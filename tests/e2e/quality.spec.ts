@@ -81,9 +81,9 @@ test('AC-I18N-01 English has no Chinese; Chinese has no English library texts', 
   }
   await open(page, '/po', { lang: 'zh' });
   await waitForRows(page, 'PurchaseOrders');
-  await page.getByRole('button', { name: '显示筛选' }).click();
+  await page.getByRole('button', { name: '展开页头' }).click();
   const zh = await visibleText();
-  for (const english of ['Show Filters', 'Hide Filters', 'Adapt Filters', 'Standard', 'Purchase Orders', 'Search', 'Settings']) expect(zh).not.toContain(english);
+  for (const english of ['Expand Header', 'Collapse Header', 'Pin Header', 'Adapt Filters', 'Standard', 'Purchase Orders', 'Search', 'Settings']) expect(zh).not.toContain(english);
   expect(zh).toMatch(/采购订单/);
 });
 
@@ -98,7 +98,7 @@ test('AC-Q-02 performance: first rows within 2.5 s; scrolling 10,000 rows withou
   await waitForRows(page, 'PurchaseOrders');
   expect(Date.now() - t0).toBeLessThan(2500);
   // all 10,000 rows: widen company codes and drop the status filter
-  await page.getByRole('button', { name: 'Show Filters' }).click();
+  await page.getByRole('button', { name: 'Expand Header' }).click();
   const cc = page.locator('[data-sk-filter="CompanyCode"] input:not([type="hidden"])').first();
   await cc.click();
   for (let i = 0; i < 3; i++) await cc.press('Backspace');
@@ -109,7 +109,7 @@ test('AC-Q-02 performance: first rows within 2.5 s; scrolling 10,000 rows withou
   for (let i = 0; i < 3; i++) await st.press('Backspace');
   // live update: the list re-queries without "Go"
   await expect(table(page, 'PurchaseOrders').locator('[data-sk-table-title]')).toHaveText('Purchase Orders (10000)');
-  await page.getByRole('button', { name: 'Hide Filters' }).click();
+  await page.getByRole('button', { name: 'Collapse Header' }).click();
   await page.evaluate(() => ((window as unknown as { __long: number[] }).__long = []));
   const viewport = table(page, 'PurchaseOrders').locator('.ag-grid-viewport');
   for (let y = 0; y < 400_000; y += 20_000) {

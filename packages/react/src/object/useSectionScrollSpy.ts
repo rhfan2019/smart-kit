@@ -73,6 +73,8 @@ export function useSectionScrollSpy(scope: string, ids: string[], enabled = true
           }, 100);
           return;
         }
+        // +1: the page has to scroll down to reach the section (measured before scrolling)
+        let heading = Math.sign(el.getBoundingClientRect().top - viewportTopOf(container) - offset());
         scrollElementTo(el, offset());
         el.focus({ preventScroll: true });
         // A smooth scroll is cancelled by layout changes (the header snaps while scrolling) and the sticky
@@ -87,7 +89,6 @@ export function useSectionScrollSpy(scope: string, ids: string[], enabled = true
           const target = document.getElementById(SECTION_ELEMENT_ID(scope, id));
           return target ? target.getBoundingClientRect().top - viewportTopOf(container) - offset() : 0;
         };
-        let heading = Math.sign(distance()); // +1: the page has to scroll down to reach the section
         let checks = 0;
         const timer = setInterval(() => {
           const target = document.getElementById(SECTION_ELEMENT_ID(scope, id));

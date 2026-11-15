@@ -20,6 +20,7 @@ import { SmartField } from '../field/SmartField';
 import { smartKitGridTheme } from '../theme/agGrid';
 import { applyExtensions, type ExtendEntry } from '../util/extend';
 import { usePageState, useStoredState } from '../util/usePageState';
+import { useDynamicPage } from '../page/DynamicPage';
 import { exportRows } from './exportRows';
 import { TableP13nDialog } from './TableP13nDialog';
 import { useListQuery } from './useListQuery';
@@ -255,6 +256,7 @@ export function SmartTable(p: SmartTableProps) {
   const service = useService(p.service);
   const { navigation, intlLocale, timeZone } = useSmartKit();
   const t = useText();
+  const page = useDynamicPage();
   const model = service.model;
   const source: QuerySource = useMemo(
     () => (p.parent ? { parent: p.parent.path, navigation: p.parent.navigation } : { entitySet: p.entitySet! }),
@@ -497,6 +499,7 @@ export function SmartTable(p: SmartTableProps) {
         p.onSelectionChange?.(rows);
         saveView();
       }}
+      onBodyScroll={(e) => { if (mode === 'grid' && e.direction === 'vertical') page?.contentScrolled(e.top); }}
       onBodyScrollEnd={() => saveView()}
       onSortChanged={onSortChanged}
       onColumnMoved={(e) => {

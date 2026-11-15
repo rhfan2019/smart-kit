@@ -2,11 +2,12 @@
  * DynamicPage: sticky title area, collapsible header content, content area and footer (LR-01, LR-12, OP-01, OP-02;
  * Dynamic Page Layout guideline, see docs/11-guideline-gap-report.md §4):
  * - snap on scroll (layout "flow"): the header content scrolls away under the sticky title; while it is out of view
- *   the title shows the collapsed state (summary, small avatar);
+ *   the title shows the collapsed state (summary, small avatar). With layout "fill" (content with its own scrollbar,
+ *   e.g. a grid table) the content reports its scrolling through `contentScrolled`: scrolling it down collapses the
+ *   header, back at the top it expands again;
  * - snap on click: the expand/collapse button, and clicking the title bar where it has no active element;
- * - pin (layout "flow" only): keeps the header content while scrolling; collapsing overrules and releases the pin;
+ * - pin: keeps the header content while scrolling; collapsing overrules and releases the pin;
  *   not offered on small screens or when the header would take more than 60% of the viewport;
- * - layout "fill" (content with its own scrollbar, e.g. a grid table): no snap on scroll and no pin;
  * - keyboard: the header expands when the keyboard focus enters it and collapses when the focus leaves it for the page
  *   content (unless pinned).
  * The expand/collapse and pin buttons sit centred on the bottom border of the header.
@@ -41,7 +42,7 @@ export interface DynamicPageProps {
   onHeaderExpandedChange?(expanded: boolean): void;
   pinned?: boolean;
   onPinnedChange?(pinned: boolean): void;
-  /** Collapse while scrolling the page and offer pinning (layout "flow" only). */
+  /** Collapse while scrolling and offer pinning. With layout "fill" the scrolling of the content is used (see contentScrolled). */
   snapOnScroll?: boolean;
   /** Show "Show Filters / Hide Filters" in the title actions instead of the expand/collapse and pin buttons. */
   filterToggle?: boolean;
@@ -60,6 +61,8 @@ interface DynamicPageContext {
   stickyHeight(): number;
   /** Collapses the header, then calls `fn` (object page anchors: collapse first, then scroll). */
   collapseThen(fn: () => void): void;
+  /** Layout "fill": the content scrolled to `top` (px). Collapses or expands the header unless it is pinned. */
+  contentScrolled(top: number): void;
 }
 
 const Ctx = createContext<DynamicPageContext | null>(null);
@@ -80,7 +83,9 @@ export function DynamicPage(p: DynamicPageProps) {
   /** Snap on scroll needs a scrolling page: never with layout "fill". */
   const pageSnap = Boolean(p.snapOnScroll) && !fill;
   const [pinAllowed, setPinAllowed] = useState(true);
-  const pinned = pageSnap && pinAllowed ? (p.pinned ?? ownPinned) : false;
+  const pinned = p.snapOnScroll && pinAllowed ? (p.pinned ?? ownPinned) : false;
+  const autoCollapsed = useRef<number | null>(null); // time of the last collapse caused by content scrolling
+  const lastTop = useRef(0);
   const setPinned = (v: boolean) => {
     if (p.pinned === undefined) setOwnPinned(v);
     p.onPinnedChange?.(v);
@@ -100,7 +105,7 @@ export function DynamicPage(p: DynamicPageProps) {
   const rootRef = useRef<HTMLDivElement>(null);
   // No pin on small screens, or when the header (title + content) would take more than 60% of the viewport.
   useEffect(() => {
-    if (!pageSnap) return;
+    if (!p.snapOnScroll) return;
     const check = () => {
       const root = rootRef.current;
       if (!root) return;
@@ -118,7 +123,7 @@ export function DynamicPage(p: DynamicPageProps) {
     const ro = typeof ResizeObserver === 'undefined' ? undefined : new ResizeObserver(check);
     if (ro && headerRef.current) ro.observe(headerRef.current);
     return () => { window.removeEventListener('resize', check); ro?.disconnect(); };
-  }, [pageSnap, expanded, p.header]);
+  }, [p.snapOnScroll, expanded, p.header]);
   useEffect(() => {
     if (!pinAllowed && (p.pinned ?? ownPinned)) setPinned(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- release the pin when it stops being allowed
@@ -155,6 +160,20 @@ export function DynamicPage(p: DynamicPageProps) {
       if (!pageSnap && !pinned && expanded && hasHeader) setExpanded(false);
       requestAnimationFrame(() => requestAnimationFrame(fn));
     },
+    contentScrolled: (top) => {
+      const previous = lastTop.current;
+      lastTop.current = top;
+      if (!fill || !p.snapOnScroll || pinned || !hasHeader) return;
+      if (top > 0 && previous === 0 && expanded) {
+        autoCollapsed.current = Date.now();
+        setExpanded(false);
+      } else if (top === 0 && previous > 0 && !expanded && autoCollapsed.current !== null) {
+        // The taller content may clamp the scroll position to 0 right after collapsing: not a scroll to the top.
+        if (Date.now() - autoCollapsed.current < 400) return;
+        autoCollapsed.current = null;
+        setExpanded(true);
+      }
+    },
   };
   /** Snap on click (button or title bar). Collapsing overrules the pin and releases it. */
   const expand = () => {
@@ -165,7 +184,7 @@ export function DynamicPage(p: DynamicPageProps) {
     if (pinned) setPinned(false);
     if (expanded && !scrolledPast) setExpanded(false);
   };
-  const toggle = () => (collapsed ? expand() : collapse());
+  const toggle = () => { autoCollapsed.current = null; if (collapsed) expand(); else collapse(); };
   const onTitleClick = (e: React.MouseEvent) => {
     if (!hasHeader) return;
     const target = e.target as HTMLElement;
@@ -223,7 +242,7 @@ export function DynamicPage(p: DynamicPageProps) {
           {collapsed ? <ChevronDown className="sk-icon" /> : <ChevronUp className="sk-icon" />}
         </ActionIcon>
       </Tooltip>
-      {pageSnap && pinAllowed && !collapsed ? (
+      {p.snapOnScroll && pinAllowed && !collapsed ? (
         <Tooltip label={pinned ? t('page.unpinHeader') : t('page.pinHeader')}>
           <ActionIcon variant={pinned ? 'filled' : 'default'} size="md" radius="xl" aria-label={pinned ? t('page.unpinHeader') : t('page.pinHeader')} aria-pressed={pinned} onClick={() => setPinned(!pinned)} data-sk-header-pin>
             {pinned ? <PinOff className="sk-icon" /> : <Pin className="sk-icon" />}

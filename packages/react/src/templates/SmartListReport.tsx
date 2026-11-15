@@ -1,7 +1,7 @@
 /**
  * List report page template, built only from public building blocks (AC-BOOT-01): variant management, filter bar,
- * grid table, filter summary, "Show / Hide Filters" (grid table: no snap on scroll, no pin), initial focus and state
- * restoration.
+ * grid table, filter summary, header expand/collapse and pin (the header snaps when the table scrolls), initial focus
+ * and state restoration.
  */
 import type { Row, SortItem, VariantContent } from '@rhfan2019/smart-kit-core';
 import { useEffect, useMemo, useRef, type ReactNode } from 'react';
@@ -30,9 +30,9 @@ export interface SmartListReportProps {
   /** Content between header and table (e.g. KPI cards). */
   beforeTable?: ReactNode;
   /**
-   * Header control. Default true: a "Show Filters / Hide Filters" button in the title bar, no snap on scroll and no pin,
-   * as the list report guideline prescribes for grid tables (LR-12; Dynamic Page: special case without page scrolling).
-   * False: the expand/collapse button on the header border instead (still no pin and no snap: the grid scrolls itself).
+   * "Show Filters / Hide Filters" in the title bar instead of the expand/collapse and pin buttons on the header border
+   * (the variant the list report guideline describes for grid tables). Default false: the header features as in the
+   * SAP reference app; the header collapses while the table is scrolled down and expands at the top, unless pinned.
    */
   filterToggle?: boolean;
   className?: string;
@@ -45,7 +45,7 @@ export function SmartListReport(props: SmartListReportProps) {
   const { ui } = useMetaModel(p.entitySet, { service: p.service });
   // Execution on load waits for the variant list: a default variant decides whether to execute (LR-02, LR-15).
   const filter = useFilterState(p.entitySet, { service: p.service, pageKey, liveMode: p.liveMode, autoExecute: false });
-  const [view, setView] = usePageState<{ columns?: string[]; sort?: SortItem[]; headerExpanded?: boolean }>(`${pageKey}:view`, {});
+  const [view, setView] = usePageState<{ columns?: string[]; sort?: SortItem[]; headerExpanded?: boolean; headerPinned?: boolean }>(`${pageKey}:view`, {});
   const columns = view.columns;
   const sort = view.sort ?? ui.presentation.sortOrder;
 
@@ -110,7 +110,10 @@ export function SmartListReport(props: SmartListReportProps) {
     <div ref={rootRef} className={['sk-list-report', p.className].filter(Boolean).join(' ')}>
       <DynamicPage
         layout="fill"
-        filterToggle={p.filterToggle ?? true}
+        filterToggle={p.filterToggle}
+        snapOnScroll={!p.filterToggle}
+        pinned={view.headerPinned ?? false}
+        onPinnedChange={(v) => setView((s) => ({ ...s, headerPinned: v }))}
         heading={p.title ?? ui.headerInfo.typeNamePlural}
         headingContent={<SmartVariantManagement variants={variants} content={content} onApply={apply} standardName={p.title} autoApplyOption={!p.liveMode} />}
         actions={p.headerActions}

@@ -232,32 +232,44 @@ test.describe('list report: purchase orders', () => {
     await expect(page).toHaveURL(/object\?path=PurchaseOrders/);
   });
 
-  test('AC-LR-13 grid table: Show / Hide Filters, no expand/collapse or pin buttons, no snap on table scroll; title click', async ({ page }) => {
+  test('AC-LR-13 header: expand/collapse and pin on the header border; the header snaps when the table scrolls; title click', async ({ page }) => {
     await open(page, MANUAL);
     const t = await waitForRows(page, 'PurchaseOrders');
     const header = page.locator('.sk-dynamic-page__header');
     await expect(header).toHaveCount(0); // a query ran on start: collapsed (LR-13)
-    await expect(page.locator('[data-sk-header-pin], [data-sk-header-toggle]')).toHaveCount(0);
-    await page.getByRole('button', { name: 'Show Filters' }).click();
+    await expect(page.getByRole('button', { name: 'Show Filters' })).toHaveCount(0);
+    await page.getByRole('button', { name: 'Expand Header' }).click();
     await expect(header).toBeVisible();
-    await expect(page.locator('[data-sk-header-pin], [data-sk-header-toggle]')).toHaveCount(0);
-    // the table scrolls by itself: scrolling it does not collapse the header (Dynamic Page: special case)
-    await t.locator('.ag-grid-viewport').evaluate((el) => el.scrollTo(0, 2000));
-    await page.waitForTimeout(400);
-    await expect(header).toBeVisible();
-    await page.getByRole('button', { name: 'Hide Filters' }).click();
+    // the buttons sit centred on the bottom border of the header
+    const box = await page.locator('.sk-dynamic-page__features-buttons').boundingBox();
+    const line = await page.locator('.sk-dynamic-page__features').boundingBox();
+    expect(Math.abs(box!.y + box!.height / 2 - line!.y)).toBeLessThan(2);
+    expect(Math.abs(box!.x + box!.width / 2 - page.viewportSize()!.width / 2)).toBeLessThan(40);
+    await expect(page.locator('[data-sk-header-pin]')).toBeVisible();
+    // scrolling the table down collapses the header, back to the top expands it
+    const scroller = t.locator('.ag-grid-viewport');
+    await scroller.evaluate((el) => el.scrollTo(0, 400));
     await expect(header).toHaveCount(0);
+    await page.waitForTimeout(500);
+    await scroller.evaluate((el) => el.scrollTo(0, 0));
+    await expect(header).toBeVisible();
+    // pinned: scrolling keeps the header
+    await page.locator('[data-sk-header-pin]').click();
+    await expect(page.locator('[data-sk-header-pin]')).toHaveAttribute('aria-pressed', 'true');
+    await scroller.evaluate((el) => el.scrollTo(0, 400));
+    await page.waitForTimeout(300);
+    await expect(header).toBeVisible();
+    // collapsing overrules the pin and releases it
+    await page.getByRole('button', { name: 'Collapse Header' }).click();
+    await expect(header).toHaveCount(0);
+    await page.getByRole('button', { name: 'Expand Header' }).click();
+    await expect(page.locator('[data-sk-header-pin]')).toHaveAttribute('aria-pressed', 'false');
     // snap on click: clicking the title bar where there is no active element toggles the header
-    const title = page.locator('.sk-dynamic-page__title');
-    const box = (await title.boundingBox())!;
-    await page.mouse.click(box.x + box.width / 2, box.y + 12);
+    const title = (await page.locator('.sk-dynamic-page__title').boundingBox())!;
+    await page.mouse.click(title.x + title.width / 2, title.y + 12);
+    await expect(header).toHaveCount(0);
+    await page.mouse.click(title.x + title.width / 2, title.y + 12);
     await expect(header).toBeVisible();
-    await page.mouse.click(box.x + box.width / 2, box.y + 12);
-    await expect(header).toHaveCount(0);
-    // the variant button is an active element: no toggle
-    await page.locator('[data-sk-variant]').click();
-    await page.keyboard.press('Escape');
-    await expect(header).toHaveCount(0);
   });
 
   test('AC-LR-18 live update is the default: no Go, queries on change, no "Apply Automatically"', async ({ page }) => {
@@ -285,7 +297,8 @@ test.describe('list report: purchase orders', () => {
     await expect(header).toBeVisible();
     // leaving the header for the page content collapses it again
     await page.getByRole('button', { name: /^Adapt Filters/ }).focus();
-    await page.keyboard.press('Tab');
+    // Tab past the remaining header elements (the expand/collapse and pin buttons) into the table
+    for (let i = 0; i < 6 && (await page.evaluate(() => Boolean(document.activeElement?.closest('[data-sk-header-region]')))); i++) await page.keyboard.press('Tab');
     await expect(header).toHaveCount(0);
   });
 

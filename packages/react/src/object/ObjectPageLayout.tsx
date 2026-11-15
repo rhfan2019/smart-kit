@@ -174,6 +174,38 @@ export function ObjectPageLayout(p: ObjectPageLayoutProps) {
   const onTab = (id: string) => { setOwnTab(id); changed.current?.(id); };
   const onActive = (id: string) => changed.current?.(id);
 
+  // Anchor navigation: a spacer after the last section lets every section scroll up to the anchor bar, also when the
+  // content is shorter than the window (as the UI5 object page does).
+  const sectionsRef = useRef<HTMLDivElement>(null);
+  const [spacer, setSpacer] = useState(0);
+  useEffect(() => {
+    const el = sectionsRef.current;
+    if (tabs || !el) { setSpacer(0); return; }
+    const compute = () => {
+      const all = el.querySelectorAll<HTMLElement>('[data-sk-section]');
+      const last = all[all.length - 1];
+      const page = el.closest('.sk-dynamic-page');
+      if (!last || !page) return setSpacer(0);
+      const container = scrollParent(el);
+      const viewport = container instanceof Window ? window.innerHeight : container.clientHeight;
+      const sticky = (page.querySelector<HTMLElement>('.sk-dynamic-page__sticky')?.offsetHeight ?? 0) + (page.querySelector<HTMLElement>('.sk-dynamic-page__navigation')?.offsetHeight ?? 0);
+      const content = page.querySelector<HTMLElement>('.sk-dynamic-page__content');
+      const style = content ? getComputedStyle(content) : undefined;
+      const padBottom = style ? (parseFloat(style.paddingBottom) || 0) + (parseFloat(style.rowGap) || 0) : 0; // the spacer follows after a gap
+      const footer = page.querySelector<HTMLElement>('.sk-dynamic-page__footer')?.offsetHeight ?? 0;
+      const fromLast = last.getBoundingClientRect().bottom - last.getBoundingClientRect().top;
+      const next = Math.max(0, Math.ceil(viewport - sticky - fromLast - padBottom - footer));
+      setSpacer((s) => (Math.abs(s - next) > 1 ? next : s));
+    };
+    compute();
+    const ro = typeof ResizeObserver === 'undefined' ? undefined : new ResizeObserver(compute);
+    ro?.observe(el);
+    const sticky = el.closest('.sk-dynamic-page')?.querySelector('.sk-dynamic-page__sticky');
+    if (ro && sticky) ro.observe(sticky);
+    window.addEventListener('resize', compute);
+    return () => { ro?.disconnect(); window.removeEventListener('resize', compute); };
+  }, [tabs, sections.length]);
+
   const header = p.facets || p.avatar ? (
     <div className="sk-object-header">
       {p.avatar ? <div className="sk-object-header__avatar">{p.avatar}</div> : null}
@@ -200,11 +232,12 @@ export function ObjectPageLayout(p: ObjectPageLayoutProps) {
       footer={p.footer}
       data-testid={`object-${p.scope}`}
     >
-      <div className="sk-object-page__sections">
+      <div className="sk-object-page__sections" ref={sectionsRef}>
         {(tabs ? sections.filter((s) => s.id === tab) : sections).map((s) => (
           <SectionView key={s.id} scope={p.scope} section={s} tabs={tabs} />
         ))}
       </div>
+      {!tabs && spacer > 0 ? <div className="sk-object-page__spacer" style={{ height: spacer }} aria-hidden data-sk-spacer /> : null}
     </DynamicPage>
   );
 }

@@ -23,6 +23,8 @@ test('AC-NAV-01 returning to the list restores filters, search, sort, columns, s
     await t.locator('.ag-grid-viewport').evaluate((el) => el.scrollTo(0, 120 * 40));
     return t.locator('.ag-row[row-index="125"]').count();
   }, { timeout: 15_000 }).toBe(1);
+  await expect(page.locator('.sk-dynamic-page__header')).toHaveCount(0); // scrolling the table collapsed the header
+  await page.waitForTimeout(300);
   await t.locator('.ag-row[row-index="125"] input[type="checkbox"]').check();
   const selectedPo = await t.locator('.ag-row[row-index="125"] [col-id="DataField::PurchaseOrder"]').innerText();
   await page.waitForTimeout(300);

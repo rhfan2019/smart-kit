@@ -25,7 +25,7 @@ export function FreestylePage() {
   return (
     <DynamicPage
       layout="fill"
-      filterToggle
+      snapOnScroll
       heading={ui.headerInfo.typeNamePlural}
       summary={<FilterSummary entitySet="PurchaseOrders" filters={filter.filters} search={filter.search} />}
       header={<SmartFilterBar state={filter} />}

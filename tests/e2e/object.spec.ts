@@ -278,6 +278,21 @@ test('AC-EXT-03 a custom section after General Information, also in the anchor b
   await expect(page.locator('[data-sk-anchor="Custom::Timeline"]')).toHaveText('Delivery Timeline');
 });
 
+test('AC-OP-12 short pages: every anchor brings its section under the anchor bar (spacer after the last section)', async ({ page }) => {
+  await open(page, itemPath());
+  await expect(page.locator('[data-sk-anchor="History"]')).toBeVisible();
+  const gap = (id: string) => page.evaluate((id) => document.querySelector(`[data-sk-section="${id}"]`)!.getBoundingClientRect().top - document.querySelector('.sk-dynamic-page__navigation')!.getBoundingClientRect().bottom, id);
+  for (const id of ['Pricing', 'History']) {
+    await page.locator(`[data-sk-anchor="${id}"]`).click();
+    await expect(page.locator(`[data-sk-anchor="${id}"]`)).toHaveAttribute('aria-current', 'true');
+    await expect.poll(() => gap(id)).toBeLessThan(3);
+    await expect.poll(() => gap(id)).toBeGreaterThan(-3);
+  }
+  await page.locator('[data-sk-anchor="ItemData"]').click();
+  await expect.poll(() => main(page).evaluate((el) => el.scrollTop)).toBe(0);
+  await expect(page.locator('[data-sk-anchor="ItemData"]')).toHaveAttribute('aria-current', 'true');
+});
+
 test('AC-NAV-02 returning from the sub-object page restores the object page state', async ({ page }) => {
   await open(page, poPath());
   await page.locator('[data-sk-anchor="Items"]').click();
