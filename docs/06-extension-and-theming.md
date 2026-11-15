@@ -107,3 +107,17 @@
   - 列表页：`/po`、`/nw/products`。
   - 对象页：`/<服务名>/object?path=<编码后的实体路径>`，例如 `/purchasing/object?path=PurchaseOrders('4500000001')`。
   - 宿主应用自己的其他路由（演示用的 `/about`）在测试里验证不受影响（AC-NAV-06）。
+
+## 6. 二期新增的扩展点和令牌（2026-11-15）
+
+扩展点：
+- `SmartTable`：`actionGroups`（菜单按钮）、`modelActions={false}`（不用注解动作）、`createMode`、`deletable`、`workingMode`、`lineItem`、`titleAddon`、`toolbarEnd`；部件 `SmartTable.Copy`、`SmartTable.Details`。
+- `SmartListReport`：`views`、`contents`、`chart`、`tableType`、`share`、`onRowsChange`。
+- `SmartObjectPage`：`keyInfo`、`sideContent`、`subObjectCreate`、`create`、`onCreated`、`onDeleted`、`editable`、`paging`、`letterboxing`；`SectionItem.subSections[].blocks`（布局块）。
+- `DynamicPage`：`keyInfo`、`actionItems`、`layoutActions`、`titleAddon`、`letterboxing`；`ColumnContext`（弹性分栏给列的布局动作和面包屑规则）。
+- `ServiceConfig.editStrategy(entitySet)`：替换编辑策略（ADR-018）。
+- `NavigationAdapter.toTable(parent, navigation, service)`："Show All (x)" 的目标页。
+
+新增令牌（各主题共用语义层，深色主题跟随语义色）：`--sk-text-h3` / `--sk-text-h4` / `--sk-text-h5`（对象页标题样式）、`--sk-size-letterbox`（1280px）、`--sk-size-side-content`、`--sk-size-generic-tag`、`--sk-sticky-offset` / `--sk-tabs-height` / `--sk-table-toolbar-height`（运行时由组件设置的吸顶偏移），以及图表组件令牌 `--sk-chart-*`、`--sk-microchart-*`（ADR-021）。
+
+文案：二期的库文案在 `packages/react/src/i18n/messages.p2.en.ts` / `messages.p2.zh.ts`，并入主文案表，键集合由单元测试检查一致。

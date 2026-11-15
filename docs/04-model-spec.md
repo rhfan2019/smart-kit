@@ -163,3 +163,20 @@ interface EntityUi {
 ```
 
 JSON 对象里也可以写 `$Reference` 来声明别名，写法同 CSDL JSON。
+
+## 9. 二期新增的模型字段（2026-11-15）
+
+| 字段 | 来源 | 说明 |
+| --- | --- | --- |
+| `EntityUi.actions` / `objectActions` | `UI.LineItem` / `UI.Identification` 里的 `UI.DataFieldForAction` | `ActionModel`：限定名、是否绑定、`inline`、`determining`、`operationAvailable`（`Core.OperationAvailable`，去掉绑定参数前缀后的路径或常量）、非绑定参数（ADR-024） |
+| `EntityUi.charts` | `UI.Chart` 按限定符 | `ChartModel`：图表类型、维度、度量、度量的 DataPoint（`MeasureAttributes`）、`navigation`（页头 Facet 引用 `导航/@UI.Chart` 时） |
+| `EntityUi.views` | 带限定符的 `UI.SelectionPresentationVariant` | `ViewModel`：文字、条件、排序、LineItem（按 `Visualizations` 的限定符）、图表 |
+| `EntityUi.quickView` | `UI.QuickViewFacets` | 表单组 |
+| `FieldModel.importance` | 记录上的 `UI.Importance` | `High` / `Medium` / `Low`；未注解为空，响应式表格按 Medium 处理（关键标识列按 High），表单按 High |
+| `FieldModel.quickView` | 字段的 `Common.Text` 经过的单值导航，或以该字段为外键的导航，其目标有 `UI.QuickViewFacets` | `{ navigation, typeName }` |
+| `HeaderFacetModel` `kind: 'chart' / 'text'` | 指向 `UI.Chart` 的页头 Facet；只有一个多行文本字段的 FieldGroup | 微图表 Facet、纯文本 Facet |
+| `DataPointModel.minimumValue / maximumValue / sampleSize` | `UI.DataPoint` | 微图表刻度；汇总评分 |
+| `PropertyModel.mandatory / readOnly` | `Common.FieldControl` 常量 `Mandatory` / `ReadOnly` | 编辑校验与只读 |
+| `EntitySetModel.draft` | `Common.DraftRoot` / `Common.DraftNode` | 动作名（ADR-018）；一期的 `DRAFT_UNSUPPORTED` 警告改为信息 `DRAFT` |
+
+`DataFieldForAction` 不再进 `lineItem`，也不再产生"不支持"的警告；动作在元数据里找不到时给出 `UNRESOLVED_ACTION` 警告。

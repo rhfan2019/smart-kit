@@ -1,6 +1,6 @@
 # 01b 对象页（Object Page）规则清单与导航规则
 
-> 状态：现行 · 2026-11-14。
+> 状态：现行 · 2026-11-14；2026-11-15 二期完成：标"二期"的条目（含 NAV-07 弹性分栏）已实现，逐项见 `13-phase2-acceptance.md` 和 `14-phase2-acceptance-report.md`。
 >
 > 出处缩写：
 > - **[OP]** SAP Fiori Design Guidelines v1.148《Object Page Floorplan》（2026-11-14 用内置浏览器通读）

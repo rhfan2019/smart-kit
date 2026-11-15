@@ -4,7 +4,7 @@
 
 元数据驱动、白盒、可换主题的 React 组件库：从 OData V4 的 `$metadata` 与注解生成列表页和对象页的积木，页面由使用者在 JSX 里自己拼。
 
-**状态：一期（只读的列表页、对象页、子对象页）已完成。** 验收结果见 [docs/10-acceptance-report.md](docs/10-acceptance-report.md)，目标与范围见 [docs/prompt/项目目标与范围-v5.md](docs/prompt/项目目标与范围-v5.md)。
+**状态：一期（只读的列表页、对象页、子对象页）和二期（编辑、草稿、弹性分栏及其余功能）已完成。** 验收结果见 [docs/10-acceptance-report.md](docs/10-acceptance-report.md) 和 [docs/14-phase2-acceptance-report.md](docs/14-phase2-acceptance-report.md)，目标与范围见 [docs/prompt/项目目标与范围-v5.md](docs/prompt/项目目标与范围-v5.md)。
 
 ## 包
 

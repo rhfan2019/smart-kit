@@ -1,6 +1,6 @@
 # 01 列表页（List Report）规则清单
 
-> 状态：现行 · 2026-11-14。
+> 状态：现行 · 2026-11-14；2026-11-15 二期完成：标"二期"的条目已实现，逐项见 `13-phase2-acceptance.md` 和 `14-phase2-acceptance-report.md`（分组只在响应式表格提供，见 `12` U-5）。
 >
 > 出处缩写：
 > - **[LR]** SAP Fiori Design Guidelines v1.148《List Report Floorplan》（2026-11-14 用内置浏览器通读）
