@@ -11,7 +11,7 @@ export default defineConfig({
   workers: 1,
   retries: process.env.CI ? 1 : 0,
   reporter: process.env.CI ? [['github'], ['list']] : 'list',
-  snapshotPathTemplate: '{testDir}/__screenshots__/{testFilePath}/{arg}{ext}',
+  snapshotPathTemplate: '{testDir}/__screenshots__/{platform}/{testFilePath}/{arg}{ext}',
   use: {
     ...devices['Desktop Chrome'],
     baseURL: DEMO,
