@@ -36,6 +36,21 @@ const engineSpecific = DraftMockEntitySet.prototype.checkSpecificProperties;
 DraftMockEntitySet.prototype.checkSpecificProperties = function (expr, ...rest) {
   return expr.identifier === 'DraftAdministrativeData/InProcessByUser' ? null : engineSpecific.call(this, expr, ...rest);
 };
+// Memory: the engine's MockDataEntitySet.getProperty memoizes resolved properties but not misses. Every $filter
+// literal ("'1000'") is looked up as a property for every row it checks; each miss goes through the annotation
+// converter's resolvePath, which records a message that is kept for the life of the process. Long e2e runs grew
+// by ~1 KB per checked row until the server ran out of heap. Remember misses as well.
+{
+  const { MockDataEntitySet } = createRequire(import.meta.url)('@sap-ux/fe-mockserver-core/dist/data/entitySets/entitySet.js');
+  const getProperty = MockDataEntitySet.prototype.getProperty;
+  MockDataEntitySet.prototype.getProperty = function (identifier) {
+    this.__skMisses ??= new Set();
+    if (this.__skMisses.has(identifier)) return undefined;
+    const found = getProperty.call(this, identifier);
+    if (found === undefined) this.__skMisses.add(identifier);
+    return found;
+  };
+}
 const root = dirname(fileURLToPath(import.meta.url));
 const PORT = Number(process.env.MOCK_PORT ?? 4400);
 const E2E = process.env.E2E === '1';
