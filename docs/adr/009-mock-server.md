@@ -1,0 +1,24 @@
+# ADR-009 测试服务用 ASP.NET Core OData
+
+- **背景**：
+  - 需要一个真实、独立的 OData V4 服务端，才能验证"生成的查询被服务器接受"（v5 第 9 节第 2 条）。
+  - 如果服务端也由我们自己写，就是自己验证自己。
+  - CAP 的核心包 `@sap/cds` 是 SAP 开发者许可（专有），按 v5 第 3.3 节不能用。
+- **决定**：
+  - .NET 10 SDK（10.0.404，装在 `~/.dotnet`）；
+  - `Microsoft.AspNetCore.OData` 9.5.0；
+  - EF Core SQLite 10.0.x。
+  - 服务的 `$metadata` 由手写的 CSDL XML 文件（含 UI 注解）经 `CsdlReader` 读入，再把 EDM 类型绑定到 C# 类，用标准的 `[EnableQuery]` 控制器提供数据。
+- **核实**（2026-11-14 的技术验证）：
+  - 手写 CSDL 里的 `edmx:Reference`、UI 和 Common 注解原样出现在 `$metadata` 里；
+  - `$metadata?$format=json` 输出 CSDL JSON；
+  - `$select`、`$expand`（含嵌套 `$select`）、`$filter`（含导航路径）、`$orderby`、`$top`、`$skip`、`$count` 开箱可用；
+  - `IEEE754Compatible=true` 时 Decimal 和计数以字符串返回；
+  - 带 `If-Match` 的 PATCH 返回 412 只需几行代码；
+  - `Accept-Language` 切换 `$metadata` 只需几行中间件。
+  - 需要自己写的：`$search` 的 `ISearchBinder`（不注册时，`$search` 会被**静默忽略**，所以必须注册，或者明确拒绝）；`$batch` 的事务性（一期不用 `$batch`）。
+- **代价**：
+  - 开发和 CI 需要 .NET SDK；
+  - 仓库里多一门语言；
+  - SQLite 输出 Decimal 时不补齐小数位，需要在数据层按 `Scale` 格式化。
+- **状态**：采纳。
