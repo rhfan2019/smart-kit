@@ -108,7 +108,7 @@ interface EntityUi {
 | 列（`LineItem`） | 主键，加上按声明顺序排列的基本类型属性。排除：`Edm.Stream`、`Edm.Binary`、`Edm.Geography*`、`UI.Hidden`、`Common.Text` 指向的文本属性（它会随代码显示）、作为单位或币种的属性。最多 8 列 |
 | 筛选字段 | 主键（可筛选时），加上有 `ValueList` 的属性；如果都没有，取前 3 个可筛选的字符串属性。最多 6 个 |
 | 页头（`HeaderInfo`） | `TypeName` 和 `TypeNamePlural` 由实体类型名推导（复数加 s）。`Title` 按顺序取：`Common.SemanticKey`；名字为 `Name`、`*Name`、`Title`、`Description` 的字符串属性；第一个主键 |
-| 区块（`Facets`） | 一个 id 为 `GeneralInformation` 的区块，标题用库文案"常规信息 / General Information"，内容是全部基本类型属性的表单，按每组 6 个字段分组。另外，每个集合导航生成一个区块，内容是子表，子表的列按目标实体推导 |
+| 区块（`Facets`） | 一个 id 为 `GeneralInformation` 的区块，模型里标题为空，由界面层用库文案"常规信息 / General Information"显示，内容是全部基本类型属性的表单，按每组 6 个字段分组。另外，每个集合导航生成一个区块，内容是子表，子表的列按目标实体推导 |
 | 能力 | `Filterable`、`Sortable`、`Countable`、`TopSupported`、`SkipSupported` 默认都是 true。`Searchable` 默认 **false**：OData 标准没有说服务一定支持 `$search`，只有显式声明了才显示搜索框 |
 | 必填筛选 | 只来自 `FilterRestrictions/RequiredProperties` |
 
@@ -116,7 +116,7 @@ interface EntityUi {
 
 | 对象 | id |
 | --- | --- |
-| 列 | `DataField::<路径>`，路径里的 `/` 换成 `::`；`DataFieldForAnnotation` 用 `DataFieldForAnnotation::<注解路径>`；记录里有 `ID` 时优先用它 |
+| 列 | `DataField::<路径>`，路径里的 `/` 换成 `::`；`DataFieldForAnnotation` 用 `DataFieldForAnnotation::<注解路径>`，注解路径里的词汇表命名空间写成短别名（`_Supplier::UI.DataPoint#Rating`），与各文件用的别名无关；记录里有 `ID` 时优先用它 |
 | 筛选字段 | 属性路径 |
 | 区块和子区块 | Facet 的 `ID`；没有时用标签生成（`Label` 去掉空格），再没有时用目标生成（`FieldGroup::Qualifier`、`导航::LineItem`） |
 | 页头 Facet | 同区块 |

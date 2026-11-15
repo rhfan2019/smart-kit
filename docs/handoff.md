@@ -1,17 +1,17 @@
 # 交接文档
 
-> 最后更新：2026-11-14。新会话先读本文，再读 `docs/prompt/项目目标与范围-v5.md`。
+> 最后更新：2026-11-15。新会话先读本文，再读 `docs/prompt/项目目标与范围-v5.md`。
 
 ## 1. 现状
 
-- 阶段 0（澄清）完成。结论已并入任务说明 v4、v5。
-- 阶段 1（研究与设计）完成：`docs/01`–`08`、`docs/query-shapes.md`、`docs/adr/`。
-- 用户在 2026-11-14 要求："按计划持续推进直至任务全部完成，中间不用停"。因此各阶段之间不再停下等确认。
-- 推送规则：只在本地提交，全部完成后由用户决定是否推送。
+- 阶段 0、1、1.5、2 全部完成，一期验收结果见 `docs/10-acceptance-report.md`。
+- 所有提交都只在本地，**没有推送到远程**：用户要求全部完成后再决定是否推送。
+- 唯一没有在本机验证的项：CI 工作流从未在 GitHub 上跑过；Linux 的截图基准还没有生成。
 
 ## 2. 下一步
 
-阶段 1.5 技术验证 → 阶段 2 的八个纵向切片 → 验收报告。
+1. 用户决定是否推送；推送后看 CI，第一次运行时生成 Linux 截图基准（`npx playwright test tests/e2e/quality.spec.ts -g AC-THEME-01 --update-snapshots`）并提交。
+2. 二期：编辑（直接保存，再做草稿）、弹性分栏、响应式表格及 `01`/`01b` 中标为二期的功能。编辑接缝已在 `spikes/edit-seam` 验证。
 
 ## 3. 已定的关键决策
 
@@ -19,16 +19,29 @@
 | --- | --- |
 | 两期；一期为只读的列表页、对象页、子对象页 | v5 第 2 节 |
 | 一期不做草稿，也不识别草稿服务 | v5 第 3.2 节 |
-| 只排除专有许可的 SAP 包；解析用 `@sap-ux/*` | v5 第 3.3 节、ADR-008 |
+| 只排除专有许可的 SAP 包；解析用 `@sap-ux/*`，另加内联注解预处理和 CSDL JSON 转换 | v5 第 3.3 节、ADR-008、`09` |
 | 测试服务用 ASP.NET Core OData（.NET 10，装在 `~/.dotnet`） | ADR-009 |
 | 列表页用网格表格，响应式表格放二期 | ADR-002 |
 | 变体存服务端实体集 | ADR-014 |
 | 库不依赖路由；示例用 React Router | ADR-010 |
 | 只支持中文和英文 | v5 第 6.8 节 |
 
-## 4. 环境
+## 4. 常用命令
 
-- Node 24、npm 11。
-- .NET SDK 10.0.404 在 `~/.dotnet`，不在 PATH 上。脚本里用 `scripts/dotnet.mjs` 定位它。
+| 命令 | 作用 |
+| --- | --- |
+| `npm run mock` | 启动测试服务（http://localhost:4400），首次会生成 SQLite 数据 |
+| `npm run dev` | 启动示例应用（http://localhost:4401，代理到测试服务） |
+| `npm run storybook` | Storybook（http://localhost:6006） |
+| `npm run typecheck` / `npm run lint` / `npm test` | 类型、lint 和令牌与商标检查、单元测试 |
+| `npm run e2e` | 端到端；会自己启动测试服务（`E2E=1`）和示例应用 |
+| `npm run build` / `npm run size` | 构建两个包和示例应用；体积预算 |
+| `npm run trace -- --strict` | 注解覆盖与验收条目的可追溯检查 |
+| `npm run samples` | 从运行中的测试服务导出 `$metadata` 样本 |
+| `node scripts/rename-scope.mjs <@scope> --dry-run` | 改 npm scope |
+
+## 5. 环境
+
+- Node 24、npm 11；.NET SDK 10.0.404 在 `~/.dotnet`，`apps/mock/run.mjs` 会自动找到它。
 - 端口：测试服务 4400，示例应用 4401，Storybook 6006。
 - 参考项目在 `../00-fiori-list-report-floorplan-folk`，遵守它 `AGENTS.md` 的隔离规则（不访问 `03-invoice-assure`）。

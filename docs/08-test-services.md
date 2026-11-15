@@ -56,7 +56,7 @@
 | `PurchaseOrders` 实体类型 | `HeaderInfo`（标题 `PurchaseOrder`，副标题 `Description`，图片 `_Supplier/LogoUrl`）；`LineItem`（含 `DataFieldForAnnotation` 指向供应商评分和交货进度的 DataPoint，以及 `Criticality`）；`SelectionFields`（`PurchaseOrder`、`Supplier`、`Status`、`OrderDate`、`PurchaseOrderType`）；`PresentationVariant`（按 `OrderDate` 降序，`RequestAtLeast` 含 `Currency`）；`SelectionVariant`（默认条件：状态不等于"已关闭"）；`HeaderFacets`（表单：供应商与采购组；关键值：净值；进度：交货进度；评分：供应商评分）；`Facets`（"常规信息"区块含两个子区块；"项目"区块只有一张表；"备注"区块 `PartOfPreview=false` 的子区块） |
 | `PurchaseOrderItems` 实体类型 | `HeaderInfo`、`LineItem`、`Facets`（"项目数据"表单；"定价"区块的第一个子区块是定价条件表，第二个子区块是金额表单，对应 OP-12 第 ③ 种情况；"历史"区块只有一张表） |
 | 属性 | `Common.Label`、`Common.Text` + `UI.TextArrangement`、`Common.ValueList`、`Common.ValueListWithFixedValues`、`Measures.ISOCurrency`、`Measures.Unit`、`UI.Hidden`（`StatusCriticality`）、`UI.HiddenFilter`、`UI.MultiLineText`、`UI.IsImageURL`、`Common.SemanticKey`、`Core.Computed` |
-| 实体集 | `Capabilities.SearchRestrictions`（`PurchaseOrders` 可搜索）、`FilterRestrictions`（`Notes` 不可筛选；`CompanyCode` 必填并有默认值）、`SortRestrictions`（`Description` 不可排序）、`CountRestrictions`（`ItemHistory` 不可计数）、`UpdateRestrictions`（`PurchaseOrders` 可更新，供阶段 1.5 验证） |
+| 实体集 | `Capabilities.SearchRestrictions`（`PurchaseOrders`、`PurchaseOrderItems`、`Suppliers`、`Materials` 可搜索）、`FilterRestrictions`（`Notes` 不可筛选；`CompanyCode` 必填并有默认值）、`SortRestrictions`（`Description` 不可排序）、`CountRestrictions`（`ItemHistory` 不可计数）、`UpdateRestrictions`（`PurchaseOrders` 可更新，供阶段 1.5 验证） |
 
 服务端按这些 Capabilities 拒绝违反的请求，返回 400。这样，客户端如果发出了会失败的请求，端到端测试就会失败。
 
@@ -64,3 +64,13 @@
 
 - `npm run samples` 从运行中的服务导出 `$metadata`（两种语言 × XML 和 JSON），存到 `packages/core/test/samples/`，供单元测试离线使用。
 - 单元测试 ANN-70 检查同一服务的 XML 样本和 JSON 样本得到相同模型。
+
+## 5. 与上文的差异（实现时的调整）
+
+- 多了 `PurchaseOrderTypes` 实体集（订单类型的固定值来源），以及 `PurchasingGroup` 字段（页头表单 Facet）。
+- `PurchaseOrders` 的 Insert / Delete 限制为 false；项目和供应商有 `Common.SemanticKey`。
+- 状态码：NEW（0）、APPR（3）、ORD（5）、PART（2）、CLOSED（3）；已下单或部分交货且交货日早于 2026-11-14 的订单，`StatusCriticality` 为 1（逾期）。
+- Microsoft.OData.Edm 不能原样读写部分注解（集合里的 `AnnotationPath`、注解的注解、记录里的注解），所以 `$metadata` 的 XML 直接输出模板（替换标签后），JSON 的 `$Annotations` 由模板转换。单元测试 ANN-70 保证两者得到相同模型。
+- `$search`：服务端把含数字的检索词改写成带引号的短语（Microsoft.OData 只接受字母词）。
+- 必填筛选（`RequiredProperties`）只声明、不在服务端强制。
+- PATCH 只接受部分字段（采购订单：描述、备注、订单类型、采购组、订单日期），其他字段返回 400。

@@ -83,7 +83,7 @@
   | `dark` | 深色表面 | 明黄（作为线条和底色） |
 
 - **密度**：`data-density`，`comfortable`（默认）或 `compact`。只重新定义尺寸令牌，例如控件高 32 → 26、行高 36 → 28。
-- **Mantine 桥接**：在 `tokens.css` 里把 Mantine 的 CSS 变量（`--mantine-color-body`、`--mantine-color-text`、`--mantine-primary-color-filled` 等）指向语义层。Mantine 的 `forceColorScheme` 不使用，颜色完全由我们的变量决定。
+- **Mantine 桥接**：Mantine 的 CSS 变量（`--mantine-color-body`、`--mantine-color-text`、`--mantine-primary-color-filled`，以及 Alert、Badge 等用到的 red / blue / green / yellow / orange 色板）通过 `smartKitCssVariablesResolver` 和 `tokens.css` 指向语义层。宿主用 `forceColorScheme="light"`，深色由我们的 `data-theme="dark"` 实现，颜色完全由我们的变量决定。
 - **AG Grid 桥接**：主题参数全部写成 `var(--sk-…)`，例如 `backgroundColor: 'var(--sk-color-surface)'`。切换主题时不重建表格。
 - **JS 里的颜色**：图表、头像等需要在 JS 里用颜色的地方，用 `readToken('--sk-color-accent')` 读取计算后的值；`useThemeTokens()` 在 `data-theme` 变化时（通过 `MutationObserver`）重新读取。
 - **检查**：
@@ -105,5 +105,5 @@
 - **适配器接口**见 `05-data-provider.md` 第 8 节。
 - **示例实现**：`apps/demo/src/navigation.ts` 用 React Router 实现适配器：
   - 列表页：`/po`、`/nw/products`。
-  - 对象页：`/po/object?path=<编码后的实体路径>`。
+  - 对象页：`/<服务名>/object?path=<编码后的实体路径>`，例如 `/purchasing/object?path=PurchaseOrders('4500000001')`。
   - 宿主应用自己的其他路由（演示用的 `/about`）在测试里验证不受影响（AC-NAV-06）。

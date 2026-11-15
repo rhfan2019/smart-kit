@@ -21,7 +21,8 @@ interface QueryRequest {
   source: { entitySet: string } | { parent: EntityPath; navigation: string };
   select: string[];                  // 属性路径（可以经过单值导航，如 _Supplier/Name）
   expand: ExpandSpec[];              // 由 select 里经过导航的路径推导，也可以显式给出
-  filter?: FilterTree;               // 由条件模型生成，见第 3 节
+  filters?: FilterState;             // 条件模型，见第 3 节；字段之间为"且"
+  anyOf?: FilterState;               // 任一字段满足即可（值帮助在不支持 $search 时的回退）
   search?: string;
   orderBy: { path: string; descending: boolean }[];
   skip?: number; top?: number;
@@ -181,10 +182,12 @@ interface PageStateStore {
   set<T>(key: string, value: T): void;
 }
 interface NavigationAdapter {
-  /** 进入对象页或子对象页；path 是实体路径 */
-  toObject(path: EntityPath): void;
+  /** 进入对象页或子对象页；path 是实体路径，service 是服务名 */
+  toObject(path: EntityPath, service?: string): void;
   /** 回到某个列表 */
-  toList(entitySet: string): void;
+  toList(entitySet: string, service?: string): void;
+  /** 该实体集的行是否有对象页（决定是否显示导航指示器） */
+  hasObjectPage?(entitySet: string, service?: string): boolean;
   /** 生成链接地址，给 <a href> 用（中键、新标签页打开）；返回 undefined 时只渲染按钮 */
   href?(target: { kind: 'object'; path: EntityPath } | { kind: 'list'; entitySet: string }): string | undefined;
 }
@@ -192,5 +195,5 @@ interface NavigationAdapter {
 
 - **页面状态的键**：`<namespace>:<页面 id>`。`namespace` 在 Provider 上必填，例如 `smart-kit-demo`。
 - **默认存储**：`MemoryPageStateStore`，状态只存在内存里，刷新后丢失。
-- **其他存储**：使用者可以注入基于 `sessionStorage` 的实现。库提供 `createSessionPageStateStore(namespace)`，只在调用时访问 `sessionStorage`，访问失败就退回内存。
+- **其他存储**：使用者可以注入基于 `sessionStorage` 的实现。库提供 `createSessionPageStateStore(prefix?)`，键已经由 Provider 加了命名空间，`prefix` 是可选的额外前缀；只在调用时访问 `sessionStorage`，访问失败就退回内存。
 - **实体路径（`EntityPath`）**：字符串，用 OData 资源路径的写法，例如 `PurchaseOrders('4500000001')/_Item(PurchaseOrder='4500000001',PurchaseOrderItem=10)`。`core` 提供解析和生成函数，适配器负责把它放进宿主的 URL。
