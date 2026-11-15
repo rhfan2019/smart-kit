@@ -21,3 +21,10 @@
 | [015](015-no-batch-phase1.md) | 一期不用 `$batch` | 采纳 |
 | [016](016-export.md) | 导出用 write-excel-file | 采纳 |
 | [017](017-mock-server-fe-mockserver.md) | 测试服务改用 `@sap-ux/fe-mockserver-core`（纯 Node） | 采纳 |
+| [018](018-edit-strategies.md) | 编辑策略：直接保存与草稿都实现 `EditStrategy` | 采纳 |
+| [019](019-draft-test-service.md) | 草稿测试服务 `/odata/purchasing-draft/`（引擎原生草稿） | 采纳 |
+| [020](020-responsive-table.md) | 响应式表格自己用 HTML 表格实现 | 采纳 |
+| [021](021-charts.md) | 图表和微图表用 SVG 自己实现，数据用 `$apply` | 采纳 |
+| [022](022-flexible-column-layout.md) | 弹性分栏由宿主路由驱动 | 采纳 |
+| [023](023-messages.md) | 消息模型 | 采纳 |
+| [024](024-actions.md) | 动作 | 采纳 |
