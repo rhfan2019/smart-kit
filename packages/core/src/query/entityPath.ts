@@ -1,4 +1,4 @@
-/** Entity paths: OData resource paths such as `PurchaseOrders('1')/_Item(PurchaseOrder='1',PurchaseOrderItem=10)`. */
+/** Entity paths: OData resource paths such as `Orders('1')/_Item(Order='1',Item=10)`. */
 import type { EntityTypeModel, MetaModel } from '../model/types';
 import { encodeKeyLiteral } from './literals';
 
@@ -74,7 +74,7 @@ export interface ResolvedPath {
   typeName: string;
   /** Key values of the addressed entity, by key property name. */
   key: Record<string, string>;
-  /** Canonical URL path relative to the service root, e.g. `PurchaseOrderItems(PurchaseOrder='1',PurchaseOrderItem=10)`. */
+  /** Canonical URL path relative to the service root, e.g. `OrderItems(Order='1',Item=10)`. */
   canonical: string;
   /** Entity paths of every level, from the root down to this entity (for breadcrumbs). */
   levels: { path: EntityPath; entitySet: string; typeName: string; key: Record<string, string> }[];

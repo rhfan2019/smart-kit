@@ -92,8 +92,8 @@
 .sk-table__nav { color: var(--sk-color-text-muted); }
 .sk-table__search { min-width: calc(var(--sk-size-column-min) * 1.5); }
 .sk-table .ag-cell { display: flex; align-items: center; }
-.sk-table--auto .ag-layout-auto-height .ag-center-cols-viewport,
-.sk-table--auto .ag-layout-auto-height .ag-center-cols-container { min-height: 0; }
+.sk-table--auto .ag-layout-auto-height .ag-grid-scrolling-rows,
+.sk-table--auto .ag-layout-auto-height .ag-grid-scrolling-container { min-height: 0; }
 .sk-table .ag-cell[col-id='$nav'] { justify-content: center; padding: 0; }
 
 /* ---------------------------------------------------------------- object page */

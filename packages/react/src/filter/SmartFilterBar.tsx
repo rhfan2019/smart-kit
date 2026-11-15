@@ -47,16 +47,16 @@ function SearchPart() {
   const { capabilities } = useMetaModel(p.state.entitySet, { service: p.state.service });
   if (!capabilities.searchable) return null;
   return (
+    <div className="sk-filterbar__search" data-sk-filter="$search">
     <TextInput
-      className="sk-filterbar__search"
       aria-label={t('filterBar.search')}
       placeholder={t('filterBar.search')}
       value={p.state.search}
       leftSection={<Search className="sk-icon" />}
       onChange={(e) => p.state.setSearch(e.currentTarget.value)}
       onKeyDown={(e) => { if (e.key === 'Enter') p.state.go(); }}
-      data-sk-filter="$search"
     />
+    </div>
   );
 }
 

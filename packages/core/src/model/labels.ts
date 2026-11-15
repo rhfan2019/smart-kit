@@ -1,6 +1,6 @@
 /** Turns a property or type name into words: OrderDate → "Order Date", unit_price → "Unit Price", CategoryID → "Category ID". */
 export function humanize(name: string): string {
-  const cleaned = name.replace(/^_+/, '').replace(/[_\-]+/g, ' ');
+  const cleaned = name.replace(/^_+/, '').replace(/[_-]+/g, ' ');
   const words = cleaned
     .replace(/([a-z\d])([A-Z])/g, '$1 $2')
     .replace(/([A-Z]+)([A-Z][a-z])/g, '$1 $2')

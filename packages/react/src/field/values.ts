@@ -1,7 +1,7 @@
 /** Value helpers shared by fields, cells and exports. */
 import { formatValue, resolvePath, type FieldModel, type MetaModel, type PropertyModel, type Row, type ValueRef } from '@rhfan2019/smart-kit-core';
 
-/** Reads a value by property path, following expanded navigation objects ("_Supplier/SupplierName"). */
+/** Reads a value by property path, following expanded navigation objects ("_Partner/PartnerName"). */
 export function getPath(row: Row | undefined, path: string): unknown {
   let cur: unknown = row;
   for (const seg of path.split('/')) {

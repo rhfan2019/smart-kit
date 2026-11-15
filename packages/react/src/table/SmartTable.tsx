@@ -315,7 +315,7 @@ export function SmartTable(p: SmartTableProps) {
     const path = pathOf(row);
     if (p.onRowNavigate) p.onRowNavigate(row, path);
     else navigation?.toObject(path, service.name);
-  }, [p, pathOf, navigation]);
+  }, [p, pathOf, navigation, service.name]);
 
   // Restore selection and scroll position (NAV-04).
   const stored = useStoredState<{ selectedKeys: string[]; firstRow: number }>(stateKey ? `${stateKey}:view` : undefined);
@@ -466,6 +466,7 @@ export function SmartTable(p: SmartTableProps) {
       rowSelection={{ mode: 'multiRow', checkboxes: true, headerCheckbox: mode === 'auto', enableClickSelection: false }}
       selectionColumnDef={{ pinned: 'left', width: 48, resizable: false, suppressHeaderMenuButton: true }}
       suppressCellFocus={false}
+      suppressColumnVirtualisation={mode === 'auto'}
       animateRows={false}
       ensureDomOrder
       localeText={{ loadingOoo: t('table.loading'), noRowsToShow: noDataText, ariaRowSelect: t('table.selectRow'), ariaChecked: t('common.yes'), ariaUnchecked: t('common.no') }}

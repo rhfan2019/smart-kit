@@ -323,7 +323,7 @@ function idFromPath(path: string): string {
   return path.replace(/\//g, '::');
 }
 
-/** Id fragment for an annotation path, independent of aliases: "_Supplier/@com.sap.vocabularies.UI.v1.DataPoint#R" → "_Supplier::UI.DataPoint#R". */
+/** Id fragment for an annotation path, independent of aliases: "_Partner/@com.sap.vocabularies.UI.v1.DataPoint#R" → "_Partner::UI.DataPoint#R". */
 function annotationId(target: string): string {
   return idFromPath(target.replace(/@/g, '').replace(/com\.sap\.vocabularies\.(\w+)\.v1\./g, '$1.').replace(/Org\.OData\.(\w+)\.V1\./g, '$1.'));
 }

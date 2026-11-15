@@ -11,7 +11,7 @@ import {
 } from '../index';
 
 export interface SmartObjectPageProps {
-  /** Entity path, e.g. "PurchaseOrders('4500000001')". */
+  /** Entity path, e.g. "Orders('1')". */
   path: string;
   service?: string;
   navigation?: 'anchor' | 'tabs';

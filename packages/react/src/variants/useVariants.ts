@@ -45,7 +45,7 @@ export function useVariants(pageKey: string, o: UseVariantsOptions): VariantsApi
   const qc = useQueryClient();
   const key = ['smart-kit', namespace, service.name, 'variants', pageKey];
   const q = useQuery({ queryKey: key, queryFn: () => store.list(pageKey), staleTime: Infinity });
-  const variants = q.data ?? [];
+  const variants = useMemo(() => q.data ?? [], [q.data]);
   const [state, setState] = usePageState<{ currentId: string | null }>(`${pageKey}:variant`, { currentId: null });
   const standard: Variant = useMemo(() => ({ id: STANDARD_VARIANT_ID, pageKey, name: '', isDefault: !variants.some((v) => v.isDefault), autoApply: true, content: o.standard }), [pageKey, variants, o.standard]);
   const defaultVariant = variants.find((v) => v.isDefault);

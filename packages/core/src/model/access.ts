@@ -21,7 +21,7 @@ export function getUi(model: MetaModel, typeName: string): EntityUi {
   return model.ui[typeName]!;
 }
 
-/** Resolves a property path ("_Supplier/SupplierName") against an entity type. */
+/** Resolves a property path ("_Partner/PartnerName") against an entity type. */
 export function getProperty(model: MetaModel, typeName: string, path: string): PropertyModel | undefined {
   return resolvePath(model.entityTypes, typeName, path).property;
 }

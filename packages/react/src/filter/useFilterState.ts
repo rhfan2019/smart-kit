@@ -92,15 +92,11 @@ export function useFilterState(entitySet: string, o: UseFilterStateOptions = {})
     // eslint-disable-next-line react-hooks/exhaustive-deps -- run once on mount
   }, []);
 
+  const stateRef = useRef(state);
+  stateRef.current = state;
   const go = useCallback((): boolean => {
-    let ok = true;
-    setState((s) => {
-      if (missing(s.filters).length) {
-        ok = false;
-        return { ...s, showRequiredErrors: true };
-      }
-      return { ...s, applied: { filters: s.filters, search: s.search }, showRequiredErrors: false };
-    });
+    const ok = missing(stateRef.current.filters).length === 0;
+    setState((s) => (ok ? { ...s, applied: { filters: s.filters, search: s.search }, showRequiredErrors: false } : { ...s, showRequiredErrors: true }));
     return ok;
   }, [missing, setState]);
 
