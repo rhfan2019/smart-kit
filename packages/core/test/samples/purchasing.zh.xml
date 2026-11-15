@@ -218,7 +218,7 @@
       </Annotations>
       <Annotations Target="Purchasing.Container/PurchaseOrderItems">
         <Annotation Term="Capabilities.SearchRestrictions">
-          <Record Type="Capabilities.SearchRestrictionsType"><PropertyValue Property="Searchable" Bool="false"/></Record>
+          <Record Type="Capabilities.SearchRestrictionsType"><PropertyValue Property="Searchable" Bool="true"/></Record>
         </Annotation>
         <Annotation Term="Core.OptimisticConcurrency">
           <Collection><PropertyPath>Version</PropertyPath></Collection>

@@ -137,6 +137,13 @@ export function useTableContext(): TableContextValue {
   return useInternal().ctx;
 }
 
+/** Index of the row at the top of the viewport (getFirstDisplayedRowIndex includes the render buffer). */
+function topRowIndex(api: GridApi): number {
+  const first = api.getDisplayedRowAtIndex(Math.max(0, api.getFirstDisplayedRowIndex() ?? 0));
+  const height = first?.rowHeight || 1;
+  return Math.max(0, Math.round(api.getVerticalPixelRange().top / height));
+}
+
 function defaultWidth(f: FieldModel | undefined, edmType: string | undefined): number {
   if (f?.kind === 'dataPoint') return f.dataPoint?.visualization === 'Progress' ? 180 : 130;
   if (edmType === 'Edm.Date') return 130;
@@ -392,11 +399,12 @@ export function SmartTable(p: SmartTableProps) {
           if (r && apiRef.current) {
             const api = apiRef.current;
             api.forEachNode((n) => { if (n.data && r.selectedKeys.includes(keyOf(n.data as Row))) n.setSelected(true); });
-            if (params.startRow === 0 && r.firstRow > 0) {
-              const firstRow = r.firstRow;
-              requestAnimationFrame(() => api.ensureIndexVisible(Math.min(firstRow, (last ?? firstRow + 1) - 1), 'top'));
-            }
-            if (params.endRow > r.firstRow) restore.current = { ...r, firstRow: 0 };
+            const target = last === undefined ? r.firstRow : Math.min(r.firstRow, last - 1);
+            if (target > 0) {
+              // Scroll there (this loads the block holding the row); once that block is in, scroll again precisely.
+              setTimeout(() => api.ensureIndexVisible(target, 'top'), 0);
+              if (params.startRow <= target && target < params.endRow) restore.current = { ...r, firstRow: 0 };
+            } else if (params.startRow === 0) restore.current = r.selectedKeys.length ? { ...r, firstRow: 0 } : undefined;
           }
         } catch (e) {
           if (!isAbortError(e)) {
@@ -419,7 +427,7 @@ export function SmartTable(p: SmartTableProps) {
   const saveView = () => {
     const api = apiRef.current;
     if (!stateKey || !api || api.isDestroyed()) return;
-    stored.write({ selectedKeys: ((api.getSelectedRows() ?? []) as Row[]).map(keyOf), firstRow: mode === 'grid' ? Math.max(0, api.getFirstDisplayedRowIndex() ?? 0) : 0 });
+    stored.write({ selectedKeys: ((api.getSelectedRows() ?? []) as Row[]).map(keyOf), firstRow: mode === 'grid' ? topRowIndex(api) : 0 });
   };
   useEffect(() => () => saveView(), []); // eslint-disable-line react-hooks/exhaustive-deps -- store on unmount
 

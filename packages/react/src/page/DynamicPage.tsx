@@ -113,7 +113,8 @@ export function DynamicPage(p: DynamicPageProps) {
     pinned,
     stickyHeight: () => (stickyRef.current?.offsetHeight ?? 0) + (navRef.current?.offsetHeight ?? 0),
     collapseThen: (fn) => {
-      if (!pinned && expanded && hasHeader && !scrolledPast) setExpanded(false);
+      // With snap on scroll the header collapses by scrolling past it; without it, collapse explicitly.
+      if (!p.snapOnScroll && !pinned && expanded && hasHeader) setExpanded(false);
       requestAnimationFrame(() => requestAnimationFrame(fn));
     },
   };

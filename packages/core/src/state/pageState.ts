@@ -22,10 +22,11 @@ interface StorageLike {
 }
 
 /**
- * Persists page state in a Storage (sessionStorage by default) under `namespace:`-prefixed keys.
- * Falls back to memory when the storage is not available.
+ * Persists page state in a Storage (sessionStorage by default). Keys arrive already namespaced by the
+ * provider ("<namespace>:<page key>"); `prefix` is an optional extra prefix. Falls back to memory when the
+ * storage is not available.
  */
-export function createSessionPageStateStore(namespace: string, storage?: StorageLike): PageStateStore {
+export function createSessionPageStateStore(prefix = '', storage?: StorageLike): PageStateStore {
   const memory = new MemoryPageStateStore();
   const resolve = (): StorageLike | undefined => {
     if (storage) return storage;
@@ -35,7 +36,7 @@ export function createSessionPageStateStore(namespace: string, storage?: Storage
       return undefined;
     }
   };
-  const k = (key: string) => `${namespace}:${key}`;
+  const k = (key: string) => (prefix ? `${prefix}:${key}` : key);
   return {
     get<T>(key: string): T | undefined {
       try {

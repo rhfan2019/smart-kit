@@ -553,7 +553,7 @@
    "Purchasing.Container/PurchaseOrderItems": {
     "@Capabilities.SearchRestrictions": {
      "@type": "Org.OData.Capabilities.V1.SearchRestrictionsType",
-     "Searchable": false
+     "Searchable": true
     },
     "@Core.OptimisticConcurrency": [
      {

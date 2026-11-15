@@ -63,11 +63,11 @@ function Lazy({ children }: { children: ReactNode }) {
   const [visible, setVisible] = useState(typeof IntersectionObserver === 'undefined');
   useEffect(() => {
     if (visible || !ref.current) return;
-    const near = () => ref.current && ref.current.getBoundingClientRect().top < window.innerHeight + 400;
+    const near = () => ref.current && ref.current.getBoundingClientRect().top < window.innerHeight + 200;
     if (near()) { setVisible(true); return; }
     const onScroll = () => { if (near()) setVisible(true); };
     document.addEventListener('scroll', onScroll, { capture: true, passive: true });
-    const obs = new IntersectionObserver(([e]) => { if (e!.isIntersecting) setVisible(true); }, { rootMargin: '400px 0px' });
+    const obs = new IntersectionObserver(([e]) => { if (e!.isIntersecting) setVisible(true); }, { rootMargin: '200px 0px' });
     obs.observe(ref.current);
     return () => { obs.disconnect(); document.removeEventListener('scroll', onScroll, { capture: true }); };
   }, [visible]);

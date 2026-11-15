@@ -13,12 +13,24 @@ export function ObjectRoute() {
   const path = params.get('path') ?? '';
   const { s } = useShell();
   const isOrder = service === 'purchasing' && path.startsWith('PurchaseOrders(') && !path.includes('/');
+  const extra = Number(params.get('extra') ?? 0);
   const sectionExtend = useMemo(
-    () => (isOrder ? [{
-      id: 'Custom::Timeline', position: 'after' as const, anchor: 'GeneralInformation',
-      item: { id: 'Custom::Timeline', title: s('timeline'), subSections: [{ id: 'Custom::Timeline', title: s('timeline'), content: <div className="demo__card" data-demo-timeline>{s('timelineText')}</div> }] } satisfies SectionItem,
-    }] : undefined),
-    [isOrder, s],
+    () => (isOrder ? [
+      {
+        id: 'Custom::Timeline', position: 'after' as const, anchor: 'GeneralInformation',
+        item: {
+          id: 'Custom::Timeline', title: s('timeline'),
+          messageStrip: <Alert variant="light" data-demo-section-message>{s('timelineText')}</Alert>,
+          subSections: [{ id: 'Custom::Timeline', title: s('timeline'), content: <div className="demo__card" data-demo-timeline>{s('timelineText')}</div> }],
+        } satisfies SectionItem,
+      },
+      // ?extra=n adds n more sections (used to test the anchor overflow menu)
+      ...Array.from({ length: extra }, (_, i) => ({
+        id: `Custom::Extra${i + 1}`, position: 'end' as const,
+        item: { id: `Custom::Extra${i + 1}`, title: `${s('timeline')} ${i + 1}`, subSections: [{ id: `Custom::Extra${i + 1}`, title: `${s('timeline')} ${i + 1}`, content: <div className="demo__card">{i + 1}</div> }] } satisfies SectionItem,
+      })),
+    ] : undefined),
+    [isOrder, s, extra],
   );
   if (!path) return null;
   return (

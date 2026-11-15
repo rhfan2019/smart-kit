@@ -60,7 +60,7 @@ export function App() {
   }, [locale]);
 
   const navigation = useMemo(() => createNavigationAdapter(navigate), [navigate]);
-  const pageState = useMemo(() => createSessionPageStateStore('smart-kit-demo'), []);
+  const pageState = useMemo(() => createSessionPageStateStore(), []);
   const shell = useMemo(() => ({ locale, s: (k: ShellKey, p?: Record<string, string | number>) => shellText(locale, k, p) }), [locale]);
   const fill = /^\/(po|nw\/products|nw\/orders|freestyle)\/?$/.test(location.pathname);
 

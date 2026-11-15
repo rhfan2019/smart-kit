@@ -209,6 +209,7 @@ public class PurchasingSearchBinder : ISearchBinder
         [typeof(PurchaseOrderEntity)] = ["PurchaseOrder", "Description", "_Supplier.SupplierName"],
         [typeof(SupplierEntity)] = ["Supplier", "SupplierName", "City"],
         [typeof(MaterialEntity)] = ["Material", "MaterialName"],
+        [typeof(PurchaseOrderItemEntity)] = ["Material", "_Material.MaterialName", "Plant"],
     };
     static readonly System.Reflection.MethodInfo Contains = typeof(string).GetMethod("Contains", [typeof(string)])!;
     static readonly System.Reflection.MethodInfo ToLower = typeof(string).GetMethod("ToLower", Type.EmptyTypes)!;

@@ -9,6 +9,7 @@ export function useSectionScrollSpy(scope: string, ids: string[], enabled = true
   const [active, setActive] = useState<string | undefined>(ids[0]);
   const page = useDynamicPage();
   const lock = useRef(0);
+  const recompute = useRef<() => void>(() => {});
   const pageRef = useRef(page);
   pageRef.current = page;
 
@@ -31,6 +32,7 @@ export function useSectionScrollSpy(scope: string, ids: string[], enabled = true
         : container.scrollTop + container.clientHeight >= container.scrollHeight - 2);
       setActive(atEnd ? ids[ids.length - 1] : current);
     };
+    recompute.current = onScroll;
     container.addEventListener('scroll', onScroll, { passive: true });
     onScroll();
     return () => container.removeEventListener('scroll', onScroll);
@@ -43,8 +45,18 @@ export function useSectionScrollSpy(scope: string, ids: string[], enabled = true
         if (!el) return;
         lock.current = Date.now() + 900;
         setActive(id.split('::sub::')[0]);
-        scrollElementTo(el, pageRef.current?.stickyHeight() ?? 0);
+        // Re-evaluate once the programmatic scroll is over (the user may have scrolled meanwhile).
+        setTimeout(() => recompute.current(), 950);
+        const container = scrollParent(el);
+        const expected = scrollElementTo(el, pageRef.current?.stickyHeight() ?? 0);
         el.focus({ preventScroll: true });
+        // The sticky area grows when the header snaps; correct the position once it has settled,
+        // unless the user has scrolled elsewhere in the meantime.
+        setTimeout(() => {
+          const target = document.getElementById(SECTION_ELEMENT_ID(scope, id));
+          const now = container instanceof Window ? window.scrollY : container.scrollTop;
+          if (target && Math.abs(now - expected) < 80) scrollElementTo(target, pageRef.current?.stickyHeight() ?? 0, 'auto');
+        }, 450);
       };
       if (pageRef.current) pageRef.current.collapseThen(go);
       else go();

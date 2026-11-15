@@ -1,0 +1,215 @@
+import { expect, test, type Page } from '@playwright/test';
+import { MOCK, open, recordOData, resetServer, table } from './helpers';
+
+const PO = '4500000001';
+const poPath = (po = PO) => `/purchasing/object?path=${encodeURIComponent(`PurchaseOrders('${po}')`)}`;
+const itemPath = (po = PO, item = 10) => `/purchasing/object?path=${encodeURIComponent(`PurchaseOrders('${po}')/_Item(PurchaseOrder='${po}',PurchaseOrderItem=${item})`)}`;
+const main = (page: Page) => page.locator('#demo-main');
+const scrollMain = (page: Page, y: number) => main(page).evaluate((el, top) => el.scrollTo({ top }), y);
+
+test.beforeEach(async ({ page }) => resetServer(page));
+
+test('AC-OP-01 header: title, subtitle, avatar, facets, snap on scroll, pin, collapse button', async ({ page }) => {
+  await open(page, poPath());
+  await expect(page.locator('.sk-dynamic-page__heading')).toHaveText(PO);
+  await expect(page.locator('.sk-dynamic-page__subheading')).not.toBeEmpty();
+  await expect(page.locator('.sk-object-header__avatar img')).toBeVisible();
+  await expect(page.locator('.sk-facet')).toHaveCount(4);
+  await expect(page.locator('.sk-facet--form .sk-facet__pair')).toHaveCount(4);
+  await expect(page.locator('.sk-facet--kpi .sk-facet__kpi-value')).toHaveText(/^\d{1,3}(,\d{3})*\.\d{2}$/);
+  await expect(page.locator('.sk-facet--progress [role="progressbar"]')).toBeVisible();
+  await expect(page.locator('.sk-facet--rating .mantine-Rating-root')).toBeVisible();
+  // snap on scroll
+  await scrollMain(page, 600);
+  await expect(page.locator('.sk-dynamic-page__title[data-collapsed]')).toBeVisible();
+  await expect(page.locator('.sk-dynamic-page__avatar img')).toBeVisible();
+  await scrollMain(page, 0);
+  await expect(page.locator('.sk-dynamic-page__title[data-collapsed]')).toHaveCount(0);
+  // pin keeps the header while scrolling
+  await page.locator('[data-sk-header-pin]').click();
+  await scrollMain(page, 600);
+  await page.waitForTimeout(200);
+  await expect(page.locator('.sk-dynamic-page__title[data-collapsed]')).toHaveCount(0);
+  await expect(page.locator('.sk-object-header')).toBeInViewport();
+  await page.locator('[data-sk-header-pin]').click();
+  await scrollMain(page, 0);
+  // collapse button
+  await page.locator('[data-sk-header-toggle]').click();
+  await expect(page.locator('.sk-object-header')).toHaveCount(0);
+  await page.locator('[data-sk-header-toggle]').click();
+  await expect(page.locator('.sk-object-header')).toBeVisible();
+});
+
+test('AC-OP-02 anchors: scroll, scroll spy, subsection menu, overflow, small-screen select', async ({ page }) => {
+  await open(page, poPath());
+  await page.locator('[data-sk-anchor="Items"]').click();
+  await expect(page.locator('[data-sk-anchor="Items"]')).toHaveAttribute('aria-current', 'true');
+  await expect(page.locator('[data-sk-section="Items"]')).toBeInViewport();
+  await scrollMain(page, 0);
+  await expect(page.locator('[data-sk-anchor="GeneralInformation"]')).toHaveAttribute('aria-current', 'true');
+  // subsection dropdown for a section with two subsections
+  await page.locator('[data-sk-anchor-menu="GeneralInformation"]').click();
+  await expect(page.getByRole('menuitem')).toHaveCount(2);
+  await page.keyboard.press('Escape');
+  await expect(page.locator('[data-sk-anchor-menu="Items"]')).toHaveCount(0);
+  // overflow menu
+  await page.setViewportSize({ width: 900, height: 900 });
+  await open(page, `${poPath()}&extra=8`);
+  await expect(page.locator('[data-sk-anchor-overflow]')).toBeVisible();
+  await page.locator('[data-sk-anchor-overflow]').click();
+  await expect(page.getByRole('menuitem', { name: /8$/ })).toBeVisible();
+  await page.keyboard.press('Escape');
+  // small screens: a select
+  await page.setViewportSize({ width: 480, height: 900 });
+  await open(page, poPath());
+  await expect(page.locator('.sk-anchorbar--select')).toBeVisible();
+});
+
+test('AC-OP-03 tab navigation shows one section and counts on tabs', async ({ page }) => {
+  await open(page, `${poPath()}&layout=tabs`);
+  await expect(page.locator('[data-sk-section]')).toHaveCount(1);
+  await page.locator('[data-sk-anchor="Items"]').click();
+  await expect(page.locator('[data-sk-section]')).toHaveCount(1);
+  await expect(page.locator('[data-sk-section="Items"]')).toBeVisible();
+  await expect(page.locator('[data-sk-anchor="Items"]')).toHaveText('Items (150)');
+});
+
+test('AC-OP-04 title de-duplication (four cases)', async ({ page }) => {
+  await open(page, poPath());
+  // ② two subsections: section title + subsection titles
+  await expect(page.locator('[data-sk-section="GeneralInformation"] > .sk-section__title')).toBeVisible();
+  await expect(page.locator('[data-sk-section="GeneralInformation"] .sk-subsection__title')).toHaveCount(2);
+  // ④ one subsection with one table: the table title is the title
+  await expect(page.locator('[data-sk-section="Items"] > .sk-section__title')).toHaveCount(0);
+  await page.locator('[data-sk-anchor="Items"]').click();
+  await expect(page.locator('[data-sk-section="Items"] [data-sk-table-title]')).toHaveText('Items (150)');
+  // ① one subsection: its title is promoted
+  await expect(page.locator('[data-sk-section="NotesSection"] > .sk-section__title')).toBeVisible();
+  await expect(page.locator('[data-sk-section="NotesSection"] .sk-subsection__title')).toHaveCount(0);
+  // ③ first subsection is a table: no subsection title, the table carries it; the second keeps its title
+  await open(page, itemPath());
+  await page.locator('[data-sk-anchor="Pricing"]').click();
+  const pricing = page.locator('[data-sk-section="Pricing"]');
+  await expect(pricing.locator('> .sk-section__title')).toBeVisible();
+  await expect(pricing.locator('[data-sk-subsection="PricingConditions"] .sk-subsection__title')).toHaveCount(0);
+  await expect(pricing.locator('[data-sk-subsection="PricingConditions"] [data-sk-table-title]')).toHaveText(/\(\d+\)$/);
+  await expect(pricing.locator('[data-sk-subsection="PricingTotals"] .sk-subsection__title')).toBeVisible();
+});
+
+test('AC-OP-05 form columns follow the content width; labels on top', async ({ page }) => {
+  const columns = async () => {
+    const xs = await page.locator('[data-sk-subsection="GeneralData"] .sk-form__field').evaluateAll((els) => els.map((e) => Math.round(e.getBoundingClientRect().left)));
+    return new Set(xs).size;
+  };
+  for (const [width, expected] of [[1700, 6], [1250, 4], [850, 3], [500, 1]] as const) {
+    await page.setViewportSize({ width, height: 900 });
+    await open(page, poPath());
+    await expect.poll(columns, { message: `width ${width}` }).toBe(expected);
+  }
+  const label = await page.locator('.sk-form__label').first().boundingBox();
+  const value = await page.locator('.sk-form__value').first().boundingBox();
+  expect(label!.y).toBeLessThan(value!.y);
+});
+
+test('AC-OP-06 Show More / Show Less', async ({ page }) => {
+  await open(page, poPath());
+  const notes = page.locator('[data-sk-section="NotesSection"]');
+  await expect(notes.locator('.sk-form')).toHaveCount(0);
+  await notes.locator('[data-sk-show-more]').click();
+  await expect(notes.locator('.sk-form')).toBeVisible();
+  await expect(notes.locator('[data-sk-show-more]')).toHaveText('Show Less');
+  await notes.locator('[data-sk-show-more]').click();
+  await expect(notes.locator('.sk-form')).toHaveCount(0);
+});
+
+test('AC-OP-07 sub-table: 10 rows, More adds 20, search, sort, lazy request', async ({ page }) => {
+  const rec = recordOData(page);
+  await page.setViewportSize({ width: 1440, height: 520 });
+  await open(page, poPath());
+  await expect(page.locator('.sk-dynamic-page__heading')).toHaveText(PO);
+  await page.waitForTimeout(500);
+  expect(rec.urls.some((u) => u.includes('/_Item?'))).toBe(false);
+  await page.locator('[data-sk-anchor="Items"]').click();
+  const items = table(page, 'PurchaseOrderItems');
+  await expect(items.locator('.ag-row[row-index]')).toHaveCount(10);
+  await items.locator('[data-sk-more]').click();
+  await expect(items.locator('.ag-row[row-index]')).toHaveCount(30);
+  await expect(items.locator('[data-sk-more]')).toHaveText('More [30/150]');
+  await items.getByRole('textbox', { name: 'Search' }).fill('bolt');
+  await items.getByRole('textbox', { name: 'Search' }).press('Enter');
+  await expect.poll(() => rec.urls.some((u) => u.includes('/_Item?') && u.includes('$search=bolt'))).toBe(true);
+  await expect(items.locator('[data-sk-table-title]')).not.toHaveText('Items (150)');
+  await items.locator('.ag-header-cell[col-id="DataField::OrderQuantity"] .ag-header-cell-label').click();
+  await expect.poll(() => rec.urls.some((u) => u.includes('/_Item?') && u.includes('$orderby=OrderUnit,OrderQuantity'))).toBe(true);
+});
+
+test('AC-OP-08 message strips: header and section positions; page-level error', async ({ page }) => {
+  const res = await page.request.get(`${MOCK}/odata/purchasing/PurchaseOrders?$filter=StatusCriticality eq 1&$top=1&$select=PurchaseOrder`);
+  const overdue = (await res.json()).value[0].PurchaseOrder as string;
+  await open(page, poPath(overdue));
+  const title = page.locator('.sk-dynamic-page__title');
+  await expect(title.locator('[data-demo-header-message]')).toBeVisible();
+  const msg = await title.locator('[data-demo-header-message]').boundingBox();
+  const header = await page.locator('.sk-object-header').boundingBox();
+  const heading = await page.locator('.sk-dynamic-page__heading').boundingBox();
+  expect(msg!.y).toBeGreaterThan(heading!.y);
+  expect(msg!.y).toBeLessThan(header!.y);
+  await scrollMain(page, 600);
+  await expect(title.locator('[data-demo-header-message]')).toBeInViewport();
+  // section message strip above the section title
+  const sec = page.locator('[data-sk-section="Custom::Timeline"]');
+  const strip = await sec.locator('[data-demo-section-message]').boundingBox();
+  const secTitle = await sec.locator('> .sk-section__title').boundingBox();
+  expect(strip!.y).toBeLessThan(secTitle!.y);
+  // object that does not exist
+  await open(page, poPath('9999999999'));
+  await expect(page.locator('[data-sk-object-error]')).toHaveText('The object does not exist.');
+});
+
+test('AC-OP-09 sub-object page with breadcrumbs and two sub-tables', async ({ page }) => {
+  await open(page, poPath());
+  await page.locator('[data-sk-anchor="Items"]').click();
+  await table(page, 'PurchaseOrderItems').locator('[data-sk-row-nav]').first().click();
+  await expect(page).toHaveURL(/_Item\(PurchaseOrder%3D%274500000001%27%2CPurchaseOrderItem%3D10\)/);
+  await expect(page.locator('[data-sk-breadcrumb]')).toHaveText(PO);
+  await expect(page.locator('[data-sk-section="Pricing"]')).toBeVisible();
+  await expect(page.locator('[data-sk-anchor="History"]')).toBeVisible();
+  await page.locator('[data-sk-breadcrumb]').click();
+  await expect(page.locator('.sk-dynamic-page__heading')).toHaveText(PO);
+});
+
+test('AC-EXT-03 a custom section after General Information, also in the anchor bar', async ({ page }) => {
+  await open(page, poPath());
+  const ids = await page.locator('[data-sk-section]').evaluateAll((els) => els.map((e) => (e as HTMLElement).dataset.skSection));
+  expect(ids.slice(0, 3)).toEqual(['GeneralInformation', 'Custom::Timeline', 'Items']);
+  await expect(page.locator('[data-sk-anchor="Custom::Timeline"]')).toHaveText('Delivery Timeline');
+});
+
+test('AC-NAV-02 returning from the sub-object page restores the object page state', async ({ page }) => {
+  await open(page, poPath());
+  await page.locator('[data-sk-anchor="Items"]').click();
+  const items = table(page, 'PurchaseOrderItems');
+  await items.locator('[data-sk-more]').click();
+  await expect(items.locator('.ag-row[row-index]')).toHaveCount(30);
+  await items.locator('.ag-header-cell[col-id="DataField::OrderQuantity"] .ag-header-cell-label').click();
+  await expect(items.locator('.ag-header-cell[col-id="DataField::OrderQuantity"]')).toHaveAttribute('aria-sort', 'ascending');
+  await items.locator('.ag-row[row-index="2"] input[type="checkbox"]').check();
+  const third = await items.locator('.ag-row[row-index="2"] [col-id="DataField::PurchaseOrderItem"]').innerText();
+  await items.locator('.ag-row[row-index="0"] [data-sk-row-nav]').click();
+  await expect(page.locator('[data-sk-breadcrumb]')).toBeVisible();
+  await page.goBack();
+  await expect(page.locator('[data-sk-anchor="Items"]')).toHaveAttribute('aria-current', 'true');
+  await expect(items.locator('.ag-row[row-index]')).toHaveCount(30);
+  await expect(items.locator('.ag-header-cell[col-id="DataField::OrderQuantity"]')).toHaveAttribute('aria-sort', 'ascending');
+  await expect(items.locator('.ag-row[row-index="2"] [col-id="DataField::PurchaseOrderItem"]')).toHaveText(third);
+  await expect(items.locator('.ag-row[row-index="2"] input[type="checkbox"]')).toBeChecked();
+});
+
+test('AC-NAV-03 object and sub-object links open directly in a new tab', async ({ page, context }) => {
+  for (const url of [poPath(), itemPath(PO, 20)]) {
+    const fresh = await context.newPage();
+    await open(fresh, url);
+    await expect(fresh.locator('.sk-dynamic-page__heading')).toHaveText(url.includes('_Item') ? '20' : PO);
+    await fresh.close();
+  }
+});

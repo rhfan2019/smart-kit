@@ -102,14 +102,15 @@ export function SmartObjectPage(p: SmartObjectPageProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- rebuilt when data, model or counts change
   }, [ui, data, typeName, p.path, p.service, counts, p.tableExtend, navigation, t]);
 
-  // Restore the active section (NAV-04).
+  // Restore the section that was active when the page was left (NAV-04): once, with the value stored at mount.
+  const initialSection = useRef(view.section);
   const restored = useRef(false);
   useEffect(() => {
-    if (restored.current || !data || !view.section || p.navigation === 'tabs' || view.section === sections[0]?.id) return;
+    const id = initialSection.current;
+    if (restored.current || !data || !id || p.navigation === 'tabs' || id === sections[0]?.id) return;
     restored.current = true;
-    const id = view.section;
     requestAnimationFrame(() => document.querySelector<HTMLElement>(`[data-sk-anchor="${CSS.escape(id)}"]`)?.click());
-  }, [data, view.section, p.navigation, sections]);
+  }, [data, p.navigation, sections]);
 
   const crumbs = resolved.levels.slice(0, -1);
   const breadcrumbs = crumbs.length ? (
