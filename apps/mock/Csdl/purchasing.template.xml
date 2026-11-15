@@ -19,6 +19,9 @@
   <edmx:Reference Uri="https://oasis-tcs.github.io/odata-vocabularies/vocabularies/Org.OData.Core.V1.xml">
     <edmx:Include Namespace="Org.OData.Core.V1" Alias="Core"/>
   </edmx:Reference>
+  <edmx:Reference Uri="https://oasis-tcs.github.io/odata-vocabularies/vocabularies/Org.OData.Aggregation.V1.xml">
+    <edmx:Include Namespace="Org.OData.Aggregation.V1" Alias="Aggregation"/>
+  </edmx:Reference>
   <edmx:DataServices>
     <Schema Namespace="Purchasing" xmlns="http://docs.oasis-open.org/odata/ns/edm">
 
@@ -40,6 +43,10 @@
         <Property Name="Description" Type="Edm.String" MaxLength="80"/>
         <Property Name="Notes" Type="Edm.String" MaxLength="1000"/>
         <Property Name="Version" Type="Edm.Int32" Nullable="false"/>
+        <Property Name="BudgetAmount" Type="Edm.Decimal" Nullable="false" Precision="15" Scale="2"/>
+        <Property Name="InvoicedAmount" Type="Edm.Decimal" Nullable="false" Precision="15" Scale="2"/>
+        <Property Name="ApproveEnabled" Type="Edm.Boolean" Nullable="false"/>
+        <Property Name="CloseEnabled" Type="Edm.Boolean" Nullable="false"/>
         <NavigationProperty Name="_Supplier" Type="Purchasing.Supplier" Nullable="false">
           <ReferentialConstraint Property="Supplier" ReferencedProperty="Supplier"/>
         </NavigationProperty>
@@ -127,6 +134,7 @@
         <Property Name="Rating" Type="Edm.Decimal" Nullable="false" Precision="2" Scale="1"/>
         <Property Name="LogoUrl" Type="Edm.String" Nullable="false" MaxLength="255"/>
         <Property Name="IsBlocked" Type="Edm.Boolean" Nullable="false"/>
+        <Property Name="RatingCount" Type="Edm.Int32" Nullable="false"/>
       </EntityType>
 
       <EntityType Name="Material">
@@ -167,6 +175,20 @@
         <Property Name="Content" Type="Edm.String" Nullable="false"/>
         <Property Name="ModifiedAt" Type="Edm.DateTimeOffset" Nullable="false" Precision="3"/>
       </EntityType>
+
+      <!-- =========================================================== bound actions (ADR-024) -->
+      <Action Name="approve" IsBound="true">
+        <Parameter Name="_it" Type="Purchasing.PurchaseOrder" Nullable="false"/>
+        <ReturnType Type="Purchasing.PurchaseOrder" Nullable="false"/>
+      </Action>
+      <Action Name="reject" IsBound="true">
+        <Parameter Name="_it" Type="Purchasing.PurchaseOrder" Nullable="false"/>
+        <ReturnType Type="Purchasing.PurchaseOrder" Nullable="false"/>
+      </Action>
+      <Action Name="close" IsBound="true">
+        <Parameter Name="_it" Type="Purchasing.PurchaseOrder" Nullable="false"/>
+        <ReturnType Type="Purchasing.PurchaseOrder" Nullable="false"/>
+      </Action>
 
       <!-- =========================================================== container -->
       <EntityContainer Name="Container">
@@ -217,10 +239,10 @@
           <Record Type="Capabilities.UpdateRestrictionsType"><PropertyValue Property="Updatable" Bool="true"/></Record>
         </Annotation>
         <Annotation Term="Capabilities.InsertRestrictions">
-          <Record Type="Capabilities.InsertRestrictionsType"><PropertyValue Property="Insertable" Bool="false"/></Record>
+          <Record Type="Capabilities.InsertRestrictionsType"><PropertyValue Property="Insertable" Bool="true"/></Record>
         </Annotation>
         <Annotation Term="Capabilities.DeleteRestrictions">
-          <Record Type="Capabilities.DeleteRestrictionsType"><PropertyValue Property="Deletable" Bool="false"/></Record>
+          <Record Type="Capabilities.DeleteRestrictionsType"><PropertyValue Property="Deletable" Bool="true"/></Record>
         </Annotation>
         <Annotation Term="Core.OptimisticConcurrency">
           <Collection><PropertyPath>Version</PropertyPath></Collection>
@@ -229,6 +251,15 @@
       <Annotations Target="Purchasing.Container/PurchaseOrderItems">
         <Annotation Term="Capabilities.SearchRestrictions">
           <Record Type="Capabilities.SearchRestrictionsType"><PropertyValue Property="Searchable" Bool="true"/></Record>
+        </Annotation>
+        <Annotation Term="Capabilities.UpdateRestrictions">
+          <Record Type="Capabilities.UpdateRestrictionsType"><PropertyValue Property="Updatable" Bool="true"/></Record>
+        </Annotation>
+        <Annotation Term="Capabilities.InsertRestrictions">
+          <Record Type="Capabilities.InsertRestrictionsType"><PropertyValue Property="Insertable" Bool="true"/></Record>
+        </Annotation>
+        <Annotation Term="Capabilities.DeleteRestrictions">
+          <Record Type="Capabilities.DeleteRestrictionsType"><PropertyValue Property="Deletable" Bool="true"/></Record>
         </Annotation>
         <Annotation Term="Core.OptimisticConcurrency">
           <Collection><PropertyPath>Version</PropertyPath></Collection>
@@ -291,23 +322,69 @@
         </Annotation>
         <Annotation Term="UI.LineItem">
           <Collection>
-            <Record Type="UI.DataField"><PropertyValue Property="Value" Path="PurchaseOrder"/></Record>
-            <Record Type="UI.DataField"><PropertyValue Property="Value" Path="Supplier"/></Record>
+            <Record Type="UI.DataField"><PropertyValue Property="Value" Path="PurchaseOrder"/><Annotation Term="UI.Importance" EnumMember="UI.ImportanceType/High"/></Record>
+            <Record Type="UI.DataField"><PropertyValue Property="Value" Path="Supplier"/><Annotation Term="UI.Importance" EnumMember="UI.ImportanceType/High"/></Record>
             <Record Type="UI.DataFieldForAnnotation">
               <PropertyValue Property="Label" String="{{label:F.SupplierRating}}"/>
               <PropertyValue Property="Target" AnnotationPath="_Supplier/@UI.DataPoint#Rating"/>
+              <Annotation Term="UI.Importance" EnumMember="UI.ImportanceType/Low"/>
             </Record>
-            <Record Type="UI.DataField"><PropertyValue Property="Value" Path="OrderDate"/></Record>
+            <Record Type="UI.DataField"><PropertyValue Property="Value" Path="OrderDate"/><Annotation Term="UI.Importance" EnumMember="UI.ImportanceType/Medium"/></Record>
             <Record Type="UI.DataField">
               <PropertyValue Property="Value" Path="Status"/>
               <PropertyValue Property="Criticality" Path="StatusCriticality"/>
+              <Annotation Term="UI.Importance" EnumMember="UI.ImportanceType/High"/>
             </Record>
-            <Record Type="UI.DataField"><PropertyValue Property="Value" Path="NetAmount"/></Record>
+            <Record Type="UI.DataField"><PropertyValue Property="Value" Path="NetAmount"/><Annotation Term="UI.Importance" EnumMember="UI.ImportanceType/High"/></Record>
+            <Record Type="UI.DataFieldForAnnotation">
+              <PropertyValue Property="Label" String="{{label:F.DeliveredPercent}}"/>
+              <PropertyValue Property="Target" AnnotationPath="@UI.DataPoint#Delivery"/>
+              <Annotation Term="UI.Importance" EnumMember="UI.ImportanceType/Low"/>
+            </Record>
+            <Record Type="UI.DataField"><PropertyValue Property="Value" Path="PurchaseOrderType"/><Annotation Term="UI.Importance" EnumMember="UI.ImportanceType/Low"/></Record>
+            <Record Type="UI.DataFieldForAction">
+              <PropertyValue Property="Label" String="{{label:A.Approve}}"/>
+              <PropertyValue Property="Action" String="Purchasing.approve"/>
+            </Record>
+            <Record Type="UI.DataFieldForAction">
+              <PropertyValue Property="Label" String="{{label:A.Reject}}"/>
+              <PropertyValue Property="Action" String="Purchasing.reject"/>
+            </Record>
+            <Record Type="UI.DataFieldForAction">
+              <PropertyValue Property="Label" String="{{label:A.Close}}"/>
+              <PropertyValue Property="Action" String="Purchasing.close"/>
+              <PropertyValue Property="Inline" Bool="true"/>
+            </Record>
+          </Collection>
+        </Annotation>
+        <Annotation Term="UI.LineItem" Qualifier="Delivery">
+          <Collection>
+            <Record Type="UI.DataField"><PropertyValue Property="Value" Path="PurchaseOrder"/></Record>
+            <Record Type="UI.DataField"><PropertyValue Property="Value" Path="Supplier"/></Record>
             <Record Type="UI.DataFieldForAnnotation">
               <PropertyValue Property="Label" String="{{label:F.DeliveredPercent}}"/>
               <PropertyValue Property="Target" AnnotationPath="@UI.DataPoint#Delivery"/>
             </Record>
-            <Record Type="UI.DataField"><PropertyValue Property="Value" Path="PurchaseOrderType"/></Record>
+            <Record Type="UI.DataField"><PropertyValue Property="Value" Path="OrderDate"/></Record>
+            <Record Type="UI.DataField"><PropertyValue Property="Value" Path="NetAmount"/></Record>
+          </Collection>
+        </Annotation>
+        <Annotation Term="UI.Identification">
+          <Collection>
+            <Record Type="UI.DataFieldForAction">
+              <PropertyValue Property="Label" String="{{label:A.Approve}}"/>
+              <PropertyValue Property="Action" String="Purchasing.approve"/>
+              <PropertyValue Property="Determining" Bool="true"/>
+            </Record>
+            <Record Type="UI.DataFieldForAction">
+              <PropertyValue Property="Label" String="{{label:A.Reject}}"/>
+              <PropertyValue Property="Action" String="Purchasing.reject"/>
+              <PropertyValue Property="Determining" Bool="true"/>
+            </Record>
+            <Record Type="UI.DataFieldForAction">
+              <PropertyValue Property="Label" String="{{label:A.Close}}"/>
+              <PropertyValue Property="Action" String="Purchasing.close"/>
+            </Record>
           </Collection>
         </Annotation>
         <Annotation Term="UI.SelectionFields">
@@ -367,6 +444,258 @@
             </PropertyValue>
           </Record>
         </Annotation>
+        <Annotation Term="UI.SelectionPresentationVariant" Qualifier="All">
+          <Record Type="UI.SelectionPresentationVariantType">
+            <PropertyValue Property="Text" String="{{label:SPV.All}}"/>
+            <PropertyValue Property="SelectionVariant">
+              <Record Type="UI.SelectionVariantType">
+                <PropertyValue Property="Text" String="{{label:SPV.All}}"/>
+                <PropertyValue Property="SelectOptions">
+                  <Collection>
+                  <Record Type="UI.SelectOptionType">
+                    <PropertyValue Property="PropertyName" PropertyPath="CompanyCode"/>
+                    <PropertyValue Property="Ranges">
+                      <Collection>
+                        <Record Type="UI.SelectionRangeType"><PropertyValue Property="Sign" EnumMember="UI.SelectionRangeSignType/I"/><PropertyValue Property="Option" EnumMember="UI.SelectionRangeOptionType/EQ"/><PropertyValue Property="Low" String="1000"/></Record>
+                      </Collection>
+                    </PropertyValue>
+                  </Record>
+                  </Collection>
+                </PropertyValue>
+              </Record>
+            </PropertyValue>
+            <PropertyValue Property="PresentationVariant">
+              <Record Type="UI.PresentationVariantType">
+                <PropertyValue Property="SortOrder">
+                  <Collection>
+                    <Record Type="Common.SortOrderType">
+                      <PropertyValue Property="Property" PropertyPath="OrderDate"/>
+                      <PropertyValue Property="Descending" Bool="true"/>
+                    </Record>
+                  </Collection>
+                </PropertyValue>
+                <PropertyValue Property="Visualizations"><Collection><AnnotationPath>@UI.LineItem</AnnotationPath><AnnotationPath>@UI.Chart#ByStatus</AnnotationPath></Collection></PropertyValue>
+              </Record>
+            </PropertyValue>
+          </Record>
+        </Annotation>
+        <Annotation Term="UI.SelectionPresentationVariant" Qualifier="Open">
+          <Record Type="UI.SelectionPresentationVariantType">
+            <PropertyValue Property="Text" String="{{label:SPV.Open}}"/>
+            <PropertyValue Property="SelectionVariant">
+              <Record Type="UI.SelectionVariantType">
+                <PropertyValue Property="Text" String="{{label:SPV.Open}}"/>
+                <PropertyValue Property="SelectOptions">
+                  <Collection>
+                  <Record Type="UI.SelectOptionType">
+                    <PropertyValue Property="PropertyName" PropertyPath="Status"/>
+                    <PropertyValue Property="Ranges">
+                      <Collection>
+                        <Record Type="UI.SelectionRangeType"><PropertyValue Property="Sign" EnumMember="UI.SelectionRangeSignType/I"/><PropertyValue Property="Option" EnumMember="UI.SelectionRangeOptionType/EQ"/><PropertyValue Property="Low" String="NEW"/></Record>
+                        <Record Type="UI.SelectionRangeType"><PropertyValue Property="Sign" EnumMember="UI.SelectionRangeSignType/I"/><PropertyValue Property="Option" EnumMember="UI.SelectionRangeOptionType/EQ"/><PropertyValue Property="Low" String="APPR"/></Record>
+                        <Record Type="UI.SelectionRangeType"><PropertyValue Property="Sign" EnumMember="UI.SelectionRangeSignType/I"/><PropertyValue Property="Option" EnumMember="UI.SelectionRangeOptionType/EQ"/><PropertyValue Property="Low" String="ORD"/></Record>
+                      </Collection>
+                    </PropertyValue>
+                  </Record>
+                  <Record Type="UI.SelectOptionType">
+                    <PropertyValue Property="PropertyName" PropertyPath="CompanyCode"/>
+                    <PropertyValue Property="Ranges">
+                      <Collection>
+                        <Record Type="UI.SelectionRangeType"><PropertyValue Property="Sign" EnumMember="UI.SelectionRangeSignType/I"/><PropertyValue Property="Option" EnumMember="UI.SelectionRangeOptionType/EQ"/><PropertyValue Property="Low" String="1000"/></Record>
+                      </Collection>
+                    </PropertyValue>
+                  </Record>
+                  </Collection>
+                </PropertyValue>
+              </Record>
+            </PropertyValue>
+            <PropertyValue Property="PresentationVariant">
+              <Record Type="UI.PresentationVariantType">
+                <PropertyValue Property="SortOrder">
+                  <Collection>
+                    <Record Type="Common.SortOrderType">
+                      <PropertyValue Property="Property" PropertyPath="OrderDate"/>
+                      <PropertyValue Property="Descending" Bool="true"/>
+                    </Record>
+                  </Collection>
+                </PropertyValue>
+                <PropertyValue Property="Visualizations"><Collection><AnnotationPath>@UI.LineItem</AnnotationPath></Collection></PropertyValue>
+              </Record>
+            </PropertyValue>
+          </Record>
+        </Annotation>
+        <Annotation Term="UI.SelectionPresentationVariant" Qualifier="InDelivery">
+          <Record Type="UI.SelectionPresentationVariantType">
+            <PropertyValue Property="Text" String="{{label:SPV.InDelivery}}"/>
+            <PropertyValue Property="SelectionVariant">
+              <Record Type="UI.SelectionVariantType">
+                <PropertyValue Property="Text" String="{{label:SPV.InDelivery}}"/>
+                <PropertyValue Property="SelectOptions">
+                  <Collection>
+                  <Record Type="UI.SelectOptionType">
+                    <PropertyValue Property="PropertyName" PropertyPath="Status"/>
+                    <PropertyValue Property="Ranges">
+                      <Collection>
+                        <Record Type="UI.SelectionRangeType"><PropertyValue Property="Sign" EnumMember="UI.SelectionRangeSignType/I"/><PropertyValue Property="Option" EnumMember="UI.SelectionRangeOptionType/EQ"/><PropertyValue Property="Low" String="PART"/></Record>
+                      </Collection>
+                    </PropertyValue>
+                  </Record>
+                  <Record Type="UI.SelectOptionType">
+                    <PropertyValue Property="PropertyName" PropertyPath="CompanyCode"/>
+                    <PropertyValue Property="Ranges">
+                      <Collection>
+                        <Record Type="UI.SelectionRangeType"><PropertyValue Property="Sign" EnumMember="UI.SelectionRangeSignType/I"/><PropertyValue Property="Option" EnumMember="UI.SelectionRangeOptionType/EQ"/><PropertyValue Property="Low" String="1000"/></Record>
+                      </Collection>
+                    </PropertyValue>
+                  </Record>
+                  </Collection>
+                </PropertyValue>
+              </Record>
+            </PropertyValue>
+            <PropertyValue Property="PresentationVariant">
+              <Record Type="UI.PresentationVariantType">
+                <PropertyValue Property="SortOrder">
+                  <Collection>
+                    <Record Type="Common.SortOrderType">
+                      <PropertyValue Property="Property" PropertyPath="OrderDate"/>
+                      <PropertyValue Property="Descending" Bool="true"/>
+                    </Record>
+                  </Collection>
+                </PropertyValue>
+                <PropertyValue Property="Visualizations"><Collection><AnnotationPath>@UI.LineItem#Delivery</AnnotationPath></Collection></PropertyValue>
+              </Record>
+            </PropertyValue>
+          </Record>
+        </Annotation>
+        <Annotation Term="UI.SelectionPresentationVariant" Qualifier="Closed">
+          <Record Type="UI.SelectionPresentationVariantType">
+            <PropertyValue Property="Text" String="{{label:SPV.Closed}}"/>
+            <PropertyValue Property="SelectionVariant">
+              <Record Type="UI.SelectionVariantType">
+                <PropertyValue Property="Text" String="{{label:SPV.Closed}}"/>
+                <PropertyValue Property="SelectOptions">
+                  <Collection>
+                  <Record Type="UI.SelectOptionType">
+                    <PropertyValue Property="PropertyName" PropertyPath="Status"/>
+                    <PropertyValue Property="Ranges">
+                      <Collection>
+                        <Record Type="UI.SelectionRangeType"><PropertyValue Property="Sign" EnumMember="UI.SelectionRangeSignType/I"/><PropertyValue Property="Option" EnumMember="UI.SelectionRangeOptionType/EQ"/><PropertyValue Property="Low" String="CLOSED"/></Record>
+                      </Collection>
+                    </PropertyValue>
+                  </Record>
+                  <Record Type="UI.SelectOptionType">
+                    <PropertyValue Property="PropertyName" PropertyPath="CompanyCode"/>
+                    <PropertyValue Property="Ranges">
+                      <Collection>
+                        <Record Type="UI.SelectionRangeType"><PropertyValue Property="Sign" EnumMember="UI.SelectionRangeSignType/I"/><PropertyValue Property="Option" EnumMember="UI.SelectionRangeOptionType/EQ"/><PropertyValue Property="Low" String="1000"/></Record>
+                      </Collection>
+                    </PropertyValue>
+                  </Record>
+                  </Collection>
+                </PropertyValue>
+              </Record>
+            </PropertyValue>
+            <PropertyValue Property="PresentationVariant">
+              <Record Type="UI.PresentationVariantType">
+                <PropertyValue Property="SortOrder">
+                  <Collection>
+                    <Record Type="Common.SortOrderType">
+                      <PropertyValue Property="Property" PropertyPath="OrderDate"/>
+                      <PropertyValue Property="Descending" Bool="true"/>
+                    </Record>
+                  </Collection>
+                </PropertyValue>
+                <PropertyValue Property="Visualizations"><Collection><AnnotationPath>@UI.LineItem</AnnotationPath></Collection></PropertyValue>
+              </Record>
+            </PropertyValue>
+          </Record>
+        </Annotation>
+        <Annotation Term="Aggregation.ApplySupported">
+          <Record Type="Aggregation.ApplySupportedType">
+            <PropertyValue Property="Transformations"><Collection><String>filter</String><String>groupby</String><String>aggregate</String></Collection></PropertyValue>
+            <PropertyValue Property="GroupableProperties">
+              <Collection><PropertyPath>Status</PropertyPath><PropertyPath>PurchaseOrderType</PropertyPath><PropertyPath>CompanyCode</PropertyPath><PropertyPath>Supplier</PropertyPath></Collection>
+            </PropertyValue>
+            <PropertyValue Property="AggregatableProperties">
+              <Collection>
+                <Record Type="Aggregation.AggregatablePropertyType"><PropertyValue Property="Property" PropertyPath="NetAmount"/></Record>
+              </Collection>
+            </PropertyValue>
+          </Record>
+        </Annotation>
+        <Annotation Term="UI.Chart" Qualifier="ByStatus">
+          <Record Type="UI.ChartDefinitionType">
+            <PropertyValue Property="Title" String="{{label:CH.ByStatus}}"/>
+            <PropertyValue Property="ChartType" EnumMember="UI.ChartType/Column"/>
+            <PropertyValue Property="Dimensions"><Collection><PropertyPath>Status</PropertyPath></Collection></PropertyValue>
+            <PropertyValue Property="Measures"><Collection><PropertyPath>NetAmount</PropertyPath></Collection></PropertyValue>
+          </Record>
+        </Annotation>
+        <Annotation Term="UI.Chart" Qualifier="ByType">
+          <Record Type="UI.ChartDefinitionType">
+            <PropertyValue Property="Title" String="{{label:CH.ByType}}"/>
+            <PropertyValue Property="ChartType" EnumMember="UI.ChartType/Bar"/>
+            <PropertyValue Property="Dimensions"><Collection><PropertyPath>PurchaseOrderType</PropertyPath></Collection></PropertyValue>
+            <PropertyValue Property="Measures"><Collection><PropertyPath>NetAmount</PropertyPath></Collection></PropertyValue>
+          </Record>
+        </Annotation>
+        <Annotation Term="UI.DataPoint" Qualifier="Budget">
+          <Record Type="UI.DataPointType">
+            <PropertyValue Property="Title" String="{{label:DP.Budget}}"/>
+            <PropertyValue Property="Value" Path="NetAmount"/>
+            <PropertyValue Property="TargetValue" Path="BudgetAmount"/>
+            <PropertyValue Property="MinimumValue" Decimal="0"/>
+          </Record>
+        </Annotation>
+        <Annotation Term="UI.DataPoint" Qualifier="Invoiced">
+          <Record Type="UI.DataPointType">
+            <PropertyValue Property="Title" String="{{label:DP.Invoiced}}"/>
+            <PropertyValue Property="Value" Path="InvoicedAmount"/>
+            <PropertyValue Property="TargetValue" Path="NetAmount"/>
+          </Record>
+        </Annotation>
+        <Annotation Term="UI.Chart" Qualifier="BudgetBullet">
+          <Record Type="UI.ChartDefinitionType">
+            <PropertyValue Property="Title" String="{{label:CH.BudgetBullet}}"/>
+            <PropertyValue Property="ChartType" EnumMember="UI.ChartType/Bullet"/>
+            <PropertyValue Property="Measures"><Collection><PropertyPath>NetAmount</PropertyPath></Collection></PropertyValue>
+            <PropertyValue Property="MeasureAttributes">
+              <Collection>
+                <Record Type="UI.ChartMeasureAttributeType">
+                  <PropertyValue Property="Measure" PropertyPath="NetAmount"/>
+                  <PropertyValue Property="Role" EnumMember="UI.ChartMeasureRoleType/Axis1"/>
+                  <PropertyValue Property="DataPoint" AnnotationPath="@UI.DataPoint#Budget"/>
+                </Record>
+              </Collection>
+            </PropertyValue>
+          </Record>
+        </Annotation>
+        <Annotation Term="UI.Chart" Qualifier="DeliveryRadial">
+          <Record Type="UI.ChartDefinitionType">
+            <PropertyValue Property="Title" String="{{label:CH.DeliveryRadial}}"/>
+            <PropertyValue Property="ChartType" EnumMember="UI.ChartType/Donut"/>
+            <PropertyValue Property="Measures"><Collection><PropertyPath>DeliveredPercent</PropertyPath></Collection></PropertyValue>
+            <PropertyValue Property="MeasureAttributes">
+              <Collection>
+                <Record Type="UI.ChartMeasureAttributeType">
+                  <PropertyValue Property="Measure" PropertyPath="DeliveredPercent"/>
+                  <PropertyValue Property="Role" EnumMember="UI.ChartMeasureRoleType/Axis1"/>
+                  <PropertyValue Property="DataPoint" AnnotationPath="@UI.DataPoint#Delivery"/>
+                </Record>
+              </Collection>
+            </PropertyValue>
+          </Record>
+        </Annotation>
+        <Annotation Term="UI.FieldGroup" Qualifier="NotesText">
+          <Record Type="UI.FieldGroupType">
+            <PropertyValue Property="Label" String="{{label:FG.NotesText}}"/>
+            <PropertyValue Property="Data">
+              <Collection>
+                <Record Type="UI.DataField"><PropertyValue Property="Value" Path="Notes"/></Record>
+              </Collection>
+            </PropertyValue>
+          </Record>
+        </Annotation>
         <Annotation Term="UI.DataPoint" Qualifier="Delivery">
           <Record Type="UI.DataPointType">
             <PropertyValue Property="Title" String="{{label:DP.Delivery}}"/>
@@ -400,6 +729,19 @@
               <PropertyValue Property="ID" String="HeaderRating"/>
               <PropertyValue Property="Target" AnnotationPath="_Supplier/@UI.DataPoint#Rating"/>
             </Record>
+            <Record Type="UI.ReferenceFacet">
+              <PropertyValue Property="ID" String="HeaderBudget"/>
+              <PropertyValue Property="Target" AnnotationPath="@UI.Chart#BudgetBullet"/>
+            </Record>
+            <Record Type="UI.ReferenceFacet">
+              <PropertyValue Property="ID" String="HeaderDeliveryRadial"/>
+              <PropertyValue Property="Target" AnnotationPath="@UI.Chart#DeliveryRadial"/>
+            </Record>
+            <Record Type="UI.ReferenceFacet">
+              <PropertyValue Property="ID" String="HeaderNotes"/>
+              <PropertyValue Property="Label" String="{{label:FG.NotesText}}"/>
+              <PropertyValue Property="Target" AnnotationPath="@UI.FieldGroup#NotesText"/>
+            </Record>
           </Collection>
         </Annotation>
         <Annotation Term="UI.FieldGroup" Qualifier="HeaderGeneral">
@@ -424,14 +766,14 @@
                 <Record Type="UI.DataField"><PropertyValue Property="Value" Path="PurchaseOrderType"/></Record>
                 <Record Type="UI.DataField"><PropertyValue Property="Value" Path="Supplier"/></Record>
                 <Record Type="UI.DataField"><PropertyValue Property="Value" Path="CompanyCode"/></Record>
-                <Record Type="UI.DataField"><PropertyValue Property="Value" Path="PurchasingGroup"/></Record>
+                <Record Type="UI.DataField"><PropertyValue Property="Value" Path="PurchasingGroup"/><Annotation Term="UI.Importance" EnumMember="UI.ImportanceType/Medium"/></Record>
                 <Record Type="UI.DataField"><PropertyValue Property="Value" Path="OrderDate"/></Record>
                 <Record Type="UI.DataField">
                   <PropertyValue Property="Value" Path="Status"/>
                   <PropertyValue Property="Criticality" Path="StatusCriticality"/>
                 </Record>
-                <Record Type="UI.DataField"><PropertyValue Property="Value" Path="Description"/></Record>
-                <Record Type="UI.DataField"><PropertyValue Property="Value" Path="CreatedAt"/></Record>
+                <Record Type="UI.DataField"><PropertyValue Property="Value" Path="Description"/><Annotation Term="UI.Importance" EnumMember="UI.ImportanceType/Medium"/></Record>
+                <Record Type="UI.DataField"><PropertyValue Property="Value" Path="CreatedAt"/><Annotation Term="UI.Importance" EnumMember="UI.ImportanceType/Low"/></Record>
               </Collection>
             </PropertyValue>
           </Record>
@@ -508,6 +850,7 @@
         <Annotation Term="Common.Label" String="{{label:F.PurchaseOrder}}"/>
       </Annotations>
       <Annotations Target="Purchasing.PurchaseOrder/PurchaseOrderType">
+        <Annotation Term="Common.FieldControl" EnumMember="Common.FieldControlType/Mandatory"/>
         <Annotation Term="Common.Label" String="{{label:F.PurchaseOrderType}}"/>
         <Annotation Term="Common.Text" Path="_PurchaseOrderType/Name">
           <Annotation Term="UI.TextArrangement" EnumMember="UI.TextArrangementType/TextFirst"/>
@@ -532,6 +875,7 @@
         </Annotation>
       </Annotations>
       <Annotations Target="Purchasing.PurchaseOrder/Supplier">
+        <Annotation Term="Common.FieldControl" EnumMember="Common.FieldControlType/Mandatory"/>
         <Annotation Term="Common.Label" String="{{label:F.Supplier}}"/>
         <Annotation Term="Common.Text" Path="_Supplier/SupplierName">
           <Annotation Term="UI.TextArrangement" EnumMember="UI.TextArrangementType/TextFirst"/>
@@ -559,12 +903,16 @@
         </Annotation>
       </Annotations>
       <Annotations Target="Purchasing.PurchaseOrder/CompanyCode">
+        <Annotation Term="Common.FieldControl" EnumMember="Common.FieldControlType/Mandatory"/>
+        <Annotation Term="Core.Immutable" Bool="true"/>
         <Annotation Term="Common.Label" String="{{label:F.CompanyCode}}"/>
       </Annotations>
       <Annotations Target="Purchasing.PurchaseOrder/PurchasingGroup">
+        <Annotation Term="Common.FieldControl" EnumMember="Common.FieldControlType/Mandatory"/>
         <Annotation Term="Common.Label" String="{{label:F.PurchasingGroup}}"/>
       </Annotations>
       <Annotations Target="Purchasing.PurchaseOrder/OrderDate">
+        <Annotation Term="Common.FieldControl" EnumMember="Common.FieldControlType/Mandatory"/>
         <Annotation Term="Common.Label" String="{{label:F.OrderDate}}"/>
       </Annotations>
       <Annotations Target="Purchasing.PurchaseOrder/CreatedAt">
@@ -626,6 +974,39 @@
         <Annotation Term="Core.Computed" Bool="true"/>
       </Annotations>
 
+      <Annotations Target="Purchasing.PurchaseOrder/BudgetAmount">
+        <Annotation Term="Common.Label" String="{{label:F.BudgetAmount}}"/>
+        <Annotation Term="Measures.ISOCurrency" Path="Currency"/>
+        <Annotation Term="Core.Computed" Bool="true"/>
+      </Annotations>
+      <Annotations Target="Purchasing.PurchaseOrder/InvoicedAmount">
+        <Annotation Term="Common.Label" String="{{label:F.InvoicedAmount}}"/>
+        <Annotation Term="Measures.ISOCurrency" Path="Currency"/>
+        <Annotation Term="Core.Computed" Bool="true"/>
+      </Annotations>
+      <Annotations Target="Purchasing.PurchaseOrder/ApproveEnabled">
+        <Annotation Term="Common.Label" String="{{label:F.ApproveEnabled}}"/>
+        <Annotation Term="UI.Hidden" Bool="true"/>
+        <Annotation Term="Core.Computed" Bool="true"/>
+      </Annotations>
+      <Annotations Target="Purchasing.PurchaseOrder/CloseEnabled">
+        <Annotation Term="Common.Label" String="{{label:F.CloseEnabled}}"/>
+        <Annotation Term="UI.Hidden" Bool="true"/>
+        <Annotation Term="Core.Computed" Bool="true"/>
+      </Annotations>
+      <Annotations Target="Purchasing.approve(Purchasing.PurchaseOrder)">
+        <Annotation Term="Common.Label" String="{{label:A.Approve}}"/>
+        <Annotation Term="Core.OperationAvailable" Path="_it/ApproveEnabled"/>
+      </Annotations>
+      <Annotations Target="Purchasing.reject(Purchasing.PurchaseOrder)">
+        <Annotation Term="Common.Label" String="{{label:A.Reject}}"/>
+        <Annotation Term="Core.OperationAvailable" Path="_it/ApproveEnabled"/>
+      </Annotations>
+      <Annotations Target="Purchasing.close(Purchasing.PurchaseOrder)">
+        <Annotation Term="Common.Label" String="{{label:A.Close}}"/>
+        <Annotation Term="Core.OperationAvailable" Path="_it/CloseEnabled"/>
+      </Annotations>
+
       <!-- =========================================================== PurchaseOrderItem -->
       <Annotations Target="Purchasing.PurchaseOrderItem">
         <Annotation Term="UI.HeaderInfo">
@@ -646,6 +1027,60 @@
             <Record Type="UI.DataField"><PropertyValue Property="Value" Path="NetAmount"/></Record>
             <Record Type="UI.DataField"><PropertyValue Property="Value" Path="DeliveryDate"/></Record>
           </Collection>
+        </Annotation>
+        <Annotation Term="UI.HeaderFacets">
+          <Collection>
+            <Record Type="UI.ReferenceFacet">
+              <PropertyValue Property="ID" String="ItemHarvey"/>
+              <PropertyValue Property="Target" AnnotationPath="@UI.Chart#ReceivedShare"/>
+            </Record>
+            <Record Type="UI.ReferenceFacet">
+              <PropertyValue Property="ID" String="ItemDelta"/>
+              <PropertyValue Property="Target" AnnotationPath="@UI.Chart#InvoiceDelta"/>
+            </Record>
+            <Record Type="UI.ReferenceFacet">
+              <PropertyValue Property="ID" String="ItemConditions"/>
+              <PropertyValue Property="Target" AnnotationPath="_PricingCondition/@UI.Chart#Amounts"/>
+            </Record>
+            <Record Type="UI.ReferenceFacet">
+              <PropertyValue Property="ID" String="ItemPricingColumn"/>
+              <PropertyValue Property="Target" AnnotationPath="_PricingCondition/@UI.Chart#AmountColumns"/>
+            </Record>
+            <Record Type="UI.ReferenceFacet">
+              <PropertyValue Property="ID" String="ItemHistoryLine"/>
+              <PropertyValue Property="Target" AnnotationPath="_History/@UI.Chart#Quantities"/>
+            </Record>
+          </Collection>
+        </Annotation>
+        <Annotation Term="UI.DataPoint" Qualifier="Received">
+          <Record Type="UI.DataPointType">
+            <PropertyValue Property="Title" String="{{label:DP.Received}}"/>
+            <PropertyValue Property="Value" Path="ReceivedQuantity"/>
+            <PropertyValue Property="TargetValue" Path="OrderQuantity"/>
+          </Record>
+        </Annotation>
+        <Annotation Term="UI.Chart" Qualifier="ReceivedShare">
+          <Record Type="UI.ChartDefinitionType">
+            <PropertyValue Property="Title" String="{{label:CH.ReceivedShare}}"/>
+            <PropertyValue Property="ChartType" EnumMember="UI.ChartType/Pie"/>
+            <PropertyValue Property="Measures"><Collection><PropertyPath>ReceivedQuantity</PropertyPath></Collection></PropertyValue>
+            <PropertyValue Property="MeasureAttributes">
+              <Collection>
+                <Record Type="UI.ChartMeasureAttributeType">
+                  <PropertyValue Property="Measure" PropertyPath="ReceivedQuantity"/>
+                  <PropertyValue Property="Role" EnumMember="UI.ChartMeasureRoleType/Axis1"/>
+                  <PropertyValue Property="DataPoint" AnnotationPath="@UI.DataPoint#Received"/>
+                </Record>
+              </Collection>
+            </PropertyValue>
+          </Record>
+        </Annotation>
+        <Annotation Term="UI.Chart" Qualifier="InvoiceDelta">
+          <Record Type="UI.ChartDefinitionType">
+            <PropertyValue Property="Title" String="{{label:CH.InvoiceDelta}}"/>
+            <PropertyValue Property="ChartType" EnumMember="UI.ChartType/Waterfall"/>
+            <PropertyValue Property="Measures"><Collection><PropertyPath>NetAmount</PropertyPath><PropertyPath>InvoicedAmount</PropertyPath></Collection></PropertyValue>
+          </Record>
         </Annotation>
         <Annotation Term="UI.FieldGroup" Qualifier="Item">
           <Record Type="UI.FieldGroupType">
@@ -725,6 +1160,8 @@
         <Annotation Term="Common.Label" String="{{label:F.PurchaseOrderItem}}"/>
       </Annotations>
       <Annotations Target="Purchasing.PurchaseOrderItem/Material">
+        <Annotation Term="Core.Immutable" Bool="true"/>
+        <Annotation Term="Common.FieldControl" EnumMember="Common.FieldControlType/Mandatory"/>
         <Annotation Term="Common.Label" String="{{label:F.Material}}"/>
         <Annotation Term="Common.Text" Path="_Material/MaterialName">
           <Annotation Term="UI.TextArrangement" EnumMember="UI.TextArrangementType/TextFirst"/>
@@ -752,6 +1189,7 @@
         </Annotation>
       </Annotations>
       <Annotations Target="Purchasing.PurchaseOrderItem/Plant">
+        <Annotation Term="Common.FieldControl" EnumMember="Common.FieldControlType/Mandatory"/>
         <Annotation Term="Common.Label" String="{{label:F.Plant}}"/>
         <Annotation Term="Common.Text" Path="_Plant/PlantName">
           <Annotation Term="UI.TextArrangement" EnumMember="UI.TextArrangementType/TextLast"/>
@@ -778,6 +1216,7 @@
         </Annotation>
       </Annotations>
       <Annotations Target="Purchasing.PurchaseOrderItem/OrderQuantity">
+        <Annotation Term="Common.FieldControl" EnumMember="Common.FieldControlType/Mandatory"/>
         <Annotation Term="Common.Label" String="{{label:F.OrderQuantity}}"/>
         <Annotation Term="Measures.Unit" Path="OrderUnit"/>
       </Annotations>
@@ -835,6 +1274,22 @@
             <Record Type="UI.DataField"><PropertyValue Property="Value" Path="IsStatistical"/></Record>
           </Collection>
         </Annotation>
+        <Annotation Term="UI.Chart" Qualifier="Amounts">
+          <Record Type="UI.ChartDefinitionType">
+            <PropertyValue Property="Title" String="{{label:CH.Amounts}}"/>
+            <PropertyValue Property="ChartType" EnumMember="UI.ChartType/Bar"/>
+            <PropertyValue Property="Dimensions"><Collection><PropertyPath>ConditionTypeName</PropertyPath></Collection></PropertyValue>
+            <PropertyValue Property="Measures"><Collection><PropertyPath>ConditionAmount</PropertyPath></Collection></PropertyValue>
+          </Record>
+        </Annotation>
+        <Annotation Term="UI.Chart" Qualifier="AmountColumns">
+          <Record Type="UI.ChartDefinitionType">
+            <PropertyValue Property="Title" String="{{label:CH.AmountColumns}}"/>
+            <PropertyValue Property="ChartType" EnumMember="UI.ChartType/Column"/>
+            <PropertyValue Property="Dimensions"><Collection><PropertyPath>ConditionCounter</PropertyPath></Collection></PropertyValue>
+            <PropertyValue Property="Measures"><Collection><PropertyPath>ConditionAmount</PropertyPath></Collection></PropertyValue>
+          </Record>
+        </Annotation>
       </Annotations>
       <Annotations Target="Purchasing.PricingCondition/PurchaseOrder">
         <Annotation Term="Common.Label" String="{{label:F.PurchaseOrder}}"/>
@@ -891,6 +1346,14 @@
             <Record Type="UI.DataField"><PropertyValue Property="Value" Path="Amount"/></Record>
             <Record Type="UI.DataField"><PropertyValue Property="Value" Path="MovementType"/></Record>
           </Collection>
+        </Annotation>
+        <Annotation Term="UI.Chart" Qualifier="Quantities">
+          <Record Type="UI.ChartDefinitionType">
+            <PropertyValue Property="Title" String="{{label:CH.Quantities}}"/>
+            <PropertyValue Property="ChartType" EnumMember="UI.ChartType/Line"/>
+            <PropertyValue Property="Dimensions"><Collection><PropertyPath>HistoryCounter</PropertyPath></Collection></PropertyValue>
+            <PropertyValue Property="Measures"><Collection><PropertyPath>Quantity</PropertyPath></Collection></PropertyValue>
+          </Record>
         </Annotation>
       </Annotations>
       <Annotations Target="Purchasing.ItemHistory/PurchaseOrder">
@@ -965,8 +1428,31 @@
             <PropertyValue Property="Title" String="{{label:DP.Rating}}"/>
             <PropertyValue Property="Value" Path="Rating"/>
             <PropertyValue Property="TargetValue" Int="5"/>
+            <PropertyValue Property="SampleSize" Path="RatingCount"/>
             <PropertyValue Property="Visualization" EnumMember="UI.VisualizationType/Rating"/>
           </Record>
+        </Annotation>
+        <Annotation Term="UI.FieldGroup" Qualifier="QuickView">
+          <Record Type="UI.FieldGroupType">
+            <PropertyValue Property="Label" String="{{label:FG.QuickView}}"/>
+            <PropertyValue Property="Data">
+              <Collection>
+                <Record Type="UI.DataField"><PropertyValue Property="Value" Path="Country"/></Record>
+                <Record Type="UI.DataField"><PropertyValue Property="Value" Path="City"/></Record>
+                <Record Type="UI.DataField"><PropertyValue Property="Value" Path="Rating"/></Record>
+                <Record Type="UI.DataField"><PropertyValue Property="Value" Path="IsBlocked"/></Record>
+              </Collection>
+            </PropertyValue>
+          </Record>
+        </Annotation>
+        <Annotation Term="UI.QuickViewFacets">
+          <Collection>
+            <Record Type="UI.ReferenceFacet">
+              <PropertyValue Property="ID" String="QuickView"/>
+              <PropertyValue Property="Label" String="{{label:FG.QuickView}}"/>
+              <PropertyValue Property="Target" AnnotationPath="@UI.FieldGroup#QuickView"/>
+            </Record>
+          </Collection>
         </Annotation>
         <Annotation Term="Common.SemanticKey">
           <Collection><PropertyPath>Supplier</PropertyPath></Collection>
@@ -996,6 +1482,9 @@
       </Annotations>
       <Annotations Target="Purchasing.Supplier/IsBlocked">
         <Annotation Term="Common.Label" String="{{label:F.IsBlocked}}"/>
+      </Annotations>
+      <Annotations Target="Purchasing.Supplier/RatingCount">
+        <Annotation Term="Common.Label" String="{{label:F.RatingCount}}"/>
       </Annotations>
 
       <!-- =========================================================== value help entities -->

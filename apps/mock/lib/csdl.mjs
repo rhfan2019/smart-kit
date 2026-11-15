@@ -1,4 +1,6 @@
 // CSDL helpers: label placeholders in the purchasing template, and CSDL XML -> CSDL JSON (OData CSDL JSON 4.01).
+// Covers what the test services use: entity / complex / enum types, actions and functions, the entity
+// container and annotations (inline and in <Annotations> blocks).
 import { xml2js } from 'xml-js';
 
 const PLACEHOLDER = /\{\{label:([A-Za-z0-9_.]+)\}\}/g;
@@ -69,6 +71,7 @@ export function csdlXmlToJson(xml) {
         }
         schema[el.attributes.Name] = t;
       } else if (kind === 'EntityContainer') schema[el.attributes.Name] = entityContainer(el);
+      else if (kind === 'Action' || kind === 'Function') (schema[el.attributes.Name] ??= []).push(operation(el, kind));
     }
     const annotations = {};
     for (const block of kids(s, 'Annotations')) {
@@ -133,6 +136,31 @@ export function csdlXmlToJson(xml) {
       } else if (pk === 'Annotation') addAnnotation(t, p, '');
     }
     return t;
+  }
+
+  /** Action / Function overload: CSDL JSON keeps overloads as an array under the operation name. */
+  function operation(el, kind) {
+    const a = el.attributes;
+    const op = { $Kind: kind };
+    if (a.IsBound === 'true') op.$IsBound = true;
+    if (a.EntitySetPath) op.$EntitySetPath = a.EntitySetPath;
+    if (kind === 'Function' && a.IsComposable === 'true') op.$IsComposable = true;
+    const params = kids(el, 'Parameter').map((p) => {
+      const param = { $Name: p.attributes.Name };
+      typeRef(param, p.attributes.Type);
+      facets(param, p.attributes);
+      for (const ann of kids(p, 'Annotation')) addAnnotation(param, ann, '');
+      return param;
+    });
+    if (params.length) op.$Parameter = params;
+    const rt = kids(el, 'ReturnType')[0];
+    if (rt) {
+      op.$ReturnType = {};
+      typeRef(op.$ReturnType, rt.attributes.Type);
+      facets(op.$ReturnType, rt.attributes);
+    }
+    for (const ann of kids(el, 'Annotation')) addAnnotation(op, ann, '');
+    return op;
   }
 
   function entityContainer(el) {

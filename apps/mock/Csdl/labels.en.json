@@ -98,5 +98,56 @@
   "VL.Materials": "Materials",
   "VL.Plants": "Plants",
 
-  "SV.OpenOrders": "Open Orders"
+  "SV.OpenOrders": "Open Orders",
+
+  "F.BudgetAmount": "Budget",
+  "F.ApproveEnabled": "Can Be Approved",
+  "F.CloseEnabled": "Can Be Closed",
+  "F.RatingCount": "Number of Ratings",
+
+  "A.Approve": "Approve",
+  "A.Reject": "Reject",
+  "A.Close": "Close",
+
+  "DP.Budget": "Budget",
+  "DP.Invoiced": "Invoiced Amount",
+  "DP.Received": "Received Quantity",
+
+  "CH.ByStatus": "Net Amount by Status",
+  "CH.ByType": "Net Amount by Order Type",
+  "CH.BudgetBullet": "Budget Usage",
+  "CH.DeliveryRadial": "Delivery Progress",
+  "CH.ReceivedShare": "Received Quantity",
+  "CH.InvoiceDelta": "Ordered vs. Invoiced",
+  "CH.Amounts": "Condition Amounts",
+  "CH.AmountColumns": "Amounts by Condition",
+  "CH.Quantities": "Quantities by History Entry",
+
+  "FG.NotesText": "Notes",
+  "FG.QuickView": "Supplier Details",
+
+  "SPV.All": "All Orders",
+  "SPV.Open": "Open Orders",
+  "SPV.InDelivery": "In Delivery",
+  "SPV.Closed": "Closed Orders",
+
+  "T.DraftAdministrativeData": "Draft Administrative Data",
+  "F.IsActiveEntity": "Is Active Version",
+  "F.HasActiveEntity": "Has Active Version",
+  "F.HasDraftEntity": "Has Draft",
+  "F.Draft.DraftUUID": "Draft ID",
+  "F.Draft.DraftEntityType": "Draft Entity Type",
+  "F.Draft.CreationDateTime": "Draft Created On",
+  "F.Draft.CreatedByUser": "Draft Created By",
+  "F.Draft.DraftIsCreatedByMe": "Draft Created by Me",
+  "F.Draft.LastChangeDateTime": "Draft Last Changed On",
+  "F.Draft.LastChangedByUser": "Draft Last Changed By",
+  "F.Draft.DraftIsLastChangedByMe": "Draft Last Changed by Me",
+  "F.Draft.InProcessByUser": "Draft In Process By",
+  "F.Draft.DraftIsProcessedByMe": "Draft In Process by Me",
+  "F.Draft.DraftAccessType": "Draft Access Type",
+  "F.Draft.DraftIsKeptByUser": "Draft Kept by User",
+  "F.Draft.CreatedByUserDescription": "Draft Created By (Name)",
+  "F.Draft.LastChangedByUserDescription": "Draft Last Changed By (Name)",
+  "F.Draft.InProcessByUserDescription": "Draft In Process By (Name)"
 }
