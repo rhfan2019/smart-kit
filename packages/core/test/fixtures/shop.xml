@@ -1,0 +1,374 @@
+<?xml version="1.0" encoding="utf-8"?>
+<edmx:Edmx Version="4.0" xmlns:edmx="http://docs.oasis-open.org/odata/ns/edmx">
+  <edmx:Reference Uri="https://sap.github.io/odata-vocabularies/vocabularies/UI.xml">
+    <edmx:Include Namespace="com.sap.vocabularies.UI.v1" Alias="UI"/>
+  </edmx:Reference>
+  <edmx:Reference Uri="https://sap.github.io/odata-vocabularies/vocabularies/Common.xml">
+    <edmx:Include Namespace="com.sap.vocabularies.Common.v1" Alias="Common"/>
+  </edmx:Reference>
+  <edmx:Reference Uri="https://oasis-tcs.github.io/odata-vocabularies/vocabularies/Org.OData.Measures.V1.xml">
+    <edmx:Include Namespace="Org.OData.Measures.V1" Alias="Measures"/>
+  </edmx:Reference>
+  <edmx:Reference Uri="https://oasis-tcs.github.io/odata-vocabularies/vocabularies/Org.OData.Capabilities.V1.xml">
+    <edmx:Include Namespace="Org.OData.Capabilities.V1" Alias="Capabilities"/>
+  </edmx:Reference>
+  <edmx:Reference Uri="https://oasis-tcs.github.io/odata-vocabularies/vocabularies/Org.OData.Core.V1.xml">
+    <edmx:Include Namespace="Org.OData.Core.V1" Alias="Core"/>
+  </edmx:Reference>
+  <edmx:DataServices>
+    <Schema xmlns="http://docs.oasis-open.org/odata/ns/edm" Namespace="Shop">
+      <EntityType Name="Product">
+        <Key><PropertyRef Name="ID"/></Key>
+        <Property Name="ID" Type="Edm.Int32" Nullable="false"/>
+        <Property Name="Code" Type="Edm.String" MaxLength="10"/>
+        <Property Name="Name" Type="Edm.String" MaxLength="80"/>
+        <Property Name="Price" Type="Edm.Decimal" Precision="15" Scale="2"/>
+        <Property Name="Currency" Type="Edm.String" MaxLength="3"/>
+        <Property Name="CategoryID" Type="Edm.String" MaxLength="4"/>
+        <Property Name="Status" Type="Edm.String" MaxLength="1"/>
+        <Property Name="StatusCriticality" Type="Edm.Byte"/>
+        <Property Name="Rating" Type="Edm.Decimal" Precision="2" Scale="1"/>
+        <Property Name="Stock" Type="Edm.Int64"/>
+        <Property Name="ReleaseDate" Type="Edm.Date"/>
+        <Property Name="ChangedAt" Type="Edm.DateTimeOffset"/>
+        <Property Name="Notes" Type="Edm.String"/>
+        <Property Name="ImageUrl" Type="Edm.String"/>
+        <Property Name="Version" Type="Edm.Int32"/>
+        <NavigationProperty Name="_Category" Type="Shop.Category">
+          <ReferentialConstraint Property="CategoryID" ReferencedProperty="ID"/>
+        </NavigationProperty>
+        <NavigationProperty Name="_Review" Type="Collection(Shop.Review)" Partner="_Product"/>
+      </EntityType>
+      <EntityType Name="Category">
+        <Key><PropertyRef Name="ID"/></Key>
+        <Property Name="ID" Type="Edm.String" MaxLength="4" Nullable="false"/>
+        <Property Name="Name" Type="Edm.String"/>
+      </EntityType>
+      <EntityType Name="Review">
+        <Key><PropertyRef Name="ProductID"/><PropertyRef Name="ReviewNo"/></Key>
+        <Property Name="ProductID" Type="Edm.Int32" Nullable="false"/>
+        <Property Name="ReviewNo" Type="Edm.Int32" Nullable="false"/>
+        <Property Name="Stars" Type="Edm.Int32"/>
+        <Property Name="Text" Type="Edm.String"/>
+        <NavigationProperty Name="_Product" Type="Shop.Product" Partner="_Review">
+          <ReferentialConstraint Property="ProductID" ReferencedProperty="ID"/>
+        </NavigationProperty>
+      </EntityType>
+      <EntityType Name="Plain">
+        <Key><PropertyRef Name="PlainId"/></Key>
+        <Property Name="PlainId" Type="Edm.Guid" Nullable="false"/>
+        <Property Name="ProductName" Type="Edm.String"/>
+        <Property Name="unit_price" Type="Edm.Decimal"/>
+        <Property Name="Picture" Type="Edm.Binary"/>
+        <NavigationProperty Name="Lines" Type="Collection(Shop.Review)"/>
+      </EntityType>
+      <EntityContainer Name="Container">
+        <EntitySet Name="Products" EntityType="Shop.Product">
+          <NavigationPropertyBinding Path="_Category" Target="Categories"/>
+          <NavigationPropertyBinding Path="_Review" Target="Reviews"/>
+        </EntitySet>
+        <EntitySet Name="Categories" EntityType="Shop.Category"/>
+        <EntitySet Name="Reviews" EntityType="Shop.Review">
+          <NavigationPropertyBinding Path="_Product" Target="Products"/>
+        </EntitySet>
+        <EntitySet Name="Plains" EntityType="Shop.Plain">
+          <NavigationPropertyBinding Path="Lines" Target="Reviews"/>
+        </EntitySet>
+      </EntityContainer>
+      <Annotations Target="Shop.Product">
+        <Annotation Term="UI.HeaderInfo">
+          <Record Type="UI.HeaderInfoType">
+            <PropertyValue Property="TypeName" String="Product"/>
+            <PropertyValue Property="TypeNamePlural" String="Products"/>
+            <PropertyValue Property="Title"><Record Type="UI.DataField"><PropertyValue Property="Value" Path="Name"/></Record></PropertyValue>
+            <PropertyValue Property="Description"><Record Type="UI.DataField"><PropertyValue Property="Value" Path="Code"/></Record></PropertyValue>
+            <PropertyValue Property="ImageUrl" Path="ImageUrl"/>
+          </Record>
+        </Annotation>
+        <Annotation Term="UI.LineItem">
+          <Collection>
+            <Record Type="UI.DataField"><PropertyValue Property="Value" Path="Code"/></Record>
+            <Record Type="UI.DataField"><PropertyValue Property="Value" Path="Name"/></Record>
+            <Record Type="UI.DataField"><PropertyValue Property="Value" Path="CategoryID"/></Record>
+            <Record Type="UI.DataField">
+              <PropertyValue Property="Value" Path="Status"/>
+              <PropertyValue Property="Criticality" Path="StatusCriticality"/>
+            </Record>
+            <Record Type="UI.DataField"><PropertyValue Property="Value" Path="Price"/></Record>
+            <Record Type="UI.DataFieldForAnnotation">
+              <PropertyValue Property="Target" AnnotationPath="@UI.DataPoint#Rating"/>
+              <PropertyValue Property="Label" String="Rating"/>
+            </Record>
+            <Record Type="UI.DataFieldForAction">
+              <PropertyValue Property="Action" String="Shop.discontinue"/>
+              <PropertyValue Property="Label" String="Discontinue"/>
+            </Record>
+            <Record Type="UI.DataField">
+              <PropertyValue Property="Value" Path="Notes"/>
+              <Annotation Term="UI.Hidden" Bool="true"/>
+            </Record>
+            <Record Type="UI.DataField"><PropertyValue Property="Value" Path="_Category/Name"/></Record>
+          </Collection>
+        </Annotation>
+        <Annotation Term="UI.SelectionFields">
+          <Collection>
+            <PropertyPath>Code</PropertyPath>
+            <PropertyPath>CategoryID</PropertyPath>
+            <PropertyPath>Status</PropertyPath>
+            <PropertyPath>Version</PropertyPath>
+          </Collection>
+        </Annotation>
+        <Annotation Term="UI.PresentationVariant">
+          <Record Type="UI.PresentationVariantType">
+            <PropertyValue Property="SortOrder">
+              <Collection>
+                <Record Type="Common.SortOrderType">
+                  <PropertyValue Property="Property" PropertyPath="ReleaseDate"/>
+                  <PropertyValue Property="Descending" Bool="true"/>
+                </Record>
+              </Collection>
+            </PropertyValue>
+            <PropertyValue Property="RequestAtLeast"><Collection><PropertyPath>Version</PropertyPath></Collection></PropertyValue>
+            <PropertyValue Property="Visualizations"><Collection><AnnotationPath>@UI.LineItem</AnnotationPath></Collection></PropertyValue>
+          </Record>
+        </Annotation>
+        <Annotation Term="UI.SelectionVariant">
+          <Record Type="UI.SelectionVariantType">
+            <PropertyValue Property="SelectOptions">
+              <Collection>
+                <Record Type="UI.SelectOptionType">
+                  <PropertyValue Property="PropertyName" PropertyPath="Status"/>
+                  <PropertyValue Property="Ranges">
+                    <Collection>
+                      <Record Type="UI.SelectionRangeType">
+                        <PropertyValue Property="Sign" EnumMember="UI.SelectionRangeSignType/E"/>
+                        <PropertyValue Property="Option" EnumMember="UI.SelectionRangeOptionType/EQ"/>
+                        <PropertyValue Property="Low" String="X"/>
+                      </Record>
+                    </Collection>
+                  </PropertyValue>
+                </Record>
+                <Record Type="UI.SelectOptionType">
+                  <PropertyValue Property="PropertyName" PropertyPath="Name"/>
+                  <PropertyValue Property="Ranges">
+                    <Collection>
+                      <Record Type="UI.SelectionRangeType">
+                        <PropertyValue Property="Sign" EnumMember="UI.SelectionRangeSignType/I"/>
+                        <PropertyValue Property="Option" EnumMember="UI.SelectionRangeOptionType/CP"/>
+                        <PropertyValue Property="Low" String="*pen*"/>
+                      </Record>
+                    </Collection>
+                  </PropertyValue>
+                </Record>
+              </Collection>
+            </PropertyValue>
+          </Record>
+        </Annotation>
+        <Annotation Term="UI.DataPoint" Qualifier="Rating">
+          <Record Type="UI.DataPointType">
+            <PropertyValue Property="Value" Path="Rating"/>
+            <PropertyValue Property="TargetValue" Int="5"/>
+            <PropertyValue Property="Visualization" EnumMember="UI.VisualizationType/Rating"/>
+            <PropertyValue Property="Title" String="Customer Rating"/>
+          </Record>
+        </Annotation>
+        <Annotation Term="UI.DataPoint" Qualifier="Stock">
+          <Record Type="UI.DataPointType">
+            <PropertyValue Property="Value" Path="Stock"/>
+            <PropertyValue Property="Title" String="In Stock"/>
+            <PropertyValue Property="Criticality" EnumMember="UI.CriticalityType/Positive"/>
+          </Record>
+        </Annotation>
+        <Annotation Term="UI.FieldGroup" Qualifier="General">
+          <Record Type="UI.FieldGroupType">
+            <PropertyValue Property="Label" String="General"/>
+            <PropertyValue Property="Data">
+              <Collection>
+                <Record Type="UI.DataField"><PropertyValue Property="Value" Path="Code"/></Record>
+                <Record Type="UI.DataField"><PropertyValue Property="Value" Path="Name"/></Record>
+                <Record Type="UI.DataField"><PropertyValue Property="Value" Path="CategoryID"/></Record>
+              </Collection>
+            </PropertyValue>
+          </Record>
+        </Annotation>
+        <Annotation Term="UI.FieldGroup" Qualifier="Prices">
+          <Record Type="UI.FieldGroupType">
+            <PropertyValue Property="Data">
+              <Collection>
+                <Record Type="UI.DataField"><PropertyValue Property="Value" Path="Price"/></Record>
+                <Record Type="UI.DataField"><PropertyValue Property="Value" Path="ReleaseDate"/></Record>
+              </Collection>
+            </PropertyValue>
+          </Record>
+        </Annotation>
+        <Annotation Term="UI.FieldGroup" Qualifier="Notes">
+          <Record Type="UI.FieldGroupType">
+            <PropertyValue Property="Data">
+              <Collection><Record Type="UI.DataField"><PropertyValue Property="Value" Path="Notes"/></Record></Collection>
+            </PropertyValue>
+          </Record>
+        </Annotation>
+        <Annotation Term="UI.HeaderFacets">
+          <Collection>
+            <Record Type="UI.ReferenceFacet">
+              <PropertyValue Property="ID" String="HeaderGeneral"/>
+              <PropertyValue Property="Target" AnnotationPath="@UI.FieldGroup#General"/>
+            </Record>
+            <Record Type="UI.ReferenceFacet">
+              <PropertyValue Property="Target" AnnotationPath="@UI.DataPoint#Rating"/>
+            </Record>
+            <Record Type="UI.ReferenceFacet">
+              <PropertyValue Property="Target" AnnotationPath="@UI.DataPoint#Stock"/>
+            </Record>
+          </Collection>
+        </Annotation>
+        <Annotation Term="UI.Facets">
+          <Collection>
+            <Record Type="UI.CollectionFacet">
+              <PropertyValue Property="ID" String="GeneralInfo"/>
+              <PropertyValue Property="Label" String="General Information"/>
+              <PropertyValue Property="Facets">
+                <Collection>
+                  <Record Type="UI.ReferenceFacet">
+                    <PropertyValue Property="ID" String="GeneralData"/>
+                    <PropertyValue Property="Label" String="Basic Data"/>
+                    <PropertyValue Property="Target" AnnotationPath="@UI.FieldGroup#General"/>
+                  </Record>
+                  <Record Type="UI.ReferenceFacet">
+                    <PropertyValue Property="ID" String="PriceData"/>
+                    <PropertyValue Property="Label" String="Prices"/>
+                    <PropertyValue Property="Target" AnnotationPath="@UI.FieldGroup#Prices"/>
+                  </Record>
+                </Collection>
+              </PropertyValue>
+            </Record>
+            <Record Type="UI.ReferenceFacet">
+              <PropertyValue Property="ID" String="Reviews"/>
+              <PropertyValue Property="Label" String="Reviews"/>
+              <PropertyValue Property="Target" AnnotationPath="_Review/@UI.LineItem"/>
+            </Record>
+            <Record Type="UI.CollectionFacet">
+              <PropertyValue Property="ID" String="More"/>
+              <PropertyValue Property="Label" String="More"/>
+              <PropertyValue Property="Facets">
+                <Collection>
+                  <Record Type="UI.ReferenceFacet">
+                    <PropertyValue Property="ID" String="NotesData"/>
+                    <PropertyValue Property="Label" String="Notes"/>
+                    <PropertyValue Property="Target" AnnotationPath="@UI.FieldGroup#Notes"/>
+                    <Annotation Term="UI.PartOfPreview" Bool="false"/>
+                  </Record>
+                </Collection>
+              </PropertyValue>
+            </Record>
+          </Collection>
+        </Annotation>
+        <Annotation Term="Common.SemanticKey"><Collection><PropertyPath>Code</PropertyPath></Collection></Annotation>
+        <Annotation Term="Core.OptimisticConcurrency"><Collection><PropertyPath>Version</PropertyPath></Collection></Annotation>
+      </Annotations>
+      <Annotations Target="Shop.Product/Code"><Annotation Term="Common.Label" String="Product Code"/><Annotation Term="Common.IsUpperCase" Bool="true"/></Annotations>
+      <Annotations Target="Shop.Product/Name"><Annotation Term="Common.Label" String="Product Name"/></Annotations>
+      <Annotations Target="Shop.Product/Price">
+        <Annotation Term="Common.Label" String="Price"/>
+        <Annotation Term="Measures.ISOCurrency" Path="Currency"/>
+      </Annotations>
+      <Annotations Target="Shop.Product/CategoryID">
+        <Annotation Term="Common.Label" String="Category"/>
+        <Annotation Term="Common.Text" Path="_Category/Name">
+          <Annotation Term="UI.TextArrangement" EnumMember="UI.TextArrangementType/TextFirst"/>
+        </Annotation>
+        <Annotation Term="Common.ValueList">
+          <Record Type="Common.ValueListType">
+            <PropertyValue Property="CollectionPath" String="Categories"/>
+            <PropertyValue Property="SearchSupported" Bool="false"/>
+            <PropertyValue Property="Parameters">
+              <Collection>
+                <Record Type="Common.ValueListParameterInOut">
+                  <PropertyValue Property="LocalDataProperty" PropertyPath="CategoryID"/>
+                  <PropertyValue Property="ValueListProperty" String="ID"/>
+                </Record>
+                <Record Type="Common.ValueListParameterDisplayOnly">
+                  <PropertyValue Property="ValueListProperty" String="Name"/>
+                </Record>
+              </Collection>
+            </PropertyValue>
+          </Record>
+        </Annotation>
+      </Annotations>
+      <Annotations Target="Shop.Product/Status">
+        <Annotation Term="Common.Label" String="Status"/>
+        <Annotation Term="Common.ValueListWithFixedValues" Bool="true"/>
+        <Annotation Term="Common.ValueList">
+          <Record Type="Common.ValueListType">
+            <PropertyValue Property="CollectionPath" String="Categories"/>
+            <PropertyValue Property="Parameters">
+              <Collection>
+                <Record Type="Common.ValueListParameterOut">
+                  <PropertyValue Property="LocalDataProperty" PropertyPath="Status"/>
+                  <PropertyValue Property="ValueListProperty" String="ID"/>
+                </Record>
+              </Collection>
+            </PropertyValue>
+          </Record>
+        </Annotation>
+      </Annotations>
+      <Annotations Target="Shop.Product/StatusCriticality"><Annotation Term="UI.Hidden" Bool="true"/></Annotations>
+      <Annotations Target="Shop.Product/Version"><Annotation Term="UI.HiddenFilter" Bool="true"/><Annotation Term="Core.Computed" Bool="true"/></Annotations>
+      <Annotations Target="Shop.Product/Notes"><Annotation Term="UI.MultiLineText" Bool="true"/></Annotations>
+      <Annotations Target="Shop.Product/ImageUrl"><Annotation Term="UI.IsImageURL" Bool="true"/></Annotations>
+      <Annotations Target="Shop.Product/Stock"><Annotation Term="Common.IsDigitSequence" Bool="false"/></Annotations>
+      <Annotations Target="Shop.Review">
+        <Annotation Term="UI.LineItem">
+          <Collection>
+            <Record Type="UI.DataField"><PropertyValue Property="Value" Path="ReviewNo"/></Record>
+            <Record Type="UI.DataField"><PropertyValue Property="Value" Path="Stars"/></Record>
+            <Record Type="UI.DataField"><PropertyValue Property="Value" Path="Text"/></Record>
+          </Collection>
+        </Annotation>
+        <Annotation Term="UI.HeaderInfo">
+          <Record Type="UI.HeaderInfoType">
+            <PropertyValue Property="TypeName" String="Review"/>
+            <PropertyValue Property="TypeNamePlural" String="Reviews"/>
+          </Record>
+        </Annotation>
+      </Annotations>
+      <Annotations Target="Shop.Container/Products">
+        <Annotation Term="Capabilities.SearchRestrictions"><Record><PropertyValue Property="Searchable" Bool="true"/></Record></Annotation>
+        <Annotation Term="Capabilities.FilterRestrictions">
+          <Record>
+            <PropertyValue Property="NonFilterableProperties"><Collection><PropertyPath>Notes</PropertyPath></Collection></PropertyValue>
+            <PropertyValue Property="RequiredProperties"><Collection><PropertyPath>Status</PropertyPath></Collection></PropertyValue>
+            <PropertyValue Property="FilterExpressionRestrictions">
+              <Collection>
+                <Record>
+                  <PropertyValue Property="Property" PropertyPath="ReleaseDate"/>
+                  <PropertyValue Property="AllowedExpressions" String="SingleRange"/>
+                </Record>
+              </Collection>
+            </PropertyValue>
+          </Record>
+        </Annotation>
+        <Annotation Term="Capabilities.SortRestrictions">
+          <Record><PropertyValue Property="NonSortableProperties"><Collection><PropertyPath>Notes</PropertyPath></Collection></PropertyValue></Record>
+        </Annotation>
+        <Annotation Term="Capabilities.UpdateRestrictions"><Record><PropertyValue Property="Updatable" Bool="true"/></Record></Annotation>
+        <Annotation Term="Capabilities.DeleteRestrictions"><Record><PropertyValue Property="Deletable" Bool="false"/></Record></Annotation>
+        <Annotation Term="Capabilities.NavigationRestrictions">
+          <Record>
+            <PropertyValue Property="RestrictedProperties">
+              <Collection>
+                <Record>
+                  <PropertyValue Property="NavigationProperty" NavigationPropertyPath="_Review"/>
+                  <PropertyValue Property="SearchRestrictions"><Record><PropertyValue Property="Searchable" Bool="true"/></Record></PropertyValue>
+                </Record>
+              </Collection>
+            </PropertyValue>
+          </Record>
+        </Annotation>
+      </Annotations>
+      <Annotations Target="Shop.Container/Reviews">
+        <Annotation Term="Capabilities.CountRestrictions"><Record><PropertyValue Property="Countable" Bool="false"/></Record></Annotation>
+      </Annotations>
+    </Schema>
+  </edmx:DataServices>
+</edmx:Edmx>

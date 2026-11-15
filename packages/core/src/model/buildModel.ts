@@ -1,0 +1,604 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- the converter output is a deeply dynamic object graph */
+import type { ConvertedMetadata } from '@sap-ux/vocabularies-types';
+import { convertSources, type CsdlSource } from '../csdl/load';
+import { humanize } from './labels';
+import { deriveColumns, deriveUi } from './derive';
+import {
+  MODEL_VERSION,
+  type CapabilityModel,
+  type ColumnModel,
+  type DataPointModel,
+  type EntitySetModel,
+  type EntityTypeModel,
+  type EntityUi,
+  type FieldModel,
+  type FilterExpression,
+  type FormGroupModel,
+  type HeaderFacetModel,
+  type InitialCondition,
+  type MetaModel,
+  type ModelWarning,
+  type NavigationModel,
+  type PresentationModel,
+  type PropertyModel,
+  type SectionModel,
+  type SubSectionModel,
+  type TextArrangement,
+  type ValueListModel,
+  type ValueRef,
+} from './types';
+
+type Any = Record<string, any>;
+
+const str = (v: unknown): string | undefined => (v === undefined || v === null ? undefined : typeof v === 'object' && !(v instanceof String) ? undefined : String(v));
+const enumName = (v: unknown): string | undefined => {
+  const s = str(v);
+  return s === undefined ? undefined : s.split('/').pop()!.split(' ')[0];
+};
+const bool = (v: unknown, dflt: boolean): boolean => {
+  if (v === undefined || v === null) return dflt;
+  if (typeof v === 'boolean') return v;
+  if (v instanceof Boolean) return v.valueOf();
+  if (typeof v === 'object' && 'type' in (v as Any)) return dflt; // dynamic expressions are not evaluated in phase 1
+  return String(v) === 'true';
+};
+const pathOf = (v: unknown): string | undefined => {
+  if (v && typeof v === 'object' && !(v instanceof String)) {
+    const o = v as Any;
+    if (typeof o.path === 'string') return o.path;
+    if (typeof o.value === 'string') return o.value;
+  }
+  return undefined;
+};
+const join = (prefix: string, path: string) => (prefix ? `${prefix}/${path}` : path);
+
+const CRITICALITY: Record<string, number> = { VeryNegative: 1, Neutral: 0, Negative: 1, Critical: 2, Positive: 3, VeryPositive: 3, Information: 5 };
+
+function valueRef(v: unknown, prefix = ''): ValueRef | undefined {
+  if (v === undefined || v === null) return undefined;
+  if (typeof v === 'object' && !(v instanceof String) && !(v instanceof Number) && !(v instanceof Boolean)) {
+    const o = v as Any;
+    if (o.type === 'Path' || o.type === 'PropertyPath') return { path: join(prefix, o.path ?? o.value) };
+    if (o.type === 'EnumMember') return { value: enumName(o.value)! };
+    return undefined;
+  }
+  if (typeof v === 'number' || v instanceof Number) return { value: Number(v) };
+  if (typeof v === 'boolean' || v instanceof Boolean) return { value: Boolean(v.valueOf()) };
+  const s = String(v);
+  if (s.includes('/')) return { value: enumName(s)! };
+  return { value: s };
+}
+
+function criticalityRef(v: unknown, prefix = ''): ValueRef | undefined {
+  const r = valueRef(v, prefix);
+  if (r && 'value' in r && typeof r.value === 'string') {
+    const n = CRITICALITY[r.value];
+    return n === undefined ? (/^\d+$/.test(r.value) ? { value: Number(r.value) } : undefined) : { value: n };
+  }
+  return r;
+}
+
+/** Options for {@link buildModel}. */
+export interface BuildModelOptions {
+  /** Annotation files, applied after the service annotations, in order. */
+  annotationFiles?: CsdlSource[];
+  /** Local overlay, applied last. */
+  overlay?: CsdlSource;
+}
+
+export function buildModel(metadata: CsdlSource, options: BuildModelOptions = {}): MetaModel {
+  const { converted, diagnostics } = convertSources(metadata, options.annotationFiles, options.overlay);
+  return fromConverted(converted, diagnostics);
+}
+
+export function fromConverted(c: ConvertedMetadata, diagnostics: string[] = []): MetaModel {
+  const warnings: ModelWarning[] = diagnostics.map((message) => ({ level: 'warning', code: 'PARSER', message }));
+  const warn = (code: string, message: string, target?: string, level: ModelWarning['level'] = 'warning') =>
+    warnings.push({ level, code, message, target });
+
+  const entityTypes: Record<string, EntityTypeModel> = {};
+  const raw: Record<string, Any> = {};
+  for (const et of c.entityTypes as Any[]) {
+    raw[et.fullyQualifiedName] = et;
+    entityTypes[et.fullyQualifiedName] = buildEntityType(et);
+  }
+
+  const entitySets: Record<string, EntitySetModel> = {};
+  for (const es of c.entitySets as Any[]) {
+    const bindings: Record<string, string> = {};
+    for (const [path, target] of Object.entries((es.navigationPropertyBinding ?? {}) as Any)) bindings[path] = (target as Any).name;
+    const { capabilities, navigationCapabilities } = buildCapabilities(es.annotations?.Capabilities ?? {}, es.annotations?.Core ?? {});
+    entitySets[es.name] = { name: es.name, typeName: es.entityTypeName ?? es.entityType?.fullyQualifiedName, navigationBindings: bindings, capabilities, navigationCapabilities };
+  }
+
+  let draftEnabled = false;
+  for (const es of c.entitySets as Any[]) {
+    if (es.annotations?.Common?.DraftRoot || es.entityType?.annotations?.Common?.DraftRoot) draftEnabled = true;
+  }
+  if (draftEnabled) warn('DRAFT_UNSUPPORTED', 'The service is draft-enabled; draft handling is not supported in phase 1. Only active entities are read.');
+
+  const ui: Record<string, EntityUi> = {};
+  const ctx: UiContext = { entityTypes, raw, warn };
+  for (const fullName of Object.keys(entityTypes)) ui[fullName] = buildUi(fullName, ctx);
+
+  const namespace = (c as Any).namespace ?? Object.keys(entityTypes)[0]?.split('.').slice(0, -1).join('.') ?? '';
+  return { version: MODEL_VERSION, namespace, entitySets, entityTypes, ui, draftEnabled, warnings };
+}
+
+function buildEntityType(et: Any): EntityTypeModel {
+  const properties: Record<string, PropertyModel> = {};
+  const order: string[] = [];
+  const keys: string[] = (et.keys ?? []).map((k: Any) => k.name);
+  for (const p of et.entityProperties as Any[]) {
+    properties[p.name] = buildProperty(p, keys, et);
+    order.push(p.name);
+  }
+  const navigations: Record<string, NavigationModel> = {};
+  for (const n of et.navigationProperties as Any[]) {
+    navigations[n.name] = {
+      name: n.name,
+      targetType: n.targetTypeName ?? n.targetType?.fullyQualifiedName,
+      collection: Boolean(n.isCollection),
+      partner: n.partner || undefined,
+      referentialConstraints: (n.referentialConstraint ?? []).map((r: Any) => ({ property: r.sourceProperty, referencedProperty: r.targetProperty })),
+    };
+  }
+  const concurrency = et.annotations?.Core?.OptimisticConcurrency;
+  const etag = Array.isArray(concurrency) && concurrency.length ? pathOf(concurrency[0]) : undefined;
+  return { name: et.name, fullName: et.fullyQualifiedName, keys, properties, propertyOrder: order, navigations, etag };
+}
+
+function buildProperty(p: Any, keys: string[], et: Any): PropertyModel {
+  const a = p.annotations ?? {};
+  const common = a.Common ?? {};
+  const ui = a.UI ?? {};
+  const measures = a.Measures ?? {};
+  const core = a.Core ?? {};
+  const label = str(common.Label);
+  const text = common.Text;
+  const arrangement =
+    enumName(text?.annotations?.UI?.TextArrangement) ?? enumName(et.annotations?.UI?.TextArrangement) ?? undefined;
+  const currency = measures.ISOCurrency;
+  const unit = currency ?? measures.Unit;
+  return {
+    name: p.name,
+    edmType: p.type,
+    nullable: p.nullable !== false,
+    isKey: keys.includes(p.name),
+    maxLength: p.maxLength ?? undefined,
+    precision: p.precision ?? undefined,
+    scale: p.scale === 'variable' || p.scale === 'Variable' ? 'variable' : p.scale ?? undefined,
+    label: label ?? humanize(p.name),
+    labelDerived: label === undefined,
+    description: str(core.Description),
+    text: pathOf(text),
+    textArrangement: arrangement as TextArrangement | undefined,
+    unit: valueRef(unit),
+    isCurrency: currency !== undefined,
+    valueList: buildValueList(p, common),
+    criticality: criticalityRef(ui.Criticality),
+    hidden: bool(ui.Hidden, false) || (common.FieldControl !== undefined && enumName(common.FieldControl) === 'Hidden'),
+    hiddenFilter: bool(ui.HiddenFilter, false),
+    computed: bool(core.Computed, false),
+    immutable: bool(core.Immutable, false),
+    isImageUrl: bool(ui.IsImageURL, false) || bool(ui.IsImageUrl, false),
+    isUrl: bool(core.IsURL, false) || bool(core.IsUrl, false),
+    multiLine: bool(ui.MultiLineText, false),
+    isDigitSequence: bool(common.IsDigitSequence, false),
+    isUpperCase: bool(common.IsUpperCase, false),
+    fieldControl: common.FieldControl === undefined ? undefined : valueRef(common.FieldControl),
+  };
+}
+
+const PARAM_KIND: Record<string, ValueListModel['parameters'][number]['kind']> = {
+  ValueListParameterInOut: 'InOut',
+  ValueListParameterOut: 'Out',
+  ValueListParameterIn: 'In',
+  ValueListParameterDisplayOnly: 'DisplayOnly',
+  ValueListParameterConstant: 'Constant',
+};
+
+function buildValueList(p: Any, common: Any): ValueListModel | undefined {
+  const vl = common.ValueList;
+  if (!vl || typeof vl !== 'object') return undefined;
+  const parameters = ((vl.Parameters ?? []) as Any[]).map((param) => {
+    const kind = PARAM_KIND[String(param.$Type).split('.').pop()!] ?? 'DisplayOnly';
+    return {
+      kind,
+      local: pathOf(param.LocalDataProperty),
+      valueListProperty: str(param.ValueListProperty) ?? '',
+      constant: str(param.Constant),
+    };
+  });
+  const key = parameters.find((x) => (x.kind === 'InOut' || x.kind === 'Out') && x.local === p.name) ?? parameters[0];
+  if (!key) return undefined;
+  const description = parameters.find((x) => x.kind === 'DisplayOnly');
+  return {
+    collectionPath: str(vl.CollectionPath) ?? '',
+    label: str(vl.Label),
+    searchSupported: bool(vl.SearchSupported, false),
+    parameters,
+    keyProperty: key.valueListProperty,
+    descriptionProperty: description?.valueListProperty,
+    fixedValues: bool(common.ValueListWithFixedValues, false),
+  };
+}
+
+const FILTER_EXPRESSIONS = new Set(['SingleValue', 'MultiValue', 'SingleRange', 'MultiRange', 'SearchExpression', 'MultiRangeOrSearchExpression']);
+
+function restrictions(cap: Any): Partial<CapabilityModel> {
+  const out: Partial<CapabilityModel> = {};
+  const fr = cap.FilterRestrictions;
+  if (fr) {
+    out.filterable = bool(fr.Filterable, true);
+    out.nonFilterable = ((fr.NonFilterableProperties ?? []) as unknown[]).map(pathOf).filter(Boolean) as string[];
+    out.requiredFilters = ((fr.RequiredProperties ?? []) as unknown[]).map(pathOf).filter(Boolean) as string[];
+    const fe: Record<string, FilterExpression> = {};
+    for (const r of (fr.FilterExpressionRestrictions ?? []) as Any[]) {
+      const prop = pathOf(r.Property);
+      const kind = str(r.AllowedExpressions);
+      if (prop && kind && FILTER_EXPRESSIONS.has(kind)) fe[prop] = kind as FilterExpression;
+    }
+    out.filterExpressions = fe;
+  }
+  const sr = cap.SortRestrictions;
+  if (sr) {
+    out.sortable = bool(sr.Sortable, true);
+    out.nonSortable = ((sr.NonSortableProperties ?? []) as unknown[]).map(pathOf).filter(Boolean) as string[];
+  }
+  if (cap.SearchRestrictions) out.searchable = bool(cap.SearchRestrictions.Searchable, true);
+  if (cap.CountRestrictions) out.countable = bool(cap.CountRestrictions.Countable, true);
+  if (cap.TopSupported !== undefined) out.topSupported = bool(cap.TopSupported, true);
+  if (cap.SkipSupported !== undefined) out.skipSupported = bool(cap.SkipSupported, true);
+  if (cap.ExpandRestrictions) {
+    out.nonExpandable = ((cap.ExpandRestrictions.NonExpandableProperties ?? []) as unknown[]).map(pathOf).filter(Boolean) as string[];
+  }
+  if (cap.InsertRestrictions) out.insertable = bool(cap.InsertRestrictions.Insertable, true);
+  if (cap.UpdateRestrictions) out.updatable = bool(cap.UpdateRestrictions.Updatable, true);
+  if (cap.DeleteRestrictions) out.deletable = bool(cap.DeleteRestrictions.Deletable, true);
+  return out;
+}
+
+export const DEFAULT_CAPABILITIES: CapabilityModel = {
+  searchable: false,
+  countable: true,
+  filterable: true,
+  sortable: true,
+  topSupported: true,
+  skipSupported: true,
+  nonFilterable: [],
+  nonSortable: [],
+  requiredFilters: [],
+  filterExpressions: {},
+  nonExpandable: [],
+  insertable: true,
+  updatable: true,
+  deletable: true,
+};
+
+function buildCapabilities(cap: Any, _core: Any): { capabilities: CapabilityModel; navigationCapabilities: Record<string, Partial<CapabilityModel>> } {
+  const capabilities = { ...DEFAULT_CAPABILITIES, ...restrictions(cap) };
+  const navigationCapabilities: Record<string, Partial<CapabilityModel>> = {};
+  for (const r of (cap.NavigationRestrictions?.RestrictedProperties ?? []) as Any[]) {
+    const nav = pathOf(r.NavigationProperty);
+    if (nav) navigationCapabilities[nav] = restrictions(r);
+  }
+  return { capabilities, navigationCapabilities };
+}
+
+// ---------------------------------------------------------------------------------------------
+// UI description
+
+interface UiContext {
+  entityTypes: Record<string, EntityTypeModel>;
+  raw: Record<string, Any>;
+  warn: (code: string, message: string, target?: string, level?: ModelWarning['level']) => void;
+}
+
+/** Resolves "nav1/nav2/Prop" against an entity type; returns the property and its owning type. */
+export function resolvePath(entityTypes: Record<string, EntityTypeModel>, typeName: string, path: string): { property?: PropertyModel; type?: EntityTypeModel; navigationPath: string[] } {
+  const segments = path.split('/');
+  let type = entityTypes[typeName];
+  const navigationPath: string[] = [];
+  for (let i = 0; i < segments.length - 1; i++) {
+    const nav = type?.navigations[segments[i]!];
+    if (!nav) return { navigationPath };
+    navigationPath.push(nav.name);
+    type = entityTypes[nav.targetType];
+  }
+  return { property: type?.properties[segments[segments.length - 1]!], type, navigationPath };
+}
+
+/** Splits "nav/@UI.LineItem#Q" or "@com.sap.vocabularies.UI.v1.FieldGroup#Q" into navigation, term and qualifier. */
+function splitAnnotationPath(value: string): { navigation: string; term: string; qualifier?: string } {
+  const at = value.indexOf('@');
+  const navigation = at > 0 ? value.slice(0, at).replace(/\/$/, '') : '';
+  const rest = value.slice(at + 1);
+  const [termFull, qualifier] = rest.split('#');
+  return { navigation, term: termFull!.split('.').pop()!, qualifier };
+}
+
+function idFromPath(path: string): string {
+  return path.replace(/\//g, '::');
+}
+
+/** Id fragment for an annotation path, independent of aliases: "_Supplier/@com.sap.vocabularies.UI.v1.DataPoint#R" → "_Supplier::UI.DataPoint#R". */
+function annotationId(target: string): string {
+  return idFromPath(target.replace(/@/g, '').replace(/com\.sap\.vocabularies\.(\w+)\.v1\./g, '$1.').replace(/Org\.OData\.(\w+)\.V1\./g, '$1.'));
+}
+
+function uniqueIds<T extends { id: string }>(items: T[], ctx: UiContext, scope: string): T[] {
+  const seen = new Map<string, number>();
+  return items.map((it) => {
+    const n = (seen.get(it.id) ?? 0) + 1;
+    seen.set(it.id, n);
+    if (n === 1) return it;
+    ctx.warn('DUPLICATE_ID', `Duplicate id "${it.id}" in ${scope}`, scope);
+    return { ...it, id: `${it.id}::${n}` };
+  });
+}
+
+function buildDataPoint(dp: Any, id: string, prefix: string, typeName: string, ctx: UiContext): DataPointModel | undefined {
+  const value = pathOf(dp?.Value);
+  if (!value) return undefined;
+  const resolved = resolvePath(ctx.entityTypes, typeName, join(prefix, value));
+  const viz = enumName(dp.Visualization);
+  return {
+    id,
+    title: str(dp.Title) ?? resolved.property?.label ?? humanize(value),
+    value: join(prefix, value),
+    targetValue: valueRef(dp.TargetValue, prefix),
+    visualization: viz === 'Rating' ? 'Rating' : viz === 'Progress' ? 'Progress' : 'Number',
+    criticality: criticalityRef(dp.Criticality, prefix),
+  };
+}
+
+function lookupAnnotation(typeName: string, navigation: string, term: string, qualifier: string | undefined, ctx: UiContext): { value: unknown; typeName: string } | undefined {
+  let tn = typeName;
+  if (navigation) {
+    for (const seg of navigation.split('/')) {
+      const nav = ctx.entityTypes[tn]?.navigations[seg];
+      if (!nav) return undefined;
+      tn = nav.targetType;
+    }
+  }
+  const ui = ctx.raw[tn]?.annotations?.UI;
+  if (!ui) return undefined;
+  const key = qualifier ? `${term}#${qualifier}` : term;
+  return ui[key] === undefined ? undefined : { value: ui[key], typeName: tn };
+}
+
+function buildField(rec: Any, typeName: string, ctx: UiContext, scope: string, semanticKey: string[]): FieldModel | undefined {
+  const type = String(rec.$Type ?? '').split('.').pop();
+  if (rec.annotations?.UI?.Hidden !== undefined && bool(rec.annotations.UI.Hidden, false)) return undefined;
+  if (type === 'DataFieldForAction' || type === 'DataFieldForIntentBasedNavigation' || type === 'DataFieldWithIntentBasedNavigation' || type === 'DataFieldWithAction') {
+    ctx.warn('UNSUPPORTED_RECORD', `${type} is not supported in phase 1 and is ignored`, scope, 'info');
+    return undefined;
+  }
+  if (type === 'DataFieldForAnnotation') {
+    const target = str(rec.Target?.value) ?? pathOf(rec.Target);
+    if (!target) return undefined;
+    const { navigation, term, qualifier } = splitAnnotationPath(target);
+    if (term !== 'DataPoint') {
+      ctx.warn('UNSUPPORTED_RECORD', `DataFieldForAnnotation to ${term} is not supported in phase 1`, scope, 'info');
+      return undefined;
+    }
+    const found = lookupAnnotation(typeName, navigation, term, qualifier, ctx);
+    const dp = found ? buildDataPoint(found.value as Any, qualifier ?? 'DataPoint', navigation, typeName, ctx) : undefined;
+    if (!dp) {
+      ctx.warn('UNRESOLVED_TARGET', `Cannot resolve ${target}`, scope);
+      return undefined;
+    }
+    const id = str(rec.ID) ?? `DataFieldForAnnotation::${annotationId(target)}`;
+    return { id, kind: 'dataPoint', label: str(rec.Label) ?? dp.title, dataPoint: dp, criticalityIcon: true, isSemanticKey: false };
+  }
+  const path = pathOf(rec.Value);
+  if (!path) return undefined;
+  const resolved = resolvePath(ctx.entityTypes, typeName, path);
+  if (!resolved.property) {
+    ctx.warn('UNRESOLVED_PATH', `Path "${path}" does not exist on ${typeName}`, scope);
+    return undefined;
+  }
+  if (resolved.property.hidden) return undefined;
+  const rep = enumName(rec.CriticalityRepresentation);
+  return {
+    id: str(rec.ID) ?? `DataField::${idFromPath(path)}`,
+    kind: 'field',
+    path,
+    label: str(rec.Label) ?? resolved.property.label,
+    criticality: criticalityRef(rec.Criticality) ?? resolved.property.criticality,
+    criticalityIcon: rep !== 'WithoutIcon',
+    url: type === 'DataFieldWithUrl' ? valueRef(rec.Url) : undefined,
+    isSemanticKey: semanticKey.includes(path),
+  };
+}
+
+function buildFields(records: unknown, typeName: string, ctx: UiContext, scope: string, semanticKey: string[]): FieldModel[] {
+  if (!Array.isArray(records)) return [];
+  return uniqueIds(
+    records.map((r) => buildField(r as Any, typeName, ctx, scope, semanticKey)).filter((f): f is FieldModel => f !== undefined),
+    ctx,
+    scope,
+  );
+}
+
+function presentationFrom(pv: Any | undefined): { presentation: PresentationModel; lineItemQualifier?: string } {
+  const sortOrder = ((pv?.SortOrder ?? []) as Any[])
+    .map((s) => ({ path: pathOf(s.Property) ?? '', descending: bool(s.Descending, false) }))
+    .filter((s) => s.path);
+  const requestAtLeast = ((pv?.RequestAtLeast ?? []) as unknown[]).map(pathOf).filter(Boolean) as string[];
+  const viz = ((pv?.Visualizations ?? []) as unknown[]).map((v) => str((v as Any)?.value) ?? pathOf(v)).find((v) => v && v.includes('LineItem'));
+  const lineItemQualifier = viz?.includes('#') ? viz.split('#')[1] : undefined;
+  return { presentation: { sortOrder, requestAtLeast }, lineItemQualifier };
+}
+
+const RANGE_OPTIONS = new Set(['EQ', 'NE', 'BT', 'NB', 'LT', 'LE', 'GT', 'GE']);
+
+function selectionVariantFrom(sv: Any | undefined): InitialCondition[] {
+  const out: InitialCondition[] = [];
+  for (const so of (sv?.SelectOptions ?? []) as Any[]) {
+    const path = pathOf(so.PropertyName);
+    if (!path) continue;
+    for (const r of (so.Ranges ?? []) as Any[]) {
+      const sign = enumName(r.Sign) ?? 'I';
+      const option = enumName(r.Option) ?? 'EQ';
+      const low = r.Low?.valueOf?.() ?? r.Low;
+      const high = r.High?.valueOf?.() ?? r.High;
+      let operator = option;
+      let values: unknown[] = option === 'BT' || option === 'NB' ? [low, high] : [low];
+      if (option === 'CP' && typeof low === 'string') {
+        const s = low.startsWith('*');
+        const e = low.endsWith('*');
+        operator = s && e ? 'Contains' : e ? 'StartsWith' : s ? 'EndsWith' : 'EQ';
+        values = [low.replace(/^\*|\*$/g, '')];
+      } else if (!RANGE_OPTIONS.has(option)) continue;
+      out.push({ path, exclude: sign === 'E', operator, values });
+    }
+  }
+  return out;
+}
+
+function buildUi(fullName: string, ctx: UiContext): EntityUi {
+  const et = ctx.entityTypes[fullName]!;
+  const ann: Any = ctx.raw[fullName]?.annotations ?? {};
+  const ui: Any = ann.UI ?? {};
+  const semanticKey = ((ann.Common?.SemanticKey ?? []) as unknown[]).map(pathOf).filter(Boolean) as string[];
+
+  const spv = ui.SelectionPresentationVariant;
+  const pv = spv?.PresentationVariant ?? ui.PresentationVariant;
+  const sv = spv?.SelectionVariant ?? ui.SelectionVariant;
+  const { presentation, lineItemQualifier } = presentationFrom(pv);
+  const lineItemRecords = ui[lineItemQualifier ? `LineItem#${lineItemQualifier}` : 'LineItem'];
+  const lineItem: ColumnModel[] | undefined = lineItemRecords ? buildFields(lineItemRecords, fullName, ctx, `${fullName}@UI.LineItem`, semanticKey) : undefined;
+
+  const selectionFields = Array.isArray(ui.SelectionFields)
+    ? (ui.SelectionFields as unknown[]).map(pathOf).filter((p): p is string => {
+        if (!p) return false;
+        const r = resolvePath(ctx.entityTypes, fullName, p);
+        if (!r.property) ctx.warn('UNRESOLVED_PATH', `Selection field "${p}" does not exist`, fullName);
+        return Boolean(r.property) && !r.property!.hidden && !r.property!.hiddenFilter;
+      })
+    : undefined;
+
+  const hi = ui.HeaderInfo;
+  const headerInfo = hi
+    ? {
+        typeName: str(hi.TypeName) ?? humanize(et.name),
+        typeNamePlural: str(hi.TypeNamePlural) ?? humanize(et.name),
+        title: pathOf(hi.Title?.Value),
+        description: pathOf(hi.Description?.Value),
+        imageUrl: valueRef(hi.ImageUrl),
+      }
+    : undefined;
+
+  const sections = Array.isArray(ui.Facets) ? buildSections(ui.Facets as Any[], fullName, ctx, semanticKey) : undefined;
+  const headerFacets = Array.isArray(ui.HeaderFacets) ? buildHeaderFacets(ui.HeaderFacets as Any[], fullName, ctx, semanticKey) : [];
+
+  return deriveUi(et, ctx.entityTypes, {
+    headerInfo,
+    lineItem,
+    selectionFields,
+    presentation,
+    selectionVariant: selectionVariantFrom(sv),
+    sections,
+    headerFacets,
+    semanticKey,
+  }, (target) => tableFor(fullName, target, ctx));
+}
+
+/** Builds the table content for a "nav/@UI.LineItem" facet target. */
+function tableFor(typeName: string, navigation: string, ctx: UiContext, qualifier?: string): SubSectionModel['content'] | undefined {
+  const nav = ctx.entityTypes[typeName]?.navigations[navigation];
+  if (!nav || !nav.collection) return undefined;
+  const target = nav.targetType;
+  const tui: Any = ctx.raw[target]?.annotations?.UI ?? {};
+  const semanticKey = ((ctx.raw[target]?.annotations?.Common?.SemanticKey ?? []) as unknown[]).map(pathOf).filter(Boolean) as string[];
+  const records = tui[qualifier ? `LineItem#${qualifier}` : 'LineItem'];
+  const columns = records ? buildFields(records, target, ctx, `${target}@UI.LineItem`, semanticKey) : deriveColumns(ctx.entityTypes[target]!, ctx.entityTypes);
+  const { presentation } = presentationFrom(tui.PresentationVariant);
+  return { kind: 'table', navigation, targetType: target, columns, presentation };
+}
+
+function facetId(f: Any, fallback: string): string {
+  return str(f.ID) ?? (str(f.Label) ? str(f.Label)!.replace(/\s+/g, '') : fallback);
+}
+
+function contentForReference(f: Any, typeName: string, ctx: UiContext, semanticKey: string[], scope: string): SubSectionModel['content'] | undefined {
+  const target = str(f.Target?.value) ?? pathOf(f.Target);
+  if (!target) return undefined;
+  const { navigation, term, qualifier } = splitAnnotationPath(target);
+  if (term === 'LineItem') return tableFor(typeName, navigation, ctx, qualifier);
+  if (term === 'FieldGroup' || term === 'Identification') {
+    const found = lookupAnnotation(typeName, navigation, term, qualifier, ctx);
+    if (!found) return undefined;
+    const data = term === 'FieldGroup' ? (found.value as Any).Data : found.value;
+    const fields = buildFields(data, found.typeName, ctx, scope, semanticKey).map((fd) => (navigation && fd.path ? { ...fd, path: join(navigation, fd.path) } : fd));
+    return { kind: 'form', groups: [{ id: facetId(f, annotationId(target)), label: str((found.value as Any).Label) ?? str(f.Label), fields }] };
+  }
+  if (term === 'DataPoint') {
+    const found = lookupAnnotation(typeName, navigation, term, qualifier, ctx);
+    const dp = found ? buildDataPoint(found.value as Any, qualifier ?? 'DataPoint', navigation, typeName, ctx) : undefined;
+    return dp ? { kind: 'dataPoint', dataPoint: dp } : undefined;
+  }
+  ctx.warn('UNSUPPORTED_FACET', `Facet target ${target} is not supported in phase 1`, scope, 'info');
+  return undefined;
+}
+
+function partOfPreview(f: Any): boolean {
+  return bool(f.annotations?.UI?.PartOfPreview, true);
+}
+
+function buildSubSection(f: Any, typeName: string, ctx: UiContext, semanticKey: string[], index: number): SubSectionModel | undefined {
+  const type = String(f.$Type).split('.').pop();
+  const scope = `${typeName}@UI.Facets`;
+  if (type === 'ReferenceFacet') {
+    const content = contentForReference(f, typeName, ctx, semanticKey, scope);
+    if (!content) {
+      ctx.warn('UNRESOLVED_TARGET', `Cannot resolve facet ${str(f.ID) ?? index}`, scope);
+      return undefined;
+    }
+    const target = str(f.Target?.value) ?? '';
+    const label = str(f.Label) ?? (content.kind === 'form' ? content.groups[0]?.label : undefined) ?? (content.kind === 'table' ? ctx.raw[content.targetType] && (str(ctx.raw[content.targetType]!.annotations?.UI?.HeaderInfo?.TypeNamePlural) ?? humanize(content.navigation)) : undefined) ?? '';
+    return { id: facetId(f, annotationId(target) || `SubSection${index}`), label, partOfPreview: partOfPreview(f), content };
+  }
+  if (type === 'CollectionFacet') {
+    // A collection facet nested inside a section is a form with several groups.
+    const groups: FormGroupModel[] = [];
+    for (const child of (f.Facets ?? []) as Any[]) {
+      const c = contentForReference(child, typeName, ctx, semanticKey, scope);
+      if (c?.kind === 'form') groups.push(...c.groups);
+    }
+    if (!groups.length) return undefined;
+    return { id: facetId(f, `SubSection${index}`), label: str(f.Label) ?? '', partOfPreview: partOfPreview(f), content: { kind: 'form', groups } };
+  }
+  return undefined;
+}
+
+function buildSections(facets: Any[], typeName: string, ctx: UiContext, semanticKey: string[]): SectionModel[] {
+  const sections: SectionModel[] = [];
+  facets.forEach((f, i) => {
+    const type = String(f.$Type).split('.').pop();
+    if (type === 'CollectionFacet') {
+      const subs = ((f.Facets ?? []) as Any[]).map((c, j) => buildSubSection(c, typeName, ctx, semanticKey, j)).filter((s): s is SubSectionModel => s !== undefined);
+      if (subs.length) sections.push({ id: facetId(f, `Section${i}`), label: str(f.Label) ?? subs[0]!.label, subSections: uniqueIds(subs, ctx, `${typeName} section ${i}`) });
+    } else {
+      const sub = buildSubSection(f, typeName, ctx, semanticKey, i);
+      if (sub) sections.push({ id: sub.id, label: sub.label, subSections: [sub] });
+    }
+  });
+  return uniqueIds(sections, ctx, `${typeName}@UI.Facets`);
+}
+
+function buildHeaderFacets(facets: Any[], typeName: string, ctx: UiContext, semanticKey: string[]): HeaderFacetModel[] {
+  const out: HeaderFacetModel[] = [];
+  facets.forEach((f, i) => {
+    const content = String(f.$Type).endsWith('ReferenceFacet') ? contentForReference(f, typeName, ctx, semanticKey, `${typeName}@UI.HeaderFacets`) : undefined;
+    const target = str(f.Target?.value) ?? '';
+    const id = facetId(f, annotationId(target) || `HeaderFacet${i}`);
+    if (content?.kind === 'form') out.push({ id, kind: 'form', label: str(f.Label) ?? content.groups[0]?.label, fields: content.groups[0]?.fields ?? [] });
+    else if (content?.kind === 'dataPoint') out.push({ id, kind: 'dataPoint', label: str(f.Label) ?? content.dataPoint.title, dataPoint: content.dataPoint });
+    else ctx.warn('UNSUPPORTED_FACET', `Header facet ${id} is not supported in phase 1`, typeName, 'info');
+  });
+  return uniqueIds(out, ctx, `${typeName}@UI.HeaderFacets`);
+}
+

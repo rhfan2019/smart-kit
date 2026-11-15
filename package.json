@@ -1,0 +1,44 @@
+{
+  "name": "smart-kit-workspace",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "packages/core",
+    "packages/react",
+    "apps/demo"
+  ],
+  "scripts": {
+    "mock": "npm run start -w mock",
+    "mock:reset": "npm run reset -w mock",
+    "dev": "npm run dev -w demo",
+    "build": "npm run build -w @rhfan2019/smart-kit-core && npm run build -w @rhfan2019/smart-kit && npm run build -w demo",
+    "typecheck": "tsc -p packages/core/tsconfig.json --noEmit && tsc -p packages/react/tsconfig.json --noEmit && tsc -p apps/demo/tsconfig.json --noEmit && tsc -p tsconfig.tests.json --noEmit",
+    "lint": "eslint . && node scripts/check-tokens.mjs && node scripts/check-trademark.mjs",
+    "test": "vitest run",
+    "e2e": "playwright test",
+    "size": "node scripts/check-size.mjs",
+    "trace": "node scripts/trace.mjs",
+    "check:trademark": "node scripts/check-trademark.mjs",
+    "lint:tokens": "node scripts/check-tokens.mjs",
+    "samples": "node scripts/export-samples.mjs",
+    "storybook": "npm run storybook -w storybook",
+    "build-storybook": "npm run build -w storybook",
+    "rename-scope": "node scripts/rename-scope.mjs"
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "@playwright/test": "1.65.1",
+    "@axe-core/playwright": "4.14.0",
+    "@types/node": "26.6.6",
+    "eslint": "10.15.0",
+    "eslint-plugin-react-hooks": "7.1.1",
+    "globals": "17.14.0",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.72.2",
+    "vitest": "5.1.0",
+    "jsdom": "31.0.1",
+    "@testing-library/react": "16.3.3",
+    "@testing-library/user-event": "14.6.10",
+    "@testing-library/dom": "10.4.2"
+  }
+}

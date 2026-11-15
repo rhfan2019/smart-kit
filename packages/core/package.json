@@ -1,0 +1,40 @@
+{
+  "name": "@rhfan2019/smart-kit-core",
+  "version": "0.1.0",
+  "description": "Metadata model, query generation and data providers for smart-kit (pure TypeScript).",
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": false,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "import": "./src/index.ts"
+    }
+  },
+  "publishConfig": {
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "import": "./dist/index.js"
+      }
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "vite build"
+  },
+  "dependencies": {
+    "@sap-ux/edmx-parser": "0.10.0",
+    "@sap-ux/annotation-converter": "0.10.23",
+    "@sap-ux/vocabularies-types": "0.16.0",
+    "xml-js": "1.6.11"
+  },
+  "devDependencies": {
+    "vite": "8.3.8",
+    "vite-plugin-dts": "5.1.2"
+  }
+}

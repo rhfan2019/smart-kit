@@ -1,0 +1,147 @@
+/** In-memory data provider: evaluates query requests directly (tests, Storybook, demos without a backend). */
+import { compareValues, matches } from '../conditions/conditions';
+import type { EntityTypeModel, MetaModel, NavigationModel } from '../model/types';
+import { resolveEntityPath, type EntityPath } from '../query/entityPath';
+import { sourceInfo, type ExpandSpec, type QueryRequest, type QueryResult, type ReadRequest, type Row } from '../query/request';
+import { resolvePath } from '../model/buildModel';
+import { ConcurrencyError, ODataError } from './errors';
+import type { DataProvider, RequestOptions } from './provider';
+
+export interface MemoryProviderOptions {
+  model: MetaModel;
+  data: Record<string, Row[]>;
+  /** Artificial latency in milliseconds. */
+  latency?: number;
+}
+
+/** Pairs of (source property, target property) that link `nav` from `type` to its target. */
+function links(model: MetaModel, type: EntityTypeModel, nav: NavigationModel): { source: string; target: string }[] {
+  if (nav.referentialConstraints.length) return nav.referentialConstraints.map((r) => ({ source: r.property, target: r.referencedProperty }));
+  const target = model.entityTypes[nav.targetType]!;
+  const partner = nav.partner ? target.navigations[nav.partner] : undefined;
+  if (partner?.referentialConstraints.length) return partner.referentialConstraints.map((r) => ({ source: r.referencedProperty, target: r.property }));
+  return type.keys.filter((k) => k in target.properties).map((k) => ({ source: k, target: k }));
+}
+
+export class MemoryProvider implements DataProvider {
+  constructor(private readonly o: MemoryProviderOptions) {}
+
+  private rows(entitySet: string): Row[] {
+    return this.o.data[entitySet] ?? [];
+  }
+
+  private async delay(signal?: AbortSignal) {
+    if (this.o.latency) await new Promise((r) => setTimeout(r, this.o.latency));
+    if (signal?.aborted) throw Object.assign(new Error('Aborted'), { name: 'AbortError' });
+  }
+
+  private navigate(entitySet: string, typeName: string, row: Row, navName: string): { set: string; rows: Row[]; collection: boolean } {
+    const model = this.o.model;
+    const type = model.entityTypes[typeName]!;
+    const nav = type.navigations[navName]!;
+    const set = model.entitySets[entitySet]!.navigationBindings[navName]!;
+    const pairs = links(model, type, nav);
+    const rows = this.rows(set).filter((r) => pairs.every((p) => String(r[p.target]) === String(row[p.source])));
+    return { set, rows, collection: nav.collection };
+  }
+
+  private project(entitySet: string, typeName: string, row: Row, select: string[], expand: ExpandSpec[]): Row {
+    const out: Row = {};
+    const type = this.o.model.entityTypes[typeName]!;
+    const props = select.length ? select : Object.keys(type.properties);
+    for (const p of new Set([...type.keys, ...props])) if (p in row) out[p] = row[p];
+    for (const e of expand) {
+      const nav = type.navigations[e.navigation];
+      if (!nav) continue;
+      const r = this.navigate(entitySet, typeName, row, e.navigation);
+      const proj = (x: Row) => this.project(r.set, nav.targetType, x, e.select, e.expand);
+      out[e.navigation] = r.collection ? r.rows.map(proj) : r.rows[0] ? proj(r.rows[0]) : null;
+    }
+    return out;
+  }
+
+  private value(entitySet: string, typeName: string, row: Row, path: string): unknown {
+    const segs = path.split('/');
+    let cur: Row | undefined = row;
+    let set = entitySet;
+    let tn = typeName;
+    for (let i = 0; i < segs.length - 1 && cur; i++) {
+      const r = this.navigate(set, tn, cur, segs[i]!);
+      set = r.set;
+      tn = this.o.model.entityTypes[tn]!.navigations[segs[i]!]!.targetType;
+      cur = r.rows[0];
+    }
+    return cur ? cur[segs[segs.length - 1]!] : undefined;
+  }
+
+  async query(req: QueryRequest, opts: RequestOptions = {}): Promise<QueryResult> {
+    await this.delay(opts.signal);
+    const model = this.o.model;
+    const info = sourceInfo(model, req.source);
+    let rows: Row[];
+    if ('parent' in req.source) {
+      const parent = resolveEntityPath(model, req.source.parent);
+      const parentRow = this.findByKey(parent.entitySet, parent.typeName, parent.key);
+      if (!parentRow) throw new ODataError({ status: 404, message: `Not found: ${req.source.parent}` });
+      rows = this.navigate(parent.entitySet, parent.typeName, parentRow, req.source.navigation).rows;
+    } else rows = this.rows(info.entitySet);
+
+    const typeOf = (p: string) => resolvePath(model.entityTypes, info.typeName, p).property?.edmType ?? 'Edm.String';
+    const val = (r: Row, p: string) => this.value(info.entitySet, info.typeName, r, p);
+    if (req.filters) {
+      const f = req.filters;
+      rows = rows.filter((r) => Object.entries(f).every(([p, cs]) => matches(val(r, p), cs, typeOf(p))));
+    }
+    if (req.anyOf && Object.keys(req.anyOf).length) {
+      const a = req.anyOf;
+      rows = rows.filter((r) => Object.entries(a).some(([p, cs]) => matches(val(r, p), cs, typeOf(p))));
+    }
+    if (req.search) {
+      const terms = req.search.toLowerCase().split(/\s+/).filter(Boolean);
+      const type = model.entityTypes[info.typeName]!;
+      const strings = Object.values(type.properties).filter((p) => p.edmType === 'Edm.String').map((p) => p.name);
+      rows = rows.filter((r) => terms.every((t) => strings.some((p) => String(r[p] ?? '').toLowerCase().includes(t))));
+    }
+    if (req.orderBy.length) {
+      rows = [...rows].sort((a, b) => {
+        for (const s of req.orderBy) {
+          const c = compareValues(val(a, s.path), val(b, s.path), typeOf(s.path));
+          if (c) return s.descending ? -c : c;
+        }
+        return 0;
+      });
+    }
+    const count = rows.length;
+    const skip = req.skip ?? 0;
+    const page = req.top === undefined ? rows.slice(skip) : rows.slice(skip, skip + req.top);
+    return { rows: page.map((r) => this.project(info.entitySet, info.typeName, r, req.select, req.expand)), count: req.count ? count : undefined };
+  }
+
+  private findByKey(entitySet: string, typeName: string, key: Record<string, string>): Row | undefined {
+    const type = this.o.model.entityTypes[typeName]!;
+    return this.rows(entitySet).find((r) => type.keys.every((k) => String(r[k]) === String(key[k])));
+  }
+
+  async read(path: EntityPath, req: ReadRequest, opts: RequestOptions = {}): Promise<Row> {
+    await this.delay(opts.signal);
+    const resolved = resolveEntityPath(this.o.model, path);
+    const row = this.findByKey(resolved.entitySet, resolved.typeName, resolved.key);
+    if (!row) throw new ODataError({ status: 404, message: `Not found: ${path}` });
+    return this.project(resolved.entitySet, resolved.typeName, row, req.select, req.expand);
+  }
+
+  async update(path: EntityPath, patch: Row, opts: RequestOptions & { etag?: string }): Promise<{ row: Row; etag?: string }> {
+    await this.delay(opts.signal);
+    const resolved = resolveEntityPath(this.o.model, path);
+    const row = this.findByKey(resolved.entitySet, resolved.typeName, resolved.key);
+    if (!row) throw new ODataError({ status: 404, message: `Not found: ${path}` });
+    const etag = row['@odata.etag'] as string | undefined;
+    if (opts.etag && etag && opts.etag !== etag) {
+      throw new ConcurrencyError({ status: 412, message: 'The entity was changed by someone else' });
+    }
+    Object.assign(row, patch);
+    const next = `W/"${Date.now()}"`;
+    row['@odata.etag'] = next;
+    return { row: { ...row }, etag: next };
+  }
+}
