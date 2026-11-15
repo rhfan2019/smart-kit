@@ -81,6 +81,7 @@ for (const svc of [
     await t.locator(`.ag-header-cell[col-id="${svc.first}"] .ag-header-cell-label`).click();
     await t.locator(`.ag-header-cell[col-id="${svc.first}"] .ag-header-cell-label`).click();
     await expect(t.locator(`.ag-header-cell[col-id="${svc.first}"]`)).toHaveAttribute('aria-sort', 'descending');
+    await expect.poll(async () => (await columnTexts(page, svc.set, svc.first))[0] ?? '').not.toBe('');
     const firstValue = (await columnTexts(page, svc.set, svc.first))[0]!;
     await t.locator('[data-sk-row-nav]').first().click();
     await expect(page.locator('.sk-dynamic-page__heading')).not.toBeEmpty();
@@ -88,7 +89,7 @@ for (const svc of [
     await expect(page.locator('.sk-form__field').first()).toBeVisible();
     await page.goBack();
     await waitForRows(page, svc.set);
-    expect((await columnTexts(page, svc.set, svc.first))[0]).toBe(firstValue);
+    await expect.poll(async () => (await columnTexts(page, svc.set, svc.first))[0]).toBe(firstValue);
   });
 }
 

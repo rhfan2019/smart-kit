@@ -60,26 +60,38 @@ export function SmartListReport(p: SmartListReportProps) {
   const setHeaderExpanded = (v: boolean) => setView((s) => ({ ...s, headerExpanded: v }));
 
   // LR-14: initial focus.
+  const latestFilter = useRef(filter);
+  latestFilter.current = filter;
   const rootRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     let tries = 0;
+    let stopped = false;
+    const stop = () => { stopped = true; };
+    document.addEventListener('pointerdown', stop, true);
+    document.addEventListener('keydown', stop, true);
     const h = setInterval(() => {
       const root = rootRef.current;
-      if (!root || ++tries > 50) return clearInterval(h);
-      if (root.contains(document.activeElement) && document.activeElement !== root) return clearInterval(h);
+      if (!root || stopped || ++tries > 60) return clearInterval(h);
+      // Wait until the initial execution is decided and, if a query runs, until its rows are there.
+      if (!initialized.current) return;
+      if (latestFilter.current.applied !== null && !root.querySelector('.ag-row[row-index="0"], [data-sk-nodata], .sk-table__error')) return;
+      // Re-apply while focus has fallen back to the document (rows may be re-rendered after the first paint).
+      const active = document.activeElement;
+      if (active && active !== document.body && active !== document.documentElement) return;
       let target: HTMLElement | null = null;
       const expanded = Boolean(root.querySelector('.sk-dynamic-page__header'));
       if (expanded) {
-        const missing = filter.missingRequired[0];
+        const missing = latestFilter.current.missingRequired[0];
         if (missing) target = root.querySelector<HTMLElement>(`[data-sk-filter="${missing}"] input:not([type="hidden"])`);
         target ??= p.liveMode ? root.querySelector<HTMLElement>('[data-sk-filter] input:not([type="hidden"])') : root.querySelector<HTMLElement>('[data-sk-go]');
       } else target = root.querySelector<HTMLElement>('.ag-row[row-index="0"] [role="gridcell"]');
-      if (target) {
-        target.focus();
-        clearInterval(h);
-      }
+      target?.focus();
     }, 100);
-    return () => clearInterval(h);
+    return () => {
+      clearInterval(h);
+      document.removeEventListener('pointerdown', stop, true);
+      document.removeEventListener('keydown', stop, true);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- once on mount
   }, []);
 
