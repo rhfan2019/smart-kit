@@ -52,7 +52,8 @@ function SearchPart() {
       aria-label={t('filterBar.search')}
       placeholder={t('filterBar.search')}
       value={p.state.search}
-      leftSection={<Search className="sk-icon" />}
+      rightSection={<Search className="sk-icon" aria-hidden />}
+      rightSectionPointerEvents="none"
       onChange={(e) => p.state.setSearch(e.currentTarget.value)}
       onKeyDown={(e) => { if (e.key === 'Enter') p.state.go(); }}
     />

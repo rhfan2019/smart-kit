@@ -33,7 +33,8 @@ export const table = (page: Page, entitySet: string) => page.locator(`[data-sk-t
 /** Waits until a grid shows data rows and returns the title text. */
 export async function waitForRows(page: Page, entitySet: string) {
   const t = table(page, entitySet);
-  await expect(t.locator('.ag-row[row-index]').first()).toBeVisible();
+  // a loaded row, not the placeholder the infinite row model shows while the first block loads
+  await expect(t.locator('.ag-row[row-index]:not(.ag-row-loading) [col-id]:not([col-id="ag-Grid-SelectionColumn"])').first()).not.toBeEmpty();
   return t;
 }
 
@@ -57,9 +58,9 @@ export async function clearFilter(page: Page, path: string) {
   for (let i = 0; i < 6; i++) await input.press('Backspace');
 }
 
-/** Expands the filter bar if it is collapsed. */
+/** Expands the header (filter bar) if it is collapsed. */
 export async function showFilters(page: Page) {
-  const btn = page.getByRole('button', { name: 'Show Filters' });
+  const btn = page.getByRole('button', { name: 'Expand Header' });
   if (await btn.isVisible()) await btn.click();
   await expect(page.locator('.sk-dynamic-page__header')).toBeVisible();
 }

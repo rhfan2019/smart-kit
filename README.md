@@ -35,7 +35,7 @@ const { model, provider } = await loadService({ serviceUrl: '/odata/purchasing/'
 
 ## 开发
 
-需要 Node 24 和 .NET SDK 10（测试服务）。
+需要 Node 24。测试服务是纯 Node（SAP 开源的 `@sap-ux/fe-mockserver-core`，见 `apps/mock`）。
 
 ```bash
 npm install

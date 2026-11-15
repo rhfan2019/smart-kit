@@ -65,6 +65,25 @@ test('AC-OP-02 anchors: scroll, scroll spy, subsection menu, overflow, small-scr
   await expect(page.locator('.sk-anchorbar--select')).toBeVisible();
 });
 
+test.describe('with smooth scrolling (no reduced motion)', () => {
+  test.use({ reducedMotion: 'no-preference' });
+  test('AC-OP-02 anchors bring the section under the sticky area, also when the header snaps during the scroll', async ({ page }) => {
+    await open(page, poPath());
+    const sectionTop = async (id: string) =>
+      page.locator(`[data-sk-section="${id}"]`).evaluate((el) => el.getBoundingClientRect().top - document.querySelector('.sk-dynamic-page__navigation')!.getBoundingClientRect().bottom);
+    for (const id of ['Items', 'Custom::Timeline', 'GeneralInformation']) {
+      await page.locator(`[data-sk-anchor="${id}"]`).click();
+      await expect(page.locator(`[data-sk-anchor="${id}"]`)).toHaveAttribute('aria-current', 'true');
+      await expect.poll(() => sectionTop(id), { timeout: 3000 }).toBeLessThan(40);
+      await expect.poll(() => sectionTop(id), { timeout: 3000 }).toBeGreaterThan(-4);
+    }
+    // the header buttons sit centred on the line between header and anchor bar
+    const box = await page.locator('.sk-dynamic-page__features-buttons').boundingBox();
+    const line = await page.locator('.sk-dynamic-page__features').boundingBox();
+    expect(Math.abs(box!.y + box!.height / 2 - line!.y)).toBeLessThan(2);
+  });
+});
+
 test('AC-OP-03 tab navigation shows one section and counts on tabs', async ({ page }) => {
   await open(page, `${poPath()}&layout=tabs`);
   await expect(page.locator('[data-sk-section]')).toHaveCount(1);
@@ -195,10 +214,13 @@ test('AC-NAV-02 returning from the sub-object page restores the object page stat
   await expect(items.locator('.ag-header-cell[col-id="DataField::OrderQuantity"]')).toHaveAttribute('aria-sort', 'ascending');
   await items.locator('.ag-row[row-index="2"] input[type="checkbox"]').check();
   const third = await items.locator('.ag-row[row-index="2"] [col-id="DataField::PurchaseOrderItem"]').innerText();
+  // the section that is current when leaving (scrolling to the buttons above may have changed it)
+  const current = await page.locator('[data-sk-anchor][aria-current="true"]').getAttribute('data-sk-anchor');
+  expect(current).not.toBe('GeneralInformation');
   await items.locator('.ag-row[row-index="0"] [data-sk-row-nav]').click();
   await expect(page.locator('[data-sk-breadcrumb]')).toBeVisible();
   await page.goBack();
-  await expect(page.locator('[data-sk-anchor="Items"]')).toHaveAttribute('aria-current', 'true');
+  await expect(page.locator(`[data-sk-anchor="${current}"]`)).toHaveAttribute('aria-current', 'true');
   await expect(items.locator('.ag-row[row-index]')).toHaveCount(30);
   await expect(items.locator('.ag-header-cell[col-id="DataField::OrderQuantity"]')).toHaveAttribute('aria-sort', 'ascending');
   await expect(items.locator('.ag-row[row-index="2"] [col-id="DataField::PurchaseOrderItem"]')).toHaveText(third);

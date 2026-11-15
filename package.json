@@ -11,7 +11,6 @@
   ],
   "scripts": {
     "mock": "npm run start -w mock",
-    "mock:reset": "npm run reset -w mock",
     "dev": "npm run dev -w demo",
     "build": "npm run build -w @rhfan2019/smart-kit-core && npm run build -w @rhfan2019/smart-kit && npm run build -w demo",
     "typecheck": "tsc -p packages/core/tsconfig.json --noEmit && tsc -p packages/react/tsconfig.json --noEmit && tsc -p apps/demo/tsconfig.json --noEmit && tsc -p tsconfig.tests.json --noEmit && tsc -p apps/storybook/tsconfig.json --noEmit",

@@ -18,6 +18,10 @@
 .sk-field__unit { color: var(--sk-color-text-muted); font-size: var(--sk-text-small); }
 .sk-field--progress { display: inline-flex; flex-direction: column; align-items: stretch; gap: var(--sk-space-1); width: 100%; }
 .sk-field__progress-text { color: var(--sk-color-text-muted); font-size: var(--sk-font-size-1); }
+/* In table cells the indicator is one line high: bar and value side by side. */
+.ag-cell .sk-field--progress, .sk-table .sk-field--progress { flex-direction: row; align-items: center; gap: var(--sk-space-2); }
+.ag-cell .sk-field--progress .sk-progress, .sk-table .sk-field--progress .sk-progress { flex: 1 1 0; width: auto; min-width: var(--sk-space-6); }
+.ag-cell .sk-field__progress-text, .sk-table .sk-field__progress-text { flex: none; white-space: nowrap; line-height: 1; }
 .sk-progress { --progress-section-color: var(--sk-color-progress); background: var(--sk-color-progress-track); }
 .sk-field--rating { --rating-color: var(--sk-color-rating); }
 .sk-field--rating .mantine-Rating-symbolBody { color: var(--sk-color-rating); }
@@ -29,7 +33,7 @@
 .sk-status--info { color: var(--sk-color-info); }
 
 /* ---------------------------------------------------------------- dynamic page */
-.sk-dynamic-page { display: flex; flex-direction: column; background: var(--sk-color-page); color: var(--sk-color-text); font-family: var(--sk-font-sans); font-size: var(--sk-text-body); min-height: 100%; }
+.sk-dynamic-page { overflow-anchor: none; display: flex; flex-direction: column; background: var(--sk-color-page); color: var(--sk-color-text); font-family: var(--sk-font-sans); font-size: var(--sk-text-body); min-height: 100%; }
 .sk-dynamic-page--fill { height: 100%; min-height: 0; }
 .sk-dynamic-page__sticky { position: sticky; top: 0; z-index: 3; background: var(--sk-page-header-bg); }
 .sk-dynamic-page__title { padding: var(--sk-space-4) var(--sk-space-page-x) var(--sk-space-3); }
@@ -43,10 +47,14 @@
 .sk-dynamic-page__actions { flex: none; }
 .sk-dynamic-page__message { margin-top: var(--sk-space-3); }
 .sk-dynamic-page__header { background: var(--sk-page-header-bg); padding: var(--sk-space-2) var(--sk-space-page-x) var(--sk-space-4); }
-.sk-dynamic-page__features { display: flex; justify-content: center; gap: var(--sk-space-3); background: var(--sk-page-header-bg); border-bottom: var(--sk-size-border) solid var(--sk-color-border); padding-bottom: var(--sk-space-2); position: relative; }
+/* Expand/collapse and pin: centred on the bottom border of the header, half above and half below it (LR-12, OP-02). */
+.sk-dynamic-page__features { position: relative; z-index: 2; height: 0; border-bottom: var(--sk-size-border) solid var(--sk-color-border); }
+.sk-dynamic-page__features-buttons { position: absolute; left: 50%; top: 0; transform: translate(-50%, -50%); display: flex; gap: var(--sk-space-2); padding: 0 var(--sk-space-2); }
+.sk-dynamic-page__features-buttons .mantine-ActionIcon-root { box-shadow: var(--sk-shadow-1); }
+.sk-dynamic-page__features + .sk-dynamic-page__navigation, .sk-dynamic-page__sticky:has(> .sk-dynamic-page__features) + .sk-dynamic-page__navigation { padding-top: var(--sk-space-4); }
 .sk-dynamic-page__sentinel { height: var(--sk-size-border); margin-top: calc(-1 * var(--sk-size-border)); }
 .sk-dynamic-page__avatar { flex: none; }
-.sk-dynamic-page__navigation { position: sticky; z-index: 2; border-bottom: var(--sk-size-border) solid var(--sk-color-border); background: var(--sk-page-header-bg); }
+.sk-dynamic-page__navigation { position: sticky; z-index: 1; border-bottom: var(--sk-size-border) solid var(--sk-color-border); background: var(--sk-page-header-bg); }
 .sk-dynamic-page__content { flex: 1 1 auto; min-height: 0; padding: var(--sk-space-5) var(--sk-space-page-x); display: flex; flex-direction: column; gap: var(--sk-space-5); }
 .sk-dynamic-page--fill .sk-dynamic-page__content { overflow: hidden; }
 .sk-dynamic-page__footer { position: sticky; bottom: 0; background: var(--sk-color-surface); border-top: var(--sk-size-border) solid var(--sk-color-border); padding: var(--sk-space-3) var(--sk-space-page-x); box-shadow: var(--sk-shadow-1); }
@@ -55,6 +63,10 @@
 .sk-filterbar { display: flex; align-items: flex-end; gap: var(--sk-filterbar-gap); flex-wrap: wrap; }
 .sk-filterbar__fields { flex: 1 1 auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(calc(var(--sk-size-column-min) * 2), 1fr)); gap: var(--sk-space-3) var(--sk-filterbar-gap); align-items: end; min-width: 0; }
 .sk-filterbar__search { align-self: end; }
+/* Token inputs stay one line high like the other fields (tokens that do not fit are clipped, see the value help). */
+.sk-filterbar .sk-tokens__list { flex-wrap: nowrap; overflow: hidden; }
+.sk-filterbar .sk-tokens__list > .mantine-Pill-root { flex: none; max-width: 70%; }
+.sk-filterbar .sk-tokens__input { flex: 1 0 3ch; min-width: 3ch; }
 .sk-filterbar__actions { margin-left: auto; align-self: end; }
 .sk-filter-summary { color: var(--sk-color-text-muted); }
 .sk-adapt__list { padding: var(--sk-space-2) 0; }

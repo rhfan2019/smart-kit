@@ -1,6 +1,6 @@
 # 08 测试服务
 
-> 状态：现行 · 2026-11-14。代码在 `apps/mock`（C#，ASP.NET Core OData）。选型理由见 `adr/009-mock-server.md`。
+> 状态：现行 · 2026-11-15。代码在 `apps/mock`（Node，`@sap-ux/fe-mockserver-core` 加前置层 `server.mjs`）。选型理由见 `adr/017-mock-server-fe-mockserver.md`（取代 ADR-009 的 ASP.NET Core OData）。
 >
 > 两个服务都由本仓库编写，数据由固定随机种子生成，**不取自任何真实系统**，也不复制公开 Northwind 服务的数据。
 
@@ -8,9 +8,8 @@
 
 | 命令 | 作用 |
 | --- | --- |
-| `npm run mock` | 启动测试服务，地址 `http://localhost:4400`。首次启动时生成 SQLite 数据库（`apps/mock/data/*.db`，不提交） |
-| `npm run mock:reset` | 删除数据库，重新生成 |
-| `POST /test/reset` | 只在环境变量 `E2E=1` 时存在；清空变体表，恢复种子数据。端到端测试在每个用例前调用 |
+| `npm run mock` | 启动测试服务，地址 `http://localhost:4400`（`MOCK_PORT` 可改）。数据在启动时按固定种子在内存里生成，约 0.1 秒；端口被占用时给出提示并退出 |
+| `POST /test/reset` | 只在环境变量 `E2E=1` 时存在；清空变体，撤销所有修改。端到端测试在每个用例前调用 |
 
 服务地址：
 
@@ -70,7 +69,11 @@
 - 多了 `PurchaseOrderTypes` 实体集（订单类型的固定值来源），以及 `PurchasingGroup` 字段（页头表单 Facet）。
 - `PurchaseOrders` 的 Insert / Delete 限制为 false；项目和供应商有 `Common.SemanticKey`。
 - 状态码：NEW（0）、APPR（3）、ORD（5）、PART（2）、CLOSED（3）；已下单或部分交货且交货日早于 2026-11-14 的订单，`StatusCriticality` 为 1（逾期）。
-- Microsoft.OData.Edm 不能原样读写部分注解（集合里的 `AnnotationPath`、注解的注解、记录里的注解），所以 `$metadata` 的 XML 直接输出模板（替换标签后），JSON 的 `$Annotations` 由模板转换。单元测试 ANN-70 保证两者得到相同模型。
-- `$search`：服务端把含数字的检索词改写成带引号的短语（Microsoft.OData 只接受字母词）。
+- `$metadata` 的 XML 是模板替换标签后的原文；CSDL JSON 由 `apps/mock/lib/csdl.mjs` 从 XML 转换。单元测试 ANN-70 保证两者得到相同模型。
+- 代码表文本（状态名、订单类型名、条件类型名、历史类别名）按 `Accept-Language` 返回中文或英文；按这些文本筛选和排序时用的是英文原文。
+- `$search` 由前置层改写成 `$filter`：每个词在该实体集的搜索字段里做不区分大小写的包含匹配（采购订单：订单号、描述、供应商名称；项目：物料、物料名称、工厂；供应商：编号、名称、城市；物料：编号、名称），词之间是"且"，支持 `OR`、`NOT`、括号和带引号的短语。
+- 引擎的筛选有两处与 OData 不一致，已修正或绕开（ADR-017）：`eq null` / `ne null` 由数据贡献者的 `checkFilterValue` 重新实现；字符串里的 `''` 和 `"` 先换成私用区字符再交给引擎，比较时换回，但在 `contains` 等字符串函数里无法换回，这类条件匹配不到数据（请求仍然成功）。
+- 引擎总是返回 `@odata.count`；前置层在请求没有 `$count=true` 时去掉它，这样"不可计数"的实体集也不会带出条数。
 - 必填筛选（`RequiredProperties`）只声明、不在服务端强制。
-- PATCH 只接受部分字段（采购订单：描述、备注、订单类型、采购组、订单日期），其他字段返回 400。
+- PATCH 只接受部分字段（采购订单：描述、备注、订单类型、采购组、订单日期；项目：交货日期、工厂），其他字段返回 400；`If-Match` 与当前 `Version` 不符时返回 412。
+- 数据量与 .NET 版本相同的规则生成，但随机数生成器不同，具体数值和名称与 2026-11-14 之前不同（例如默认筛选下的采购订单是 1616 张）。

@@ -100,7 +100,8 @@ describe('scripts', () => {
 describe('CI (AC-Q-01)', () => {
   it('the CI workflow runs every machine check', () => {
     const ci = readFileSync(join(ROOT, '.github/workflows/ci.yml'), 'utf8');
-    for (const step of ['npm run typecheck', 'npm run lint', 'npm test', 'npm run trace -- --strict', 'npm run build', 'npm run size', 'npm run build-storybook', 'npm run e2e', 'setup-dotnet']) expect(ci).toContain(step);
+    for (const step of ['npm run typecheck', 'npm run lint', 'npm test', 'npm run trace -- --strict', 'npm run build', 'npm run size', 'npm run build-storybook', 'npm run e2e']) expect(ci).toContain(step);
+    expect(ci).not.toContain('dotnet'); // the test services are plain Node (ADR-009)
   });
 });
 

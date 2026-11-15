@@ -9,7 +9,7 @@ test('AC-NAV-01 returning to the list restores filters, search, sort, columns, s
   await showFilters(page);
   await filterInput(page, '$search').fill('Ltd');
   await page.locator('[data-sk-go]').click();
-  await expect.poll(() => titleCount(page, 'PurchaseOrders')).toBeLessThan(1598);
+  await expect.poll(() => titleCount(page, 'PurchaseOrders')).toBeLessThan(1616);
   const count = await titleCount(page, 'PurchaseOrders');
   // sort by purchase order, hide a column
   await t.locator('.ag-header-cell[col-id="DataField::PurchaseOrder"] .ag-header-cell-label').click();

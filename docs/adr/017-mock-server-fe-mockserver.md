@@ -1,0 +1,27 @@
+# ADR-017 测试服务改用 `@sap-ux/fe-mockserver-core`（取代 ADR-009）
+
+- **背景**：
+  - ADR-009 选 ASP.NET Core OData，是在"完全不依赖 SAP"的前提下做的。v5 第 3.3 节把规则放宽为"只排除专有许可的包"，并要求避免重复造轮子。
+  - .NET 方案让开发和 CI 多装一个 SDK、仓库多一门语言，`npm run mock` 也因此依赖本机的 .NET 环境。
+  - `@sap-ux/fe-mockserver-core`（SAP 开源，Apache-2.0）是 SAP Fiori 工具自带的 OData 模拟服务的核心，按 `$metadata` 和数据提供 OData V4 服务；它依赖的 `@sap-ux/edmx-parser`、`@sap-ux/annotation-converter` 本库已经在用（ADR-008）。
+- **决定**：
+  - `apps/mock` 改为纯 Node：`server.mjs` 在前面处理本库需要、但这个引擎不提供的部分，其余交给 `@sap-ux/fe-mockserver-core` 1.8.0。
+  - 数据在启动时按固定种子在内存里生成（`lib/purchasing.mjs`、`lib/northwind.mjs`），不再写数据库文件；`POST /test/reset` 让引擎重新读取初始数据。
+  - 删除 C# 工程；CI 不再安装 .NET。
+- **前置层负责的部分**（引擎不提供，或与 OData 规范不一致）：
+  - 按 `Accept-Language` 返回中文或英文的 `$metadata`，以及 CSDL JSON（`lib/csdl.mjs` 把 CSDL XML 转成 CSDL JSON）；
+  - 按 Capabilities 注解拒绝不支持的 `$search`、`$count`、`$filter`、`$orderby`（HTTP 400）；
+  - `$search`：引擎只在实体自己的字符串属性里查找，无法覆盖"供应商名称"这类关联字段，所以改写成等价的 `$filter`；
+  - 乐观锁：按 `Version` 计算 ETag，`If-Match` 不符时返回 412，保存时 `Version` 加 1；
+  - 可修改字段的白名单；`IEEE754Compatible=true` 时 Decimal 以带固定小数位的字符串返回；代码表文本按语言返回；
+  - 引擎总是返回 `@odata.count`，前置层在请求没有 `$count=true` 时去掉它。
+- **用引擎的扩展点修正的部分**：
+  - `checkFilterValue`（每个实体集的数据贡献者都设置）：引擎对 `eq null`、`ne null` 的处理不符合 OData 语义，改为自己比较。
+  - 引擎的词法分析不接受字符串里的 `''`（转义的单引号）和 `"`：前置层把它们换成私用区字符，比较时再换回。字符串函数（`contains` 等）里无法换回，这类条件不会匹配任何数据，但请求仍然成功（测试数据里没有引号）。
+- **理由**：
+  - 不再需要 .NET；只用开源的 SAP 工具链，与解析层同源。
+  - 端到端测试仍然连一个独立实现的查询引擎（不是本库自己的内存数据提供者），`server.spec.ts` 继续逐条对比两者的结果。
+- **代价**：
+  - 前置层约 400 行；引擎的上述缺陷靠扩展点和改写绕开，升级引擎版本时要重跑 `server.spec.ts`。
+  - 数据在内存里，每次启动重新生成（约 0.1 秒）。
+- **状态**：采纳。

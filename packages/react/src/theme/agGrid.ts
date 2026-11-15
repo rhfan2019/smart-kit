@@ -18,6 +18,7 @@ export const smartKitGridTheme = themeQuartz.withParams({
   headerHeight: 'var(--sk-header-row-height)',
   wrapperBorderRadius: 'var(--sk-radius-panel)',
   borderRadius: 'var(--sk-radius-control)',
+  checkboxBorderRadius: 'var(--sk-radius-1)',
   checkboxCheckedBackgroundColor: 'var(--sk-color-primary)',
   checkboxCheckedBorderColor: 'var(--sk-color-primary)',
   checkboxCheckedShapeColor: 'var(--sk-color-text-on-primary)',

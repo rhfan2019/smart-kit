@@ -105,6 +105,7 @@ export function ConditionInput(p: ConditionInputProps) {
       acceptValueOnBlur
       clearable
       splitChars={[]}
+      classNames={{ pillsList: 'sk-tokens__list', inputField: 'sk-tokens__input' }}
       rightSection={
         vl && !vl.fixedValues ? (
           <ActionIcon onClick={p.onValueHelp} aria-label={t('filterBar.showValueHelp')} title={t('filterBar.showValueHelp')}>

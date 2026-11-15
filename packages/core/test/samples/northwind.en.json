@@ -105,6 +105,7 @@
     "$Kind": "NavigationProperty",
     "$Type": "NorthwindLike.Category",
     "$Partner": "Products",
+    "$Nullable": true,
     "$ReferentialConstraint": {
      "CategoryID": "CategoryID"
     }
@@ -113,6 +114,7 @@
     "$Kind": "NavigationProperty",
     "$Type": "NorthwindLike.Supplier",
     "$Partner": "Products",
+    "$Nullable": true,
     "$ReferentialConstraint": {
      "SupplierID": "SupplierID"
     }
@@ -242,6 +244,7 @@
     "$Kind": "NavigationProperty",
     "$Type": "NorthwindLike.Customer",
     "$Partner": "Orders",
+    "$Nullable": true,
     "$ReferentialConstraint": {
      "CustomerID": "CustomerID"
     }
@@ -250,6 +253,7 @@
     "$Kind": "NavigationProperty",
     "$Type": "NorthwindLike.Employee",
     "$Partner": "Orders",
+    "$Nullable": true,
     "$ReferentialConstraint": {
      "EmployeeID": "EmployeeID"
     }

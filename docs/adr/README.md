@@ -12,7 +12,7 @@
 | [006](006-docs-storybook.md) | 文档与示例用 Storybook | 采纳 |
 | [007](007-package-manager.md) | npm workspaces | 采纳 |
 | [008](008-csdl-parser.md) | CSDL 与注解解析用 `@sap-ux/*` | 采纳 |
-| [009](009-mock-server.md) | 测试服务用 ASP.NET Core OData | 采纳 |
+| [009](009-mock-server.md) | 测试服务用 ASP.NET Core OData | 已被 ADR-017 取代 |
 | [010](010-routing.md) | 库不依赖路由；示例用 React Router | 采纳 |
 | [011](011-component-naming.md) | 组件沿用 Smart* 名字 | 采纳 |
 | [012](012-package-naming.md) | 包名与改名脚本 | 采纳 |
@@ -20,3 +20,4 @@
 | [014](014-variant-storage.md) | 变体存服务端实体集 | 采纳 |
 | [015](015-no-batch-phase1.md) | 一期不用 `$batch` | 采纳 |
 | [016](016-export.md) | 导出用 write-excel-file | 采纳 |
+| [017](017-mock-server-fe-mockserver.md) | 测试服务改用 `@sap-ux/fe-mockserver-core`（纯 Node） | 采纳 |

@@ -3,7 +3,7 @@
 - **背景**：用户要求变体存数据库，与 SAP 一致。
 - **决定**：
   - `VariantStore` 接口，加上 `ODataVariantStore` 实现，读写服务上的实体集（默认 `Variants`）。
-  - 测试服务把它存进 SQLite。
+  - 测试服务把它存在内存里（`@sap-ux/fe-mockserver-core`，ADR-017），`POST /test/reset` 清空。
 - **理由**：
   - 不需要额外的后端协议，复用同一个 OData 服务和使用者注入的 `fetch`（认证由宿主处理）。
   - 使用者也可以换成自己的实现。

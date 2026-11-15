@@ -21,4 +21,4 @@
   - 开发和 CI 需要 .NET SDK；
   - 仓库里多一门语言；
   - SQLite 输出 Decimal 时不补齐小数位，需要在数据层按 `Scale` 格式化。
-- **状态**：采纳。
+- **状态**：已被 [ADR-017](017-mock-server-fe-mockserver.md) 取代（2026-11-15）。

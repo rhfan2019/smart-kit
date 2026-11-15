@@ -2,6 +2,9 @@
  * DynamicPage: sticky title area, collapsible header content, content area and footer (LR-01, LR-12, OP-01, OP-02).
  * Snap on scroll: the header content scrolls away under the sticky title; while it is out of view the title shows the
  * collapsed state (summary, small avatar). Pinning makes the header content sticky as well.
+ * With layout "fill" the page itself does not scroll: the content (a grid table) reports its scrolling through
+ * `contentScrolled`, and the header collapses when the content is scrolled down and expands again at the top.
+ * The expand/collapse and pin buttons sit centred on the bottom border of the header.
  */
 import { ActionIcon, Button, Group, Tooltip } from '@mantine/core';
 import { ChevronDown, ChevronUp, Pin, PinOff } from 'lucide-react';
@@ -33,9 +36,9 @@ export interface DynamicPageProps {
   onHeaderExpandedChange?(expanded: boolean): void;
   pinned?: boolean;
   onPinnedChange?(pinned: boolean): void;
-  /** Collapse while scrolling and offer pinning (responsive content). False for content with its own scrollbar. */
+  /** Collapse while scrolling and offer pinning. With layout "fill" the scrolling of the content is used (see contentScrolled). */
   snapOnScroll?: boolean;
-  /** Show "Show Filters / Hide Filters" in the title actions instead of the header features (grid tables). */
+  /** Show "Show Filters / Hide Filters" in the title actions instead of the expand/collapse and pin buttons. */
   filterToggle?: boolean;
   /** 'fill' gives the content the remaining height (grid tables); 'flow' lets the page scroll. */
   layout?: 'fill' | 'flow';
@@ -52,6 +55,8 @@ interface DynamicPageContext {
   stickyHeight(): number;
   /** Collapses the header, then calls `fn` (object page anchors: collapse first, then scroll). */
   collapseThen(fn: () => void): void;
+  /** Layout "fill": the content scrolled to `top` (px). Collapses or expands the header unless it is pinned. */
+  contentScrolled(top: number): void;
 }
 
 const Ctx = createContext<DynamicPageContext | null>(null);
@@ -69,6 +74,11 @@ export function DynamicPage(p: DynamicPageProps) {
   };
   const [ownPinned, setOwnPinned] = useState(false);
   const pinned = p.snapOnScroll ? (p.pinned ?? ownPinned) : false;
+  const fill = p.layout === 'fill';
+  /** Snap by scrolling the page (layout "flow"); with "fill" the content scroll drives the header instead. */
+  const pageSnap = Boolean(p.snapOnScroll) && !fill;
+  const autoCollapsed = useRef<number | null>(null); // time of the last collapse caused by content scrolling
+  const lastTop = useRef(0);
   const setPinned = (v: boolean) => {
     if (p.pinned === undefined) setOwnPinned(v);
     p.onPinnedChange?.(v);
@@ -88,7 +98,7 @@ export function DynamicPage(p: DynamicPageProps) {
   const sentinelRef = useRef<HTMLDivElement>(null);
   const [scrolledPast, setScrolledPast] = useState(false);
   useEffect(() => {
-    if (!p.snapOnScroll || pinned || !expanded || typeof IntersectionObserver === 'undefined') {
+    if (!pageSnap || pinned || !expanded || typeof IntersectionObserver === 'undefined') {
       setScrolledPast(false);
       return;
     }
@@ -100,7 +110,7 @@ export function DynamicPage(p: DynamicPageProps) {
     );
     obs.observe(el);
     return () => obs.disconnect();
-  }, [p.snapOnScroll, pinned, expanded]);
+  }, [pageSnap, pinned, expanded]);
 
   const hasHeader = Boolean(p.header);
   const collapsed = hasHeader && (!expanded || scrolledPast);
@@ -114,24 +124,41 @@ export function DynamicPage(p: DynamicPageProps) {
     stickyHeight: () => (stickyRef.current?.offsetHeight ?? 0) + (navRef.current?.offsetHeight ?? 0),
     collapseThen: (fn) => {
       // With snap on scroll the header collapses by scrolling past it; without it, collapse explicitly.
-      if (!p.snapOnScroll && !pinned && expanded && hasHeader) setExpanded(false);
+      if (!pageSnap && !pinned && expanded && hasHeader) setExpanded(false);
       requestAnimationFrame(() => requestAnimationFrame(fn));
     },
+    contentScrolled: (top) => {
+      const previous = lastTop.current;
+      lastTop.current = top;
+      if (!fill || !p.snapOnScroll || pinned || !hasHeader) return;
+      if (top > 0 && previous === 0 && expanded) {
+        autoCollapsed.current = Date.now();
+        setExpanded(false);
+      } else if (top === 0 && previous > 0 && !expanded && autoCollapsed.current !== null) {
+        // The taller content may clamp the scroll position to 0 right after collapsing: not a scroll to the top.
+        if (Date.now() - autoCollapsed.current < 400) return;
+        autoCollapsed.current = null;
+        setExpanded(true);
+      }
+    },
+  };
+  const toggle = () => {
+    autoCollapsed.current = null;
+    if (scrolledPast) { setExpanded(true); scrollTop(); }
+    else setExpanded(!expanded);
   };
 
   const features = hasHeader && !p.filterToggle ? (
     <div className="sk-dynamic-page__features">
+      <div className="sk-dynamic-page__features-buttons">
       <Tooltip label={collapsed ? t('page.expandHeader') : t('page.collapseHeader')}>
         <ActionIcon
           variant="default"
-          size="sm"
+          size="md"
           radius="xl"
           aria-label={collapsed ? t('page.expandHeader') : t('page.collapseHeader')}
           aria-expanded={!collapsed}
-          onClick={() => {
-            if (scrolledPast) { setExpanded(true); scrollTop(); }
-            else setExpanded(!expanded);
-          }}
+          onClick={toggle}
           data-sk-header-toggle
         >
           {collapsed ? <ChevronDown className="sk-icon" /> : <ChevronUp className="sk-icon" />}
@@ -139,11 +166,12 @@ export function DynamicPage(p: DynamicPageProps) {
       </Tooltip>
       {p.snapOnScroll && !collapsed ? (
         <Tooltip label={pinned ? t('page.unpinHeader') : t('page.pinHeader')}>
-          <ActionIcon variant={pinned ? 'filled' : 'default'} size="sm" radius="xl" aria-label={pinned ? t('page.unpinHeader') : t('page.pinHeader')} aria-pressed={pinned} onClick={() => setPinned(!pinned)} data-sk-header-pin>
+          <ActionIcon variant={pinned ? 'filled' : 'default'} size="md" radius="xl" aria-label={pinned ? t('page.unpinHeader') : t('page.pinHeader')} aria-pressed={pinned} onClick={() => setPinned(!pinned)} data-sk-header-pin>
             {pinned ? <PinOff className="sk-icon" /> : <Pin className="sk-icon" />}
           </ActionIcon>
         </Tooltip>
       ) : null}
+      </div>
     </div>
   ) : null;
 
@@ -181,14 +209,14 @@ export function DynamicPage(p: DynamicPageProps) {
       <div className={['sk-dynamic-page', `sk-dynamic-page--${p.layout ?? 'flow'}`, p.className].filter(Boolean).join(' ')} data-testid={p['data-testid']}>
         <div className="sk-dynamic-page__sticky" ref={stickyRef}>
           {titleArea}
-          {pinned || !p.snapOnScroll ? headerContent : null}
-          {pinned || !p.snapOnScroll || scrolledPast ? features : null}
+          {pinned || !pageSnap ? headerContent : null}
+          {pinned || !pageSnap || scrolledPast || !expanded ? features : null}
         </div>
-        {p.snapOnScroll && !pinned ? (
+        {pageSnap && !pinned ? (
           <>
             {headerContent}
             <div ref={sentinelRef} className="sk-dynamic-page__sentinel" aria-hidden />
-            {!scrolledPast ? features : null}
+            {!scrolledPast && expanded ? features : null}
           </>
         ) : null}
         {p.navigation ? (

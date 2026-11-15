@@ -1,6 +1,7 @@
 /**
  * List report page template, built only from public building blocks (AC-BOOT-01): variant management, filter bar,
- * grid table, filter summary, "Show / Hide Filters", initial focus and state restoration.
+ * grid table, filter summary, header expand/collapse and pin (the header snaps when the table scrolls), initial focus
+ * and state restoration.
  */
 import type { Row, SortItem, VariantContent } from '@rhfan2019/smart-kit-core';
 import { useEffect, useMemo, useRef, type ReactNode } from 'react';
@@ -25,6 +26,12 @@ export interface SmartListReportProps {
   onRowNavigate?(row: Row, path: string): void;
   /** Content between header and table (e.g. KPI cards). */
   beforeTable?: ReactNode;
+  /**
+   * "Show Filters / Hide Filters" in the title instead of the expand/collapse and pin buttons, as the guideline
+   * prescribes for grid tables (LR-12). Default false: the header has the expand/collapse and pin buttons and
+   * collapses while the table is scrolled down.
+   */
+  filterToggle?: boolean;
   className?: string;
 }
 
@@ -34,7 +41,7 @@ export function SmartListReport(p: SmartListReportProps) {
   const { ui } = useMetaModel(p.entitySet, { service: p.service });
   // Execution on load waits for the variant list: a default variant decides whether to execute (LR-02, LR-15).
   const filter = useFilterState(p.entitySet, { service: p.service, pageKey, liveMode: p.liveMode, autoExecute: false });
-  const [view, setView] = usePageState<{ columns?: string[]; sort?: SortItem[]; headerExpanded?: boolean }>(`${pageKey}:view`, {});
+  const [view, setView] = usePageState<{ columns?: string[]; sort?: SortItem[]; headerExpanded?: boolean; headerPinned?: boolean }>(`${pageKey}:view`, {});
   const columns = view.columns;
   const sort = view.sort ?? ui.presentation.sortOrder;
 
@@ -99,7 +106,10 @@ export function SmartListReport(p: SmartListReportProps) {
     <div ref={rootRef} className={['sk-list-report', p.className].filter(Boolean).join(' ')}>
       <DynamicPage
         layout="fill"
-        filterToggle
+        snapOnScroll={!p.filterToggle}
+        filterToggle={p.filterToggle}
+        pinned={view.headerPinned ?? false}
+        onPinnedChange={(v) => setView((s) => ({ ...s, headerPinned: v }))}
         heading={p.title ?? ui.headerInfo.typeNamePlural}
         headingContent={<SmartVariantManagement variants={variants} content={content} onApply={apply} standardName={p.title} />}
         actions={p.headerActions}

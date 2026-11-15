@@ -1,12 +1,13 @@
 # 交接文档
 
-> 最后更新：2026-11-15。新会话先读本文，再读 `docs/prompt/项目目标与范围-v5.md`。
+> 最后更新：2026-11-15（一期验收后的修正）。新会话先读本文，再读 `docs/prompt/项目目标与范围-v5.md`。
 
 ## 1. 现状
 
 - 阶段 0、1、1.5、2 全部完成，一期验收结果见 `docs/10-acceptance-report.md`。
 - 所有提交都只在本地，**没有推送到远程**：用户要求全部完成后再决定是否推送。
 - 唯一没有在本机验证的项：CI 工作流从未在 GitHub 上跑过；Linux 的截图基准还没有生成。
+- 验收后的修正（2026-11-15）：测试服务从 ASP.NET Core OData 换成 `@sap-ux/fe-mockserver-core`（ADR-017，不再需要 .NET）；列表页页头改用展开 / 折叠和固定按钮（LR-12）；页头按钮放到页头下沿正中；对象页锚点在平滑滚动下失效的缺陷已修（`10-acceptance-report.md` 第 5 节）。
 
 ## 2. 下一步
 
@@ -20,7 +21,8 @@
 | 两期；一期为只读的列表页、对象页、子对象页 | v5 第 2 节 |
 | 一期不做草稿，也不识别草稿服务 | v5 第 3.2 节 |
 | 只排除专有许可的 SAP 包；解析用 `@sap-ux/*`，另加内联注解预处理和 CSDL JSON 转换 | v5 第 3.3 节、ADR-008、`09` |
-| 测试服务用 ASP.NET Core OData（.NET 10，装在 `~/.dotnet`） | ADR-009 |
+| 测试服务用 `@sap-ux/fe-mockserver-core`（纯 Node） | ADR-017（取代 ADR-009） |
+| 列表页页头用展开 / 折叠和固定按钮，表格滚动时页头折叠；`filterToggle` 可切回"显示 / 隐藏筛选" | LR-12、ADR-002 |
 | 列表页用网格表格，响应式表格放二期 | ADR-002 |
 | 变体存服务端实体集 | ADR-014 |
 | 库不依赖路由；示例用 React Router | ADR-010 |
@@ -30,7 +32,7 @@
 
 | 命令 | 作用 |
 | --- | --- |
-| `npm run mock` | 启动测试服务（http://localhost:4400），首次会生成 SQLite 数据 |
+| `npm run mock` | 启动测试服务（http://localhost:4400），数据在内存里生成；端口被占用时提示并退出 |
 | `npm run dev` | 启动示例应用（http://localhost:4401，代理到测试服务） |
 | `npm run storybook` | Storybook（http://localhost:6006） |
 | `npm run typecheck` / `npm run lint` / `npm test` | 类型、lint 和令牌与商标检查、单元测试 |
@@ -42,6 +44,6 @@
 
 ## 5. 环境
 
-- Node 24、npm 11；.NET SDK 10.0.404 在 `~/.dotnet`，`apps/mock/run.mjs` 会自动找到它。
+- Node 24、npm 11。不再需要 .NET（本机 `~/.dotnet` 里装过的 SDK 可以删除）。
 - 端口：测试服务 4400，示例应用 4401，Storybook 6006。
 - 参考项目在 `../00-fiori-list-report-floorplan-folk`，遵守它 `AGENTS.md` 的隔离规则（不访问 `03-invoice-assure`）。
