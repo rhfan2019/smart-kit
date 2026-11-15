@@ -12,4 +12,6 @@ export interface NavigationAdapter {
   href?(target: NavigationTarget): string | undefined;
   /** Whether an object page exists for rows of `entitySet` (controls navigation indicators). */
   hasObjectPage?(entitySet: string, service?: string): boolean;
+  /** Opens a page with the whole table of a collection navigation ("Show All (x)", OP Tables). */
+  toTable?(parent: EntityPath, navigation: string, service?: string): void;
 }

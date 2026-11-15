@@ -34,10 +34,11 @@ describe('more annotation terms', () => {
     expect(t.properties.CustomerID!.fieldControl).toEqual({ value: 'Mandatory' });
   });
 
-  it('ANN-26 draft-enabled services produce a warning', () => {
+  it('ANN-26 draft-enabled services are recognized (phase 2: draft strategy, ADR-018)', () => {
     const m = buildModel(doc(types, container, `<Annotations Target="T.C/Orders"><Annotation Term="Common.DraftRoot"><Record><PropertyValue Property="ActivationAction" String="T.activate"/></Record></Annotation></Annotations>`));
     expect(m.draftEnabled).toBe(true);
-    expect(m.warnings.map((w) => w.code)).toContain('DRAFT_UNSUPPORTED');
+    expect(m.entitySets.Orders!.draft).toMatchObject({ root: true, activationAction: 'T.activate' });
+    expect(m.warnings.map((w) => w.code)).toContain('DRAFT');
   });
 
   it('ANN-44 ExpandRestrictions: non-expandable navigations are not expanded', () => {

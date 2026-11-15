@@ -1,6 +1,7 @@
 /** Public API of @rhfan2019/smart-kit-core. Everything exported here is listed in docs/api.md. */
 export { MODEL_VERSION } from './model/types';
 export type {
+  ActionModel, ChartModel, DraftModel, Importance, ViewModel,
   CapabilityModel, ColumnModel, Criticality, DataPointModel, EdmType, EntitySetModel, EntityTypeModel, EntityUi, FieldModel,
   FilterExpression, FormGroupModel, HeaderFacetModel, HeaderInfoModel, InitialCondition, MetaModel, ModelWarning, NavigationModel,
   PresentationModel, PropertyModel, SectionModel, SubSectionContent, SubSectionModel, TextArrangement, ValueListModel,
@@ -23,13 +24,14 @@ export {
   type EntityPath, type PathSegment, type ResolvedPath,
 } from './query/entityPath';
 export {
-  buildListRequest, buildObjectRequest, buildValueHelpRequest, objectFields, fieldPaths, companionPaths, dataPointPaths, selectAndExpand,
+  buildListRequest, buildObjectRequest, buildValueHelpRequest, buildAggregateRequest, chartFields, objectFields, fieldPaths, companionPaths, dataPointPaths, selectAndExpand,
   toQueryString, readQueryString, filterString, sourcePath, sourceInfo, encodeOption,
   type QueryRequest, type QueryResult, type ReadRequest, type Row, type SortItem, type ExpandSpec, type QuerySource,
-  type ListRequestOptions, type ValueHelpRequestOptions, type SourceInfo,
+  type ListRequestOptions, type ValueHelpRequestOptions, type AggregateRequestOptions, type SourceInfo,
 } from './query/request';
 
-export type { DataProvider, ReadDataProvider, WriteDataProvider, FetchLike, RequestOptions } from './data/provider';
+export type { DataProvider, ReadDataProvider, WriteDataProvider, WriteResult, FetchLike, RequestOptions } from './data/provider';
+export { messagesFromHeader, messagesFromError, createMessage, highestSeverity, type Message, type MessageType } from './data/messages';
 export { ODataV4Provider, loadService, type ODataV4ProviderOptions, type LoadServiceOptions } from './data/odata';
 export { MemoryProvider, type MemoryProviderOptions } from './data/memory';
 export { ODataError, ConcurrencyError, errorFromResponse, isAbortError, type ODataErrorDetail } from './data/errors';
@@ -37,6 +39,6 @@ export { ODataError, ConcurrencyError, errorFromResponse, isAbortError, type ODa
 export { MemoryVariantStore, ODataVariantStore, STANDARD_VARIANT_ID, type Variant, type VariantContent, type VariantStore } from './state/variants';
 export { MemoryPageStateStore, createSessionPageStateStore, type PageStateStore } from './state/pageState';
 export type { NavigationAdapter, NavigationTarget } from './state/navigation';
-export type { EditSession, EditStrategy } from './state/edit';
+export { DirectEditStrategy, DraftEditStrategy, editStrategyFor, siblingPath, isDraftRow, type EditSession, type EditStrategy } from './state/edit';
 
 export { formatValue, formatNumber, formatDate, formatDateTime, formatTime, currencyDigits, type FormatOptions } from './format/format';

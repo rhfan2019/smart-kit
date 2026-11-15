@@ -35,6 +35,8 @@ export interface QueryRequest {
   count: boolean;
   /** Time zone for calendar-day filters on Edm.DateTimeOffset properties. */
   timeZone?: string;
+  /** Server-side aggregation ($apply, OData Data Aggregation): group by `groupBy` and aggregate the measures (ADR-021). */
+  aggregate?: { groupBy: string[]; measures: { path: string; with: 'sum' | 'average' | 'min' | 'max' }[] };
 }
 
 export interface ReadRequest {
@@ -103,8 +105,7 @@ export function dataPointPaths(model: MetaModel, typeName: string, dp: DataPoint
   const out = [dp.value];
   const prop = resolvePath(model.entityTypes, typeName, dp.value).property;
   if (prop) out.push(...companionPaths(prop, dp.value));
-  if (dp.targetValue && 'path' in dp.targetValue) out.push(dp.targetValue.path);
-  if (dp.criticality && 'path' in dp.criticality) out.push(dp.criticality.path);
+  for (const ref of [dp.targetValue, dp.criticality, dp.minimumValue, dp.maximumValue, dp.sampleSize]) if (ref && 'path' in ref) out.push(ref.path);
   return out;
 }
 
@@ -205,12 +206,25 @@ export function objectFields(ui: EntityUi): FieldModel[] {
   const out: FieldModel[] = [];
   for (const f of ui.headerFacets) {
     if (f.kind === 'form') out.push(...f.fields);
-    else out.push({ id: f.id, kind: 'dataPoint', dataPoint: f.dataPoint, label: f.label ?? '', criticalityIcon: true, isSemanticKey: false });
+    else if (f.kind === 'text') out.push(f.field);
+    else if (f.kind === 'dataPoint') out.push({ id: f.id, kind: 'dataPoint', dataPoint: f.dataPoint, label: f.label ?? '', criticalityIcon: true, isSemanticKey: false });
+    else if (!f.chart.navigation) out.push(...chartFields(f.chart));
   }
   for (const s of ui.sections) for (const sub of s.subSections) {
     if (sub.content.kind === 'form') for (const g of sub.content.groups) out.push(...g.fields);
     if (sub.content.kind === 'dataPoint') out.push({ id: sub.id, kind: 'dataPoint', dataPoint: sub.content.dataPoint, label: sub.label, criticalityIcon: true, isSemanticKey: false });
   }
+  return out;
+}
+
+/** Fields a chart of the entity itself needs (measures with their data points, dimensions). */
+export function chartFields(chart: { id: string; measures: string[]; dimensions: string[]; dataPoints: Record<string, DataPointModel> }): FieldModel[] {
+  const out: FieldModel[] = [];
+  for (const m of chart.measures) {
+    const dp = chart.dataPoints[m];
+    out.push(dp ? { id: `${chart.id}::${m}`, kind: 'dataPoint', dataPoint: dp, label: dp.title, criticalityIcon: true, isSemanticKey: false } : { id: `${chart.id}::${m}`, kind: 'field', path: m, label: m, criticalityIcon: true, isSemanticKey: false });
+  }
+  for (const d of chart.dimensions) out.push({ id: `${chart.id}::${d}`, kind: 'field', path: d, label: d, criticalityIcon: true, isSemanticKey: false });
   return out;
 }
 
@@ -230,6 +244,44 @@ export function buildObjectRequest(model: MetaModel, typeName: string, ui: Entit
     ...extraSelect,
   ]);
   return selectAndExpand(model, typeName, paths);
+}
+
+export interface AggregateRequestOptions {
+  source: QuerySource;
+  filters?: FilterState;
+  search?: string;
+  timeZone?: string;
+  /** Maximum number of groups. */
+  top?: number;
+}
+
+/**
+ * Builds the aggregation request of a chart (ADR-021): group by the dimensions (and the texts of the dimensions,
+ * so that categories can be labelled) and sum the measures.
+ */
+export function buildAggregateRequest(model: MetaModel, chart: { dimensions: string[]; measures: string[] }, o: AggregateRequestOptions): QueryRequest {
+  const info = sourceInfo(model, o.source);
+  const caps = info.parentSet ? capabilitiesFor(model, info.parentSet, info.navigation) : capabilitiesFor(model, info.entitySet);
+  const groupBy: string[] = [];
+  for (const d of chart.dimensions) {
+    groupBy.push(d);
+    const prop = resolvePath(model.entityTypes, info.typeName, d).property;
+    if (prop) for (const c of companionPaths(prop, d)) if (!groupBy.includes(c)) groupBy.push(c);
+  }
+  const filters: FilterState = {};
+  for (const [path, conds] of Object.entries(o.filters ?? {})) if (isFilterable(caps, path) && conds.length) filters[path] = conds;
+  return {
+    source: o.source,
+    select: [],
+    expand: [],
+    filters: Object.keys(filters).length ? filters : undefined,
+    search: caps.searchable && o.search?.trim() ? o.search.trim() : undefined,
+    orderBy: chart.dimensions.map((d) => ({ path: d, descending: false })),
+    top: o.top,
+    count: false,
+    timeZone: o.timeZone,
+    aggregate: { groupBy, measures: chart.measures.map((m) => ({ path: m, with: 'sum' as const })) },
+  };
 }
 
 export interface ValueHelpRequestOptions {
@@ -317,6 +369,19 @@ export function filterString(model: MetaModel, typeName: string, req: Pick<Query
 export function toQueryString(model: MetaModel, req: QueryRequest): string {
   const info = sourceInfo(model, req.source);
   const opts: string[] = [];
+  if (req.aggregate) {
+    // $apply is evaluated before $filter: filters go into a filter() transformation (OData Data Aggregation §3).
+    const filter = filterString(model, info.typeName, req);
+    const steps = [
+      ...(filter ? [`filter(${filter})`] : []),
+      ...(req.search ? [`search(${req.search})`] : []),
+      `groupby((${req.aggregate.groupBy.join(',')}),aggregate(${req.aggregate.measures.map((m) => `${m.path} with ${m.with} as ${m.path.replace(/\//g, '_')}`).join(',')}))`,
+    ];
+    opts.push(`$apply=${encodeOption(steps.join('/'))}`);
+    if (req.orderBy.length) opts.push(`$orderby=${encodeOption(req.orderBy.map((s) => (s.descending ? `${s.path} desc` : s.path)).join(','))}`);
+    if (req.top !== undefined) opts.push(`$top=${req.top}`);
+    return opts.join('&');
+  }
   if (req.count) opts.push('$count=true');
   if (req.select.length) opts.push(`$select=${encodeOption(req.select.join(','))}`);
   const filter = filterString(model, info.typeName, req);
