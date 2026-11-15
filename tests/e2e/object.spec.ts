@@ -205,7 +205,7 @@ test('AC-NAV-02 returning from the sub-object page restores the object page stat
   await expect(items.locator('.ag-row[row-index="2"] input[type="checkbox"]')).toBeChecked();
 });
 
-test('AC-NAV-03 object and sub-object links open directly in a new tab', async ({ page, context }) => {
+test('AC-NAV-03 object and sub-object links open directly in a new tab', async ({ context }) => {
   for (const url of [poPath(), itemPath(PO, 20)]) {
     const fresh = await context.newPage();
     await open(fresh, url);

@@ -97,6 +97,15 @@ describe('scripts', () => {
   });
 });
 
+describe('Storybook (AC-Q-05)', () => {
+  it('every exported building block has a story', () => {
+    const api = readFileSync(join(ROOT, 'docs/api.md'), 'utf8').split('## `@rhfan2019/smart-kit`')[1]!.split('### 类型')[0]!;
+    const components = [...api.matchAll(/^- `([A-Z]\w+)`/gm)].map((m) => m[1]!).filter((n) => !/Error$|^MESSAGES$|^INTL_LOCALE$/.test(n));
+    const stories = files(join(ROOT, 'apps/storybook')).filter((f) => !f.includes('storybook-static') && /\.tsx?$/.test(f)).map((f) => readFileSync(f, 'utf8')).join('\n');
+    expect(components.filter((c) => !new RegExp(`\\b${c}\\b`).test(stories))).toEqual([]);
+  });
+});
+
 // ---------------------------------------------------------------------------------- contrast (AC-THEME-04)
 
 function tokenTables(): Record<string, Record<string, string>> {
