@@ -117,6 +117,13 @@
   --sk-size-column-min: 120px;
   --sk-size-dialog-list: 360px;
   --sk-size-max-content: 1680px;
+  --sk-size-letterbox: 1280px;
+  --sk-size-side-content: 320px;
+  /* Sticky offsets set at runtime (dynamic page title, list tabs, table toolbar) */
+  --sk-sticky-offset: 0px;
+  --sk-tabs-height: 0px;
+  --sk-table-toolbar-height: 0px;
+  --sk-size-generic-tag: 28px;
   --sk-duration-fast: 120ms;
   --sk-duration-base: 200ms;
 }
@@ -274,6 +281,10 @@
   --sk-text-page-title: var(--sk-font-size-5);
   --sk-text-object-title: var(--sk-font-size-6);
   --sk-text-section-title: var(--sk-font-size-4);
+  /* OP Title Styles: control titles in the content area (H3 > H4 > H5) */
+  --sk-text-h3: var(--sk-font-size-4);
+  --sk-text-h4: var(--sk-font-size-3);
+  --sk-text-h5: var(--sk-font-size-2);
   --sk-text-label: var(--sk-font-size-2);
   --sk-text-kpi: var(--sk-font-size-7);
   --sk-font-weight-regular: 400;
@@ -293,6 +304,23 @@
   --sk-page-header-bg: var(--sk-color-surface);
   --sk-facet-kpi-size: var(--sk-text-kpi);
   --sk-filterbar-gap: var(--sk-space-field);
+  /* charts (ADR-021) */
+  --sk-chart-color: var(--sk-color-link);
+  --sk-chart-selected-color: var(--sk-color-accent);
+  --sk-chart-track: var(--sk-color-progress-track);
+  --sk-chart-target: var(--sk-color-text);
+  --sk-chart-axis: var(--sk-color-border-strong);
+  --sk-chart-grid: var(--sk-color-border);
+  --sk-chart-label: var(--sk-color-text-muted);
+  --sk-chart-text: var(--sk-text-small);
+  --sk-microchart-width: 160px;
+  --sk-microchart-height: 56px;
+  --sk-microchart-width-s: 96px;
+  --sk-microchart-height-s: 24px;
+  --sk-microchart-circle: 44px;
+  --sk-microchart-circle-s: 20px;
+  --sk-microchart-ring-width: 6px;
+  --sk-microchart-dot: 5px;
 }
 
 /* ---------------------------------------------------------------- Mantine bridge

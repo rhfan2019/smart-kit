@@ -1,7 +1,9 @@
 /** 简体中文库文案。键必须与 messages.en.ts 一致（单元测试检查）。 */
 import type { Messages } from './messages.en';
+import { p2zh } from './messages.p2.zh';
 
 export const zh: Messages = {
+  ...p2zh,
   'filterBar.search': '搜索',
   'filterBar.go': '执行',
   'filterBar.adaptFilters': { one: '适配筛选 ({count})', other: '适配筛选 ({count})', zero: '适配筛选' },
@@ -112,4 +114,16 @@ export const zh: Messages = {
   'object.image': '{name} 的图片',
   'object.enlargeImage': '放大 {name} 的图片',
   'object.notFound': '对象不存在。',
+  'chart.noData': '无数据',
+  'chart.noDataFor': '{label}：无数据',
+  'chart.value': '{label}：{value}',
+  'chart.valueOf': '{label}：{value} / {target}',
+  'chart.percent': '{label}：{percent}',
+  'chart.delta': '{label}：{value1} 对比 {value2}，差额 {delta}',
+  'chart.series': '{label}：{points}',
+  'chart.seriesItem': '{name} {value}',
+  'chart.listSeparator': '，',
+  'chart.point': '{dimension} {label}：{value}',
+  'chart.caption': '按{dimension}的{measure}',
+  'chart.loading': '正在加载图表…',
 };

@@ -61,7 +61,7 @@ describe('texts (AC-I18N-02)', () => {
 
   it('no Chinese characters in library code outside the zh messages', () => {
     const hits = [...files(join(ROOT, 'packages/react/src')), ...files(join(ROOT, 'packages/core/src'))]
-      .filter((f) => !f.endsWith('messages.zh.ts'))
+      .filter((f) => !f.endsWith('.zh.ts'))
       .filter((f) => /[一-鿿]/.test(readFileSync(f, 'utf8').replace(/\/\*[\s\S]*?\*\/|\/\/.*$/gm, '')))
       .map((f) => relative(ROOT, f));
     expect(hits).toEqual([]);

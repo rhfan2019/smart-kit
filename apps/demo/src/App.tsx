@@ -12,11 +12,13 @@ import { HooksOnlyPage } from './pages/HooksOnlyPage';
 import { NorthwindListPage } from './pages/NorthwindPages';
 import { ObjectRoute } from './pages/ObjectRoute';
 import { PurchaseOrdersPage } from './pages/PurchaseOrdersPage';
+import { FclPage } from './pages/FclPage';
+import { TablePage } from './pages/TablePage';
 import { shellText, type ShellKey } from './shellText';
 
 const fetchJson: FetchLike = (url, init) => fetch(url, init);
 
-const SERVICES = { purchasing: '/odata/purchasing/', northwind: '/odata/northwind/' } as const;
+const SERVICES = { purchasing: '/odata/purchasing/', northwind: '/odata/northwind/', 'purchasing-draft': '/odata/purchasing-draft/' } as const;
 
 const ShellCtx = createContext<{ locale: Locale; s(key: ShellKey, params?: Record<string, string | number>): string }>({ locale: 'zh', s: (k) => k });
 export const useShell = () => useContext(ShellCtx);
@@ -62,7 +64,8 @@ export function App() {
   const navigation = useMemo(() => createNavigationAdapter(navigate), [navigate]);
   const pageState = useMemo(() => createSessionPageStateStore(), []);
   const shell = useMemo(() => ({ locale, s: (k: ShellKey, p?: Record<string, string | number>) => shellText(locale, k, p) }), [locale]);
-  const fill = /^\/(po|nw\/products|nw\/orders|freestyle)\/?$/.test(location.pathname);
+  const responsiveList = /[?&]table=(responsive|auto)/.test(location.search);
+  const fill = (!responsiveList && /^\/(po|po-draft|nw\/products|nw\/orders|freestyle|fcl)\/?$/.test(location.pathname)) || /^\/fcl\/?$/.test(location.pathname) || /^\/[\w-]+\/table\/?$/.test(location.pathname);
 
   return (
     <MantineProvider theme={smartKitMantineTheme} cssVariablesResolver={smartKitCssVariablesResolver} forceColorScheme="light">
@@ -73,6 +76,8 @@ export function App() {
               <span className="demo__brand">{shell.s('app')}</span>
               <nav className="demo__nav">
                 <NavLink to="/po">{shell.s('po')}</NavLink>
+                <NavLink to="/po-draft">{shell.s('poDraft')}</NavLink>
+                <NavLink to="/fcl">{shell.s('fcl')}</NavLink>
                 <NavLink to="/nw/products">{shell.s('products')}</NavLink>
                 <NavLink to="/nw/orders">{shell.s('orders')}</NavLink>
                 <NavLink to="/freestyle">{shell.s('freestyle')}</NavLink>
@@ -93,6 +98,9 @@ export function App() {
                   <Routes>
                     <Route path="/" element={<HomePage />} />
                     <Route path="/po" element={<PurchaseOrdersPage />} />
+                    <Route path="/po-draft" element={<PurchaseOrdersPage service="purchasing-draft" />} />
+                    <Route path="/fcl" element={<FclPage />} />
+                    <Route path="/:service/table" element={<TablePage />} />
                     <Route path="/nw/products" element={<NorthwindListPage entitySet="Products" />} />
                     <Route path="/nw/orders" element={<NorthwindListPage entitySet="Orders" />} />
                     <Route path="/freestyle" element={<FreestylePage />} />
