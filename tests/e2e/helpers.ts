@@ -1,6 +1,6 @@
 import { expect, type Page, type Request } from '@playwright/test';
 
-export const MOCK = 'http://localhost:4400';
+export const MOCK = `http://localhost:${process.env.E2E_MOCK_PORT ?? '4400'}`;
 
 /** Resets the test service data (variants, patched rows) before a test. */
 export async function resetServer(page: Page) {
@@ -58,9 +58,9 @@ export async function clearFilter(page: Page, path: string) {
   for (let i = 0; i < 6; i++) await input.press('Backspace');
 }
 
-/** Expands the header (filter bar) if it is collapsed. */
+/** Expands the header (filter bar) if it is collapsed: "Show Filters" (list report) or "Expand Header". */
 export async function showFilters(page: Page) {
-  const btn = page.getByRole('button', { name: 'Expand Header' });
+  const btn = page.getByRole('button', { name: /^(Show Filters|Expand Header)$/ });
   if (await btn.isVisible()) await btn.click();
   await expect(page.locator('.sk-dynamic-page__header')).toBeVisible();
 }

@@ -108,6 +108,7 @@ export const en = {
   'object.loadError': 'The object could not be loaded: {message}',
   'object.breadcrumbs': 'Breadcrumbs',
   'object.image': 'Image of {name}',
+  'object.enlargeImage': 'Enlarge image of {name}',
   'object.notFound': 'The object does not exist.',
 } as const;
 

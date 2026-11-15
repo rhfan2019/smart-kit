@@ -1,6 +1,6 @@
 # 11 规范对照报告：列表页、对象页（含动态页页头）
 
-> 日期：2026-11-15。状态：**待用户确认**。本报告只做对照和建议，不改代码；用户确认后再按第 6 节的清单修改。
+> 日期：2026-11-15。状态：**已处理**。用户决定"以 SAP 的说明为准"，第 7 节列出每一项的处理结果和对应测试。
 >
 > 对照的规范（SAP Fiori Design Guidelines v1.148，2026-11-15 用内置浏览器通读全文）：
 > - **[LR]** List Report Floorplan：<https://www.sap.com/design-system/fiori-design-web/v1-148/page-types/floorplans/list-report-floorplan-sap-fiori-element>
@@ -288,3 +288,25 @@
 | E8 | 打开列表页（页头折叠） | 固定按钮数=0（只有展开按钮） | — |
 | E9 | 点"展开" | 固定按钮数=1 | `11-evidence/E9-list-expanded.png` |
 | E10 | 点标题区空白处 | 页头仍展开（点击标题无效） | — |
+
+## 7. 处理结果（2026-11-15，以 SAP 的说明为准）
+
+| 项 | 处理 | 依据 | 测试 |
+| --- | --- | --- | --- |
+| 第 1 节 / D-7 | 采购订单对象页默认用页签导航（`?layout=anchor` 仍可切到锚点）。切换页签时页签栏位置不变、不折叠页头 | [OP] Tables（50–100 到 200 条用页签）、Tab Navigation | AC-OP-03 |
+| C-1 | 网格表格列表页：标题栏用"显示筛选 / 隐藏筛选"，不提供滚动折叠和固定。`SmartListReport` 的 `filterToggle` 默认 true；设为 false 时用页头下沿的展开 / 折叠按钮，仍不提供固定。上一轮加的"随表格滚动折叠"已删除 | [LR] Header Toolbar、Expand / Collapse Behavior、Global Actions 三处明确写了"显示 / 隐藏筛选"；[DP] 特例：不滚动折叠、不提供固定 | AC-LR-13 |
+| D-1 | 点击标题栏上没有可交互元素的地方切换页头；鼠标手形，悬停有背景 | [DP] Snap on Click | AC-LR-13、AC-OP-11 |
+| D-2 | 点"折叠"（按钮或标题栏）会取消固定 | [DP] Pinning | AC-OP-11 |
+| D-3 | 屏幕宽度小于 600px，或页头（标题 + 内容）超过可视高度 60% 时，不显示固定按钮，并取消已有的固定 | [DP] Pinning | AC-OP-11 |
+| D-4 | 键盘（Tab / F6）把焦点移进页头时展开；焦点从页头移到内容区时折叠（固定时不折叠；焦点进入弹出层时不算离开） | [DP] Keyboard Interaction | AC-LR-19、AC-OP-11 |
+| D-5 | 页签模式下，每个带表格的页签单独发一次只计数的请求（`$top=0&$count=true`），打开前就显示条数；不可计数的子表不显示条数 | [OP] Tab Navigation | AC-OP-03 |
+| D-6 | 头像可点击，对话框显示大图，Esc 或关闭按钮关闭 | [OP] Image Facet | AC-OP-11 |
+| D-8 | `SmartListReport` 默认即时模式；"自动执行"选项只在手动模式出现。示例的 `/po?mode=manual` 演示手动模式 | [LR] Filters、Variant Management | AC-LR-18；手动模式的用例改用 `?mode=manual` |
+| U-1 | 页头已折叠时切换页签：保持折叠，新页签从页签栏下方开始 | 规范未写明，按默认建议 | AC-OP-03 |
+| U-2 | 点第一个锚点：回到页面顶部，页头展开 | 规范未写明，按默认建议 | AC-OP-10 |
+| O16 | 未改：标题层级的"样式"仍未核实 | — | — |
+
+附带的修改：
+- 页签模式下锚点栏是 `tablist`，子区块下拉按钮不再出现在无障碍树里（`tablist` 只能包含页签；页签内容已显示该区块的全部子区块）。axe 零违规。
+- 端到端测试可以用 `E2E_MOCK_PORT` / `E2E_DEMO_PORT` 换端口，与开发者本机已在运行的测试服务、示例应用互不干扰。
+

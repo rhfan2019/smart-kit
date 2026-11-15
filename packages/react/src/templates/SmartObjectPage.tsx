@@ -2,8 +2,9 @@
  * Object page template, built only from public building blocks (AC-BOOT-01): header with facets, anchor or tab
  * navigation, forms and sub-tables from UI.Facets, breadcrumbs for sub-object pages, state restoration.
  */
-import { Alert, Anchor, Avatar, Breadcrumbs } from '@mantine/core';
-import { DERIVED_GENERAL_SECTION, resolveEntityPath, targetEntitySet, type Row, type SectionModel } from '@rhfan2019/smart-kit-core';
+import { Alert, Anchor, Avatar, Breadcrumbs, Image, Modal, UnstyledButton } from '@mantine/core';
+import { useQueries } from '@tanstack/react-query';
+import { capabilitiesFor, DERIVED_GENERAL_SECTION, resolveEntityPath, targetEntitySet, type Row, type SectionModel } from '@rhfan2019/smart-kit-core';
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import {
   getPath, HeaderFacet, ObjectPageLayout, SmartField, SmartForm, SmartTable, useObject, useObjectTitle, usePageState, useService, useSmartKit, useText,
@@ -58,7 +59,29 @@ export function SmartObjectPage(p: SmartObjectPageProps) {
     <SmartField typeName={typeName} service={p.service} path={ui.headerInfo.description} row={data} />
   ) : undefined;
   const image = ui.headerInfo.imageUrl ? ('path' in ui.headerInfo.imageUrl ? getPath(data, ui.headerInfo.imageUrl.path) : ui.headerInfo.imageUrl.value) : undefined;
-  const avatar = (size: 'sm' | 'lg') => (image ? <Avatar src={String(image)} alt={t('object.image', { name: heading })} size={size} radius="md" className="sk-object-avatar" /> : undefined);
+  // OP Image Facet: pressing the image enlarges it.
+  const [enlarged, setEnlarged] = useState(false);
+  const avatar = (size: 'sm' | 'lg') => (image ? (
+    <UnstyledButton onClick={() => setEnlarged(true)} aria-label={t('object.enlargeImage', { name: heading })} className="sk-object-avatar__button" data-sk-avatar-enlarge={size}>
+      <Avatar src={String(image)} alt={t('object.image', { name: heading })} size={size} radius="md" className="sk-object-avatar" />
+    </UnstyledButton>
+  ) : undefined);
+
+  // Tab navigation: every tab with a table shows its item count (OP Tab Navigation), also before the tab is opened.
+  const countQueries = useMemo(() => (p.navigation !== 'tabs' ? [] : ui.sections.flatMap((s: SectionModel) => s.subSections.flatMap((sub) => {
+    if (sub.content.kind !== 'table' || !capabilitiesFor(service.model, resolved.entitySet, sub.content.navigation).countable) return [];
+    const keys = service.model.entityTypes[sub.content.targetType]?.keys ?? [];
+    return [{ id: sub.id, navigation: sub.content.navigation, keys }];
+  }))), [p.navigation, ui, service.model, resolved.entitySet]);
+  const counted = useQueries({
+    queries: countQueries.map((c) => ({
+      queryKey: ['sk-count', service.name, p.path, c.navigation],
+      queryFn: ({ signal }: { signal: AbortSignal }) => service.dataProvider.query({ source: { parent: p.path, navigation: c.navigation }, select: c.keys, expand: [], orderBy: [], top: 0, count: true }, { signal }),
+    })),
+  });
+  const countKey = counted.map((q) => q.data?.count ?? '').join(',');
+  const tabCounts = useMemo(() => Object.fromEntries(countQueries.map((c, i) => [c.id, counted[i]?.data?.count])), [countKey, countQueries]); // eslint-disable-line react-hooks/exhaustive-deps
+  const countOf = (id: string) => counts[id] ?? tabCounts[id];
 
   const sections: SectionItem[] = useMemo(() => {
     const label = (s: { id: string; label: string }) => (s.label || (s.id === DERIVED_GENERAL_SECTION ? t('object.generalInformation') : s.id));
@@ -81,7 +104,7 @@ export function SmartObjectPage(p: SmartObjectPageProps) {
           title: subTitle,
           isTable: true,
           lazy: true,
-          count: counts[sub.id],
+          count: countOf(sub.id),
           partOfPreview: sub.partOfPreview,
           content: (
             <SmartTable
@@ -100,7 +123,7 @@ export function SmartObjectPage(p: SmartObjectPageProps) {
       }),
     }));
     // eslint-disable-next-line react-hooks/exhaustive-deps -- rebuilt when data, model or counts change
-  }, [ui, data, typeName, p.path, p.service, counts, p.tableExtend, navigation, t]);
+  }, [ui, data, typeName, p.path, p.service, counts, tabCounts, p.tableExtend, navigation, t]);
 
   // Restore the section that was active when the page was left (NAV-04): once, with the value stored at mount.
   const initialSection = useRef(view.section);
@@ -127,6 +150,7 @@ export function SmartObjectPage(p: SmartObjectPageProps) {
   ) : null;
 
   return (
+    <>
     <ObjectPageLayout
       className={p.className}
       scope={typeName.replace(/\W/g, '_')}
@@ -148,5 +172,11 @@ export function SmartObjectPage(p: SmartObjectPageProps) {
       headerPinned={view.pinned}
       onHeaderPinnedChange={(pin) => setView((v) => ({ ...v, pinned: pin }))}
     />
+    {image ? (
+      <Modal opened={enlarged} onClose={() => setEnlarged(false)} title={heading} centered size="auto" closeButtonProps={{ 'aria-label': t('common.close') }}>
+        <Image src={String(image)} alt={t('object.image', { name: heading })} className="sk-object-avatar__large" data-sk-avatar-large />
+      </Modal>
+    ) : null}
+    </>
   );
 }

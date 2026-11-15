@@ -107,6 +107,8 @@
   --sk-size-header-row-compact: 28px;
   --sk-size-avatar: 64px;
   --sk-size-avatar-small: 32px;
+  --sk-size-image-large: 480px;
+  --sk-size-image-large-height: 70vh;
   --sk-size-facet-text: 320px;
   --sk-size-icon: 16px;
   --sk-size-border: 1px;

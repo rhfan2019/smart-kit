@@ -2,7 +2,9 @@ import { expect, test, type Page } from '@playwright/test';
 import { MOCK, open, recordOData, resetServer, table } from './helpers';
 
 const PO = '4500000001';
-const poPath = (po = PO) => `/purchasing/object?path=${encodeURIComponent(`PurchaseOrders('${po}')`)}`;
+/** Anchor navigation unless `layout` says otherwise (purchase orders default to tabs, see AC-OP-03). */
+const poPath = (po = PO, layout: 'anchor' | 'tabs' | '' = 'anchor') => `/purchasing/object?path=${encodeURIComponent(`PurchaseOrders('${po}')`)}${layout ? `&layout=${layout}` : ''}`;
+const navTop = (page: Page) => page.locator('.sk-dynamic-page__navigation').evaluate((el) => Math.round(el.getBoundingClientRect().top));
 const itemPath = (po = PO, item = 10) => `/purchasing/object?path=${encodeURIComponent(`PurchaseOrders('${po}')/_Item(PurchaseOrder='${po}',PurchaseOrderItem=${item})`)}`;
 const main = (page: Page) => page.locator('#demo-main');
 const scrollMain = (page: Page, y: number) => main(page).evaluate((el, top) => el.scrollTo({ top }), y);
@@ -84,13 +86,85 @@ test.describe('with smooth scrolling (no reduced motion)', () => {
   });
 });
 
-test('AC-OP-03 tab navigation shows one section and counts on tabs', async ({ page }) => {
-  await open(page, `${poPath()}&layout=tabs`);
+test('AC-OP-03 purchase orders use tab navigation: one section, counts on every tab, the tab bar stays in place', async ({ page }) => {
+  await open(page, poPath(PO, '')); // default of the demo: an order has up to 150 items (OP Tables)
   await expect(page.locator('[data-sk-section]')).toHaveCount(1);
-  await page.locator('[data-sk-anchor="Items"]').click();
-  await expect(page.locator('[data-sk-section]')).toHaveCount(1);
-  await expect(page.locator('[data-sk-section="Items"]')).toBeVisible();
+  // the count is there before the tab is opened
   await expect(page.locator('[data-sk-anchor="Items"]')).toHaveText('Items (150)');
+  const top = await navTop(page);
+  for (const id of ['Items', 'NotesSection', 'Custom::Timeline', 'GeneralInformation']) {
+    await page.locator(`[data-sk-anchor="${id}"]`).click();
+    await expect(page.locator(`[data-sk-section="${id}"]`)).toBeVisible();
+    await expect(page.locator('[data-sk-section]')).toHaveCount(1);
+    expect(await navTop(page)).toBe(top);
+    await expect(page.locator('.sk-object-header')).toBeVisible(); // switching tabs does not collapse the header
+  }
+});
+
+test('AC-OP-03 switching tabs keeps a collapsed header collapsed; the new tab starts under the tab bar', async ({ page }) => {
+  await open(page, poPath(PO, 'tabs'));
+  await page.locator('[data-sk-anchor="Items"]').click();
+  await expect(page.locator('[data-sk-section="Items"]')).toBeVisible();
+  const items = table(page, 'PurchaseOrderItems');
+  await items.locator('[data-sk-more]').click();
+  await expect(items.locator('.ag-row[row-index]')).toHaveCount(30);
+  await scrollMain(page, 500);
+  await expect(page.locator('.sk-dynamic-page__title[data-collapsed]')).toBeVisible();
+  await page.locator('[data-sk-anchor="NotesSection"]').click();
+  await expect(page.locator('[data-sk-section="NotesSection"]')).toBeVisible();
+  await page.waitForTimeout(300);
+  await expect(page.locator('.sk-dynamic-page__title[data-collapsed]')).toBeVisible();
+  // the tab content starts right under the tab bar (separated only by the content area's top padding)
+  const gap = await page.evaluate(() => {
+    const content = document.querySelector('.sk-dynamic-page__content')!;
+    const pad = parseFloat(getComputedStyle(content).paddingTop);
+    return document.querySelector('.sk-object-page__sections')!.getBoundingClientRect().top - document.querySelector('.sk-dynamic-page__navigation')!.getBoundingClientRect().bottom - pad;
+  });
+  expect(Math.abs(gap)).toBeLessThan(2);
+});
+
+test('AC-OP-10 anchors: the first anchor returns to the top and the header expands', async ({ page }) => {
+  await open(page, poPath());
+  await page.locator('[data-sk-anchor="Items"]').click();
+  await expect(page.locator('.sk-dynamic-page__title[data-collapsed]')).toBeVisible();
+  await page.locator('[data-sk-anchor="GeneralInformation"]').click();
+  await expect.poll(() => main(page).evaluate((el) => el.scrollTop)).toBe(0);
+  await expect(page.locator('.sk-dynamic-page__title[data-collapsed]')).toHaveCount(0);
+  await expect(page.locator('[data-sk-anchor="GeneralInformation"]')).toHaveAttribute('aria-current', 'true');
+});
+
+test('AC-OP-11 header: title click, collapse releases the pin, no pin for a tall header, image enlarges', async ({ page }) => {
+  await open(page, poPath());
+  const header = page.locator('.sk-object-header');
+  // snap on click on the title bar
+  const title = (await page.locator('.sk-dynamic-page__title').boundingBox())!;
+  await page.mouse.click(title.x + title.width * 0.6, title.y + 16);
+  await expect(header).toHaveCount(0);
+  await page.mouse.click(title.x + title.width * 0.6, title.y + 16);
+  await expect(header).toBeVisible();
+  // collapsing overrules the pin and releases it
+  await page.locator('[data-sk-header-pin]').click();
+  await expect(page.locator('[data-sk-header-pin]')).toHaveAttribute('aria-pressed', 'true');
+  await page.locator('[data-sk-header-toggle]').click();
+  await expect(header).toHaveCount(0);
+  await page.locator('[data-sk-header-toggle]').click();
+  await expect(page.locator('[data-sk-header-pin]')).toHaveAttribute('aria-pressed', 'false');
+  // the image facet enlarges on press
+  await page.locator('[data-sk-avatar-enlarge="lg"]').click();
+  await expect(page.locator('[data-sk-avatar-large]')).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(page.locator('[data-sk-avatar-large]')).toHaveCount(0);
+  // a header taller than 60% of the viewport: no pin
+  await page.setViewportSize({ width: 1440, height: 420 });
+  await expect(page.locator('[data-sk-header-pin]')).toHaveCount(0);
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await expect(page.locator('[data-sk-header-pin]')).toHaveCount(1);
+  // keyboard: leaving the header for the content collapses it; entering it expands it
+  await page.locator('[data-sk-header-pin]').focus();
+  await page.keyboard.press('Tab');
+  await expect(header).toHaveCount(0);
+  await page.keyboard.press('Shift+Tab');
+  await expect(header).toBeVisible();
 });
 
 test('AC-OP-04 title de-duplication (four cases)', async ({ page }) => {

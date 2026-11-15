@@ -1,7 +1,10 @@
 import { defineConfig, devices } from '@playwright/test';
 
-const MOCK = 'http://localhost:4400';
-const DEMO = 'http://localhost:4401';
+// E2E_MOCK_PORT / E2E_DEMO_PORT let the tests run next to servers a developer already has on 4400 / 4401.
+const MOCK_PORT = process.env.E2E_MOCK_PORT ?? '4400';
+const DEMO_PORT = process.env.E2E_DEMO_PORT ?? '4401';
+const MOCK = `http://localhost:${MOCK_PORT}`;
+const DEMO = `http://localhost:${DEMO_PORT}`;
 
 export default defineConfig({
   testDir: 'tests/e2e',
@@ -25,12 +28,13 @@ export default defineConfig({
     {
       command: 'npm run mock',
       url: `${MOCK}/odata/purchasing/$metadata`,
-      env: { E2E: '1' },
+      env: { E2E: '1', MOCK_PORT },
       reuseExistingServer: !process.env.CI,
       timeout: 240_000,
     },
     {
-      command: 'npm run dev -w demo',
+      command: `npm run dev -w demo -- --port ${DEMO_PORT} --strictPort`,
+      env: { MOCK_URL: MOCK },
       url: DEMO,
       reuseExistingServer: !process.env.CI,
       timeout: 120_000,

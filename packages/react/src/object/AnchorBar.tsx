@@ -62,7 +62,7 @@ export function AnchorBar(p: AnchorBarProps) {
         {p.items.map((it) => {
           const active = it.id === p.active;
           return (
-            <div key={it.id} className="sk-anchorbar__item" data-active={active || undefined}>
+            <div key={it.id} className="sk-anchorbar__item" data-active={active || undefined} role={p.tabs ? 'presentation' : undefined}>
               <UnstyledButton
                 className="sk-anchorbar__anchor"
                 data-sk-anchor={it.id}
@@ -76,7 +76,8 @@ export function AnchorBar(p: AnchorBarProps) {
               {it.subSections.length > 1 ? (
                 <Menu position="bottom-start">
                   <Menu.Target>
-                    <ActionIcon size="sm" aria-label={t('object.subsections', { name: it.title })} data-sk-anchor-menu={it.id}><ChevronDown className="sk-icon" /></ActionIcon>
+                    {/* In a tablist only tabs are allowed; the tab content shows all subsections, so the menu is a pointer shortcut there. */}
+                    <ActionIcon size="sm" aria-label={t('object.subsections', { name: it.title })} data-sk-anchor-menu={it.id} {...(p.tabs ? { 'aria-hidden': true, tabIndex: -1 } : {})}><ChevronDown className="sk-icon" /></ActionIcon>
                   </Menu.Target>
                   <Menu.Dropdown>
                     {it.subSections.map((s) => <Menu.Item key={s.id} onClick={() => p.onSelect(it.id, s.id)}>{s.title}</Menu.Item>)}

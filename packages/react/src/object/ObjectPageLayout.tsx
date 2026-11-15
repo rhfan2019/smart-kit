@@ -5,9 +5,10 @@
 import { Button, Skeleton } from '@mantine/core';
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useText } from '../context/SmartKitProvider';
-import { DynamicPage } from '../page/DynamicPage';
+import { DynamicPage, useDynamicPage } from '../page/DynamicPage';
 import { applyExtensions, type ExtendEntry } from '../util/extend';
 import { AnchorBar } from './AnchorBar';
+import { scrollParent } from './scroll';
 import { SECTION_ELEMENT_ID, useSectionScrollSpy } from './useSectionScrollSpy';
 
 export interface SubSectionItem {
@@ -130,6 +131,7 @@ interface NavProps {
 function SectionNavigation({ scope, sections, tabs, tab, onTab, onActive }: NavProps) {
   const ids = sections.map((s) => s.id);
   const spy = useSectionScrollSpy(scope, ids, !tabs);
+  const page = useDynamicPage();
   const report = useRef(onActive);
   report.current = onActive;
   useEffect(() => { if (!tabs && spy.active) report.current(spy.active); }, [tabs, spy.active]);
@@ -141,8 +143,19 @@ function SectionNavigation({ scope, sections, tabs, tab, onTab, onActive }: NavP
   }));
   const select = (sectionId: string, sub?: string) => {
     if (tabs) {
+      // Switching tabs keeps the header as it is. A header collapsed by scrolling stays collapsed, and the new tab
+      // starts at its top, right under the tab bar.
+      const collapsed = Boolean(page?.collapsed);
+      if (collapsed && page?.expanded) page.setExpanded(false);
       onTab(sectionId);
-      if (sub) requestAnimationFrame(() => spy.scrollTo(`${sectionId}::sub::${sub}`));
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        if (sub) return spy.scrollTo(`${sectionId}::sub::${sub}`);
+        if (collapsed) {
+          const bar = document.querySelector(`[data-testid="object-${CSS.escape(scope)}"] .sk-dynamic-page__navigation`);
+          const container = scrollParent(bar);
+          container.scrollTo({ top: 0 });
+        }
+      }));
       return;
     }
     spy.scrollTo(sub ? `${sectionId}::sub::${sub}` : sectionId);
@@ -170,7 +183,7 @@ export function ObjectPageLayout(p: ObjectPageLayoutProps) {
 
   return (
     <DynamicPage
-      className={['sk-object-page', p.className].filter(Boolean).join(' ')}
+      className={['sk-object-page', tabs ? 'sk-object-page--tabs' : '', p.className].filter(Boolean).join(' ')}
       heading={p.heading}
       subheading={p.subheading}
       breadcrumbs={p.breadcrumbs}

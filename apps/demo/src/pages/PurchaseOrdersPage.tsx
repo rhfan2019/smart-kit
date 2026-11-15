@@ -2,11 +2,15 @@
 import { Alert } from '@mantine/core';
 import { SmartListReport, type TableExtendEntry } from '@rhfan2019/smart-kit';
 import { useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router';
 import { useShell } from '../App';
 
 export function PurchaseOrdersPage() {
   const { s } = useShell();
   const [message, setMessage] = useState<string | null>(null);
+  // Live update by default (list report guideline); ?mode=manual shows the manual mode with "Go".
+  const [params] = useSearchParams();
+  const manual = params.get('mode') === 'manual';
   const tableExtend = useMemo<TableExtendEntry[]>(() => [
     // Insert a custom column after the supplier column.
     {
@@ -25,6 +29,7 @@ export function PurchaseOrdersPage() {
     <SmartListReport
       entitySet="PurchaseOrders"
       pageKey="po"
+      liveMode={!manual}
       tableExtend={tableExtend}
       beforeTable={message ? <Alert withCloseButton onClose={() => setMessage(null)} data-demo-message>{message}</Alert> : null}
     />

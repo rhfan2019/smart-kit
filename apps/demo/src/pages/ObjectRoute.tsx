@@ -1,4 +1,8 @@
-/** Object page route: /:service/object?path=<entity path>[&layout=tabs] */
+/**
+ * Object page route: /:service/object?path=<entity path>[&layout=tabs|anchor]
+ * Purchase orders use tab navigation by default: an order can have up to 150 items, and the object page guideline
+ * recommends tabs for tables of more than 50–100 and fewer than 200 items. Other objects use anchor navigation.
+ */
 import { Alert } from '@mantine/core';
 import { getPath, SmartObjectPage, type SectionItem } from '@rhfan2019/smart-kit';
 import { useMemo } from 'react';
@@ -38,7 +42,7 @@ export function ObjectRoute() {
       key={`${service}:${path}`}
       service={service}
       path={path}
-      navigation={params.get('layout') === 'tabs' ? 'tabs' : 'anchor'}
+      navigation={(params.get('layout') ?? (isOrder ? 'tabs' : 'anchor')) === 'tabs' ? 'tabs' : 'anchor'}
       sectionExtend={sectionExtend}
       extraSelect={isOrder ? EXTRA : undefined}
       headerMessage={isOrder ? (row) => (getPath(row, 'StatusCriticality') === 1 ? <Alert color="red" variant="light" data-demo-header-message>{s('overdueMessage')}</Alert> : null) : undefined}

@@ -37,6 +37,11 @@
 .sk-dynamic-page--fill { height: 100%; min-height: 0; }
 .sk-dynamic-page__sticky { position: sticky; top: 0; z-index: 3; background: var(--sk-page-header-bg); }
 .sk-dynamic-page__title { padding: var(--sk-space-4) var(--sk-space-page-x) var(--sk-space-3); }
+/* Snap on click: the title bar toggles the header where it has no active element. */
+.sk-dynamic-page__title[data-snap] { cursor: pointer; }
+.sk-dynamic-page__title[data-snap]:hover { background: var(--sk-color-hover); }
+.sk-dynamic-page__title[data-snap] :is(button, a, input, [role="button"]) { cursor: auto; }
+.sk-dynamic-page__title[data-snap] :is(button, a, [role="button"]) { cursor: pointer; }
 .sk-dynamic-page__breadcrumbs { margin-bottom: var(--sk-space-2); }
 .sk-dynamic-page__title-row { display: flex; align-items: flex-start; gap: var(--sk-space-4); }
 .sk-dynamic-page__heading-block { flex: 1 1 auto; min-width: 0; }
@@ -166,3 +171,6 @@
   .sk-object-header { flex-direction: column; gap: var(--sk-space-4); }
   .sk-filterbar__fields { grid-template-columns: 1fr; }
 }
+
+.sk-object-avatar__button { display: inline-flex; border-radius: var(--sk-radius-control); }
+.sk-object-avatar__large { max-width: var(--sk-size-image-large); max-height: var(--sk-size-image-large-height); object-fit: contain; }

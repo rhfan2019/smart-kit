@@ -56,6 +56,23 @@ export function useSectionScrollSpy(scope: string, ids: string[], enabled = true
         const container = scrollParent(el);
         const position = () => (container instanceof Window ? window.scrollY : container.scrollTop);
         const offset = () => pageRef.current?.stickyHeight() ?? 0;
+        if (id === ids[0]) {
+          // The first section starts the page: back to the top, where the header expands again.
+          const reduced = typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+          container.scrollTo({ top: 0, behavior: reduced ? 'auto' : 'smooth' });
+          el.focus({ preventScroll: true });
+          const started = Date.now();
+          const wait = setInterval(() => {
+            if (position() <= 0 || Date.now() - started > 1500) {
+              clearInterval(wait);
+              if (position() > 0) container.scrollTo({ top: 0 });
+              lock.current = 0;
+              clicked.current = null;
+              recompute.current();
+            }
+          }, 100);
+          return;
+        }
         scrollElementTo(el, offset());
         el.focus({ preventScroll: true });
         // A smooth scroll is cancelled by layout changes (the header snaps while scrolling) and the sticky
@@ -106,7 +123,7 @@ export function useSectionScrollSpy(scope: string, ids: string[], enabled = true
       if (pageRef.current) pageRef.current.collapseThen(go);
       else go();
     },
-    [scope],
+    [scope, ids.join('|')], // eslint-disable-line react-hooks/exhaustive-deps
   );
   return { active, scrollTo };
 }

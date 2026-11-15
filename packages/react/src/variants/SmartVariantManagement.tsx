@@ -14,6 +14,8 @@ export interface SmartVariantManagementProps {
   onApply(v: { content: VariantContent; autoApply: boolean }): void;
   /** Shown instead of "Standard" for the standard variant. */
   standardName?: string;
+  /** Offer "Apply Automatically" (default true). The list report guideline offers it only in manual update mode. */
+  autoApplyOption?: boolean;
 }
 
 export function SmartVariantManagement(p: SmartVariantManagementProps) {
@@ -51,13 +53,13 @@ export function SmartVariantManagement(p: SmartVariantManagementProps) {
         </Menu>
         {modified ? <Badge variant="light" color="gray" data-sk-variant-modified>{t('variant.modified')}</Badge> : null}
       </Group>
-      <SaveAsDialog opened={saveAs} existing={v.variants.map((x) => x.name)} onCancel={() => setSaveAs(false)} onOk={async (name, isDefault, autoApply) => { await v.saveAs(name, p.content, { isDefault, autoApply }); setSaveAs(false); }} />
-      <ManageDialog opened={manage} api={v} standardName={nameOf(STANDARD_VARIANT_ID, '')} onClose={() => setManage(false)} />
+      <SaveAsDialog opened={saveAs} autoApplyOption={p.autoApplyOption !== false} existing={v.variants.map((x) => x.name)} onCancel={() => setSaveAs(false)} onOk={async (name, isDefault, autoApply) => { await v.saveAs(name, p.content, { isDefault, autoApply }); setSaveAs(false); }} />
+      <ManageDialog opened={manage} autoApplyOption={p.autoApplyOption !== false} api={v} standardName={nameOf(STANDARD_VARIANT_ID, '')} onClose={() => setManage(false)} />
     </>
   );
 }
 
-function SaveAsDialog(p: { opened: boolean; existing: string[]; onOk(name: string, isDefault: boolean, autoApply: boolean): Promise<void>; onCancel(): void }) {
+function SaveAsDialog(p: { opened: boolean; autoApplyOption: boolean; existing: string[]; onOk(name: string, isDefault: boolean, autoApply: boolean): Promise<void>; onCancel(): void }) {
   const t = useText();
   const [name, setName] = useState('');
   const [isDefault, setIsDefault] = useState(false);
@@ -76,7 +78,7 @@ function SaveAsDialog(p: { opened: boolean; existing: string[]; onOk(name: strin
         <Stack gap="sm">
           <TextInput label={t('variant.name')} value={name} onChange={(e) => { setName(e.currentTarget.value); setError(undefined); }} error={error} data-autofocus required />
           <Checkbox label={t('variant.setDefault')} checked={isDefault} onChange={(e) => setIsDefault(e.currentTarget.checked)} />
-          <Checkbox label={t('variant.autoApply')} checked={autoApply} onChange={(e) => setAutoApply(e.currentTarget.checked)} />
+          {p.autoApplyOption ? <Checkbox label={t('variant.autoApply')} checked={autoApply} onChange={(e) => setAutoApply(e.currentTarget.checked)} /> : null}
         </Stack>
         <Group justify="flex-end" className="sk-dialog-footer">
           <Button type="submit" data-sk-variant-saveas-ok>{t('variant.save')}</Button>
@@ -87,7 +89,7 @@ function SaveAsDialog(p: { opened: boolean; existing: string[]; onOk(name: strin
   );
 }
 
-function ManageDialog(p: { opened: boolean; api: VariantsApi; standardName: string; onClose(): void }) {
+function ManageDialog(p: { opened: boolean; autoApplyOption: boolean; api: VariantsApi; standardName: string; onClose(): void }) {
   const t = useText();
   const v = p.api;
   const defaultId = v.variants.find((x) => x.isDefault)?.id ?? STANDARD_VARIANT_ID;
@@ -98,7 +100,7 @@ function ManageDialog(p: { opened: boolean; api: VariantsApi; standardName: stri
           <Table.Tr>
             <Table.Th>{t('variant.name')}</Table.Th>
             <Table.Th>{t('variant.default')}</Table.Th>
-            <Table.Th>{t('variant.autoApply')}</Table.Th>
+            {p.autoApplyOption ? <Table.Th>{t('variant.autoApply')}</Table.Th> : null}
             <Table.Th />
           </Table.Tr>
         </Table.Thead>
@@ -106,7 +108,7 @@ function ManageDialog(p: { opened: boolean; api: VariantsApi; standardName: stri
           <Table.Tr>
             <Table.Td>{p.standardName}</Table.Td>
             <Table.Td><Radio checked={defaultId === STANDARD_VARIANT_ID} onChange={() => void v.setDefault(STANDARD_VARIANT_ID)} aria-label={t('variant.setDefault')} /></Table.Td>
-            <Table.Td />
+            {p.autoApplyOption ? <Table.Td /> : null}
             <Table.Td />
           </Table.Tr>
           {v.variants.map((x) => (
@@ -115,7 +117,7 @@ function ManageDialog(p: { opened: boolean; api: VariantsApi; standardName: stri
                 <TextInput size="xs" defaultValue={x.name} aria-label={t('variant.name')} onBlur={(e) => { const n = e.currentTarget.value.trim(); if (n && n !== x.name) void v.update({ ...x, name: n }); }} />
               </Table.Td>
               <Table.Td><Radio checked={defaultId === x.id} onChange={() => void v.setDefault(x.id)} aria-label={t('variant.setDefault')} /></Table.Td>
-              <Table.Td><Checkbox checked={x.autoApply} onChange={(e) => void v.update({ ...x, autoApply: e.currentTarget.checked })} aria-label={t('variant.autoApply')} /></Table.Td>
+              {p.autoApplyOption ? <Table.Td><Checkbox checked={x.autoApply} onChange={(e) => void v.update({ ...x, autoApply: e.currentTarget.checked })} aria-label={t('variant.autoApply')} /></Table.Td> : null}
               <Table.Td><ActionIcon onClick={() => void v.remove(x.id)} aria-label={t('variant.delete')}><Trash2 className="sk-icon" /></ActionIcon></Table.Td>
             </Table.Tr>
           ))}

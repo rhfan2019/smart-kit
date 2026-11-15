@@ -4,7 +4,7 @@ import { columnTexts, filterInput, open, resetServer, showFilters, table, titleC
 test.beforeEach(async ({ page }) => resetServer(page));
 
 test('AC-NAV-01 returning to the list restores filters, search, sort, columns, scroll and selection', async ({ page }) => {
-  await open(page, '/po');
+  await open(page, '/po?mode=manual');
   const t = await waitForRows(page, 'PurchaseOrders');
   await showFilters(page);
   await filterInput(page, '$search').fill('Ltd');

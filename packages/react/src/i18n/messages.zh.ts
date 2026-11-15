@@ -110,5 +110,6 @@ export const zh: Messages = {
   'object.loadError': '对象加载失败：{message}',
   'object.breadcrumbs': '面包屑',
   'object.image': '{name} 的图片',
+  'object.enlargeImage': '放大 {name} 的图片',
   'object.notFound': '对象不存在。',
 };

@@ -1,11 +1,14 @@
 import { expect, test } from '@playwright/test';
-import { clearFilter, columnTexts, filterInput, open, recordOData, resetServer, showFilters, table, titleCount, waitForRows } from './helpers';
+import { clearFilter, columnTexts, filterInput, MOCK, open, recordOData, resetServer, showFilters, table, titleCount, waitForRows } from './helpers';
+
+/** The demo list in manual update mode ("Go"); the template default is live update (LR Filters). */
+const MANUAL = '/po?mode=manual';
 
 test.beforeEach(async ({ page }) => resetServer(page));
 
 test.describe('list report: purchase orders', () => {
   test('AC-LR-01 default variant executes on load; header collapsed; no-data texts', async ({ page }) => {
-    await open(page, '/po');
+    await open(page, MANUAL);
     await waitForRows(page, 'PurchaseOrders');
     await expect.poll(() => titleCount(page, 'PurchaseOrders')).toBe(1616);
     await expect(page.locator('.sk-dynamic-page__header')).toHaveCount(0);
@@ -21,7 +24,7 @@ test.describe('list report: purchase orders', () => {
 
   test('AC-LR-02 manual mode shows an overlay until Go', async ({ page }) => {
     const rec = recordOData(page);
-    await open(page, '/po');
+    await open(page, MANUAL);
     await waitForRows(page, 'PurchaseOrders');
     await showFilters(page);
     const before = rec.urls.length;
@@ -46,7 +49,7 @@ test.describe('list report: purchase orders', () => {
   });
 
   test('AC-LR-04 filter bar layout: search first without label, Go before Adapt Filters (n)', async ({ page }) => {
-    await open(page, '/po');
+    await open(page, MANUAL);
     await showFilters(page);
     const fields = page.locator('.sk-filterbar__fields > *');
     await expect(fields.first()).toHaveAttribute('data-sk-filter', '$search');
@@ -61,7 +64,7 @@ test.describe('list report: purchase orders', () => {
 
   test('AC-LR-05 tokens, exclusion, ranges, date range and search together', async ({ page }) => {
     const rec = recordOData(page);
-    await open(page, '/po');
+    await open(page, MANUAL);
     await showFilters(page);
     const po = filterInput(page, 'PurchaseOrder');
     await po.fill('4500000001...4500000100');
@@ -80,7 +83,7 @@ test.describe('list report: purchase orders', () => {
   });
 
   test('AC-LR-06 value help: typeahead, dialog select, conditions, token "text (code)"', async ({ page }) => {
-    await open(page, '/po');
+    await open(page, MANUAL);
     await showFilters(page);
     const sup = page.locator('[data-sk-filter="Supplier"]');
     // typeahead
@@ -109,7 +112,7 @@ test.describe('list report: purchase orders', () => {
   });
 
   test('AC-LR-07 Adapt Filters adds and removes fields; fields with values are locked', async ({ page }) => {
-    await open(page, '/po');
+    await open(page, MANUAL);
     await showFilters(page);
     await page.getByRole('button', { name: /Adapt Filters/ }).click();
     const dialog = page.getByRole('dialog', { name: 'Adapt Filters' });
@@ -123,7 +126,7 @@ test.describe('list report: purchase orders', () => {
   });
 
   test('AC-LR-08 variants are stored in the service database', async ({ page }) => {
-    await open(page, '/po');
+    await open(page, MANUAL);
     await waitForRows(page, 'PurchaseOrders');
     await showFilters(page);
     const st = filterInput(page, 'Status');
@@ -139,7 +142,7 @@ test.describe('list report: purchase orders', () => {
     await dialog.locator('[data-sk-variant-saveas-ok]').click();
     await expect(page.locator('[data-sk-variant]')).toHaveText('Approved only');
     // stored on the server
-    const res = await page.request.get("http://localhost:4400/odata/purchasing/Variants?$filter=PageKey eq 'po'");
+    const res = await page.request.get(`${MOCK}/odata/purchasing/Variants?$filter=PageKey eq 'po'`);
     const body = await res.json();
     expect(body.value.map((v: { Name: string; IsDefault: boolean; AutoApply: boolean }) => [v.Name, v.IsDefault, v.AutoApply])).toEqual([['Approved only', true, false]]);
     // new session: default variant without auto-apply → header expanded and "To start"
@@ -166,7 +169,7 @@ test.describe('list report: purchase orders', () => {
 
   test('AC-LR-09 server sorting and block loading; scrolling to the end of 10,000 rows', async ({ page }) => {
     const rec = recordOData(page);
-    await open(page, '/po');
+    await open(page, MANUAL);
     await waitForRows(page, 'PurchaseOrders');
     await showFilters(page);
     // remove default conditions to get all 10,000 rows
@@ -191,7 +194,7 @@ test.describe('list report: purchase orders', () => {
 
   test('AC-LR-10 personalization updates columns, $select and $orderby', async ({ page }) => {
     const rec = recordOData(page);
-    await open(page, '/po');
+    await open(page, MANUAL);
     await waitForRows(page, 'PurchaseOrders');
     await table(page, 'PurchaseOrders').locator('[data-sk-table-settings]').click();
     const dialog = page.getByRole('dialog', { name: 'View Settings' });
@@ -208,7 +211,7 @@ test.describe('list report: purchase orders', () => {
   });
 
   test('AC-LR-11 export to spreadsheet', async ({ page }) => {
-    await open(page, '/po');
+    await open(page, MANUAL);
     await waitForRows(page, 'PurchaseOrders');
     const download = page.waitForEvent('download');
     await table(page, 'PurchaseOrders').locator('[data-sk-table-export]').click();
@@ -217,7 +220,7 @@ test.describe('list report: purchase orders', () => {
   });
 
   test('AC-LR-12 navigation indicator and Enter open the object page', async ({ page }) => {
-    await open(page, '/po');
+    await open(page, MANUAL);
     const t = await waitForRows(page, 'PurchaseOrders');
     const first = (await columnTexts(page, 'PurchaseOrders', 'DataField::PurchaseOrder'))[0]!;
     await t.locator('[data-sk-row-nav]').first().click();
@@ -229,41 +232,66 @@ test.describe('list report: purchase orders', () => {
     await expect(page).toHaveURL(/object\?path=PurchaseOrders/);
   });
 
-  test('AC-LR-13 header: expand/collapse and pin on the header border; the header snaps when the table scrolls', async ({ page }) => {
-    await open(page, '/po');
+  test('AC-LR-13 grid table: Show / Hide Filters, no expand/collapse or pin buttons, no snap on table scroll; title click', async ({ page }) => {
+    await open(page, MANUAL);
     const t = await waitForRows(page, 'PurchaseOrders');
     const header = page.locator('.sk-dynamic-page__header');
     await expect(header).toHaveCount(0); // a query ran on start: collapsed (LR-13)
-    await expect(page.getByRole('button', { name: 'Show Filters' })).toHaveCount(0);
-    await page.getByRole('button', { name: 'Expand Header' }).click();
+    await expect(page.locator('[data-sk-header-pin], [data-sk-header-toggle]')).toHaveCount(0);
+    await page.getByRole('button', { name: 'Show Filters' }).click();
     await expect(header).toBeVisible();
-    // the buttons sit centred on the bottom border of the header
-    const box = await page.locator('.sk-dynamic-page__features-buttons').boundingBox();
-    const line = await page.locator('.sk-dynamic-page__features').boundingBox();
-    expect(Math.abs(box!.y + box!.height / 2 - line!.y)).toBeLessThan(2);
-    const viewport = page.viewportSize()!;
-    expect(Math.abs(box!.x + box!.width / 2 - viewport.width / 2)).toBeLessThan(40);
-    // scrolling the table down collapses the header, back to the top expands it
-    const scroller = t.locator('.ag-grid-viewport');
-    await scroller.evaluate((el) => el.scrollTo(0, 400));
+    await expect(page.locator('[data-sk-header-pin], [data-sk-header-toggle]')).toHaveCount(0);
+    // the table scrolls by itself: scrolling it does not collapse the header (Dynamic Page: special case)
+    await t.locator('.ag-grid-viewport').evaluate((el) => el.scrollTo(0, 2000));
+    await page.waitForTimeout(400);
+    await expect(header).toBeVisible();
+    await page.getByRole('button', { name: 'Hide Filters' }).click();
     await expect(header).toHaveCount(0);
-    await page.waitForTimeout(500);
-    await scroller.evaluate((el) => el.scrollTo(0, 0));
+    // snap on click: clicking the title bar where there is no active element toggles the header
+    const title = page.locator('.sk-dynamic-page__title');
+    const box = (await title.boundingBox())!;
+    await page.mouse.click(box.x + box.width / 2, box.y + 12);
     await expect(header).toBeVisible();
-    // pinned: scrolling keeps the header
-    await page.locator('[data-sk-header-pin]').click();
-    await expect(page.locator('[data-sk-header-pin]')).toHaveAttribute('aria-pressed', 'true');
-    await scroller.evaluate((el) => el.scrollTo(0, 400));
-    await page.waitForTimeout(300);
+    await page.mouse.click(box.x + box.width / 2, box.y + 12);
+    await expect(header).toHaveCount(0);
+    // the variant button is an active element: no toggle
+    await page.locator('[data-sk-variant]').click();
+    await page.keyboard.press('Escape');
+    await expect(header).toHaveCount(0);
+  });
+
+  test('AC-LR-18 live update is the default: no Go, queries on change, no "Apply Automatically"', async ({ page }) => {
+    const rec = recordOData(page);
+    await open(page, '/po');
+    await waitForRows(page, 'PurchaseOrders');
+    await showFilters(page);
+    await expect(page.locator('[data-sk-go]')).toHaveCount(0);
+    await filterInput(page, '$search').fill('Ltd');
+    await expect.poll(() => rec.urls.some((u) => u.includes('$search=Ltd')), { timeout: 2000 }).toBe(true);
+    await page.locator('[data-sk-variant]').click();
+    await page.locator('[data-sk-variant-saveas]').click();
+    const dialog = page.getByRole('dialog', { name: 'Save As' });
+    await expect(dialog.getByRole('checkbox', { name: 'Set as Default' })).toBeVisible();
+    await expect(dialog.getByRole('checkbox', { name: 'Apply Automatically' })).toHaveCount(0);
+  });
+
+  test('AC-LR-19 keyboard: the header expands when the focus enters it and collapses when it leaves', async ({ page }) => {
+    await open(page, MANUAL);
+    await waitForRows(page, 'PurchaseOrders');
+    const header = page.locator('.sk-dynamic-page__header');
+    await expect(header).toHaveCount(0);
+    await page.locator('[data-sk-table-settings]').focus();
+    for (let i = 0; i < 12 && !(await page.evaluate(() => Boolean(document.activeElement?.closest('[data-sk-header-region]')))); i++) await page.keyboard.press('Shift+Tab');
     await expect(header).toBeVisible();
-    // manual collapse still works
-    await page.getByRole('button', { name: 'Collapse Header' }).click();
+    // leaving the header for the page content collapses it again
+    await page.getByRole('button', { name: /^Adapt Filters/ }).focus();
+    await page.keyboard.press('Tab');
     await expect(header).toHaveCount(0);
   });
 
   test('AC-LR-14 initial focus', async ({ page }) => {
     // collapsed header → first table row
-    await open(page, '/po');
+    await open(page, MANUAL);
     await waitForRows(page, 'PurchaseOrders');
     await expect.poll(() => page.evaluate(() => document.activeElement?.closest('.ag-row') !== null)).toBe(true);
     // expanded header in manual mode with a default variant that does not execute → Go
@@ -281,7 +309,7 @@ test.describe('list report: purchase orders', () => {
   });
 
   test('AC-LR-15 cell types from annotations', async ({ page }) => {
-    await open(page, '/po');
+    await open(page, MANUAL);
     const t = await waitForRows(page, 'PurchaseOrders');
     const row = t.locator('.ag-row[row-index]').first();
     await expect(row.locator('[col-id="DataField::Supplier"]')).toHaveText(/.+ \(00001\d{5}\)/); // text (code)
@@ -295,7 +323,7 @@ test.describe('list report: purchase orders', () => {
 
   test('AC-LR-16 mandatory filter blocks Go', async ({ page }) => {
     const rec = recordOData(page);
-    await open(page, '/po');
+    await open(page, MANUAL);
     await waitForRows(page, 'PurchaseOrders');
     await showFilters(page);
     await clearFilter(page, 'CompanyCode');
@@ -306,7 +334,7 @@ test.describe('list report: purchase orders', () => {
   });
 
   test('AC-LR-17 keyboard: arrow keys move between cells', async ({ page }) => {
-    await open(page, '/po');
+    await open(page, MANUAL);
     const t = await waitForRows(page, 'PurchaseOrders');
     await t.locator('.ag-row[row-index]').first().locator('.ag-cell').nth(0).click();
     await page.keyboard.press('ArrowDown');
@@ -326,7 +354,7 @@ test.describe('capabilities and query shapes', () => {
     await showFilters(page);
     await expect(page.locator('[data-sk-filter="$search"]')).toHaveCount(0);
     // purchasing: Description is not sortable, Notes not filterable
-    await open(page, '/po');
+    await open(page, MANUAL);
     await waitForRows(page, 'PurchaseOrders');
     await table(page, 'PurchaseOrders').locator('[data-sk-table-settings]').click();
     await page.getByRole('dialog').getByRole('tab', { name: 'Sort' }).click();
@@ -343,7 +371,7 @@ test.describe('capabilities and query shapes', () => {
 
   test('AC-DATA-08 query shapes match the reference rules (docs/query-shapes.md)', async ({ page }) => {
     const rec = recordOData(page);
-    await open(page, '/po');
+    await open(page, MANUAL);
     await waitForRows(page, 'PurchaseOrders');
     const list = rec.urls.find((u) => u.startsWith('/odata/purchasing/PurchaseOrders?'))!;
     // Q-01/Q-02: only visible columns and their companions; texts through $expand($select)
@@ -366,7 +394,7 @@ test.describe('capabilities and query shapes', () => {
 
 test.describe('extensions in the list', () => {
   test('AC-EXT-02 inserted column after the supplier and a selection-dependent action', async ({ page }) => {
-    await open(page, '/po');
+    await open(page, MANUAL);
     const t = await waitForRows(page, 'PurchaseOrders');
     const ids = await t.locator('.ag-header-cell').evaluateAll((els) => els.map((e) => e.getAttribute('col-id')));
     expect(ids.indexOf('Custom::Overdue')).toBe(ids.indexOf('DataField::Supplier') + 1);
@@ -379,7 +407,7 @@ test.describe('extensions in the list', () => {
   });
 
   test('AC-EXT-01 replaced cell renderer and replaced toolbar', async ({ page }) => {
-    await open(page, '/po');
+    await open(page, MANUAL);
     const t = await waitForRows(page, 'PurchaseOrders');
     await t.locator('.ag-grid-viewport').evaluate((el) => el.scrollTo(el.scrollWidth, 0));
     await expect(t.locator('[data-demo-type]').first()).toHaveText(/^(NB|FO|UB)$/);

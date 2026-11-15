@@ -1,7 +1,7 @@
 /**
  * List report page template, built only from public building blocks (AC-BOOT-01): variant management, filter bar,
- * grid table, filter summary, header expand/collapse and pin (the header snaps when the table scrolls), initial focus
- * and state restoration.
+ * grid table, filter summary, "Show / Hide Filters" (grid table: no snap on scroll, no pin), initial focus and state
+ * restoration.
  */
 import type { Row, SortItem, VariantContent } from '@rhfan2019/smart-kit-core';
 import { useEffect, useMemo, useRef, type ReactNode } from 'react';
@@ -15,7 +15,10 @@ export interface SmartListReportProps {
   service?: string;
   /** Key for variants and state restoration; defaults to the entity set. */
   pageKey?: string;
-  /** Live update mode instead of "Go". */
+  /**
+   * Live update mode (default true, recommended by the list report guideline): every change filters immediately.
+   * False: manual update mode with "Go", for services where filtering on every change is too slow.
+   */
   liveMode?: boolean;
   /** Execute the standard variant on load (default true). */
   autoExecute?: boolean;
@@ -27,21 +30,22 @@ export interface SmartListReportProps {
   /** Content between header and table (e.g. KPI cards). */
   beforeTable?: ReactNode;
   /**
-   * "Show Filters / Hide Filters" in the title instead of the expand/collapse and pin buttons, as the guideline
-   * prescribes for grid tables (LR-12). Default false: the header has the expand/collapse and pin buttons and
-   * collapses while the table is scrolled down.
+   * Header control. Default true: a "Show Filters / Hide Filters" button in the title bar, no snap on scroll and no pin,
+   * as the list report guideline prescribes for grid tables (LR-12; Dynamic Page: special case without page scrolling).
+   * False: the expand/collapse button on the header border instead (still no pin and no snap: the grid scrolls itself).
    */
   filterToggle?: boolean;
   className?: string;
 }
 
-export function SmartListReport(p: SmartListReportProps) {
+export function SmartListReport(props: SmartListReportProps) {
+  const p = { ...props, liveMode: props.liveMode ?? true };
   const t = useText();
   const pageKey = p.pageKey ?? `list:${p.entitySet}`;
   const { ui } = useMetaModel(p.entitySet, { service: p.service });
   // Execution on load waits for the variant list: a default variant decides whether to execute (LR-02, LR-15).
   const filter = useFilterState(p.entitySet, { service: p.service, pageKey, liveMode: p.liveMode, autoExecute: false });
-  const [view, setView] = usePageState<{ columns?: string[]; sort?: SortItem[]; headerExpanded?: boolean; headerPinned?: boolean }>(`${pageKey}:view`, {});
+  const [view, setView] = usePageState<{ columns?: string[]; sort?: SortItem[]; headerExpanded?: boolean }>(`${pageKey}:view`, {});
   const columns = view.columns;
   const sort = view.sort ?? ui.presentation.sortOrder;
 
@@ -106,12 +110,9 @@ export function SmartListReport(p: SmartListReportProps) {
     <div ref={rootRef} className={['sk-list-report', p.className].filter(Boolean).join(' ')}>
       <DynamicPage
         layout="fill"
-        snapOnScroll={!p.filterToggle}
-        filterToggle={p.filterToggle}
-        pinned={view.headerPinned ?? false}
-        onPinnedChange={(v) => setView((s) => ({ ...s, headerPinned: v }))}
+        filterToggle={p.filterToggle ?? true}
         heading={p.title ?? ui.headerInfo.typeNamePlural}
-        headingContent={<SmartVariantManagement variants={variants} content={content} onApply={apply} standardName={p.title} />}
+        headingContent={<SmartVariantManagement variants={variants} content={content} onApply={apply} standardName={p.title} autoApplyOption={!p.liveMode} />}
         actions={p.headerActions}
         summary={<FilterSummary entitySet={p.entitySet} service={p.service} filters={filter.filters} search={filter.search} />}
         header={<SmartFilterBar state={filter} extend={p.filterExtend} />}
