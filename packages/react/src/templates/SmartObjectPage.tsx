@@ -400,6 +400,7 @@ function ObjectPageInner(p: SmartObjectPageProps & { registerNavigate(fn: (m: Me
         }),
       };
     });
+    for (let i = out.length - 1; i >= 0; i--) if (!out[i]!.subSections.length) out.splice(i, 1);
     // Temporary "Header" section in global edit mode (OP Editing header content in Global Edit mode).
     if (editing && headerFields.length) {
       out.unshift({

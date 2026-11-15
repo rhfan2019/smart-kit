@@ -1,5 +1,5 @@
 /** Repository-level architecture checks. */
-import { execFileSync } from 'node:child_process';
+import { execFileSync, execSync } from 'node:child_process';
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { ESLint } from 'eslint';
@@ -87,7 +87,7 @@ describe('scripts', () => {
     expect(execFileSync('node', ['scripts/check-trademark.mjs'], { cwd: ROOT, encoding: 'utf8' })).toContain('ok');
   });
   it('AC-MOD-04 every phase-1 annotation term is traced to a test', () => {
-    expect(execFileSync('node', ['scripts/trace.mjs'], { cwd: ROOT, encoding: 'utf8' })).toMatch(/annotation terms \(phase 1\): (\d+)\/\1 traced/);
+    expect(execFileSync('node', ['scripts/trace.mjs'], { cwd: ROOT, encoding: 'utf8' })).toMatch(/phase 1 · annotation terms: (\d+)\/\1 traced/);
   });
   it('AC-Q-06 changelog and semantic versions', () => {
     expect(readFileSync(join(ROOT, 'CHANGELOG.md'), 'utf8')).toMatch(/## \[0\.1\.0\]/);
@@ -105,7 +105,7 @@ describe('CI (AC-Q-01)', () => {
   });
 });
 
-describe('Storybook (AC-Q-05)', () => {
+describe('Storybook (AC-Q-05, P2-GEN-07)', () => {
   it('every exported building block has a story', () => {
     const api = readFileSync(join(ROOT, 'docs/api.md'), 'utf8').split('## `@rhfan2019/smart-kit`')[1]!.split('### 类型')[0]!;
     const components = [...api.matchAll(/^- `([A-Z]\w+)`/gm)].map((m) => m[1]!).filter((n) => !/Error$|^MESSAGES$|^INTL_LOCALE$/.test(n));
@@ -164,4 +164,12 @@ describe('contrast (AC-THEME-04)', () => {
       expect(contrast(f, b)).toBeGreaterThanOrEqual(4.5);
     });
   }
+});
+
+describe('bundle size (AC-Q-02, P2-GEN-08)', () => {
+  it('P2-GEN-08 both packages build and stay within the gzip budgets', () => {
+    execSync('npm run build -w @rhfan2019/smart-kit-core && npm run build -w @rhfan2019/smart-kit', { cwd: ROOT, stdio: 'pipe' });
+    const out = execSync('node scripts/check-size.mjs', { cwd: ROOT, encoding: 'utf8' });
+    expect(out).not.toContain('FAIL');
+  }, 180_000);
 });

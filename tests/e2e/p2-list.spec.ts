@@ -5,7 +5,6 @@ import { clearFilter, evidence, filterInput, mainScroll, MOCK, open, recordOData
 test.beforeEach(async ({ page }) => resetServer(page));
 
 const rows = (page: Page, set = 'PurchaseOrders') => table(page, set).locator('tr[data-sk-row]');
-const gridRow = (page: Page, po: string) => table(page, 'PurchaseOrders').locator(`.ag-center-cols-container .ag-row`).filter({ hasText: po });
 /** Selects grid rows by purchase order number (the checkbox lives in the pinned left container, same row-index). */
 async function selectGrid(page: Page, ...pos: string[]) {
   for (const po of pos) {

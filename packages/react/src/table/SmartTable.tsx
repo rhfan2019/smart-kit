@@ -180,6 +180,8 @@ interface InternalCtx {
   canCopy: boolean;
   copied: string | null;
   details: { available: boolean; shown: boolean; toggle(): void };
+  /** Width of the table (px), for the toolbar overflow. */
+  width: number;
   openP13n(): void;
   exportNow(): void;
   exporting: boolean;
@@ -237,9 +239,10 @@ function TitlePart() {
 }
 
 function ActionsPart() {
-  const { actions, ctx, p } = useInternal();
+  const { actions, ctx, p, width } = useInternal();
   const t = useText();
-  const INLINE = 4;
+  // Narrow tables (e.g. the first column of a flexible column layout) move actions into "More" earlier.
+  const INLINE = width < 560 ? 0 : width < 900 ? 2 : 4;
   const btn = (a: ActionItem) => {
     const disabled = (a.requiresSelection && ctx.selected.length === 0) || (a.enabled ? !a.enabled(ctx.selected) : false);
     return { disabled, onPress: () => a.onPress(ctx) };
@@ -731,10 +734,18 @@ export function SmartTable(p: SmartTableProps) {
   const title = p.title ?? ui.headerInfo.typeNamePlural;
   const searchable = caps.searchable;
   const [hiddenCols, setHiddenCols] = useState<string[]>([]);
+  const [width, setWidth] = useState(1440);
+  useEffect(() => {
+    const el = sectionRef.current;
+    if (!el || typeof ResizeObserver === 'undefined') return;
+    const ro = new ResizeObserver(() => setWidth(el.clientWidth || 1440));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
   const internal: InternalCtx = {
     p, ctx, title, allColumns, visibleIds: visible, setVisibleIds, setSort, actions, openP13n: () => setP13n(true),
     exportNow: () => void exportNow(), exporting, search, setSearch, searchable,
-    copyNow, canCopy: p.copy !== false, copied,
+    copyNow, canCopy: p.copy !== false, copied, width,
     details: { available: responsive && hiddenCols.length > 0, shown: Boolean(own.details), toggle: () => setOwn((x) => ({ ...x, details: !x.details })) },
   };
 

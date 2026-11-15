@@ -389,7 +389,7 @@ test.describe('capabilities and query shapes', () => {
     const list = rec.urls.find((u) => u.startsWith('/odata/purchasing/PurchaseOrders?'))!;
     // Q-01/Q-02: only visible columns and their companions; texts through $expand($select)
     expect(list).toContain('$select=PurchaseOrder,Supplier,OrderDate,Status,StatusCriticality,NetAmount,Currency,DeliveredPercent,PurchaseOrderType');
-    expect(list).toContain('$expand=_Supplier($select=SupplierName,Rating),_Status($select=Name),_PurchaseOrderType($select=Name)');
+    expect(list).toContain('$expand=_Supplier($select=SupplierName,Rating,RatingCount),_Status($select=Name),_PurchaseOrderType($select=Name)');
     // Q-05 default sort from PresentationVariant; Q-06/Q-07 first block with $count
     expect(list).toMatch(/\$count=true.*\$orderby=OrderDate desc.*\$skip=0&\$top=100/);
     // Q-05b sorting an amount sorts by currency first

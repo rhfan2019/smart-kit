@@ -60,7 +60,9 @@ export function MicroChart(p: MicroChartProps) {
   const inner = <span className="sk-microchart__frame" aria-hidden>{r.body}</span>;
   if (p.onPress) {
     return (
-      <button type="button" className={cx(className, 'sk-microchart--pressable')} aria-label={r.aria} data-sk-microchart={p.kind} onClick={() => p.onPress?.()}>
+      <button type="button" className={cx(className, 'sk-microchart--pressable')} data-sk-microchart={p.kind} onClick={() => p.onPress?.()}>
+        {/* The name comes from the content (not aria-label), so it never conflicts with the visible numbers. */}
+        <span className="sk-visually-hidden">{r.aria}</span>
         {inner}
       </button>
     );

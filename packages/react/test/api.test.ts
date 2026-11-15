@@ -12,7 +12,7 @@ function documented(pkg: string): string[] {
   return [...values.matchAll(/^- `([\w$]+)`/gm)].map((m) => m[1]!).sort();
 }
 
-describe('public API (AC-Q-03)', () => {
+describe('public API (AC-Q-03, P2-GEN-07)', () => {
   it('core runtime exports match docs/api.md', () => {
     expect(Object.keys(core).sort()).toEqual(documented('@rhfan2019/smart-kit-core'));
   });

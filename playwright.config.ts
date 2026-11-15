@@ -13,7 +13,8 @@ export default defineConfig({
   fullyParallel: false,
   workers: 1,
   retries: process.env.CI ? 1 : 0,
-  reporter: process.env.CI ? [['github'], ['list']] : 'list',
+  // The JSON results feed `npm run trace` (docs/13: every criterion must map to a passing test).
+  reporter: process.env.CI ? [['github'], ['list'], ['json', { outputFile: 'reports/e2e-results.json' }]] : [['list'], ['json', { outputFile: 'reports/e2e-results.json' }]],
   snapshotPathTemplate: '{testDir}/__screenshots__/{platform}/{testFilePath}/{arg}{ext}',
   use: {
     ...devices['Desktop Chrome'],

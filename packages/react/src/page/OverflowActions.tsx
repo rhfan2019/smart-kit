@@ -86,7 +86,6 @@ export function OverflowActions(p: OverflowActionsProps) {
   const hidden = flexible.slice(visible);
   return (
     <div ref={boxRef} className={['sk-overflow-actions', p.className].filter(Boolean).join(' ')} data-sk={p['data-sk']}>
-      {fixed.length ? <span ref={fixedRef} className="sk-overflow-actions__fixed">{fixed.map(button)}</span> : null}
       {shown.map(button)}
       {hidden.length ? (
         <Menu position="bottom-end">
@@ -98,6 +97,7 @@ export function OverflowActions(p: OverflowActionsProps) {
           </Menu.Dropdown>
         </Menu>
       ) : null}
+      {fixed.length ? <span ref={fixedRef} className="sk-overflow-actions__fixed">{fixed.map(button)}</span> : null}
       <div ref={measureRef} className="sk-overflow-actions__measure" aria-hidden>
         {flexible.map((a) => (a.icon ? <ActionIcon key={a.id} variant="subtle" tabIndex={-1}>{a.icon}</ActionIcon> : <Button key={a.id} variant="subtle" tabIndex={-1}>{a.label}</Button>))}
         <ActionIcon variant="subtle" tabIndex={-1}><MoreHorizontal className="sk-icon" /></ActionIcon>

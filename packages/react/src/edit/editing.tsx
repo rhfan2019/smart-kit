@@ -30,8 +30,10 @@ const NUMERIC = /Int|Decimal|Double|Single|Byte/;
 /** Client validation (OP In Edit Mode): mandatory fields and number formats; messages target the property path. */
 export function validate(model: MetaModel, typeName: string, fields: FieldModel[], values: Row, t: TextFn, creating = false): Message[] {
   const out: Message[] = [];
+  const seen = new Set<string>();
   for (const f of fields) {
-    if (f.kind !== 'field' || !f.path || f.path.includes('/')) continue;
+    if (f.kind !== 'field' || !f.path || f.path.includes('/') || seen.has(f.path)) continue;
+    seen.add(f.path);
     const prop = resolvePath(model.entityTypes, typeName, f.path).property;
     if (!isEditable(prop, creating)) continue;
     const v = values[f.path];
