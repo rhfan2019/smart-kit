@@ -1,0 +1,357 @@
+/*
+ * smart-kit design tokens. The ONLY file in packages/react that may contain literal colors and sizes
+ * (checked by scripts/check-tokens.mjs). Three layers: primitives → semantics → component tokens.
+ * Themes switch with [data-theme], density with [data-density]. See docs/06-extension-and-theming.md §3.
+ */
+
+/* ---------------------------------------------------------------- 1. primitives (no meaning) */
+:root {
+  --sk-yellow-50: #fffbe8;
+  --sk-yellow-100: #fff4c1;
+  --sk-yellow-200: #ffeb94;
+  --sk-yellow-300: #fbdf6c;
+  --sk-yellow-400: #f6d55a;
+  --sk-yellow-500: #f2c94c;
+  --sk-yellow-600: #d9b03a;
+  --sk-yellow-700: #b8922b;
+  --sk-yellow-800: #8a6600;
+  --sk-yellow-900: #5c4400;
+
+  --sk-navy-50: #eef0f8;
+  --sk-navy-100: #d9ddef;
+  --sk-navy-200: #b3bbdf;
+  --sk-navy-300: #8592c8;
+  --sk-navy-400: #5d6aab;
+  --sk-navy-500: #3d4a8a;
+  --sk-navy-600: #2c3772;
+  --sk-navy-700: #1f2a5a;
+  --sk-navy-800: #161e42;
+  --sk-navy-900: #0e132b;
+
+  --sk-ink-0: #ffffff;
+  --sk-ink-50: #faf8f4;
+  --sk-ink-100: #f5f3ee;
+  --sk-ink-150: #f0ece4;
+  --sk-ink-200: #e8e3d8;
+  --sk-ink-300: #ddd8cd;
+  --sk-ink-400: #aaa496;
+  --sk-ink-500: #857f74;
+  --sk-ink-600: #6b665d;
+  --sk-ink-700: #5e5b55;
+  --sk-ink-800: #3a3833;
+  --sk-ink-850: #2a2926;
+  --sk-ink-900: #1f1e1c;
+  --sk-ink-950: #161513;
+  --sk-ink-1000: #100f0e;
+
+  --sk-slate-0: #ffffff;
+  --sk-slate-50: #f8f9fc;
+  --sk-slate-100: #f1f3f8;
+  --sk-slate-200: #e3e6ef;
+  --sk-slate-300: #cfd4e2;
+  --sk-slate-600: #5a6178;
+  --sk-slate-700: #474d63;
+  --sk-slate-900: #1b1f2e;
+
+  --sk-green-100: #e2f9e8;
+  --sk-green-300: #6fd69a;
+  --sk-green-700: #008046;
+  --sk-green-900: #0d3b24;
+  --sk-red-100: #ffebe9;
+  --sk-red-300: #ff8f8a;
+  --sk-red-700: #d1282d;
+  --sk-red-900: #4a1416;
+  --sk-amber-100: #fff4c1;
+  --sk-amber-300: #f2c94c;
+  --sk-amber-700: #8a6600;
+  --sk-amber-900: #3d3000;
+  --sk-blue-100: #eef2ff;
+  --sk-blue-300: #a5adff;
+  --sk-blue-700: #4a52d1;
+  --sk-blue-900: #1c2050;
+  --sk-indigo-500: #5c67f4;
+
+  --sk-font-sans: Inter, -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', 'Segoe UI', sans-serif;
+
+  --sk-font-size-1: 11.5px;
+  --sk-font-size-2: 12.5px;
+  --sk-font-size-3: 14px;
+  --sk-font-size-4: 16px;
+  --sk-font-size-5: 20px;
+  --sk-font-size-6: 24px;
+  --sk-font-size-7: 28px;
+
+  --sk-space-1: 2px;
+  --sk-space-2: 4px;
+  --sk-space-3: 8px;
+  --sk-space-4: 12px;
+  --sk-space-5: 16px;
+  --sk-space-6: 24px;
+  --sk-space-7: 32px;
+  --sk-space-8: 48px;
+
+  --sk-radius-1: 4px;
+  --sk-radius-2: 8px;
+  --sk-radius-3: 12px;
+  --sk-radius-4: 999px;
+
+  --sk-shadow-1: 0 1px 2px rgba(0, 0, 0, 0.06);
+  --sk-shadow-2: 0 2px 8px rgba(0, 0, 0, 0.08);
+  --sk-shadow-3: 0 8px 24px rgba(0, 0, 0, 0.16);
+
+  --sk-size-control-comfortable: 32px;
+  --sk-size-control-compact: 26px;
+  --sk-size-row-comfortable: 40px;
+  --sk-size-row-compact: 30px;
+  --sk-size-header-row-comfortable: 36px;
+  --sk-size-header-row-compact: 28px;
+  --sk-size-avatar: 64px;
+  --sk-size-avatar-small: 32px;
+  --sk-size-facet-text: 320px;
+  --sk-size-icon: 16px;
+  --sk-size-border: 1px;
+  --sk-size-accent-line: 3px;
+  --sk-size-anchorbar: 44px;
+  --sk-size-column-min: 120px;
+  --sk-size-dialog-list: 360px;
+  --sk-size-max-content: 1680px;
+  --sk-duration-fast: 120ms;
+  --sk-duration-base: 200ms;
+}
+
+/* ---------------------------------------------------------------- 2. semantics: yellow (default) */
+:root,
+[data-theme='yellow'] {
+  --sk-color-page: var(--sk-ink-100);
+  --sk-color-surface: var(--sk-ink-0);
+  --sk-color-surface-2: var(--sk-ink-50);
+  --sk-color-surface-raised: var(--sk-ink-0);
+  --sk-color-overlay: rgba(245, 243, 238, 0.82);
+  --sk-color-backdrop: rgba(28, 27, 25, 0.3);
+
+  --sk-color-text: var(--sk-ink-900);
+  --sk-color-text-muted: var(--sk-ink-700);
+  --sk-color-text-subtle: var(--sk-ink-600);
+  --sk-color-text-on-primary: var(--sk-ink-0);
+  --sk-color-link: var(--sk-blue-700);
+
+  --sk-color-primary: var(--sk-ink-900);
+  --sk-color-primary-hover: var(--sk-ink-800);
+  --sk-color-accent: var(--sk-yellow-500);
+  --sk-color-accent-wash: var(--sk-yellow-100);
+  --sk-color-hover: var(--sk-ink-150);
+  --sk-color-focus: var(--sk-indigo-500);
+
+  --sk-color-border: var(--sk-ink-200);
+  --sk-color-border-strong: var(--sk-ink-300);
+
+  --sk-color-positive: var(--sk-green-700);
+  --sk-color-positive-wash: var(--sk-green-100);
+  --sk-color-critical: var(--sk-amber-700);
+  --sk-color-critical-wash: var(--sk-amber-100);
+  --sk-color-negative: var(--sk-red-700);
+  --sk-color-negative-wash: var(--sk-red-100);
+  --sk-color-info: var(--sk-blue-700);
+  --sk-color-info-wash: var(--sk-blue-100);
+  --sk-color-neutral: var(--sk-ink-700);
+  --sk-color-neutral-wash: var(--sk-ink-150);
+
+  --sk-color-rating: var(--sk-yellow-600);
+  --sk-color-progress: var(--sk-ink-900);
+  --sk-color-progress-track: var(--sk-ink-200);
+  --sk-avatar-palette: var(--sk-yellow-100);
+  color-scheme: light;
+}
+
+/* ---------------------------------------------------------------- navy (light) */
+[data-theme='navy'] {
+  --sk-color-page: var(--sk-slate-100);
+  --sk-color-surface: var(--sk-slate-0);
+  --sk-color-surface-2: var(--sk-slate-50);
+  --sk-color-surface-raised: var(--sk-slate-0);
+  --sk-color-overlay: rgba(241, 243, 248, 0.82);
+  --sk-color-backdrop: rgba(27, 31, 46, 0.32);
+
+  --sk-color-text: var(--sk-slate-900);
+  --sk-color-text-muted: var(--sk-slate-700);
+  --sk-color-text-subtle: var(--sk-slate-600);
+  --sk-color-text-on-primary: var(--sk-slate-0);
+  --sk-color-link: var(--sk-navy-500);
+
+  --sk-color-primary: var(--sk-navy-700);
+  --sk-color-primary-hover: var(--sk-navy-600);
+  --sk-color-accent: var(--sk-navy-400);
+  --sk-color-accent-wash: var(--sk-navy-50);
+  --sk-color-hover: var(--sk-slate-100);
+  --sk-color-focus: var(--sk-navy-400);
+
+  --sk-color-border: var(--sk-slate-200);
+  --sk-color-border-strong: var(--sk-slate-300);
+
+  --sk-color-rating: var(--sk-amber-700);
+  --sk-color-progress: var(--sk-navy-600);
+  --sk-color-progress-track: var(--sk-slate-200);
+  --sk-avatar-palette: var(--sk-navy-100);
+  color-scheme: light;
+}
+
+/* ---------------------------------------------------------------- dark */
+[data-theme='dark'] {
+  --sk-color-page: var(--sk-ink-1000);
+  --sk-color-surface: var(--sk-ink-950);
+  --sk-color-surface-2: var(--sk-ink-900);
+  --sk-color-surface-raised: var(--sk-ink-850);
+  --sk-color-overlay: rgba(16, 15, 14, 0.8);
+  --sk-color-backdrop: rgba(0, 0, 0, 0.55);
+
+  --sk-color-text: var(--sk-ink-100);
+  --sk-color-text-muted: var(--sk-ink-300);
+  --sk-color-text-subtle: var(--sk-ink-400);
+  --sk-color-text-on-primary: var(--sk-ink-1000);
+  --sk-color-link: var(--sk-blue-300);
+
+  --sk-color-primary: var(--sk-yellow-500);
+  --sk-color-primary-hover: var(--sk-yellow-400);
+  --sk-color-accent: var(--sk-yellow-500);
+  --sk-color-accent-wash: var(--sk-amber-900);
+  --sk-color-hover: var(--sk-ink-850);
+  --sk-color-focus: var(--sk-blue-300);
+
+  --sk-color-border: var(--sk-ink-850);
+  --sk-color-border-strong: var(--sk-ink-800);
+
+  --sk-color-positive: var(--sk-green-300);
+  --sk-color-positive-wash: var(--sk-green-900);
+  --sk-color-critical: var(--sk-amber-300);
+  --sk-color-critical-wash: var(--sk-amber-900);
+  --sk-color-negative: var(--sk-red-300);
+  --sk-color-negative-wash: var(--sk-red-900);
+  --sk-color-info: var(--sk-blue-300);
+  --sk-color-info-wash: var(--sk-blue-900);
+  --sk-color-neutral: var(--sk-ink-300);
+  --sk-color-neutral-wash: var(--sk-ink-850);
+
+  --sk-color-rating: var(--sk-yellow-500);
+  --sk-color-progress: var(--sk-yellow-500);
+  --sk-color-progress-track: var(--sk-ink-800);
+  --sk-avatar-palette: var(--sk-ink-850);
+  color-scheme: dark;
+}
+
+/* ---------------------------------------------------------------- density and size semantics */
+:root,
+[data-density='comfortable'] {
+  --sk-control-height: var(--sk-size-control-comfortable);
+  --sk-row-height: var(--sk-size-row-comfortable);
+  --sk-header-row-height: var(--sk-size-header-row-comfortable);
+  --sk-space-page-x: var(--sk-space-6);
+  --sk-space-section: var(--sk-space-7);
+  --sk-space-field: var(--sk-space-5);
+  --sk-space-gap: var(--sk-space-3);
+  --sk-space-inset: var(--sk-space-5);
+  --sk-text-body: var(--sk-font-size-3);
+  --sk-text-small: var(--sk-font-size-2);
+}
+
+[data-density='compact'] {
+  --sk-control-height: var(--sk-size-control-compact);
+  --sk-row-height: var(--sk-size-row-compact);
+  --sk-header-row-height: var(--sk-size-header-row-compact);
+  --sk-space-page-x: var(--sk-space-5);
+  --sk-space-section: var(--sk-space-6);
+  --sk-space-field: var(--sk-space-4);
+  --sk-space-gap: var(--sk-space-2);
+  --sk-space-inset: var(--sk-space-4);
+  --sk-text-body: var(--sk-font-size-2);
+  --sk-text-small: var(--sk-font-size-1);
+}
+
+:root {
+  --sk-radius-control: var(--sk-radius-2);
+  --sk-radius-panel: var(--sk-radius-3);
+  --sk-text-page-title: var(--sk-font-size-5);
+  --sk-text-object-title: var(--sk-font-size-6);
+  --sk-text-section-title: var(--sk-font-size-4);
+  --sk-text-label: var(--sk-font-size-2);
+  --sk-text-kpi: var(--sk-font-size-7);
+  --sk-font-weight-regular: 400;
+  --sk-font-weight-medium: 500;
+  --sk-font-weight-bold: 600;
+  --sk-font-weight-light: 300;
+}
+
+/* ---------------------------------------------------------------- 3. component tokens */
+:root,
+[data-theme],
+[data-density] {
+  --sk-table-header-bg: var(--sk-color-surface-2);
+  --sk-table-row-selected-bg: var(--sk-color-accent-wash);
+  --sk-table-row-hover-bg: var(--sk-color-hover);
+  --sk-anchor-active-color: var(--sk-color-accent);
+  --sk-page-header-bg: var(--sk-color-surface);
+  --sk-facet-kpi-size: var(--sk-text-kpi);
+  --sk-filterbar-gap: var(--sk-space-field);
+}
+
+/* ---------------------------------------------------------------- Mantine bridge
+ * Mantine also receives these values through cssVariablesResolver (theme/mantine.ts); the selectors here
+ * make nested [data-theme] / [data-density] containers re-resolve them. */
+:root,
+[data-theme],
+[data-density] {
+  --mantine-font-family: var(--sk-font-sans);
+  --mantine-font-family-headings: var(--sk-font-sans);
+  --mantine-color-body: var(--sk-color-page);
+  --mantine-color-text: var(--sk-color-text);
+  --mantine-color-bright: var(--sk-color-text);
+  --mantine-color-dimmed: var(--sk-color-text-muted);
+  --mantine-color-anchor: var(--sk-color-link);
+  --mantine-color-placeholder: var(--sk-color-text-subtle);
+  --mantine-color-default: var(--sk-color-surface);
+  --mantine-color-default-hover: var(--sk-color-hover);
+  --mantine-color-default-color: var(--sk-color-text);
+  --mantine-color-default-border: var(--sk-color-border-strong);
+  --mantine-color-error: var(--sk-color-negative);
+  --mantine-primary-color-filled: var(--sk-color-primary);
+  --mantine-primary-color-filled-hover: var(--sk-color-primary-hover);
+  --mantine-primary-color-contrast: var(--sk-color-text-on-primary);
+  --mantine-primary-color-light: var(--sk-color-hover);
+  --mantine-primary-color-light-hover: var(--sk-color-border);
+  --mantine-primary-color-light-color: var(--sk-color-text);
+  --mantine-color-sk-filled: var(--sk-color-primary);
+  --mantine-color-sk-filled-hover: var(--sk-color-primary-hover);
+  --mantine-color-sk-light: var(--sk-color-hover);
+  --mantine-color-sk-light-hover: var(--sk-color-border);
+  --mantine-color-sk-light-color: var(--sk-color-text);
+  --mantine-color-sk-outline: var(--sk-color-text);
+  --mantine-color-sk-outline-hover: var(--sk-color-hover);
+  --mantine-color-sk-text: var(--sk-color-text);
+  --mantine-color-gray-0: var(--sk-color-surface-2);
+  --mantine-color-gray-1: var(--sk-color-hover);
+  --mantine-color-gray-2: var(--sk-color-border);
+  --mantine-color-gray-3: var(--sk-color-border-strong);
+  --mantine-color-gray-4: var(--sk-color-border-strong);
+  --mantine-color-gray-6: var(--sk-color-text-subtle);
+  --mantine-color-gray-7: var(--sk-color-text-muted);
+  --mantine-color-dark-light-color: var(--sk-color-text);
+  --mantine-color-gray-light: var(--sk-color-hover);
+  --mantine-color-gray-light-hover: var(--sk-color-border);
+  --mantine-color-gray-light-color: var(--sk-color-text-muted);
+  --mantine-color-gray-filled: var(--sk-color-text-subtle);
+  --mantine-color-gray-text: var(--sk-color-text-muted);
+  --mantine-radius-default: var(--sk-radius-control);
+  --mantine-radius-sm: var(--sk-radius-1);
+  --mantine-radius-md: var(--sk-radius-control);
+  --mantine-radius-lg: var(--sk-radius-panel);
+  --mantine-font-size-xs: var(--sk-font-size-1);
+  --mantine-font-size-sm: var(--sk-text-small);
+  --mantine-font-size-md: var(--sk-text-body);
+  --mantine-font-size-lg: var(--sk-font-size-4);
+  --mantine-font-size-xl: var(--sk-font-size-5);
+  --input-height-sm: var(--sk-control-height);
+  --button-height-sm: var(--sk-control-height);
+  --mantine-shadow-md: var(--sk-shadow-2);
+  --mantine-shadow-lg: var(--sk-shadow-3);
+  --mantine-color-white: var(--sk-color-surface);
+  --mantine-color-black: var(--sk-color-text);
+}

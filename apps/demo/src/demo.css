@@ -1,0 +1,18 @@
+/* Demo shell styles. Uses the library tokens so that it follows the theme. */
+html, body, #root { height: 100%; margin: 0; }
+body { background: var(--sk-color-page); color: var(--sk-color-text); font-family: var(--sk-font-sans); }
+.demo { display: grid; grid-template-rows: auto 1fr; height: 100%; }
+.demo__bar { display: flex; align-items: center; gap: var(--sk-space-4); padding: var(--sk-space-2) var(--sk-space-5); background: var(--sk-color-surface); border-bottom: var(--sk-size-border) solid var(--sk-color-border); flex-wrap: wrap; }
+.demo__brand { font-weight: var(--sk-font-weight-bold); margin-right: var(--sk-space-4); }
+.demo__nav { display: flex; gap: var(--sk-space-4); flex: 1 1 auto; flex-wrap: wrap; }
+.demo__nav a { color: var(--sk-color-text-muted); text-decoration: none; font-weight: var(--sk-font-weight-medium); }
+.demo__nav a[aria-current='page'] { color: var(--sk-color-text); box-shadow: inset 0 calc(-1 * var(--sk-size-accent-line)) 0 var(--sk-color-accent); }
+.demo__main { overflow: auto; min-height: 0; position: relative; }
+.demo__main--fill { overflow: hidden; }
+.demo__page { padding: var(--sk-space-6); }
+.demo__split { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: var(--sk-space-5); padding: var(--sk-space-5); }
+.demo__table { width: 100%; border-collapse: collapse; background: var(--sk-color-surface); }
+.demo__table th, .demo__table td { text-align: left; padding: var(--sk-space-2) var(--sk-space-3); border-bottom: var(--sk-size-border) solid var(--sk-color-border); }
+.demo__table tr[aria-selected='true'] { background: var(--sk-color-accent-wash); }
+.demo__card { background: var(--sk-color-surface); border: var(--sk-size-border) solid var(--sk-color-border); border-radius: var(--sk-radius-panel); padding: var(--sk-space-5); }
+.demo__overdue { color: var(--sk-color-negative); font-weight: var(--sk-font-weight-bold); }

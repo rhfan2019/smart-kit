@@ -1,0 +1,7 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    { "name": "demo", "runtimeExecutable": "npm", "runtimeArgs": ["run", "dev", "-w", "demo"], "port": 4401 },
+    { "name": "mock", "runtimeExecutable": "npm", "runtimeArgs": ["run", "mock"], "port": 4400 }
+  ]
+}
