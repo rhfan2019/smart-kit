@@ -195,7 +195,8 @@ function evalCondition(value: unknown, c: Condition, type: EdmType): boolean {
     type = 'Edm.Date';
   }
   const cmp = (x: unknown) => compareValues(value, x, type);
-  const s = value === null || value === undefined ? '' : String(value).toLowerCase();
+  // OData string functions are case-sensitive.
+  const s = value === null || value === undefined ? '' : String(value);
   switch (c.operator) {
     case 'EQ': return cmp(a) === 0;
     case 'NE': return cmp(a) !== 0;
@@ -205,10 +206,10 @@ function evalCondition(value: unknown, c: Condition, type: EdmType): boolean {
     case 'GE': return value != null && cmp(a) >= 0;
     case 'BT': return value != null && cmp(a) >= 0 && cmp(b) <= 0;
     case 'NB': return !(value != null && cmp(a) >= 0 && cmp(b) <= 0);
-    case 'Contains': return s.includes(String(a).toLowerCase());
-    case 'NotContains': return !s.includes(String(a).toLowerCase());
-    case 'StartsWith': return s.startsWith(String(a).toLowerCase());
-    case 'EndsWith': return s.endsWith(String(a).toLowerCase());
+    case 'Contains': return s.includes(String(a));
+    case 'NotContains': return !s.includes(String(a));
+    case 'StartsWith': return s.startsWith(String(a));
+    case 'EndsWith': return s.endsWith(String(a));
     case 'Empty': return value === null || value === undefined || value === '';
     case 'NotEmpty': return !(value === null || value === undefined || value === '');
   }

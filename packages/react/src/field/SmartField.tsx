@@ -73,8 +73,8 @@ export function SmartField(props: SmartFieldProps) {
     const value = Number(v.value ?? 0);
     const label = t('field.rating', { value: v.formatted || '0', max });
     return (
-      <span className="sk-field sk-field--rating" title={label}>
-        <Rating value={value} count={max} fractions={2} readOnly size="sm" aria-label={label} />
+      <span className="sk-field sk-field--rating" title={label} role="img" aria-label={label}>
+        <Rating value={value} count={max} fractions={2} readOnly size="sm" aria-hidden />
       </span>
     );
   }

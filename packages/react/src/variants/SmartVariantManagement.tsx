@@ -29,7 +29,7 @@ export function SmartVariantManagement(p: SmartVariantManagementProps) {
       <Group gap="xs" wrap="nowrap" className="sk-variant">
         <Menu position="bottom-start" width={280}>
           <Menu.Target>
-            <UnstyledButton className="sk-variant__button" aria-label={t('variant.select')} data-sk-variant>
+            <UnstyledButton className="sk-variant__button" title={t('variant.select')} data-sk-variant>
               <h1 className="sk-dynamic-page__heading">{nameOf(v.current.id, v.current.name)}</h1>
               <ChevronDown className="sk-icon" />
             </UnstyledButton>
