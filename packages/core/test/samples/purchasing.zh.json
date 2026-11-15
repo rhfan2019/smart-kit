@@ -1,0 +1,1824 @@
+{
+ "$Version": "4.0",
+ "$EntityContainer": "Purchasing.Container",
+ "$Reference": {
+  "https://sap.github.io/odata-vocabularies/vocabularies/UI.xml": {
+   "$Include": [
+    {
+     "$Namespace": "com.sap.vocabularies.UI.v1",
+     "$Alias": "UI"
+    }
+   ]
+  },
+  "https://sap.github.io/odata-vocabularies/vocabularies/Common.xml": {
+   "$Include": [
+    {
+     "$Namespace": "com.sap.vocabularies.Common.v1",
+     "$Alias": "Common"
+    }
+   ]
+  },
+  "https://oasis-tcs.github.io/odata-vocabularies/vocabularies/Org.OData.Measures.V1.xml": {
+   "$Include": [
+    {
+     "$Namespace": "Org.OData.Measures.V1",
+     "$Alias": "Measures"
+    }
+   ]
+  },
+  "https://oasis-tcs.github.io/odata-vocabularies/vocabularies/Org.OData.Capabilities.V1.xml": {
+   "$Include": [
+    {
+     "$Namespace": "Org.OData.Capabilities.V1",
+     "$Alias": "Capabilities"
+    }
+   ]
+  },
+  "https://oasis-tcs.github.io/odata-vocabularies/vocabularies/Org.OData.Core.V1.xml": {
+   "$Include": [
+    {
+     "$Namespace": "Org.OData.Core.V1",
+     "$Alias": "Core"
+    }
+   ]
+  }
+ },
+ "Purchasing": {
+  "PurchaseOrder": {
+   "$Kind": "EntityType",
+   "$Key": [
+    "PurchaseOrder"
+   ],
+   "PurchaseOrder": {
+    "$MaxLength": 10
+   },
+   "PurchaseOrderType": {
+    "$MaxLength": 4
+   },
+   "Supplier": {
+    "$MaxLength": 10
+   },
+   "CompanyCode": {
+    "$MaxLength": 4
+   },
+   "PurchasingGroup": {
+    "$MaxLength": 3
+   },
+   "OrderDate": {
+    "$Type": "Edm.Date"
+   },
+   "CreatedAt": {
+    "$Type": "Edm.DateTimeOffset",
+    "$Precision": 0
+   },
+   "Status": {
+    "$MaxLength": 10
+   },
+   "StatusCriticality": {
+    "$Type": "Edm.Byte"
+   },
+   "NetAmount": {
+    "$Type": "Edm.Decimal",
+    "$Precision": 15,
+    "$Scale": 2
+   },
+   "Currency": {
+    "$MaxLength": 3
+   },
+   "DeliveredPercent": {
+    "$Type": "Edm.Decimal",
+    "$Precision": 4,
+    "$Scale": 1
+   },
+   "Description": {
+    "$Nullable": true,
+    "$MaxLength": 80
+   },
+   "Notes": {
+    "$Nullable": true,
+    "$MaxLength": 1000
+   },
+   "Version": {
+    "$Type": "Edm.Int32"
+   },
+   "_Supplier": {
+    "$Kind": "NavigationProperty",
+    "$Type": "Purchasing.Supplier",
+    "$ReferentialConstraint": {
+     "Supplier": "Supplier"
+    }
+   },
+   "_Status": {
+    "$Kind": "NavigationProperty",
+    "$Type": "Purchasing.OrderStatus",
+    "$ReferentialConstraint": {
+     "Status": "Code"
+    }
+   },
+   "_PurchaseOrderType": {
+    "$Kind": "NavigationProperty",
+    "$Type": "Purchasing.OrderType",
+    "$ReferentialConstraint": {
+     "PurchaseOrderType": "Code"
+    }
+   },
+   "_Item": {
+    "$Kind": "NavigationProperty",
+    "$Collection": true,
+    "$Type": "Purchasing.PurchaseOrderItem",
+    "$Partner": "_PurchaseOrder"
+   }
+  },
+  "PurchaseOrderItem": {
+   "$Kind": "EntityType",
+   "$Key": [
+    "PurchaseOrder",
+    "PurchaseOrderItem"
+   ],
+   "PurchaseOrder": {
+    "$MaxLength": 10
+   },
+   "PurchaseOrderItem": {
+    "$Type": "Edm.Int32"
+   },
+   "Material": {
+    "$MaxLength": 10
+   },
+   "Plant": {
+    "$MaxLength": 4
+   },
+   "OrderQuantity": {
+    "$Type": "Edm.Decimal",
+    "$Precision": 13,
+    "$Scale": 3
+   },
+   "OrderUnit": {
+    "$MaxLength": 3
+   },
+   "NetPrice": {
+    "$Type": "Edm.Decimal",
+    "$Precision": 11,
+    "$Scale": 2
+   },
+   "NetAmount": {
+    "$Type": "Edm.Decimal",
+    "$Precision": 15,
+    "$Scale": 2
+   },
+   "Currency": {
+    "$MaxLength": 3
+   },
+   "DeliveryDate": {
+    "$Type": "Edm.Date"
+   },
+   "ReceivedQuantity": {
+    "$Type": "Edm.Decimal",
+    "$Precision": 13,
+    "$Scale": 3
+   },
+   "InvoicedAmount": {
+    "$Type": "Edm.Decimal",
+    "$Precision": 15,
+    "$Scale": 2
+   },
+   "Version": {
+    "$Type": "Edm.Int32"
+   },
+   "_PurchaseOrder": {
+    "$Kind": "NavigationProperty",
+    "$Type": "Purchasing.PurchaseOrder",
+    "$Partner": "_Item",
+    "$ReferentialConstraint": {
+     "PurchaseOrder": "PurchaseOrder"
+    }
+   },
+   "_Material": {
+    "$Kind": "NavigationProperty",
+    "$Type": "Purchasing.Material",
+    "$ReferentialConstraint": {
+     "Material": "Material"
+    }
+   },
+   "_Plant": {
+    "$Kind": "NavigationProperty",
+    "$Type": "Purchasing.Plant",
+    "$ReferentialConstraint": {
+     "Plant": "Plant"
+    }
+   },
+   "_PricingCondition": {
+    "$Kind": "NavigationProperty",
+    "$Collection": true,
+    "$Type": "Purchasing.PricingCondition",
+    "$Partner": "_Item"
+   },
+   "_History": {
+    "$Kind": "NavigationProperty",
+    "$Collection": true,
+    "$Type": "Purchasing.ItemHistory",
+    "$Partner": "_Item"
+   }
+  },
+  "PricingCondition": {
+   "$Kind": "EntityType",
+   "$Key": [
+    "PurchaseOrder",
+    "PurchaseOrderItem",
+    "ConditionCounter"
+   ],
+   "PurchaseOrder": {
+    "$MaxLength": 10
+   },
+   "PurchaseOrderItem": {
+    "$Type": "Edm.Int32"
+   },
+   "ConditionCounter": {
+    "$Type": "Edm.Int32"
+   },
+   "ConditionType": {
+    "$MaxLength": 4
+   },
+   "ConditionTypeName": {
+    "$MaxLength": 40
+   },
+   "Rate": {
+    "$Type": "Edm.Decimal",
+    "$Precision": 11,
+    "$Scale": 2
+   },
+   "RateUnit": {
+    "$MaxLength": 3
+   },
+   "ConditionAmount": {
+    "$Type": "Edm.Decimal",
+    "$Precision": 15,
+    "$Scale": 2
+   },
+   "Currency": {
+    "$MaxLength": 3
+   },
+   "IsStatistical": {
+    "$Type": "Edm.Boolean"
+   },
+   "_Item": {
+    "$Kind": "NavigationProperty",
+    "$Type": "Purchasing.PurchaseOrderItem",
+    "$Partner": "_PricingCondition",
+    "$ReferentialConstraint": {
+     "PurchaseOrder": "PurchaseOrder",
+     "PurchaseOrderItem": "PurchaseOrderItem"
+    }
+   }
+  },
+  "ItemHistory": {
+   "$Kind": "EntityType",
+   "$Key": [
+    "PurchaseOrder",
+    "PurchaseOrderItem",
+    "HistoryCounter"
+   ],
+   "PurchaseOrder": {
+    "$MaxLength": 10
+   },
+   "PurchaseOrderItem": {
+    "$Type": "Edm.Int32"
+   },
+   "HistoryCounter": {
+    "$Type": "Edm.Int32"
+   },
+   "Category": {
+    "$MaxLength": 2
+   },
+   "CategoryText": {
+    "$MaxLength": 40
+   },
+   "DocumentNumber": {
+    "$MaxLength": 10
+   },
+   "PostingDate": {
+    "$Type": "Edm.Date"
+   },
+   "Quantity": {
+    "$Type": "Edm.Decimal",
+    "$Precision": 13,
+    "$Scale": 3
+   },
+   "Unit": {
+    "$MaxLength": 3
+   },
+   "Amount": {
+    "$Type": "Edm.Decimal",
+    "$Precision": 15,
+    "$Scale": 2
+   },
+   "Currency": {
+    "$MaxLength": 3
+   },
+   "MovementType": {
+    "$Nullable": true,
+    "$MaxLength": 3
+   },
+   "_Item": {
+    "$Kind": "NavigationProperty",
+    "$Type": "Purchasing.PurchaseOrderItem",
+    "$Partner": "_History",
+    "$ReferentialConstraint": {
+     "PurchaseOrder": "PurchaseOrder",
+     "PurchaseOrderItem": "PurchaseOrderItem"
+    }
+   }
+  },
+  "Supplier": {
+   "$Kind": "EntityType",
+   "$Key": [
+    "Supplier"
+   ],
+   "Supplier": {
+    "$MaxLength": 10
+   },
+   "SupplierName": {
+    "$MaxLength": 80
+   },
+   "Country": {
+    "$MaxLength": 3
+   },
+   "City": {
+    "$MaxLength": 40
+   },
+   "Rating": {
+    "$Type": "Edm.Decimal",
+    "$Precision": 2,
+    "$Scale": 1
+   },
+   "LogoUrl": {
+    "$MaxLength": 255
+   },
+   "IsBlocked": {
+    "$Type": "Edm.Boolean"
+   }
+  },
+  "Material": {
+   "$Kind": "EntityType",
+   "$Key": [
+    "Material"
+   ],
+   "Material": {
+    "$MaxLength": 10
+   },
+   "MaterialName": {
+    "$MaxLength": 80
+   },
+   "MaterialGroup": {
+    "$MaxLength": 9
+   },
+   "BaseUnit": {
+    "$MaxLength": 3
+   }
+  },
+  "Plant": {
+   "$Kind": "EntityType",
+   "$Key": [
+    "Plant"
+   ],
+   "Plant": {
+    "$MaxLength": 4
+   },
+   "PlantName": {
+    "$MaxLength": 40
+   },
+   "City": {
+    "$MaxLength": 40
+   }
+  },
+  "OrderStatus": {
+   "$Kind": "EntityType",
+   "$Key": [
+    "Code"
+   ],
+   "Code": {
+    "$MaxLength": 10
+   },
+   "Name": {
+    "$MaxLength": 40
+   },
+   "Criticality": {
+    "$Type": "Edm.Byte"
+   }
+  },
+  "OrderType": {
+   "$Kind": "EntityType",
+   "$Key": [
+    "Code"
+   ],
+   "Code": {
+    "$MaxLength": 4
+   },
+   "Name": {
+    "$MaxLength": 40
+   }
+  },
+  "Variant": {
+   "$Kind": "EntityType",
+   "$Key": [
+    "ID"
+   ],
+   "ID": {
+    "$Type": "Edm.Guid"
+   },
+   "PageKey": {
+    "$MaxLength": 200
+   },
+   "Name": {
+    "$MaxLength": 100
+   },
+   "IsDefault": {
+    "$Type": "Edm.Boolean"
+   },
+   "AutoApply": {
+    "$Type": "Edm.Boolean"
+   },
+   "Content": {},
+   "ModifiedAt": {
+    "$Type": "Edm.DateTimeOffset",
+    "$Precision": 3
+   }
+  },
+  "Container": {
+   "$Kind": "EntityContainer",
+   "PurchaseOrders": {
+    "$Collection": true,
+    "$Type": "Purchasing.PurchaseOrder",
+    "$NavigationPropertyBinding": {
+     "_Supplier": "Suppliers",
+     "_Status": "OrderStatuses",
+     "_PurchaseOrderType": "PurchaseOrderTypes",
+     "_Item": "PurchaseOrderItems"
+    }
+   },
+   "PurchaseOrderItems": {
+    "$Collection": true,
+    "$Type": "Purchasing.PurchaseOrderItem",
+    "$NavigationPropertyBinding": {
+     "_PurchaseOrder": "PurchaseOrders",
+     "_Material": "Materials",
+     "_Plant": "Plants",
+     "_PricingCondition": "PricingConditions",
+     "_History": "ItemHistory"
+    }
+   },
+   "PricingConditions": {
+    "$Collection": true,
+    "$Type": "Purchasing.PricingCondition",
+    "$NavigationPropertyBinding": {
+     "_Item": "PurchaseOrderItems"
+    }
+   },
+   "ItemHistory": {
+    "$Collection": true,
+    "$Type": "Purchasing.ItemHistory",
+    "$NavigationPropertyBinding": {
+     "_Item": "PurchaseOrderItems"
+    }
+   },
+   "Suppliers": {
+    "$Collection": true,
+    "$Type": "Purchasing.Supplier"
+   },
+   "Materials": {
+    "$Collection": true,
+    "$Type": "Purchasing.Material"
+   },
+   "Plants": {
+    "$Collection": true,
+    "$Type": "Purchasing.Plant"
+   },
+   "OrderStatuses": {
+    "$Collection": true,
+    "$Type": "Purchasing.OrderStatus"
+   },
+   "PurchaseOrderTypes": {
+    "$Collection": true,
+    "$Type": "Purchasing.OrderType"
+   },
+   "Variants": {
+    "$Collection": true,
+    "$Type": "Purchasing.Variant"
+   }
+  },
+  "$Annotations": {
+   "Purchasing.Container/PurchaseOrders": {
+    "@Capabilities.SearchRestrictions": {
+     "@type": "Org.OData.Capabilities.V1.SearchRestrictionsType",
+     "Searchable": true
+    },
+    "@Capabilities.FilterRestrictions": {
+     "@type": "Org.OData.Capabilities.V1.FilterRestrictionsType",
+     "NonFilterableProperties": [
+      {
+       "$PropertyPath": "Notes"
+      }
+     ],
+     "RequiredProperties": [
+      {
+       "$PropertyPath": "CompanyCode"
+      }
+     ]
+    },
+    "@Capabilities.SortRestrictions": {
+     "@type": "Org.OData.Capabilities.V1.SortRestrictionsType",
+     "NonSortableProperties": [
+      {
+       "$PropertyPath": "Description"
+      }
+     ]
+    },
+    "@Capabilities.UpdateRestrictions": {
+     "@type": "Org.OData.Capabilities.V1.UpdateRestrictionsType",
+     "Updatable": true
+    },
+    "@Capabilities.InsertRestrictions": {
+     "@type": "Org.OData.Capabilities.V1.InsertRestrictionsType",
+     "Insertable": false
+    },
+    "@Capabilities.DeleteRestrictions": {
+     "@type": "Org.OData.Capabilities.V1.DeleteRestrictionsType",
+     "Deletable": false
+    },
+    "@Core.OptimisticConcurrency": [
+     {
+      "$PropertyPath": "Version"
+     }
+    ]
+   },
+   "Purchasing.Container/PurchaseOrderItems": {
+    "@Capabilities.SearchRestrictions": {
+     "@type": "Org.OData.Capabilities.V1.SearchRestrictionsType",
+     "Searchable": false
+    },
+    "@Core.OptimisticConcurrency": [
+     {
+      "$PropertyPath": "Version"
+     }
+    ]
+   },
+   "Purchasing.Container/PricingConditions": {
+    "@Capabilities.SearchRestrictions": {
+     "@type": "Org.OData.Capabilities.V1.SearchRestrictionsType",
+     "Searchable": false
+    }
+   },
+   "Purchasing.Container/ItemHistory": {
+    "@Capabilities.SearchRestrictions": {
+     "@type": "Org.OData.Capabilities.V1.SearchRestrictionsType",
+     "Searchable": false
+    },
+    "@Capabilities.CountRestrictions": {
+     "@type": "Org.OData.Capabilities.V1.CountRestrictionsType",
+     "Countable": false
+    }
+   },
+   "Purchasing.Container/Suppliers": {
+    "@Capabilities.SearchRestrictions": {
+     "@type": "Org.OData.Capabilities.V1.SearchRestrictionsType",
+     "Searchable": true
+    }
+   },
+   "Purchasing.Container/Materials": {
+    "@Capabilities.SearchRestrictions": {
+     "@type": "Org.OData.Capabilities.V1.SearchRestrictionsType",
+     "Searchable": true
+    }
+   },
+   "Purchasing.Container/Plants": {
+    "@Capabilities.SearchRestrictions": {
+     "@type": "Org.OData.Capabilities.V1.SearchRestrictionsType",
+     "Searchable": false
+    }
+   },
+   "Purchasing.Container/OrderStatuses": {
+    "@Capabilities.SearchRestrictions": {
+     "@type": "Org.OData.Capabilities.V1.SearchRestrictionsType",
+     "Searchable": false
+    }
+   },
+   "Purchasing.Container/PurchaseOrderTypes": {
+    "@Capabilities.SearchRestrictions": {
+     "@type": "Org.OData.Capabilities.V1.SearchRestrictionsType",
+     "Searchable": false
+    }
+   },
+   "Purchasing.Container/Variants": {
+    "@Capabilities.SearchRestrictions": {
+     "@type": "Org.OData.Capabilities.V1.SearchRestrictionsType",
+     "Searchable": false
+    }
+   },
+   "Purchasing.PurchaseOrder": {
+    "@UI.HeaderInfo": {
+     "@type": "com.sap.vocabularies.UI.v1.HeaderInfoType",
+     "TypeName": "采购订单",
+     "TypeNamePlural": "采购订单",
+     "Title": {
+      "@type": "com.sap.vocabularies.UI.v1.DataField",
+      "Value": {
+       "$Path": "PurchaseOrder"
+      }
+     },
+     "Description": {
+      "@type": "com.sap.vocabularies.UI.v1.DataField",
+      "Value": {
+       "$Path": "Description"
+      }
+     },
+     "ImageUrl": {
+      "$Path": "_Supplier/LogoUrl"
+     }
+    },
+    "@UI.LineItem": [
+     {
+      "@type": "com.sap.vocabularies.UI.v1.DataField",
+      "Value": {
+       "$Path": "PurchaseOrder"
+      }
+     },
+     {
+      "@type": "com.sap.vocabularies.UI.v1.DataField",
+      "Value": {
+       "$Path": "Supplier"
+      }
+     },
+     {
+      "@type": "com.sap.vocabularies.UI.v1.DataFieldForAnnotation",
+      "Label": "供应商评分",
+      "Target": {
+       "$AnnotationPath": "_Supplier/@UI.DataPoint#Rating"
+      }
+     },
+     {
+      "@type": "com.sap.vocabularies.UI.v1.DataField",
+      "Value": {
+       "$Path": "OrderDate"
+      }
+     },
+     {
+      "@type": "com.sap.vocabularies.UI.v1.DataField",
+      "Value": {
+       "$Path": "Status"
+      },
+      "Criticality": {
+       "$Path": "StatusCriticality"
+      }
+     },
+     {
+      "@type": "com.sap.vocabularies.UI.v1.DataField",
+      "Value": {
+       "$Path": "NetAmount"
+      }
+     },
+     {
+      "@type": "com.sap.vocabularies.UI.v1.DataFieldForAnnotation",
+      "Label": "交货进度",
+      "Target": {
+       "$AnnotationPath": "@UI.DataPoint#Delivery"
+      }
+     },
+     {
+      "@type": "com.sap.vocabularies.UI.v1.DataField",
+      "Value": {
+       "$Path": "PurchaseOrderType"
+      }
+     }
+    ],
+    "@UI.SelectionFields": [
+     {
+      "$PropertyPath": "PurchaseOrder"
+     },
+     {
+      "$PropertyPath": "Supplier"
+     },
+     {
+      "$PropertyPath": "Status"
+     },
+     {
+      "$PropertyPath": "OrderDate"
+     },
+     {
+      "$PropertyPath": "PurchaseOrderType"
+     },
+     {
+      "$PropertyPath": "CompanyCode"
+     }
+    ],
+    "@UI.PresentationVariant": {
+     "@type": "com.sap.vocabularies.UI.v1.PresentationVariantType",
+     "SortOrder": [
+      {
+       "@type": "com.sap.vocabularies.Common.v1.SortOrderType",
+       "Property": {
+        "$PropertyPath": "OrderDate"
+       },
+       "Descending": true
+      }
+     ],
+     "Visualizations": [
+      {
+       "$AnnotationPath": "@UI.LineItem"
+      }
+     ],
+     "RequestAtLeast": [
+      {
+       "$PropertyPath": "Currency"
+      }
+     ]
+    },
+    "@UI.SelectionVariant": {
+     "@type": "com.sap.vocabularies.UI.v1.SelectionVariantType",
+     "Text": "未关闭的订单",
+     "SelectOptions": [
+      {
+       "@type": "com.sap.vocabularies.UI.v1.SelectOptionType",
+       "PropertyName": {
+        "$PropertyPath": "Status"
+       },
+       "Ranges": [
+        {
+         "@type": "com.sap.vocabularies.UI.v1.SelectionRangeType",
+         "Sign": "I",
+         "Option": "NE",
+         "Low": "CLOSED"
+        }
+       ]
+      },
+      {
+       "@type": "com.sap.vocabularies.UI.v1.SelectOptionType",
+       "PropertyName": {
+        "$PropertyPath": "CompanyCode"
+       },
+       "Ranges": [
+        {
+         "@type": "com.sap.vocabularies.UI.v1.SelectionRangeType",
+         "Sign": "I",
+         "Option": "EQ",
+         "Low": "1000"
+        }
+       ]
+      }
+     ]
+    },
+    "@UI.DataPoint#Delivery": {
+     "@type": "com.sap.vocabularies.UI.v1.DataPointType",
+     "Title": "交货进度",
+     "Value": {
+      "$Path": "DeliveredPercent"
+     },
+     "TargetValue": 100,
+     "Visualization": "Progress"
+    },
+    "@UI.DataPoint#NetAmount": {
+     "@type": "com.sap.vocabularies.UI.v1.DataPointType",
+     "Title": "净值",
+     "Value": {
+      "$Path": "NetAmount"
+     }
+    },
+    "@UI.HeaderFacets": [
+     {
+      "@type": "com.sap.vocabularies.UI.v1.ReferenceFacet",
+      "ID": "HeaderGeneral",
+      "Label": "供应商与采购组",
+      "Target": {
+       "$AnnotationPath": "@UI.FieldGroup#HeaderGeneral"
+      }
+     },
+     {
+      "@type": "com.sap.vocabularies.UI.v1.ReferenceFacet",
+      "ID": "HeaderNetAmount",
+      "Target": {
+       "$AnnotationPath": "@UI.DataPoint#NetAmount"
+      }
+     },
+     {
+      "@type": "com.sap.vocabularies.UI.v1.ReferenceFacet",
+      "ID": "HeaderDelivery",
+      "Target": {
+       "$AnnotationPath": "@UI.DataPoint#Delivery"
+      }
+     },
+     {
+      "@type": "com.sap.vocabularies.UI.v1.ReferenceFacet",
+      "ID": "HeaderRating",
+      "Target": {
+       "$AnnotationPath": "_Supplier/@UI.DataPoint#Rating"
+      }
+     }
+    ],
+    "@UI.FieldGroup#HeaderGeneral": {
+     "@type": "com.sap.vocabularies.UI.v1.FieldGroupType",
+     "Label": "供应商与采购组",
+     "Data": [
+      {
+       "@type": "com.sap.vocabularies.UI.v1.DataField",
+       "Value": {
+        "$Path": "Supplier"
+       }
+      },
+      {
+       "@type": "com.sap.vocabularies.UI.v1.DataField",
+       "Value": {
+        "$Path": "PurchasingGroup"
+       }
+      },
+      {
+       "@type": "com.sap.vocabularies.UI.v1.DataField",
+       "Value": {
+        "$Path": "CompanyCode"
+       }
+      },
+      {
+       "@type": "com.sap.vocabularies.UI.v1.DataField",
+       "Value": {
+        "$Path": "OrderDate"
+       }
+      }
+     ]
+    },
+    "@UI.FieldGroup#General": {
+     "@type": "com.sap.vocabularies.UI.v1.FieldGroupType",
+     "Label": "常规数据",
+     "Data": [
+      {
+       "@type": "com.sap.vocabularies.UI.v1.DataField",
+       "Value": {
+        "$Path": "PurchaseOrder"
+       }
+      },
+      {
+       "@type": "com.sap.vocabularies.UI.v1.DataField",
+       "Value": {
+        "$Path": "PurchaseOrderType"
+       }
+      },
+      {
+       "@type": "com.sap.vocabularies.UI.v1.DataField",
+       "Value": {
+        "$Path": "Supplier"
+       }
+      },
+      {
+       "@type": "com.sap.vocabularies.UI.v1.DataField",
+       "Value": {
+        "$Path": "CompanyCode"
+       }
+      },
+      {
+       "@type": "com.sap.vocabularies.UI.v1.DataField",
+       "Value": {
+        "$Path": "PurchasingGroup"
+       }
+      },
+      {
+       "@type": "com.sap.vocabularies.UI.v1.DataField",
+       "Value": {
+        "$Path": "OrderDate"
+       }
+      },
+      {
+       "@type": "com.sap.vocabularies.UI.v1.DataField",
+       "Value": {
+        "$Path": "Status"
+       },
+       "Criticality": {
+        "$Path": "StatusCriticality"
+       }
+      },
+      {
+       "@type": "com.sap.vocabularies.UI.v1.DataField",
+       "Value": {
+        "$Path": "Description"
+       }
+      },
+      {
+       "@type": "com.sap.vocabularies.UI.v1.DataField",
+       "Value": {
+        "$Path": "CreatedAt"
+       }
+      }
+     ]
+    },
+    "@UI.FieldGroup#Amounts": {
+     "@type": "com.sap.vocabularies.UI.v1.FieldGroupType",
+     "Label": "金额",
+     "Data": [
+      {
+       "@type": "com.sap.vocabularies.UI.v1.DataField",
+       "Value": {
+        "$Path": "NetAmount"
+       }
+      },
+      {
+       "@type": "com.sap.vocabularies.UI.v1.DataField",
+       "Value": {
+        "$Path": "Currency"
+       }
+      },
+      {
+       "@type": "com.sap.vocabularies.UI.v1.DataField",
+       "Value": {
+        "$Path": "DeliveredPercent"
+       }
+      }
+     ]
+    },
+    "@UI.FieldGroup#Notes": {
+     "@type": "com.sap.vocabularies.UI.v1.FieldGroupType",
+     "Label": "备注",
+     "Data": [
+      {
+       "@type": "com.sap.vocabularies.UI.v1.DataField",
+       "Value": {
+        "$Path": "Notes"
+       }
+      }
+     ]
+    },
+    "@UI.Facets": [
+     {
+      "@type": "com.sap.vocabularies.UI.v1.CollectionFacet",
+      "ID": "GeneralInformation",
+      "Label": "常规信息",
+      "Facets": [
+       {
+        "@type": "com.sap.vocabularies.UI.v1.ReferenceFacet",
+        "ID": "GeneralData",
+        "Label": "常规数据",
+        "Target": {
+         "$AnnotationPath": "@UI.FieldGroup#General"
+        }
+       },
+       {
+        "@type": "com.sap.vocabularies.UI.v1.ReferenceFacet",
+        "ID": "AmountData",
+        "Label": "金额",
+        "Target": {
+         "$AnnotationPath": "@UI.FieldGroup#Amounts"
+        }
+       }
+      ]
+     },
+     {
+      "@type": "com.sap.vocabularies.UI.v1.ReferenceFacet",
+      "ID": "Items",
+      "Label": "项目",
+      "Target": {
+       "$AnnotationPath": "_Item/@UI.LineItem"
+      }
+     },
+     {
+      "@type": "com.sap.vocabularies.UI.v1.CollectionFacet",
+      "ID": "NotesSection",
+      "Label": "备注",
+      "Facets": [
+       {
+        "@type": "com.sap.vocabularies.UI.v1.ReferenceFacet",
+        "@UI.PartOfPreview": false,
+        "ID": "NotesData",
+        "Label": "备注",
+        "Target": {
+         "$AnnotationPath": "@UI.FieldGroup#Notes"
+        }
+       }
+      ]
+     }
+    ],
+    "@Common.SemanticKey": [
+     {
+      "$PropertyPath": "PurchaseOrder"
+     }
+    ]
+   },
+   "Purchasing.PurchaseOrder/PurchaseOrder": {
+    "@Common.Label": "采购订单"
+   },
+   "Purchasing.PurchaseOrder/PurchaseOrderType": {
+    "@Common.Label": "订单类型",
+    "@Common.Text": {
+     "$Path": "_PurchaseOrderType/Name"
+    },
+    "@Common.Text@UI.TextArrangement": "TextFirst",
+    "@Common.ValueListWithFixedValues": true,
+    "@Common.ValueList": {
+     "@type": "com.sap.vocabularies.Common.v1.ValueListType",
+     "Label": "订单类型",
+     "CollectionPath": "PurchaseOrderTypes",
+     "Parameters": [
+      {
+       "@type": "com.sap.vocabularies.Common.v1.ValueListParameterInOut",
+       "LocalDataProperty": {
+        "$PropertyPath": "PurchaseOrderType"
+       },
+       "ValueListProperty": "Code"
+      },
+      {
+       "@type": "com.sap.vocabularies.Common.v1.ValueListParameterDisplayOnly",
+       "ValueListProperty": "Name"
+      }
+     ]
+    }
+   },
+   "Purchasing.PurchaseOrder/Supplier": {
+    "@Common.Label": "供应商",
+    "@Common.Text": {
+     "$Path": "_Supplier/SupplierName"
+    },
+    "@Common.Text@UI.TextArrangement": "TextFirst",
+    "@Common.ValueList": {
+     "@type": "com.sap.vocabularies.Common.v1.ValueListType",
+     "Label": "供应商",
+     "CollectionPath": "Suppliers",
+     "SearchSupported": true,
+     "Parameters": [
+      {
+       "@type": "com.sap.vocabularies.Common.v1.ValueListParameterInOut",
+       "LocalDataProperty": {
+        "$PropertyPath": "Supplier"
+       },
+       "ValueListProperty": "Supplier"
+      },
+      {
+       "@type": "com.sap.vocabularies.Common.v1.ValueListParameterDisplayOnly",
+       "ValueListProperty": "SupplierName"
+      },
+      {
+       "@type": "com.sap.vocabularies.Common.v1.ValueListParameterDisplayOnly",
+       "ValueListProperty": "Country"
+      }
+     ]
+    }
+   },
+   "Purchasing.PurchaseOrder/CompanyCode": {
+    "@Common.Label": "公司代码"
+   },
+   "Purchasing.PurchaseOrder/PurchasingGroup": {
+    "@Common.Label": "采购组"
+   },
+   "Purchasing.PurchaseOrder/OrderDate": {
+    "@Common.Label": "订单日期"
+   },
+   "Purchasing.PurchaseOrder/CreatedAt": {
+    "@Common.Label": "创建时间",
+    "@Core.Computed": true
+   },
+   "Purchasing.PurchaseOrder/Status": {
+    "@Common.Label": "状态",
+    "@Common.Text": {
+     "$Path": "_Status/Name"
+    },
+    "@Common.Text@UI.TextArrangement": "TextOnly",
+    "@Common.ValueListWithFixedValues": true,
+    "@Common.ValueList": {
+     "@type": "com.sap.vocabularies.Common.v1.ValueListType",
+     "Label": "状态",
+     "CollectionPath": "OrderStatuses",
+     "Parameters": [
+      {
+       "@type": "com.sap.vocabularies.Common.v1.ValueListParameterInOut",
+       "LocalDataProperty": {
+        "$PropertyPath": "Status"
+       },
+       "ValueListProperty": "Code"
+      },
+      {
+       "@type": "com.sap.vocabularies.Common.v1.ValueListParameterDisplayOnly",
+       "ValueListProperty": "Name"
+      }
+     ]
+    }
+   },
+   "Purchasing.PurchaseOrder/StatusCriticality": {
+    "@Common.Label": "状态重要性",
+    "@UI.Hidden": true,
+    "@Core.Computed": true
+   },
+   "Purchasing.PurchaseOrder/NetAmount": {
+    "@Common.Label": "净值",
+    "@Measures.ISOCurrency": {
+     "$Path": "Currency"
+    },
+    "@Core.Computed": true
+   },
+   "Purchasing.PurchaseOrder/Currency": {
+    "@Common.Label": "货币"
+   },
+   "Purchasing.PurchaseOrder/DeliveredPercent": {
+    "@Common.Label": "交货进度",
+    "@Measures.Unit": "%",
+    "@Core.Computed": true
+   },
+   "Purchasing.PurchaseOrder/Description": {
+    "@Common.Label": "描述"
+   },
+   "Purchasing.PurchaseOrder/Notes": {
+    "@Common.Label": "备注",
+    "@UI.MultiLineText": true
+   },
+   "Purchasing.PurchaseOrder/Version": {
+    "@Common.Label": "版本",
+    "@UI.HiddenFilter": true,
+    "@Core.Computed": true
+   },
+   "Purchasing.PurchaseOrderItem": {
+    "@UI.HeaderInfo": {
+     "@type": "com.sap.vocabularies.UI.v1.HeaderInfoType",
+     "TypeName": "采购订单项目",
+     "TypeNamePlural": "采购订单项目",
+     "Title": {
+      "@type": "com.sap.vocabularies.UI.v1.DataField",
+      "Value": {
+       "$Path": "PurchaseOrderItem"
+      }
+     },
+     "Description": {
+      "@type": "com.sap.vocabularies.UI.v1.DataField",
+      "Value": {
+       "$Path": "_Material/MaterialName"
+      }
+     }
+    },
+    "@UI.LineItem": [
+     {
+      "@type": "com.sap.vocabularies.UI.v1.DataField",
+      "Value": {
+       "$Path": "PurchaseOrderItem"
+      }
+     },
+     {
+      "@type": "com.sap.vocabularies.UI.v1.DataField",
+      "Value": {
+       "$Path": "Material"
+      }
+     },
+     {
+      "@type": "com.sap.vocabularies.UI.v1.DataField",
+      "Value": {
+       "$Path": "Plant"
+      }
+     },
+     {
+      "@type": "com.sap.vocabularies.UI.v1.DataField",
+      "Value": {
+       "$Path": "OrderQuantity"
+      }
+     },
+     {
+      "@type": "com.sap.vocabularies.UI.v1.DataField",
+      "Value": {
+       "$Path": "NetPrice"
+      }
+     },
+     {
+      "@type": "com.sap.vocabularies.UI.v1.DataField",
+      "Value": {
+       "$Path": "NetAmount"
+      }
+     },
+     {
+      "@type": "com.sap.vocabularies.UI.v1.DataField",
+      "Value": {
+       "$Path": "DeliveryDate"
+      }
+     }
+    ],
+    "@UI.FieldGroup#Item": {
+     "@type": "com.sap.vocabularies.UI.v1.FieldGroupType",
+     "Label": "项目数据",
+     "Data": [
+      {
+       "@type": "com.sap.vocabularies.UI.v1.DataField",
+       "Value": {
+        "$Path": "Material"
+       }
+      },
+      {
+       "@type": "com.sap.vocabularies.UI.v1.DataField",
+       "Value": {
+        "$Path": "Plant"
+       }
+      },
+      {
+       "@type": "com.sap.vocabularies.UI.v1.DataField",
+       "Value": {
+        "$Path": "OrderQuantity"
+       }
+      },
+      {
+       "@type": "com.sap.vocabularies.UI.v1.DataField",
+       "Value": {
+        "$Path": "DeliveryDate"
+       }
+      },
+      {
+       "@type": "com.sap.vocabularies.UI.v1.DataField",
+       "Value": {
+        "$Path": "ReceivedQuantity"
+       }
+      }
+     ]
+    },
+    "@UI.FieldGroup#PricingTotals": {
+     "@type": "com.sap.vocabularies.UI.v1.FieldGroupType",
+     "Label": "合计",
+     "Data": [
+      {
+       "@type": "com.sap.vocabularies.UI.v1.DataField",
+       "Value": {
+        "$Path": "NetPrice"
+       }
+      },
+      {
+       "@type": "com.sap.vocabularies.UI.v1.DataField",
+       "Value": {
+        "$Path": "NetAmount"
+       }
+      },
+      {
+       "@type": "com.sap.vocabularies.UI.v1.DataField",
+       "Value": {
+        "$Path": "InvoicedAmount"
+       }
+      }
+     ]
+    },
+    "@UI.Facets": [
+     {
+      "@type": "com.sap.vocabularies.UI.v1.CollectionFacet",
+      "ID": "ItemData",
+      "Label": "项目数据",
+      "Facets": [
+       {
+        "@type": "com.sap.vocabularies.UI.v1.ReferenceFacet",
+        "ID": "ItemFields",
+        "Label": "项目数据",
+        "Target": {
+         "$AnnotationPath": "@UI.FieldGroup#Item"
+        }
+       }
+      ]
+     },
+     {
+      "@type": "com.sap.vocabularies.UI.v1.CollectionFacet",
+      "ID": "Pricing",
+      "Label": "定价",
+      "Facets": [
+       {
+        "@type": "com.sap.vocabularies.UI.v1.ReferenceFacet",
+        "ID": "PricingConditions",
+        "Label": "定价条件",
+        "Target": {
+         "$AnnotationPath": "_PricingCondition/@UI.LineItem"
+        }
+       },
+       {
+        "@type": "com.sap.vocabularies.UI.v1.ReferenceFacet",
+        "ID": "PricingTotals",
+        "Label": "合计",
+        "Target": {
+         "$AnnotationPath": "@UI.FieldGroup#PricingTotals"
+        }
+       }
+      ]
+     },
+     {
+      "@type": "com.sap.vocabularies.UI.v1.ReferenceFacet",
+      "ID": "History",
+      "Label": "历史",
+      "Target": {
+       "$AnnotationPath": "_History/@UI.LineItem"
+      }
+     }
+    ],
+    "@Common.SemanticKey": [
+     {
+      "$PropertyPath": "PurchaseOrder"
+     },
+     {
+      "$PropertyPath": "PurchaseOrderItem"
+     }
+    ]
+   },
+   "Purchasing.PurchaseOrderItem/PurchaseOrder": {
+    "@Common.Label": "采购订单"
+   },
+   "Purchasing.PurchaseOrderItem/PurchaseOrderItem": {
+    "@Common.Label": "项目"
+   },
+   "Purchasing.PurchaseOrderItem/Material": {
+    "@Common.Label": "物料",
+    "@Common.Text": {
+     "$Path": "_Material/MaterialName"
+    },
+    "@Common.Text@UI.TextArrangement": "TextFirst",
+    "@Common.ValueList": {
+     "@type": "com.sap.vocabularies.Common.v1.ValueListType",
+     "Label": "物料",
+     "CollectionPath": "Materials",
+     "SearchSupported": true,
+     "Parameters": [
+      {
+       "@type": "com.sap.vocabularies.Common.v1.ValueListParameterInOut",
+       "LocalDataProperty": {
+        "$PropertyPath": "Material"
+       },
+       "ValueListProperty": "Material"
+      },
+      {
+       "@type": "com.sap.vocabularies.Common.v1.ValueListParameterDisplayOnly",
+       "ValueListProperty": "MaterialName"
+      },
+      {
+       "@type": "com.sap.vocabularies.Common.v1.ValueListParameterDisplayOnly",
+       "ValueListProperty": "MaterialGroup"
+      }
+     ]
+    }
+   },
+   "Purchasing.PurchaseOrderItem/Plant": {
+    "@Common.Label": "工厂",
+    "@Common.Text": {
+     "$Path": "_Plant/PlantName"
+    },
+    "@Common.Text@UI.TextArrangement": "TextLast",
+    "@Common.ValueList": {
+     "@type": "com.sap.vocabularies.Common.v1.ValueListType",
+     "Label": "工厂",
+     "CollectionPath": "Plants",
+     "Parameters": [
+      {
+       "@type": "com.sap.vocabularies.Common.v1.ValueListParameterInOut",
+       "LocalDataProperty": {
+        "$PropertyPath": "Plant"
+       },
+       "ValueListProperty": "Plant"
+      },
+      {
+       "@type": "com.sap.vocabularies.Common.v1.ValueListParameterDisplayOnly",
+       "ValueListProperty": "PlantName"
+      },
+      {
+       "@type": "com.sap.vocabularies.Common.v1.ValueListParameterDisplayOnly",
+       "ValueListProperty": "City"
+      }
+     ]
+    }
+   },
+   "Purchasing.PurchaseOrderItem/OrderQuantity": {
+    "@Common.Label": "订单数量",
+    "@Measures.Unit": {
+     "$Path": "OrderUnit"
+    }
+   },
+   "Purchasing.PurchaseOrderItem/OrderUnit": {
+    "@Common.Label": "订单单位"
+   },
+   "Purchasing.PurchaseOrderItem/NetPrice": {
+    "@Common.Label": "净价",
+    "@Measures.ISOCurrency": {
+     "$Path": "Currency"
+    },
+    "@Core.Computed": true
+   },
+   "Purchasing.PurchaseOrderItem/NetAmount": {
+    "@Common.Label": "净值",
+    "@Measures.ISOCurrency": {
+     "$Path": "Currency"
+    },
+    "@Core.Computed": true
+   },
+   "Purchasing.PurchaseOrderItem/Currency": {
+    "@Common.Label": "货币"
+   },
+   "Purchasing.PurchaseOrderItem/DeliveryDate": {
+    "@Common.Label": "交货日期"
+   },
+   "Purchasing.PurchaseOrderItem/ReceivedQuantity": {
+    "@Common.Label": "已收货数量",
+    "@Measures.Unit": {
+     "$Path": "OrderUnit"
+    },
+    "@Core.Computed": true
+   },
+   "Purchasing.PurchaseOrderItem/InvoicedAmount": {
+    "@Common.Label": "已开票金额",
+    "@Measures.ISOCurrency": {
+     "$Path": "Currency"
+    },
+    "@Core.Computed": true
+   },
+   "Purchasing.PurchaseOrderItem/Version": {
+    "@Common.Label": "版本",
+    "@UI.HiddenFilter": true,
+    "@Core.Computed": true
+   },
+   "Purchasing.PricingCondition": {
+    "@UI.HeaderInfo": {
+     "@type": "com.sap.vocabularies.UI.v1.HeaderInfoType",
+     "TypeName": "定价条件",
+     "TypeNamePlural": "定价条件",
+     "Title": {
+      "@type": "com.sap.vocabularies.UI.v1.DataField",
+      "Value": {
+       "$Path": "ConditionTypeName"
+      }
+     },
+     "Description": {
+      "@type": "com.sap.vocabularies.UI.v1.DataField",
+      "Value": {
+       "$Path": "ConditionType"
+      }
+     }
+    },
+    "@UI.LineItem": [
+     {
+      "@type": "com.sap.vocabularies.UI.v1.DataField",
+      "Value": {
+       "$Path": "ConditionCounter"
+      }
+     },
+     {
+      "@type": "com.sap.vocabularies.UI.v1.DataField",
+      "Value": {
+       "$Path": "ConditionType"
+      }
+     },
+     {
+      "@type": "com.sap.vocabularies.UI.v1.DataField",
+      "Value": {
+       "$Path": "Rate"
+      }
+     },
+     {
+      "@type": "com.sap.vocabularies.UI.v1.DataField",
+      "Value": {
+       "$Path": "ConditionAmount"
+      }
+     },
+     {
+      "@type": "com.sap.vocabularies.UI.v1.DataField",
+      "Value": {
+       "$Path": "IsStatistical"
+      }
+     }
+    ]
+   },
+   "Purchasing.PricingCondition/PurchaseOrder": {
+    "@Common.Label": "采购订单"
+   },
+   "Purchasing.PricingCondition/PurchaseOrderItem": {
+    "@Common.Label": "项目"
+   },
+   "Purchasing.PricingCondition/ConditionCounter": {
+    "@Common.Label": "条件计数器"
+   },
+   "Purchasing.PricingCondition/ConditionType": {
+    "@Common.Label": "条件类型",
+    "@Common.Text": {
+     "$Path": "ConditionTypeName"
+    },
+    "@Common.Text@UI.TextArrangement": "TextFirst"
+   },
+   "Purchasing.PricingCondition/ConditionTypeName": {
+    "@Common.Label": "条件类型名称"
+   },
+   "Purchasing.PricingCondition/Rate": {
+    "@Common.Label": "费率",
+    "@Measures.Unit": {
+     "$Path": "RateUnit"
+    }
+   },
+   "Purchasing.PricingCondition/RateUnit": {
+    "@Common.Label": "费率单位"
+   },
+   "Purchasing.PricingCondition/ConditionAmount": {
+    "@Common.Label": "条件金额",
+    "@Measures.ISOCurrency": {
+     "$Path": "Currency"
+    }
+   },
+   "Purchasing.PricingCondition/Currency": {
+    "@Common.Label": "货币"
+   },
+   "Purchasing.PricingCondition/IsStatistical": {
+    "@Common.Label": "统计性"
+   },
+   "Purchasing.ItemHistory": {
+    "@UI.HeaderInfo": {
+     "@type": "com.sap.vocabularies.UI.v1.HeaderInfoType",
+     "TypeName": "历史记录",
+     "TypeNamePlural": "采购订单历史",
+     "Title": {
+      "@type": "com.sap.vocabularies.UI.v1.DataField",
+      "Value": {
+       "$Path": "DocumentNumber"
+      }
+     },
+     "Description": {
+      "@type": "com.sap.vocabularies.UI.v1.DataField",
+      "Value": {
+       "$Path": "CategoryText"
+      }
+     }
+    },
+    "@UI.LineItem": [
+     {
+      "@type": "com.sap.vocabularies.UI.v1.DataField",
+      "Value": {
+       "$Path": "Category"
+      }
+     },
+     {
+      "@type": "com.sap.vocabularies.UI.v1.DataField",
+      "Value": {
+       "$Path": "DocumentNumber"
+      }
+     },
+     {
+      "@type": "com.sap.vocabularies.UI.v1.DataField",
+      "Value": {
+       "$Path": "PostingDate"
+      }
+     },
+     {
+      "@type": "com.sap.vocabularies.UI.v1.DataField",
+      "Value": {
+       "$Path": "Quantity"
+      }
+     },
+     {
+      "@type": "com.sap.vocabularies.UI.v1.DataField",
+      "Value": {
+       "$Path": "Amount"
+      }
+     },
+     {
+      "@type": "com.sap.vocabularies.UI.v1.DataField",
+      "Value": {
+       "$Path": "MovementType"
+      }
+     }
+    ]
+   },
+   "Purchasing.ItemHistory/PurchaseOrder": {
+    "@Common.Label": "采购订单"
+   },
+   "Purchasing.ItemHistory/PurchaseOrderItem": {
+    "@Common.Label": "项目"
+   },
+   "Purchasing.ItemHistory/HistoryCounter": {
+    "@Common.Label": "历史计数器"
+   },
+   "Purchasing.ItemHistory/Category": {
+    "@Common.Label": "类别",
+    "@Common.Text": {
+     "$Path": "CategoryText"
+    },
+    "@Common.Text@UI.TextArrangement": "TextOnly"
+   },
+   "Purchasing.ItemHistory/CategoryText": {
+    "@Common.Label": "类别名称"
+   },
+   "Purchasing.ItemHistory/DocumentNumber": {
+    "@Common.Label": "凭证编号"
+   },
+   "Purchasing.ItemHistory/PostingDate": {
+    "@Common.Label": "过账日期"
+   },
+   "Purchasing.ItemHistory/Quantity": {
+    "@Common.Label": "数量",
+    "@Measures.Unit": {
+     "$Path": "Unit"
+    }
+   },
+   "Purchasing.ItemHistory/Unit": {
+    "@Common.Label": "单位"
+   },
+   "Purchasing.ItemHistory/Amount": {
+    "@Common.Label": "金额",
+    "@Measures.ISOCurrency": {
+     "$Path": "Currency"
+    }
+   },
+   "Purchasing.ItemHistory/Currency": {
+    "@Common.Label": "货币"
+   },
+   "Purchasing.ItemHistory/MovementType": {
+    "@Common.Label": "移动类型"
+   },
+   "Purchasing.Supplier": {
+    "@UI.HeaderInfo": {
+     "@type": "com.sap.vocabularies.UI.v1.HeaderInfoType",
+     "TypeName": "供应商",
+     "TypeNamePlural": "供应商",
+     "Title": {
+      "@type": "com.sap.vocabularies.UI.v1.DataField",
+      "Value": {
+       "$Path": "SupplierName"
+      }
+     },
+     "Description": {
+      "@type": "com.sap.vocabularies.UI.v1.DataField",
+      "Value": {
+       "$Path": "Supplier"
+      }
+     },
+     "ImageUrl": {
+      "$Path": "LogoUrl"
+     }
+    },
+    "@UI.LineItem": [
+     {
+      "@type": "com.sap.vocabularies.UI.v1.DataField",
+      "Value": {
+       "$Path": "LogoUrl"
+      }
+     },
+     {
+      "@type": "com.sap.vocabularies.UI.v1.DataField",
+      "Value": {
+       "$Path": "Supplier"
+      }
+     },
+     {
+      "@type": "com.sap.vocabularies.UI.v1.DataField",
+      "Value": {
+       "$Path": "SupplierName"
+      }
+     },
+     {
+      "@type": "com.sap.vocabularies.UI.v1.DataField",
+      "Value": {
+       "$Path": "Country"
+      }
+     },
+     {
+      "@type": "com.sap.vocabularies.UI.v1.DataField",
+      "Value": {
+       "$Path": "City"
+      }
+     },
+     {
+      "@type": "com.sap.vocabularies.UI.v1.DataFieldForAnnotation",
+      "Label": "评分",
+      "Target": {
+       "$AnnotationPath": "@UI.DataPoint#Rating"
+      }
+     },
+     {
+      "@type": "com.sap.vocabularies.UI.v1.DataField",
+      "Value": {
+       "$Path": "IsBlocked"
+      }
+     }
+    ],
+    "@UI.DataPoint#Rating": {
+     "@type": "com.sap.vocabularies.UI.v1.DataPointType",
+     "Title": "供应商评分",
+     "Value": {
+      "$Path": "Rating"
+     },
+     "TargetValue": 5,
+     "Visualization": "Rating"
+    },
+    "@Common.SemanticKey": [
+     {
+      "$PropertyPath": "Supplier"
+     }
+    ]
+   },
+   "Purchasing.Supplier/Supplier": {
+    "@Common.Label": "供应商",
+    "@Common.Text": {
+     "$Path": "SupplierName"
+    },
+    "@Common.Text@UI.TextArrangement": "TextSeparate"
+   },
+   "Purchasing.Supplier/SupplierName": {
+    "@Common.Label": "供应商名称"
+   },
+   "Purchasing.Supplier/Country": {
+    "@Common.Label": "国家/地区"
+   },
+   "Purchasing.Supplier/City": {
+    "@Common.Label": "城市"
+   },
+   "Purchasing.Supplier/Rating": {
+    "@Common.Label": "评分"
+   },
+   "Purchasing.Supplier/LogoUrl": {
+    "@Common.Label": "标志",
+    "@UI.IsImageURL": true
+   },
+   "Purchasing.Supplier/IsBlocked": {
+    "@Common.Label": "已冻结"
+   },
+   "Purchasing.Material": {
+    "@UI.HeaderInfo": {
+     "@type": "com.sap.vocabularies.UI.v1.HeaderInfoType",
+     "TypeName": "物料",
+     "TypeNamePlural": "物料",
+     "Title": {
+      "@type": "com.sap.vocabularies.UI.v1.DataField",
+      "Value": {
+       "$Path": "MaterialName"
+      }
+     },
+     "Description": {
+      "@type": "com.sap.vocabularies.UI.v1.DataField",
+      "Value": {
+       "$Path": "Material"
+      }
+     }
+    }
+   },
+   "Purchasing.Material/Material": {
+    "@Common.Label": "物料"
+   },
+   "Purchasing.Material/MaterialName": {
+    "@Common.Label": "物料描述"
+   },
+   "Purchasing.Material/MaterialGroup": {
+    "@Common.Label": "物料组"
+   },
+   "Purchasing.Material/BaseUnit": {
+    "@Common.Label": "基本单位"
+   },
+   "Purchasing.Plant": {
+    "@UI.HeaderInfo": {
+     "@type": "com.sap.vocabularies.UI.v1.HeaderInfoType",
+     "TypeName": "工厂",
+     "TypeNamePlural": "工厂",
+     "Title": {
+      "@type": "com.sap.vocabularies.UI.v1.DataField",
+      "Value": {
+       "$Path": "PlantName"
+      }
+     }
+    }
+   },
+   "Purchasing.Plant/Plant": {
+    "@Common.Label": "工厂"
+   },
+   "Purchasing.Plant/PlantName": {
+    "@Common.Label": "工厂名称"
+   },
+   "Purchasing.Plant/City": {
+    "@Common.Label": "城市"
+   },
+   "Purchasing.OrderStatus/Code": {
+    "@Common.Label": "状态",
+    "@Common.Text": {
+     "$Path": "Name"
+    },
+    "@Common.Text@UI.TextArrangement": "TextFirst"
+   },
+   "Purchasing.OrderStatus/Name": {
+    "@Common.Label": "状态名称"
+   },
+   "Purchasing.OrderStatus/Criticality": {
+    "@Common.Label": "状态重要性",
+    "@UI.Hidden": true
+   },
+   "Purchasing.OrderType/Code": {
+    "@Common.Label": "订单类型",
+    "@Common.Text": {
+     "$Path": "Name"
+    },
+    "@Common.Text@UI.TextArrangement": "TextFirst"
+   },
+   "Purchasing.OrderType/Name": {
+    "@Common.Label": "订单类型名称"
+   },
+   "Purchasing.Variant/ID": {
+    "@Common.Label": "变体标识",
+    "@Core.Computed": true
+   },
+   "Purchasing.Variant/PageKey": {
+    "@Common.Label": "页面键"
+   },
+   "Purchasing.Variant/Name": {
+    "@Common.Label": "变体名称"
+   },
+   "Purchasing.Variant/IsDefault": {
+    "@Common.Label": "默认"
+   },
+   "Purchasing.Variant/AutoApply": {
+    "@Common.Label": "自动应用"
+   },
+   "Purchasing.Variant/Content": {
+    "@Common.Label": "内容"
+   },
+   "Purchasing.Variant/ModifiedAt": {
+    "@Common.Label": "修改时间",
+    "@Core.Computed": true
+   }
+  }
+ }
+}

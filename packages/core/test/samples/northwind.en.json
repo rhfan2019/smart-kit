@@ -1,0 +1,362 @@
+{
+ "$Version": "4.0",
+ "$EntityContainer": "NorthwindLike.Container",
+ "NorthwindLike": {
+  "Category": {
+   "$Kind": "EntityType",
+   "$Key": [
+    "CategoryID"
+   ],
+   "CategoryID": {
+    "$Type": "Edm.Int32"
+   },
+   "CategoryName": {
+    "$MaxLength": 15
+   },
+   "Description": {
+    "$Nullable": true
+   },
+   "Products": {
+    "$Kind": "NavigationProperty",
+    "$Collection": true,
+    "$Type": "NorthwindLike.Product",
+    "$Partner": "Category"
+   }
+  },
+  "Supplier": {
+   "$Kind": "EntityType",
+   "$Key": [
+    "SupplierID"
+   ],
+   "SupplierID": {
+    "$Type": "Edm.Int32"
+   },
+   "CompanyName": {
+    "$MaxLength": 40
+   },
+   "ContactName": {
+    "$Nullable": true,
+    "$MaxLength": 30
+   },
+   "City": {
+    "$Nullable": true,
+    "$MaxLength": 15
+   },
+   "Country": {
+    "$Nullable": true,
+    "$MaxLength": 15
+   },
+   "Phone": {
+    "$Nullable": true,
+    "$MaxLength": 24
+   },
+   "Products": {
+    "$Kind": "NavigationProperty",
+    "$Collection": true,
+    "$Type": "NorthwindLike.Product",
+    "$Partner": "Supplier"
+   }
+  },
+  "Product": {
+   "$Kind": "EntityType",
+   "$Key": [
+    "ProductID"
+   ],
+   "ProductID": {
+    "$Type": "Edm.Int32"
+   },
+   "ProductName": {
+    "$MaxLength": 40
+   },
+   "SupplierID": {
+    "$Type": "Edm.Int32",
+    "$Nullable": true
+   },
+   "CategoryID": {
+    "$Type": "Edm.Int32",
+    "$Nullable": true
+   },
+   "QuantityPerUnit": {
+    "$Nullable": true,
+    "$MaxLength": 20
+   },
+   "UnitPrice": {
+    "$Type": "Edm.Decimal",
+    "$Nullable": true,
+    "$Precision": 19,
+    "$Scale": 4
+   },
+   "UnitsInStock": {
+    "$Type": "Edm.Int16",
+    "$Nullable": true
+   },
+   "UnitsOnOrder": {
+    "$Type": "Edm.Int16",
+    "$Nullable": true
+   },
+   "ReorderLevel": {
+    "$Type": "Edm.Int16",
+    "$Nullable": true
+   },
+   "Discontinued": {
+    "$Type": "Edm.Boolean"
+   },
+   "Category": {
+    "$Kind": "NavigationProperty",
+    "$Type": "NorthwindLike.Category",
+    "$Partner": "Products",
+    "$ReferentialConstraint": {
+     "CategoryID": "CategoryID"
+    }
+   },
+   "Supplier": {
+    "$Kind": "NavigationProperty",
+    "$Type": "NorthwindLike.Supplier",
+    "$Partner": "Products",
+    "$ReferentialConstraint": {
+     "SupplierID": "SupplierID"
+    }
+   },
+   "OrderDetails": {
+    "$Kind": "NavigationProperty",
+    "$Collection": true,
+    "$Type": "NorthwindLike.OrderDetail",
+    "$Partner": "Product"
+   }
+  },
+  "Customer": {
+   "$Kind": "EntityType",
+   "$Key": [
+    "CustomerID"
+   ],
+   "CustomerID": {
+    "$MaxLength": 5
+   },
+   "CompanyName": {
+    "$MaxLength": 40
+   },
+   "ContactName": {
+    "$Nullable": true,
+    "$MaxLength": 30
+   },
+   "City": {
+    "$Nullable": true,
+    "$MaxLength": 15
+   },
+   "Country": {
+    "$Nullable": true,
+    "$MaxLength": 15
+   },
+   "Phone": {
+    "$Nullable": true,
+    "$MaxLength": 24
+   },
+   "Orders": {
+    "$Kind": "NavigationProperty",
+    "$Collection": true,
+    "$Type": "NorthwindLike.Order",
+    "$Partner": "Customer"
+   }
+  },
+  "Employee": {
+   "$Kind": "EntityType",
+   "$Key": [
+    "EmployeeID"
+   ],
+   "EmployeeID": {
+    "$Type": "Edm.Int32"
+   },
+   "LastName": {
+    "$MaxLength": 20
+   },
+   "FirstName": {
+    "$MaxLength": 10
+   },
+   "Title": {
+    "$Nullable": true,
+    "$MaxLength": 30
+   },
+   "HireDate": {
+    "$Type": "Edm.Date",
+    "$Nullable": true
+   },
+   "City": {
+    "$Nullable": true,
+    "$MaxLength": 15
+   },
+   "Country": {
+    "$Nullable": true,
+    "$MaxLength": 15
+   },
+   "Orders": {
+    "$Kind": "NavigationProperty",
+    "$Collection": true,
+    "$Type": "NorthwindLike.Order",
+    "$Partner": "Employee"
+   }
+  },
+  "Order": {
+   "$Kind": "EntityType",
+   "$Key": [
+    "OrderID"
+   ],
+   "OrderID": {
+    "$Type": "Edm.Int32"
+   },
+   "CustomerID": {
+    "$Nullable": true,
+    "$MaxLength": 5
+   },
+   "EmployeeID": {
+    "$Type": "Edm.Int32",
+    "$Nullable": true
+   },
+   "OrderDate": {
+    "$Type": "Edm.DateTimeOffset",
+    "$Nullable": true,
+    "$Precision": 0
+   },
+   "RequiredDate": {
+    "$Type": "Edm.Date",
+    "$Nullable": true
+   },
+   "ShippedDate": {
+    "$Type": "Edm.Date",
+    "$Nullable": true
+   },
+   "Freight": {
+    "$Type": "Edm.Decimal",
+    "$Nullable": true,
+    "$Precision": 19,
+    "$Scale": 4
+   },
+   "ShipCity": {
+    "$Nullable": true,
+    "$MaxLength": 15
+   },
+   "ShipCountry": {
+    "$Nullable": true,
+    "$MaxLength": 15
+   },
+   "Customer": {
+    "$Kind": "NavigationProperty",
+    "$Type": "NorthwindLike.Customer",
+    "$Partner": "Orders",
+    "$ReferentialConstraint": {
+     "CustomerID": "CustomerID"
+    }
+   },
+   "Employee": {
+    "$Kind": "NavigationProperty",
+    "$Type": "NorthwindLike.Employee",
+    "$Partner": "Orders",
+    "$ReferentialConstraint": {
+     "EmployeeID": "EmployeeID"
+    }
+   },
+   "OrderDetails": {
+    "$Kind": "NavigationProperty",
+    "$Collection": true,
+    "$Type": "NorthwindLike.OrderDetail",
+    "$Partner": "Order"
+   }
+  },
+  "OrderDetail": {
+   "$Kind": "EntityType",
+   "$Key": [
+    "OrderID",
+    "ProductID"
+   ],
+   "OrderID": {
+    "$Type": "Edm.Int32"
+   },
+   "ProductID": {
+    "$Type": "Edm.Int32"
+   },
+   "UnitPrice": {
+    "$Type": "Edm.Decimal",
+    "$Precision": 19,
+    "$Scale": 4
+   },
+   "Quantity": {
+    "$Type": "Edm.Int16"
+   },
+   "Discount": {
+    "$Type": "Edm.Single"
+   },
+   "Order": {
+    "$Kind": "NavigationProperty",
+    "$Type": "NorthwindLike.Order",
+    "$Partner": "OrderDetails",
+    "$ReferentialConstraint": {
+     "OrderID": "OrderID"
+    }
+   },
+   "Product": {
+    "$Kind": "NavigationProperty",
+    "$Type": "NorthwindLike.Product",
+    "$Partner": "OrderDetails",
+    "$ReferentialConstraint": {
+     "ProductID": "ProductID"
+    }
+   }
+  },
+  "Container": {
+   "$Kind": "EntityContainer",
+   "Categories": {
+    "$Collection": true,
+    "$Type": "NorthwindLike.Category",
+    "$NavigationPropertyBinding": {
+     "Products": "Products"
+    }
+   },
+   "Suppliers": {
+    "$Collection": true,
+    "$Type": "NorthwindLike.Supplier",
+    "$NavigationPropertyBinding": {
+     "Products": "Products"
+    }
+   },
+   "Products": {
+    "$Collection": true,
+    "$Type": "NorthwindLike.Product",
+    "$NavigationPropertyBinding": {
+     "Category": "Categories",
+     "Supplier": "Suppliers",
+     "OrderDetails": "OrderDetails"
+    }
+   },
+   "Customers": {
+    "$Collection": true,
+    "$Type": "NorthwindLike.Customer",
+    "$NavigationPropertyBinding": {
+     "Orders": "Orders"
+    }
+   },
+   "Employees": {
+    "$Collection": true,
+    "$Type": "NorthwindLike.Employee",
+    "$NavigationPropertyBinding": {
+     "Orders": "Orders"
+    }
+   },
+   "Orders": {
+    "$Collection": true,
+    "$Type": "NorthwindLike.Order",
+    "$NavigationPropertyBinding": {
+     "Customer": "Customers",
+     "Employee": "Employees",
+     "OrderDetails": "OrderDetails"
+    }
+   },
+   "OrderDetails": {
+    "$Collection": true,
+    "$Type": "NorthwindLike.OrderDetail",
+    "$NavigationPropertyBinding": {
+     "Order": "Orders",
+     "Product": "Products"
+    }
+   }
+  }
+ }
+}

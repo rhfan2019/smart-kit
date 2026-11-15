@@ -5,7 +5,8 @@
   "workspaces": [
     "packages/core",
     "packages/react",
-    "apps/demo"
+    "apps/demo",
+    "apps/mock"
   ],
   "scripts": {
     "mock": "npm run start -w mock",

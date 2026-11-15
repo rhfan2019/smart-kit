@@ -166,7 +166,8 @@ function buildProperty(p: Any, keys: string[], et: Any): PropertyModel {
     nullable: p.nullable !== false,
     isKey: keys.includes(p.name),
     maxLength: p.maxLength ?? undefined,
-    precision: p.precision ?? undefined,
+    // Temporal precision 0 is the CSDL default; XML omits it while some JSON writers emit it.
+    precision: p.precision === 0 && /DateTimeOffset|TimeOfDay|Duration/.test(p.type) ? undefined : p.precision ?? undefined,
     scale: p.scale === 'variable' || p.scale === 'Variable' ? 'variable' : p.scale ?? undefined,
     label: label ?? humanize(p.name),
     labelDerived: label === undefined,

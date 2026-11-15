@@ -1,0 +1,10 @@
+{
+  "name": "mock",
+  "private": true,
+  "description": "Local OData V4 test services (ASP.NET Core OData): /odata/northwind/ and /odata/purchasing/ on http://localhost:4400",
+  "type": "module",
+  "scripts": {
+    "start": "node run.mjs",
+    "reset": "node run.mjs --reset"
+  }
+}
