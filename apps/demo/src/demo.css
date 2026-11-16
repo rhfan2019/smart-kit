@@ -16,3 +16,21 @@ body { background: var(--sk-color-page); color: var(--sk-color-text); font-famil
 .demo__table tr[aria-selected='true'] { background: var(--sk-color-accent-wash); }
 .demo__card { background: var(--sk-color-surface); border: var(--sk-size-border) solid var(--sk-color-border); border-radius: var(--sk-radius-panel); padding: var(--sk-space-5); }
 .demo__overdue { color: var(--sk-color-negative); font-weight: var(--sk-font-weight-bold); }
+
+/* Micro chart scenarios (/microcharts). */
+.demo-mc { max-width: 1280px; }
+.demo-mc__intro { color: var(--sk-color-text-muted); max-width: 80ch; }
+.demo-mc__section { margin-top: var(--sk-space-6); }
+.demo-mc__section > p { color: var(--sk-color-text-muted); max-width: 80ch; }
+.demo-mc__grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: var(--sk-space-4); }
+.demo-mc__card { background: var(--sk-color-surface); border: var(--sk-size-border) solid var(--sk-color-border); border-radius: var(--sk-radius-panel); padding: var(--sk-space-4); display: flex; flex-direction: column; gap: var(--sk-space-2); }
+.demo-mc__card h4 { margin: var(--sk-space-2) 0 0; font-size: var(--sk-text-small); }
+.demo-mc__card p { margin: 0; font-size: var(--sk-text-small); line-height: 1.5; }
+.demo-mc__place { font-size: var(--sk-font-size-1); color: var(--sk-color-text-muted); text-transform: uppercase; letter-spacing: 0.04em; }
+.demo-mc__facet { display: flex; flex-direction: column; gap: var(--sk-space-1); padding: var(--sk-space-3); background: var(--sk-color-page); border-radius: var(--sk-radius-panel); align-self: flex-start; max-width: 100%; }
+.demo-mc__facet-title { font-weight: var(--sk-font-weight-bold); }
+.demo-mc__facet-subtitle { font-size: var(--sk-text-small); color: var(--sk-color-text-muted); }
+.demo-mc__box { max-width: 100%; }
+.demo-mc__rules { font-size: var(--sk-font-size-1); color: var(--sk-color-text-muted); margin-top: auto; }
+.demo-mc__table td { vertical-align: middle; }
+.demo-mc__table td:not(:first-child) { width: 18%; min-width: 120px; }

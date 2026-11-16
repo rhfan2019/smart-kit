@@ -7,6 +7,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ### Added (phase 3, micro charts, see docs/15)
 
+- Demo: micro chart scenario page (`/microcharts`): every chart type in the business situation the SAP guidelines give for it, at the size of its place, with a supplier table of chart cells.
+
 - Micro charts follow the SAP Fiori guidelines (docs/15, decision D08): they fill their container within 64×18 – 320×94 px, hide labels by the measured height, and hide numbers that do not fit instead of cutting them; "No data" placeholder (empty in table cells).
 - Bullet: forecast bar, threshold markers and colours from `UI.CriticalityCalculation`, delta mode (`UI.VisualizationType/DeltaBulletChart`); Radial: without `TargetValue` the value is the percentage; Harvey Ball: the total is `MaximumValue`, qualitative palette colour without criticality.
 - Micro charts in table and form cells (`UI.DataFieldForAnnotation` to a `UI.Chart` of the row, of a single-valued navigation, or over a collection navigation).

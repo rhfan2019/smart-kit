@@ -76,3 +76,32 @@ test('MC-10 ADR-025 a line chart over a collection in a table cell, read with $e
   expect(rec.urls.some((u) => /\/_Item\?.*\$expand=.*_History\(\$select=[^;)]*Quantity[^;)]*;\$orderby=HistoryCounter;\$top=100\)/.test(u))).toBe(true);
   await shot(t, 'MC-10-series');
 });
+
+test('MC-01 scenario page: each of the nine charts in the situation the guidelines name, at the size of its place', async ({ page }) => {
+  await open(page, '/microcharts', { lang: 'en' });
+  const kinds = { 'bullet-revenue': 'bullet', 'bullet-cost': 'bullet', 'radial-ontime': 'radial', 'harvey-received': 'harvey', 'harvey-contract': 'harvey', 'column-margin': 'column', 'line-price': 'line', 'area-cash': 'area', 'comparison-suppliers': 'comparison', 'stacked-status': 'stackedBar', 'delta-quarter': 'delta' };
+  for (const [id, kind] of Object.entries(kinds)) {
+    const chart = page.locator(`[data-demo-scenario="${id}"] [data-sk-microchart="${kind}"]`);
+    await expect(chart, id).toBeVisible();
+    await expect(chart, id).toHaveAccessibleName(/.+: .+/);
+    const box = (await chart.boundingBox())!;
+    // MC-03: between 64 × 18 and 320 × 94
+    expect(box.width, id).toBeLessThanOrEqual(320.5);
+    expect(box.height, id).toBeLessThanOrEqual(94.5);
+  }
+  // MC-05: no value in a header facet shows the placeholder
+  await expect(page.locator('[data-demo-scenario="empty-supplier"]')).toContainText('No data');
+  // MC-24: the cost variance is a delta bullet; MC-45: area with actual and target
+  await expect(page.locator('[data-demo-scenario="bullet-cost"] [data-sk-microchart="bullet"]')).toHaveAccessibleName(/Difference/);
+  await expect(page.locator('[data-demo-scenario="area-cash"] [data-sk-microchart-bar="target"]')).toHaveCount(1);
+  // MC-06: table cells without data stay empty; MC-27: no labels in cells
+  const table = page.locator('[data-demo-supplier-table]');
+  const last = table.locator('tbody tr').last();
+  await expect(last.locator('[data-sk-microchart]')).toHaveCount(1);
+  await expect(table.locator('.sk-microchart__lane')).toHaveCount(0);
+  if (process.env.E2E_EVIDENCE === '1') {
+    // the page scrolls inside the shell's main area: let it grow so the screenshot shows every case
+    await page.locator('#demo-main').evaluate((el) => { el.style.overflow = 'visible'; el.style.height = 'auto'; document.querySelector<HTMLElement>('.demo')!.style.height = 'auto'; });
+    await shot(page.locator('[data-demo-microcharts]'), 'MC-scenarios');
+  }
+});

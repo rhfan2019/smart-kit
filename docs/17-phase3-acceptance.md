@@ -8,7 +8,7 @@
 
 | 编号 | 要求 | 出处 | 验收方式 |
 | --- | --- | --- | --- |
-| MC-01 | 用途：在很小的地方一眼看出状况或变化，不能交互分析。 | [MC] Usage | D |
+| MC-01 | 用途：在很小的地方一眼看出状况或变化，不能交互分析。演示应用的场景页（`/microcharts`）为每种图给出规范指定的业务场景，图的大小就是它所在位置的大小。 | [MC] Usage | D、E |
 | MC-02 | 响应式：图的大小完全由父容器决定，组件本身不设宽高。 | [MC] Responsiveness | U、E、S、V |
 | MC-03 | 尺寸范围：宽 64～320 px，高 18～94 px（九种相同）。 | [MC] 各页 Maximum and Minimum Sizes | U、E、S、V |
 | MC-04 | 数字永不截断：放不下就整个隐藏，不显示"12…"。 | [MC] Guidelines · Truncation；Area、Column 页 | U、V |
