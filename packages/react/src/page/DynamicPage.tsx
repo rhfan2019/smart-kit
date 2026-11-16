@@ -16,6 +16,13 @@ import { ActionIcon, Button, Group, Tooltip } from '@mantine/core';
 import { ChevronDown, ChevronUp, Pin, PinOff } from 'lucide-react';
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import { useText } from '../context/SmartKitProvider';
+import { useColumn } from './columnContext';
+import { OverflowActions, type ToolbarAction } from './OverflowActions';
+
+/** Page width from which layout actions share the line with the global actions (DP Responsiveness). */
+const LAYOUT_BREAKPOINT = 1280;
+/** Page width below which a collapsed header becomes a summary line (DP Summary Line, docs/12 U-12). */
+const SUMMARY_LINE_BREAKPOINT = 600;
 
 export interface DynamicPageProps {
   /** Page or object title. */
@@ -28,6 +35,16 @@ export interface DynamicPageProps {
   collapsedAvatar?: ReactNode;
   /** Global actions on the right of the title area. */
   actions?: ReactNode;
+  /** Global actions that move into an overflow menu from right to left when space runs out (after `actions`). */
+  actionItems?: ToolbarAction[];
+  /** Key information / KPIs in the middle of the title bar, left-aligned (DP Header Title (4)). */
+  keyInfo?: ReactNode;
+  /** Layout actions (DP Header Title (6)); a FlexibleColumnLayout column provides them through its context. */
+  layoutActions?: ReactNode;
+  /** Shown right of the title (object marker, DP Header Title / OP Unsaved Changes). */
+  titleAddon?: ReactNode;
+  /** Limits the page content to 1280px (DP Responsiveness · letterboxing). */
+  letterboxing?: boolean;
   /** Shown in the title area while the header is collapsed (filter information). */
   summary?: ReactNode;
   /** Shown between title and header content; stays visible when collapsed (object page message strip). */
@@ -72,6 +89,9 @@ export function useDynamicPage(): DynamicPageContext | null {
 
 export function DynamicPage(p: DynamicPageProps) {
   const t = useText();
+  const column = useColumn();
+  const layoutActions = p.layoutActions ?? column?.layoutActions;
+  const breadcrumbs = column && !column.showBreadcrumbs ? undefined : p.breadcrumbs;
   const [ownExpanded, setOwnExpanded] = useState(p.defaultHeaderExpanded ?? true);
   const expanded = p.headerExpanded ?? ownExpanded;
   const setExpanded = (v: boolean) => {
@@ -103,6 +123,16 @@ export function DynamicPage(p: DynamicPageProps) {
     return () => ro.disconnect();
   }, []);
   const rootRef = useRef<HTMLDivElement>(null);
+  const [pageWidth, setPageWidth] = useState(LAYOUT_BREAKPOINT);
+  useEffect(() => {
+    const el = rootRef.current;
+    if (!el || typeof ResizeObserver === 'undefined') return;
+    const ro = new ResizeObserver(() => setPageWidth(el.clientWidth));
+    ro.observe(el);
+    setPageWidth(el.clientWidth);
+    return () => ro.disconnect();
+  }, []);
+  const wide = pageWidth >= LAYOUT_BREAKPOINT;
   // No pin on small screens, or when the header (title + content) would take more than 60% of the viewport.
   useEffect(() => {
     if (!p.snapOnScroll) return;
@@ -147,6 +177,7 @@ export function DynamicPage(p: DynamicPageProps) {
 
   const hasHeader = Boolean(p.header);
   const collapsed = hasHeader && (!expanded || scrolledPast);
+  const summaryLine = collapsed && pageWidth > 0 && pageWidth < SUMMARY_LINE_BREAKPOINT;
   const scrollTop = () => headerRef.current?.closest('.sk-dynamic-page')?.scrollIntoView({ block: 'start' });
 
   const ctx: DynamicPageContext = {
@@ -178,7 +209,11 @@ export function DynamicPage(p: DynamicPageProps) {
   /** Snap on click (button or title bar). Collapsing overrules the pin and releases it. */
   const expand = () => {
     if (scrolledPast) { setExpanded(true); scrollTop(); }
-    else if (!expanded) setExpanded(true);
+    else if (!expanded) {
+      setExpanded(true);
+      // DP Snap on Click: the expanded header must be visible; on a scrolled page its content sits above the viewport.
+      if (pageSnap) requestAnimationFrame(scrollTop);
+    }
   };
   const collapse = () => {
     if (pinned) setPinned(false);
@@ -197,6 +232,7 @@ export function DynamicPage(p: DynamicPageProps) {
   const keyboard = useRef(false);
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Tab' || e.key === 'F6') keyboard.current = true; };
+    // F6 is handled below as a group jump; mark it as keyboard so that focus events count.
     const onPointer = () => { keyboard.current = false; };
     document.addEventListener('keydown', onKey, true);
     document.addEventListener('pointerdown', onPointer, true);
@@ -223,7 +259,42 @@ export function DynamicPage(p: DynamicPageProps) {
     };
     root.addEventListener('focusin', onFocusIn);
     root.addEventListener('focusout', onFocusOut);
-    return () => { root.removeEventListener('focusin', onFocusIn); root.removeEventListener('focusout', onFocusOut); };
+    // F6 / Shift+F6 group jumps (DP Keyboard Interaction): into the header title bar (expands), out of the header
+    // into the content (collapses), and back.
+    const focusables = (el: Element) => [...el.querySelectorAll<HTMLElement>('a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), select, textarea, [tabindex]:not([tabindex="-1"])')].filter((x) => x.offsetParent !== null || x === document.activeElement);
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'F6' || e.altKey || e.ctrlKey || e.metaKey) return;
+      const l = latest.current;
+      const title = root.querySelector<HTMLElement>(':scope > .sk-dynamic-page__sticky > .sk-dynamic-page__title');
+      const content = root.querySelector<HTMLElement>(':scope > .sk-dynamic-page__content');
+      if (!title || !content) return;
+      const active = document.activeElement;
+      const inHead = inHeader(active);
+      const inContent = active instanceof Element && content.contains(active);
+      const before = !root.contains(active) && active instanceof Node && Boolean(root.compareDocumentPosition(active) & Node.DOCUMENT_POSITION_PRECEDING);
+      if (!e.shiftKey && !root.contains(active) && (before || !active || active === document.body)) {
+        if (root.closest('[data-sk-fcl-column]') && root.closest('[data-sk-fcl-column]') !== document.querySelector('[data-sk-fcl-column]')) return;
+        e.preventDefault();
+        title.focus();
+        if (l.hasHeader && l.collapsed) l.expand();
+      } else if (!e.shiftKey && inHead) {
+        e.preventDefault();
+        (focusables(content)[0] ?? content).focus();
+        if (l.hasHeader && !l.pinned && !l.collapsed) l.collapse();
+      } else if (e.shiftKey && inContent) {
+        e.preventDefault();
+        title.focus();
+        if (l.hasHeader && l.collapsed) l.expand();
+      } else if (e.shiftKey && inHead) {
+        e.preventDefault();
+        const all = focusables(document.body);
+        const prev = all.filter((x) => !root.contains(x) && Boolean(root.compareDocumentPosition(x) & Node.DOCUMENT_POSITION_PRECEDING)).pop();
+        prev?.focus();
+        if (l.hasHeader && !l.pinned && !l.collapsed) l.collapse();
+      }
+    };
+    document.addEventListener('keydown', onKey);
+    return () => { root.removeEventListener('focusin', onFocusIn); root.removeEventListener('focusout', onFocusOut); document.removeEventListener('keydown', onKey); };
   }, []); // reads the latest state through refs
 
   const features = hasHeader && !p.filterToggle ? (
@@ -253,24 +324,61 @@ export function DynamicPage(p: DynamicPageProps) {
     </div>
   ) : null;
 
-  const titleArea = (
-    <div className="sk-dynamic-page__title" data-collapsed={collapsed || undefined} data-sk-header-region data-snap={hasHeader || undefined} onClick={onTitleClick}>
-      {p.breadcrumbs ? <div className="sk-dynamic-page__breadcrumbs">{p.breadcrumbs}</div> : null}
+  // Space for the global actions: the title row minus the title (natural width, at most 40%), key information,
+  // layout actions and the other actions (DP Responsiveness: actions overflow before the key information goes).
+  const actionSpace = () => {
+    const row = rootRef.current?.querySelector<HTMLElement>(':scope > .sk-dynamic-page__sticky .sk-dynamic-page__title-row');
+    if (!row) return 0;
+    const w = (sel: string) => [...row.querySelectorAll<HTMLElement>(sel)].reduce((n, el) => n + el.offsetWidth, 0);
+    const heading = row.querySelector<HTMLElement>('.sk-dynamic-page__heading-line');
+    const sub = row.querySelector<HTMLElement>('.sk-dynamic-page__subheading');
+    const natural = Math.max(heading?.scrollWidth ?? 0, Math.min(sub?.scrollWidth ?? 0, 240));
+    const title = Math.min(natural, row.clientWidth * 0.4) + (row.querySelector('.sk-dynamic-page__avatar') ? 48 : 0);
+    const others = [...(row.querySelector('[data-sk-global-actions]')?.children ?? [])].filter((c) => !c.classList.contains('sk-dynamic-page__action-items')).reduce((n, c) => n + (c as HTMLElement).offsetWidth + 8, 0);
+    return row.clientWidth - title - w(':scope > .sk-dynamic-page__key-info') - w(':scope > .sk-dynamic-page__layout-actions') - w(':scope > .sk-dynamic-page__divider') - others - 4 * 16;
+  };
+  const globalActions = (
+    <Group gap="xs" className="sk-dynamic-page__actions" wrap="nowrap" data-sk-global-actions>
+      {p.actions}
+      {p.actionItems?.length ? <OverflowActions items={p.actionItems} className="sk-dynamic-page__action-items" availableWidth={actionSpace} /> : null}
+      {hasHeader && p.filterToggle ? (
+        <Button variant="subtle" onClick={toggle} aria-expanded={expanded} data-sk-filter-toggle>
+          {expanded ? t('page.hideFilters') : t('page.showFilters')}
+        </Button>
+      ) : null}
+    </Group>
+  );
+  const layout = layoutActions ? <div className="sk-dynamic-page__layout-actions" data-sk-layout-actions data-placement={wide ? 'inline' : 'above'}>{layoutActions}</div> : null;
+  const titleArea = summaryLine ? (
+    // DP Summary Line: on phones the collapsed header shows only the title and an arrow button; tapping it toggles.
+    <div className="sk-dynamic-page__title sk-dynamic-page__title--summary-line" data-collapsed data-sk-header-region data-snap onClick={onTitleClick} tabIndex={-1} data-sk-summary-line>
+      <div className="sk-dynamic-page__title-row">
+        {p.collapsedAvatar ? <div className="sk-dynamic-page__avatar">{p.collapsedAvatar}</div> : null}
+        <div className="sk-dynamic-page__heading-block">
+          {p.headingContent ?? <h1 className="sk-dynamic-page__heading">{p.heading}</h1>}
+        </div>
+        <ActionIcon variant="subtle" aria-label={t('page.expandHeader')} aria-expanded={false} onClick={toggle} data-sk-header-toggle data-sk-summary-toggle>
+          <ChevronDown className="sk-icon" />
+        </ActionIcon>
+      </div>
+    </div>
+  ) : (
+    <div className="sk-dynamic-page__title" data-collapsed={collapsed || undefined} data-sk-header-region data-snap={hasHeader || undefined} onClick={onTitleClick} tabIndex={-1} aria-label={typeof p.heading === 'string' ? p.heading : undefined} role="group">
+      {layout && !wide ? <div className="sk-dynamic-page__layout-row">{layout}</div> : null}
+      {breadcrumbs ? <div className="sk-dynamic-page__breadcrumbs">{breadcrumbs}</div> : null}
       <div className="sk-dynamic-page__title-row">
         {collapsed && p.collapsedAvatar ? <div className="sk-dynamic-page__avatar">{p.collapsedAvatar}</div> : null}
         <div className="sk-dynamic-page__heading-block">
-          {p.headingContent ?? <h1 className="sk-dynamic-page__heading">{p.heading}</h1>}
-          {p.subheading ? <div className="sk-dynamic-page__subheading">{p.subheading}</div> : null}
+          <div className="sk-dynamic-page__heading-line">
+            {p.headingContent ?? <h1 className="sk-dynamic-page__heading" data-sk-heading>{p.heading}</h1>}
+            {p.titleAddon ? <span className="sk-dynamic-page__title-addon">{p.titleAddon}</span> : null}
+          </div>
+          {p.subheading ? <div className="sk-dynamic-page__subheading" data-sk-subheading>{p.subheading}</div> : null}
           {collapsed && p.summary ? <div className="sk-dynamic-page__summary" aria-live="polite">{p.summary}</div> : null}
         </div>
-        <Group gap="xs" className="sk-dynamic-page__actions" wrap="nowrap">
-          {p.actions}
-          {hasHeader && p.filterToggle ? (
-            <Button variant="subtle" onClick={toggle} aria-expanded={expanded} data-sk-filter-toggle>
-              {expanded ? t('page.hideFilters') : t('page.showFilters')}
-            </Button>
-          ) : null}
-        </Group>
+        {p.keyInfo ? <div className="sk-dynamic-page__key-info" data-sk-key-info>{p.keyInfo}</div> : null}
+        {globalActions}
+        {layout && wide ? <><span className="sk-dynamic-page__divider" aria-hidden />{layout}</> : null}
       </div>
       {p.titleMessage ? <div className="sk-dynamic-page__message">{p.titleMessage}</div> : null}
     </div>
@@ -284,11 +392,11 @@ export function DynamicPage(p: DynamicPageProps) {
 
   return (
     <Ctx.Provider value={ctx}>
-      <div ref={rootRef} className={['sk-dynamic-page', `sk-dynamic-page--${p.layout ?? 'flow'}`, p.className].filter(Boolean).join(' ')} data-testid={p['data-testid']}>
+      <div ref={rootRef} className={['sk-dynamic-page', `sk-dynamic-page--${p.layout ?? 'flow'}`, p.letterboxing ? 'sk-dynamic-page--letterboxing' : '', p.className].filter(Boolean).join(' ')} data-testid={p['data-testid']} data-wide={wide || undefined} style={{ ['--sk-sticky-offset' as string]: `${titleHeight}px` }}>
         <div className="sk-dynamic-page__sticky" ref={stickyRef}>
           {titleArea}
           {pinned || !pageSnap ? headerContent : null}
-          {pinned || !pageSnap || scrolledPast || !expanded ? features : null}
+          {summaryLine ? null : pinned || !pageSnap || scrolledPast || !expanded ? features : null}
         </div>
         {pageSnap && !pinned ? (
           <>
@@ -302,7 +410,7 @@ export function DynamicPage(p: DynamicPageProps) {
             {p.navigation}
           </div>
         ) : null}
-        <div className="sk-dynamic-page__content">{p.children}</div>
+        <div className="sk-dynamic-page__content" tabIndex={-1}>{p.children}</div>
         {p.footer ? <div className="sk-dynamic-page__footer">{p.footer}</div> : null}
       </div>
     </Ctx.Provider>

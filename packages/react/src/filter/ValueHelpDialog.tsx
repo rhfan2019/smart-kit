@@ -1,6 +1,6 @@
 /** Value help dialog: "Search and Select" from the value list and "Define Conditions" (include / exclude) (LR-11). */
 import { ActionIcon, Button, Checkbox, Group, Modal, Pill, ScrollArea, SegmentedControl, Select, Stack, Table, Tabs, Text, TextInput } from '@mantine/core';
-import { getProperty, OPERATOR_ARITY, OPERATORS, type Condition, type Operator, type PropertyModel } from '@rhfan2019/smart-kit-core';
+import { filterExpressionRules, getProperty, OPERATOR_ARITY, OPERATORS, restrictConditions, type Condition, type Operator, type PropertyModel } from '@rhfan2019/smart-kit-core';
 import { Plus, Search, Trash2 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useService, useSmartKit, useText } from '../context/SmartKitProvider';
@@ -31,11 +31,15 @@ export function ValueHelpDialog(p: ValueHelpDialogProps) {
   const typeName = service.model.entitySets[p.entitySet]!.typeName;
   const prop = getProperty(service.model, typeName, p.path);
   const vl = prop?.valueList;
+  // Capabilities.FilterExpressionRestrictions (P2-LR-19): allowed operators, exclusions and number of conditions.
+  const expression = service.model.entitySets[p.entitySet]!.capabilities.filterExpressions[p.path];
+  const rules = filterExpressionRules(expression);
+  const canSelect = Boolean(vl) && rules.operators.includes('EQ');
   const [selected, setSelected] = useState<Condition[]>(p.conditions);
   const [draft, setDraft] = useState('');
   const [search, setSearch] = useState('');
   const [top, setTop] = useState(PAGE);
-  const [tab, setTab] = useState<string | null>(vl ? 'select' : 'conditions');
+  const [tab, setTab] = useState<string | null>(canSelect ? 'select' : 'conditions');
 
   useEffect(() => {
     if (p.opened) {
@@ -43,7 +47,7 @@ export function ValueHelpDialog(p: ValueHelpDialogProps) {
       setDraft('');
       setSearch('');
       setTop(PAGE);
-      setTab(vl ? 'select' : 'conditions');
+      setTab(canSelect ? 'select' : 'conditions');
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- reset only when (re)opened
   }, [p.opened]);
@@ -61,23 +65,23 @@ export function ValueHelpDialog(p: ValueHelpDialogProps) {
     if (isSelected(key)) setSelected(selected.filter((c) => !(c.operator === 'EQ' && !c.exclude && String(c.values[0]) === key)));
     else {
       const text = vl!.descriptionProperty ? getPath(row, vl!.descriptionProperty) : undefined;
-      setSelected([...selected, { operator: 'EQ', values: [key], text: text ? String(text) : undefined }]);
+      setSelected(restrictConditions(expression, [...selected, { operator: 'EQ', values: [key], text: text ? String(text) : undefined }]));
     }
   };
 
   const conditionRows = selected.map((c, i) => ({ c, i })).filter(({ c }) => !(c.operator === 'EQ' && !c.exclude && c.text !== undefined));
   const updateCondition = (i: number, next: Condition) => setSelected(selected.map((c, j) => (j === i ? next : c)));
-  const ops = prop?.edmType === 'Edm.String' ? STRING_OPS : OTHER_OPS;
+  const ops = (prop?.edmType === 'Edm.String' ? STRING_OPS : OTHER_OPS).filter((o) => rules.operators.includes(o));
   const count = list.data?.count;
 
   return (
     <Modal opened={p.opened} onClose={p.onCancel} title={p.title} size="xl" classNames={{ body: 'sk-vh' }}>
       <Tabs value={tab} onChange={setTab} keepMounted={false}>
         <Tabs.List>
-          {vl ? <Tabs.Tab value="select">{t('vh.searchAndSelect')}</Tabs.Tab> : null}
+          {canSelect ? <Tabs.Tab value="select">{t('vh.searchAndSelect')}</Tabs.Tab> : null}
           <Tabs.Tab value="conditions">{t('vh.defineConditions')}</Tabs.Tab>
         </Tabs.List>
-        {vl ? (
+        {canSelect ? (
           <Tabs.Panel value="select" className="sk-vh__panel">
             <form onSubmit={(e) => { e.preventDefault(); setSearch(draft); setTop(PAGE); }}>
               <Group gap="xs" className="sk-vh__search">
@@ -115,9 +119,9 @@ export function ValueHelpDialog(p: ValueHelpDialogProps) {
         <Tabs.Panel value="conditions" className="sk-vh__panel">
           <Stack gap="xs">
             {conditionRows.map(({ c, i }) => (
-              <ConditionRow key={i} condition={c} prop={prop} ops={ops} onChange={(n) => updateCondition(i, n)} onRemove={() => setSelected(selected.filter((_, j) => j !== i))} />
+              <ConditionRow key={i} condition={c} prop={prop} ops={ops} exclude={rules.exclude} onChange={(n) => updateCondition(i, n)} onRemove={() => setSelected(selected.filter((_, j) => j !== i))} />
             ))}
-            <Button variant="subtle" leftSection={<Plus className="sk-icon" />} onClick={() => setSelected([...selected, { operator: 'EQ', values: [''] }])} className="sk-self-start">
+            <Button variant="subtle" leftSection={<Plus className="sk-icon" />} disabled={rules.max !== undefined && selected.length >= rules.max} onClick={() => setSelected([...selected, { operator: ops[0] ?? 'EQ', values: [''] }])} className="sk-self-start" data-sk-vh-add-condition>
               {t('vh.addCondition')}
             </Button>
           </Stack>
@@ -145,7 +149,7 @@ function dedupe(cs: Condition[]): Condition[] {
   return cs.filter((c, i) => cs.findIndex((x) => sameCondition(x, c)) === i);
 }
 
-function ConditionRow(p: { condition: Condition; prop: PropertyModel | undefined; ops: Operator[]; onChange(c: Condition): void; onRemove(): void }) {
+function ConditionRow(p: { condition: Condition; prop: PropertyModel | undefined; ops: Operator[]; exclude: boolean; onChange(c: Condition): void; onRemove(): void }) {
   const t = useText();
   const c = p.condition;
   const arity = OPERATOR_ARITY[c.operator];
@@ -166,12 +170,14 @@ function ConditionRow(p: { condition: Condition; prop: PropertyModel | undefined
   );
   return (
     <Group gap="xs" wrap="nowrap" className="sk-vh__condition">
-      <SegmentedControl
-        size="xs"
-        value={c.exclude ? 'E' : 'I'}
-        onChange={(v) => p.onChange({ ...c, exclude: v === 'E' || undefined })}
-        data={[{ value: 'I', label: t('vh.include') }, { value: 'E', label: t('vh.exclude') }]}
-      />
+      {p.exclude ? (
+        <SegmentedControl
+          size="xs"
+          value={c.exclude ? 'E' : 'I'}
+          onChange={(v) => p.onChange({ ...c, exclude: v === 'E' || undefined })}
+          data={[{ value: 'I', label: t('vh.include') }, { value: 'E', label: t('vh.exclude') }]}
+        />
+      ) : null}
       <Select
         aria-label={t('p13n.sortBy')}
         value={c.operator}

@@ -29,16 +29,32 @@ export { useValueList } from './filter/useValueList';
 export { useVariants, type VariantsApi, type UseVariantsOptions } from './variants/useVariants';
 export { SmartVariantManagement, type SmartVariantManagementProps } from './variants/SmartVariantManagement';
 
-export { SmartTable, useTableContext, type SmartTableProps, type ColumnItem, type ActionItem, type TableExtendEntry, type TableContextValue, type TableQuery } from './table/SmartTable';
+export { SmartTable, useTableContext, type SmartTableProps, type ColumnItem, type ActionItem, type ActionGroup, type TableExtendEntry, type TableContextValue, type TableQuery } from './table/SmartTable';
 export { TableP13nDialog, type TableP13nDialogProps } from './table/TableP13nDialog';
 export { useListQuery, type ListQueryOptions, type ListQueryResult } from './table/useListQuery';
 
 export { useObject, useObjectTitle, type ObjectResult, type UseObjectOptions } from './object/useObject';
 export { useSectionScrollSpy } from './object/useSectionScrollSpy';
-export { ObjectPageLayout, type ObjectPageLayoutProps, type SectionItem, type SubSectionItem } from './object/ObjectPageLayout';
-export { HeaderFacet, type HeaderFacetProps } from './object/HeaderFacet';
+export { ObjectPageLayout, type ObjectPageLayoutProps, type SectionItem, type SubSectionItem, type BlockItem } from './object/ObjectPageLayout';
+export { HeaderFacet, linkify, type HeaderFacetProps } from './object/HeaderFacet';
 export { AnchorBar, type AnchorBarProps, type AnchorItem } from './object/AnchorBar';
 export { SmartForm, type SmartFormProps, type FormFieldItem } from './object/SmartForm';
 
-export { SmartListReport, type SmartListReportProps } from './templates/SmartListReport';
+export { SmartListReport, type SmartListReportProps, type ListContentItem } from './templates/SmartListReport';
 export { SmartObjectPage, type SmartObjectPageProps } from './templates/SmartObjectPage';
+
+// ---- phase 2
+export { MicroChart, SimpleChart, niceTicks, MICRO_COMPARISON_MAX, type MicroChartKind, type MicroChartPoint, type MicroChartProps, type MicroChartCriticality, type MicroChartThreshold, type MicroChartAreaThresholds, type ChartDatum, type SimpleChartProps } from './chart';
+export { MessageProvider, MessageButton, MessageIcon, useMessages, type MessagesApi } from './messages/MessageContext';
+export { useActionRunner, isActionAvailable, actionPaths, type ActionRunner, type ActionTarget, type ActionResult } from './actions/useActionRunner';
+export { useEditStrategy, isEditable, validate, fieldErrors, createFields, createWith, CreateDialog, type CreateDialogProps } from './edit/editing';
+export { FieldEditor, type FieldEditorProps } from './field/FieldEditor';
+export { QuickViewLink } from './field/QuickView';
+export { DraftMarker, draftState, type DraftState } from './object/DraftMarker';
+export { GenericTag, type GenericTagProps } from './object/GenericTag';
+export { OverflowActions, type OverflowActionsProps, type ToolbarAction } from './page/OverflowActions';
+export { ShareMenu, type ShareMenuProps } from './page/ShareMenu';
+export { ColumnContext, useColumn, type ColumnContextValue } from './page/columnContext';
+export { ResponsiveTable, hiddenByImportance, type ResponsiveTableProps, type ResponsiveColumn } from './table/ResponsiveTable';
+export { ChartView, type ChartViewProps } from './list/ChartView';
+export { FlexibleColumnLayout, type FlexibleColumnLayoutProps, type FclLayout, type FclPaging } from './layout/FlexibleColumnLayout';

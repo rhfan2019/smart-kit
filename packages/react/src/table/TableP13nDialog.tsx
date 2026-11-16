@@ -1,4 +1,4 @@
-/** Personalization dialog: column visibility and order, sort (LR-19). Grouping is phase 2. */
+/** Personalization dialog: column visibility and order, sort, and grouping for responsive tables (LR-19, docs/12 U-5). */
 import { ActionIcon, Button, Checkbox, Group, Modal, ScrollArea, Select, Stack, Tabs } from '@mantine/core';
 import type { SortItem } from '@rhfan2019/smart-kit-core';
 import { ArrowDown, ArrowUp, Plus, Trash2 } from 'lucide-react';
@@ -11,8 +11,11 @@ export interface TableP13nDialogProps {
   visible: string[];
   sort: SortItem[];
   sortable: { path: string; label: string }[];
-  onOk(visible: string[], sort: SortItem[]): void;
+  onOk(visible: string[], sort: SortItem[], groupBy?: string | null): void;
   onCancel(): void;
+  /** Columns that can be grouped by; the "Group" tab is shown only when given (responsive table). */
+  groupable?: { id: string; label: string }[];
+  groupBy?: string | null;
 }
 
 export function TableP13nDialog(p: TableP13nDialogProps) {
@@ -20,8 +23,10 @@ export function TableP13nDialog(p: TableP13nDialogProps) {
   const [order, setOrder] = useState<string[]>([]);
   const [shown, setShown] = useState<string[]>([]);
   const [sort, setSort] = useState<SortItem[]>([]);
+  const [group, setGroup] = useState<string | null>(null);
   useEffect(() => {
     if (!p.opened) return;
+    setGroup(p.groupBy ?? null);
     setOrder([...p.visible, ...p.columns.map((c) => c.id).filter((id) => !p.visible.includes(id))]);
     setShown(p.visible);
     setSort(p.sort.filter((s) => p.sortable.some((x) => x.path === s.path)));
@@ -41,7 +46,17 @@ export function TableP13nDialog(p: TableP13nDialogProps) {
         <Tabs.List>
           <Tabs.Tab value="columns">{t('p13n.columns')}</Tabs.Tab>
           <Tabs.Tab value="sort">{t('p13n.sort')}</Tabs.Tab>
+          {p.groupable ? <Tabs.Tab value="group" data-sk-p13n-group-tab>{t('table.group')}</Tabs.Tab> : null}
         </Tabs.List>
+        {p.groupable ? (
+          <Tabs.Panel value="group" className="sk-p13n__panel">
+            <Select
+              label={t('p13n.groupBy')} value={group ?? '$none'} allowDeselect={false} data-sk-p13n-group
+              data={[{ value: '$none', label: t('p13n.noGroup') }, ...p.groupable.map((g) => ({ value: g.id, label: g.label }))]}
+              onChange={(v) => setGroup(!v || v === '$none' ? null : v)}
+            />
+          </Tabs.Panel>
+        ) : null}
         <Tabs.Panel value="columns" className="sk-p13n__panel">
           <ScrollArea.Autosize mah="var(--sk-size-dialog-list)">
             <Stack gap="xs">
@@ -87,7 +102,7 @@ export function TableP13nDialog(p: TableP13nDialogProps) {
         </Tabs.Panel>
       </Tabs>
       <Group justify="flex-end" className="sk-dialog-footer">
-        <Button onClick={() => p.onOk(order.filter((id) => shown.includes(id)), sort)} data-sk-p13n-ok>{t('common.ok')}</Button>
+        <Button onClick={() => p.onOk(order.filter((id) => shown.includes(id)), sort, p.groupable ? group : undefined)} data-sk-p13n-ok>{t('common.ok')}</Button>
         <Button variant="default" onClick={p.onCancel}>{t('common.cancel')}</Button>
       </Group>
     </Modal>

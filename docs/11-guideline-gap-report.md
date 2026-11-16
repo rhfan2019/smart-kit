@@ -147,7 +147,7 @@
 | O6 | 关键值 Facet：标题必选，大号数值；状态文本可在右边带图标 | Key Value Facet | AC-OP-01 | — | 一致 |
 | O7 | 进度 Facet：标题、进度条、页脚文字 | Progress Indicator Facet | "52.2 of 100" | E1 | 一致 |
 | O8 | 评分 Facet：单个评分为标题加评分；汇总评分必须有"x out of y"页脚；5 颗星，显示半星 | Rating Indicator Facet | 单个评分，5 颗星，有半星 | — | 一致（汇总评分不涉及） |
-| O9 | 纯文本 Facet（默认宽 320px）、微图表 Facet | Plain Text / Micro Chart | 没有 | — | 二期（见 `01b` OP-04） |
+| O9 | 纯文本 Facet（默认宽 320px）、微图表 Facet | Plain Text / Micro Chart | 没有 | — | 纯文本：二期。微图表：三期（见 `01b` OP-04） |
 | O10 | 导航栏：锚点（默认）或页签 | Navigation Bar | `navigation="tabs"` 可切换（AC-OP-02、AC-OP-03） | E1–E7 | 一致；示例的选择见 D-7 |
 | O11 | 锚点栏在页头下方，点击滚动到区块标题，锚点栏保持可见 | Anchor Bar Navigation | AC-OP-02（含平滑滚动用例） | E2 | 一致 |
 | O12 | 有多个子区块的锚点带下拉箭头和子区块菜单；放不下的锚点进溢出菜单（分层）；滚动时当前锚点保持可见；方向键在锚点间移动；小屏幕变成下拉框 | Anchor Bar Navigation · Overflow / Responsiveness / Behavior | AC-OP-02 | — | 一致 |

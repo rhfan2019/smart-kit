@@ -5,11 +5,20 @@
 import { Button, Skeleton } from '@mantine/core';
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useText } from '../context/SmartKitProvider';
-import { DynamicPage, useDynamicPage } from '../page/DynamicPage';
+import { DynamicPage, useDynamicPage, type DynamicPageProps } from '../page/DynamicPage';
 import { applyExtensions, type ExtendEntry } from '../util/extend';
 import { AnchorBar } from './AnchorBar';
 import { scrollParent } from './scroll';
 import { SECTION_ELEMENT_ID, useSectionScrollSpy } from './useSectionScrollSpy';
+
+/** A layout block of a subsection (OP Blocks): occupies 1, 2 or 3 columns, or fewer when fewer are available. */
+export interface BlockItem {
+  id: string;
+  columns: 1 | 2 | 3;
+  content: ReactNode;
+  /** Shown only after "Show More". */
+  more?: boolean;
+}
 
 export interface SubSectionItem {
   id: string;
@@ -17,7 +26,9 @@ export interface SubSectionItem {
   count?: number;
   /** The content is a single table: its toolbar carries the title (OP-12 ③ ④). */
   isTable?: boolean;
-  content: ReactNode;
+  content?: ReactNode;
+  /** Layout blocks instead of (or after) `content`. */
+  blocks?: BlockItem[];
   /** False: content is behind "Show More" (UI.PartOfPreview = false). */
   partOfPreview?: boolean;
   actions?: ReactNode;
@@ -57,6 +68,16 @@ export interface ObjectPageLayoutProps {
   onHeaderPinnedChange?(v: boolean): void;
   footer?: ReactNode;
   className?: string;
+  /** Header title extras (DynamicPage): key information, object marker, layout actions, overflowing actions. */
+  keyInfo?: ReactNode;
+  titleAddon?: ReactNode;
+  layoutActions?: ReactNode;
+  actionItems?: DynamicPageProps['actionItems'];
+  /** Dynamic side content (OP Dynamic Side Content): contextual information on the right. */
+  sideContent?: ReactNode;
+  sideContentOpen?: boolean;
+  sideContentTitle?: string;
+  letterboxing?: boolean;
 }
 
 function Lazy({ children }: { children: ReactNode }) {
@@ -79,7 +100,15 @@ function SubSectionView({ scope, sectionId, sub, showTitle }: { scope: string; s
   const t = useText();
   const [more, setMore] = useState(false);
   const hidden = sub.partOfPreview === false && !more;
-  const content = sub.lazy ? <Lazy>{sub.content}</Lazy> : sub.content;
+  const hasMoreBlocks = Boolean(sub.blocks?.some((b) => b.more));
+  const blocks = sub.blocks?.length ? (
+    <div className="sk-blocks" data-sk-blocks>
+      {sub.blocks.filter((b) => more || !b.more).map((b) => (
+        <div key={b.id} className={`sk-block sk-block--${b.columns}`} data-sk-block={b.id} data-columns={b.columns}>{b.content}</div>
+      ))}
+    </div>
+  ) : null;
+  const content = <>{sub.lazy ? <Lazy>{sub.content}</Lazy> : sub.content}{blocks}</>;
   return (
     <div className="sk-subsection" id={SECTION_ELEMENT_ID(scope, `${sectionId}::sub::${sub.id}`)} tabIndex={-1} data-sk-subsection={sub.id}>
       {showTitle && !sub.isTable ? (
@@ -89,7 +118,7 @@ function SubSectionView({ scope, sectionId, sub, showTitle }: { scope: string; s
         </div>
       ) : null}
       {hidden ? null : content}
-      {sub.partOfPreview === false ? (
+      {sub.partOfPreview === false || hasMoreBlocks ? (
         <div className="sk-subsection__more">
           <Button variant="subtle" size="xs" onClick={() => setMore(!more)} aria-expanded={more} data-sk-show-more>
             {more ? t('object.showLess') : t('object.showMore')}
@@ -206,6 +235,7 @@ export function ObjectPageLayout(p: ObjectPageLayoutProps) {
     return () => { ro?.disconnect(); window.removeEventListener('resize', compute); };
   }, [tabs, sections.length]);
 
+  const [sideOpen] = [p.sideContentOpen ?? false];
   const header = p.facets || p.avatar ? (
     <div className="sk-object-header">
       {p.avatar ? <div className="sk-object-header__avatar">{p.avatar}</div> : null}
@@ -213,9 +243,14 @@ export function ObjectPageLayout(p: ObjectPageLayoutProps) {
     </div>
   ) : undefined;
 
-  return (
+  const page = (
     <DynamicPage
       className={['sk-object-page', tabs ? 'sk-object-page--tabs' : '', p.className].filter(Boolean).join(' ')}
+      keyInfo={p.keyInfo}
+      letterboxing={p.letterboxing}
+      titleAddon={p.titleAddon}
+      layoutActions={p.layoutActions}
+      actionItems={p.actionItems}
       heading={p.heading}
       subheading={p.subheading}
       breadcrumbs={p.breadcrumbs}
@@ -239,5 +274,17 @@ export function ObjectPageLayout(p: ObjectPageLayoutProps) {
       </div>
       {!tabs && spacer > 0 ? <div className="sk-object-page__spacer" style={{ height: spacer }} aria-hidden data-sk-spacer /> : null}
     </DynamicPage>
+  );
+  if (!p.sideContent) return page;
+  return (
+    <div className="sk-object-page-wrap" data-side-open={sideOpen || undefined}>
+      <div className="sk-object-page-wrap__main">{page}</div>
+      {sideOpen ? (
+        <aside className="sk-side-content" aria-label={p.sideContentTitle} data-sk-side-content>
+          {p.sideContentTitle ? <h2 className="sk-side-content__title">{p.sideContentTitle}</h2> : null}
+          {p.sideContent}
+        </aside>
+      ) : null}
+    </div>
   );
 }

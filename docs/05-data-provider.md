@@ -74,6 +74,16 @@ interface Condition {
 type FilterState = Record<string /* 属性路径 */, Condition[]>;
 ```
 
+**允许的表达式（`Capabilities.FilterExpressionRestrictions`，二期，P2-LR-19）**：`filterExpressionRules(expression)` 给出每个字段允许的运算符、能否排除、最多几个条件；`restrictConditions` 去掉不允许的条件（单值、单范围只保留最后一个）。筛选字段、取值帮助、`useFilterState` 和 `buildListRequest` / `buildAggregateRequest` 都用它，所以请求里从不出现服务不接受的条件。
+
+| 表达式 | 运算符 | 排除 | 个数 |
+| --- | --- | --- | --- |
+| `SingleValue` | EQ | 否 | 1 |
+| `MultiValue` | EQ | 否 | 不限 |
+| `SingleRange` | EQ、BT、LT、LE、GT、GE | 否 | 1 |
+| `SearchExpression` | Contains、StartsWith、EndsWith（纯文字按 Contains） | 否 | 不限 |
+| `MultiRange`、`MultiRangeOrSearchExpression`、未注解 | 全部 | 是 | 不限 |
+
 语义：
 - 同一字段：所有包含条件之间是 `or`；排除条件之间是 `and`，每条取反；两部分之间是 `and`。
 - 不同字段之间是 `and`。
@@ -132,7 +142,7 @@ type FilterState = Record<string /* 属性路径 */, Condition[]>;
 - 412 映射为 `ConcurrencyError extends ODataError`（编辑接缝用）。
 - `AbortError` 不当作错误显示。
 
-## 6. 编辑接缝（一期只定义，阶段 1.5 验证）
+## 6. 编辑接缝（一期只定义，阶段 1.5 验证；二期实现见第 9 节）
 
 ```ts
 interface EditStrategy {
@@ -197,3 +207,21 @@ interface NavigationAdapter {
 - **默认存储**：`MemoryPageStateStore`，状态只存在内存里，刷新后丢失。
 - **其他存储**：使用者可以注入基于 `sessionStorage` 的实现。库提供 `createSessionPageStateStore(prefix?)`，键已经由 Provider 加了命名空间，`prefix` 是可选的额外前缀；只在调用时访问 `sessionStorage`，访问失败就退回内存。
 - **实体路径（`EntityPath`）**：字符串，用 OData 资源路径的写法，例如 `PurchaseOrders('4500000001')/_Item(PurchaseOrder='4500000001',PurchaseOrderItem=10)`。`core` 提供解析和生成函数，适配器负责把它放进宿主的 URL。
+
+## 9. 二期：写能力、编辑策略、消息、聚合（2026-11-15）
+
+```ts
+interface WriteDataProvider {
+  update(path, patch, { etag? }): Promise<WriteResult>;                 // PATCH，If-Match
+  create(target: QuerySource, row): Promise<WriteResult & { path }>;   // POST 到实体集或集合导航
+  remove(path, { etag? }): Promise<{ messages? }>;                      // DELETE
+  invoke(action, { path?, parameters? }): Promise<{ row?, messages? }>; // 绑定动作：<path>/<Namespace.action>
+}
+interface WriteResult { row: Row; etag?: string; messages?: Message[] } // messages 来自 sap-messages 头
+```
+
+- **编辑策略**（ADR-018）：`DirectEditStrategy`（只 PATCH 改过的字段；新建 POST）和 `DraftEditStrategy`（`EditAction` 得到草稿 → 修改 PATCH 到 `IsActiveEntity=false` 的实例（`flush`，界面在停止输入 600ms 后调用）→ `PreparationAction` + `ActivationAction`；放弃 = DELETE 草稿；新建 = POST 得到草稿）。`editStrategyFor(model, entitySet, provider)` 按模型选择，服务配置的 `editStrategy` 可以替换。`siblingPath` 在活动实例和草稿实例的路径之间转换。
+- **消息**（ADR-023）：`messagesFromHeader`（`sap-messages`，`numericSeverity` 1–4）、`messagesFromError`（`error.details` 优先）、`createMessage`、`highestSeverity`。
+- **聚合**（ADR-021）：`buildAggregateRequest(model, chart, { source, filters, search })` 生成 `$apply=filter(…)/groupby((维度,维度文本),aggregate(度量 with sum as 度量))`；筛选放进 `filter()` 变换（`$apply` 先于 `$filter` 求值）。内存数据提供者按同样语义聚合。
+- **草稿列表**：`SmartListReport` 对草稿根实体集加 `IsActiveEntity eq true`；"编辑状态"筛选映射为 `HasDraftEntity` 和 `DraftAdministrativeData/DraftIsCreatedByMe` 的条件（"他人的未保存修改"即测试服务的锁定）。
+- **能力**：`InsertRestrictions`、`DeleteRestrictions`、`UpdateRestrictions` 决定新建、删除、编辑按钮是否出现。

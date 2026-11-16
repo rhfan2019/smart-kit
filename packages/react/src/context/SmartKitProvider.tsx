@@ -1,7 +1,7 @@
 /** Root provider: services, language, navigation, state stores, renderers. See docs/03-component-inventory.md §1. */
 import {
   capabilitiesFor, getEntitySet, MemoryPageStateStore, type CapabilityModel, type DataProvider, type EntitySetModel, type EntityTypeModel,
-  type EntityUi, type MetaModel, type NavigationAdapter, type PageStateStore, type VariantStore,
+  type EditStrategy, type EntityUi, type MetaModel, type NavigationAdapter, type PageStateStore, type VariantStore,
 } from '@rhfan2019/smart-kit-core';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { createContext, useContext, useMemo, useState, type ReactNode } from 'react';
@@ -13,6 +13,8 @@ export interface ServiceConfig {
   model: MetaModel;
   dataProvider: DataProvider;
   variants?: VariantStore;
+  /** Replaces the edit strategy of an entity set (default: draft for draft-enabled sets, direct save otherwise; ADR-018). */
+  editStrategy?(entitySet: string): EditStrategy | undefined;
 }
 
 export interface SmartKitProviderProps {

@@ -8,12 +8,14 @@ import type { NavigateFunction } from 'react-router';
 /** Entity sets that have a list page route, per service. */
 export const LIST_ROUTES: Record<string, Record<string, string>> = {
   purchasing: { PurchaseOrders: '/po' },
+  'purchasing-draft': { PurchaseOrders: '/po-draft' },
   northwind: { Products: '/nw/products', Orders: '/nw/orders' },
 };
 
 /** Entity sets that have an object page, per service. */
 export const OBJECT_PAGES: Record<string, string[]> = {
   purchasing: ['PurchaseOrders', 'PurchaseOrderItems'],
+  'purchasing-draft': ['PurchaseOrders', 'PurchaseOrderItems'],
   northwind: ['Products', 'Orders', 'Categories', 'Suppliers', 'Customers'],
 };
 
@@ -28,5 +30,6 @@ export function createNavigationAdapter(navigate: NavigateFunction): NavigationA
       return target.kind === 'object' ? objectHref(service, target.path) : LIST_ROUTES[service]?.[target.entitySet];
     },
     hasObjectPage: (entitySet, service = 'purchasing') => OBJECT_PAGES[service]?.includes(entitySet) ?? false,
+    toTable: (parent, nav, service = 'purchasing') => navigate(`/${service}/table?parent=${encodeURIComponent(parent)}&nav=${encodeURIComponent(nav)}`),
   };
 }

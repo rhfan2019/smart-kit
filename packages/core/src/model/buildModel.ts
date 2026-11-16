@@ -5,7 +5,13 @@ import { humanize } from './labels';
 import { deriveColumns, deriveUi } from './derive';
 import {
   MODEL_VERSION,
+  type ActionModel,
   type CapabilityModel,
+  type ChartModel,
+  type CriticalityCalculationModel,
+  type DraftModel,
+  type Importance,
+  type ViewModel,
   type ColumnModel,
   type DataPointModel,
   type EntitySetModel,
@@ -60,6 +66,8 @@ function valueRef(v: unknown, prefix = ''): ValueRef | undefined {
     const o = v as Any;
     if (o.type === 'Path' || o.type === 'PropertyPath') return { path: join(prefix, o.path ?? o.value) };
     if (o.type === 'EnumMember') return { value: enumName(o.value)! };
+    // Decimal constants arrive as { isDecimal, valueOf } (e.g. DataPoint MinimumValue Decimal="0", thresholds).
+    if ((typeof o.isDecimal === 'function' ? o.isDecimal() : o.isDecimal) === true) return { value: Number(o.valueOf()) };
     return undefined;
   }
   if (typeof v === 'number' || v instanceof Number) return { value: Number(v) };
@@ -111,11 +119,25 @@ export function fromConverted(c: ConvertedMetadata, diagnostics: string[] = []):
     entitySets[es.name] = { name: es.name, typeName: es.entityTypeName ?? es.entityType?.fullyQualifiedName, navigationBindings: bindings, capabilities, navigationCapabilities };
   }
 
+  // Draft (ADR-018): Common.DraftRoot on the root entity set, Common.DraftNode on the sets reached from it.
   let draftEnabled = false;
   for (const es of c.entitySets as Any[]) {
-    if (es.annotations?.Common?.DraftRoot || es.entityType?.annotations?.Common?.DraftRoot) draftEnabled = true;
+    const common = es.annotations?.Common ?? es.entityType?.annotations?.Common ?? {};
+    const rec = common.DraftRoot ?? common.DraftNode;
+    if (!rec) continue;
+    draftEnabled = true;
+    const name = (v: unknown) => str(v) ?? pathOf(v);
+    const draft: DraftModel = {
+      root: Boolean(common.DraftRoot),
+      activationAction: name(rec.ActivationAction),
+      editAction: name(rec.EditAction),
+      preparationAction: name(rec.PreparationAction),
+      discardAction: name(rec.DiscardAction),
+      newAction: name(rec.NewAction),
+    };
+    entitySets[es.name]!.draft = draft;
   }
-  if (draftEnabled) warn('DRAFT_UNSUPPORTED', 'The service is draft-enabled; draft handling is not supported in phase 1. Only active entities are read.');
+  if (draftEnabled) warn('DRAFT', 'The service is draft-enabled: editing uses the draft strategy (ADR-018).', undefined, 'info');
 
   const ui: Record<string, EntityUi> = {};
   const ctx: UiContext = { entityTypes, raw, warn };
@@ -188,6 +210,8 @@ function buildProperty(p: Any, keys: string[], et: Any): PropertyModel {
     isDigitSequence: bool(common.IsDigitSequence, false),
     isUpperCase: bool(common.IsUpperCase, false),
     fieldControl: common.FieldControl === undefined ? undefined : valueRef(common.FieldControl),
+    mandatory: enumName(common.FieldControl) === 'Mandatory',
+    readOnly: enumName(common.FieldControl) === 'ReadOnly',
   };
 }
 
@@ -351,7 +375,107 @@ function buildDataPoint(dp: Any, id: string, prefix: string, typeName: string, c
     targetValue: valueRef(dp.TargetValue, prefix),
     visualization: viz === 'Rating' ? 'Rating' : viz === 'Progress' ? 'Progress' : 'Number',
     criticality: criticalityRef(dp.Criticality, prefix),
+    minimumValue: valueRef(dp.MinimumValue, prefix),
+    maximumValue: valueRef(dp.MaximumValue, prefix),
+    sampleSize: valueRef(dp.SampleSize, prefix),
+    forecastValue: valueRef(dp.ForecastValue, prefix),
+    criticalityCalculation: criticalityCalculation(dp.CriticalityCalculation, prefix),
+    deltaBullet: viz === 'DeltaBulletChart' || undefined,
+    fractionDigits: typeof dp.ValueFormat?.NumberOfFractionalDigits === 'number' ? dp.ValueFormat.NumberOfFractionalDigits : undefined,
   };
+}
+
+function criticalityCalculation(cc: Any, prefix: string): CriticalityCalculationModel | undefined {
+  if (!cc || typeof cc !== 'object') return undefined;
+  const dir = enumName(cc.ImprovementDirection);
+  if (dir !== 'Maximize' && dir !== 'Minimize' && dir !== 'Target') return undefined;
+  return {
+    improvementDirection: dir,
+    deviationRangeLowValue: valueRef(cc.DeviationRangeLowValue, prefix),
+    toleranceRangeLowValue: valueRef(cc.ToleranceRangeLowValue, prefix),
+    acceptanceRangeLowValue: valueRef(cc.AcceptanceRangeLowValue, prefix),
+    acceptanceRangeHighValue: valueRef(cc.AcceptanceRangeHighValue, prefix),
+    toleranceRangeHighValue: valueRef(cc.ToleranceRangeHighValue, prefix),
+    deviationRangeHighValue: valueRef(cc.DeviationRangeHighValue, prefix),
+  };
+}
+
+/** UI.Chart: dimensions, measures and the data points of the measures (ADR-021). */
+function buildChart(rec: Any, id: string, navigation: string, ownerType: string, ctx: UiContext): ChartModel | undefined {
+  let typeName = ownerType;
+  for (const seg of navigation ? navigation.split('/') : []) {
+    const nav = ctx.entityTypes[typeName]?.navigations[seg];
+    if (!nav) return undefined;
+    typeName = nav.targetType;
+  }
+  const paths = (v: unknown) => ((Array.isArray(v) ? v : []) as unknown[]).map(pathOf).filter((x): x is string => Boolean(x));
+  const measures = paths(rec?.Measures);
+  if (!measures.length) return undefined;
+  const dataPoints: Record<string, DataPointModel> = {};
+  for (const ma of (rec.MeasureAttributes ?? []) as Any[]) {
+    const measure = pathOf(ma.Measure);
+    const target = str(ma.DataPoint?.value) ?? pathOf(ma.DataPoint);
+    if (!measure || !target) continue;
+    const { navigation: n, term, qualifier } = splitAnnotationPath(target);
+    if (term !== 'DataPoint') continue;
+    const found = lookupAnnotation(typeName, n, term, qualifier, ctx);
+    const dp = found ? buildDataPoint(found.value as Any, qualifier ?? 'DataPoint', n, typeName, ctx) : undefined;
+    if (dp) dataPoints[measure] = dp;
+  }
+  const first = resolvePath(ctx.entityTypes, typeName, measures[0]!).property;
+  return {
+    id,
+    title: str(rec.Title) ?? first?.label ?? humanize(measures[0]!),
+    chartType: enumName(rec.ChartType) ?? 'Column',
+    dimensions: paths(rec.Dimensions),
+    measures,
+    dataPoints,
+    navigation,
+    typeName,
+  };
+}
+
+/** UI.DataFieldForAction records of a collection (UI.LineItem, UI.Identification). */
+function buildActions(records: unknown, scope: string, ctx: UiContext): ActionModel[] {
+  if (!Array.isArray(records)) return [];
+  const out: ActionModel[] = [];
+  for (const rec of records as Any[]) {
+    if (String(rec.$Type ?? '').split('.').pop() !== 'DataFieldForAction') continue;
+    if (rec.annotations?.UI?.Hidden !== undefined && bool(rec.annotations.UI.Hidden, false)) continue;
+    const action = str(rec.Action);
+    if (!action) continue;
+    const qualified = action.replace(/\(.*\)$/, '');
+    const target: Any | undefined = rec.ActionTarget;
+    if (!target) ctx.warn('UNRESOLVED_ACTION', `Action ${action} is not declared in the metadata`, scope);
+    const params = ((target?.parameters ?? []) as Any[]);
+    const bound = Boolean(target?.isBound);
+    const bindingName: string | undefined = bound ? params[0]?.name : undefined;
+    const avail = target?.annotations?.Core?.OperationAvailable;
+    let operationAvailable: ValueRef | undefined;
+    if (avail !== undefined && avail !== null) {
+      const path = pathOf(avail);
+      if (path) operationAvailable = { path: bindingName && path.startsWith(`${bindingName}/`) ? path.slice(bindingName.length + 1) : path };
+      else operationAvailable = { value: bool(avail, true) };
+    }
+    out.push({
+      id: str(rec.ID) ?? `DataFieldForAction::${qualified}`,
+      label: str(rec.Label) ?? humanize(qualified.split('.').pop()!),
+      action: qualified,
+      name: qualified.split('.').pop()!,
+      bound,
+      inline: bool(rec.Inline, false),
+      determining: bool(rec.Determining, false),
+      criticality: criticalityRef(rec.Criticality),
+      operationAvailable,
+      parameters: params.slice(bound ? 1 : 0).map((p) => ({
+        name: String(p.name),
+        edmType: String(p.type),
+        label: str(p.annotations?.Common?.Label) ?? humanize(String(p.name)),
+        nullable: p.nullable !== false,
+      })),
+    });
+  }
+  return uniqueIds(out, ctx, scope);
 }
 
 function lookupAnnotation(typeName: string, navigation: string, term: string, qualifier: string | undefined, ctx: UiContext): { value: unknown; typeName: string } | undefined {
@@ -372,14 +496,28 @@ function lookupAnnotation(typeName: string, navigation: string, term: string, qu
 function buildField(rec: Any, typeName: string, ctx: UiContext, scope: string, semanticKey: string[]): FieldModel | undefined {
   const type = String(rec.$Type ?? '').split('.').pop();
   if (rec.annotations?.UI?.Hidden !== undefined && bool(rec.annotations.UI.Hidden, false)) return undefined;
-  if (type === 'DataFieldForAction' || type === 'DataFieldForIntentBasedNavigation' || type === 'DataFieldWithIntentBasedNavigation' || type === 'DataFieldWithAction') {
-    ctx.warn('UNSUPPORTED_RECORD', `${type} is not supported in phase 1 and is ignored`, scope, 'info');
+  if (type === 'DataFieldForAction') return undefined; // actions, see buildActions
+  if (type === 'DataFieldForIntentBasedNavigation' || type === 'DataFieldWithIntentBasedNavigation' || type === 'DataFieldWithAction') {
+    ctx.warn('UNSUPPORTED_RECORD', `${type} is not supported (depends on the SAP launchpad) and is ignored`, scope, 'info');
     return undefined;
   }
+  const importance = enumName(rec.annotations?.UI?.Importance) as Importance | undefined;
   if (type === 'DataFieldForAnnotation') {
     const target = str(rec.Target?.value) ?? pathOf(rec.Target);
     if (!target) return undefined;
     const { navigation, term, qualifier } = splitAnnotationPath(target);
+    if (term === 'Chart') {
+      // Micro chart in a cell or form (docs/15 MC-10): of the row itself, of a single-valued navigation, or over a
+      // collection navigation (read with $expand, ADR-025).
+      const found = lookupAnnotation(typeName, navigation, term, qualifier, ctx);
+      const chart = found ? buildChart(found.value as Any, qualifier ?? 'Chart', navigation, typeName, ctx) : undefined;
+      if (!chart) {
+        ctx.warn('UNRESOLVED_TARGET', `Cannot resolve ${target}`, scope);
+        return undefined;
+      }
+      const id = str(rec.ID) ?? `DataFieldForAnnotation::${annotationId(target)}`;
+      return { id, kind: 'chart', label: str(rec.Label) ?? chart.title, chart, criticalityIcon: false, isSemanticKey: false, importance };
+    }
     if (term !== 'DataPoint') {
       ctx.warn('UNSUPPORTED_RECORD', `DataFieldForAnnotation to ${term} is not supported in phase 1`, scope, 'info');
       return undefined;
@@ -391,7 +529,7 @@ function buildField(rec: Any, typeName: string, ctx: UiContext, scope: string, s
       return undefined;
     }
     const id = str(rec.ID) ?? `DataFieldForAnnotation::${annotationId(target)}`;
-    return { id, kind: 'dataPoint', label: str(rec.Label) ?? dp.title, dataPoint: dp, criticalityIcon: true, isSemanticKey: false };
+    return { id, kind: 'dataPoint', label: str(rec.Label) ?? dp.title, dataPoint: dp, criticalityIcon: true, isSemanticKey: false, importance };
   }
   const path = pathOf(rec.Value);
   if (!path) return undefined;
@@ -411,7 +549,31 @@ function buildField(rec: Any, typeName: string, ctx: UiContext, scope: string, s
     criticalityIcon: rep !== 'WithoutIcon',
     url: type === 'DataFieldWithUrl' ? valueRef(rec.Url) : undefined,
     isSemanticKey: semanticKey.includes(path),
+    importance,
+    quickView: quickViewFor(typeName, path, resolved.property, ctx),
   };
+}
+
+/**
+ * Cross navigation (LR Navigation): a field refers to an object with UI.QuickViewFacets when its text comes through a
+ * single-valued navigation to that object, or when it is the foreign key of such a navigation.
+ */
+function quickViewFor(typeName: string, path: string, prop: PropertyModel, ctx: UiContext): FieldModel['quickView'] {
+  const segments = path.split('/');
+  let owner = typeName;
+  for (const seg of segments.slice(0, -1)) owner = ctx.entityTypes[owner]?.navigations[seg]?.targetType ?? owner;
+  const prefix = segments.slice(0, -1).join('/');
+  const has = (tn: string) => Boolean(ctx.raw[tn]?.annotations?.UI?.QuickViewFacets);
+  const candidates: string[] = [];
+  if (prop.text?.includes('/')) candidates.push(prop.text.split('/')[0]!);
+  for (const nav of Object.values(ctx.entityTypes[owner]?.navigations ?? {})) {
+    if (!nav.collection && nav.referentialConstraints.some((r) => r.property === prop.name)) candidates.push(nav.name);
+  }
+  for (const n of candidates) {
+    const nav = ctx.entityTypes[owner]?.navigations[n];
+    if (nav && !nav.collection && has(nav.targetType)) return { navigation: join(prefix, n), typeName: nav.targetType };
+  }
+  return undefined;
 }
 
 function buildFields(records: unknown, typeName: string, ctx: UiContext, scope: string, semanticKey: string[]): FieldModel[] {
@@ -495,7 +657,43 @@ function buildUi(fullName: string, ctx: UiContext): EntityUi {
   const sections = Array.isArray(ui.Facets) ? buildSections(ui.Facets as Any[], fullName, ctx, semanticKey) : undefined;
   const headerFacets = Array.isArray(ui.HeaderFacets) ? buildHeaderFacets(ui.HeaderFacets as Any[], fullName, ctx, semanticKey) : [];
 
-  return deriveUi(et, ctx.entityTypes, {
+  const charts: Record<string, ChartModel> = {};
+  for (const key of Object.keys(ui)) {
+    if (key !== 'Chart' && !key.startsWith('Chart#')) continue;
+    const q = key.includes('#') ? key.split('#')[1]! : '';
+    const chart = buildChart(ui[key], q || 'Chart', '', fullName, ctx);
+    if (chart) charts[q] = chart;
+  }
+
+  // Multiple views (LR General Layout): every qualified SelectionPresentationVariant is a view.
+  const views: ViewModel[] = [];
+  for (const key of Object.keys(ui)) {
+    if (!key.startsWith('SelectionPresentationVariant#')) continue;
+    const v = ui[key];
+    const q = key.split('#')[1]!;
+    const { presentation: vp, lineItemQualifier: lq } = presentationFrom(v?.PresentationVariant);
+    const vizs = ((v?.PresentationVariant?.Visualizations ?? []) as unknown[]).map((x) => str((x as Any)?.value) ?? pathOf(x) ?? '');
+    const chartViz = vizs.find((x) => x.includes('Chart'));
+    const records = ui[lq ? `LineItem#${lq}` : 'LineItem'];
+    views.push({
+      id: q,
+      text: str(v?.Text) ?? humanize(q),
+      conditions: selectionVariantFrom(v?.SelectionVariant),
+      presentation: vp.sortOrder.length ? vp : { ...vp, sortOrder: presentation.sortOrder },
+      lineItem: records ? buildFields(records, fullName, ctx, `${fullName}@UI.LineItem`, semanticKey) : lineItem ?? [],
+      chart: chartViz ? charts[chartViz.includes('#') ? chartViz.split('#')[1]! : ''] : undefined,
+    });
+  }
+
+  const quickViewFacets = ui.QuickViewFacets as Any[] | undefined;
+  const quickView = Array.isArray(quickViewFacets)
+    ? quickViewFacets.flatMap((f) => {
+        const c = String(f.$Type).endsWith('ReferenceFacet') ? contentForReference(f, fullName, ctx, semanticKey, `${fullName}@UI.QuickViewFacets`) : undefined;
+        return c?.kind === 'form' ? c.groups : [];
+      })
+    : undefined;
+
+  const ui2 = deriveUi(et, ctx.entityTypes, {
     headerInfo,
     lineItem,
     selectionFields,
@@ -505,6 +703,14 @@ function buildUi(fullName: string, ctx: UiContext): EntityUi {
     headerFacets,
     semanticKey,
   }, (target) => tableFor(fullName, target, ctx));
+  return {
+    ...ui2,
+    actions: buildActions(lineItemRecords, `${fullName}@UI.LineItem`, ctx),
+    objectActions: buildActions(ui.Identification, `${fullName}@UI.Identification`, ctx),
+    charts,
+    views,
+    quickView,
+  };
 }
 
 /** Builds the table content for a "nav/@UI.LineItem" facet target. */
@@ -540,6 +746,11 @@ function contentForReference(f: Any, typeName: string, ctx: UiContext, semanticK
     const found = lookupAnnotation(typeName, navigation, term, qualifier, ctx);
     const dp = found ? buildDataPoint(found.value as Any, qualifier ?? 'DataPoint', navigation, typeName, ctx) : undefined;
     return dp ? { kind: 'dataPoint', dataPoint: dp } : undefined;
+  }
+  if (term === 'Chart' && scope.endsWith('@UI.HeaderFacets')) {
+    const found = lookupAnnotation(typeName, navigation, term, qualifier, ctx);
+    const chart = found ? buildChart(found.value as Any, qualifier ?? 'Chart', navigation, typeName, ctx) : undefined;
+    return chart ? { kind: 'chart', chart } : undefined;
   }
   ctx.warn('UNSUPPORTED_FACET', `Facet target ${target} is not supported in phase 1`, scope, 'info');
   return undefined;
@@ -596,7 +807,11 @@ function buildHeaderFacets(facets: Any[], typeName: string, ctx: UiContext, sema
     const content = String(f.$Type).endsWith('ReferenceFacet') ? contentForReference(f, typeName, ctx, semanticKey, `${typeName}@UI.HeaderFacets`) : undefined;
     const target = str(f.Target?.value) ?? '';
     const id = facetId(f, annotationId(target) || `HeaderFacet${i}`);
-    if (content?.kind === 'form') out.push({ id, kind: 'form', label: str(f.Label) ?? content.groups[0]?.label, fields: content.groups[0]?.fields ?? [] });
+    const fields = content?.kind === 'form' ? content.groups[0]?.fields ?? [] : [];
+    const only = fields.length === 1 && fields[0]!.path ? resolvePath(ctx.entityTypes, typeName, fields[0]!.path).property : undefined;
+    if (content?.kind === 'form' && only?.multiLine) out.push({ id, kind: 'text', label: str(f.Label) ?? content.groups[0]?.label, field: fields[0]! });
+    else if (content?.kind === 'form') out.push({ id, kind: 'form', label: str(f.Label) ?? content.groups[0]?.label, fields });
+    else if (content?.kind === 'chart') out.push({ id, kind: 'chart', label: str(f.Label) ?? content.chart.title, chart: content.chart });
     else if (content?.kind === 'dataPoint') out.push({ id, kind: 'dataPoint', label: str(f.Label) ?? content.dataPoint.title, dataPoint: content.dataPoint });
     else ctx.warn('UNSUPPORTED_FACET', `Header facet ${id} is not supported in phase 1`, typeName, 'info');
   });

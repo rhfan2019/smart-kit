@@ -27,7 +27,16 @@ export interface ObjectResult {
 export function useObject(path: string, o: UseObjectOptions = {}): ObjectResult {
   const service = useService(o.service);
   const { namespace, locale } = useSmartKit();
-  const resolved = useMemo(() => resolveEntityPath(service.model, path), [service.model, path]);
+  const resolved = useMemo((): ResolvedPath => {
+    try {
+      return resolveEntityPath(service.model, path);
+    } catch (e) {
+      // A disabled read (e.g. create mode) may name only the entity set.
+      const set = service.model.entitySets[path.split('(')[0]!];
+      if (o.enabled === false && set) return { entitySet: set.name, typeName: set.typeName, key: {}, canonical: set.name, levels: [] };
+      throw e;
+    }
+  }, [service.model, path, o.enabled]);
   const ui = service.model.ui[resolved.typeName]!;
   const req = useMemo(() => buildObjectRequest(service.model, resolved.typeName, ui, o.extraFields, o.extraSelect), [service.model, resolved.typeName, ui, o.extraFields, o.extraSelect]);
   const q = useQuery({

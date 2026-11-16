@@ -64,7 +64,7 @@
 | --- | --- | --- | --- | --- | --- | --- |
 | `ObjectPageLayout`（含 `.Header`、`.Sections`、`.Footer`） | 动态页头 + 导航栏 + 区块容器；锚点或页签；滚动跟随；区块按需加载 | 不读数据 | `navigation: 'anchor' \| 'tabs'`、`selectedSection` / `onSelectedSectionChange`、`headerExpanded`、`headerPinned` | 区块只含子区块；标题去冗余规则（OP-12） | 区块的增加、替换、顺序 | sap.uxap.ObjectPageLayout |
 | `ObjectPageHeader` | 面包屑、标题、副标题、头像、动作区、页头 Facet 容器、页头消息条位置 | — | `title`、`subtitle`、`image`、`breadcrumbs`、`actions`、`facets`、`messageStrip` | 各元素的位置和折叠行为（OP-01、OP-04） | 各元素内容 | sap.f.DynamicPageTitle + ObjectPageDynamicHeader |
-| `HeaderFacet` | 一个页头 Facet：表单、纯文本、图片、关键值、进度、评分 | 微型图表（二期） | `facet`（模型生成）或 `kind` + 显式值 | 每种 Facet 的结构（OP-04） | 自定义 Facet | sap.fe 的 HeaderFacet 片段 |
+| `HeaderFacet` | 一个页头 Facet：表单、纯文本、图片、关键值、进度、评分 | 微型图表：九种（`MicroChart`，三期，规则见 `15-research-micro-chart.md`） | `facet`（模型生成）或 `kind` + 显式值 | 每种 Facet 的结构（OP-04） | 自定义 Facet | sap.fe 的 HeaderFacet 片段 |
 | `AnchorBar` | 锚点、子区块菜单、溢出菜单、小屏下拉；方向键导航 | — | `sections`、`active`、`onSelect` | OP-08 | — | sap.uxap.AnchorBar |
 | `Section`、`SubSection` | 区块和子区块；标题与条数；子区块工具栏；"显示更多 / 显示更少"；区块消息条位置 | — | `id`、`title`、`count`、`actions`、`moreContent` | OP-10、OP-11 | 内容 | sap.uxap.ObjectPageSection / SubSection |
 | `SmartObjectPage` | **整页模板示例**：`useObject` + `ObjectPageLayout` + 从 `UI.Facets` 生成的区块（表单、子表），只用公开导出 | 不编辑 | `path`（实体路径）、`onNavigate`、`extend?` | — | 全部 | sap.fe.templates.ObjectPage |
@@ -80,3 +80,25 @@
 | `useSectionScrollSpy(sectionIds, scrollRoot)` | 当前区块、滚动到某区块（先折叠页头再滚动） | `{ active, scrollTo }` |
 | `usePageState(key, initial)` | 读写页面状态（返回时恢复） | `[state, setState]` |
 | `useTableContext()` / `useObjectContext()` | 给自定义内容用：数据、选中行、刷新、当前筛选 | — |
+
+## 7. 二期新增的积木（2026-11-15）
+
+验收条目见 `13-phase2-acceptance.md`，设计决定见 ADR-018–024。
+
+| 积木 | 职责 | 不做什么 | 主要输入 | 骨架锁定 | 开放 |
+| --- | --- | --- | --- | --- | --- |
+| `SmartTable`（二期扩展） | `mode="responsive"`（HTML 表格，页面滚动、滚动续载、吸顶、按 `UI.Importance` 隐藏列和"显示明细"、分组）；`UI.DataFieldForAction` 生成表动作（`actionGroups` 收进菜单按钮）和行内动作；新建（对话框或表首新行）、删除确认、复制、工作模式、草稿标记、"Show All (x)"、滚动续载（`growing="scroll"`）、标题级别（`titleLevel`） | 网格表格的分组（ADR-002） | `createMode`、`editing`、`workingMode`、`actionGroups`、`lineItem`、`titleAddon`、`toolbarEnd`、`showAllThreshold`、`onRowsChange`、`refreshToken` | 工具栏分区不变；窄表时动作先进"更多" | 同一期，另加 `SmartTable.Copy`、`SmartTable.Details` |
+| `ResponsiveTable` | 响应式表格的渲染内核（也可单独用） | 取数 | `columns`（带重要性）、`rows`、选择、导航、续载 | 列头吸顶、pop-in 位置 | 列渲染 |
+| `ChartView`、`SimpleChart`、`MicroChart` | 列表页图表视图（`$apply` 聚合、下钻弹出框）；微图表：九种（Bullet、Radial、Harvey Ball、Column、Line、Area、Comparison、Stacked Bar、Delta，三期按 `15-research-micro-chart.md` 完成），随父容器变化尺寸，可放进页头 Facet、表格和表单单元格（`SmartField`） | 图表库的交互（缩放、图例） | `chart`（`UI.Chart`）、筛选；微图表的值和序列 | 文字替代、键盘选择 | 颜色令牌 |
+| `HeaderFacet`（二期扩展） | 纯文本（320px，链接）、微图表、汇总评分 Facet | — | 模型 Facet | 每种 Facet 的结构 | 自定义 Facet |
+| `MessageProvider`、`MessageButton` | 页面消息集合、页脚消息按钮和消息弹窗；点消息定位字段 | 消息持久化 | 消息列表、`onNavigate` | 弹窗分组和排序 | 自定义消息 |
+| `useActionRunner` | 动作执行：可用性、部分处理对话框、参数对话框、响应消息 | — | 动作模型、目标行 | 部分处理的提示内容 | 结果回调 |
+| `CreateDialog`、`FieldEditor`、`useEditStrategy` | 新建对话框；按类型的编辑控件；编辑策略选择 | 富文本编辑 | 字段、值、错误 | — | 渲染器注册表照旧可替换 |
+| `DraftMarker`、`GenericTag` | 对象标记（草稿 / 他人的未保存修改）及其弹出框；通用标签 | — | 行（含 `DraftAdministrativeData`） | 弹出框内容 | — |
+| `QuickViewLink` | 快速预览（`UI.QuickViewFacets`） | 预览里编辑 | 字段、行 | — | — |
+| `OverflowActions`、`ShareMenu` | 从右往左溢出的工具栏；分享菜单（邮件、复制链接） | 存为磁贴、SAP Jam | 动作列表；链接 | 溢出顺序 | 自定义按钮（`render`） |
+| `DynamicPage`（二期扩展） | 关键信息、布局动作（1280px 断点）、全局动作溢出、标题截断 / 换行、F6、摘要行、Letterboxing、对象标记位置 | — | `keyInfo`、`layoutActions`、`actionItems`、`titleAddon`、`letterboxing` | 区域位置 | 各插槽 |
+| `ObjectPageLayout`（二期扩展） | 布局块（1/2/3 列，"显示更多"）、动态侧边内容、锚点栏轮播按钮 | — | `SubSectionItem.blocks`、`sideContent` | 块的列规则 | 块内容 |
+| `SmartObjectPage`（二期扩展） | 编辑（直接保存 / 草稿）、新建模式、删除、页头和页脚动作、临时"页头"区块、部分编辑、子对象新建、分页按钮、侧边内容、消息 | 页面级变体 | `create`、`editable`、`subObjectCreate`、`keyInfo`、`sideContent`、`paging` | 编辑时布局不变 | 同一期 |
+| `SmartListReport`（二期扩展） | 分享、多视图（分段按钮 / 下拉 / 页签）、多内容、图表、表格类型（含 `auto`）、工作模式、页脚消息、草稿编辑状态 | 分析表、树形表 | `views`、`contents`、`chart`、`tableType`、`workingMode`、`actionGroups` | 同一期 | 同一期 |
+| `FlexibleColumnLayout` | 一到三列；布局动作和分页按钮通过 `ColumnContext` 交给列里的动态页 | 读写地址栏（ADR-022） | `layout`、三个列、关闭和分页回调 | 列宽比例、窄屏只显示最后一列 | 列内容 |

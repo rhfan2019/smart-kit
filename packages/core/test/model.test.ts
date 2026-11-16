@@ -11,7 +11,7 @@ const product = model.entityTypes['Shop.Product']!;
 describe('model basics', () => {
   it('AC-MOD-05 has a version and records warnings instead of throwing', () => {
     expect(model.version).toBe(MODEL_VERSION);
-    expect(model.warnings.some((w) => w.code === 'UNSUPPORTED_RECORD')).toBe(true);
+    expect(model.warnings.some((w) => w.code === 'UNRESOLVED_ACTION')).toBe(true); // Shop.discontinue is not declared
   });
 
   it('reads entity sets, keys, navigations and bindings', () => {

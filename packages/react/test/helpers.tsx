@@ -1,5 +1,5 @@
 import { MantineProvider } from '@mantine/core';
-import { buildModel, MemoryProvider, MemoryVariantStore, type Row } from '@rhfan2019/smart-kit-core';
+import { buildModel, MemoryProvider, MemoryVariantStore, type MetaModel, type Row } from '@rhfan2019/smart-kit-core';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { ReactNode } from 'react';
@@ -16,11 +16,12 @@ export const shopData: Record<string, Row[]> = {
   Reviews: [],
 };
 
-export function wrap(children: ReactNode, opts: { locale?: Locale; renderers?: Parameters<typeof SmartKitProvider>[0]['renderers'] } = {}) {
-  const provider = new MemoryProvider({ model: shopModel, data: shopData });
+export function wrap(children: ReactNode, opts: { locale?: Locale; renderers?: Parameters<typeof SmartKitProvider>[0]['renderers']; model?: MetaModel } = {}) {
+  const model = opts.model ?? shopModel;
+  const provider = new MemoryProvider({ model, data: opts.model ? {} : shopData });
   return (
     <MantineProvider theme={smartKitMantineTheme}>
-      <SmartKitProvider services={{ shop: { model: shopModel, dataProvider: provider, variants: new MemoryVariantStore() } }} locale={opts.locale ?? 'en'} namespace="test" renderers={opts.renderers}>
+      <SmartKitProvider services={{ shop: { model, dataProvider: provider, variants: new MemoryVariantStore() } }} locale={opts.locale ?? 'en'} namespace="test" renderers={opts.renderers}>
         {children}
       </SmartKitProvider>
     </MantineProvider>

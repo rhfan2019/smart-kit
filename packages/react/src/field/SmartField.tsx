@@ -1,11 +1,15 @@
 /** SmartField: displays (and, for the edit seam, edits) one field according to its type and annotations. */
-import { Avatar, Checkbox, Progress, Rating, Textarea, TextInput, Tooltip } from '@mantine/core';
-import { resolvePath, type FieldModel, type Row } from '@rhfan2019/smart-kit-core';
+import { Avatar, Progress, Rating } from '@mantine/core';
+import { formatNumber, resolvePath, type FieldModel, type Row } from '@rhfan2019/smart-kit-core';
 import { AlertTriangle, CheckCircle2, Info, XCircle } from 'lucide-react';
 import { useMemo, type ReactNode } from 'react';
+import { MicroChart } from '../chart/MicroChart';
+import { chartHidden, chartProps } from '../chart/fromModel';
 import { useService, useSmartKit, useText } from '../context/SmartKitProvider';
 import type { FieldRenderer, FieldRenderProps } from './renderers';
 import { fieldValue, resolveRef } from './values';
+import { FieldEditor } from './FieldEditor';
+import { QuickViewLink } from './QuickView';
 
 export interface SmartFieldProps {
   /** Entity type full name the field belongs to. Use `entitySet` instead when convenient. */
@@ -22,6 +26,15 @@ export interface SmartFieldProps {
   onChange?(value: unknown): void;
   /** Label for accessibility when used without a visible label. */
   'aria-label'?: string;
+  /** Edit mode: error text, mandatory marker, read-only, element id. */
+  error?: string;
+  required?: boolean;
+  readOnly?: boolean;
+  id?: string;
+  /** Edit mode: show the label above the editor (dialogs). */
+  showLabel?: boolean;
+  /** Rendered in a table cell: a micro chart without data leaves the cell empty (docs/15 MC-06). */
+  cell?: boolean;
 }
 
 const CRITICALITY_CLASS: Record<number, string> = { 0: 'neutral', 1: 'negative', 2: 'critical', 3: 'positive', 5: 'info' };
@@ -60,12 +73,33 @@ export function SmartField(props: SmartFieldProps) {
     () => props.field ?? { id: `DataField::${props.path}`, kind: 'field', path: props.path, label: resolvePath(service.model.entityTypes, typeName, props.path ?? '').property?.label ?? props.path ?? '', criticalityIcon: true, isSemanticKey: false },
     [props.field, props.path, service.model, typeName],
   );
+  if (field.kind === 'chart' && field.chart) {
+    // Micro chart in a table or form cell (docs/15 MC-10): of the row, of a single-valued navigation or over a collection (ADR-025).
+    const chart = field.chart;
+    const cp = chartHidden(service.model, chart) ? undefined : chartProps({ model: service.model, locale: intlLocale, timeZone }, typeName, chart, props.row);
+    if (!cp) return null;
+    const measureProp = resolvePath(service.model.entityTypes, chart.typeName, chart.measures[0]!).property;
+    const digits = chart.dataPoints[chart.measures[0]!]?.fractionDigits ?? (typeof measureProp?.scale === 'number' ? measureProp.scale : undefined);
+    const fmt = (n: number) => formatNumber(String(n), intlLocale, digits !== undefined ? { min: digits, max: digits } : { max: 2 });
+    return (
+      <span className="sk-field sk-field--chart">
+        <MicroChart {...cp} label={props['aria-label'] ?? field.label} format={fmt} hideOnNoData={props.cell} />
+      </span>
+    );
+  }
   const v = fieldValue({ model: service.model, typeName, locale: intlLocale, timeZone }, field, props.row);
   const mode = props.mode ?? 'display';
   const renderProps: FieldRenderProps = { ...v, row: props.row ?? {}, field, mode, onChange: props.onChange };
   const custom = rendererFor(renderers, typeName, field, renderProps);
   if (custom) return <>{custom(renderProps)}</>;
-  if (mode === 'edit' && field.kind === 'field') return <FieldEditor {...renderProps} value={props.value ?? v.value} label={props['aria-label'] ?? field.label} />;
+  if (mode === 'edit' && field.kind === 'field') {
+    return (
+      <FieldEditor
+        property={v.property} value={props.value === undefined ? v.value : props.value} onChange={props.onChange} label={props['aria-label'] ?? field.label}
+        unit={v.unit} error={props.error} required={props.required} disabled={props.readOnly} id={props.id} service={props.service} showLabel={props.showLabel}
+      />
+    );
+  }
 
   const dp = field.dataPoint;
   if (dp?.visualization === 'Rating') {
@@ -102,6 +136,7 @@ export function SmartField(props: SmartFieldProps) {
       </a>
     );
   }
+  if (field.quickView && v.value !== null && v.value !== undefined && v.value !== '') content = <QuickViewLink typeName={typeName} field={field} row={props.row} service={props.service}>{content}</QuickViewLink>;
   const crit = v.criticality;
   const className = [
     'sk-field',
@@ -119,26 +154,3 @@ export function SmartField(props: SmartFieldProps) {
   );
 }
 
-/** Minimal editors for the edit seam (phase 1 does not save; see docs/05-data-provider.md §6). */
-function FieldEditor(p: FieldRenderProps & { label: string }) {
-  const prop = p.property;
-  const disabled = Boolean(prop?.computed || prop?.isKey);
-  if (prop?.edmType === 'Edm.Boolean') {
-    return <Checkbox checked={p.value === true} disabled={disabled} aria-label={p.label} onChange={(e) => p.onChange?.(e.currentTarget.checked)} />;
-  }
-  if (prop?.multiLine) {
-    return <Textarea value={String(p.value ?? '')} disabled={disabled} aria-label={p.label} autosize minRows={2} onChange={(e) => p.onChange?.(e.currentTarget.value)} />;
-  }
-  const input = (
-    <TextInput
-      value={p.value === null || p.value === undefined ? '' : String(p.value)}
-      disabled={disabled}
-      aria-label={p.label}
-      maxLength={prop?.maxLength}
-      inputMode={prop && /Int|Decimal|Double|Single|Byte/.test(prop.edmType) ? 'decimal' : undefined}
-      rightSection={p.unit ? <span className="sk-field__unit">{p.unit}</span> : undefined}
-      onChange={(e) => p.onChange?.(e.currentTarget.value)}
-    />
-  );
-  return prop?.description ? <Tooltip label={prop.description}>{input}</Tooltip> : input;
-}

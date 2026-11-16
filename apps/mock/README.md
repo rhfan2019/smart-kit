@@ -17,18 +17,23 @@ MOCK_PORT=4500 npm start
 | 地址 | 说明 |
 | --- | --- |
 | `/odata/northwind/` | 仿 Northwind，命名空间 `NorthwindLike`，**没有任何注解** |
-| `/odata/purchasing/` | 采购订单，命名空间 `Purchasing`，完整 UI / Common / Measures / Capabilities / Core 注解 |
+| `/odata/purchasing/` | 采购订单，命名空间 `Purchasing`，完整 UI / Common / Measures / Capabilities / Core / Aggregation 注解；直接保存（新建、PATCH、删除、绑定动作 `approve` / `reject` / `close`） |
+| `/odata/purchasing-draft/` | 同一份模板派生的草稿服务（`IsActiveEntity` 键、`draftEdit` / `draftActivate` / `draftPrepare`、`Common.DraftRoot` / `DraftNode`）；`4500000004` 有其他用户（虚构的 Alex Miller）的草稿 |
+| `GET /` | 服务列表 |
 | `…/$metadata`、`…/$metadata?$format=json` | CSDL XML / CSDL JSON |
 | `/media/suppliers/{id}.svg` | 生成的供应商标志（`Supplier.LogoUrl`） |
-| `POST /test/reset` | 只在 `E2E=1` 时存在：清空变体、撤销所有修改 |
+| `POST /test/reset` | 只在 `E2E=1` 时存在：两个采购服务一起重置（变体、新建和删除的行、动作结果、草稿） |
 
 ## 文件
 
 | 文件 | 内容 |
 | --- | --- |
-| `server.mjs` | HTTP 服务：CORS、按语言的 `$metadata`、Capabilities 检查、`$search` 改写、ETag 和可修改字段、Decimal 字符串化，其余交给引擎 |
+| `server.mjs` | HTTP 服务：CORS、按语言的 `$metadata`、Capabilities 检查、`$search` 改写、ETag 和可修改 / 可新建字段、校验（400 + `details`）、草稿服务的写规则（活动版本只读、其他用户的锁 409）、`sap-messages` 警告、Decimal 字符串化，其余交给引擎 |
+| `lib/rules.mjs` | 业务规则，作为引擎数据贡献者的钩子：编号和默认值、计算字段、订单合计、绑定动作、草稿锁和激活校验 |
+| `lib/messages.mjs` | 中英文消息文字、`sap-messages` 严重级别、OData 错误体 |
+| `lib/draft.mjs` | 由采购模板派生草稿服务的 XML 变换，以及草稿服务的数据（含其他用户的草稿） |
 | `lib/purchasing.mjs`、`lib/northwind.mjs`、`lib/fake.mjs` | 数据生成（固定种子） |
-| `lib/datasets.mjs`、`mockdata/<服务>/<实体集>.js` | 引擎的数据贡献者：初始数据和 `checkFilterValue` |
+| `lib/datasets.mjs`、`mockdata/<服务>/<实体集>.js` | 引擎的数据贡献者：初始数据、`checkFilterValue` 和 `lib/rules.mjs` 的钩子（`mockdata/purchasing-draft/` 是草稿服务的） |
 | `lib/filter.mjs` | `$search` → `$filter`、字符串字面量编码、OData 语义的比较 |
 | `lib/csdl.mjs` | 标签占位符替换、CSDL XML → CSDL JSON |
 | `Csdl/` | 手写的 CSDL（采购服务是带 `{{label:键}}` 的模板）和中英文标签 |

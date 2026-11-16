@@ -16,7 +16,7 @@ test('AC-OP-01 header: title, subtitle, avatar, facets, snap on scroll, pin, col
   await expect(page.locator('.sk-dynamic-page__heading')).toHaveText(PO);
   await expect(page.locator('.sk-dynamic-page__subheading')).not.toBeEmpty();
   await expect(page.locator('.sk-object-header__avatar img')).toBeVisible();
-  await expect(page.locator('.sk-facet')).toHaveCount(4);
+  await expect(page.locator('.sk-object-header__facets > .sk-facet')).toHaveCount(7); // phase 2 added budget, delivery radial and notes
   await expect(page.locator('.sk-facet--form .sk-facet__pair')).toHaveCount(4);
   await expect(page.locator('.sk-facet--kpi .sk-facet__kpi-value')).toHaveText(/^\d{1,3}(,\d{3})*\.\d{2}$/);
   await expect(page.locator('.sk-facet--progress [role="progressbar"]')).toBeVisible();
@@ -106,8 +106,10 @@ test('AC-OP-03 switching tabs keeps a collapsed header collapsed; the new tab st
   await page.locator('[data-sk-anchor="Items"]').click();
   await expect(page.locator('[data-sk-section="Items"]')).toBeVisible();
   const items = table(page, 'PurchaseOrderItems');
-  await items.locator('[data-sk-more]').click();
-  await expect(items.locator('.ag-row[row-index]')).toHaveCount(30);
+  // the table ends its tab: it loads more rows on scroll (phase 2, OP Tables · Tab Navigation)
+  await expect(items.locator('.ag-row[row-index]').first()).toBeVisible();
+  await scrollMain(page, 100000);
+  await expect.poll(() => items.locator('.ag-row[row-index] [col-id="DataField::PurchaseOrderItem"]').count()).toBeGreaterThan(10);
   await scrollMain(page, 500);
   await expect(page.locator('.sk-dynamic-page__title[data-collapsed]')).toBeVisible();
   await page.locator('[data-sk-anchor="NotesSection"]').click();
@@ -191,7 +193,8 @@ test('AC-OP-04 title de-duplication (four cases)', async ({ page }) => {
 
 test('AC-OP-05 form columns follow the content width; labels on top', async ({ page }) => {
   const columns = async () => {
-    const xs = await page.locator('[data-sk-subsection="GeneralData"] .sk-form__field').evaluateAll((els) => els.map((e) => Math.round(e.getBoundingClientRect().left)));
+    // fields hidden by UI.Importance on smaller screens (phase 2) do not count
+    const xs = await page.locator('[data-sk-subsection="GeneralData"] .sk-form__field').evaluateAll((els) => els.filter((e) => getComputedStyle(e).display !== 'none').map((e) => Math.round(e.getBoundingClientRect().left)));
     return new Set(xs).size;
   };
   for (const [width, expected] of [[1700, 6], [1250, 4], [850, 3], [500, 1]] as const) {

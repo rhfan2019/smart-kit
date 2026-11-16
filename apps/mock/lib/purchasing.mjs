@@ -4,6 +4,33 @@ import { Fake, day, round } from './fake.mjs';
 
 export const TODAY = '2026-11-14';
 
+/** Status code -> [English, Chinese, criticality]. */
+export const STATUS = () => Object.fromEntries(STATUSES.map(([c, en, zh, crit]) => [c, { en, zh, criticality: crit }]));
+/** Order type codes. */
+export const ORDER_TYPE_CODES = () => ORDER_TYPES.map((t) => t[0]);
+/** Company code -> currency. */
+export const currencyOfCompany = (cc) => COMPANIES.find((c) => c[0] === cc)?.[1];
+/** Budget of an order: net amount + 20 %. */
+export const budgetOf = (net) => round(net * 1.2, 2);
+
+/** Computed properties of a purchase order that depend on its status or amounts. */
+export function deriveOrder(po) {
+  po.BudgetAmount = budgetOf(po.NetAmount);
+  po.ApproveEnabled = po.Status === 'NEW';
+  po.CloseEnabled = po.Status !== 'CLOSED';
+  return po;
+}
+
+/** Deterministic number of ratings (5..400) from the supplier id; consumes no random numbers. */
+function ratingCount(id) {
+  let h = 2166136261;
+  for (const c of id) h = Math.imul(h ^ c.charCodeAt(0), 16777619) >>> 0;
+  return 5 + (h % 396);
+}
+
+/** Order with more than 200 items (phase 2): 4500000002 is filled up to this many items after the main loop. */
+export const LARGE_ORDER = { id: '4500000002', items: 230 };
+
 // code, English, Chinese, criticality (0 neutral, 1 negative, 2 critical, 3 positive, 5 information)
 const STATUSES = [
   ['NEW', 'New', '新建', 0],
@@ -11,6 +38,7 @@ const STATUSES = [
   ['ORD', 'Ordered', '已下单', 5],
   ['PART', 'Partially Delivered', '部分交货', 2],
   ['CLOSED', 'Closed', '已关闭', 3],
+  ['REJ', 'Rejected', '拒绝', 1], // phase 2: only reached through the reject action, never generated
 ];
 const ORDER_TYPES = [
   ['NB', 'Standard Order', '标准采购订单'],
@@ -35,13 +63,13 @@ export const ZH_TEXTS = {
   CategoryText: Object.fromEntries(HISTORY_CATEGORIES.map((s) => [s[1], s[2]])),
 };
 
-const COMPANIES = [
+export const COMPANIES = [
   ['1000', 'EUR', ['Hamburg', 'Munich', 'Cologne']],
   ['2000', 'USD', ['Chicago', 'Denver', 'Austin']],
   ['3000', 'CNY', ['Shanghai', 'Suzhou', 'Chengdu']],
   ['4000', 'JPY', ['Osaka', 'Nagoya', 'Yokohama']],
 ];
-const FX_FROM_EUR = { EUR: 1, USD: 1.1, CNY: 7.8, JPY: 160 };
+export const FX_FROM_EUR = { EUR: 1, USD: 1.1, CNY: 7.8, JPY: 160 };
 
 const MAT_BASE = ['Steel', 'Stainless', 'Aluminium', 'Brass', 'Copper', 'Nylon', 'PVC', 'Rubber', 'Oak', 'Glass', 'Ceramic', 'Carbon'];
 const MAT_ITEMS = [
@@ -241,8 +269,56 @@ export function generatePurchasing() {
     PurchaseOrders.push(po);
   }
 
+  // ---- phase 2 additions: after the main loop, so the random stream of the rows above is unchanged
+  for (const s of Suppliers) s.RatingCount = ratingCount(s.Supplier);
+  PurchaseOrders[0].Notes = 'Terms: https://example.com/terms';
+  fillLargeOrder(PurchaseOrders, PurchaseOrderItems, PricingConditions, materials, Plants);
+  const invoiced = new Map();
+  for (const it of PurchaseOrderItems) invoiced.set(it.PurchaseOrder, (invoiced.get(it.PurchaseOrder) ?? 0) + it.InvoicedAmount);
+  for (const po of PurchaseOrders) {
+    po.InvoicedAmount = round(invoiced.get(po.PurchaseOrder) ?? 0, 2);
+    deriveOrder(po);
+  }
+  const MaterialPrices = Object.fromEntries(materials.map((m) => [m.m.Material, m.priceEur]));
+
   return {
     OrderStatuses, PurchaseOrderTypes, Suppliers, Materials: materials.map((m) => m.m), Plants,
-    PurchaseOrders, PurchaseOrderItems, PricingConditions, ItemHistory, Variants: [],
+    PurchaseOrders, PurchaseOrderItems, PricingConditions, ItemHistory, Variants: [], MaterialPrices,
   };
+}
+
+/** Typical price of a material in a currency (null for unknown materials). */
+export function typicalPrice(prices, material, currency) {
+  const eur = prices[material];
+  if (eur === undefined) return null;
+  const scale = currency === 'JPY' ? 0 : 2;
+  const p = round(eur * (FX_FROM_EUR[currency] ?? 1), scale);
+  return p > 0 ? p : 1;
+}
+
+/** Appends items to LARGE_ORDER with an own seed (one gross-price condition each, no history). */
+function fillLargeOrder(orders, items, conditions, materials, plants) {
+  const f = new Fake(20261115);
+  const po = orders.find((o) => o.PurchaseOrder === LARGE_ORDER.id);
+  const own = items.filter((i) => i.PurchaseOrder === po.PurchaseOrder);
+  const closed = po.Status === 'CLOSED';
+  const plantsOfCompany = plants.filter((p) => p.Plant[0] === po.CompanyCode[0]);
+  let next = Math.max(...own.map((i) => i.PurchaseOrderItem)) + 10;
+  const scale = po.Currency === 'JPY' ? 0 : 2;
+  for (let k = own.length; k < LARGE_ORDER.items; k++, next += 10) {
+    const { m: mat, priceEur } = f.pick(materials);
+    const qty = mat.BaseUnit === 'EA' ? f.between(1, 200) : f.dec(0.5, 500, 3);
+    const price = Math.max(round(priceEur * FX_FROM_EUR[po.Currency], scale), scale ? 0.01 : 1);
+    const net = round(qty * price, 2);
+    items.push({
+      PurchaseOrder: po.PurchaseOrder, PurchaseOrderItem: next, Material: mat.Material, Plant: f.pick(plantsOfCompany).Plant,
+      OrderQuantity: qty, OrderUnit: mat.BaseUnit, NetPrice: price, NetAmount: net, Currency: po.Currency,
+      DeliveryDate: day.add(po.OrderDate, f.between(7, 60)), ReceivedQuantity: closed ? qty : 0, InvoicedAmount: closed ? net : 0, Version: 1,
+    });
+    conditions.push({
+      PurchaseOrder: po.PurchaseOrder, PurchaseOrderItem: next, ConditionCounter: 1, ConditionType: 'PBXX', ConditionTypeName: CONDITION_TYPES[0][1],
+      Rate: price, RateUnit: po.Currency, ConditionAmount: net, Currency: po.Currency, IsStatistical: false,
+    });
+    po.NetAmount = round(po.NetAmount + net, 2);
+  }
 }

@@ -1,10 +1,12 @@
 /** OData V4 data provider. See docs/05-data-provider.md §1. */
 import type { MetaModel } from '../model/types';
 import { resolveEntityPath, type EntityPath } from '../query/entityPath';
-import { readQueryString, sourcePath, toQueryString, type QueryRequest, type QueryResult, type ReadRequest, type Row } from '../query/request';
+import { keyPredicate } from '../query/entityPath';
+import { readQueryString, sourceInfo, sourcePath, toQueryString, type QueryRequest, type QueryResult, type QuerySource, type ReadRequest, type Row } from '../query/request';
+import { messagesFromHeader } from './messages';
 import { buildModel, type BuildModelOptions } from '../model/buildModel';
 import { errorFromResponse } from './errors';
-import type { DataProvider, FetchLike, RequestOptions } from './provider';
+import type { DataProvider, FetchLike, RequestOptions, WriteResult } from './provider';
 
 export interface ODataV4ProviderOptions {
   /** Service root, ending with "/". */
@@ -56,18 +58,45 @@ export class ODataV4Provider implements DataProvider {
     return JSON.parse(await res.text()) as Row;
   }
 
-  async update(path: EntityPath, patch: Row, opts: RequestOptions & { etag?: string }): Promise<{ row: Row; etag?: string }> {
-    const url = join(this.o.serviceUrl, resolveEntityPath(this.o.model, path).canonical);
+  private async write(method: string, url: string, body: unknown, opts: RequestOptions & { etag?: string } = {}) {
     const res = await this.o.fetch(url, {
-      method: 'PATCH',
-      headers: this.headers({ 'Content-Type': 'application/json;IEEE754Compatible=true', Prefer: 'return=representation', ...(opts.etag ? { 'If-Match': opts.etag } : {}) }),
-      body: JSON.stringify(patch),
+      method,
+      headers: this.headers({
+        ...(body === undefined ? {} : { 'Content-Type': 'application/json;IEEE754Compatible=true' }),
+        ...(method === 'DELETE' ? {} : { Prefer: 'return=representation' }),
+        ...(opts.etag ? { 'If-Match': opts.etag } : {}),
+      }),
+      body: body === undefined ? undefined : JSON.stringify(body),
       signal: opts.signal,
     });
     if (!res.ok) throw await errorFromResponse(res);
     const text = await res.text();
-    const row = text ? (JSON.parse(text) as Row) : {};
-    return { row, etag: (row['@odata.etag'] as string | undefined) ?? res.headers.get('ETag') ?? undefined };
+    const row = text ? (JSON.parse(text) as Row) : undefined;
+    return { row, etag: (row?.['@odata.etag'] as string | undefined) ?? res.headers.get('ETag') ?? undefined, messages: messagesFromHeader(res.headers.get('sap-messages')) };
+  }
+
+  async update(path: EntityPath, patch: Row, opts: RequestOptions & { etag?: string } = {}): Promise<WriteResult> {
+    const r = await this.write('PATCH', join(this.o.serviceUrl, resolveEntityPath(this.o.model, path).canonical), patch, opts);
+    return { row: r.row ?? {}, etag: r.etag, messages: r.messages };
+  }
+
+  async create(target: QuerySource, row: Row, opts: RequestOptions = {}): Promise<WriteResult & { path: EntityPath }> {
+    const r = await this.write('POST', join(this.o.serviceUrl, sourcePath(this.o.model, target)), row, opts);
+    const created = r.row ?? {};
+    const info = sourceInfo(this.o.model, target);
+    const path = `${info.entitySet}${keyPredicate(this.o.model.entityTypes[info.typeName]!, created)}`;
+    return { row: created, etag: r.etag, messages: r.messages, path };
+  }
+
+  async remove(path: EntityPath, opts: RequestOptions & { etag?: string } = {}) {
+    const r = await this.write('DELETE', join(this.o.serviceUrl, resolveEntityPath(this.o.model, path).canonical), undefined, opts);
+    return { messages: r.messages };
+  }
+
+  async invoke(action: string, opts: RequestOptions & { path?: EntityPath; parameters?: Row } = {}) {
+    const url = opts.path ? join(this.o.serviceUrl, `${resolveEntityPath(this.o.model, opts.path).canonical}/${action}`) : join(this.o.serviceUrl, action.split('.').pop()!);
+    const r = await this.write('POST', url, opts.parameters ?? {}, opts);
+    return { row: r.row, messages: r.messages };
   }
 
   /** Generic JSON request against the service (used by the variant store). */

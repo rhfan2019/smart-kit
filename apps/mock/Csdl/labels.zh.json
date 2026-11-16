@@ -98,5 +98,59 @@
   "VL.Materials": "物料",
   "VL.Plants": "工厂",
 
-  "SV.OpenOrders": "未关闭的订单"
+  "SV.OpenOrders": "未关闭的订单",
+
+  "F.BudgetAmount": "预算",
+  "F.ApproveEnabled": "可审批",
+  "F.CloseEnabled": "可关闭",
+  "F.RatingCount": "评分次数",
+
+  "A.Approve": "审批",
+  "A.Reject": "拒绝",
+  "A.Close": "关闭",
+
+  "DP.Budget": "预算",
+  "DP.Invoiced": "已开票金额",
+  "DP.Received": "已收数量",
+
+  "CH.ByStatus": "按状态的净值",
+  "CH.ByType": "按订单类型的净值",
+  "CH.BudgetBullet": "预算使用",
+  "CH.DeliveryRadial": "交货进度",
+  "CH.ReceivedShare": "已收数量",
+  "CH.InvoiceDelta": "订单金额与开票金额",
+  "CH.Amounts": "条件金额",
+  "CH.AmountColumns": "按条件的金额",
+  "CH.AmountShare": "条件金额占比",
+  "CH.QuantityArea": "数量趋势与目标",
+  "DP.QuantityTrend": "数量",
+  "CH.Quantities": "按历史记录的数量",
+
+  "FG.NotesText": "备注",
+  "FG.QuickView": "供应商详情",
+
+  "SPV.All": "全部订单",
+  "SPV.Open": "未完成订单",
+  "SPV.InDelivery": "交货中",
+  "SPV.Closed": "已关闭订单",
+
+  "T.DraftAdministrativeData": "草稿管理数据",
+  "F.IsActiveEntity": "活动版本",
+  "F.HasActiveEntity": "有活动版本",
+  "F.HasDraftEntity": "有草稿",
+  "F.Draft.DraftUUID": "草稿 ID",
+  "F.Draft.DraftEntityType": "草稿实体类型",
+  "F.Draft.CreationDateTime": "草稿创建时间",
+  "F.Draft.CreatedByUser": "草稿创建人",
+  "F.Draft.DraftIsCreatedByMe": "由我创建的草稿",
+  "F.Draft.LastChangeDateTime": "草稿上次更改时间",
+  "F.Draft.LastChangedByUser": "草稿上次更改人",
+  "F.Draft.DraftIsLastChangedByMe": "由我上次更改的草稿",
+  "F.Draft.InProcessByUser": "草稿处理人",
+  "F.Draft.DraftIsProcessedByMe": "由我处理的草稿",
+  "F.Draft.DraftAccessType": "草稿访问类型",
+  "F.Draft.DraftIsKeptByUser": "用户保留的草稿",
+  "F.Draft.CreatedByUserDescription": "草稿创建人姓名",
+  "F.Draft.LastChangedByUserDescription": "草稿上次更改人姓名",
+  "F.Draft.InProcessByUserDescription": "草稿处理人姓名"
 }

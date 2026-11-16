@@ -8,3 +8,4 @@ playwright-report/
 storybook-static/
 *.tsbuildinfo
 apps/mock/data/
+reports/

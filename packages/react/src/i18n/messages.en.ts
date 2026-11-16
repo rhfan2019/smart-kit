@@ -1,5 +1,8 @@
 /** English library texts. Keys must match messages.zh.ts (checked by a unit test). */
+import { p2en } from './messages.p2.en';
+
 export const en = {
+  ...p2en,
   'filterBar.search': 'Search',
   'filterBar.go': 'Go',
   'filterBar.adaptFilters': { one: 'Adapt Filters ({count})', other: 'Adapt Filters ({count})', zero: 'Adapt Filters' },
@@ -110,6 +113,30 @@ export const en = {
   'object.image': 'Image of {name}',
   'object.enlargeImage': 'Enlarge image of {name}',
   'object.notFound': 'The object does not exist.',
+  'chart.noData': 'No data',
+  'chart.noDataFor': '{label}: No data',
+  'chart.value': '{label}: {value}',
+  'chart.valueOf': '{label}: {value} of {target}',
+  'chart.percent': '{label}: {percent}',
+  'chart.parts': '{label}: {parts}',
+  'chart.line': 'Line {n}',
+  'chart.state.neutral': 'Neutral',
+  'chart.state.negative': 'Bad',
+  'chart.state.critical': 'Critical',
+  'chart.state.positive': 'Good',
+  'chart.state.info': 'Information',
+  'chart.actual': 'Actual {value}',
+  'chart.target': 'Target {value}',
+  'chart.forecast': 'Forecast {value}',
+  'chart.difference': 'Difference {value}',
+  'chart.thresholds': 'Thresholds {values}',
+  'chart.delta': '{label}: {value1} compared with {value2}, difference {delta}',
+  'chart.series': '{label}: {points}',
+  'chart.seriesItem': '{name} {value}',
+  'chart.listSeparator': ', ',
+  'chart.point': '{dimension} {label}: {value}',
+  'chart.caption': '{measure} by {dimension}',
+  'chart.loading': 'Loading chart…',
 } as const;
 
 type Widen<T> = { -readonly [K in keyof T]: T[K] extends string ? string : { [P in keyof T[K]]: string } };

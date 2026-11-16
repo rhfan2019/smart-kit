@@ -45,6 +45,7 @@
 | `--sk-navy-50 … --sk-navy-900` | 海军蓝色阶（不是 SAP 蓝；色相偏紫的深蓝 `#1f2a5a` 系） |
 | `--sk-ink-0 … --sk-ink-1000` | 中性暖灰，从白到墨黑 |
 | `--sk-green-*`、`--sk-red-*`、`--sk-amber-*`、`--sk-blue-*` | 状态色色阶 |
+| `--sk-orange-*`、`--sk-teal-*`、`--sk-pink-*`、`--sk-purple-*`、`--sk-cyan-*`、`--sk-magenta-*`、`--sk-coral-*`、`--sk-indigo-300` | 图表色相（定性色板用，`-600` 给亮色主题，`-300` 给暗色主题；`15` MC-08） |
 | `--sk-font-sans` | `Inter, "PingFang SC", "Microsoft YaHei", system-ui, sans-serif` |
 | `--sk-radius-1 … 4`、`--sk-space-1 … 8`、`--sk-font-size-1 … 7`、`--sk-shadow-1 … 3` | 尺寸刻度 |
 
@@ -58,6 +59,7 @@
 | 边框 | `--sk-color-border`、`--sk-color-border-strong` |
 | 状态 | `--sk-color-positive / -wash`、`--sk-color-critical / -wash`、`--sk-color-negative / -wash`、`--sk-color-info / -wash`、`--sk-color-neutral / -wash` |
 | 尺寸 | `--sk-control-height`、`--sk-row-height`、`--sk-header-row-height`、`--sk-space-page-x`、`--sk-space-section`、`--sk-space-field`、`--sk-radius-control`、`--sk-radius-panel` |
+| 图表定性色板 | `--sk-color-chart-1` ～ `--sk-color-chart-11`：每个主题各定义一套（亮色主题用 `-600`，暗色主题用 `-300`），在本主题背景上的对比度不低于 3:1。自定义主题必须同样定义这 11 个（`15` MC-08） |
 | 文字刻度 | `--sk-text-page-title`、`--sk-text-object-title`、`--sk-text-section-title`、`--sk-text-body`、`--sk-text-label`、`--sk-text-kpi` |
 
 ### 3.3 组件层（局部微调入口）
@@ -71,6 +73,17 @@
 | `--sk-page-header-bg` | `var(--sk-color-surface)` |
 | `--sk-facet-kpi-size` | `var(--sk-text-kpi)` |
 | `--sk-filterbar-gap` | `var(--sk-space-field)` |
+| `--sk-chart-palette-1` ～ `-11` | `var(--sk-color-chart-1)` ～ `var(--sk-color-chart-11)`（微型图表无语义时的颜色） |
+| `--sk-chart-forecast-opacity` | `0.35`（子弹图预测条：实际值颜色变浅） |
+| `--sk-microchart-min-width` / `-min-height` / `-max-width` / `-max-height` | `64px` / `18px` / `320px` / `94px`（微型图表随容器变化的上下限，`15` MC-03） |
+| `--sk-microchart-facet-width` / `-facet-height` | `160px` / `72px`（页头微图表 Facet 给图的空间） |
+| `--sk-microchart-cell-height` | 行高减去单元格内边距（表格和表单单元格里的微型图表） |
+| `--sk-microchart-value-size` | `var(--sk-font-size-4)`（Harvey Ball 部分值、Radial 百分数） |
+| `--sk-microchart-bar-thickness` / `--sk-microchart-stack-height` | `6px` / `20px`（Comparison 条粗细、Stacked Bar 条高上限） |
+| `--sk-microchart-dot` | `6px`（Line 数据点） |
+| `--sk-chart-band-positive` / `-critical` / `-negative` | `var(--sk-color-positive)` 等（Area 阈值区域，MC-74） |
+| `--sk-chart-actual-line` | `var(--sk-color-text)`（Area 实际值线） |
+| `--sk-chart-segment-text` | `var(--sk-color-surface)`（Stacked Bar 段内文字） |
 
 ### 3.4 主题与密度
 
@@ -107,3 +120,17 @@
   - 列表页：`/po`、`/nw/products`。
   - 对象页：`/<服务名>/object?path=<编码后的实体路径>`，例如 `/purchasing/object?path=PurchaseOrders('4500000001')`。
   - 宿主应用自己的其他路由（演示用的 `/about`）在测试里验证不受影响（AC-NAV-06）。
+
+## 6. 二期新增的扩展点和令牌（2026-11-15）
+
+扩展点：
+- `SmartTable`：`actionGroups`（菜单按钮）、`modelActions={false}`（不用注解动作）、`createMode`、`deletable`、`workingMode`、`lineItem`、`titleAddon`、`toolbarEnd`；部件 `SmartTable.Copy`、`SmartTable.Details`。
+- `SmartListReport`：`views`、`contents`、`chart`、`tableType`、`share`、`onRowsChange`。
+- `SmartObjectPage`：`keyInfo`、`sideContent`、`subObjectCreate`、`create`、`onCreated`、`onDeleted`、`editable`、`paging`、`letterboxing`；`SectionItem.subSections[].blocks`（布局块）。
+- `DynamicPage`：`keyInfo`、`actionItems`、`layoutActions`、`titleAddon`、`letterboxing`；`ColumnContext`（弹性分栏给列的布局动作和面包屑规则）。
+- `ServiceConfig.editStrategy(entitySet)`：替换编辑策略（ADR-018）。
+- `NavigationAdapter.toTable(parent, navigation, service)`："Show All (x)" 的目标页。
+
+新增令牌（各主题共用语义层，深色主题跟随语义色）：`--sk-text-h3` / `--sk-text-h4` / `--sk-text-h5`（对象页标题样式）、`--sk-size-letterbox`（1280px）、`--sk-size-side-content`、`--sk-size-generic-tag`、`--sk-sticky-offset` / `--sk-tabs-height` / `--sk-table-toolbar-height`（运行时由组件设置的吸顶偏移），以及图表组件令牌 `--sk-chart-*`、`--sk-microchart-*`（ADR-021）。
+
+文案：二期的库文案在 `packages/react/src/i18n/messages.p2.en.ts` / `messages.p2.zh.ts`，并入主文案表，键集合由单元测试检查一致。

@@ -109,7 +109,7 @@ export function deriveUi(
   types: Record<string, EntityTypeModel>,
   p: PartialUi,
   tableFor: (navigation: string) => SubSectionModel['content'] | undefined,
-): EntityUi {
+): Omit<EntityUi, 'actions' | 'objectActions' | 'charts' | 'views' | 'quickView'> {
   const headerInfo = p.headerInfo ?? deriveHeaderInfo(et, p.semanticKey);
   if (p.headerInfo && !p.headerInfo.title) headerInfo.title = deriveHeaderInfo(et, p.semanticKey).title;
   return {

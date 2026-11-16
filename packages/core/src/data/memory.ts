@@ -1,17 +1,19 @@
 /** In-memory data provider: evaluates query requests directly (tests, Storybook, demos without a backend). */
 import { compareValues, matches } from '../conditions/conditions';
 import type { EntityTypeModel, MetaModel, NavigationModel } from '../model/types';
-import { resolveEntityPath, type EntityPath } from '../query/entityPath';
-import { sourceInfo, type ExpandSpec, type QueryRequest, type QueryResult, type ReadRequest, type Row } from '../query/request';
+import { keyPredicate, resolveEntityPath, type EntityPath } from '../query/entityPath';
+import { sourceInfo, type ExpandSpec, type QueryRequest, type QueryResult, type QuerySource, type ReadRequest, type Row } from '../query/request';
 import { resolvePath } from '../model/buildModel';
 import { ConcurrencyError, ODataError } from './errors';
-import type { DataProvider, RequestOptions } from './provider';
+import type { DataProvider, RequestOptions, WriteResult } from './provider';
 
 export interface MemoryProviderOptions {
   model: MetaModel;
   data: Record<string, Row[]>;
   /** Artificial latency in milliseconds. */
   latency?: number;
+  /** Bound and unbound action handlers by qualified name (MemoryProvider.invoke). */
+  actions?: Record<string, (row: Row | undefined, parameters: Row) => Row | undefined>;
 }
 
 /** Pairs of (source property, target property) that link `nav` from `type` to its target. */
@@ -21,6 +23,13 @@ function links(model: MetaModel, type: EntityTypeModel, nav: NavigationModel): {
   const partner = nav.partner ? target.navigations[nav.partner] : undefined;
   if (partner?.referentialConstraints.length) return partner.referentialConstraints.map((r) => ({ source: r.referencedProperty, target: r.property }));
   return type.keys.filter((k) => k in target.properties).map((k) => ({ source: k, target: k }));
+}
+
+function setPath(row: Row, path: string, value: unknown) {
+  const segs = path.split('/');
+  let cur = row;
+  for (const s of segs.slice(0, -1)) cur = (cur[s] ??= {}) as Row;
+  cur[segs[segs.length - 1]!] = value;
 }
 
 export class MemoryProvider implements DataProvider {
@@ -55,7 +64,19 @@ export class MemoryProvider implements DataProvider {
       if (!nav) continue;
       const r = this.navigate(entitySet, typeName, row, e.navigation);
       const proj = (x: Row) => this.project(r.set, nav.targetType, x, e.select, e.expand);
-      out[e.navigation] = r.collection ? r.rows.map(proj) : r.rows[0] ? proj(r.rows[0]) : null;
+      let rows = r.rows;
+      if (r.collection && e.orderBy?.length) {
+        const target = this.o.model.entityTypes[nav.targetType]!;
+        rows = [...rows].sort((a, b) => {
+          for (const s of e.orderBy!) {
+            const c = compareValues(a[s.path], b[s.path], target.properties[s.path]?.edmType ?? 'Edm.String');
+            if (c) return s.descending ? -c : c;
+          }
+          return 0;
+        });
+      }
+      if (r.collection && e.top !== undefined) rows = rows.slice(0, e.top);
+      out[e.navigation] = r.collection ? rows.map(proj) : rows[0] ? proj(rows[0]) : null;
     }
     return out;
   }
@@ -111,6 +132,22 @@ export class MemoryProvider implements DataProvider {
         return 0;
       });
     }
+    if (req.aggregate) {
+      const agg = req.aggregate;
+      const groups = new Map<string, Row>();
+      for (const r of rows) {
+        const key = JSON.stringify(agg.groupBy.map((g) => val(r, g)));
+        let g = groups.get(key);
+        if (!g) {
+          g = {};
+          for (const p of agg.groupBy) setPath(g, p, val(r, p));
+          for (const m of agg.measures) g[m.path.replace(/\//g, '_')] = 0;
+          groups.set(key, g);
+        }
+        for (const m of agg.measures) g[m.path.replace(/\//g, '_')] = Number(g[m.path.replace(/\//g, '_')]) + Number(val(r, m.path) ?? 0);
+      }
+      return { rows: [...groups.values()].slice(0, req.top) };
+    }
     const count = rows.length;
     const skip = req.skip ?? 0;
     const page = req.top === undefined ? rows.slice(skip) : rows.slice(skip, skip + req.top);
@@ -130,18 +167,57 @@ export class MemoryProvider implements DataProvider {
     return this.project(resolved.entitySet, resolved.typeName, row, req.select, req.expand);
   }
 
-  async update(path: EntityPath, patch: Row, opts: RequestOptions & { etag?: string }): Promise<{ row: Row; etag?: string }> {
+  async update(path: EntityPath, patch: Row, opts: RequestOptions & { etag?: string } = {}): Promise<WriteResult> {
     await this.delay(opts.signal);
-    const resolved = resolveEntityPath(this.o.model, path);
-    const row = this.findByKey(resolved.entitySet, resolved.typeName, resolved.key);
-    if (!row) throw new ODataError({ status: 404, message: `Not found: ${path}` });
+    const row = this.existing(path);
     const etag = row['@odata.etag'] as string | undefined;
     if (opts.etag && etag && opts.etag !== etag) {
       throw new ConcurrencyError({ status: 412, message: 'The entity was changed by someone else' });
     }
     Object.assign(row, patch);
-    const next = `W/"${Date.now()}"`;
+    const next = `W/"${Date.now()}-${Math.random().toString(36).slice(2, 6)}"`;
     row['@odata.etag'] = next;
-    return { row: { ...row }, etag: next };
+    return { row: { ...row }, etag: next, messages: [] };
+  }
+
+  private existing(path: EntityPath): Row {
+    const resolved = resolveEntityPath(this.o.model, path);
+    const row = this.findByKey(resolved.entitySet, resolved.typeName, resolved.key);
+    if (!row) throw new ODataError({ status: 404, message: `Not found: ${path}` });
+    return row;
+  }
+
+  async create(target: QuerySource, row: Row, opts: RequestOptions = {}): Promise<WriteResult & { path: EntityPath }> {
+    await this.delay(opts.signal);
+    const model = this.o.model;
+    const info = sourceInfo(model, target);
+    const created: Row = { ...row, '@odata.etag': `W/"${Date.now()}"` };
+    if ('parent' in target) {
+      // Foreign keys from the parent (referential constraints of the partner).
+      const parent = resolveEntityPath(model, target.parent);
+      const parentRow = this.findByKey(parent.entitySet, parent.typeName, parent.key);
+      const nav = model.entityTypes[parent.typeName]!.navigations[target.navigation]!;
+      if (parentRow) for (const l of links(model, model.entityTypes[parent.typeName]!, nav)) created[l.target] ??= parentRow[l.source];
+    }
+    (this.o.data[info.entitySet] ??= []).push(created);
+    return { row: { ...created }, etag: created['@odata.etag'] as string, path: `${info.entitySet}${keyPredicate(model.entityTypes[info.typeName]!, created)}`, messages: [] };
+  }
+
+  async remove(path: EntityPath, opts: RequestOptions & { etag?: string } = {}) {
+    await this.delay(opts.signal);
+    const row = this.existing(path);
+    const resolved = resolveEntityPath(this.o.model, path);
+    const list = this.o.data[resolved.entitySet]!;
+    list.splice(list.indexOf(row), 1);
+    return { messages: [] };
+  }
+
+  async invoke(action: string, opts: RequestOptions & { path?: EntityPath; parameters?: Row } = {}) {
+    await this.delay(opts.signal);
+    const handler = this.o.actions?.[action];
+    if (!handler) throw new ODataError({ status: 501, message: `Action ${action} is not implemented` });
+    const row = opts.path ? this.existing(opts.path) : undefined;
+    const result = handler(row, opts.parameters ?? {});
+    return { row: result ? { ...result } : undefined, messages: [] };
   }
 }

@@ -1,7 +1,7 @@
 {
   "name": "mock",
   "private": true,
-  "description": "Local OData V4 test services (@sap-ux/fe-mockserver-core): /odata/northwind/ and /odata/purchasing/ on http://localhost:4400",
+  "description": "Local OData V4 test services (@sap-ux/fe-mockserver-core): /odata/northwind/, /odata/purchasing/ and /odata/purchasing-draft/ on http://localhost:4400",
   "type": "module",
   "scripts": {
     "start": "node run.mjs"

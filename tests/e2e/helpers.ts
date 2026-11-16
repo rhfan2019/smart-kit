@@ -64,3 +64,17 @@ export async function showFilters(page: Page) {
   if (await btn.isVisible()) await btn.click();
   await expect(page.locator('.sk-dynamic-page__header')).toBeVisible();
 }
+
+/** Saves a screenshot as evidence for docs/14 when E2E_EVIDENCE=1 (docs/13 "S"). */
+export async function evidence(page: Page, id: string, target?: import('@playwright/test').Locator) {
+  if (process.env.E2E_EVIDENCE !== '1') return;
+  const path = `docs/14-evidence/${id}.png`;
+  if (target) await target.screenshot({ path, animations: 'disabled' });
+  else await page.screenshot({ path, animations: 'disabled' });
+}
+
+/** Object page route of a purchase order (anchor navigation unless `layout` says otherwise). */
+export const orderPath = (po: string, o: { layout?: 'anchor' | 'tabs'; service?: string; extra?: string } = {}) =>
+  `/${o.service ?? 'purchasing'}/object?path=${encodeURIComponent(o.service === 'purchasing-draft' ? `PurchaseOrders(PurchaseOrder='${po}',IsActiveEntity=true)` : `PurchaseOrders('${po}')`)}&layout=${o.layout ?? 'anchor'}${o.extra ?? ''}`;
+
+export const mainScroll = (page: Page, y: number) => page.locator('#demo-main').evaluate((el, top) => el.scrollTo({ top }), y);

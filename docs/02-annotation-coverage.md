@@ -2,7 +2,7 @@
 
 > 状态：现行 · 2026-11-14。
 >
-> 期次：**一期** / **二期** / **不做**。
+> 期次：**一期** / **二期** / **三期** / **不做**。
 >
 > "测试"一列是测试编号，测试名称里带这个编号（例如 `it('ANN-01 …')`），可以用 `npm run trace` 检查每个一期条目都有对应测试（v4 第 9 节第 10 条）。
 >
@@ -20,7 +20,7 @@
 | `UI.LineItem` | 表格列：`DataField`、`DataFieldWithUrl`、`DataFieldForAnnotation`（指向 DataPoint，即评分和进度）、`DataFieldWithNavigationPath`（显示为文本）；`DataFieldForAction` 和 `DataFieldForIntentBasedNavigation` 在一期忽略 | 一期（动作二期） | LR-18、LR-31 | ANN-01 |
 | `UI.SelectionFields` | 筛选栏默认字段，按顺序 | 一期 | LR-09、LR-10 | ANN-02 |
 | `UI.HeaderInfo` | 列表表标题（`TypeNamePlural`）、对象页标题和副标题（`Title`、`Description`）、图片（`ImageUrl`）、面包屑文字 | 一期 | OP-01、NAV-03 | ANN-03 |
-| `UI.PresentationVariant` | 默认排序（`SortOrder`）、使用的 LineItem 限定符（`Visualizations`）、`RequestAtLeast` | 一期（`GroupBy`、`Total` 二期） | LR-32 | ANN-04 |
+| `UI.PresentationVariant` | 默认排序（`SortOrder`）、使用的 LineItem 限定符（`Visualizations`）、`RequestAtLeast` | 一期（分组由个性化对话框提供，`GroupBy`、`Total` 注解不做） | LR-32 | ANN-04 |
 | `UI.SelectionVariant` | 默认筛选条件（`SelectOptions`）、默认参数 | 一期（用作初始条件） | LR-06 | ANN-05 |
 | `UI.SelectionPresentationVariant` | 列表页的默认组合 | 一期（只取它引用的 SV 和 PV） | LR-06 | ANN-05 |
 | `UI.Facets` | 对象页区块：`CollectionFacet` 是区块，它的子 Facet 是子区块；顶层的 `ReferenceFacet` 是只有一个子区块的区块 | 一期 | OP-10、OP-12 | ANN-06 |
@@ -35,12 +35,18 @@
 | `UI.CriticalityRepresentation` | 是否显示图标 | 一期 | LR-31 | ANN-11 |
 | `UI.Hidden` | 字段不出现在任何界面（列、筛选、表单、个性化） | 一期（只支持常量；路径值二期） | LR-31 | ANN-12 |
 | `UI.HiddenFilter` | 字段不出现在筛选栏和适配筛选里 | 一期 | LR-09 | ANN-12 |
-| `UI.Importance` | 列的重要性 | 二期（只在响应式表格和小屏表单里有用） | OP-13 | — |
+| `UI.Importance` | 列的重要性（响应式表格按宽度隐藏列，见 ADR-020）；表单字段在小屏隐藏 | 二期 | OP-13、P2-LR-09、P2-OP-10 | ANN-87 |
 | `UI.TextArrangement` | 代码与文本的排列：`TextFirst`、`TextLast`、`TextOnly`、`TextSeparate` | 一期 | LR-31 | ANN-13 |
 | `UI.IsImageURL` | 字段值是图片地址，显示为头像 | 一期 | LR-31、OP-04 | ANN-14 |
 | `UI.MultiLineText` | 多行文本显示 | 一期 | OP-13 | ANN-14 |
-| `UI.Chart`、`UI.ConnectedFields`、`UI.Note` | 图表、组合字段、备注 | 二期 | — | — |
-| `UI.Badge`、`UI.KPI`、`UI.SelectionPresentationVariant`（多视图）、`UI.DeleteHidden`、`UI.UpdateHidden`、`UI.CreateHidden` | | 二期 | — | — |
+| `UI.Chart` | 列表页图表视图（Column、Bar）和页头微图表 Facet（Bullet、Donut、Pie、Waterfall 作为 Delta、Column、Line、Bar 作为 Comparison），见 ADR-021。三期按 SAP 改正：`Waterfall` 作为 Delta 的约定去掉，见下面三期一行和 `15` | 二期 | P2-LR-04、P2-OP-04 | ANN-82、ANN-83 |
+| `UI.ConnectedFields`、`UI.Note` | 组合字段、备注 | 不做（三篇基准规范没有要求） | — | — |
+| `UI.SelectionPresentationVariant`（带限定符，多视图） | 每个限定符是一个视图：`Text`、`SelectionVariant`、`PresentationVariant`（LineItem 限定符、图表） | 二期 | P2-LR-01、P2-LR-02 | ANN-85 |
+| `UI.DataFieldForAction`（`LineItem`、`Identification`）与 `Core.OperationAvailable` | 表动作、行内动作（`Inline`）、页头和页脚动作（`Determining`）；可用性和部分处理，见 ADR-024 | 二期 | P2-LRA-02、P2-LRA-03、P2-OP-26 | ANN-80、ANN-81 |
+| `UI.QuickViewFacets` | 快速预览（交叉导航） | 二期 | P2-LR-13 | ANN-86 |
+| `UI.DataPoint` 的 `SampleSize`、`MinimumValue`、`MaximumValue` | 汇总评分、微图表的刻度 | 二期 | P2-OP-04、P2-OP-06 | ANN-84 |
+| `UI.Badge`、`UI.KPI`、`UI.DeleteHidden`、`UI.UpdateHidden`、`UI.CreateHidden` | | 不做（三篇基准规范没有要求；动作的隐藏用 Capabilities 和 `OperationAvailable`） | — | — |
+| `UI.Chart`（作为微型图表，被 `DataFieldForAnnotation` 或 `ReferenceFacet` 引用，九种全做：Area、Bullet、Column、Comparison、Delta、Harvey Ball、Line、Radial、Stacked Bar），以及它用到的 `UI.DataPoint` 的 `CriticalityCalculation`、`ForecastValue`、`Visualization`（`DeltaBulletChart`）、`ValueFormat` | 表格单元格里的微型图表；页头微图表 Facet 补齐其余种类（二期已有的见上一行）。`ChartType` 对应关系：`Bullet`、`Donut`（Radial）、`Pie`（Harvey Ball）、`Column`、`Line`、`Area`、`Bar`（Comparison）、`BarStacked`（Stacked Bar），Delta 暂用本库约定 `Waterfall`（待定）；二期的 `Area`→折线、`BarStacked`→Comparison 改正。规则见 `15-research-micro-chart.md` 第 3 节，导航集合的读取见 ADR-025；讨论记录 D01、D07～D10。三期已实现，验收见 `17`、`18` | 三期 | LR-31、OP-04、MC-60、MC-61、MC-65 | MC-60、MC-61、MC-65 |
 
 ## 2. Common
 
@@ -50,12 +56,14 @@
 | `Common.Text` | 代码字段对应的文本路径（可以经过导航，如 `_Supplier/Name`），查询时自动 `$expand` | 一期 | LR-31 | ANN-21 |
 | `Common.ValueList` | 值帮助：`CollectionPath`、`Parameters`（`ValueListParameterInOut`、`ValueListParameterOut`、`ValueListParameterIn`、`ValueListParameterDisplayOnly`）、`SearchSupported`、`Label` | 一期 | LR-11 | ANN-22 |
 | `Common.ValueListWithFixedValues` | 固定值，显示为下拉框而不是对话框 | 一期 | LR-10 | ANN-22 |
-| `Common.ValueListReferences`、`Common.ValueListMapping` | 外部值帮助服务 | 二期 | — | — |
-| `Common.FieldControl` | 一期只读，只识别 `Hidden`（值为 0）；其他值在编辑时才有意义 | 一期（隐藏）、二期（编辑态） | OP-20 | ANN-23 |
+| `Common.ValueListReferences`、`Common.ValueListMapping` | 外部值帮助服务 | 不做（测试服务没有外部值帮助服务，三篇基准规范没有要求） | — | — |
+| `Common.FieldControl` | 一期只读，只识别 `Hidden`（值为 0）；编辑态见下一行 | 一期（隐藏） | OP-20 | ANN-23 |
+| `Common.FieldControl`（`Mandatory`、`ReadOnly` 常量） | 编辑和新建时的必填与只读 | 二期 | P2-OP-16、P2-LR-15 | ANN-88 |
 | `Common.SemanticKey` | 关键标识列（加粗）；也决定面包屑和标题的回退显示 | 一期 | LR-24 | ANN-24 |
 | `Common.IsUpperCase`、`Common.IsDigitSequence`、`Common.IsCalendarDate` 等 | 格式提示 | 一期（`IsDigitSequence` 显示时去掉前导零） | LR-31 | ANN-25 |
-| `Common.DraftRoot` 及其他草稿术语 | 草稿 | 二期（一期遇到时，在模型里给出"不支持"的警告） | — | ANN-26 |
-| `Common.SideEffects` | 编辑联动 | 二期 | — | — |
+| `Common.DraftRoot` 的识别 | 模型标记草稿服务 | 一期 | — | ANN-26 |
+| `Common.DraftRoot`、`Common.DraftNode` 的动作 | 草稿编辑策略：`EditAction`、`PreparationAction`、`ActivationAction`，见 ADR-018 | 二期 | P2-OP-18 | ANN-89 |
+| `Common.SideEffects` | 编辑联动 | 不做（三篇基准规范没有要求；保存后整页重新读取） | — | — |
 
 ## 3. Measures
 
@@ -69,7 +77,7 @@
 
 | 术语 | 用途 | 期次 | 规则 | 测试 |
 | --- | --- | --- | --- | --- |
-| `Capabilities.FilterRestrictions` | `Filterable`、`NonFilterableProperties`、`RequiredProperties`（必填筛选）、`FilterExpressionRestrictions`（`SingleValue`、`MultiValue`、`SingleRange`、`MultiRange`、`SearchExpression`） | 一期 | LR-06、LR-10、LR-35 | ANN-40 |
+| `Capabilities.FilterRestrictions` | `Filterable`、`NonFilterableProperties`、`RequiredProperties`（必填筛选）、`FilterExpressionRestrictions`（`SingleValue`、`MultiValue`、`SingleRange`、`MultiRange`、`SearchExpression`；二期起筛选字段、取值帮助和请求都按它限制，P2-LR-19） | 一期 | LR-06、LR-10、LR-35 | ANN-40 |
 | `Capabilities.SortRestrictions` | `Sortable`、`NonSortableProperties` | 一期 | LR-35 | ANN-41 |
 | `Capabilities.SearchRestrictions` | `Searchable` | 一期 | LR-05、LR-35 | ANN-42 |
 | `Capabilities.CountRestrictions` | `Countable` | 一期 | LR-35 | ANN-43 |
