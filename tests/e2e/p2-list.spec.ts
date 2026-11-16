@@ -1,6 +1,6 @@
 /** Phase 2 · List Report (docs/13 §1–3): Components and Actions figures, behaviour rules. */
 import { expect, test, type Page } from '@playwright/test';
-import { clearFilter, evidence, filterInput, mainScroll, showFilters, MOCK, open, recordOData, resetServer, table, waitForRows } from './helpers';
+import { clearFilter, columnTexts, evidence, filterInput, mainScroll, showFilters, MOCK, open, recordOData, resetServer, table, waitForRows } from './helpers';
 
 test.beforeEach(async ({ page }) => resetServer(page));
 
@@ -16,7 +16,10 @@ async function filterStatus(page: Page, ...codes: string[]) {
   await page.locator('[data-sk-header-toggle]').click();
   await clearFilter(page, 'Status');
   const st = filterInput(page, 'Status');
+  // Wait for the list request with the whole filter: until it returns, the grid still shows the unfiltered rows.
+  const filtered = page.waitForResponse((r) => /\/PurchaseOrders\?/.test(r.url()) && codes.every((c) => decodeURIComponent(r.url()).includes(`'${c}'`)));
   for (const c of codes) { await st.fill(`=${c}`); await st.press('Enter'); }
+  await filtered;
   await page.locator('[data-sk-header-toggle]').click();
 }
 
@@ -80,7 +83,8 @@ test('P2-LRC-11 footer toolbar shows the message button when messages exist; it 
   await waitForRows(page, 'PurchaseOrders');
   await expect(page.locator('.sk-dynamic-page__footer')).toHaveCount(0);
   await filterStatus(page, 'NEW');
-  await expect(table(page, 'PurchaseOrders').locator('.ag-row[row-index="0"] [col-id="DataField::Status"]')).toHaveText(/New/);
+  // every rendered row is New (the unfiltered first row may be New too, so one row proves nothing)
+  await expect.poll(() => columnTexts(page, 'PurchaseOrders', 'DataField::Status').then((t) => t.length > 0 && t.every((x) => /New/.test(x)))).toBe(true);
   await table(page, 'PurchaseOrders').locator('.ag-row[row-index="0"] input[type="checkbox"]').first().check();
   await table(page, 'PurchaseOrders').locator('[data-sk-action-group="decide"]').click();
   await page.getByRole('menuitem', { name: 'Approve' }).click();

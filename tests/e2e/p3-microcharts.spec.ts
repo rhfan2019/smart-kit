@@ -105,3 +105,18 @@ test('MC-01 scenario page: each of the nine charts in the situation the guidelin
     await shot(page.locator('[data-demo-microcharts]'), 'MC-scenarios');
   }
 });
+
+test('MC-02 AC-OP-12 header chart facets keep their size while their series loads, so anchor navigation lands under the anchor bar', async ({ page }) => {
+  // slow series requests: the facets' data arrives after the anchor click (as on a slow CI runner)
+  await page.route(/_History|_Condition/, async (r) => { await new Promise((f) => setTimeout(f, 2000)); await r.continue(); });
+  await open(page, itemPath);
+  await expect(page.locator('[data-sk-anchor="History"]')).toBeVisible();
+  const header = () => page.locator('.sk-object-header').evaluate((el) => (el as HTMLElement).offsetHeight);
+  const before = await header();
+  await page.locator('[data-sk-anchor="Pricing"]').click();
+  await expect(page.locator('[data-sk-facet="ItemHistoryLine"] [data-sk-facet-footer]')).toBeAttached({ timeout: 10_000 });
+  expect(await header()).toBe(before);
+  const gap = () => page.evaluate(() => document.querySelector('[data-sk-section="Pricing"]')!.getBoundingClientRect().top - document.querySelector('.sk-dynamic-page__navigation')!.getBoundingClientRect().bottom);
+  await expect.poll(gap).toBeLessThan(3);
+  await expect.poll(gap).toBeGreaterThan(-3);
+});

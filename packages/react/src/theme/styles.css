@@ -386,6 +386,7 @@
 .sk-messages__text { min-width: 0; }
 .sk-facet__subtitle { color: var(--sk-color-text-muted); font-size: var(--sk-text-small); }
 .sk-facet__footer { color: var(--sk-color-text-muted); font-size: var(--sk-text-small); }
+.sk-facet__footer--pending { visibility: hidden; }
 .sk-facet__text { white-space: pre-wrap; overflow-wrap: anywhere; font-size: var(--sk-text-small); }
 .sk-object-header__edit { align-self: flex-start; margin-left: auto; }
 .sk-blocks { display: grid; grid-template-columns: repeat(var(--sk-form-cols, 1), minmax(0, 1fr)); gap: var(--sk-space-5); padding: var(--sk-space-inset); container-type: inline-size; }

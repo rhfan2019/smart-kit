@@ -68,6 +68,7 @@ function ChartFacet({ facet, chart, row, typeName, service: serviceName, path }:
   const props: Omit<MicroChartProps, 'label'> = chartProps({ model, locale: intlLocale, timeZone }, typeName, chart, row, series ? q.data?.rows ?? [] : undefined) ?? { kind };
   const seriesPoints = props.points ?? props.lines?.[0] ?? [];
   const hasData = microChartHasData(props);
+  const loading = series && Boolean(path) && q.isPending;
   const subtitle = series && dimProp ? t('chart.caption', { measure: measureProp?.label ?? measure, dimension: dimProp.label }) : undefined;
   void timeZone;
   return (
@@ -79,6 +80,8 @@ function ChartFacet({ facet, chart, row, typeName, service: serviceName, path }:
       </div>
       {/* MC-06: without data the footer goes too; MC-51: a radial chart shows a percentage, no unit. */}
       {unit && hasData && kind !== 'radial' ? <div className="sk-facet__footer" data-sk-facet-footer>{unit}</div> : null}
+      {/* While the series loads, keep the footer's line so the header does not grow when the unit arrives (no layout shift). */}
+      {loading && measureProp?.unit && kind !== 'radial' ? <div className="sk-facet__footer sk-facet__footer--pending" aria-hidden>{'\u00a0'}</div> : null}
       <Modal opened={opened} onClose={() => setOpened(false)} title={label} size="lg" closeButtonProps={{ 'aria-label': t('common.close') }}>
         {series ? (
           <SimpleChart kind="column" title={label} measureLabel={measureProp?.label ?? measure} dimensionLabel={dimProp?.label ?? ''} data={seriesPoints.filter((p) => Number.isFinite(p.value)).map((p, i) => ({ key: String(i), label: p.label, value: p.value, formatted: `${fmt(p.value)} ${unit}`.trim() }))} format={fmt} height={260} />

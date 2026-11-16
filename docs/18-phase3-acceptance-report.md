@@ -13,7 +13,7 @@
 | 类型检查 `npm run typecheck` | 通过 |
 | lint（含令牌检查、商标检查）`npm run lint` | 通过 |
 | 单元测试 `npm test` | 14 个文件、229 个测试全部通过 |
-| 端到端测试 `npm run e2e` | 188 个全部通过（含三期 `p3-microcharts.spec.ts` 6 个） |
+| 端到端测试 `npm run e2e` | 189 个全部通过（含三期 `p3-microcharts.spec.ts` 7 个）；CI（Linux）的截图基准在 `tests/e2e/__screenshots__/linux/` |
 | 可追溯 `npm run trace -- --strict` | 一期 33/33、72/72；二期 143/143；三期 58/58（验收方式含 U 或 E 的条目全部有通过的测试） |
 | 构建 `npm run build`、Storybook | 通过 |
 | 体积 `npm run size`（gzip） | core 24.2 KB（预算 60 KB）、react 69.1 KB（预算 80 KB）；三期前为 22.9 KB、64.7 KB |

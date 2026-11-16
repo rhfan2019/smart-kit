@@ -27,6 +27,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ### Fixed (phase 3)
 
+- Header chart facets over a collection keep their footer line while the data loads, so the header no longer grows when it arrives (anchor navigation landed below the anchor bar on slow machines).
+
 - `Decimal` constants in annotations (for example DataPoint `MinimumValue Decimal="0"`) were ignored.
 
 ### Added (phase 2, see docs/12–14)
