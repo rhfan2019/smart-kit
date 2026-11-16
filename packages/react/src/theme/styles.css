@@ -182,54 +182,116 @@
 .sk-chart--positive { --sk-chart-mark: var(--sk-color-positive); }
 .sk-chart--info { --sk-chart-mark: var(--sk-color-info); }
 
-/* micro charts: M is the header facet size, S fits a table cell (one line). */
-.sk-microchart { display: inline-flex; flex: none; width: var(--sk-microchart-width); height: var(--sk-microchart-height); color: var(--sk-color-text); font-family: var(--sk-font-sans); font-size: var(--sk-chart-text); line-height: 1.2; font-variant-numeric: tabular-nums; vertical-align: middle; }
-.sk-microchart--S { width: var(--sk-microchart-width-s); height: var(--sk-microchart-height-s); }
+.sk-chart--palette-1 { --sk-chart-mark: var(--sk-chart-palette-1); }
+.sk-chart--palette-2 { --sk-chart-mark: var(--sk-chart-palette-2); }
+.sk-chart--palette-3 { --sk-chart-mark: var(--sk-chart-palette-3); }
+.sk-chart--palette-4 { --sk-chart-mark: var(--sk-chart-palette-4); }
+.sk-chart--palette-5 { --sk-chart-mark: var(--sk-chart-palette-5); }
+.sk-chart--palette-6 { --sk-chart-mark: var(--sk-chart-palette-6); }
+.sk-chart--palette-7 { --sk-chart-mark: var(--sk-chart-palette-7); }
+.sk-chart--palette-8 { --sk-chart-mark: var(--sk-chart-palette-8); }
+.sk-chart--palette-9 { --sk-chart-mark: var(--sk-chart-palette-9); }
+.sk-chart--palette-10 { --sk-chart-mark: var(--sk-chart-palette-10); }
+.sk-chart--palette-11 { --sk-chart-mark: var(--sk-chart-palette-11); }
+
+/* micro charts (docs/15): fill the container within the size limits (MC-02, MC-03); numbers that do not fit are hidden,
+ * never cut (MC-04): a [data-sk-fit] group whose [data-sk-num] overflows gets [data-sk-overflow]. */
+.sk-microchart { position: relative; display: flex; box-sizing: border-box; width: 100%; height: 100%; min-width: var(--sk-microchart-min-width); min-height: var(--sk-microchart-min-height); max-width: var(--sk-microchart-max-width); max-height: var(--sk-microchart-max-height); color: var(--sk-color-text); font-family: var(--sk-font-sans); font-size: var(--sk-chart-text); line-height: 1.2; font-variant-numeric: tabular-nums; vertical-align: middle; overflow: hidden; }
 .sk-microchart--pressable { appearance: none; border: 0; padding: 0; margin: 0; background: none; text-align: inherit; cursor: pointer; border-radius: var(--sk-radius-1); }
 .sk-microchart--pressable:hover { background: var(--sk-color-hover); }
-.sk-microchart--pressable:focus-visible { outline: calc(2 * var(--sk-size-border)) solid var(--sk-color-focus); outline-offset: var(--sk-space-1); }
-.sk-microchart__frame { display: flex; flex-direction: column; justify-content: center; gap: var(--sk-space-1); width: 100%; height: 100%; min-width: 0; }
-.sk-microchart--S .sk-microchart__frame { flex-direction: row; align-items: center; gap: var(--sk-space-2); }
-.sk-microchart--radial .sk-microchart__frame, .sk-microchart--harvey .sk-microchart__frame { flex-direction: row; align-items: center; gap: var(--sk-space-3); }
-.sk-microchart--delta .sk-microchart__frame { flex-direction: row; align-items: stretch; gap: var(--sk-space-3); }
-.sk-microchart__plot { display: block; flex: 1 1 auto; width: 100%; min-width: 0; min-height: 0; overflow: visible; }
-.sk-microchart--bullet .sk-microchart__plot { flex: 0 0 auto; height: var(--sk-space-5); }
-.sk-microchart--S.sk-microchart--bullet .sk-microchart__plot { flex: 1 1 auto; height: 100%; }
-.sk-microchart--delta .sk-microchart__plot { height: auto; }
-.sk-microchart__circle { display: block; flex: none; width: var(--sk-microchart-circle); height: var(--sk-microchart-circle); }
-.sk-microchart--S .sk-microchart__circle { width: var(--sk-microchart-circle-s); height: var(--sk-microchart-circle-s); }
+.sk-microchart--pressable:focus-visible, .sk-microchart--nodata:focus-visible { outline: calc(2 * var(--sk-size-border)) solid var(--sk-color-focus); outline-offset: var(--sk-space-1); }
+.sk-microchart__frame { display: flex; flex-direction: column; justify-content: center; gap: var(--sk-space-1); width: 100%; height: 100%; min-width: 0; min-height: 0; }
+.sk-microchart--radial .sk-microchart__frame, .sk-microchart--harvey .sk-microchart__frame { flex-direction: row; align-items: center; justify-content: flex-start; gap: var(--sk-space-3); }
+.sk-microchart__plot { display: block; flex: 1 1 0; width: 100%; min-width: 0; min-height: 0; overflow: visible; }
+.sk-microchart__circle { display: block; flex: none; height: 100%; width: auto; aspect-ratio: 1; }
 .sk-microchart__texts { display: flex; align-items: baseline; justify-content: space-between; gap: var(--sk-space-2); min-width: 0; white-space: nowrap; }
-.sk-microchart--S .sk-microchart__texts { flex: none; order: 2; }
-.sk-microchart__texts--stack { flex-direction: column; align-items: flex-start; justify-content: center; gap: 0; }
-.sk-microchart--S .sk-microchart__texts--stack { flex-direction: row; align-items: baseline; gap: var(--sk-space-2); }
-.sk-microchart--S.sk-microchart--delta .sk-microchart__muted { display: none; }
+.sk-microchart__texts--stack { flex-direction: column; align-items: flex-start; justify-content: center; gap: 0; flex: 0 1 auto; }
+.sk-microchart__values { display: flex; flex-direction: column; min-width: 0; }
+[data-sk-num] { display: block; min-width: 0; overflow: hidden; white-space: nowrap; }
+[data-sk-fit] { min-width: 0; }
+[data-sk-fit][data-sk-overflow] { visibility: hidden; }
 .sk-microchart__value { font-weight: var(--sk-font-weight-bold); }
+.sk-microchart__value--mark { color: var(--sk-chart-mark, var(--sk-color-text)); }
 .sk-microchart__muted { color: var(--sk-chart-label); }
 .sk-microchart__delta { color: var(--sk-chart-mark, var(--sk-color-text)); }
-.sk-microchart__edges { display: flex; justify-content: space-between; gap: var(--sk-space-2); color: var(--sk-chart-label); white-space: nowrap; overflow: hidden; }
-.sk-microchart--S .sk-microchart__edges { display: none; }
-.sk-microchart__nodata { color: var(--sk-chart-label); border: var(--sk-size-border) dashed var(--sk-chart-axis); border-radius: var(--sk-radius-1); display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; }
+.sk-microchart__edges { display: flex; justify-content: space-between; gap: var(--sk-space-2); color: var(--sk-chart-label); white-space: nowrap; }
+.sk-microchart--compact .sk-microchart__edges { display: none; }
+/* MC-05: same size as the chart, surface background, "No data" in the middle. */
+.sk-microchart--nodata { background: var(--sk-color-surface); border-radius: var(--sk-radius-1); }
+.sk-microchart__nodata { color: var(--sk-chart-label); display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; white-space: nowrap; overflow: hidden; }
 .sk-microchart__track { fill: var(--sk-chart-track); }
 .sk-microchart__mark { fill: var(--sk-chart-mark, var(--sk-chart-color)); }
-.sk-microchart__mark--plain { fill: var(--sk-chart-color); }
+/* delta: the two value bars are neutral (SAP anatomy); the delta bar carries the semantic colour */
+.sk-microchart__mark--plain { fill: var(--sk-color-neutral); }
+.sk-microchart__forecast { opacity: var(--sk-chart-forecast-opacity); }
 .sk-microchart__target { fill: var(--sk-chart-target); }
+.sk-microchart__threshold { fill: var(--sk-chart-mark, var(--sk-chart-axis)); }
 .sk-microchart__baseline { stroke: var(--sk-chart-axis); stroke-width: var(--sk-size-border); }
 .sk-microchart__line { fill: none; stroke: var(--sk-chart-mark, var(--sk-chart-color)); stroke-width: calc(2 * var(--sk-size-border)); stroke-linejoin: round; }
 .sk-microchart__dot { stroke: var(--sk-chart-mark, var(--sk-chart-color)); stroke-width: var(--sk-microchart-dot); stroke-linecap: round; }
-.sk-microchart__ring { position: relative; display: inline-flex; flex: none; }
-.sk-microchart__ring-track, .sk-microchart__ring-mark { fill: none; stroke-width: var(--sk-microchart-ring-width); }
+.sk-microchart__ring { position: relative; display: flex; flex: none; height: 100%; aspect-ratio: 1; }
+.sk-microchart__ring .sk-microchart__circle { width: 100%; height: 100%; }
+.sk-microchart__ring-track, .sk-microchart__ring-mark { fill: none; }
 .sk-microchart__ring-track { stroke: var(--sk-chart-track); }
 .sk-microchart__ring-mark { stroke: var(--sk-chart-mark, var(--sk-chart-color)); }
-.sk-microchart__center { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-weight: var(--sk-font-weight-bold); }
-.sk-microchart--S .sk-microchart__ring { gap: var(--sk-space-2); align-items: center; }
-.sk-microchart--S .sk-microchart__center { position: static; }
+.sk-microchart__center { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; padding: 0 18%; font-size: var(--sk-microchart-value-size); }
+.sk-microchart__side { min-width: 0; }
 .sk-microchart__rows { display: grid; grid-template-columns: minmax(0, auto) minmax(var(--sk-space-6), 1fr) auto; align-content: center; gap: var(--sk-space-1) var(--sk-space-2); width: 100%; height: 100%; }
 .sk-microchart__row { display: contents; }
 .sk-microchart__row-label { color: var(--sk-chart-label); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.sk-microchart__row-plot { display: block; width: 100%; height: var(--sk-space-3); align-self: center; }
-.sk-microchart__row-value { text-align: end; white-space: nowrap; }
-.sk-microchart--S .sk-microchart__row-label, .sk-microchart--S .sk-microchart__row-value { display: none; }
-.sk-microchart--S .sk-microchart__rows { grid-template-columns: 1fr; gap: var(--sk-space-1); }
+.sk-microchart__row-plot { display: block; width: 100%; height: var(--sk-microchart-bar-thickness); align-self: center; }
+.sk-microchart__row-value { text-align: end; }
+.sk-microchart--compact .sk-microchart__row-label, .sk-microchart--compact .sk-microchart__row-value { display: none; }
+.sk-microchart--compact .sk-microchart__rows { grid-template-columns: 1fr; gap: var(--sk-space-1); }
+.sk-microchart__edges { color: var(--sk-color-text); }
+.sk-microchart__edges--thirds > * { flex: 1 1 0; text-align: center; }
+.sk-microchart__edges--thirds > :first-child { text-align: start; }
+.sk-microchart__edges--thirds > :last-child { text-align: end; }
+.sk-microchart__column-labels { display: flex; flex: none; min-width: 0; }
+.sk-microchart__column-labels > * { flex: 1 1 0; text-align: center; }
+.sk-microchart__threshold-label { position: absolute; right: 0; max-width: 50%; transform: translateY(-50%); background: var(--sk-color-surface); padding: 0 var(--sk-space-1); }
+.sk-microchart__plot-box { position: relative; display: flex; flex: 1 1 0; min-height: 0; min-width: 0; }
+.sk-microchart__plot-box > .sk-microchart__plot { height: 100%; }
+.sk-microchart__dot--focus { stroke-width: calc(var(--sk-microchart-dot) * 1.5); }
+/* bullet (SAP anatomy): the actual value above the bar at its end, the target below at the marker */
+.sk-microchart__lane { position: relative; flex: none; height: calc(var(--sk-chart-text) * 1.3); min-width: 0; }
+.sk-microchart__placed { position: absolute; top: 0; white-space: nowrap; }
+.sk-microchart__value--large { font-size: var(--sk-microchart-value-size); }
+.sk-chart--positive.sk-microchart__row-fit, .sk-chart--negative.sk-microchart__row-fit, .sk-chart--critical.sk-microchart__row-fit, .sk-chart--info.sk-microchart__row-fit { color: var(--sk-chart-mark); }
+/* area (SAP anatomy): solid threshold areas, the actual line in the text colour, the target dotted */
+.sk-microchart--area .sk-microchart__line { stroke: var(--sk-chart-actual-line); stroke-width: calc(2 * var(--sk-size-border)); }
+.sk-microchart--area .sk-microchart__line--target { stroke: var(--sk-chart-target); stroke-width: calc(2 * var(--sk-size-border)); }
+/* delta (SAP anatomy): value 1, the delta, value 2 from top to bottom; names left, values right */
+.sk-microchart__delta-grid { display: flex; flex-direction: column; justify-content: center; gap: var(--sk-space-1); width: 100%; height: 100%; min-width: 0; }
+.sk-microchart__delta-body { display: flex; align-items: center; gap: var(--sk-space-2); flex: 1 1 0; min-height: 0; }
+.sk-microchart__delta-body > .sk-microchart__plot { height: 100%; }
+.sk-microchart__delta-value { flex: none; }
+.sk-microchart__title { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sk-microchart__connector { stroke: var(--sk-chart-target); stroke-width: var(--sk-size-border); }
+.sk-microchart__titles { flex: 0 1 auto; max-width: 40%; }
+.sk-microchart__titles > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
+.sk-microchart__threshold-line { stroke: var(--sk-chart-axis); stroke-width: var(--sk-size-border); stroke-dasharray: 4 3; }
+.sk-microchart__line--target { stroke: var(--sk-chart-target); stroke-dasharray: 1 3; stroke-linecap: round; }
+.sk-microchart__band--positive { fill: var(--sk-chart-band-positive); }
+.sk-microchart__band--critical { fill: var(--sk-chart-band-critical); }
+.sk-microchart__band--negative { fill: var(--sk-chart-band-negative); }
+.sk-microchart__wide { display: flex; align-items: center; gap: var(--sk-space-2); width: 100%; height: 100%; min-width: 0; }
+.sk-microchart__wide > .sk-microchart__plot { height: 100%; }
+/* comparison (MC-42): normal = name and value above each bar, bare = bars only */
+.sk-microchart__rows--normal, .sk-microchart__rows--bare { display: flex; flex-direction: column; justify-content: center; gap: var(--sk-space-1); }
+.sk-microchart__rows--normal .sk-microchart__row, .sk-microchart__rows--bare .sk-microchart__row { display: flex; flex-direction: column; min-width: 0; }
+.sk-microchart__row-head { display: flex; justify-content: space-between; gap: var(--sk-space-2); min-width: 0; }
+.sk-microchart__row-fit { display: flex; justify-content: flex-end; min-width: 0; }
+.sk-microchart__rows--bare .sk-microchart__row-plot { height: var(--sk-space-2); }
+/* stacked bar (MC-58, MC-59): segments side by side, labels inside, no legend */
+.sk-microchart__stack { display: flex; align-self: center; width: 100%; height: 100%; max-height: var(--sk-microchart-stack-height); overflow: hidden; }
+.sk-microchart__segment { display: flex; align-items: center; justify-content: center; min-width: 0; background: var(--sk-chart-mark, var(--sk-chart-color)); color: var(--sk-chart-segment-text); }
+.sk-microchart__segment-label { display: flex; justify-content: center; min-width: 0; max-width: 100%; padding: 0 var(--sk-space-1); }
+/* header micro chart facet: the container gives the chart its height (MC-02) */
+.sk-facet--chart { width: var(--sk-microchart-facet-width); max-width: 100%; }
+.sk-facet__chart:has(> .sk-microchart) { height: var(--sk-microchart-facet-height); max-width: var(--sk-microchart-max-width); }
+/* table and form cells: the cell is the container */
+.sk-field--chart { display: flex; width: 100%; height: var(--sk-microchart-cell-height); }
 
 /* list report chart view */
 .sk-chart { position: relative; width: 100%; min-width: 0; color: var(--sk-color-text); font-family: var(--sk-font-sans); }

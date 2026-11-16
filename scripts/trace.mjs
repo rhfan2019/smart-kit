@@ -2,7 +2,8 @@
 // - phase 1: every phase-1 annotation term (docs/02) and every criterion of docs/07 is referenced by a test whose
 //   name contains its id;
 // - phase 2: every criterion of docs/13 and every phase-2 annotation term of docs/02 maps to a test that PASSED in the
-//   latest results (reports/unit-results.json from `npm test`, reports/e2e-results.json from `npm run e2e`).
+//   latest results (reports/unit-results.json from `npm test`, reports/e2e-results.json from `npm run e2e`);
+// - phase 3: every micro chart criterion of docs/17 tested by U or E maps to a passing test.
 // `--strict` fails on any gap; `--verbose` lists the tests per id.
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
@@ -78,5 +79,20 @@ if (notTraced.length) console.log(`  without a test: ${notTraced.join(', ')}`);
 if (notPassing.length) console.log(`  failing: ${notPassing.join(', ')}`);
 if (verbose) for (const r of p2Rows) console.log(`${r.id}\t${r.passed}/${r.total}\t${r.sources.join(', ')}`);
 
-const failed = missingAnn.length || (strict && (missingAc.length || noResults.length || notTraced.length || notPassing.length));
+// ---------------------------------------------------------------- phase 3 (micro charts, docs/17)
+const p3doc = readFileSync(join(ROOT, 'docs/17-phase3-acceptance.md'), 'utf8');
+// Rows whose acceptance method includes U or E need a passing test; D (guidance only) does not.
+const p3 = [...p3doc.matchAll(/^\| (MC-\d+) \|.*\| ([^|]*) \|$/gm)].filter((m) => /[UE]/.test(m[2])).map((m) => m[1]);
+const p3Rows = p3.map((id) => {
+  const ts = traced(id);
+  return { id, total: ts.length, passed: ts.filter((t) => t.passed).length, sources: [...new Set(ts.map((t) => t.source))] };
+});
+const p3NotTraced = p3Rows.filter((r) => r.total === 0).map((r) => r.id);
+const p3NotPassing = p3Rows.filter((r) => r.total > 0 && r.passed < r.total).map((r) => `${r.id} (${r.passed}/${r.total})`);
+console.log(`phase 3 · micro chart criteria (docs/17): ${p3Rows.length - p3NotTraced.length - p3NotPassing.length}/${p3Rows.length} traced to passing tests`);
+if (p3NotTraced.length) console.log(`  without a test: ${p3NotTraced.join(', ')}`);
+if (p3NotPassing.length) console.log(`  failing: ${p3NotPassing.join(', ')}`);
+if (verbose) for (const r of p3Rows) console.log(`${r.id}\t${r.passed}/${r.total}\t${r.sources.join(', ')}`);
+
+const failed = missingAnn.length || (strict && (missingAc.length || noResults.length || notTraced.length || notPassing.length || p3NotTraced.length || p3NotPassing.length));
 process.exit(failed ? 1 : 0);

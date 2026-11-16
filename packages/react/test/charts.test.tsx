@@ -7,18 +7,18 @@ import { wrap } from './helpers';
 const bars = (root: Element) => root.querySelectorAll('[data-sk-microchart-bar]');
 
 describe('P2-OP-04 micro charts (ADR-021)', () => {
-  it('bullet: value, target marker and text alternative', () => {
+  it('MC-21 bullet: value, target marker and text alternative', () => {
     render(wrap(<MicroChart kind="bullet" label="Budget" value={1200} target={1440} criticality={3} />));
-    const img = screen.getByRole('img', { name: 'Budget: 1,200 of 1,440' });
+    const img = screen.getByRole('img', { name: 'Budget: Actual 1,200 (Good), Target 1,440' });
     expect(img).toHaveClass('sk-microchart--bullet', 'sk-chart--positive');
     expect(bars(img)).toHaveLength(2);
     expect(img.querySelector('[data-sk-microchart-bar="target"]')).not.toBeNull();
-    expect(img).toHaveTextContent('1,200');
+    expect(img).toHaveTextContent('1.2K'); // short labels (docs/15 MC-13)
   });
 
   it('bullet without target uses the plain value label; custom format is used', () => {
     render(wrap(<MicroChart kind="bullet" label="Stock" value={7} format={(n) => `${n} pc`} />));
-    expect(screen.getByRole('img', { name: 'Stock: 7 pc' })).toBeInTheDocument();
+    expect(screen.getByRole('img', { name: 'Stock: Actual 7 pc' })).toBeInTheDocument();
   });
 
   it('radial: percent in the centre', () => {
@@ -39,7 +39,8 @@ describe('P2-OP-04 micro charts (ADR-021)', () => {
     render(wrap(<MicroChart kind="delta" label="Revenue" value={80} target={100} />));
     const img = screen.getByRole('img', { name: 'Revenue: 80 compared with 100, difference -20' });
     expect(bars(img)).toHaveLength(3);
-    expect(img.querySelector('[data-sk-microchart-bar="delta"]')).toHaveClass('sk-chart--negative');
+    // docs/15 MC-62: the delta colour comes from thresholds (criticality); without them it is neutral
+    expect(img.querySelector('[data-sk-microchart-bar="delta"]')).toHaveClass('sk-chart--neutral');
   });
 
   const points = [{ label: 'Jan', value: 10 }, { label: 'Feb', value: -5, criticality: 1 as const }, { label: 'Mar', value: 20 }];
@@ -50,22 +51,26 @@ describe('P2-OP-04 micro charts (ADR-021)', () => {
     expect(bars(img)[1]).toHaveClass('sk-chart--negative');
     const base = Number(img.querySelector('.sk-microchart__baseline')!.getAttribute('y1'));
     expect(Number(bars(img)[1]!.getAttribute('y'))).toBeCloseTo(base);
-    expect(img.querySelector('.sk-microchart__edges')).toHaveTextContent('JanMar');
+    // docs/15 MC-31: first and last values on top, first and last dimension values below
+    expect(img.querySelector('.sk-microchart__edges--top')).toHaveTextContent('1020');
+    expect(img.querySelector('.sk-microchart__edges--bottom')).toHaveTextContent('JanMar');
   });
 
-  it('line: polyline with a dot per point and first / last values', () => {
+  it('line: polyline; points hidden except semantic ones; first / last values and dimension values', () => {
     render(wrap(<MicroChart kind="line" label="Trend" points={points} />));
     const img = screen.getByRole('img', { name: 'Trend: Jan 10, Feb -5, Mar 20' });
     expect(img.querySelector('polyline')!.getAttribute('points')!.split(' ')).toHaveLength(3);
-    expect(bars(img)).toHaveLength(3);
-    expect(img.querySelector('.sk-microchart__edges')).toHaveTextContent('1020');
+    // docs/15 MC-37, MC-38: only the point with a semantic colour is drawn
+    expect(bars(img)).toHaveLength(1);
+    expect(img.querySelector('.sk-microchart__edges--top')).toHaveTextContent('1020');
+    expect(img.querySelector('.sk-microchart__edges--bottom')).toHaveTextContent('JanMar');
   });
 
-  it('comparison: at most four bars with label and value', () => {
-    const many = ['A', 'B', 'C', 'D', 'E'].map((label, i) => ({ label, value: (i + 1) * 10 }));
+  it('comparison: at most twelve bars with label and value (docs/15 MC-41)', () => {
+    const many = Array.from({ length: 14 }, (_, i) => ({ label: String.fromCharCode(65 + i), value: (i + 1) * 10 }));
     render(wrap(<MicroChart kind="comparison" label="Top" points={many} />));
-    const img = screen.getByRole('img', { name: 'Top: A 10, B 20, C 30, D 40' });
-    expect(bars(img)).toHaveLength(4);
+    const img = screen.getByRole('img', { name: /^Top: A 10, B 20, .*, L 120$/ });
+    expect(bars(img)).toHaveLength(12);
     expect(img.querySelectorAll('.sk-microchart__row-label')[3]).toHaveTextContent('D');
   });
 
@@ -81,14 +86,14 @@ describe('P2-OP-04 micro charts (ADR-021)', () => {
     ));
     for (const l of ['A', 'B', 'C']) expect(screen.getByRole('img', { name: `${l}: No data` })).toHaveTextContent('No data');
     expect(bars(screen.getByRole('img', { name: 'D: 0 of 10' }))).toHaveLength(0);
-    expect(screen.getByRole('img', { name: 'E: 0 of 0' })).toBeInTheDocument();
+    expect(screen.getByRole('img', { name: 'E: Actual 0, Target 0' })).toBeInTheDocument();
   });
 
-  it('pressable: a button with the text alternative, Enter and Space press it', async () => {
+  it('MC-07 MC-11 pressable: a button with the text alternative, Enter and Space press it', async () => {
     const onPress = vi.fn();
-    render(wrap(<MicroChart kind="radial" label="Received" value={1} target={4} onPress={onPress} size="S" />));
+    render(wrap(<MicroChart kind="radial" label="Received" value={1} target={4} onPress={onPress} />));
     const button = screen.getByRole('button', { name: 'Received: 25%' });
-    expect(button).toHaveClass('sk-microchart--S');
+    expect(button).toHaveClass('sk-microchart--pressable');
     expect(screen.queryByRole('img')).toBeNull();
     const user = userEvent.setup();
     await user.tab();
@@ -101,7 +106,7 @@ describe('P2-OP-04 micro charts (ADR-021)', () => {
 
   it('Chinese text alternative', () => {
     render(wrap(<MicroChart kind="bullet" label="预算" value={1} target={2} />, { locale: 'zh' }));
-    expect(screen.getByRole('img', { name: '预算：1 / 2' })).toBeInTheDocument();
+    expect(screen.getByRole('img', { name: '预算：实际 1，目标 2' })).toBeInTheDocument();
   });
 });
 

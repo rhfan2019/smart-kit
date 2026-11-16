@@ -12,8 +12,12 @@
 - `buildModel`
 - `buildObjectRequest`
 - `buildValueHelpRequest`
+- `calculateCriticality`
 - `capabilitiesFor`
+- `chartExpand`
 - `chartFields`
+- `chartIsSeries`
+- `chartSeriesSelect`
 - `childPathOf`
 - `companionPaths`
 - `compareDecimal`
@@ -63,6 +67,8 @@
 - `MemoryVariantStore`
 - `messagesFromError`
 - `messagesFromHeader`
+- `MICRO_CHART_MAX_POINTS`
+- `MICRO_COMPARISON_MAX_BARS`
 - `MODEL_VERSION`
 - `ModelError`
 - `objectFields`
@@ -100,6 +106,7 @@
 - `ColumnModel`
 - `Condition`
 - `Criticality`
+- `CriticalityCalculationModel`
 - `CsdlSource`
 - `DataPointModel`
 - `DataProvider`
@@ -123,6 +130,7 @@
 - `HeaderFacetModel`
 - `HeaderInfoModel`
 - `Importance`
+- `ImprovementDirection`
 - `InitialCondition`
 - `ListRequestOptions`
 - `LoadServiceOptions`
@@ -296,10 +304,12 @@
 - `MessageKey`
 - `Messages`
 - `MessagesApi`
+- `MicroChartAreaThresholds`
 - `MicroChartCriticality`
 - `MicroChartKind`
 - `MicroChartPoint`
 - `MicroChartProps`
+- `MicroChartThreshold`
 - `ObjectPageLayoutProps`
 - `ObjectResult`
 - `OverflowActionsProps`

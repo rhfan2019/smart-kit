@@ -2,7 +2,7 @@
 
 > 状态：现行 · 2026-11-14。
 >
-> 期次：**一期** / **二期** / **不做**。
+> 期次：**一期** / **二期** / **三期** / **不做**。
 >
 > "测试"一列是测试编号，测试名称里带这个编号（例如 `it('ANN-01 …')`），可以用 `npm run trace` 检查每个一期条目都有对应测试（v4 第 9 节第 10 条）。
 >
@@ -39,13 +39,14 @@
 | `UI.TextArrangement` | 代码与文本的排列：`TextFirst`、`TextLast`、`TextOnly`、`TextSeparate` | 一期 | LR-31 | ANN-13 |
 | `UI.IsImageURL` | 字段值是图片地址，显示为头像 | 一期 | LR-31、OP-04 | ANN-14 |
 | `UI.MultiLineText` | 多行文本显示 | 一期 | OP-13 | ANN-14 |
-| `UI.Chart` | 列表页图表视图（Column、Bar）和页头微图表 Facet（Bullet、Donut、Pie、Waterfall 作为 Delta、Column、Line、Bar 作为 Comparison），见 ADR-021 | 二期 | P2-LR-04、P2-OP-04 | ANN-82、ANN-83 |
+| `UI.Chart` | 列表页图表视图（Column、Bar）和页头微图表 Facet（Bullet、Donut、Pie、Waterfall 作为 Delta、Column、Line、Bar 作为 Comparison），见 ADR-021。三期按 SAP 改正：`Waterfall` 作为 Delta 的约定去掉，见下面三期一行和 `15` | 二期 | P2-LR-04、P2-OP-04 | ANN-82、ANN-83 |
 | `UI.ConnectedFields`、`UI.Note` | 组合字段、备注 | 不做（三篇基准规范没有要求） | — | — |
 | `UI.SelectionPresentationVariant`（带限定符，多视图） | 每个限定符是一个视图：`Text`、`SelectionVariant`、`PresentationVariant`（LineItem 限定符、图表） | 二期 | P2-LR-01、P2-LR-02 | ANN-85 |
 | `UI.DataFieldForAction`（`LineItem`、`Identification`）与 `Core.OperationAvailable` | 表动作、行内动作（`Inline`）、页头和页脚动作（`Determining`）；可用性和部分处理，见 ADR-024 | 二期 | P2-LRA-02、P2-LRA-03、P2-OP-26 | ANN-80、ANN-81 |
 | `UI.QuickViewFacets` | 快速预览（交叉导航） | 二期 | P2-LR-13 | ANN-86 |
 | `UI.DataPoint` 的 `SampleSize`、`MinimumValue`、`MaximumValue` | 汇总评分、微图表的刻度 | 二期 | P2-OP-04、P2-OP-06 | ANN-84 |
 | `UI.Badge`、`UI.KPI`、`UI.DeleteHidden`、`UI.UpdateHidden`、`UI.CreateHidden` | | 不做（三篇基准规范没有要求；动作的隐藏用 Capabilities 和 `OperationAvailable`） | — | — |
+| `UI.Chart`（作为微型图表，被 `DataFieldForAnnotation` 或 `ReferenceFacet` 引用，九种全做：Area、Bullet、Column、Comparison、Delta、Harvey Ball、Line、Radial、Stacked Bar），以及它用到的 `UI.DataPoint` 的 `CriticalityCalculation`、`ForecastValue`、`Visualization`（`DeltaBulletChart`）、`ValueFormat` | 表格单元格里的微型图表；页头微图表 Facet 补齐其余种类（二期已有的见上一行）。`ChartType` 对应关系：`Bullet`、`Donut`（Radial）、`Pie`（Harvey Ball）、`Column`、`Line`、`Area`、`Bar`（Comparison）、`BarStacked`（Stacked Bar），Delta 暂用本库约定 `Waterfall`（待定）；二期的 `Area`→折线、`BarStacked`→Comparison 改正。规则见 `15-research-micro-chart.md` 第 3 节，导航集合的读取见 ADR-025；讨论记录 D01、D07～D10。三期已实现，验收见 `17`、`18` | 三期 | LR-31、OP-04、MC-60、MC-61、MC-65 | MC-60、MC-61、MC-65 |
 
 ## 2. Common
 

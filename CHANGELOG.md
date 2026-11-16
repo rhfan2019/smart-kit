@@ -5,6 +5,28 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+### Added (phase 3, micro charts, see docs/15)
+
+- Micro charts follow the SAP Fiori guidelines (docs/15, decision D08): they fill their container within 64×18 – 320×94 px, hide labels by the measured height, and hide numbers that do not fit instead of cutting them; "No data" placeholder (empty in table cells).
+- Bullet: forecast bar, threshold markers and colours from `UI.CriticalityCalculation`, delta mode (`UI.VisualizationType/DeltaBulletChart`); Radial: without `TargetValue` the value is the percentage; Harvey Ball: the total is `MaximumValue`, qualitative palette colour without criticality.
+- Micro charts in table and form cells (`UI.DataFieldForAnnotation` to a `UI.Chart` of the row, of a single-valued navigation, or over a collection navigation).
+- All nine micro charts: Area (actual and dotted target lines, threshold areas from `CriticalityCalculation`, wide view) and Stacked Bar (percent of the sum or of a maximum, `Common.Text` labels) are new; Line draws up to three lines (one per measure) with threshold line, focus points and fixed scale; Column has start/end value and dimension labels (optional label per column); Comparison shows up to 12 bars with three width-dependent layouts; Delta shows names left, values right, the delta in the middle.
+- Charts over a collection navigation are read with `$expand(…;$orderby=…;$top=…)` (ADR-025); core exports `chartExpand`, `chartSeriesSelect`, `chartIsSeries`, `MICRO_CHART_MAX_POINTS`, `MICRO_COMPARISON_MAX_BARS`; `ExpandSpec` has optional `orderBy` and `top`; the memory provider applies them.
+- Appearance aligned with the SAPUI5 1.154 samples (docs/15 §7): bullet labels above/below the bar, threshold lines across the bar; comparison tracks; solid area threshold areas; delta layout; text alternatives name the semantic state.
+- Phase-3 acceptance criteria (docs/17) are checked by `npm run trace -- --strict`.
+- Model: DataPoint `ForecastValue`, `CriticalityCalculation`, `ValueFormat`, `DeltaBulletChart`; core exports `calculateCriticality` and the types `CriticalityCalculationModel`, `ImprovementDirection`; react exports the type `MicroChartThreshold`.
+- Theme tokens: qualitative chart palette `--sk-color-chart-1…11` per theme, `--sk-chart-palette-1…11`, micro chart size limits.
+
+### Changed (phase 3)
+
+- `UI.ChartType` for micro charts: only the eight types of the OData V4 Fiori Elements (`Bullet`, `Donut`, `Pie`, `Column`, `Line`, `Area`, `Bar`, `BarStacked`). `Waterfall` no longer draws a delta chart, and `VerticalBullet`, `ColumnStacked`, `HorizontalWaterfall` are no longer accepted; `Area` and `BarStacked` are no longer drawn as line and comparison charts (their own charts follow).
+- Delta micro chart without thresholds is neutral (was green / red by sign); line data points are hidden by default; comparison shows up to 12 bars (was 4) and `MICRO_COMPARISON_MAX` is 12.
+- `MicroChart`: the `size` prop is ignored (the size follows the container); the fixed size tokens `--sk-microchart-width`, `-height`, `-width-s`, `-height-s`, `-circle`, `-circle-s`, `-ring-width` are removed.
+
+### Fixed (phase 3)
+
+- `Decimal` constants in annotations (for example DataPoint `MinimumValue Decimal="0"`) were ignored.
+
 ### Added (phase 2, see docs/12–14)
 
 - Editing: `DirectEditStrategy` (PATCH + ETag, POST) and `DraftEditStrategy` (Common.DraftRoot actions) with `editStrategyFor`; data provider writes `create`, `remove`, `invoke`; messages from `sap-messages` and error details (`messagesFromHeader`, `messagesFromError`).

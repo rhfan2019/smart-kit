@@ -44,7 +44,7 @@ export { SmartListReport, type SmartListReportProps, type ListContentItem } from
 export { SmartObjectPage, type SmartObjectPageProps } from './templates/SmartObjectPage';
 
 // ---- phase 2
-export { MicroChart, SimpleChart, niceTicks, MICRO_COMPARISON_MAX, type MicroChartKind, type MicroChartPoint, type MicroChartProps, type MicroChartCriticality, type ChartDatum, type SimpleChartProps } from './chart';
+export { MicroChart, SimpleChart, niceTicks, MICRO_COMPARISON_MAX, type MicroChartKind, type MicroChartPoint, type MicroChartProps, type MicroChartCriticality, type MicroChartThreshold, type MicroChartAreaThresholds, type ChartDatum, type SimpleChartProps } from './chart';
 export { MessageProvider, MessageButton, MessageIcon, useMessages, type MessagesApi } from './messages/MessageContext';
 export { useActionRunner, isActionAvailable, actionPaths, type ActionRunner, type ActionTarget, type ActionResult } from './actions/useActionRunner';
 export { useEditStrategy, isEditable, validate, fieldErrors, createFields, createWith, CreateDialog, type CreateDialogProps } from './edit/editing';

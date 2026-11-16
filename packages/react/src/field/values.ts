@@ -36,6 +36,12 @@ export interface ValueContext {
 
 /** Computes everything a field needs for display. */
 export function fieldValue(ctx: ValueContext, field: FieldModel, row: Row | undefined): FieldValue {
+  // A micro chart's text value (export, copy, grouping) is its main measure.
+  if (field.kind === 'chart' && field.chart) {
+    const m = field.chart.measures[0]!;
+    const dp = field.chart.dataPoints[m];
+    return fieldValue(ctx, dp ? { ...field, kind: 'dataPoint', dataPoint: dp, chart: undefined } : { ...field, kind: 'field', path: m, chart: undefined }, row);
+  }
   const path = field.kind === 'dataPoint' ? field.dataPoint!.value : field.path!;
   const prop = resolvePath(ctx.model.entityTypes, ctx.typeName, path).property;
   const value = getPath(row, path);

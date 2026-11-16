@@ -64,7 +64,19 @@ export class MemoryProvider implements DataProvider {
       if (!nav) continue;
       const r = this.navigate(entitySet, typeName, row, e.navigation);
       const proj = (x: Row) => this.project(r.set, nav.targetType, x, e.select, e.expand);
-      out[e.navigation] = r.collection ? r.rows.map(proj) : r.rows[0] ? proj(r.rows[0]) : null;
+      let rows = r.rows;
+      if (r.collection && e.orderBy?.length) {
+        const target = this.o.model.entityTypes[nav.targetType]!;
+        rows = [...rows].sort((a, b) => {
+          for (const s of e.orderBy!) {
+            const c = compareValues(a[s.path], b[s.path], target.properties[s.path]?.edmType ?? 'Edm.String');
+            if (c) return s.descending ? -c : c;
+          }
+          return 0;
+        });
+      }
+      if (r.collection && e.top !== undefined) rows = rows.slice(0, e.top);
+      out[e.navigation] = r.collection ? rows.map(proj) : rows[0] ? proj(rows[0]) : null;
     }
     return out;
   }

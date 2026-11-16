@@ -118,6 +118,27 @@ export interface DataPointModel {
   maximumValue?: ValueRef;
   /** Aggregated rating: number of ratings (OP Rating Indicator Facet). */
   sampleSize?: ValueRef;
+  /** Bullet micro chart forecast (MC-23). */
+  forecastValue?: ValueRef;
+  /** Semantic colour from thresholds when there is no Criticality (MC-09). */
+  criticalityCalculation?: CriticalityCalculationModel;
+  /** UI.VisualizationType/DeltaBulletChart: the bullet micro chart shows the difference to the target (MC-24). */
+  deltaBullet?: boolean;
+  /** UI.NumberFormat/NumberOfFractionalDigits of ValueFormat (MC-13). */
+  fractionDigits?: number;
+}
+
+export type ImprovementDirection = 'Maximize' | 'Minimize' | 'Target';
+
+/** UI.CriticalityCalculationType: each value is a constant or a path relative to the row. */
+export interface CriticalityCalculationModel {
+  improvementDirection: ImprovementDirection;
+  deviationRangeLowValue?: ValueRef;
+  toleranceRangeLowValue?: ValueRef;
+  acceptanceRangeLowValue?: ValueRef;
+  acceptanceRangeHighValue?: ValueRef;
+  toleranceRangeHighValue?: ValueRef;
+  deviationRangeHighValue?: ValueRef;
 }
 
 export type Importance = 'High' | 'Medium' | 'Low';
@@ -146,7 +167,7 @@ export interface ActionModel {
 export interface ChartModel {
   id: string;
   title: string;
-  /** UI.ChartType member, e.g. "Column", "Bar", "Line", "Bullet", "Donut", "Pie", "Waterfall". */
+  /** UI.ChartType member. Micro charts use Bullet, Donut, Pie, Column, Line, Area, Bar, BarStacked (docs/15 MC-60). */
   chartType: string;
   /** Property paths relative to the chart's entity. */
   dimensions: string[];
@@ -180,11 +201,13 @@ export interface DraftModel {
 
 export interface FieldModel {
   id: string;
-  kind: 'field' | 'dataPoint';
+  kind: 'field' | 'dataPoint' | 'chart';
   /** Property path relative to the row, for kind 'field'. */
   path?: string;
   label: string;
   dataPoint?: DataPointModel;
+  /** Micro chart in a table cell or form (DataFieldForAnnotation to UI.Chart, docs/15 MC-10). */
+  chart?: ChartModel;
   criticality?: ValueRef;
   criticalityIcon: boolean;
   url?: ValueRef;

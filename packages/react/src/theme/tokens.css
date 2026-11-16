@@ -70,6 +70,22 @@
   --sk-blue-700: #4a52d1;
   --sk-blue-900: #1c2050;
   --sk-indigo-500: #5c67f4;
+  /* Chart hues for the qualitative palette (docs/15 MC-08): -600 for light themes, -300 for dark themes. */
+  --sk-indigo-300: #9aa2ff;
+  --sk-orange-600: #c2560e;
+  --sk-orange-300: #f5a065;
+  --sk-teal-600: #0f7c73;
+  --sk-teal-300: #4fc4b8;
+  --sk-pink-600: #c4326a;
+  --sk-pink-300: #f48fb1;
+  --sk-purple-600: #7a47c2;
+  --sk-purple-300: #c3a3f5;
+  --sk-cyan-600: #0b72a8;
+  --sk-cyan-300: #6cc4ef;
+  --sk-magenta-600: #a23592;
+  --sk-magenta-300: #e58ad6;
+  --sk-coral-600: #d1453b;
+  --sk-coral-300: #ff9a8f;
 
   --sk-font-sans: Inter, -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', 'Segoe UI', sans-serif;
 
@@ -169,6 +185,17 @@
   --sk-color-progress: var(--sk-ink-900);
   --sk-color-progress-track: var(--sk-ink-200);
   --sk-avatar-palette: var(--sk-yellow-100);
+  --sk-color-chart-1: var(--sk-blue-700);
+  --sk-color-chart-2: var(--sk-orange-600);
+  --sk-color-chart-3: var(--sk-teal-600);
+  --sk-color-chart-4: var(--sk-pink-600);
+  --sk-color-chart-5: var(--sk-purple-600);
+  --sk-color-chart-6: var(--sk-cyan-600);
+  --sk-color-chart-7: var(--sk-indigo-500);
+  --sk-color-chart-8: var(--sk-magenta-600);
+  --sk-color-chart-9: var(--sk-slate-600);
+  --sk-color-chart-10: var(--sk-coral-600);
+  --sk-color-chart-11: var(--sk-navy-500);
   color-scheme: light;
 }
 
@@ -201,6 +228,17 @@
   --sk-color-progress: var(--sk-navy-600);
   --sk-color-progress-track: var(--sk-slate-200);
   --sk-avatar-palette: var(--sk-navy-100);
+  --sk-color-chart-1: var(--sk-blue-700);
+  --sk-color-chart-2: var(--sk-orange-600);
+  --sk-color-chart-3: var(--sk-teal-600);
+  --sk-color-chart-4: var(--sk-pink-600);
+  --sk-color-chart-5: var(--sk-purple-600);
+  --sk-color-chart-6: var(--sk-cyan-600);
+  --sk-color-chart-7: var(--sk-indigo-500);
+  --sk-color-chart-8: var(--sk-magenta-600);
+  --sk-color-chart-9: var(--sk-slate-600);
+  --sk-color-chart-10: var(--sk-coral-600);
+  --sk-color-chart-11: var(--sk-navy-500);
   color-scheme: light;
 }
 
@@ -244,6 +282,17 @@
   --sk-color-progress: var(--sk-yellow-500);
   --sk-color-progress-track: var(--sk-ink-800);
   --sk-avatar-palette: var(--sk-ink-850);
+  --sk-color-chart-1: var(--sk-blue-300);
+  --sk-color-chart-2: var(--sk-orange-300);
+  --sk-color-chart-3: var(--sk-teal-300);
+  --sk-color-chart-4: var(--sk-pink-300);
+  --sk-color-chart-5: var(--sk-purple-300);
+  --sk-color-chart-6: var(--sk-cyan-300);
+  --sk-color-chart-7: var(--sk-indigo-300);
+  --sk-color-chart-8: var(--sk-magenta-300);
+  --sk-color-chart-9: var(--sk-slate-300);
+  --sk-color-chart-10: var(--sk-coral-300);
+  --sk-color-chart-11: var(--sk-navy-300);
   color-scheme: dark;
 }
 
@@ -313,14 +362,42 @@
   --sk-chart-grid: var(--sk-color-border);
   --sk-chart-label: var(--sk-color-text-muted);
   --sk-chart-text: var(--sk-text-small);
-  --sk-microchart-width: 160px;
-  --sk-microchart-height: 56px;
-  --sk-microchart-width-s: 96px;
-  --sk-microchart-height-s: 24px;
-  --sk-microchart-circle: 44px;
-  --sk-microchart-circle-s: 20px;
-  --sk-microchart-ring-width: 6px;
-  --sk-microchart-dot: 5px;
+  /* qualitative palette (docs/15 MC-08): local overrides go here, theme values in --sk-color-chart-* */
+  --sk-chart-palette-1: var(--sk-color-chart-1);
+  --sk-chart-palette-2: var(--sk-color-chart-2);
+  --sk-chart-palette-3: var(--sk-color-chart-3);
+  --sk-chart-palette-4: var(--sk-color-chart-4);
+  --sk-chart-palette-5: var(--sk-color-chart-5);
+  --sk-chart-palette-6: var(--sk-color-chart-6);
+  --sk-chart-palette-7: var(--sk-color-chart-7);
+  --sk-chart-palette-8: var(--sk-color-chart-8);
+  --sk-chart-palette-9: var(--sk-color-chart-9);
+  --sk-chart-palette-10: var(--sk-color-chart-10);
+  --sk-chart-palette-11: var(--sk-color-chart-11);
+  /* bullet forecast bar: the actual colour, lighter (MC-23) */
+  --sk-chart-forecast-opacity: 0.35;
+  /* micro charts fill their container within these limits (MC-02, MC-03) */
+  --sk-microchart-min-width: 64px;
+  --sk-microchart-min-height: 18px;
+  --sk-microchart-max-width: 320px;
+  --sk-microchart-max-height: 94px;
+  /* height of the chart area of a header micro chart facet (the container decides the size) */
+  --sk-microchart-facet-height: 72px;
+  --sk-microchart-facet-width: 160px;
+  /* micro chart in a table or form cell: the row height less the cell padding */
+  --sk-microchart-cell-height: calc(var(--sk-row-height) - var(--sk-space-3));
+  --sk-microchart-dot: 6px;
+  /* emphasised numbers (Harvey Ball value, radial percentage) and the thickness of comparison bars */
+  --sk-microchart-value-size: var(--sk-font-size-4);
+  --sk-microchart-bar-thickness: 6px;
+  /* area threshold areas (MC-47) in the semantic colours, the actual line in the text colour */
+  --sk-chart-band-positive: var(--sk-color-positive);
+  --sk-chart-band-critical: var(--sk-color-critical);
+  --sk-chart-band-negative: var(--sk-color-negative);
+  --sk-chart-actual-line: var(--sk-color-text);
+  /* stacked bar: bar thickness limit and the text on the segments */
+  --sk-microchart-stack-height: 20px;
+  --sk-chart-segment-text: var(--sk-color-surface);
 }
 
 /* ---------------------------------------------------------------- Mantine bridge

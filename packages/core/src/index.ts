@@ -2,7 +2,7 @@
 export { MODEL_VERSION } from './model/types';
 export type {
   ActionModel, ChartModel, DraftModel, Importance, ViewModel,
-  CapabilityModel, ColumnModel, Criticality, DataPointModel, EdmType, EntitySetModel, EntityTypeModel, EntityUi, FieldModel,
+  CapabilityModel, ColumnModel, Criticality, CriticalityCalculationModel, ImprovementDirection, DataPointModel, EdmType, EntitySetModel, EntityTypeModel, EntityUi, FieldModel,
   FilterExpression, FormGroupModel, HeaderFacetModel, HeaderInfoModel, InitialCondition, MetaModel, ModelWarning, NavigationModel,
   PresentationModel, PropertyModel, SectionModel, SubSectionContent, SubSectionModel, TextArrangement, ValueListModel,
   ValueListParameter, ValueRef,
@@ -10,6 +10,7 @@ export type {
 export { buildModel, resolvePath, DEFAULT_CAPABILITIES, type BuildModelOptions } from './model/buildModel';
 export { DERIVED_GENERAL_SECTION, deriveColumns } from './model/derive';
 export { humanize } from './model/labels';
+export { calculateCriticality } from './model/criticality';
 export { getEntitySet, getEntityType, getUi, getProperty, capabilitiesFor, targetEntitySet, isFilterable, isSortable, UnknownEntitySetError } from './model/access';
 export { csdlJsonToXml } from './csdl/csdlJsonToXml';
 export { ModelError, toCsdlXml, type CsdlSource } from './csdl/load';
@@ -25,7 +26,7 @@ export {
   type EntityPath, type PathSegment, type ResolvedPath,
 } from './query/entityPath';
 export {
-  buildListRequest, buildObjectRequest, buildValueHelpRequest, buildAggregateRequest, chartFields, objectFields, fieldPaths, companionPaths, dataPointPaths, selectAndExpand,
+  buildListRequest, buildObjectRequest, buildValueHelpRequest, buildAggregateRequest, chartFields, chartExpand, chartIsSeries, chartSeriesSelect, MICRO_CHART_MAX_POINTS, MICRO_COMPARISON_MAX_BARS, objectFields, fieldPaths, companionPaths, dataPointPaths, selectAndExpand,
   toQueryString, readQueryString, filterString, sourcePath, sourceInfo, encodeOption,
   type QueryRequest, type QueryResult, type ReadRequest, type Row, type SortItem, type ExpandSpec, type QuerySource,
   type ListRequestOptions, type ValueHelpRequestOptions, type AggregateRequestOptions, type SourceInfo,

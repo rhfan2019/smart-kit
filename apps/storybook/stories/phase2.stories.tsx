@@ -16,15 +16,18 @@ type Story = StoryObj;
 const pad = { padding: 16 };
 
 export const MicroCharts: Story = {
+  // Micro charts fill their container (docs/15 MC-02); each one gets a header facet sized box here. All rules: "Phase 3".
   render: () => (
     <div style={{ ...pad, display: 'flex', gap: 24, flexWrap: 'wrap' }}>
-      <MicroChart kind="bullet" label="Budget" value={1200} target={1440} />
-      <MicroChart kind="radial" label="Delivered" value={52} target={100} />
-      <MicroChart kind="harvey" label="Received" value={3} target={8} />
-      <MicroChart kind="delta" label="Invoiced" value={900} target={1200} />
-      <MicroChart kind="column" label="Amounts" points={[{ label: '1', value: 3 }, { label: '2', value: -1 }, { label: '3', value: 5 }]} />
-      <MicroChart kind="line" label="Quantities" points={[{ label: '1', value: 3 }, { label: '2', value: 4 }, { label: '3', value: 2 }]} />
-      <MicroChart kind="comparison" label={`Top ${MICRO_COMPARISON_MAX}`} points={[{ label: 'A', value: 30 }, { label: 'B', value: 12 }]} onPress={() => undefined} />
+      {[
+        <MicroChart key="b" kind="bullet" label="Budget" value={1200} target={1440} />,
+        <MicroChart key="r" kind="radial" label="Delivered" value={52} target={100} />,
+        <MicroChart key="h" kind="harvey" label="Received" value={3} max={8} />,
+        <MicroChart key="d" kind="delta" label="Invoiced" value={900} target={1200} />,
+        <MicroChart key="c" kind="column" label="Amounts" points={[{ label: '1', value: 3 }, { label: '2', value: -1 }, { label: '3', value: 5 }]} />,
+        <MicroChart key="l" kind="line" label="Quantities" points={[{ label: '1', value: 3 }, { label: '2', value: 4 }, { label: '3', value: 2 }]} />,
+        <MicroChart key="m" kind="comparison" label={`Top ${MICRO_COMPARISON_MAX}`} points={[{ label: 'A', value: 30 }, { label: 'B', value: 12 }]} onPress={() => undefined} />,
+      ].map((chart) => <div key={chart.key} style={{ width: 160, height: 72 }}>{chart}</div>)}
     </div>
   ),
 };

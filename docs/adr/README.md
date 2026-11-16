@@ -28,3 +28,4 @@
 | [022](022-flexible-column-layout.md) | 弹性分栏由宿主路由驱动 | 采纳 |
 | [023](023-messages.md) | 消息模型 | 采纳 |
 | [024](024-actions.md) | 动作 | 采纳 |
+| [025](025-micro-chart-series.md) | 导航集合上的微型图表用 `$expand` 带 `$orderby`、`$top` 一起读 | 采纳 |

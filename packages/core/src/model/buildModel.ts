@@ -8,6 +8,7 @@ import {
   type ActionModel,
   type CapabilityModel,
   type ChartModel,
+  type CriticalityCalculationModel,
   type DraftModel,
   type Importance,
   type ViewModel,
@@ -65,6 +66,8 @@ function valueRef(v: unknown, prefix = ''): ValueRef | undefined {
     const o = v as Any;
     if (o.type === 'Path' || o.type === 'PropertyPath') return { path: join(prefix, o.path ?? o.value) };
     if (o.type === 'EnumMember') return { value: enumName(o.value)! };
+    // Decimal constants arrive as { isDecimal, valueOf } (e.g. DataPoint MinimumValue Decimal="0", thresholds).
+    if ((typeof o.isDecimal === 'function' ? o.isDecimal() : o.isDecimal) === true) return { value: Number(o.valueOf()) };
     return undefined;
   }
   if (typeof v === 'number' || v instanceof Number) return { value: Number(v) };
@@ -375,6 +378,25 @@ function buildDataPoint(dp: Any, id: string, prefix: string, typeName: string, c
     minimumValue: valueRef(dp.MinimumValue, prefix),
     maximumValue: valueRef(dp.MaximumValue, prefix),
     sampleSize: valueRef(dp.SampleSize, prefix),
+    forecastValue: valueRef(dp.ForecastValue, prefix),
+    criticalityCalculation: criticalityCalculation(dp.CriticalityCalculation, prefix),
+    deltaBullet: viz === 'DeltaBulletChart' || undefined,
+    fractionDigits: typeof dp.ValueFormat?.NumberOfFractionalDigits === 'number' ? dp.ValueFormat.NumberOfFractionalDigits : undefined,
+  };
+}
+
+function criticalityCalculation(cc: Any, prefix: string): CriticalityCalculationModel | undefined {
+  if (!cc || typeof cc !== 'object') return undefined;
+  const dir = enumName(cc.ImprovementDirection);
+  if (dir !== 'Maximize' && dir !== 'Minimize' && dir !== 'Target') return undefined;
+  return {
+    improvementDirection: dir,
+    deviationRangeLowValue: valueRef(cc.DeviationRangeLowValue, prefix),
+    toleranceRangeLowValue: valueRef(cc.ToleranceRangeLowValue, prefix),
+    acceptanceRangeLowValue: valueRef(cc.AcceptanceRangeLowValue, prefix),
+    acceptanceRangeHighValue: valueRef(cc.AcceptanceRangeHighValue, prefix),
+    toleranceRangeHighValue: valueRef(cc.ToleranceRangeHighValue, prefix),
+    deviationRangeHighValue: valueRef(cc.DeviationRangeHighValue, prefix),
   };
 }
 
@@ -484,6 +506,18 @@ function buildField(rec: Any, typeName: string, ctx: UiContext, scope: string, s
     const target = str(rec.Target?.value) ?? pathOf(rec.Target);
     if (!target) return undefined;
     const { navigation, term, qualifier } = splitAnnotationPath(target);
+    if (term === 'Chart') {
+      // Micro chart in a cell or form (docs/15 MC-10): of the row itself, of a single-valued navigation, or over a
+      // collection navigation (read with $expand, ADR-025).
+      const found = lookupAnnotation(typeName, navigation, term, qualifier, ctx);
+      const chart = found ? buildChart(found.value as Any, qualifier ?? 'Chart', navigation, typeName, ctx) : undefined;
+      if (!chart) {
+        ctx.warn('UNRESOLVED_TARGET', `Cannot resolve ${target}`, scope);
+        return undefined;
+      }
+      const id = str(rec.ID) ?? `DataFieldForAnnotation::${annotationId(target)}`;
+      return { id, kind: 'chart', label: str(rec.Label) ?? chart.title, chart, criticalityIcon: false, isSemanticKey: false, importance };
+    }
     if (term !== 'DataPoint') {
       ctx.warn('UNSUPPORTED_RECORD', `DataFieldForAnnotation to ${term} is not supported in phase 1`, scope, 'info');
       return undefined;

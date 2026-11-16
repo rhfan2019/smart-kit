@@ -104,7 +104,7 @@
 | P2-OP-01 | 对象标记：草稿和"未保存的修改"图标在标题右侧 | [OP] Dynamic Page Header、Unsaved Changes | E |
 | P2-OP-02 | 表单 Facet：值可以是链接（快速预览） | [OP] Form Facet | E |
 | P2-OP-03 | 纯文本 Facet：标题可选；默认宽 320px；文本可以内嵌链接 | [OP] Plain Text Facet | E、M |
-| P2-OP-04 | 微图表 Facet：标题、副标题、图表、页脚（单位）；支持 Bullet、Column、Line、Comparison、Delta、Harvey Ball、Radial 七种；图表可点击 | [OP] Micro Chart Facet | E、U、S |
+| P2-OP-04 | 微图表 Facet：标题、副标题、图表、页脚（单位）；支持 Bullet、Column、Line、Comparison、Delta、Harvey Ball、Radial 七种；图表可点击。（三期按 SAP 规范修订，见 `15-research-micro-chart.md`） | [OP] Micro Chart Facet | E、U、S |
 | P2-OP-05 | 进度 Facet：标题、副标题、进度条、页脚 | [OP] Progress Indicator Facet | E |
 | P2-OP-06 | 评分 Facet：单个评分（标题、副标题、评分）和汇总评分（副标题是样本数，页脚 "x.x out of y"） | [OP] Rating Indicator Facet | E、U |
 | P2-OP-07 | 关键值 Facet：状态文本右侧带图标 | [OP] Key Value Facet | E |

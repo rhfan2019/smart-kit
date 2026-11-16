@@ -18,6 +18,8 @@ test('P2-OPC-02 P2-OPC-03 P2-OPC-04 P2-OPC-07 components: navigation bar, conten
   expect(pageTop.y).toBeGreaterThanOrEqual(shell.bottom - 1);
   await expect(page.locator('.sk-dynamic-page [role="banner"]')).toHaveCount(0);
   // facets flow from left to right and wrap to a second line
+  // measure after the data is shown (empty facets are narrower)
+  await expect(page.locator('[data-sk-facet="HeaderBudget"] [data-sk-microchart-bar="value"]')).toHaveCount(1);
   const tops = await page.locator('.sk-object-header__facets > .sk-facet').evaluateAll((els) => els.map((e) => Math.round(e.getBoundingClientRect().top)));
   expect(new Set(tops).size).toBeGreaterThan(1);
   await evidence(page, 'P2-OPC-07', page.locator('.sk-dynamic-page__sticky, .sk-object-header').first());
@@ -150,13 +152,15 @@ test('P2-OP-02 P2-OP-03 P2-OP-05 P2-OP-06 P2-OP-07 header facets: link in a form
   await evidence(page, 'P2-OP-06', page.locator('.sk-object-header'));
 });
 
-test('P2-OP-04 micro chart facets: bullet and radial on the order; harvey ball, delta, comparison, column and line on the item', async ({ page }) => {
+test('P2-OP-04 micro chart facets: bullet and radial on the order; harvey ball, delta bullet, comparison, column and line on the item', async ({ page }) => {
   await open(page, orderPath('4500000001'));
   await expect(page.locator('[data-sk-microchart="bullet"]')).toBeVisible();
   await expect(page.locator('[data-sk-microchart="radial"]')).toBeVisible();
   await expect(page.locator('[data-sk-facet="HeaderBudget"] [data-sk-facet-footer]')).toHaveText('EUR');
   await open(page, itemPath('4500000001', 10));
-  for (const kind of ['harvey', 'delta', 'comparison', 'column', 'line']) await expect(page.locator(`[data-sk-microchart="${kind}"]`)).toBeVisible();
+  for (const kind of ['harvey', 'comparison', 'column', 'line']) await expect(page.locator(`[data-sk-microchart="${kind}"]`)).toBeVisible();
+  // docs/15 MC-64: no Delta chart from annotations; the item shows the standard delta bullet chart (DeltaBulletChart, MC-24)
+  await expect(page.locator('[data-sk-facet="ItemDelta"] [data-sk-microchart="bullet"] [data-sk-microchart-bar="delta"]')).toHaveCount(1);
   await expect(page.locator('[data-sk-microchart="column"] [data-sk-microchart-bar]')).not.toHaveCount(0);
   await evidence(page, 'P2-OP-04', page.locator('.sk-object-header'));
   // a micro chart can be pressed: it opens a larger chart

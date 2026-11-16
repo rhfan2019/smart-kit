@@ -3,7 +3,7 @@ import { toFilter, type Condition, type FilterState } from '../conditions/condit
 import { restrictConditions } from '../conditions/filterExpressions';
 import { capabilitiesFor, isFilterable, isSortable } from '../model/access';
 import { resolvePath } from '../model/buildModel';
-import type { DataPointModel, EntityUi, FieldModel, MetaModel, PropertyModel, ValueListModel } from '../model/types';
+import type { ChartModel, DataPointModel, EntityUi, FieldModel, MetaModel, PropertyModel, ValueListModel } from '../model/types';
 import { resolveEntityPath, type EntityPath } from './entityPath';
 
 export type Row = Record<string, unknown>;
@@ -17,6 +17,9 @@ export interface ExpandSpec {
   navigation: string;
   select: string[];
   expand: ExpandSpec[];
+  /** Collection navigations only: order and size of the expanded collection (micro chart series, ADR-025). */
+  orderBy?: SortItem[];
+  top?: number;
 }
 
 export type QuerySource = { entitySet: string } | { parent: EntityPath; navigation: string };
@@ -83,6 +86,14 @@ const prefixed = (prefix: string, p: string) => {
 /** All paths a field needs: the value plus text, unit, criticality, URL. */
 export function fieldPaths(model: MetaModel, typeName: string, field: FieldModel): string[] {
   if (field.kind === 'dataPoint' && field.dataPoint) return dataPointPaths(model, typeName, field.dataPoint);
+  if (field.kind === 'chart') {
+    const chart = field.chart;
+    if (!chart) return [];
+    if (!chart.navigation) return chartFields(chart).flatMap((f) => fieldPaths(model, typeName, f));
+    // A chart of a single-valued navigation reads that object's fields; a collection is expanded (chartExpand).
+    if (chartIsSeries(model, typeName, chart)) return [];
+    return chartSeriesSelect(model, chart).map((p) => `${chart.navigation}/${p}`);
+  }
   const out: string[] = [];
   if (!field.path) return out;
   out.push(field.path);
@@ -106,7 +117,10 @@ export function dataPointPaths(model: MetaModel, typeName: string, dp: DataPoint
   const out = [dp.value];
   const prop = resolvePath(model.entityTypes, typeName, dp.value).property;
   if (prop) out.push(...companionPaths(prop, dp.value));
-  for (const ref of [dp.targetValue, dp.criticality, dp.minimumValue, dp.maximumValue, dp.sampleSize]) if (ref && 'path' in ref) out.push(ref.path);
+  const cc = dp.criticalityCalculation;
+  const refs = [dp.targetValue, dp.criticality, dp.minimumValue, dp.maximumValue, dp.sampleSize, dp.forecastValue,
+    cc?.deviationRangeLowValue, cc?.toleranceRangeLowValue, cc?.acceptanceRangeLowValue, cc?.acceptanceRangeHighValue, cc?.toleranceRangeHighValue, cc?.deviationRangeHighValue];
+  for (const ref of refs) if (ref && 'path' in ref && !out.includes(ref.path)) out.push(ref.path);
   return out;
 }
 
@@ -170,6 +184,7 @@ export function buildListRequest(model: MetaModel, ui: EntityUi, o: ListRequestO
     ...(o.extraSelect ?? []),
   ]);
   const { select, expand } = selectAndExpand(model, info.typeName, paths, caps.nonExpandable);
+  addChartExpands(model, info.typeName, o.columns, expand, caps.nonExpandable);
 
   const filters: FilterState = {};
   for (const [path, conds] of Object.entries(o.filters ?? {})) {
@@ -212,6 +227,8 @@ export function objectFields(ui: EntityUi): FieldModel[] {
     else if (f.kind === 'text') out.push(f.field);
     else if (f.kind === 'dataPoint') out.push({ id: f.id, kind: 'dataPoint', dataPoint: f.dataPoint, label: f.label ?? '', criticalityIcon: true, isSemanticKey: false });
     else if (!f.chart.navigation) out.push(...chartFields(f.chart));
+    // A chart of a single-valued navigation reads that object's fields; a series has its own query (ADR-025).
+    else out.push({ id: f.id, kind: 'chart', chart: f.chart, label: f.label ?? '', criticalityIcon: false, isSemanticKey: false });
   }
   for (const s of ui.sections) for (const sub of s.subSections) {
     if (sub.content.kind === 'form') for (const g of sub.content.groups) out.push(...g.fields);
@@ -246,7 +263,84 @@ export function buildObjectRequest(model: MetaModel, typeName: string, ui: Entit
     ...[...objectFields(ui), ...extra].flatMap((f) => fieldPaths(model, typeName, f)),
     ...extraSelect,
   ]);
-  return selectAndExpand(model, typeName, paths);
+  const out = selectAndExpand(model, typeName, paths);
+  const headerIds = new Set(ui.headerFacets.map((f) => f.id));
+  addChartExpands(model, typeName, [...objectFields(ui).filter((f) => !headerIds.has(f.id)), ...extra], out.expand);
+  return out;
+}
+
+/** Maximum number of points read for a micro chart over a navigation collection (ADR-025). */
+export const MICRO_CHART_MAX_POINTS = 100;
+/** Comparison micro charts show at most 12 bars (docs/15 MC-41). */
+export const MICRO_COMPARISON_MAX_BARS = 12;
+
+/** The chart's navigation from `typeName` is a collection (its data is a series of rows). */
+export function chartIsSeries(model: MetaModel, typeName: string, chart: Pick<ChartModel, 'navigation'>): boolean {
+  if (!chart.navigation) return false;
+  let tn = typeName;
+  let collection = false;
+  for (const seg of chart.navigation.split('/')) {
+    const nav = model.entityTypes[tn]?.navigations[seg];
+    if (!nav) return false;
+    collection ||= nav.collection;
+    tn = nav.targetType;
+  }
+  return collection;
+}
+
+/** Paths (relative to the chart's entity) a micro chart reads from each row: keys, measures, dimensions and their texts,
+ * units, and the data point values the chart uses (docs/15 §3.2). Paths through further navigations are left out. */
+export function chartSeriesSelect(model: MetaModel, chart: ChartModel): string[] {
+  const type = model.entityTypes[chart.typeName];
+  const out: string[] = [...(type?.keys ?? [])];
+  const add = (p: string | undefined) => { if (p && !p.includes('/') && !out.includes(p)) out.push(p); };
+  for (const d of chart.dimensions) {
+    add(d);
+    add(resolvePath(model.entityTypes, chart.typeName, d).property?.text);
+  }
+  for (const m of chart.measures) {
+    add(m);
+    const prop = resolvePath(model.entityTypes, chart.typeName, m).property;
+    if (prop?.unit && 'path' in prop.unit) add(prop.unit.path);
+    if (prop?.text) add(prop.text);
+    const dp = chart.dataPoints[m];
+    if (dp) {
+      add(dp.value);
+      const cc = dp.criticalityCalculation;
+      for (const ref of [dp.targetValue, dp.criticality, dp.minimumValue, dp.maximumValue, dp.forecastValue,
+        cc?.deviationRangeLowValue, cc?.toleranceRangeLowValue, cc?.acceptanceRangeLowValue, cc?.acceptanceRangeHighValue, cc?.toleranceRangeHighValue, cc?.deviationRangeHighValue]) {
+        if (ref && 'path' in ref) add(ref.path);
+      }
+    }
+  }
+  return out;
+}
+
+/** $expand of a micro chart over a collection navigation (ADR-025): ordered by the dimension, at most N rows. */
+export function chartExpand(model: MetaModel, chart: ChartModel): ExpandSpec {
+  return {
+    navigation: chart.navigation,
+    select: chartSeriesSelect(model, chart),
+    expand: [],
+    orderBy: chart.dimensions.slice(0, 1).map((d) => ({ path: d, descending: false })),
+    top: chart.chartType === 'Bar' ? MICRO_COMPARISON_MAX_BARS : MICRO_CHART_MAX_POINTS,
+  };
+}
+
+function addChartExpands(model: MetaModel, typeName: string, fields: FieldModel[], expand: ExpandSpec[], nonExpandable: string[] = []) {
+  for (const f of fields) {
+    const chart = f.kind === 'chart' ? f.chart : undefined;
+    if (!chart || chart.navigation.includes('/') || nonExpandable.includes(chart.navigation) || !chartIsSeries(model, typeName, chart)) continue;
+    const e = chartExpand(model, chart);
+    const same = expand.find((x) => x.navigation === e.navigation);
+    if (!same) expand.push(e);
+    else {
+      // Two charts over the same collection share one expand.
+      for (const p of e.select) if (!same.select.includes(p)) same.select.push(p);
+      same.top = Math.max(same.top ?? 0, e.top ?? 0);
+      same.orderBy ??= e.orderBy;
+    }
+  }
 }
 
 export interface AggregateRequestOptions {
@@ -348,6 +442,8 @@ function expandToString(e: ExpandSpec): string {
   const inner: string[] = [];
   if (e.select.length) inner.push(`$select=${e.select.join(',')}`);
   if (e.expand.length) inner.push(`$expand=${e.expand.map(expandToString).join(',')}`);
+  if (e.orderBy?.length) inner.push(`$orderby=${e.orderBy.map((s) => (s.descending ? `${s.path} desc` : s.path)).join(',')}`);
+  if (e.top !== undefined) inner.push(`$top=${e.top}`);
   return inner.length ? `${e.navigation}(${inner.join(';')})` : e.navigation;
 }
 

@@ -211,6 +211,7 @@ function topRowIndex(api: GridApi): number {
 
 function defaultWidth(f: FieldModel | undefined, edmType: string | undefined): number {
   if (f?.kind === 'dataPoint') return f.dataPoint?.visualization === 'Progress' ? 180 : 130;
+  if (f?.kind === 'chart') return 160;
   if (edmType === 'Edm.Date') return 130;
   if (edmType === 'Edm.DateTimeOffset') return 180;
   if (edmType && /Decimal|Int|Double|Single/.test(edmType)) return 150;
@@ -629,7 +630,7 @@ export function SmartTable(p: SmartTableProps) {
         type: prop && /Int|Decimal|Double|Single|Byte/.test(prop.edmType) && c.field?.kind === 'field' ? 'rightAligned' : undefined,
         cellRenderer: (params: { data?: Row }) => (params.data ? (
           <span className={i === 0 && marker ? 'sk-cell--with-marker' : undefined}>
-            {c.render ? c.render(params.data) : <SmartField typeName={info.typeName} service={p.service} field={c.field!} row={params.data} />}
+            {c.render ? c.render(params.data) : <SmartField typeName={info.typeName} service={p.service} field={c.field!} row={params.data} cell />}
             {i === 0 && marker ? marker(params.data) : null}
             {i === 0 && overridesRef.current[keyOf(params.data)] ? <span className="sk-table__changed" data-sk-changed-marker>{t('table.changedItem')}</span> : null}
           </span>
@@ -782,7 +783,7 @@ export function SmartTable(p: SmartTableProps) {
       label: c.label,
       importance: c.field?.importance ?? (c.field?.isSemanticKey ? 'High' : 'Medium'),
       align: prop && /Int|Decimal|Double|Single|Byte/.test(prop.edmType) && c.field?.kind === 'field' ? 'end' : undefined,
-      render: (row: Row) => (c.render ? c.render(row) : c.field ? <SmartField typeName={info.typeName} service={p.service} field={c.field} row={row} /> : null),
+      render: (row: Row) => (c.render ? c.render(row) : c.field ? <SmartField typeName={info.typeName} service={p.service} field={c.field} row={row} cell /> : null),
       groupValue: c.field ? (row: Row) => fieldValue(valueCtx, c.field!, row).display || groupValueOf(c.field!.path ?? '')(row) : undefined,
     };
   });

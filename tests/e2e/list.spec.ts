@@ -199,6 +199,8 @@ test.describe('list report: purchase orders', () => {
     await table(page, 'PurchaseOrders').locator('[data-sk-table-settings]').click();
     const dialog = page.getByRole('dialog', { name: 'View Settings' });
     await dialog.getByRole('checkbox', { name: 'Net Amount' }).uncheck();
+    // the budget micro chart column (docs/15 MC-10) also reads the net amount
+    await dialog.getByRole('checkbox', { name: 'Budget Usage' }).uncheck();
     await dialog.getByRole('tab', { name: 'Sort' }).click();
     await dialog.getByRole('button', { name: 'Remove' }).first().click();
     await dialog.getByRole('button', { name: 'Add sort criterion' }).click();

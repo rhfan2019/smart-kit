@@ -121,6 +121,9 @@
   "CH.InvoiceDelta": "Ordered vs. Invoiced",
   "CH.Amounts": "Condition Amounts",
   "CH.AmountColumns": "Amounts by Condition",
+  "CH.AmountShare": "Share of Condition Amounts",
+  "CH.QuantityArea": "Quantity Trend vs. Target",
+  "DP.QuantityTrend": "Quantity",
   "CH.Quantities": "Quantities by History Entry",
 
   "FG.NotesText": "Notes",

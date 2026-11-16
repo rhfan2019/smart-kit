@@ -1,8 +1,10 @@
 /** SmartField: displays (and, for the edit seam, edits) one field according to its type and annotations. */
 import { Avatar, Progress, Rating } from '@mantine/core';
-import { resolvePath, type FieldModel, type Row } from '@rhfan2019/smart-kit-core';
+import { formatNumber, resolvePath, type FieldModel, type Row } from '@rhfan2019/smart-kit-core';
 import { AlertTriangle, CheckCircle2, Info, XCircle } from 'lucide-react';
 import { useMemo, type ReactNode } from 'react';
+import { MicroChart } from '../chart/MicroChart';
+import { chartHidden, chartProps } from '../chart/fromModel';
 import { useService, useSmartKit, useText } from '../context/SmartKitProvider';
 import type { FieldRenderer, FieldRenderProps } from './renderers';
 import { fieldValue, resolveRef } from './values';
@@ -31,6 +33,8 @@ export interface SmartFieldProps {
   id?: string;
   /** Edit mode: show the label above the editor (dialogs). */
   showLabel?: boolean;
+  /** Rendered in a table cell: a micro chart without data leaves the cell empty (docs/15 MC-06). */
+  cell?: boolean;
 }
 
 const CRITICALITY_CLASS: Record<number, string> = { 0: 'neutral', 1: 'negative', 2: 'critical', 3: 'positive', 5: 'info' };
@@ -69,6 +73,20 @@ export function SmartField(props: SmartFieldProps) {
     () => props.field ?? { id: `DataField::${props.path}`, kind: 'field', path: props.path, label: resolvePath(service.model.entityTypes, typeName, props.path ?? '').property?.label ?? props.path ?? '', criticalityIcon: true, isSemanticKey: false },
     [props.field, props.path, service.model, typeName],
   );
+  if (field.kind === 'chart' && field.chart) {
+    // Micro chart in a table or form cell (docs/15 MC-10): of the row, of a single-valued navigation or over a collection (ADR-025).
+    const chart = field.chart;
+    const cp = chartHidden(service.model, chart) ? undefined : chartProps({ model: service.model, locale: intlLocale, timeZone }, typeName, chart, props.row);
+    if (!cp) return null;
+    const measureProp = resolvePath(service.model.entityTypes, chart.typeName, chart.measures[0]!).property;
+    const digits = chart.dataPoints[chart.measures[0]!]?.fractionDigits ?? (typeof measureProp?.scale === 'number' ? measureProp.scale : undefined);
+    const fmt = (n: number) => formatNumber(String(n), intlLocale, digits !== undefined ? { min: digits, max: digits } : { max: 2 });
+    return (
+      <span className="sk-field sk-field--chart">
+        <MicroChart {...cp} label={props['aria-label'] ?? field.label} format={fmt} hideOnNoData={props.cell} />
+      </span>
+    );
+  }
   const v = fieldValue({ model: service.model, typeName, locale: intlLocale, timeZone }, field, props.row);
   const mode = props.mode ?? 'display';
   const renderProps: FieldRenderProps = { ...v, row: props.row ?? {}, field, mode, onChange: props.onChange };

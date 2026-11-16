@@ -351,6 +351,11 @@
               <Annotation Term="UI.Importance" EnumMember="UI.ImportanceType/Low"/>
             </Record>
             <Record Type="UI.DataField"><PropertyValue Property="Value" Path="PurchaseOrderType"/><Annotation Term="UI.Importance" EnumMember="UI.ImportanceType/Low"/></Record>
+            <!-- docs/15 MC-10: a micro chart in a table cell -->
+            <Record Type="UI.DataFieldForAnnotation">
+              <PropertyValue Property="Target" AnnotationPath="@UI.Chart#BudgetBullet"/>
+              <Annotation Term="UI.Importance" EnumMember="UI.ImportanceType/Low"/>
+            </Record>
             <Record Type="UI.DataFieldForAction">
               <PropertyValue Property="Label" String="{{label:A.Approve}}"/>
               <PropertyValue Property="Action" String="Purchasing.approve"/>
@@ -654,6 +659,13 @@
             <PropertyValue Property="Value" Path="NetAmount"/>
             <PropertyValue Property="TargetValue" Path="BudgetAmount"/>
             <PropertyValue Property="MinimumValue" Decimal="0"/>
+            <!-- docs/15 MC-09, MC-25: over budget is bad; the budget is the threshold marker and colours the bar -->
+            <PropertyValue Property="CriticalityCalculation">
+              <Record Type="UI.CriticalityCalculationType">
+                <PropertyValue Property="ImprovementDirection" EnumMember="UI.ImprovementDirectionType/Minimize"/>
+                <PropertyValue Property="DeviationRangeHighValue" Path="BudgetAmount"/>
+              </Record>
+            </PropertyValue>
           </Record>
         </Annotation>
         <Annotation Term="UI.DataPoint" Qualifier="Invoiced">
@@ -832,7 +844,7 @@
             <Record Type="UI.ReferenceFacet">
               <PropertyValue Property="ID" String="Items"/>
               <PropertyValue Property="Label" String="{{label:Facet.Items}}"/>
-              <PropertyValue Property="Target" AnnotationPath="_Item/@UI.LineItem"/>
+              <PropertyValue Property="Target" AnnotationPath="_Item/@UI.LineItem#InOrder"/>
             </Record>
             <Record Type="UI.CollectionFacet">
               <PropertyValue Property="ID" String="NotesSection"/>
@@ -1037,6 +1049,24 @@
             <Record Type="UI.DataField"><PropertyValue Property="Value" Path="DeliveryDate"/></Record>
           </Collection>
         </Annotation>
+        <!-- Items of one order (object page sub-table): also the quantity history as a line micro chart. Not in the
+             item list of all orders: the test server expands every item before applying $top there (ADR-025). -->
+        <Annotation Term="UI.LineItem" Qualifier="InOrder">
+          <Collection>
+            <Record Type="UI.DataField"><PropertyValue Property="Value" Path="PurchaseOrderItem"/></Record>
+            <Record Type="UI.DataField"><PropertyValue Property="Value" Path="Material"/></Record>
+            <Record Type="UI.DataField"><PropertyValue Property="Value" Path="Plant"/></Record>
+            <Record Type="UI.DataField"><PropertyValue Property="Value" Path="OrderQuantity"/></Record>
+            <Record Type="UI.DataField"><PropertyValue Property="Value" Path="NetPrice"/></Record>
+            <Record Type="UI.DataField"><PropertyValue Property="Value" Path="NetAmount"/></Record>
+            <Record Type="UI.DataField"><PropertyValue Property="Value" Path="DeliveryDate"/></Record>
+            <!-- docs/15 MC-10, ADR-025: a micro chart over a collection navigation in a table cell -->
+            <Record Type="UI.DataFieldForAnnotation">
+              <PropertyValue Property="Target" AnnotationPath="_History/@UI.Chart#Quantities"/>
+              <Annotation Term="UI.Importance" EnumMember="UI.ImportanceType/Low"/>
+            </Record>
+          </Collection>
+        </Annotation>
         <Annotation Term="UI.HeaderFacets">
           <Collection>
             <Record Type="UI.ReferenceFacet">
@@ -1059,13 +1089,32 @@
               <PropertyValue Property="ID" String="ItemHistoryLine"/>
               <PropertyValue Property="Target" AnnotationPath="_History/@UI.Chart#Quantities"/>
             </Record>
+            <!-- docs/15 MC-45: area micro chart; MC-58: stacked bar micro chart -->
+            <Record Type="UI.ReferenceFacet">
+              <PropertyValue Property="ID" String="ItemHistoryArea"/>
+              <PropertyValue Property="Target" AnnotationPath="_History/@UI.Chart#QuantityArea"/>
+            </Record>
+            <Record Type="UI.ReferenceFacet">
+              <PropertyValue Property="ID" String="ItemConditionShare"/>
+              <PropertyValue Property="Target" AnnotationPath="_PricingCondition/@UI.Chart#AmountShare"/>
+            </Record>
           </Collection>
+        </Annotation>
+        <Annotation Term="UI.DataPoint" Qualifier="Invoiced">
+          <Record Type="UI.DataPointType">
+            <PropertyValue Property="Title" String="{{label:DP.Invoiced}}"/>
+            <PropertyValue Property="Value" Path="InvoicedAmount"/>
+            <PropertyValue Property="TargetValue" Path="NetAmount"/>
+            <!-- docs/15 MC-24: the bullet chart shows the difference to the net amount -->
+            <PropertyValue Property="Visualization" EnumMember="UI.VisualizationType/DeltaBulletChart"/>
+          </Record>
         </Annotation>
         <Annotation Term="UI.DataPoint" Qualifier="Received">
           <Record Type="UI.DataPointType">
             <PropertyValue Property="Title" String="{{label:DP.Received}}"/>
             <PropertyValue Property="Value" Path="ReceivedQuantity"/>
-            <PropertyValue Property="TargetValue" Path="OrderQuantity"/>
+            <!-- docs/15 MC-55: the Harvey Ball total is MaximumValue -->
+            <PropertyValue Property="MaximumValue" Path="OrderQuantity"/>
           </Record>
         </Annotation>
         <Annotation Term="UI.Chart" Qualifier="ReceivedShare">
@@ -1087,8 +1136,18 @@
         <Annotation Term="UI.Chart" Qualifier="InvoiceDelta">
           <Record Type="UI.ChartDefinitionType">
             <PropertyValue Property="Title" String="{{label:CH.InvoiceDelta}}"/>
-            <PropertyValue Property="ChartType" EnumMember="UI.ChartType/Waterfall"/>
-            <PropertyValue Property="Measures"><Collection><PropertyPath>NetAmount</PropertyPath><PropertyPath>InvoicedAmount</PropertyPath></Collection></PropertyValue>
+            <!-- docs/15 MC-64: no Delta micro chart from annotations; the standard delta bullet chart instead -->
+            <PropertyValue Property="ChartType" EnumMember="UI.ChartType/Bullet"/>
+            <PropertyValue Property="Measures"><Collection><PropertyPath>InvoicedAmount</PropertyPath></Collection></PropertyValue>
+            <PropertyValue Property="MeasureAttributes">
+              <Collection>
+                <Record Type="UI.ChartMeasureAttributeType">
+                  <PropertyValue Property="Measure" PropertyPath="InvoicedAmount"/>
+                  <PropertyValue Property="Role" EnumMember="UI.ChartMeasureRoleType/Axis1"/>
+                  <PropertyValue Property="DataPoint" AnnotationPath="@UI.DataPoint#Invoiced"/>
+                </Record>
+              </Collection>
+            </PropertyValue>
           </Record>
         </Annotation>
         <Annotation Term="UI.FieldGroup" Qualifier="Item">
@@ -1283,6 +1342,14 @@
             <Record Type="UI.DataField"><PropertyValue Property="Value" Path="IsStatistical"/></Record>
           </Collection>
         </Annotation>
+        <Annotation Term="UI.Chart" Qualifier="AmountShare">
+          <Record Type="UI.ChartDefinitionType">
+            <PropertyValue Property="Title" String="{{label:CH.AmountShare}}"/>
+            <PropertyValue Property="ChartType" EnumMember="UI.ChartType/BarStacked"/>
+            <PropertyValue Property="Dimensions"><Collection><PropertyPath>ConditionTypeName</PropertyPath></Collection></PropertyValue>
+            <PropertyValue Property="Measures"><Collection><PropertyPath>ConditionAmount</PropertyPath></Collection></PropertyValue>
+          </Record>
+        </Annotation>
         <Annotation Term="UI.Chart" Qualifier="Amounts">
           <Record Type="UI.ChartDefinitionType">
             <PropertyValue Property="Title" String="{{label:CH.Amounts}}"/>
@@ -1355,6 +1422,37 @@
             <Record Type="UI.DataField"><PropertyValue Property="Value" Path="Amount"/></Record>
             <Record Type="UI.DataField"><PropertyValue Property="Value" Path="MovementType"/></Record>
           </Collection>
+        </Annotation>
+        <Annotation Term="UI.DataPoint" Qualifier="QuantityTrend">
+          <Record Type="UI.DataPointType">
+            <PropertyValue Property="Title" String="{{label:DP.QuantityTrend}}"/>
+            <PropertyValue Property="Value" Path="Quantity"/>
+            <PropertyValue Property="TargetValue" Decimal="150"/>
+            <PropertyValue Property="CriticalityCalculation">
+              <Record Type="UI.CriticalityCalculationType">
+                <PropertyValue Property="ImprovementDirection" EnumMember="UI.ImprovementDirectionType/Maximize"/>
+                <PropertyValue Property="DeviationRangeLowValue" Decimal="80"/>
+                <PropertyValue Property="ToleranceRangeLowValue" Decimal="120"/>
+              </Record>
+            </PropertyValue>
+          </Record>
+        </Annotation>
+        <Annotation Term="UI.Chart" Qualifier="QuantityArea">
+          <Record Type="UI.ChartDefinitionType">
+            <PropertyValue Property="Title" String="{{label:CH.QuantityArea}}"/>
+            <PropertyValue Property="ChartType" EnumMember="UI.ChartType/Area"/>
+            <PropertyValue Property="Dimensions"><Collection><PropertyPath>HistoryCounter</PropertyPath></Collection></PropertyValue>
+            <PropertyValue Property="Measures"><Collection><PropertyPath>Quantity</PropertyPath></Collection></PropertyValue>
+            <PropertyValue Property="MeasureAttributes">
+              <Collection>
+                <Record Type="UI.ChartMeasureAttributeType">
+                  <PropertyValue Property="Measure" PropertyPath="Quantity"/>
+                  <PropertyValue Property="Role" EnumMember="UI.ChartMeasureRoleType/Axis1"/>
+                  <PropertyValue Property="DataPoint" AnnotationPath="@UI.DataPoint#QuantityTrend"/>
+                </Record>
+              </Collection>
+            </PropertyValue>
+          </Record>
         </Annotation>
         <Annotation Term="UI.Chart" Qualifier="Quantities">
           <Record Type="UI.ChartDefinitionType">

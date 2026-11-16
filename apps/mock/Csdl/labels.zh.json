@@ -121,6 +121,9 @@
   "CH.InvoiceDelta": "订单金额与开票金额",
   "CH.Amounts": "条件金额",
   "CH.AmountColumns": "按条件的金额",
+  "CH.AmountShare": "条件金额占比",
+  "CH.QuantityArea": "数量趋势与目标",
+  "DP.QuantityTrend": "数量",
   "CH.Quantities": "按历史记录的数量",
 
   "FG.NotesText": "备注",
