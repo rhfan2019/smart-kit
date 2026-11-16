@@ -5,6 +5,7 @@ import { smartKitCssVariablesResolver, smartKitMantineTheme, SmartKitProvider, t
 import 'dayjs/locale/zh-cn';
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { NavLink, Route, Routes, useLocation, useNavigate } from 'react-router';
+import { purchasingOverlay } from './annotations';
 import { createNavigationAdapter } from './navigation';
 import { AboutPage, HomePage } from './pages/HostPages';
 import { FreestylePage } from './pages/FreestylePage';
@@ -52,7 +53,9 @@ export function App() {
     let cancelled = false;
     setServices(null);
     Promise.all(Object.entries(SERVICES).map(async ([name, url]) => {
-      const { model, provider } = await loadService({ serviceUrl: url, fetch: fetchJson, language: locale });
+      // Local annotations (overlay layer): views of the purchase order list by order type.
+      const overlay = name.startsWith('purchasing') ? purchasingOverlay(locale) : undefined;
+      const { model, provider } = await loadService({ serviceUrl: url, fetch: fetchJson, language: locale, overlay });
       const cfg: ServiceConfig = { model, dataProvider: provider, variants: model.entitySets.Variants ? new ODataVariantStore(provider) : undefined };
       return [name, cfg] as const;
     }))

@@ -1,6 +1,6 @@
 /** Phase 2 · List Report (docs/13 §1–3): Components and Actions figures, behaviour rules. */
 import { expect, test, type Page } from '@playwright/test';
-import { clearFilter, evidence, filterInput, mainScroll, MOCK, open, recordOData, resetServer, table, waitForRows } from './helpers';
+import { clearFilter, evidence, filterInput, mainScroll, showFilters, MOCK, open, recordOData, resetServer, table, waitForRows } from './helpers';
 
 test.beforeEach(async ({ page }) => resetServer(page));
 
@@ -393,4 +393,40 @@ test('P2-LR-17 draft list: editing status filter and draft markers on rows', asy
   await marker.click();
   await expect(page.locator('[data-sk-draft-popover]')).toContainText('Alex Miller');
   await evidence(page, 'P2-LR-17');
+});
+
+test('P2-LR-02 views by order type from local annotations (overlay): tabs with counts, the type filter leaves the filter bar', async ({ page }) => {
+  const rec = recordOData(page);
+  await open(page, '/po?views=type');
+  const tabs = page.locator('[data-sk-list-tab]');
+  await expect(tabs).toHaveText([/^Standard Orders \(\d+\)$/, /^Framework Orders \(\d+\)$/, /^Stock Transport Orders \(\d+\)$/]);
+  await waitForRows(page, 'PurchaseOrders');
+  // the counts add up to the unfiltered total of the same filters
+  const counts = (await tabs.allInnerTexts()).map((x) => Number(x.match(/\((\d+)\)/)![1]));
+  const total = await page.request.get(`${MOCK}/odata/purchasing/PurchaseOrders/$count?$filter=${encodeURIComponent("Status ne 'CLOSED' and CompanyCode eq '1000'")}`).then((r) => r.text());
+  expect(counts.reduce((a, b) => a + b, 0)).toBe(Number(total));
+  // the tab bar sits above the table toolbar (no overlap with a grid table)
+  const bar = await page.locator('.sk-list-tabs__list').boundingBox();
+  const toolbar = await table(page, 'PurchaseOrders').locator('.sk-table__toolbar').boundingBox();
+  expect(bar!.y + bar!.height).toBeLessThanOrEqual(toolbar!.y);
+  await page.locator('[data-sk-list-tab="TypeFO"]').click();
+  await expect.poll(() => rec.urls.some((u) => u.includes("PurchaseOrderType eq 'FO'") && !u.includes('$top=0'))).toBe(true);
+  await page.locator('[data-sk-header-toggle]').click();
+  await expect(page.locator('[data-sk-filter="PurchaseOrderType"]')).toHaveCount(0);
+  await expect(page.locator('[data-sk-filter="Status"]')).toBeVisible();
+});
+
+test('AC-LR-05 date range: two clicks pick a range; the field shows formatted dates in both languages', async ({ page }) => {
+  for (const [lang, re] of [['en', /^Nov 2, 2026 – Nov 13, 2026$/], ['zh', /^2026年11月2日 – 2026年11月13日$/]] as const) {
+    const rec = recordOData(page);
+    await open(page, '/po', { lang });
+    await showFilters(page);
+    const field = page.locator('[data-sk-filter="OrderDate"]');
+    await field.locator('button').first().click();
+    const day = (n: number) => page.locator('.mantine-DatePickerInput-day:not([data-outside])', { hasText: new RegExp(`^${n}$`) }).first();
+    await day(2).click();
+    await day(13).click();
+    await expect(field.locator('button').first()).toHaveText(re);
+    await expect.poll(() => rec.urls.some((u) => u.includes('OrderDate ge 2026-11-02 and OrderDate le 2026-11-13'))).toBe(true);
+  }
 });

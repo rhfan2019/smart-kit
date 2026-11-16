@@ -1,6 +1,7 @@
 /**
  * Purchase order list: the list report template with extensions (AC-EXT-01, AC-EXT-02) and the phase-2 options.
- * Query parameters (docs/13): mode=manual, views=switch|tabs (views=select shows four views in a select),
+ * Query parameters (docs/13): mode=manual, views=switch|tabs (views=select shows four views in a select;
+ * views=type / type-switch: views by order type from the demo's local annotations, src/annotations.ts),
  * contents=1 (multiple content), table=responsive|auto, chart=1, working=continuous, filterToggle=1.
  */
 import { Alert } from '@mantine/core';
@@ -8,6 +9,7 @@ import { SmartListReport, type ActionGroup, type TableExtendEntry } from '@rhfan
 import { useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router';
 import { useShell } from '../App';
+import { ORDER_TYPE_VIEWS } from '../annotations';
 
 export function PurchaseOrdersPage({ service = 'purchasing' }: { service?: string }) {
   const { s } = useShell();
@@ -42,7 +44,7 @@ export function PurchaseOrdersPage({ service = 'purchasing' }: { service?: strin
       liveMode={!manual}
       tableExtend={tableExtend}
       actionGroups={actionGroups}
-      views={viewsParam === 'switch' ? { mode: 'switch', ids: ['Open', 'InDelivery', 'Closed'] } : viewsParam === 'select' ? { mode: 'switch' } : viewsParam === 'tabs' ? { mode: 'tabs', ids: ['Open', 'InDelivery', 'Closed'] } : undefined}
+      views={viewsParam === 'type' ? { mode: 'tabs', ids: ORDER_TYPE_VIEWS } : viewsParam === 'type-switch' ? { mode: 'switch', ids: ORDER_TYPE_VIEWS } : viewsParam === 'switch' ? { mode: 'switch', ids: ['Open', 'InDelivery', 'Closed'] } : viewsParam === 'select' ? { mode: 'switch' } : viewsParam === 'tabs' ? { mode: 'tabs', ids: ['Open', 'InDelivery', 'Closed'] } : undefined}
       contents={params.get('contents') ? [{ key: 'orders', entitySet: 'PurchaseOrders', tableExtend }, { key: 'items', entitySet: 'PurchaseOrderItems', title: s('items') }] : undefined}
       tableType={table === 'responsive' || table === 'auto' ? table : 'grid'}
       chart={params.get('chart') ? 'ByStatus' : undefined}

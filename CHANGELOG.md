@@ -18,6 +18,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ### Fixed (phase 2)
 
+- Date range filters: the first click no longer completes the range (a range can be picked), and the field shows formatted dates instead of "ll – ll".
+- With multiple views or content and a grid table, the tab bar no longer overlaps the table toolbar.
+- Expanding a header that was collapsed by the button on a scrolled page shows the header instead of collapsing again.
+
 - Test service memory grew with every `$filter` until it ran out of heap in long e2e runs (engine `getProperty` did not cache misses).
 
 ### Changed
