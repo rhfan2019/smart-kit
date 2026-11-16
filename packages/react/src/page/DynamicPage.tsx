@@ -209,7 +209,11 @@ export function DynamicPage(p: DynamicPageProps) {
   /** Snap on click (button or title bar). Collapsing overrules the pin and releases it. */
   const expand = () => {
     if (scrolledPast) { setExpanded(true); scrollTop(); }
-    else if (!expanded) setExpanded(true);
+    else if (!expanded) {
+      setExpanded(true);
+      // DP Snap on Click: the expanded header must be visible; on a scrolled page its content sits above the viewport.
+      if (pageSnap) requestAnimationFrame(scrollTop);
+    }
   };
   const collapse = () => {
     if (pinned) setPinned(false);

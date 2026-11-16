@@ -87,4 +87,5 @@ export const p2zh: { [K in keyof typeof p2en]: string } = {
   'quickView.title': '{type}快速预览',
   'rating.outOf': '{value} / {max}',
   'rating.samples': '{count} 个评分',
+  'filterBar.dateFormat': 'YYYY年M月D日',
 };

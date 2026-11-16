@@ -120,6 +120,8 @@ test('P2-DP-04 pin keeps the header while scrolling; collapsing overrules and re
   await page.locator('[data-sk-header-toggle]').click();
   await expect(collapsed(page)).toBeVisible();
   await page.locator('[data-sk-header-toggle]').click();
+  // expanding scrolls back to the top; the pin button is shown again once the header content is visible
+  await expect(page.locator('.sk-object-header')).toBeInViewport();
   await expect(page.locator('[data-sk-header-pin]')).toHaveAttribute('aria-pressed', 'false');
 });
 

@@ -85,4 +85,5 @@ export const p2en = {
   'quickView.title': 'Quick view of {type}',
   'rating.outOf': '{value} out of {max}',
   'rating.samples': '{count} ratings',
+  'filterBar.dateFormat': 'MMM D, YYYY',
 } as const;

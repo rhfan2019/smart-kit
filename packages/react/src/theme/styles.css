@@ -338,7 +338,10 @@
 .sk-object-page-wrap__main { flex: 1 1 auto; min-width: 0; }
 .sk-side-content { flex: none; width: var(--sk-size-side-content); border-left: var(--sk-size-border) solid var(--sk-color-border); background: var(--sk-color-surface); padding: var(--sk-space-4); position: sticky; top: 0; align-self: flex-start; max-height: 100vh; overflow: auto; }
 .sk-side-content__title { margin: 0 0 var(--sk-space-3); font-size: var(--sk-text-section-title); }
-.sk-list-tabs__list { position: sticky; top: var(--sk-sticky-offset); z-index: 2; background: var(--sk-color-page); }
+/* LR Sticky Behavior: the tab bar sticks under the title only when the page scrolls (responsive table); with a grid
+   table the content does not scroll, so the tab bar stays in place above the table. */
+.sk-list-tabs__list { background: var(--sk-color-page); }
+.sk-list-report--responsive .sk-list-tabs__list { position: sticky; top: var(--sk-sticky-offset); z-index: 2; }
 .sk-list-report:not(.sk-list-report--responsive) .sk-list-tabs { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; }
 .sk-list-report:not(.sk-list-report--responsive) .sk-list-tabs__panel { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; padding-top: var(--sk-space-3); }
 .sk-list-report--responsive .sk-list-tabs__panel { padding-top: var(--sk-space-3); }

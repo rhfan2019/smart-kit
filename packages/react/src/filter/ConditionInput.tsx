@@ -46,6 +46,9 @@ export function ConditionInput(p: ConditionInputProps) {
   const prop = getProperty(service.model, typeName, p.path);
   const vl = prop?.valueList;
   const [typed, setTyped] = useState('');
+  // A range being picked (first date chosen, second not yet): kept locally, not written to the conditions, so that the
+  // picker does not treat "equal to the first date" as a finished range.
+  const [pending, setPending] = useState<[string | null, string | null] | null>(null);
 
   const fixed = useValueList(vl, { top: 200, enabled: Boolean(vl?.fixedValues) }, p.service);
   const suggest = useValueList(vl, { search: typed, top: 10, enabled: Boolean(vl && !vl.fixedValues && typed.trim().length > 0) }, p.service);
@@ -79,14 +82,22 @@ export function ConditionInput(p: ConditionInputProps) {
         type="range"
         allowSingleDateInRange
         clearable
-        value={range}
-        valueFormat="ll"
+        value={pending ?? range}
+        // Explicit per-language format: dayjs's localized tokens ("ll") need a plugin and would show literally.
+        valueFormat={t('filterBar.dateFormat')}
         locale={intlLocale.slice(0, 2)}
         onChange={(v) => {
           const [a, b] = v as [string | null, string | null];
+          if (a && !b) { setPending([a, null]); return; }
+          setPending(null);
           if (!a) p.onChange([]);
-          else if (!b || a === b) p.onChange([{ operator: 'EQ', values: [a] }]);
+          else if (a === b) p.onChange([{ operator: 'EQ', values: [a] }]);
           else p.onChange([{ operator: 'BT', values: [a, b] }]);
+        }}
+        onDropdownClose={() => {
+          // Closed after one date: filter for that day.
+          if (pending?.[0]) p.onChange([{ operator: 'EQ', values: [pending[0]] }]);
+          setPending(null);
         }}
       />
     );
