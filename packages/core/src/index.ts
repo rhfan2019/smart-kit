@@ -18,6 +18,7 @@ export {
   OPERATORS, OPERATOR_ARITY, toFilter, propertyFilter, isComplete, activeFilterPaths, matches, compareValues, compareDecimal, startOfDayIso,
   type Condition, type FilterState, type Operator, type FilterOptions,
 } from './conditions/conditions';
+export { filterExpressionRules, conditionAllowed, restrictConditions, type FilterExpressionRules } from './conditions/filterExpressions';
 export { toLiteral, LiteralError } from './query/literals';
 export {
   keyPredicate, parseEntityPath, resolveEntityPath, entityPathOf, childPathOf, EntityPathError,

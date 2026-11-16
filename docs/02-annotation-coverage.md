@@ -76,7 +76,7 @@
 
 | 术语 | 用途 | 期次 | 规则 | 测试 |
 | --- | --- | --- | --- | --- |
-| `Capabilities.FilterRestrictions` | `Filterable`、`NonFilterableProperties`、`RequiredProperties`（必填筛选）、`FilterExpressionRestrictions`（`SingleValue`、`MultiValue`、`SingleRange`、`MultiRange`、`SearchExpression`） | 一期 | LR-06、LR-10、LR-35 | ANN-40 |
+| `Capabilities.FilterRestrictions` | `Filterable`、`NonFilterableProperties`、`RequiredProperties`（必填筛选）、`FilterExpressionRestrictions`（`SingleValue`、`MultiValue`、`SingleRange`、`MultiRange`、`SearchExpression`；二期起筛选字段、取值帮助和请求都按它限制，P2-LR-19） | 一期 | LR-06、LR-10、LR-35 | ANN-40 |
 | `Capabilities.SortRestrictions` | `Sortable`、`NonSortableProperties` | 一期 | LR-35 | ANN-41 |
 | `Capabilities.SearchRestrictions` | `Searchable` | 一期 | LR-05、LR-35 | ANN-42 |
 | `Capabilities.CountRestrictions` | `Countable` | 一期 | LR-35 | ANN-43 |

@@ -1,5 +1,6 @@
 /** Query requests and their OData URL form. See docs/05-data-provider.md §2. */
 import { toFilter, type Condition, type FilterState } from '../conditions/conditions';
+import { restrictConditions } from '../conditions/filterExpressions';
 import { capabilitiesFor, isFilterable, isSortable } from '../model/access';
 import { resolvePath } from '../model/buildModel';
 import type { DataPointModel, EntityUi, FieldModel, MetaModel, PropertyModel, ValueListModel } from '../model/types';
@@ -172,7 +173,9 @@ export function buildListRequest(model: MetaModel, ui: EntityUi, o: ListRequestO
 
   const filters: FilterState = {};
   for (const [path, conds] of Object.entries(o.filters ?? {})) {
-    if (isFilterable(caps, path) && conds.length) filters[path] = conds;
+    // Conditions the service does not allow for the property are never sent (capability degradation, LR-35, P2-LR-19).
+    const allowed = isFilterable(caps, path) ? restrictConditions(caps.filterExpressions[path], conds) : [];
+    if (allowed.length) filters[path] = allowed;
   }
 
   const sort = (o.sort ?? ui.presentation.sortOrder).filter((s) => isSortable(caps, s.path));
@@ -269,7 +272,10 @@ export function buildAggregateRequest(model: MetaModel, chart: { dimensions: str
     if (prop) for (const c of companionPaths(prop, d)) if (!groupBy.includes(c)) groupBy.push(c);
   }
   const filters: FilterState = {};
-  for (const [path, conds] of Object.entries(o.filters ?? {})) if (isFilterable(caps, path) && conds.length) filters[path] = conds;
+  for (const [path, conds] of Object.entries(o.filters ?? {})) {
+    const allowed = isFilterable(caps, path) ? restrictConditions(caps.filterExpressions[path], conds) : [];
+    if (allowed.length) filters[path] = allowed;
+  }
   return {
     source: o.source,
     select: [],

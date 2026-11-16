@@ -58,6 +58,7 @@
 | P2-LR-16 | 工作模式：工作清单模式下不再符合筛选的条目立即消失；连续模式下条目保留、做标记，并显示消息 | [LR] Working Modes | E |
 | P2-LR-17 | 草稿列表：筛选栏有"编辑状态"；行上显示草稿标记（"草稿""未保存的修改"） | [LR] Examples（draft handling enabled）、[OP] Unsaved Changes | E |
 | P2-LR-18 | 加载新数据时表格处于忙碌状态 | [LR] Filters | E |
+| P2-LR-19 | 筛选字段按 `Capabilities.FilterExpressionRestrictions` 限制输入：`SingleValue` 只能一个值（有固定值时是单选下拉），`MultiValue` 只能多个值（无范围、无排除），`SingleRange` 只能一个值或一个范围（日期总是范围选择器），`SearchExpression` 只能搜索模式（纯文字按"包含"）；不允许的输入给出提示且不写入；取值帮助隐藏不允许的操作符、"排除"和"搜索并选择"；请求里从不带不允许的条件 | [LR] Filters、`01` LR-35、ANN-40 | E |
 
 ## 4. 对象页 · Components 示意图（[OP] Components，1–8）
 

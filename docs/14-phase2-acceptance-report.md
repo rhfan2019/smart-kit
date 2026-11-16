@@ -10,10 +10,10 @@
 | --- | --- |
 | `npm run typecheck` | 通过（四个工程加测试、Storybook） |
 | `npm run lint` | 通过（ESLint、令牌检查、商标词检查） |
-| `npm test` | 183 个测试全部通过（core 92、react 31、仓库级 60；含二期的注解、写能力、编辑策略、消息、聚合、图表、包体积） |
-| `E2E_MOCK_PORT=4410 E2E_DEMO_PORT=4411 npm run e2e` | 第一遍 181/181 通过；第二遍 181/181 通过（一期 77 + 二期 104；2026-11-15 用户反馈后的修正之后重新跑的结果） |
-| `npm run trace -- --strict` | 一期注解术语 33/33、一期条目 72/72；二期条目和二期注解术语 **142/142 都对应到通过的测试**（读取 `reports/unit-results.json` 和 `reports/e2e-results.json`） |
-| `npm run build`、`npm run size` | core 22.7 KB、react 64.0 KB（gzip，不含 peer 依赖；预算 60 KB / 80 KB） |
+| `npm test` | 189 个测试全部通过（core 95、react 34、仓库级 60；含二期的注解、写能力、编辑策略、消息、聚合、图表、包体积） |
+| `E2E_MOCK_PORT=4410 E2E_DEMO_PORT=4411 npm run e2e` | 第一遍 182/182 通过；第二遍 182/182 通过（一期 77 + 二期 105；2026-11-15 加入 FilterExpressionRestrictions 之后重新跑的结果） |
+| `npm run trace -- --strict` | 一期注解术语 33/33、一期条目 72/72；二期条目和二期注解术语 **143/143 都对应到通过的测试**（读取 `reports/unit-results.json` 和 `reports/e2e-results.json`） |
+| `npm run build`、`npm run size` | core 22.9 KB、react 64.7 KB（gzip，不含 peer 依赖；预算 60 KB / 80 KB） |
 | `npm run build-storybook` | 通过；每个公开积木都有故事（单元测试检查） |
 
 截图基准：`tests/e2e/__screenshots__/darwin/` 的 8 张（四个主题组合 × 列表页、对象页）因为二期的工具栏动作、页头 Facet 和动作区变化重新生成，逐张检查过（工具栏：新建、删除、"决策"菜单按钮、复制；页头：Facet 换行、微图表、纯文本 Facet、汇总评分、"编辑页头"；动作区顺序：编辑、删除、关闭、侧边内容、分享）。证据截图 38 张在 `docs/14-evidence/`（`E2E_EVIDENCE=1` 时由测试生成）。
@@ -73,6 +73,7 @@
 | P2-LR-16 | 工作模式：工作清单模式下不再符合筛选的条目立即消失；连续模式下条目保留、做标记，并显示消息 | **通过** 1/1 | p2-list.spec.ts | — |
 | P2-LR-17 | 草稿列表：筛选栏有"编辑状态"；行上显示草稿标记（"草稿""未保存的修改"） | **通过** 1/1 | p2-list.spec.ts | [截图](14-evidence/P2-LR-17.png) |
 | P2-LR-18 | 加载新数据时表格处于忙碌状态 | **通过** 1/1 | p2-list.spec.ts | — |
+| P2-LR-19 | 筛选字段按 `FilterExpressionRestrictions` 限制输入（单值、多值、单范围、搜索模式），取值帮助和请求同样受限 | **通过** 7/7 | filterExpressions.test.tsx, p2-list.spec.ts, query.test.ts | [截图](14-evidence/P2-LR-19.png) |
 
 ### 4. 对象页 · Components 示意图（[OP] Components，1–8）
 
@@ -261,6 +262,8 @@
 - 用户反馈（2026-11-15）：日期范围选不出来。点第一个日期时就写回了"等于该日"，选择器把它当成完整的范围，第二次点击又开始新的范围；字段还显示字面量"ll – ll"（dayjs 的本地化格式需要插件）。现在第一个日期只暂存在组件里，选完第二个才生效（只选一个就关闭时按该日筛选）；格式按语言放进文案表。测试：AC-LR-05（中英文各选一次范围，并检查请求是 `OrderDate ge … and OrderDate le …`）。
 - 用户要求按订单类型做多视图（2026-11-15）：在示例的本地注解（覆盖层，`apps/demo/src/annotations.ts`）里加了三个 `UI.SelectionPresentationVariant`（`#TypeNB`、`#TypeFO`、`#TypeUB`），`/po?views=type` 以页签显示、`/po?views=type-switch` 以分段按钮显示，服务端不改。顺带修复：网格表格时页签栏吸顶偏移把页签压到了表工具栏上，页签栏只在响应式表格（页面滚动）时吸顶。测试：P2-LR-02（三个页签的条数之和等于总数、页签栏在工具栏之上、订单类型不在筛选栏）。
 - 重跑时发现：页面已向下滚动时，用按钮折叠再展开，页头内容展开在视口之外、立刻又算作"滚走"而折叠。现在展开时同时把页面滚回顶部，与"滚动折叠后展开"的做法一致（[DP] Snap on Click）。测试：P2-DP-04。
+
+- 用户要求按 `FilterExpressionRestrictions` 控制筛选字段（2026-11-15）：一期只读取了这个注解，界面没有用。现在 core 的 `filterExpressionRules` / `restrictConditions` 决定每个字段允许的操作符、是否可排除、最多几个条件；筛选字段、取值帮助、`useFilterState` 和 `buildListRequest` / `buildAggregateRequest` 都按它过滤，不允许的输入显示提示（中英文）。测试服务的 `PurchaseOrders` 加了限制（`OrderDate` SingleRange、`PurchaseOrderType` SingleValue、`PurchasingGroup` MultiValue、`Description` SearchExpression），违反时返回 400 `FilterExpressionNotAllowed`，所以 P2-LR-19 能证明界面从不发出不允许的条件。测试：P2-LR-19。
 
 ## 6. 未做或有限制的地方（如实说明）
 

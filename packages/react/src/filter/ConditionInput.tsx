@@ -1,7 +1,12 @@
-/** Condition editor of one filter field: tokens with typed conditions, fixed-value multi-select, date range (LR-10, LR-11). */
+/**
+ * Condition editor of one filter field: tokens with typed conditions, fixed-value multi-select, date range (LR-10, LR-11);
+ * the control follows Capabilities.FilterExpressionRestrictions (P2-LR-19): one value, values only, one range, or
+ * search patterns.
+ */
 import { ActionIcon, Select, TagsInput } from '@mantine/core';
-import { DatePickerInput } from '@mantine/dates';
-import { getProperty, isComplete, type Condition, type PropertyModel } from '@rhfan2019/smart-kit-core';
+import { DateInput, DatePickerInput } from '@mantine/dates';
+import { conditionAllowed, filterExpressionRules, getProperty, isComplete, type Condition, type PropertyModel } from '@rhfan2019/smart-kit-core';
+import dayjs from 'dayjs';
 import { Copy } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useService, useSmartKit, useText } from '../context/SmartKitProvider';
@@ -45,6 +50,8 @@ export function ConditionInput(p: ConditionInputProps) {
   const typeName = service.model.entitySets[p.entitySet]!.typeName;
   const prop = getProperty(service.model, typeName, p.path);
   const vl = prop?.valueList;
+  const rules = filterExpressionRules(service.model.entitySets[p.entitySet]!.capabilities.filterExpressions[p.path]);
+  const [rejected, setRejected] = useState(false);
   const [typed, setTyped] = useState('');
   // A range being picked (first date chosen, second not yet): kept locally, not written to the conditions, so that the
   // picker does not treat "equal to the first date" as a finished range.
@@ -59,7 +66,11 @@ export function ConditionInput(p: ConditionInputProps) {
     return { key, text: text === undefined || text === null || text === '' ? undefined : String(text) };
   };
 
-  const common = { label: p.label, error: p.error, required: p.required, id: p.id, withAsterisk: p.required, className: 'sk-filter-field' };
+  const hint = rules.expression && rules.expression !== 'MultiRange' && rules.expression !== 'MultiRangeOrSearchExpression' ? t(`filterBar.only.${rules.expression}`) : undefined;
+  const common = {
+    label: p.label, error: p.error ?? (rejected ? hint : undefined), required: p.required, id: p.id, withAsterisk: p.required, className: 'sk-filter-field',
+    'data-sk-filter-expression': rules.expression,
+  };
 
   if (prop?.edmType === 'Edm.Boolean') {
     const v = p.conditions.find((c) => c.operator === 'EQ')?.values[0];
@@ -74,7 +85,30 @@ export function ConditionInput(p: ConditionInputProps) {
     );
   }
 
-  const range = isDateType(prop) ? rangeOf(p.conditions) : undefined;
+  if (rules.expression === 'SingleValue' && vl?.fixedValues) {
+    const v = p.conditions[0]?.values[0];
+    const data = (fixed.data?.rows ?? []).map(describe).map((d) => ({ value: d.key, label: d.text ? `${d.text} (${d.key})` : d.key }));
+    return (
+      <Select
+        {...common} clearable searchable data={data} value={v === undefined ? null : String(v)} data-sk-single-select
+        onChange={(val) => {
+          const d = data.find((x) => x.value === val);
+          p.onChange(val === null ? [] : [{ operator: 'EQ', values: [val], text: d && d.label !== val ? d.label.replace(/ \([^)]*\)$/, '') : undefined }]);
+        }}
+      />
+    );
+  }
+  if (rules.expression === 'SingleValue' && isDateType(prop)) {
+    const v = p.conditions[0]?.values[0];
+    return (
+      <DateInput
+        {...common} clearable value={v ? String(v).slice(0, 10) : null} valueFormat={t('filterBar.dateFormat')} locale={intlLocale.slice(0, 2)}
+        onChange={(d) => p.onChange(d ? [{ operator: 'EQ', values: [dayjs(d).format('YYYY-MM-DD')] }] : [])}
+      />
+    );
+  }
+
+  const range = isDateType(prop) ? rangeOf(p.conditions) ?? (rules.expression === 'SingleRange' ? [null, null] : undefined) : undefined;
   if (range) {
     return (
       <DatePickerInput
@@ -112,7 +146,8 @@ export function ConditionInput(p: ConditionInputProps) {
       value={tokens}
       searchValue={typed}
       onSearchChange={setTyped}
-      data={suggestions.map(suggestionLabel).filter((l) => !tokens.includes(l))}
+      data={rules.operators.includes('EQ') ? suggestions.map(suggestionLabel).filter((l) => !tokens.includes(l)) : []}
+      maxTags={rules.max}
       acceptValueOnBlur
       clearable
       splitChars={[]}
@@ -126,14 +161,19 @@ export function ConditionInput(p: ConditionInputProps) {
       }
       onChange={(next) => {
         const kept: Condition[] = [];
+        let refused = false;
         for (const token of next) {
           const i = tokens.indexOf(token);
           if (i >= 0) { kept.push(p.conditions[i]!); continue; }
           const s = suggestions.find((d) => suggestionLabel(d) === token);
           if (s) { kept.push({ operator: 'EQ', values: [s.key], text: s.text }); continue; }
-          const c = parseConditionText(token, prop);
-          if (c) kept.push(c);
+          let c = parseConditionText(token, prop);
+          // Search expressions: plain text means "contains" (P2-LR-19).
+          if (c && rules.expression === 'SearchExpression' && c.operator === 'EQ' && !/^=/.test(token.trim())) c = { operator: 'Contains', values: c.values };
+          if (c && conditionAllowed(rules, c)) kept.push(c);
+          else if (c) refused = true;
         }
+        setRejected(refused);
         setTyped('');
         p.onChange(kept);
       }}

@@ -86,4 +86,8 @@ export const p2en = {
   'rating.outOf': '{value} out of {max}',
   'rating.samples': '{count} ratings',
   'filterBar.dateFormat': 'MMM D, YYYY',
+  'filterBar.only.SingleValue': 'Enter one value.',
+  'filterBar.only.MultiValue': 'Enter values only, without ranges or exclusions.',
+  'filterBar.only.SingleRange': 'Enter one value or one range, for example 1...10.',
+  'filterBar.only.SearchExpression': 'Enter a search pattern, for example *text* or text*.',
 } as const;

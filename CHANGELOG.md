@@ -14,6 +14,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 - Dynamic page: key information, layout actions (1280px breakpoint), global action overflow from right to left, truncation when collapsed, F6 / Shift+F6, summary line on phones, letterboxing.
 - `FlexibleColumnLayout` (one to three columns, layout actions, paging) driven by the host's router.
 - Charts: `SimpleChart`, `MicroChart` (bullet, radial, Harvey ball, delta, column, line, comparison) in SVG.
+- Filter fields honour `Capabilities.FilterExpressionRestrictions` (single value, multiple values, single range, search expression): the input, the value help and the request only allow what the service accepts; core exports `filterExpressionRules`, `conditionAllowed`, `restrictConditions` and the type `FilterExpressionRules`.
 - Test services: writes, bound actions, `sap-messages`, the draft service `/odata/purchasing-draft/`, phase-2 annotations; `scripts/trace.mjs` checks that every docs/13 criterion maps to a passing test.
 
 ### Fixed (phase 2)

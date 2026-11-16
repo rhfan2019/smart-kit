@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import {
   buildListRequest, buildModel, buildObjectRequest, buildValueHelpRequest, childPathOf, entityPathOf, parseEntityPath, propertyFilter,
   readQueryString, resolveEntityPath, sourcePath, startOfDayIso, toFilter, toLiteral, toQueryString, OPERATORS, type Condition,
+  conditionAllowed, filterExpressionRules, restrictConditions,
 } from '../src';
 
 const model = buildModel(readFileSync(join(import.meta.dirname, 'fixtures/shop.xml'), 'utf8'));
@@ -119,5 +120,41 @@ describe('query generation (AC-DATA-01)', () => {
     const vl = model.entityTypes['Shop.Product']!.properties.CategoryID!.valueList!;
     const req = buildValueHelpRequest(model, vl, { search: 'pap' });
     expect(toQueryString(model, req)).toBe("$select=ID,Name&$filter=(contains(ID,'pap') or contains(Name,'pap'))&$orderby=ID&$skip=0&$top=50".replace(/ /g, '%20').replace("$select", '$count=true&$select'));
+  });
+});
+
+describe('FilterExpressionRestrictions (P2-LR-19, ANN-40)', () => {
+  const eq = (v: string, exclude = false): Condition => ({ operator: 'EQ', values: [v], exclude });
+  it('P2-LR-19 rules per allowed expression', () => {
+    expect(filterExpressionRules('SingleValue')).toMatchObject({ operators: ['EQ'], exclude: false, max: 1 });
+    expect(filterExpressionRules('MultiValue')).toMatchObject({ operators: ['EQ'], exclude: false });
+    expect(filterExpressionRules('MultiValue').max).toBeUndefined();
+    expect(filterExpressionRules('SingleRange')).toMatchObject({ exclude: false, max: 1 });
+    expect(filterExpressionRules('SingleRange').operators).toContain('BT');
+    expect(filterExpressionRules('SearchExpression').operators).toEqual(['Contains', 'StartsWith', 'EndsWith']);
+    for (const e of [undefined, 'MultiRange', 'MultiRangeOrSearchExpression'] as const) {
+      expect(filterExpressionRules(e)).toMatchObject({ operators: OPERATORS, exclude: true });
+    }
+  });
+  it('P2-LR-19 conditions outside the rules are dropped; single expressions keep the last one', () => {
+    expect(conditionAllowed(filterExpressionRules('MultiValue'), eq('a', true))).toBe(false);
+    expect(conditionAllowed(filterExpressionRules('SingleRange'), { operator: 'NE', values: ['a'] })).toBe(false);
+    expect(restrictConditions('SingleValue', [eq('a'), eq('b')])).toEqual([eq('b')]);
+    expect(restrictConditions('MultiValue', [eq('a'), eq('b', true), { operator: 'GT', values: ['c'] }, eq('d')])).toEqual([eq('a'), eq('d')]);
+    expect(restrictConditions('SearchExpression', [eq('a'), { operator: 'Contains', values: ['x'] }])).toEqual([{ operator: 'Contains', values: ['x'] }]);
+    const all = [eq('a', true), { operator: 'GT' as const, values: ['c'] }];
+    expect(restrictConditions(undefined, all)).toEqual(all);
+    expect(restrictConditions('MultiRange', all)).toEqual(all);
+  });
+  it('P2-LR-19 ANN-40 the list request never sends a condition the service does not allow', () => {
+    const req = buildListRequest(model, ui, {
+      source: { entitySet: 'Products' },
+      columns: [],
+      filters: {
+        Status: [{ operator: 'EQ', values: ['A'] }],
+        ReleaseDate: [{ operator: 'NE', values: ['2026-01-01'] }, { operator: 'BT', values: ['2026-01-01', '2026-02-01'] }, { operator: 'EQ', values: ['2026-03-01'], exclude: true }],
+      },
+    });
+    expect(req.filters?.ReleaseDate).toEqual([{ operator: 'BT', values: ['2026-01-01', '2026-02-01'] }]);
   });
 });

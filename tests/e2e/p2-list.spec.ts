@@ -430,3 +430,43 @@ test('AC-LR-05 date range: two clicks pick a range; the field shows formatted da
     await expect.poll(() => rec.urls.some((u) => u.includes('OrderDate ge 2026-11-02 and OrderDate le 2026-11-13'))).toBe(true);
   }
 });
+
+test('P2-LR-19 ANN-40 FilterExpressionRestrictions shape the filter fields; the service never gets a disallowed filter', async ({ page }) => {
+  const rec = recordOData(page);
+  const statuses: [string, number][] = [];
+  page.on('response', (r) => { if (r.url().includes('/odata/')) statuses.push([decodeURIComponent(r.url()), r.status()]); });
+  await open(page, '/po');
+  await waitForRows(page, 'PurchaseOrders');
+  await showFilters(page);
+  // SingleValue with fixed values: a single select, not tokens
+  const type = page.locator('[data-sk-filter="PurchaseOrderType"]');
+  await expect(type.locator('[data-sk-filter-expression="SingleValue"]').or(type.locator('[data-sk-single-select]')).first()).toBeVisible();
+  await type.locator('input').first().click();
+  await page.getByRole('option', { name: /Standard Order/ }).click();
+  await expect.poll(() => rec.urls.some((u) => u.includes("PurchaseOrderType eq 'NB'"))).toBe(true);
+  // SingleRange date: always a range picker
+  await expect(page.locator('[data-sk-filter="OrderDate"] [data-sk-filter-expression="SingleRange"]')).toHaveCount(1);
+  // MultiValue and SearchExpression fields added with Adapt Filters
+  await page.getByRole('button', { name: /Adapt Filters/ }).click();
+  const dialog = page.getByRole('dialog', { name: 'Adapt Filters' });
+  await dialog.getByRole('checkbox', { name: 'Purchasing Group' }).check();
+  await dialog.getByRole('checkbox', { name: 'Description' }).check();
+  await dialog.getByRole('button', { name: 'OK' }).click();
+  const group = filterInput(page, 'PurchasingGroup');
+  await group.fill('P01...P05');
+  await group.press('Enter');
+  await expect(page.locator('[data-sk-filter="PurchasingGroup"]')).toContainText('Enter values only, without ranges or exclusions.');
+  await expect(page.locator('[data-sk-filter="PurchasingGroup"]')).not.toContainText('P01...P05');
+  await group.fill('P01');
+  await group.press('Enter');
+  await expect(page.locator('[data-sk-filter="PurchasingGroup"]')).toContainText('P01');
+  const desc = filterInput(page, 'Description');
+  await desc.fill('Replenishment');
+  await desc.press('Enter');
+  // live update: no Go button on this page
+  await expect.poll(() => rec.urls.some((u) => u.includes("PurchasingGroup eq 'P01'") && u.includes("contains(Description,'Replenishment')"))).toBe(true);
+  await expect.poll(() => statuses.some(([u, st]) => u.includes("contains(Description,'Replenishment')") && st === 200)).toBe(true);
+  await expect(table(page, 'PurchaseOrders').locator('[data-sk-table-title]')).not.toContainText('(1192)');
+  await evidence(page, 'P2-LR-19');
+  expect(statuses.filter(([, st]) => st === 400)).toEqual([]);
+});

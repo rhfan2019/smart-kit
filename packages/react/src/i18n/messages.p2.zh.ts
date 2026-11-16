@@ -88,4 +88,8 @@ export const p2zh: { [K in keyof typeof p2en]: string } = {
   'rating.outOf': '{value} / {max}',
   'rating.samples': '{count} 个评分',
   'filterBar.dateFormat': 'YYYY年M月D日',
+  'filterBar.only.SingleValue': '只能输入一个值。',
+  'filterBar.only.MultiValue': '只能输入值，不能输入范围或排除条件。',
+  'filterBar.only.SingleRange': '只能输入一个值或一个范围，例如 1...10。',
+  'filterBar.only.SearchExpression': '请输入搜索模式，例如 *文本* 或 文本*。',
 };

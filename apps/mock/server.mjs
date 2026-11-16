@@ -100,6 +100,7 @@ for (const svc of Object.keys(metadataDocs)) {
       countable: caps.CountRestrictions?.Countable?.valueOf() !== false,
       filterable: caps.FilterRestrictions?.Filterable?.valueOf() !== false,
       nonFilterable: paths(caps.FilterRestrictions, 'NonFilterableProperties'),
+      filterExpressions: Object.fromEntries((caps.FilterRestrictions?.FilterExpressionRestrictions ?? []).map((r) => [r.Property?.value ?? r.Property?.path ?? String(r.Property), String(r.AllowedExpressions)])),
       sortable: caps.SortRestrictions?.Sortable?.valueOf() !== false,
       nonSortable: paths(caps.SortRestrictions, 'NonSortableProperties'),
       hasVersion: es.entityType.entityProperties.some((p) => p.name === 'Version'),
@@ -239,6 +240,19 @@ function checkCapabilities(svc, target, params) {
     if (!set.filterable) return ['FilterNotSupported', `Entity set '${target.set}' does not support $filter.`];
     for (const p of referencedProperties(filter))
       if (set.nonFilterable.has(p)) return ['PropertyNotFilterable', `Property '${p}' of entity set '${target.set}' is not filterable (Capabilities.FilterRestrictions/NonFilterableProperties).`];
+    // Capabilities.FilterExpressionRestrictions: reject conditions the property does not allow.
+    const plain = filter.replace(/'(?:[^']|'')*'/g, "''");
+    for (const [prop, kind] of Object.entries(set.filterExpressions)) {
+      const ops = [...plain.matchAll(new RegExp(`(?<![\\w/])${prop}\\s+(eq|ne|gt|ge|lt|le)\\b`, 'g'))].map((m) => m[1]);
+      const fns = [...plain.matchAll(new RegExp(`(contains|startswith|endswith)\\(\\s*${prop}\\b`, 'g'))].length;
+      const negated = new RegExp(`not\\s*\\(?[^()]*\\b${prop}\\b`).test(plain);
+      const bad =
+        (kind === 'SingleValue' && (ops.some((o) => o !== 'eq') || ops.length > 1 || fns || negated)) ||
+        (kind === 'MultiValue' && (ops.some((o) => o !== 'eq') || fns || negated)) ||
+        (kind === 'SingleRange' && (ops.includes('ne') || ops.length > 2 || fns || negated)) ||
+        (kind === 'SearchExpression' && ops.length > 0);
+      if (bad) return ['FilterExpressionNotAllowed', `Property '${prop}' of entity set '${target.set}' allows only ${kind} conditions (Capabilities.FilterRestrictions/FilterExpressionRestrictions).`];
+    }
   }
   const orderby = params.get('$orderby');
   if (orderby !== null) {

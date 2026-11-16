@@ -1,5 +1,5 @@
 /** Headless filter state: conditions, search, visible fields, "Go", mandatory checks (LR-05–LR-09). */
-import { activeFilterPaths, isComplete, isFilterable, type Condition, type FilterState, type Operator } from '@rhfan2019/smart-kit-core';
+import { activeFilterPaths, isComplete, isFilterable, restrictConditions, type Condition, type FilterState, type Operator } from '@rhfan2019/smart-kit-core';
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useMetaModel } from '../context/SmartKitProvider';
 import { usePageState } from '../util/usePageState';
@@ -111,14 +111,16 @@ export function useFilterState(entitySet: string, o: UseFilterStateOptions = {})
 
   const setFilters = useCallback((filters: FilterState) => setState((s) => ({ ...s, filters })), [setState]);
   const setConditions = useCallback(
-    (path: string, conditions: Condition[]) =>
+    (path: string, input: Condition[]) =>
       setState((s) => {
         const filters = { ...s.filters };
+        // Capabilities.FilterExpressionRestrictions (P2-LR-19): only allowed conditions are kept.
+        const conditions = restrictConditions(capabilities.filterExpressions[path], input);
         if (conditions.length) filters[path] = conditions;
         else delete filters[path];
         return { ...s, filters };
       }),
-    [setState],
+    [setState, capabilities],
   );
   const setSearch = useCallback((search: string) => setState((s) => ({ ...s, search })), [setState]);
   const setFields = useCallback((fields: string[]) => setState((s) => ({ ...s, fields })), [setState]);

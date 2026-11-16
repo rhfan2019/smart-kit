@@ -19,6 +19,7 @@
 - `compareDecimal`
 - `compareValues`
 - `ConcurrencyError`
+- `conditionAllowed`
 - `createMessage`
 - `createSessionPageStateStore`
 - `csdlJsonToXml`
@@ -35,6 +36,7 @@
 - `entityPathOf`
 - `errorFromResponse`
 - `fieldPaths`
+- `filterExpressionRules`
 - `filterString`
 - `formatDate`
 - `formatDateTime`
@@ -74,6 +76,7 @@
 - `readQueryString`
 - `resolveEntityPath`
 - `resolvePath`
+- `restrictConditions`
 - `selectAndExpand`
 - `siblingPath`
 - `sourceInfo`
@@ -112,6 +115,7 @@
 - `FetchLike`
 - `FieldModel`
 - `FilterExpression`
+- `FilterExpressionRules`
 - `FilterOptions`
 - `FilterState`
 - `FormatOptions`

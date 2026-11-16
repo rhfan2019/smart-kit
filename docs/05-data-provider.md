@@ -74,6 +74,16 @@ interface Condition {
 type FilterState = Record<string /* 属性路径 */, Condition[]>;
 ```
 
+**允许的表达式（`Capabilities.FilterExpressionRestrictions`，二期，P2-LR-19）**：`filterExpressionRules(expression)` 给出每个字段允许的运算符、能否排除、最多几个条件；`restrictConditions` 去掉不允许的条件（单值、单范围只保留最后一个）。筛选字段、取值帮助、`useFilterState` 和 `buildListRequest` / `buildAggregateRequest` 都用它，所以请求里从不出现服务不接受的条件。
+
+| 表达式 | 运算符 | 排除 | 个数 |
+| --- | --- | --- | --- |
+| `SingleValue` | EQ | 否 | 1 |
+| `MultiValue` | EQ | 否 | 不限 |
+| `SingleRange` | EQ、BT、LT、LE、GT、GE | 否 | 1 |
+| `SearchExpression` | Contains、StartsWith、EndsWith（纯文字按 Contains） | 否 | 不限 |
+| `MultiRange`、`MultiRangeOrSearchExpression`、未注解 | 全部 | 是 | 不限 |
+
 语义：
 - 同一字段：所有包含条件之间是 `or`；排除条件之间是 `and`，每条取反；两部分之间是 `and`。
 - 不同字段之间是 `and`。
