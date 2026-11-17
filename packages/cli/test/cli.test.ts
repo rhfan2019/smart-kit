@@ -27,7 +27,7 @@ function fakeDb(): Queryable {
   const columns = [
     { oid: 1, name: 'order_id', num: 1, notnull: true, typname: 'varchar', typmod: varchar(10), comment: 'Order' },
     { oid: 1, name: 'net_amount', num: 2, notnull: true, typname: 'numeric', typmod: ((15 << 16) | 2) + 4, comment: 'Net Amount' },
-    { oid: 1, name: 'created_at', num: 3, notnull: false, typname: 'timestamptz', typmod: 0, comment: null },
+    { oid: 1, name: 'created_at', num: 3, notnull: false, typname: 'timestamptz', typmod: 0, comment: null, generated: 's' },
     { oid: 1, name: 'payload', num: 4, notnull: false, typname: 'jsonb', typmod: -1, comment: null },
     { oid: 2, name: 'order_id', num: 1, notnull: true, typname: 'varchar', typmod: varchar(10), comment: null },
     { oid: 2, name: 'line_no', num: 2, notnull: true, typname: 'int4', typmod: -1, comment: 'Line' },
@@ -71,6 +71,9 @@ describe('introspection -> CSDL', () => {
     expect(xml).toContain('<NavigationProperty Name="_OrderLine" Type="Collection(Sales.OrderLine)" Partner="_Order"/>');
     expect(xml).toContain('<NavigationPropertyBinding Path="_OrderLine" Target="OrderLines"/>');
     expect(xml).toContain('<Annotations Target="Sales.SalesOrder/NetAmount"><Annotation Term="Common.Label" String="Net Amount"/></Annotations>');
+    // a generated column is computed by the database
+    expect(order.properties.find((p) => p.name === 'CreatedAt')?.computed).toBe(true);
+    expect(xml).toContain('<Annotations Target="Sales.SalesOrder/CreatedAt"><Annotation Term="Core.Computed" Bool="true"/></Annotations>');
     expect(toStorage(m).entitySets.OrderLines).toEqual({ table: 'sales.order_line', columns: { OrderId: 'order_id', LineNo: 'line_no', Quantity: 'quantity' } });
   });
 
@@ -83,6 +86,15 @@ describe('introspection -> CSDL', () => {
     expect(m.entities[0]).toMatchObject({ set: 'Orders', navigations: [{ name: '_Lines', targetType: 'Line' }] });
     expect(m.entities[0]!.properties.map((p) => p.name)).toContain('Amount');
     expect(m.entities[1]!.navigations[0]).toMatchObject({ name: '_Header', targetSet: 'Orders', partner: '_Lines' });
+  });
+});
+
+describe('missing annotation file', () => {
+  it('is reported as a problem, not thrown (a new project runs generate before writing it)', async () => {
+    const { check } = await import('../src/index');
+    const csdl = readFileSync(join(APP, 'generated/purchasing.csdl.xml'), 'utf8');
+    const config = { ...loadConfig(join(APP, 'smart-kit.config.json')), annotations: ['annotations/does-not-exist.xml'] };
+    expect(check(config, csdl)).toEqual([expect.objectContaining({ target: '(file)', message: expect.stringMatching(/not found/) })]);
   });
 });
 

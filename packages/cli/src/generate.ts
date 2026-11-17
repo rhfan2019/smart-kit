@@ -48,6 +48,8 @@ export async function generate(config: LoadedConfig, o: { url?: string; db?: Que
 /** `smart-kit check`: the annotation files against the generated CSDL file on disk. */
 export function check(config: LoadedConfig, csdl = readFileSync(config.path(config.output.csdl), 'utf8')): CheckProblem[] {
   const index = indexCsdl(csdl);
-  const files = (config.annotations ?? []).map((rel) => ({ name: relative(process.cwd(), config.path(rel)), xml: readFileSync(config.path(rel), 'utf8') }));
-  return checkAnnotations(index, files);
+  const files = (config.annotations ?? []).map((rel) => ({ name: relative(process.cwd(), config.path(rel)), path: config.path(rel) }));
+  // a listed annotation file that does not exist yet (a new project) is a problem to report, not a crash
+  const missing: CheckProblem[] = files.filter((f) => !existsSync(f.path)).map((f) => ({ file: f.name, target: '(file)', message: 'annotation file not found (create it, or remove it from "annotations")' }));
+  return [...missing, ...checkAnnotations(index, files.filter((f) => existsSync(f.path)).map((f) => ({ name: f.name, xml: readFileSync(f.path, 'utf8') })))];
 }

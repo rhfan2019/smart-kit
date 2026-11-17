@@ -2,6 +2,23 @@
   "name": "@rhfan2019/smart-kit-core",
   "version": "0.1.0",
   "description": "Metadata model, query generation and data providers for smart-kit (pure TypeScript).",
+  "keywords": [
+    "odata",
+    "odata-v4",
+    "csdl",
+    "annotations",
+    "metadata",
+    "typescript"
+  ],
+  "homepage": "https://github.com/rhfan2019/smart-kit/tree/main/packages/core#readme",
+  "bugs": {
+    "url": "https://github.com/rhfan2019/smart-kit/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rhfan2019/smart-kit.git",
+    "directory": "packages/core"
+  },
   "license": "MIT",
   "type": "module",
   "sideEffects": false,
@@ -9,23 +26,20 @@
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "types": "./src/index.ts",
-      "import": "./src/index.ts"
+      "smart-kit-source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
     }
   },
   "publishConfig": {
-    "exports": {
-      ".": {
-        "types": "./dist/index.d.ts",
-        "import": "./dist/index.js"
-      }
-    }
+    "access": "public"
   },
   "files": [
-    "dist"
+    "dist",
+    "docs"
   ],
   "scripts": {
-    "build": "vite build"
+    "build": "vite build && node ../../scripts/fix-dts-imports.mjs ."
   },
   "dependencies": {
     "@sap-ux/edmx-parser": "0.10.0",

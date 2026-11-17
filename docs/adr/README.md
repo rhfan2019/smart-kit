@@ -32,3 +32,5 @@
 | [026](026-bundling-and-subpaths.md) | 打包规则：用多少付多少；React 包按领域分子路径 | 采纳（P4、P6、P8 待做） |
 | [027](027-odata-server-package.md) | 自写 OData V4 服务：`smart-kit-server`、`smart-kit-cli` 两个新包 | 采纳，未实施 |
 | [028](028-cards.md) | 卡片：与 SAPUI5 同名（`Card`、`Header`、`*Content`），注解驱动，外观对齐集成卡片，不做 manifest | 采纳 |
+| [029](029-npm-publishing.md) | npm 发布：导出条件 `smart-kit-source`、Changesets 四包同步版本、可信发布、打包验证 | 采纳 |
+| [030](030-docs-for-coding-agents.md) | 给 AI 编程工具的文档：随包发布 `docs/` 和 Skill，`smart-kit agents` 写 `AGENTS.md` 索引 | 采纳 |

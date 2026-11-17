@@ -18,7 +18,9 @@ export interface CardProps {
   width?: string;
   /** CSS height; default: the height of the content. */
   height?: string;
+  /** Extra CSS class on the root element. */
   className?: string;
+  /** Inline style, e.g. `{ width: 400 }` (cards fill their container otherwise). */
   style?: CSSProperties;
   /** Accessible description of the card type, e.g. "List card". */
   'aria-roledescription'?: string;

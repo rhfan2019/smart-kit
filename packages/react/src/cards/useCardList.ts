@@ -11,7 +11,9 @@ import { cardFilters, resolveListSettings, type CardAnnotationSettings } from '.
 import { hasListPage, useReportHeaderDefaults, useReportToCard } from './CardContext';
 
 export interface CardDataProps extends CardAnnotationSettings {
+  /** Entity set name as in `$metadata`, e.g. "Orders". */
   entitySet: string;
+  /** Name of the service in `SmartKitProvider` `services`; default: the provider's `defaultService`. */
   service?: string;
   /** Maximum number of items (manifest `maxItems`); default from UI.PresentationVariant/MaxItems, else per card type. */
   maxItems?: number;

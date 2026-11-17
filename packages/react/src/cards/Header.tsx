@@ -15,6 +15,7 @@ export type DeviationIndicator = 'Up' | 'Down' | 'None';
 export interface HeaderProps {
   /** Title; default: from the content's annotations (UI.HeaderInfo). */
   title?: string;
+  /** Subtitle text. */
   subtitle?: string;
   /** Counter text, e.g. "5 of 40"; default: from the content (CD-03). */
   statusText?: string;
@@ -97,8 +98,11 @@ export function Header(props: HeaderProps) {
 }
 
 export interface NumericSideIndicatorProps {
+  /** Title text. */
   title: string;
+  /** The number to show. */
   number?: string;
+  /** Unit or currency code shown with the value. */
   unit?: string;
   /** Colour of the number (sap.m.ValueColor). */
   state?: ValueColor;
@@ -121,7 +125,9 @@ export interface NumericHeaderProps extends Omit<HeaderProps, 'iconSrc' | 'iconI
   number?: string;
   /** Scaling factor shown next to the number, e.g. "K". */
   scale?: string;
+  /** Trend arrow: "Up" | "Down" | "None". */
   trend?: DeviationIndicator;
+  /** Value state colour: "Good" | "Error" | "Critical" | "Neutral" | "None". */
   state?: ValueColor;
   /** Size of the number (default "L"). */
   numberSize?: 'S' | 'L';
@@ -136,6 +142,7 @@ export interface NumericHeaderProps extends Omit<HeaderProps, 'iconSrc' | 'iconI
    * unless given as props.
    */
   entitySet?: string;
+  /** Name of the service in `SmartKitProvider` `services`; default: the provider's `defaultService`. */
   service?: string;
   /** e.g. "com.sap.vocabularies.UI.v1.DataPoint#Spend" or "@UI.DataPoint#Spend". */
   dataPointAnnotationPath?: string;

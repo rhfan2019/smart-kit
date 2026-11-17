@@ -6,12 +6,15 @@ import { useEffect, useState } from 'react';
 import { useText } from '../context/SmartKitProvider';
 
 export interface TableP13nDialogProps {
+  /** Whether the dialog is open (controlled). */
   opened: boolean;
   columns: { id: string; label: string }[];
   visible: string[];
   sort: SortItem[];
   sortable: { path: string; label: string }[];
+  /** Called with the result when the user confirms. */
   onOk(visible: string[], sort: SortItem[], groupBy?: string | null): void;
+  /** Called when the user cancels or closes the dialog. */
   onCancel(): void;
   /** Columns that can be grouped by; the "Group" tab is shown only when given (responsive table). */
   groupable?: { id: string; label: string }[];

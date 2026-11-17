@@ -11,13 +11,19 @@ import { useService, useSmartKit, useText } from '../context/SmartKitProvider';
 import { getPath } from '../field/values';
 
 export interface ChartViewProps {
+  /** Entity set name as in `$metadata`, e.g. "Orders". */
   entitySet: string;
+  /** Name of the service in `SmartKitProvider` `services`; default: the provider's `defaultService`. */
   service?: string;
+  /** Chart from the model (`ui.charts[qualifier]`, from `UI.Chart`). */
   chart: ChartModel;
+  /** Filter state (from `useFilterState` / `SmartFilterBar`), applied to the request. */
   filters: FilterState;
+  /** Search term ($search). */
   search?: string;
   /** null: not executed yet. */
   executed: boolean;
+  /** Toolbar title. */
   title: string;
   /** Toolbar content after the title (content switch). */
   titleAddon?: ReactNode;

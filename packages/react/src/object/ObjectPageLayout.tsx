@@ -47,8 +47,11 @@ export interface SectionItem {
 export interface ObjectPageLayoutProps {
   /** Unique scope for element ids (e.g. the entity type). */
   scope: string;
+  /** Title of the page. */
   heading: ReactNode;
+  /** Text under the title. */
   subheading?: ReactNode;
+  /** Breadcrumb links above the title. */
   breadcrumbs?: ReactNode;
   avatar?: ReactNode;
   collapsedAvatar?: ReactNode;
@@ -58,6 +61,7 @@ export interface ObjectPageLayoutProps {
   /** Message strip between title and header content (OP-17). */
   headerMessage?: ReactNode;
   sections: SectionItem[];
+  /** Insert, replace or remove items (ids as in the model). */
   extend?: ExtendEntry<SectionItem>[];
   navigation?: 'anchor' | 'tabs';
   selectedSection?: string;
@@ -66,7 +70,9 @@ export interface ObjectPageLayoutProps {
   onHeaderExpandedChange?(v: boolean): void;
   headerPinned?: boolean;
   onHeaderPinnedChange?(v: boolean): void;
+  /** Footer toolbar content (e.g. Save / Cancel while editing). */
   footer?: ReactNode;
+  /** Extra CSS class on the root element. */
   className?: string;
   /** Header title extras (DynamicPage): key information, object marker, layout actions, overflowing actions. */
   keyInfo?: ReactNode;

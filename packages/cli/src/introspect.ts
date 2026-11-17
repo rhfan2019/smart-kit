@@ -10,7 +10,7 @@ export interface Queryable {
 }
 
 interface TableRow { oid: number; name: string; comment: string | null; kind: string }
-interface ColumnRow { oid: number; name: string; num: number; notnull: boolean; typname: string; typmod: number; comment: string | null }
+interface ColumnRow { oid: number; name: string; num: number; notnull: boolean; typname: string; typmod: number; comment: string | null; generated?: string; identity?: string }
 interface ConstraintRow { name: string; type: 'p' | 'f'; rel: number; frel: number; key: number[]; fkey: number[] | null; fschema: string | null }
 
 const TABLES = `
@@ -22,7 +22,8 @@ const COLUMNS = `
   select a.attrelid::int as oid, a.attname as name, a.attnum::int as num, a.attnotnull as notnull,
          coalesce(bt.typname, t.typname) as typname,
          case when t.typtype = 'd' then t.typtypmod else a.atttypmod end as typmod,
-         col_description(a.attrelid, a.attnum) as comment
+         col_description(a.attrelid, a.attnum) as comment,
+         a.attgenerated::text as generated, a.attidentity::text as identity
   from pg_catalog.pg_attribute a
   join pg_catalog.pg_class c on c.oid = a.attrelid
   join pg_catalog.pg_namespace n on n.oid = c.relnamespace
@@ -92,6 +93,8 @@ export async function introspect(db: Queryable, config: CliConfig): Promise<GenM
       const p: GenProperty = { name: pc.name ?? pascal(c.name), column: c.name, nullable: !c.notnull, ...(edm ?? { edmType: pc.type! }) };
       if (pc.type) p.edmType = pc.type;
       if (c.comment) p.label = c.comment;
+      // GENERATED ALWAYS AS (…) STORED and identity columns are filled by the database: Core.Computed
+      if (c.generated === 's' || c.identity === 'a' || c.identity === 'd') p.computed = true;
       entity.properties.push(p);
       colName.set(`${t.oid}:${c.num}`, p.name);
     }

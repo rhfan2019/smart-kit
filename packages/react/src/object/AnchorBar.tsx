@@ -13,8 +13,10 @@ export interface AnchorItem {
 }
 
 export interface AnchorBarProps {
+  /** Items to show. */
   items: AnchorItem[];
   active?: string;
+  /** Called with the id of the selected item. */
   onSelect(sectionId: string, subSectionId?: string): void;
   /** Tabs mode: render as tabs (OP-09). */
   tabs?: boolean;

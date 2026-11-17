@@ -37,6 +37,34 @@ const { model, provider } = await loadService({ serviceUrl: '/odata/purchasing/'
 
 导航适配器的写法见 [apps/demo/src/navigation.ts](apps/demo/src/navigation.ts)；主题用根元素的 `data-theme`（`yellow` / `navy` / `sky` / `dark`；`sky` 是接近 SAP Horizon 的浅色配色）和 `data-density`（`comfortable` / `compact`）切换。
 
+## 在其他项目中使用
+
+四个包都发布在 npm（scope `@rhfan2019`，同一版本号）：
+
+```bash
+# 前端（React）
+npm install @rhfan2019/smart-kit @rhfan2019/smart-kit-core react react-dom @mantine/core @mantine/hooks @mantine/dates dayjs @tanstack/react-query
+# 用表格、列表页模板、对象页模板时再装（可选 peer 依赖）
+npm install ag-grid-community ag-grid-react
+# 后端（Node ≥ 24，PostgreSQL）
+npm install @rhfan2019/smart-kit-server @rhfan2019/smart-kit-core
+npm install -D @rhfan2019/smart-kit-cli
+```
+
+- 每个包的 README（npm 页面）有安装、peer 依赖和最小示例；完整用法在包里的 `docs/` 下（随版本发布）。
+- 从零开始（PostgreSQL 表 → `smart-kit generate` → 手写注解 → `smart-kit-server` → 列表页和对象页）：`node_modules/@rhfan2019/smart-kit/skills/smart-kit-getting-started/SKILL.md`。
+- **让 AI 编程工具读到这些文档**：在你的项目里装上 `@rhfan2019/smart-kit-cli`（开发依赖）后执行 `npx smart-kit agents`，它在 `AGENTS.md` 里写入指向 `node_modules` 里各包文档的索引（Codex 等读取），并在 `CLAUDE.md` 里加 `@AGENTS.md`（Claude Code 读取）。升级 smart-kit 后再执行一次（ADR-030）。
+
+## 发版
+
+版本和发布用 [Changesets](https://github.com/changesets/changesets)，四个包同步版本（ADR-029）：
+
+1. 每个要发布的改动：`npx changeset`，选 patch / minor / major，写一句给使用方看的说明，和代码一起提交。
+2. 合并到 `main` 后，GitHub Actions（`.github/workflows/release.yml`）开一个"chore: version packages"拉取请求（改版本号、内部依赖、各包 `CHANGELOG.md`）。
+3. 合并这个拉取请求，工作流构建并用 npm 可信发布（OIDC，带 provenance，不存 token）发布四个包。
+
+本地检查打出来的包：`npm run build && npm run verify:pack`（在仓库外新建项目，从 tgz 安装后逐项检查）。第一次发布和配置可信发布者的步骤见 ADR-029。
+
 ## 开发
 
 需要 Node 24。测试服务是纯 Node（SAP 开源的 `@sap-ux/fe-mockserver-core`，见 `apps/mock`）。

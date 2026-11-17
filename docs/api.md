@@ -457,10 +457,12 @@ AG Grid（`ag-grid-community`、`ag-grid-react`）是可选的 peer 依赖：不
 
 ## `@rhfan2019/smart-kit-cli`
 
-> ADR-027，开发时用的命令 `smart-kit`：`smart-kit generate`（读 PostgreSQL 的表结构，写生成的 CSDL 和存储映射，再检查注解文件）、`smart-kit check`（不连数据库，只检查注解文件）；加 `--strict` 时注解有失效的目标就以退出码 1 结束。配置文件 `smart-kit.config.json` 的写法见 `apps/pg-server/smart-kit.config.json` 和 `packages/cli/src/config.ts`。测试 `packages/server/test/api.test.ts` 比对本节。
+> ADR-027，开发时用的命令 `smart-kit`：`smart-kit generate`（读 PostgreSQL 的表结构，写生成的 CSDL 和存储映射，再检查注解文件）、`smart-kit check`（不连数据库，只检查注解文件）、`smart-kit agents`（在使用方项目的 `AGENTS.md` 里写入指向包内文档的一段索引，并让 `CLAUDE.md` 引用 `AGENTS.md`，ADR-030）；加 `--strict` 时注解有失效的目标就以退出码 1 结束。配置文件 `smart-kit.config.json` 的写法见 `apps/pg-server/smart-kit.config.json` 和 `packages/cli/src/config.ts`。测试 `packages/server/test/api.test.ts` 比对本节。
 
 ### 值（运行时导出）
 
+- `agents`
+- `agentsBlock`
 - `check`
 - `checkAnnotations`
 - `generate`
@@ -474,6 +476,7 @@ AG Grid（`ag-grid-community`、`ag-grid-react`）是可选的 peer 依赖：不
 
 ### 类型
 
+- `AgentsResult`
 - `CheckProblem`
 - `CliConfig`
 - `CsdlIndex`

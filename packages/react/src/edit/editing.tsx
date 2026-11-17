@@ -62,11 +62,17 @@ export function createFields(model: MetaModel, typeName: string, lineItem: Field
 }
 
 export interface CreateDialogProps {
+  /** Whether the dialog is open (controlled). */
   opened: boolean;
+  /** Called when the dialog closes. */
   onClose(): void;
+  /** Dialog title, e.g. "Create Purchase Order". */
   title: string;
+  /** Name of the service in `SmartKitProvider` `services`; default: the provider's `defaultService`. */
   service?: string;
+  /** Full name of the entity type, e.g. "Shop.Order" (`model.entitySets[set].typeName`). */
   typeName: string;
+  /** Fields asked in the dialog (usually from `createFields(...)`: keys that are not computed and mandatory properties). */
   fields: FieldModel[];
   /** Creates the object from the values; throws to keep the dialog open (messages are shown in the dialog). */
   onCreate(values: Row): Promise<void>;

@@ -10,6 +10,8 @@ export interface GenProperty {
   scale?: number | 'variable';
   /** From the column comment: becomes Common.Label. */
   label?: string;
+  /** Generated or identity column: becomes Core.Computed (not offered for create or edit). */
+  computed?: boolean;
 }
 
 export interface GenNavigation {

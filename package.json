@@ -31,24 +31,30 @@
     "samples": "node scripts/export-samples.mjs",
     "storybook": "npm run storybook -w storybook",
     "build-storybook": "npm run build -w storybook",
-    "rename-scope": "node scripts/rename-scope.mjs"
+    "rename-scope": "node scripts/rename-scope.mjs",
+    "verify:pack": "node scripts/verify-pack.mjs",
+    "check:docs": "node scripts/check-docs.mjs",
+    "changeset": "changeset",
+    "version-packages": "changeset version && npm install --package-lock-only --no-audit --no-fund",
+    "release": "npm run build && changeset publish"
   },
   "devDependencies": {
+    "@axe-core/playwright": "4.14.0",
+    "@changesets/cli": "3.0.3",
     "@eslint/js": "10.0.1",
     "@playwright/test": "1.65.1",
-    "@axe-core/playwright": "4.14.0",
+    "@testing-library/dom": "10.4.2",
+    "@testing-library/jest-dom": "7.0.1",
+    "@testing-library/react": "16.3.3",
+    "@testing-library/user-event": "14.6.10",
     "@types/node": "26.6.6",
     "eslint": "10.15.0",
     "eslint-plugin-react-hooks": "7.1.1",
     "globals": "17.14.0",
+    "jsdom": "31.0.1",
+    "tsx": "4.23.15",
     "typescript": "6.0.3",
     "typescript-eslint": "8.72.2",
-    "vitest": "5.1.0",
-    "jsdom": "31.0.1",
-    "@testing-library/react": "16.3.3",
-    "@testing-library/user-event": "14.6.10",
-    "@testing-library/dom": "10.4.2",
-    "@testing-library/jest-dom": "7.0.1",
-    "tsx": "4.23.15"
+    "vitest": "5.1.0"
   }
 }

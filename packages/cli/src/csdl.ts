@@ -53,7 +53,13 @@ export function toCsdl(m: GenModel, source: string): string {
   out.push('      </EntityContainer>');
   for (const e of m.entities) {
     if (e.description) out.push(`      <Annotations Target="${esc(`${ns}.${e.type}`)}"><Annotation Term="Core.Description"${attrs({ String: e.description })}/></Annotations>`);
-    for (const p of e.properties) if (p.label) out.push(`      <Annotations Target="${esc(`${ns}.${e.type}/${p.name}`)}"><Annotation Term="Common.Label"${attrs({ String: p.label })}/></Annotations>`);
+    for (const p of e.properties) {
+      const terms = [
+        ...(p.label ? [`<Annotation Term="Common.Label"${attrs({ String: p.label })}/>`] : []),
+        ...(p.computed ? ['<Annotation Term="Core.Computed" Bool="true"/>'] : []),
+      ];
+      if (terms.length) out.push(`      <Annotations Target="${esc(`${ns}.${e.type}/${p.name}`)}">${terms.join('')}</Annotations>`);
+    }
   }
   out.push('    </Schema>', '  </edmx:DataServices>', '</edmx:Edmx>', '');
   return out.join('\n');

@@ -26,6 +26,7 @@ export interface SmartFilterBarProps {
   actions?: ReactNode;
   /** Replace the default parts: write <SmartFilterBar.Search/>, <SmartFilterBar.Fields/>, <SmartFilterBar.Actions/>. */
   children?: ReactNode;
+  /** Extra CSS class on the root element. */
   className?: string;
 }
 

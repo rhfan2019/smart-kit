@@ -1,12 +1,17 @@
+import { defaultClientConditions, defaultServerConditions } from 'vite';
 import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
+  // workspace packages from their sources (exports condition `smart-kit-source`, ADR-029); projects inherit this
+  resolve: { conditions: ['smart-kit-source', ...defaultClientConditions] },
+  ssr: { resolve: { conditions: ['smart-kit-source', ...defaultServerConditions] } },
   test: {
     // The JSON results feed `npm run trace` (docs/13: every criterion must map to a passing test).
     reporters: ['default', 'json'],
     outputFile: { json: 'reports/unit-results.json' },
     projects: [
       {
+        extends: true,
         test: {
           name: 'core',
           include: ['packages/core/test/**/*.test.ts'],
@@ -14,6 +19,7 @@ export default defineConfig({
         },
       },
       {
+        extends: true,
         test: {
           name: 'react',
           include: ['packages/react/test/**/*.test.{ts,tsx}'],
@@ -22,6 +28,7 @@ export default defineConfig({
         },
       },
       {
+        extends: true,
         test: {
           name: 'server',
           include: ['packages/server/test/**/*.test.ts', 'packages/cli/test/**/*.test.ts'],
@@ -33,6 +40,7 @@ export default defineConfig({
         },
       },
       {
+        extends: true,
         test: {
           name: 'repo',
           include: ['tests/unit/**/*.test.ts'],

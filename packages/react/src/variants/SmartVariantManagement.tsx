@@ -7,6 +7,7 @@ import { useText } from '../context/SmartKitProvider';
 import type { VariantsApi } from './useVariants';
 
 export interface SmartVariantManagementProps {
+  /** Result of `useVariants(...)`. */
   variants: VariantsApi;
   /** Current page content, used for "Modified" and saving. */
   content: VariantContent;

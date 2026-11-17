@@ -6,13 +6,18 @@ import { useEffect, useMemo, useState } from 'react';
 import { useMetaModel, useText } from '../context/SmartKitProvider';
 
 export interface AdaptFiltersDialogProps {
+  /** Whether the dialog is open (controlled). */
   opened: boolean;
+  /** Entity set name as in `$metadata`, e.g. "Orders". */
   entitySet: string;
+  /** Name of the service in `SmartKitProvider` `services`; default: the provider's `defaultService`. */
   service?: string;
   fields: string[];
   /** Fields that cannot be hidden (they carry a condition or are mandatory). */
   locked: string[];
+  /** Called with the result when the user confirms. */
   onOk(fields: string[]): void;
+  /** Called when the user cancels or closes the dialog. */
   onCancel(): void;
 }
 

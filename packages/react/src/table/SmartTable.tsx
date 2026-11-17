@@ -86,19 +86,25 @@ export interface TableQuery {
 }
 
 export interface SmartTableProps {
+  /** Name of the service in `SmartKitProvider` `services`; default: the provider's `defaultService`. */
   service?: string;
   /** List: entity set. */
   entitySet?: string;
   /** Sub-table: parent entity path and collection navigation. */
   parent?: { path: string; navigation: string };
+  /** Table type: "grid" (AG Grid, default for lists), "responsive" (list-like rows), "auto" (responsive below 600 px; default for sub-tables). */
   mode?: 'grid' | 'auto' | 'responsive';
   /** Applied filters; null means "not executed yet" (shows "To start, set the relevant filters."). Undefined loads without filters. */
   query?: TableQuery | null;
   /** Visible column ids in order (controlled) */
   columns?: string[];
+  /** Called with the visible column ids after personalization. */
   onColumnsChange?(ids: string[]): void;
+  /** Sort order (controlled); default from `UI.PresentationVariant/SortOrder`. */
   sort?: SortItem[];
+  /** Called with the new sort order. */
   onSortChange?(sort: SortItem[]): void;
+  /** Called with the selected rows. */
   onSelectionChange?(rows: Row[]): void;
   /** Called when the total count becomes known (object page tab counts). */
   onCountChange?(count: number | undefined): void;
@@ -106,20 +112,25 @@ export interface SmartTableProps {
   onRowNavigate?(row: Row, path: string): void;
   /** Whether rows navigate (shows the chevron). Defaults to the adapter's hasObjectPage. */
   navigable?: boolean;
+  /** Insert, replace or remove columns and toolbar actions (ids as in the model, e.g. "DataField::GrossAmount"). */
   extend?: TableExtendEntry[];
+  /** Table title in the toolbar; default `UI.HeaderInfo/TypeNamePlural`, with the row count. */
   title?: string;
   /** Sub-tables: initial rows (default 10) and growth (default 20). */
   growingThreshold?: number;
+  /** Rows loaded per "More" (default 20). */
   growBy?: number;
   /** Key for restoring sort, columns, scroll and selection on back navigation. */
   pageKey?: string;
   /** Grey out the table (filters changed in manual mode). */
   overlay?: boolean;
+  /** Maximum rows of the Excel export (default 10 000). */
   exportLimit?: number;
   /** Search field in the toolbar (sub-tables, when searchable). */
   showSearch?: boolean;
   /** Replace the default parts: <SmartTable.Toolbar> etc. */
   children?: ReactNode;
+  /** Extra CSS class on the root element. */
   className?: string;
   /** Menu buttons for similar actions. */
   actionGroups?: ActionGroup[];

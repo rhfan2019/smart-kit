@@ -23,14 +23,20 @@ describe('public API (AC-Q-03, P2-GEN-07)', () => {
 
 describe('subpath entries (ADR-026)', () => {
   const pkg = JSON.parse(readFileSync(join(import.meta.dirname, '../package.json'), 'utf8')) as {
-    exports: Record<string, unknown>;
-    publishConfig: { exports: Record<string, unknown> };
+    exports: Record<string, Record<string, string>>;
   };
   const subpaths = Object.keys(pkg.exports).filter((k) => k !== '.' && k !== './styles.css');
 
-  it('every subpath has a source entry and a published entry', () => {
+  it('every subpath has a source entry and a published entry (ADR-029)', () => {
     expect(subpaths.length).toBeGreaterThan(0);
-    expect(Object.keys(pkg.publishConfig.exports).sort()).toEqual(Object.keys(pkg.exports).sort());
+    for (const sub of subpaths) {
+      const name = sub.slice(2);
+      expect(pkg.exports[sub]).toEqual({
+        'smart-kit-source': `./src/entries/${name}.ts`,
+        types: `./dist/entries/${name}.d.ts`,
+        import: `./dist/entries/${name}.js`,
+      });
+    }
   });
 
   it('the subpaths together export exactly what the root entry exports, each name once', async () => {

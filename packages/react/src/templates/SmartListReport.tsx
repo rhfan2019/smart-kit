@@ -26,7 +26,9 @@ export interface ListContentItem {
 }
 
 export interface SmartListReportProps {
+  /** Entity set of the list, e.g. "Orders". Required. Columns come from `UI.LineItem`, filters from `UI.SelectionFields`, the title from `UI.HeaderInfo/TypeNamePlural`. */
   entitySet: string;
+  /** Name of the service in `SmartKitProvider` `services`; default: the provider's `defaultService`. */
   service?: string;
   /** Key for variants and state restoration; defaults to the entity set. */
   pageKey?: string;
@@ -37,10 +39,15 @@ export interface SmartListReportProps {
   liveMode?: boolean;
   /** Execute the standard variant on load (default true). */
   autoExecute?: boolean;
+  /** Page title; default `UI.HeaderInfo/TypeNamePlural` of the entity type. */
   title?: string;
+  /** Extra buttons in the page header toolbar. */
   headerActions?: ReactNode;
+  /** Insert, replace or remove filter fields (ids are the property paths). */
   filterExtend?: ExtendEntry<FilterFieldItem>[];
+  /** Insert, replace or remove columns and toolbar actions (`TableExtendEntry`, ids as in the model). */
   tableExtend?: TableExtendEntry[];
+  /** Row press; receives the row and its entity path. Default: `NavigationAdapter.toObject` when the adapter has an object page for the set. */
   onRowNavigate?(row: Row, path: string): void;
   /** Content between header and table (e.g. KPI cards). */
   beforeTable?: ReactNode;
@@ -50,6 +57,7 @@ export interface SmartListReportProps {
    * SAP reference app; the header collapses while the table is scrolled down and expands at the top, unless pinned.
    */
   filterToggle?: boolean;
+  /** Extra CSS class on the root element. */
   className?: string;
   /**
    * Multiple views (LR Multiple Views) from the qualified UI.SelectionPresentationVariant annotations:

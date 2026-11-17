@@ -2,32 +2,48 @@
   "name": "@rhfan2019/smart-kit-server",
   "version": "0.1.0",
   "description": "A limited OData V4 service on PostgreSQL for smart-kit: URL -> AST -> query plan -> SQL (Node only).",
+  "keywords": [
+    "odata",
+    "odata-v4",
+    "postgresql",
+    "server",
+    "rest",
+    "kysely"
+  ],
+  "homepage": "https://github.com/rhfan2019/smart-kit/tree/main/packages/server#readme",
+  "bugs": {
+    "url": "https://github.com/rhfan2019/smart-kit/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rhfan2019/smart-kit.git",
+    "directory": "packages/server"
+  },
   "license": "MIT",
   "type": "module",
   "sideEffects": false,
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
-  "engines": { "node": ">=24" },
+  "engines": {
+    "node": ">=24"
+  },
   "exports": {
     ".": {
-      "types": "./src/index.ts",
-      "import": "./src/index.ts"
+      "smart-kit-source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
     }
   },
   "publishConfig": {
-    "exports": {
-      ".": {
-        "types": "./dist/index.d.ts",
-        "import": "./dist/index.js"
-      }
-    }
+    "access": "public"
   },
   "files": [
     "dist",
-    "NOTICE"
+    "NOTICE",
+    "docs"
   ],
   "scripts": {
-    "build": "vite build"
+    "build": "vite build && node ../../scripts/fix-dts-imports.mjs ."
   },
   "dependencies": {
     "@rhfan2019/smart-kit-core": "0.1.0",

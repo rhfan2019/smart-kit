@@ -5,3 +5,4 @@ export { toCsdl, toStorage } from './csdl';
 export { indexCsdl, checkAnnotations, type CheckProblem, type CsdlIndex } from './check';
 export { generate, check, type GenerateResult } from './generate';
 export { pascal, plural, type GenModel, type GenEntity, type GenProperty, type GenNavigation } from './model';
+export { agents, agentsBlock, type AgentsResult } from './agents';

@@ -29,7 +29,9 @@ export interface DynamicPageProps {
   heading: ReactNode;
   /** Replaces the heading area (e.g. a variant management control). */
   headingContent?: ReactNode;
+  /** Text under the title. */
   subheading?: ReactNode;
+  /** Breadcrumb links above the title. */
   breadcrumbs?: ReactNode;
   /** Shown left of the title while the header is collapsed (object page image). */
   collapsedAvatar?: ReactNode;
@@ -52,7 +54,9 @@ export interface DynamicPageProps {
   header?: ReactNode;
   /** Sticky navigation under the header (anchor bar). */
   navigation?: ReactNode;
+  /** Footer toolbar content (e.g. Save / Cancel while editing). */
   footer?: ReactNode;
+  /** Content. */
   children?: ReactNode;
   headerExpanded?: boolean;
   defaultHeaderExpanded?: boolean;
@@ -65,6 +69,7 @@ export interface DynamicPageProps {
   filterToggle?: boolean;
   /** 'fill' gives the content the remaining height (grid tables); 'flow' lets the page scroll. */
   layout?: 'fill' | 'flow';
+  /** Extra CSS class on the root element. */
   className?: string;
   'data-testid'?: string;
 }

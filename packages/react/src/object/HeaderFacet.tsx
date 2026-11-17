@@ -14,14 +14,19 @@ import { CriticalityIcon, SmartField } from '../field/SmartField';
 import { fieldValue, getPath, resolveRef } from '../field/values';
 
 export interface HeaderFacetProps {
+  /** Header facet model (`ui.headerFacets[i]`). */
   facet?: HeaderFacetModel;
+  /** Full name of the entity type, e.g. "Shop.Order" (`model.entitySets[set].typeName`). */
   typeName: string;
+  /** The entity row as read from the service (`Row`, property paths as keys, expanded navigations as nested objects); undefined while loading. */
   row: Row | undefined;
+  /** Name of the service in `SmartKitProvider` `services`; default: the provider's `defaultService`. */
   service?: string;
   /** Entity path of the object (micro charts over a collection navigation). */
   path?: string;
   /** Plain text facet or custom content. */
   title?: ReactNode;
+  /** Content. */
   children?: ReactNode;
 }
 
