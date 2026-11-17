@@ -427,6 +427,7 @@
             </PropertyValue>
             <PropertyValue Property="Visualizations"><Collection><AnnotationPath>@UI.LineItem</AnnotationPath></Collection></PropertyValue>
             <PropertyValue Property="RequestAtLeast"><Collection><PropertyPath>Currency</PropertyPath></Collection></PropertyValue>
+            <PropertyValue Property="Total"><Collection><PropertyPath>NetAmount</PropertyPath></Collection></PropertyValue>
           </Record>
         </Annotation>
         <Annotation Term="UI.SelectionVariant">

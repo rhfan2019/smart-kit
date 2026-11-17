@@ -6,6 +6,7 @@ import { deriveColumns, deriveUi } from './derive';
 import {
   MODEL_VERSION,
   type ActionModel,
+  type AggregationModel,
   type CapabilityModel,
   type ChartModel,
   type CriticalityCalculationModel,
@@ -118,6 +119,9 @@ export function fromConverted(c: ConvertedMetadata, diagnostics: string[] = []):
     const bindings: Record<string, string> = {};
     for (const [path, target] of Object.entries((es.navigationPropertyBinding ?? {}) as Any)) bindings[path] = (target as Any).name;
     const { capabilities, navigationCapabilities } = buildCapabilities(es.annotations?.Capabilities ?? {}, es.annotations?.Core ?? {});
+    // Aggregation.ApplySupported may annotate the entity set or its type (Aggregation vocabulary).
+    const apply = es.annotations?.Aggregation?.ApplySupported ?? raw[es.entityTypeName ?? es.entityType?.fullyQualifiedName]?.annotations?.Aggregation?.ApplySupported;
+    if (apply) capabilities.aggregation = aggregationFrom(apply);
     entitySets[es.name] = { name: es.name, typeName: es.entityTypeName ?? es.entityType?.fullyQualifiedName, navigationBindings: bindings, capabilities, navigationCapabilities };
     // Core.OptimisticConcurrency applies to entity sets (Core vocabulary); the ETag property is kept on the type.
     const concurrency = es.annotations?.Core?.OptimisticConcurrency;
@@ -288,6 +292,17 @@ function restrictions(cap: Any): Partial<CapabilityModel> {
   if (cap.UpdateRestrictions) out.updatable = bool(cap.UpdateRestrictions.Updatable, true);
   if (cap.DeleteRestrictions) out.deletable = bool(cap.DeleteRestrictions.Deletable, true);
   return out;
+}
+
+function aggregationFrom(a: Any): AggregationModel {
+  const strings = (v: unknown) => ((v ?? []) as unknown[]).map((x) => str(x) ?? pathOf(x)).filter((x): x is string => Boolean(x));
+  return {
+    transformations: strings(a.Transformations),
+    groupable: ((a.GroupableProperties ?? []) as unknown[]).map(pathOf).filter((x): x is string => Boolean(x)),
+    aggregatable: ((a.AggregatableProperties ?? []) as Any[])
+      .map((r) => ({ path: pathOf(r?.Property) ?? '', methods: strings(r?.SupportedAggregationMethods) }))
+      .filter((r) => r.path),
+  };
 }
 
 export const DEFAULT_CAPABILITIES: CapabilityModel = {
@@ -606,9 +621,11 @@ function presentationFrom(pv: Any | undefined): { presentation: PresentationMode
     .map((s) => ({ path: pathOf(s.Property) ?? '', descending: bool(s.Descending, false) }))
     .filter((s) => s.path);
   const requestAtLeast = ((pv?.RequestAtLeast ?? []) as unknown[]).map(pathOf).filter(Boolean) as string[];
+  const groupBy = ((pv?.GroupBy ?? []) as unknown[]).map(pathOf).filter(Boolean) as string[];
+  const total = ((pv?.Total ?? []) as unknown[]).map(pathOf).filter(Boolean) as string[];
   const viz = ((pv?.Visualizations ?? []) as unknown[]).map((v) => str((v as Any)?.value) ?? pathOf(v)).find((v) => v && v.includes('LineItem'));
   const lineItemQualifier = viz?.includes('#') ? viz.split('#')[1] : undefined;
-  return { presentation: { sortOrder, requestAtLeast }, lineItemQualifier };
+  return { presentation: { sortOrder, requestAtLeast, groupBy, total }, lineItemQualifier };
 }
 
 const RANGE_OPTIONS = new Set(['EQ', 'NE', 'BT', 'NB', 'LT', 'LE', 'GT', 'GE']);
@@ -753,8 +770,7 @@ function cardAnnotations(fullName: string, ui: Any, ann: Any, lineItem: ColumnMo
         return v === undefined ? undefined : v.includes('#') ? v.split('#')[1]! : '';
       };
       const max = Number(pv?.MaxItems?.valueOf?.() ?? pv?.MaxItems);
-      const groupBy = ((pv?.GroupBy ?? []) as unknown[]).map(pathOf).filter((x): x is string => Boolean(x));
-      presentationVariants[q] = { presentation, maxItems: Number.isFinite(max) && max > 0 ? max : undefined, lineItemQualifier: qual('LineItem'), chartQualifier: qual('Chart'), groupBy };
+      presentationVariants[q] = { presentation, maxItems: Number.isFinite(max) && max > 0 ? max : undefined, lineItemQualifier: qual('LineItem'), chartQualifier: qual('Chart'), groupBy: presentation.groupBy };
     } else if ((q = qualifierOf(key, 'SelectionVariant')) !== undefined) {
       selectionVariants[q] = selectionVariantFrom(ui[key]);
     } else if ((q = qualifierOf(key, 'DataPoint')) !== undefined) {

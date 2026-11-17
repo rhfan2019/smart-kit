@@ -388,7 +388,7 @@ test.describe('capabilities and query shapes', () => {
     const rec = recordOData(page);
     await open(page, MANUAL);
     await waitForRows(page, 'PurchaseOrders');
-    const list = rec.urls.find((u) => u.startsWith('/odata/purchasing/PurchaseOrders?'))!;
+    const list = rec.urls.find((u) => u.startsWith('/odata/purchasing/PurchaseOrders?') && !u.includes('$apply'))!;
     // Q-01/Q-02: only visible columns and their companions; texts through $expand($select)
     expect(list).toContain('$select=PurchaseOrder,Supplier,OrderDate,Status,StatusCriticality,NetAmount,Currency,DeliveredPercent,PurchaseOrderType');
     expect(list).toContain('$expand=_Supplier($select=SupplierName,Rating,RatingCount),_Status($select=Name),_PurchaseOrderType($select=Name)');

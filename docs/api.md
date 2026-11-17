@@ -11,15 +11,20 @@
 - `buildListRequest`
 - `buildModel`
 - `buildObjectRequest`
+- `buildTotalsRequest`
 - `buildValueHelpRequest`
 - `calculateCriticality`
 - `calculateTrend`
+- `canGroup`
+- `canSubtotal`
+- `canTotal`
 - `capabilitiesFor`
 - `chartExpand`
 - `chartFields`
 - `chartIsSeries`
 - `chartSeriesSelect`
 - `childPathOf`
+- `collectTotals`
 - `companionPaths`
 - `compareDecimal`
 - `compareValues`
@@ -52,6 +57,7 @@
 - `getEntityType`
 - `getProperty`
 - `getUi`
+- `groupKey`
 - `highestSeverity`
 - `humanize`
 - `isAbortError`
@@ -63,6 +69,7 @@
 - `LiteralError`
 - `loadService`
 - `matches`
+- `MAX_GROUP_VALUES`
 - `MemoryPageStateStore`
 - `MemoryProvider`
 - `MemoryVariantStore`
@@ -96,12 +103,15 @@
 - `toFilter`
 - `toLiteral`
 - `toQueryString`
+- `TOTAL_COUNT_ALIAS`
+- `unitPathOf`
 - `UnknownEntitySetError`
 
 ### 类型
 
 - `ActionModel`
 - `AggregateRequestOptions`
+- `AggregationModel`
 - `BuildModelOptions`
 - `CapabilityModel`
 - `ChartModel`
@@ -167,6 +177,9 @@
 - `SubSectionContent`
 - `SubSectionModel`
 - `TextArrangement`
+- `TotalAmount`
+- `TotalsEntry`
+- `TotalsRequestOptions`
 - `TrendCalculationModel`
 - `ValueHelpRequestOptions`
 - `ValueListModel`

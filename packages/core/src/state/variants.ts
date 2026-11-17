@@ -11,6 +11,10 @@ export interface VariantContent {
   /** Visible column ids, in order. */
   columns?: string[];
   sort?: SortItem[];
+  /** Group property of the table (responsive table, docs/23); null: explicitly not grouped. */
+  groupBy?: string | null;
+  /** Properties whose totals are shown (docs/23). */
+  totals?: string[];
   /** Free-form extra state of custom content. */
   custom?: Record<string, unknown>;
 }

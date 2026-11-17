@@ -34,3 +34,4 @@
 | [028](028-cards.md) | 卡片：与 SAPUI5 同名（`Card`、`Header`、`*Content`），注解驱动，外观对齐集成卡片，不做 manifest | 采纳 |
 | [029](029-npm-publishing.md) | npm 发布：导出条件 `smart-kit-source`、Changesets 四包同步版本、可信发布、打包验证 | 采纳 |
 | [030](030-docs-for-coding-agents.md) | 给 AI 编程工具的文档：随包发布 `docs/` 和 Skill，`smart-kit agents` 写 `AGENTS.md` 索引 | 采纳 |
+| [031](031-grouping-and-totals.md) | 列表的分组、组小计和总计由服务端 `$apply` 计算；网格表格只有总计 | 采纳 |

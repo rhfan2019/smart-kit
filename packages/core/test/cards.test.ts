@@ -18,7 +18,7 @@ describe('card annotations (docs/20)', () => {
     expect(po.lineItems['']).toBe(po.lineItem);
     expect(po.lineItems.CardList!.map((f) => f.path ?? f.dataPoint?.value)).toEqual(['Description', '_Supplier/SupplierName', 'NetAmount', 'Status', 'PurchaseOrder', 'OrderDate']);
     expect(po.presentationVariants.CardTable!.groupBy).toEqual(['Status']);
-    expect(po.presentationVariants.CardLarge).toEqual({ presentation: { sortOrder: [{ path: 'NetAmount', descending: true }], requestAtLeast: [] }, maxItems: 5, lineItemQualifier: 'CardList', chartQualifier: undefined, groupBy: [] });
+    expect(po.presentationVariants.CardLarge).toEqual({ presentation: { sortOrder: [{ path: 'NetAmount', descending: true }], requestAtLeast: [], groupBy: [], total: [] }, maxItems: 5, lineItemQualifier: 'CardList', chartQualifier: undefined, groupBy: [] });
     expect(po.selectionVariants.CardNew).toEqual([{ path: 'Status', exclude: false, operator: 'EQ', values: ['NEW'] }]);
     expect(po.dataPoints.CardAmount).toMatchObject({ value: 'NetAmount', criticality: { path: 'StatusCriticality' } });
     expect(po.fieldGroups.General!.fields.length).toBeGreaterThan(2);

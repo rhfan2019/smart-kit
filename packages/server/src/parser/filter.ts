@@ -34,11 +34,12 @@ const CompareOpTok = createToken({ name: 'CompareOp', pattern: /(?:eq|ne|gt|ge|l
 const True = keyword('True', 'true');
 const False = keyword('False', 'false');
 const Null = keyword('Null', 'null');
+const DollarCount = createToken({ name: 'DollarCount', pattern: /\$count(?![A-Za-z0-9_])/ });
 
 const TOKENS: TokenType[] = [
   WhiteSpace, LParen, RParen, Comma, Slash, Colon, StringLit,
   GuidLit, DateTimeOffsetLit, DateLit, TimeOfDayLit, NumberLit,
-  And, Or, Not, In, CompareOpTok, True, False, Null, Identifier,
+  And, Or, Not, In, CompareOpTok, True, False, Null, DollarCount, Identifier,
 ];
 const FilterLexer = new Lexer(TOKENS, { positionTracking: 'onlyOffset', ensureOptimizations: false });
 
@@ -191,16 +192,34 @@ class FilterParser extends EmbeddedActionsParser {
     this.AT_LEAST_ONE_SEP({
       SEP: Comma,
       DEF: () => {
-        const path = this.SUBRULE(this.plainPath);
-        const withWord = this.CONSUME(Identifier).image;
-        const method = this.CONSUME2(Identifier).image;
-        const asWord = this.CONSUME3(Identifier).image;
-        const alias = this.CONSUME4(Identifier).image;
-        this.ACTION(() => {
-          if (withWord !== 'with' || asWord !== 'as') throw badRequest('InvalidApply', `Expected "<path> with <method> as <alias>" in aggregate(), got "${withWord} ${method} ${asWord}".`);
-          if (!AGGREGATE_METHODS.has(method as AggregateMethod)) throw notImplemented(`Aggregation method '${method}' is not supported.`);
-          items.push({ path, method: method as AggregateMethod, alias });
-        });
+        this.OR([
+          {
+            // `$count as alias`: number of rows of the group (OData Data Aggregation §3.1.4).
+            ALT: () => {
+              this.CONSUME(DollarCount);
+              const asWord = this.CONSUME5(Identifier).image;
+              const alias = this.CONSUME6(Identifier).image;
+              this.ACTION(() => {
+                if (asWord !== 'as') throw badRequest('InvalidApply', `Expected "$count as <alias>" in aggregate(), got "$count ${asWord}".`);
+                items.push({ path: [], method: 'count', alias });
+              });
+            },
+          },
+          {
+            ALT: () => {
+              const path = this.SUBRULE(this.plainPath);
+              const withWord = this.CONSUME(Identifier).image;
+              const method = this.CONSUME2(Identifier).image;
+              const asWord = this.CONSUME3(Identifier).image;
+              const alias = this.CONSUME4(Identifier).image;
+              this.ACTION(() => {
+                if (withWord !== 'with' || asWord !== 'as') throw badRequest('InvalidApply', `Expected "<path> with <method> as <alias>" in aggregate(), got "${withWord} ${method} ${asWord}".`);
+                if (!AGGREGATE_METHODS.has(method as AggregateMethod)) throw notImplemented(`Aggregation method '${method}' is not supported.`);
+                items.push({ path, method: method as AggregateMethod, alias });
+              });
+            },
+          },
+        ]);
       },
     });
     return items;

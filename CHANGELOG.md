@@ -5,6 +5,14 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+### Added (grouping, subtotals and totals, ADR-031)
+
+- Tables: a "Totals" tab in the view settings (columns from `Aggregation.ApplySupported` `AggregatableProperties`, default from `UI.PresentationVariant/Total`); grid tables show a pinned totals row, responsive tables a sticky totals row; amounts per currency or unit, computed by the service for the current filters and search (`$apply`), not from the loaded rows.
+- Responsive tables: group headers show the row count and the subtotals of the group; only `GroupableProperties` can be grouped by (all sortable columns without `Aggregation.ApplySupported`); default grouping from `UI.PresentationVariant/GroupBy`; subtotals are requested only for the groups loaded so far, at most 50 per request.
+- `SmartTable` props `groupBy`, `onGroupByChange`, `totals`, `onTotalsChange`, `presentation`; `TableP13nDialog` props `totalable`, `totals`; `ResponsiveTable` props `groupSummary`, `totals`; `VariantContent.groupBy` and `totals` (the list report stores them in variants).
+- core: `buildTotalsRequest`, `collectTotals`, `canTotal`, `canGroup`, `canSubtotal`, `unitPathOf`, `groupKey`, `TOTAL_COUNT_ALIAS`, `MAX_GROUP_VALUES`, types `AggregationModel`, `TotalsEntry`, `TotalAmount`, `TotalsRequestOptions`; `CapabilityModel.aggregation`; `PresentationModel.groupBy` and `total`; `QueryRequest.aggregate` measures accept `countdistinct`, `count` (`$count as`) and an alias; `MemoryProvider` evaluates them.
+- smart-kit-server: `$count as <alias>` in `aggregate()`.
+
 ### Added (npm publishing and docs for coding agents, ADR-029, ADR-030)
 
 - The packages can be published and installed from npm: `exports` resolve to `dist` (the repository resolves the sources through the custom condition `smart-kit-source`; npm does not apply `publishConfig.exports`, so the previous manifests would have pointed to missing `src` files), `publishConfig.access: public`, repository / homepage / keywords, a README and LICENSE in every package; peer dependencies are `^` ranges.

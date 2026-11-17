@@ -145,7 +145,7 @@ function ListReportInner(props: SmartListReportProps) {
 
   // Execution on load waits for the variant list: a default variant decides whether to execute (LR-02, LR-15).
   const filter = useFilterState(p.entitySet, { service: p.service, pageKey, liveMode: p.liveMode, autoExecute: false, initial: initialFilters });
-  const [view, setView] = usePageState<{ columns?: string[]; sort?: SortItem[]; headerExpanded?: boolean; headerPinned?: boolean; tab?: string; chart?: boolean }>(`${pageKey}:view`, {});
+  const [view, setView] = usePageState<{ columns?: string[]; sort?: SortItem[]; groupBy?: string | null; totals?: string[]; headerExpanded?: boolean; headerPinned?: boolean; tab?: string; chart?: boolean }>(`${pageKey}:view`, {});
   const columns = view.columns;
   const sort = view.sort ?? ui.presentation.sortOrder;
   const tabs = p.contents?.length ? p.contents.map((c) => ({ key: c.key, entitySet: c.entitySet ?? p.entitySet, title: c.title, tableExtend: c.tableExtend })) : views.length ? views.map((v) => ({ key: v.id, entitySet: p.entitySet, title: v.text, tableExtend: p.tableExtend })) : [];
@@ -159,7 +159,7 @@ function ListReportInner(props: SmartListReportProps) {
   const apply = (v: { content: VariantContent; autoApply: boolean }) => {
     filter.load({ filters: v.content.filters, search: v.content.search, fields: v.content.filterFields }, v.autoApply || p.liveMode === true);
     const custom = v.content.custom as { tab?: string; chart?: boolean } | undefined;
-    setView((s) => ({ ...s, columns: v.content.columns, sort: v.content.sort, tab: custom?.tab ?? s.tab, chart: custom?.chart ?? false }));
+    setView((s) => ({ ...s, columns: v.content.columns, sort: v.content.sort, groupBy: v.content.groupBy, totals: v.content.totals, tab: custom?.tab ?? s.tab, chart: custom?.chart ?? false }));
   };
   const variants = useVariants(pageKey, { service: p.service, standard, onDefaultLoaded: (v) => apply({ content: v.content, autoApply: v.autoApply }) });
   const initialized = useRef(false);
@@ -169,7 +169,7 @@ function ListReportInner(props: SmartListReportProps) {
     if (filter.applied === null && !variants.variants.some((v) => v.isDefault) && p.autoExecute !== false) filter.go();
   }, [variants.isLoading, variants.variants, filter, p.autoExecute]);
   // The page variant stores the selected tab and the chart/table choice (LR Variant Management).
-  const content: VariantContent = { filters: filter.filters, search: filter.search, filterFields: filter.fields, columns, sort, custom: tabs.length || view.chart ? { tab: activeTab, chart: Boolean(view.chart) } : undefined };
+  const content: VariantContent = { filters: filter.filters, search: filter.search, filterFields: filter.fields, columns, sort, groupBy: view.groupBy, totals: view.totals, custom: tabs.length || view.chart ? { tab: activeTab, chart: Boolean(view.chart) } : undefined };
 
   // LR-13: expanded when no query ran on start, collapsed otherwise.
   const headerExpanded = view.headerExpanded ?? filter.applied === null;
@@ -318,6 +318,11 @@ function ListReportInner(props: SmartListReportProps) {
           onColumnsChange={entitySet === p.entitySet && !v ? (c) => setView((s) => ({ ...s, columns: c })) : undefined}
           sort={entitySet === p.entitySet && !v ? sort : v?.presentation.sortOrder}
           onSortChange={entitySet === p.entitySet && !v ? (s) => setView((x) => ({ ...x, sort: s })) : undefined}
+          groupBy={entitySet === p.entitySet && !v ? view.groupBy : undefined}
+          onGroupByChange={entitySet === p.entitySet && !v ? (g) => setView((x) => ({ ...x, groupBy: g })) : undefined}
+          totals={entitySet === p.entitySet && !v ? view.totals : undefined}
+          onTotalsChange={entitySet === p.entitySet && !v ? (ids) => setView((x) => ({ ...x, totals: ids })) : undefined}
+          presentation={v?.presentation}
           lineItem={v?.lineItem}
           extend={extend}
           onRowNavigate={p.onRowNavigate}

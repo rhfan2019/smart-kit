@@ -31,7 +31,7 @@ export interface VariantsApi {
   isModified(content: VariantContent): boolean;
 }
 
-const canon = (c: VariantContent) => JSON.stringify({ f: c.filters ?? {}, s: c.search ?? '', ff: c.filterFields ?? null, c: c.columns ?? null, o: c.sort ?? null });
+const canon = (c: VariantContent) => JSON.stringify({ f: c.filters ?? {}, s: c.search ?? '', ff: c.filterFields ?? null, c: c.columns ?? null, o: c.sort ?? null, g: c.groupBy ?? null, t: c.totals ?? null });
 
 export function useVariants(pageKey: string, o: UseVariantsOptions): VariantsApi {
   const service = useService(o.service);

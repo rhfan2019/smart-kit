@@ -6,7 +6,7 @@
 
 A **limited OData V4 service on PostgreSQL**, written for what the smart-kit front end sends: reads (`$select`,
 `$expand`, `$filter`, `$orderby`, `$top`/`$skip`, `$count`, `$search`, `$apply` with `filter`/`search`/`groupby`/
-`aggregate`), value helps, `$metadata`, direct save (PATCH with ETag, POST to a set or a collection navigation,
+`aggregate` (`sum`, `min`, `max`, `average`, `countdistinct`, `$count as`)), value helps, `$metadata`, direct save (PATCH with ETag, POST to a set or a collection navigation,
 DELETE), bound actions. **Not** supported (answers 501): drafts, `$batch`, deep insert, PUT, functions, `$compute`.
 Node only (≥ 24); never import it in browser code.
 

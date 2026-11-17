@@ -705,6 +705,8 @@ hiddenByImportance(width: number, importance: ResponsiveColumn["importance"]): b
 | `changedKeys` |  | `Set&lt;string>` | Keys of rows marked as changed (continuous working mode). |
 | `rowMarker` |  | `(row: Row) => ReactNode` |  |
 | `onHiddenColumnsChange` |  | `(ids: string[]) => void` | Reports the ids of the columns hidden on the current width. |
+| `groupSummary` |  | `(row: Row) => GroupSummary \| undefined` | Subtotals of the group starting with `row`: row count and cells by column id (docs/23). |
+| `totals` |  | `{ label: ReactNode; cells: Record&lt;string, ReactNode> }` | Totals row after the last row: cells by column id (docs/23). |
 
 ### `ResponsiveTableProps` — interface
 
@@ -762,6 +764,11 @@ const smartKitGridTheme: Theme<ThemeDefaultParams>
 | `lineItem` |  | `FieldModel[]` | Columns instead of UI.LineItem (multiple views with their own LineItem). |
 | `titleAddon` |  | `ReactNode` | Toolbar content after the title (content switch of multiple views, LR Multiple Views). |
 | `toolbarEnd` |  | `ReactNode` | Toolbar content before the settings (table / chart toggle). |
+| `groupBy` |  | `string \| null` | Group column id (controlled; responsive tables only, docs/23). Default: the column of the first `UI.PresentationVariant/GroupBy` path; null: not grouped. |
+| `onGroupByChange` |  | `(id: string \| null) => void` | Called with the group column id after personalization; when given, `groupBy` is fully controlled (undefined: the default). |
+| `totals` |  | `string[]` | Column ids whose totals are shown (controlled, docs/23). Default: the columns of `UI.PresentationVariant/Total`. |
+| `onTotalsChange` |  | `(ids: string[]) => void` | Called with the total column ids after personalization; when given, `totals` is fully controlled (undefined: the default). |
+| `presentation` |  | `PresentationModel` | Presentation variant giving the default sort, grouping and totals (multiple views); default the entity's. |
 
 ### `SmartTableProps` — interface
 
@@ -799,10 +806,12 @@ export type TableExtendEntry = | (ExtendEntry<ColumnItem> & { kind?: 'column' })
 | `visible` | **yes** | `string[]` |  |
 | `sort` | **yes** | `SortItem[]` |  |
 | `sortable` | **yes** | `{ path: string; label: string }[]` |  |
-| `onOk` | **yes** | `(visible: string[], sort: SortItem[], groupBy?: string \| null) => void` | Called with the result when the user confirms. |
+| `onOk` | **yes** | `(visible: string[], sort: SortItem[], groupBy?: string \| null, totals?: string[]) => void` | Called with the result when the user confirms. |
 | `onCancel` | **yes** | `() => void` | Called when the user cancels or closes the dialog. |
 | `groupable` |  | `{ id: string; label: string }[]` | Columns that can be grouped by; the "Group" tab is shown only when given (responsive table). |
 | `groupBy` |  | `string \| null` |  |
+| `totalable` |  | `{ id: string; label: string }[]` | Columns whose totals can be shown; the "Totals" tab is shown only when given and not empty (docs/23). |
+| `totals` |  | `string[]` | Column ids whose totals are shown. |
 
 ### `TableP13nDialogProps` — interface
 

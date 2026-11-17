@@ -36,7 +36,8 @@ export interface ExpandItem {
   options: QueryOptions;
 }
 
-export type AggregateMethod = 'sum' | 'min' | 'max' | 'average' | 'countdistinct';
+/** `count` is `$count as alias` (rows of the group; `path` is empty). */
+export type AggregateMethod = 'sum' | 'min' | 'max' | 'average' | 'countdistinct' | 'count';
 
 /** One step of $apply (OData Data Aggregation). Only the steps smart-kit sends (ADR-021). */
 export type ApplyStep =

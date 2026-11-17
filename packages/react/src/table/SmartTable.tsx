@@ -9,8 +9,8 @@
  */
 import { ActionIcon, Alert, Anchor, Button, Group, Menu, Modal, Stack, Text, TextInput, Tooltip } from '@mantine/core';
 import {
-  capabilitiesFor, isAbortError, isSortable, keyPredicate, matches, resolvePath, sourceInfo, type ActionModel, type FieldModel, type FilterState,
-  type Message, type QuerySource, type Row, type SortItem,
+  canGroup, canSubtotal, canTotal, capabilitiesFor, isAbortError, isSortable, keyPredicate, matches, resolvePath, sourceInfo, type ActionModel,
+  type FieldModel, type FilterState, type Message, type PresentationModel, type QuerySource, type Row, type SortItem, type TotalsEntry,
 } from '@rhfan2019/smart-kit-core';
 import { useQueryClient } from '@tanstack/react-query';
 import {
@@ -35,6 +35,7 @@ import { TableP13nDialog } from './TableP13nDialog';
 import { useListQuery } from './useListQuery';
 import { InlineCreateRow } from './InlineCreateRow';
 import { groupValueOf, ResponsiveTable, type ResponsiveColumn } from './ResponsiveTable';
+import { TotalLines, useGrandTotals, useSubtotals, useTotalFormatter } from './useTotals';
 
 let gridModulesRegistered = false;
 
@@ -170,7 +171,23 @@ export interface SmartTableProps {
   titleAddon?: ReactNode;
   /** Toolbar content before the settings (table / chart toggle). */
   toolbarEnd?: ReactNode;
+  /**
+   * Group column id (controlled; responsive tables only, docs/23). Default: the column of the first
+   * `UI.PresentationVariant/GroupBy` path; null: not grouped.
+   */
+  groupBy?: string | null;
+  /** Called with the group column id after personalization; when given, `groupBy` is fully controlled (undefined: the default). */
+  onGroupByChange?(id: string | null): void;
+  /** Column ids whose totals are shown (controlled, docs/23). Default: the columns of `UI.PresentationVariant/Total`. */
+  totals?: string[];
+  /** Called with the total column ids after personalization; when given, `totals` is fully controlled (undefined: the default). */
+  onTotalsChange?(ids: string[]): void;
+  /** Presentation variant giving the default sort, grouping and totals (multiple views); default the entity's. */
+  presentation?: PresentationModel;
 }
+
+/** Data of the grid's pinned totals row (docs/23). */
+const TOTAL_ROW = '$smartKitTotal';
 
 export interface TableContextValue {
   entitySet: string;
@@ -433,13 +450,14 @@ export function SmartTable(p: SmartTableProps) {
   const [confirmDelete, setConfirmDelete] = useState<Row[] | null>(null);
 
   const stateKey = p.pageKey ? `${p.pageKey}:table` : undefined;
-  const [own, setOwn] = usePageState<{ columns: string[]; sort?: SortItem[]; search: string; loaded: number; groupBy?: string | null; details?: boolean }>(stateKey, () => ({ columns: allColumns.map((c) => c.id), search: '', loaded: p.growingThreshold ?? 10 }));
+  const [own, setOwn] = usePageState<{ columns: string[]; sort?: SortItem[]; search: string; loaded: number; groupBy?: string | null; totals?: string[]; details?: boolean }>(stateKey, () => ({ columns: allColumns.map((c) => c.id), search: '', loaded: p.growingThreshold ?? 10 }));
   const visibleIds = (p.columns ?? own.columns).filter((id) => allColumns.some((c) => c.id === id));
   // Columns added by extensions after the state was stored are shown too.
   const known = new Set([...own.columns, ...(p.columns ?? [])]);
   const visible = [...visibleIds, ...allColumns.filter((c) => !known.has(c.id) && !p.columns).map((c) => c.id)];
   const setVisibleIds = (ids: string[]) => { if (!p.columns) setOwn((s) => ({ ...s, columns: ids })); p.onColumnsChange?.(ids); };
-  const baseSort = p.sort ?? own.sort ?? ui.presentation.sortOrder;
+  const presentation = p.presentation ?? ui.presentation;
+  const baseSort = p.sort ?? own.sort ?? presentation.sortOrder;
   const setSort = (s: SortItem[]) => { if (!p.sort) setOwn((x) => ({ ...x, sort: s })); p.onSortChange?.(s); };
   const search = own.search;
   const setSearch = (s: string) => setOwn((x) => ({ ...x, search: s }));
@@ -448,12 +466,29 @@ export function SmartTable(p: SmartTableProps) {
   const fields = visibleColumns.map((c) => c.field).filter((f): f is FieldModel => Boolean(f));
   const draftFields = draftRoot ? draftPaths(type) : [];
   const extraSelect = [...visibleColumns.flatMap((c) => c.select ?? []), ...actionPaths(modelActions), ...draftFields, ...(type.etag ? [type.etag] : [])];
-  // Responsive table grouping (docs/12 U-5): rows are sorted by the group property first.
-  const groupBy = responsive ? own.groupBy ?? null : null;
-  const groupPath = groupBy ? allColumns.find((c) => c.id === groupBy)?.field?.path : undefined;
+  // Grouping (responsive tables, docs/12 U-5, docs/23): rows are sorted by the group property first.
+  const fieldPath = (c: ColumnItem | undefined) => (c?.field?.kind === 'field' ? c.field.path : undefined);
+  const columnOfPath = (path: string | undefined) => (path ? allColumns.find((c) => fieldPath(c) === path)?.id : undefined);
+  const groupable = allColumns.filter((c) => { const path = fieldPath(c); return Boolean(path && canGroup(model, source, path)); });
+  // With onGroupByChange the parent keeps the state (a variant): undefined there means the annotation default.
+  const groupOwned = p.groupBy !== undefined || Boolean(p.onGroupByChange);
+  const groupChoice = (groupOwned ? p.groupBy : own.groupBy) ?? (groupOwned || own.groupBy === undefined ? columnOfPath(presentation.groupBy[0]) ?? null : null);
+  const groupBy = responsive && groupChoice && groupable.some((c) => c.id === groupChoice) ? groupChoice : null;
+  const groupPath = groupBy ? fieldPath(allColumns.find((c) => c.id === groupBy)) : undefined;
+  const setGroupBy = (id: string | null) => { if (!groupOwned) setOwn((x) => ({ ...x, groupBy: id })); p.onGroupByChange?.(id); };
+  // Totals (docs/23): numeric columns the service can aggregate (Aggregation.ApplySupported).
+  const totalPath = (c: ColumnItem | undefined) => { const path = fieldPath(c); return path && canTotal(model, source, path) ? path : undefined; };
+  const totalable = allColumns.filter((c) => totalPath(c));
+  const totalsOwned = p.totals !== undefined || Boolean(p.onTotalsChange);
+  const totalIds = (totalsOwned ? p.totals : own.totals) ?? totalable.filter((c) => presentation.total.includes(totalPath(c)!)).map((c) => c.id);
+  const setTotals = (ids: string[]) => { if (!totalsOwned) setOwn((x) => ({ ...x, totals: ids })); p.onTotalsChange?.(ids); };
   const filters = p.query?.filters ?? {};
   const effectiveSearch = [p.query?.search, search].filter(Boolean).join(' ');
   const executed = p.query !== null;
+
+  const totalColumns = visibleColumns.filter((c) => totalIds.includes(c.id) && totalPath(c));
+  const measures = [...new Set(totalColumns.map((c) => totalPath(c)!))];
+  const [totalsRevision, setTotalsRevision] = useState(0);
 
   const sort = useMemo(() => (groupPath ? [{ path: groupPath, descending: false }, ...baseSort.filter((x) => x.path !== groupPath)] : baseSort), [groupPath, JSON.stringify(baseSort)]); // eslint-disable-line react-hooks/exhaustive-deps
   const list = useListQuery({
@@ -473,6 +508,7 @@ export function SmartTable(p: SmartTableProps) {
   useEffect(() => {
     if (refreshRef.current === p.refreshToken) return;
     refreshRef.current = p.refreshToken;
+    setTotalsRevision((n) => n + 1);
     if (mode === 'grid') setRefreshToken((n) => n + 1);
     else list.refresh();
   }, [p.refreshToken]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -502,12 +538,46 @@ export function SmartTable(p: SmartTableProps) {
   const restore = useRef(stored.read());
 
   const listRows = useMemo(() => (mode === 'grid' ? [] : list.rows.map((r) => overrides[keyOf(r)] ?? r)), [mode, list.rows, overrides, keyOf]);
+
+  // ------------------------------------------------------------------ totals and subtotals (docs/23)
+  const totalsQuery = { service: p.service, source, filters, search: effectiveSearch, measures, revision: totalsRevision };
+  const grand = useGrandTotals({ ...totalsQuery, enabled: executed });
+  const subtotalsOn = Boolean(groupPath && canSubtotal(model, source, groupPath));
+  const groupValues = useMemo(() => {
+    if (!subtotalsOn || !groupPath) return [];
+    const seen = new Set<string>();
+    const out: unknown[] = [];
+    for (const r of listRows) {
+      const v = getPath(r, groupPath);
+      const k = v === null || v === undefined ? '' : String(v);
+      if (!seen.has(k)) { seen.add(k); out.push(v ?? null); }
+    }
+    return out;
+  }, [listRows, groupPath, subtotalsOn]);
+  const subtotals = useSubtotals({ ...totalsQuery, groupBy: groupPath ?? '', groupValues, enabled: executed && subtotalsOn });
+  const formatTotal = useTotalFormatter(p.service, source);
+  const totalValue = (c: ColumnItem, entry: TotalsEntry | undefined, failed: boolean): ReactNode => {
+    const path = totalPath(c);
+    if (!path || !totalIds.includes(c.id)) return null;
+    return failed ? <span className="sk-total" data-sk-total={path}>–</span> : <TotalLines path={path} lines={formatTotal(path, entry?.values[path])} />;
+  };
+  const totalCells = (entry: TotalsEntry | undefined, failed: boolean) => Object.fromEntries(totalColumns.map((c) => [c.id, totalValue(c, entry, failed)]));
+  const totalLabel = (error: string | undefined) => (
+    <span className="sk-table__total-label" title={error ? t('table.totalsError', { message: error }) : undefined} data-sk-total-label data-error={error ? true : undefined}>{t('table.total')}</span>
+  );
+  /** Cell of the grid's pinned totals row. */
+  const totalCell = (c: ColumnItem, i: number, data: Row | undefined): ReactNode => {
+    const d = data?.[TOTAL_ROW] as { entry?: TotalsEntry; error?: string } | undefined;
+    const value = totalValue(c, d?.entry, Boolean(d?.error));
+    if (i !== 0) return value;
+    return <>{totalLabel(d?.error)}{value ? <> {value}</> : null}</>;
+  };
   const ctx: TableContextValue = {
     entitySet: info.entitySet, typeName: info.typeName, source,
     rows: mode === 'grid' ? gridRows : listRows, selected,
     count: mode === 'grid' ? gridCount : list.count,
     filters, search: effectiveSearch, sort,
-    refresh: () => { setOverrides({}); if (mode === 'grid') setRefreshToken((n) => n + 1); else list.refresh(); },
+    refresh: () => { setOverrides({}); setTotalsRevision((n) => n + 1); if (mode === 'grid') setRefreshToken((n) => n + 1); else list.refresh(); },
   };
   const onCountChange = p.onCountChange;
   useEffect(() => { onCountChange?.(ctx.count); }, [ctx.count, onCountChange]);
@@ -629,8 +699,8 @@ export function SmartTable(p: SmartTableProps) {
     return () => ro.disconnect();
   }, [responsive]);
   const marker = draftRoot ? (row: Row) => <DraftMarker row={row} compact /> : undefined;
-  const latest = useRef({ ctx, p, navigate, sort });
-  latest.current = { ctx, p, navigate, sort };
+  const latest = useRef({ ctx, p, navigate, sort, totalCell });
+  latest.current = { ctx, p, navigate, sort, totalCell };
 
   const colDefs = useMemo<ColDef[]>(() => {
     const defs: ColDef[] = visibleColumns.map((c, i) => {
@@ -647,7 +717,7 @@ export function SmartTable(p: SmartTableProps) {
         sort: s ? (s.descending ? 'desc' : 'asc') : null,
         resizable: true,
         type: prop && /Int|Decimal|Double|Single|Byte/.test(prop.edmType) && c.field?.kind === 'field' ? 'rightAligned' : undefined,
-        cellRenderer: (params: { data?: Row }) => (params.data ? (
+        cellRenderer: (params: { data?: Row; node?: { rowPinned?: string | null } }) => (params.node?.rowPinned ? latest.current.totalCell(c, i, params.data) : params.data ? (
           <span className={i === 0 && marker ? 'sk-cell--with-marker' : undefined}>
             {c.render ? c.render(params.data) : <SmartField typeName={info.typeName} service={p.service} field={c.field!} row={params.data} cell />}
             {i === 0 && marker ? marker(params.data) : null}
@@ -660,14 +730,14 @@ export function SmartTable(p: SmartTableProps) {
     if (inlineCell) {
       defs.push({
         colId: '$actions', headerName: t('actions.inline'), width: 160, sortable: false, resizable: false, suppressMovable: true,
-        cellRenderer: (params: { data?: Row }) => (params.data ? inlineCell(params.data) : null),
+        cellRenderer: (params: { data?: Row; node?: { rowPinned?: string | null } }) => (params.data && !params.node?.rowPinned ? inlineCell(params.data) : null),
       });
     }
     if (navigable) {
       defs.push({
         colId: '$nav', headerName: '', width: 52, pinned: 'right', sortable: false, resizable: false, suppressMovable: true,
         headerComponentParams: { 'aria-label': t('table.navigate') },
-        cellRenderer: (params: { data?: Row }) => (params.data ? (
+        cellRenderer: (params: { data?: Row; node?: { rowPinned?: string | null } }) => (params.data && !params.node?.rowPinned ? (
           <ActionIcon className="sk-table__nav" aria-label={t('table.navigate')} onClick={() => latest.current.navigate(params.data!)} data-sk-row-nav>
             <ChevronRight className="sk-icon" />
           </ActionIcon>
@@ -729,6 +799,30 @@ export function SmartTable(p: SmartTableProps) {
     if (datasource) api.setGridOption('datasource', datasource);
     else { setGridRows([]); setGridCount(undefined); setGridEmpty(false); }
   }, [datasource, mode]);
+
+  // Grid totals: a pinned row at the bottom, as high as the most currencies of one total (docs/23).
+  // Only once rows are there: no totals row under the loading placeholder or the "no data" text.
+  const gridEmptyNow = mode === 'grid' ? gridEmpty || gridRows.length === 0 : list.rows.length === 0;
+  const pinnedBottom = useMemo(
+    () => (!responsive && executed && measures.length && !gridEmptyNow ? [{ [TOTAL_ROW]: { entry: grand.entry, error: grand.error?.message } }] : undefined),
+    [responsive, executed, measures.join('|'), gridEmptyNow, grand.entry, grand.error], // eslint-disable-line react-hooks/exhaustive-deps
+  );
+  useEffect(() => {
+    if (!pinnedBottom) return;
+    const lines = Math.max(1, ...measures.map((m) => grand.entry?.values[m]?.length ?? 1));
+    const timer = setTimeout(() => {
+      const api = apiRef.current;
+      const node = api && !api.isDestroyed() ? api.getPinnedBottomRow(0) : undefined;
+      const el = sectionRef.current;
+      if (!api || !node || !el) return;
+      const style = getComputedStyle(el);
+      const base = parseFloat(style.getPropertyValue('--sk-row-height')) || node.rowHeight || 0;
+      const line = parseFloat(style.getPropertyValue('--sk-total-line-height')) || 0;
+      node.setRowHeight(base + (lines - 1) * line);
+      api.onRowHeightChanged();
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [pinnedBottom]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const saveView = () => {
     const api = apiRef.current;
@@ -823,6 +917,13 @@ export function SmartTable(p: SmartTableProps) {
       loadMore={list.loadMore}
       showDetails={Boolean(own.details)}
       groupBy={groupBy ?? undefined}
+      groupSummary={subtotalsOn ? (row) => {
+        const failed = Boolean(subtotals.error);
+        const e = subtotals.get(getPath(row, groupPath!));
+        if (!e && !failed) return undefined;
+        return { count: e?.count, cells: totalCells(e, failed) };
+      } : undefined}
+      totals={measures.length ? { label: totalLabel(grand.error?.message), cells: totalCells(grand.entry, Boolean(grand.error)) } : undefined}
       noData={noDataText}
       inlineActions={inlineCell}
       changedKeys={new Set(Object.keys(overrides))}
@@ -839,7 +940,9 @@ export function SmartTable(p: SmartTableProps) {
       {...(mode === 'grid'
         ? { rowModelType: 'infinite' as const, cacheBlockSize: 100, maxBlocksInCache: 50, infiniteInitialRowCount: 1 }
         : { rowData: list.rows, domLayout: 'autoHeight' as const })}
-      getRowId={(r) => keyOf(r.data as Row)}
+      getRowId={(r) => (r.rowPinned ? `${TOTAL_ROW}:${r.rowPinned}` : keyOf(r.data as Row))}
+      pinnedBottomRowData={pinnedBottom}
+      getRowClass={(r) => (r.node.rowPinned ? 'sk-table__total-row' : undefined)}
       rowSelection={{ mode: 'multiRow', checkboxes: true, headerCheckbox: mode === 'auto', enableClickSelection: false }}
       selectionColumnDef={{ pinned: 'left', width: 48, resizable: false, suppressHeaderMenuButton: true }}
       suppressCellFocus={false}
@@ -874,10 +977,10 @@ export function SmartTable(p: SmartTableProps) {
         const ids = e.api.getColumnState().map((s) => s.colId).filter((id) => id !== '$nav' && !id.startsWith('ag-Grid'));
         setVisibleIds(ids);
       }}
-      onRowDoubleClicked={(e) => { if (navigable && e.data) navigate(e.data as Row); }}
+      onRowDoubleClicked={(e) => { if (navigable && e.data && !e.node.rowPinned) navigate(e.data as Row); }}
       onCellKeyDown={(e: CellKeyDownEvent) => {
         const ev = e.event as KeyboardEvent | undefined;
-        if (ev?.key === 'Enter' && navigable && e.data && e.column.getColId() !== '$nav') navigate(e.data as Row);
+        if (ev?.key === 'Enter' && navigable && e.data && !e.node.rowPinned && e.column.getColId() !== '$nav') navigate(e.data as Row);
       }}
     />
   );
@@ -920,9 +1023,11 @@ export function SmartTable(p: SmartTableProps) {
         visible={visible}
         sort={baseSort}
         sortable={allColumns.filter((c) => c.field?.kind === 'field' && c.field.path && isSortable(caps, c.field.path)).map((c) => ({ path: c.field!.path!, label: c.label }))}
-        groupable={responsive ? allColumns.filter((c) => c.field?.kind === 'field' && c.field.path && isSortable(caps, c.field.path)).map((c) => ({ id: c.id, label: c.label })) : undefined}
+        groupable={responsive ? groupable.map((c) => ({ id: c.id, label: c.label })) : undefined}
         groupBy={groupBy}
-        onOk={(ids, s, g) => { setVisibleIds(ids); setSort(s); if (g !== undefined) setOwn((x) => ({ ...x, groupBy: g })); setP13n(false); }}
+        totalable={totalable.filter((c) => visible.includes(c.id)).map((c) => ({ id: c.id, label: c.label }))}
+        totals={totalIds}
+        onOk={(ids, s, g, tot) => { setVisibleIds(ids); setSort(s); if (g !== undefined) setGroupBy(g); if (tot) setTotals(tot); setP13n(false); }}
         onCancel={() => setP13n(false)}
       />
       {runner.dialogs}

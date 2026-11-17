@@ -48,7 +48,7 @@
 | `SmartVariantManagement` | 变体选择、另存为、保存、管理（改名、删除、设默认、自动执行）；"已修改"标记 | 不知道变体内容的结构（交给页面状态） | `pageKey`、`currentContent`、`onApply(content)`、`dirty` | 弹层布局 | — | sap.ui.comp.smartvariants.SmartVariantManagement |
 | `FilterSummary` | 页头折叠时的筛选摘要文字（0、1、n 个，最多 5 个，超出加省略号） | — | `filters`、`entitySet` | 文案规则 | — | DynamicPage 的 snappedContent |
 | `SmartTable`（含 `.Toolbar`、`.Title`、`.Actions`、`.Settings`、`.Export`、`.Columns`） | 从 `LineItem` 生成列；网格表格（自带滚动、虚拟化、按块服务端加载）或自动高度（"更多"按钮）；服务端排序；多选；行导航指示器；个性化；导出；无数据文案；错误消息条 | 不负责筛选界面；不做行内编辑（二期） | `entitySet` 或 `parent`（父对象上下文 + 导航）、`query`（来自 `useListQuery`）、`columns` / `onColumnsChange`、`sort` / `onSortChange`、`selection` / `onSelectionChange`、`mode: 'grid' \| 'auto'`、`growingThreshold`、`onRowNavigate`、`extend?` | 工具栏分区：左侧标题和条数，右侧动作 → 设置 → 导出；动作溢出时从右往左收进"更多" | 列、动作的增加和替换；工具栏整体替换；单元格渲染器 | sap.ui.comp.smarttable.SmartTable / sap.ui.mdc.Table |
-| `TableP13nDialog` | 列的显隐和顺序、排序 | 分组（二期） | `columns`、`sort`、`onOk` | 页签结构 | — | sap.m.p13n.Popup |
+| `TableP13nDialog` | 列的显隐和顺序、排序；分组（响应式表格）；合计（有 `Aggregation.ApplySupported` 时，`23`） | 多级分组 | `columns`、`sort`、`groupable`、`totalable`、`onOk` | 页签结构 | — | sap.m.p13n.Popup |
 | `SmartListReport` | **整页模板示例**：`DynamicPage` + `SmartVariantManagement` + `SmartFilterBar` + `SmartTable`，只用公开导出 | 没有任何内部接口 | `entitySet`、`pageKey`、`onRowNavigate`、`liveMode`（默认 true）、`filterToggle`（默认 false）及上面各积木的透传 | — | 全部（用积木重写即可） | sap.fe.templates.ListReport |
 
 ## 4. 字段与表单

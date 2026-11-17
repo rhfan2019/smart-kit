@@ -7,10 +7,11 @@
 > or `annotationFiles` adds local ones in the browser.
 
 Vocabulary aliases used below: `UI` = `com.sap.vocabularies.UI.v1`, `Common` = `com.sap.vocabularies.Common.v1`,
-`Measures` = `Org.OData.Measures.V1`, `Capabilities` = `Org.OData.Capabilities.V1`, `Core` = `Org.OData.Core.V1`.
+`Measures` = `Org.OData.Measures.V1`, `Capabilities` = `Org.OData.Capabilities.V1`, `Core` = `Org.OData.Core.V1`,
+`Aggregation` = `Org.OData.Aggregation.V1`.
 
-Chart views, analytical cards and numeric card headers read aggregates with `$apply` (`groupby`, `aggregate`): the
-service must support it (smart-kit-server does).
+Chart views, analytical cards, numeric card headers and table totals read aggregates with `$apply` (`groupby`,
+`aggregate`, `$count as`): the service must support it (smart-kit-server does).
 
 ## What each annotation does
 
@@ -27,7 +28,8 @@ service must support it (smart-kit-server does).
 | `UI.HeaderInfo` (entity type) | `TypeName`, `TypeNamePlural` (list title), `Title`, `Description`, `ImageUrl` (object page header). |
 | `UI.LineItem` (entity type) | Table columns in order: `DataField` (`Value`, `Label`, `Criticality`), `DataFieldWithUrl`, `DataFieldForAnnotation` (→ `@UI.DataPoint#X` rating / progress / key value, or `@UI.Chart#X` micro chart), `DataFieldForAction` (toolbar button; `Inline: true` = in the row). `UI.Importance` (High / Medium / Low) decides which columns the responsive table drops first. Qualified `UI.LineItem#X` for sub-tables, cards, views. |
 | `UI.SelectionFields` (entity type) | Filter bar fields, in order. Other filterable properties are in "Adapt Filters". |
-| `UI.PresentationVariant` (entity type) | Default `SortOrder`, which `UI.LineItem` / `UI.Chart` to show (`Visualizations`), `RequestAtLeast`, `MaxItems` (cards), `GroupBy` (card groups). |
+| `UI.PresentationVariant` (entity type) | Default `SortOrder`, which `UI.LineItem` / `UI.Chart` to show (`Visualizations`), `RequestAtLeast`, `MaxItems` (cards), `GroupBy` (card groups; default grouping of responsive tables), `Total` (columns totaled by default). |
+| `Aggregation.ApplySupported` (entity set or type) | Enables table totals and group subtotals: `GroupableProperties` = what a responsive table can group by, `AggregatableProperties` = numeric columns that can be totaled (sum). Without it, tables have no totals and group without subtotals. |
 | `UI.SelectionVariant` (entity type) | Default / fixed filter conditions (`SelectOptions` with `Ranges`). |
 | `UI.SelectionPresentationVariant#X` (entity type) | One view of a list (`views` prop): `Text`, `SelectionVariant`, `PresentationVariant`. |
 | `UI.Facets` (entity type) | Object page body: `CollectionFacet` = section with `ID` and `Label`; nested `ReferenceFacet` = subsection with `Target`: `@UI.FieldGroup#X` (form), `@UI.Identification` (form), `_Nav/@UI.LineItem#X` (sub-table of a collection navigation), `@UI.DataPoint#X`, `@UI.Chart#X`. A top-level `ReferenceFacet` is a section with one subsection. `UI.PartOfPreview: false` = behind "Show More". |
