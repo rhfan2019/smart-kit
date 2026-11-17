@@ -1,5 +1,20 @@
 # @rhfan2019/smart-kit
 
+## 0.3.0
+
+### Minor Changes
+
+- 42ec477: Fixes for the first consumer (docs/25): grid tables group with row counts and subtotals in group header rows; texts name the record type instead of "object" ("User created.", `typedText`); a failed view save shows the store's error in the dialog and `VariantStore.canSave` / `canSave` / `canSaveVariants` hide Save, Save As and Manage; the view menu closes before its dialogs open; `exportable`, `onBeforeExport` (can cancel) and `onExported` on `SmartTable` and `SmartListReport`; `refreshToken` on `SmartListReport`; `MemoryProvider.setRows` for rows computed by the host; `SmartObjectPage` `partialHeaderEdit` and `share`, a failed partial edit cancels any edit session, initials avatar from `UI.HeaderInfo/Initials` (round for `Communication.Contact`); `importance` on custom columns, wider pop-in labels and `--sk-sticky-top` for host sticky bars.
+- 42ec477: Relative dates in date filter conditions (today, yesterday, this / last / next week, month, quarter and year, last / next X days, year to date): views store the operator and it is resolved against today when the list is read. Value list values in filter fields follow `UI.TextArrangement` (`TextOnly` hides the code). `FlexibleColumnLayout` has column separators with arrows that switch the ratios (new layouts `TwoColumnsBeginExpanded`, `ThreeColumnsEndExpanded`, `ThreeColumnsMidExpandedEndHidden`, `ThreeColumnsBeginExpandedEndHidden`) through `onLayoutChange`. Themes switch with `data-sk-theme` / `data-sk-density` (the former `data-theme` / `data-density` still work unless `<html>` has `data-sk-theme`); new stylesheet `@rhfan2019/smart-kit/styles.layered.css` inside `@layer smart-kit`; the React entries start with `'use client'`.
+- 42ec477: smart-kit-server: `$filter` supports the lambda operators `any` / `all` over collection navigations (with `$it` and nested variables), and a data scope may use them (`_ScopeKeys/any(k: k/CompanyCode eq '1000')`); the scope applies to reads, `$count`, key reads, `$expand`, navigation paths and lambdas of other sets, `$apply` and writes (TECH-054). Navigation joins can come from the storage mapping (`entitySets.<Set>.navigations.<name>.on`). New `createKysely(pool, { statementTimeout, keepSettings })` builds Kysely on the host's `pg` pool with UTC sessions and a statement timeout (TECH-066). smart-kit-cli: navigations without a foreign key (views) can be declared in `smart-kit.config.json` (`navigations.<name>` with `from`, `to`, `on`, `toMany` or `toOne`, `partner`); they are generated into the CSDL and the storage mapping, and `smart-kit check` reports declarations whose tables, views or columns do not exist (TECH-055); `checkDeclaredNavigations` exported.
+
+### Patch Changes
+
+- Updated dependencies [42ec477]
+- Updated dependencies [42ec477]
+- Updated dependencies [42ec477]
+  - @rhfan2019/smart-kit-core@0.3.0
+
 ## 0.2.0
 
 ### Minor Changes
