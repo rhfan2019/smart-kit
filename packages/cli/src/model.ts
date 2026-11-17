@@ -23,6 +23,8 @@ export interface GenNavigation {
   partner?: string;
   /** Dependent side only: own property -> property of the target. */
   constraints?: { property: string; referencedProperty: string }[];
+  /** Declared navigations (no foreign key): own property -> property of the target, written to the storage mapping. */
+  on?: Record<string, string>;
 }
 
 export interface GenEntity {

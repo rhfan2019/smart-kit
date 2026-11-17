@@ -4,7 +4,18 @@ import type { CapabilityModel, EdmType, EntityTypeModel, MetaModel, PropertyMode
 
 /** Where the data of an entity set lives. Written by `smart-kit generate` (the *.storage.json file). */
 export interface StorageMapping {
-  entitySets: Record<string, { table: string; columns?: Record<string, string> }>;
+  entitySets: Record<
+    string,
+    {
+      table: string;
+      columns?: Record<string, string>;
+      /**
+       * Join of a navigation property whose $metadata has no referential constraints (e.g. a collection navigation
+       * between views, declared in smart-kit.config.json): property of this set -> property of the target set.
+       */
+      navigations?: Record<string, { on: Record<string, string> }>;
+    }
+  >;
 }
 
 export interface ColumnInfo {
@@ -92,6 +103,15 @@ export function buildSchema(model: MetaModel, storage: StorageMapping = { entity
       else if (nav.partner) {
         const partner = entitySets[target]!.type.navigations[nav.partner];
         if (partner?.referentialConstraints.length) join = partner.referentialConstraints.map((r) => ({ source: r.referencedProperty, target: r.property }));
+      }
+      const mapped = storage.entitySets[set.name]?.navigations?.[nav.name]?.on;
+      if (!join && mapped) {
+        join = Object.entries(mapped).map(([source, t]) => ({ source, target: t }));
+        for (const j of join) {
+          if (!info.columns[j.source]) throw new Error(`[smart-kit-server] storage mapping of ${set.name}, navigation ${nav.name}: '${j.source}' is not a property of ${set.name}`);
+          if (!entitySets[target]!.columns[j.target]) throw new Error(`[smart-kit-server] storage mapping of ${set.name}, navigation ${nav.name}: '${j.target}' is not a property of ${target}`);
+        }
+        if (!join.length) join = undefined;
       }
       const nullable = !nav.collection && (join ?? []).some((j) => info.columns[j.source]?.nullable !== false);
       info.navigations[nav.name] = { name: nav.name, collection: nav.collection, target, join, nullable };

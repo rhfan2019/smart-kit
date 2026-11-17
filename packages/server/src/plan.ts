@@ -13,6 +13,19 @@ export interface ColumnRef {
   /** Navigation names from the plan's entity set (single-valued only). */
   via: string[];
   column: ColumnInfo;
+  /**
+   * Inside a lambda body: how many lambda levels up the path starts (0 or undefined: the innermost lambda variable,
+   * or the entity set itself outside lambdas).
+   */
+  outer?: number;
+  /** The navigations in `via` are joined without the data scope of their targets (paths inside a scope condition). */
+  unscoped?: boolean;
+}
+
+/** A lambda variable in scope while binding a lambda body. */
+export interface LambdaVar {
+  name: string;
+  set: EntitySetInfo;
 }
 
 /** A bound (resolved and type-checked) filter expression. */
@@ -26,7 +39,19 @@ export type BoundExpr =
   | { kind: 'func'; name: 'tolower' | 'toupper' | 'trim' | 'length'; arg: BoundExpr }
   | { kind: 'like'; mode: 'contains' | 'startswith' | 'endswith'; arg: BoundExpr; text: string; caseInsensitive?: boolean }
   | { kind: 'search'; expr: SearchExpr; fields: ColumnRef[] }
-  | { kind: 'const'; value: boolean };
+  | { kind: 'const'; value: boolean }
+  | {
+      kind: 'lambda';
+      op: 'any' | 'all';
+      /** Where the collection navigation starts: single-valued navigations from the entity (or lambda variable). */
+      source: { via: string[]; outer?: number; set: EntitySetInfo };
+      navigation: NavigationInfo;
+      target: EntitySetInfo;
+      /** Bound against `target` (the lambda variable); undefined for `any()`. */
+      body?: BoundExpr;
+      /** The data scope of `target` applies to its rows (false inside a scope condition). */
+      scoped: boolean;
+    };
 
 /** "This row belongs to the parent addressed by the resource path": PurchaseOrders('1')/_Item. */
 export interface ParentLink {
@@ -75,7 +100,13 @@ export interface AggregatePlan {
   parent?: ParentLink;
 }
 
-/** Data scope of an entity set for the current request: an OData $filter expression, or nothing (no restriction). */
+/**
+ * Data scope of an entity set for the current request: an OData $filter expression, or nothing (no restriction).
+ * The expression may use the set's own properties and lambda operators over its collection navigations
+ * (`_ScopeKeys/any(k: k/CompanyCode in ('1000','2000'))`); inside a lambda body, paths through the lambda variable may
+ * also follow single-valued navigations. Navigations inside a scope condition see all rows of their targets (the
+ * targets' own scopes do not apply there, so scopes cannot recurse).
+ */
 export type ScopeFunction<C> = (entitySet: string, context: C) => string | undefined;
 
 export interface PlanOptions<C> {
@@ -138,6 +169,8 @@ export class Planner<C> {
   constructor(private readonly o: PlanOptions<C>) {}
 
   private scopeCache = new Map<string, Expr>();
+  /** True while a scope condition is bound: its navigations are not scoped (see ScopeFunction). */
+  private inScope = false;
 
   get schema() {
     return this.o.schema;
@@ -150,7 +183,30 @@ export class Planner<C> {
   }
 
   /** Resolves a property path (through single-valued navigations) to a column. */
-  resolve(set: EntitySetInfo, segments: string[], where: string): ColumnRef {
+  resolve(set: EntitySetInfo, segments: string[], where: string, env: LambdaVar[] = []): ColumnRef {
+    const start = this.start(set, segments, env, where);
+    const ref = this.resolveFrom(start.set, start.rest, where);
+    if (start.outer) ref.outer = start.outer;
+    if (this.inScope && ref.via.length) ref.unscoped = true;
+    return ref;
+  }
+
+  /** Where a path starts: `$it`, a lambda variable, or (any other first segment) the entity being filtered. */
+  private start(set: EntitySetInfo, segments: string[], env: LambdaVar[], where: string): { set: EntitySetInfo; outer: number; rest: string[] } {
+    const first = segments[0];
+    if (first === '$it') {
+      if (segments.length === 1) throw notImplemented(`${where}: $it alone is not supported; use $it/<property>.`);
+      return { set, outer: env.length, rest: segments.slice(1) };
+    }
+    for (let i = env.length - 1; i >= 0; i--) {
+      if (env[i]!.name !== first) continue;
+      if (segments.length === 1) throw notImplemented(`${where}: the lambda variable '${first}' alone is not a value; use ${first}/<property>.`);
+      return { set: env[i]!.set, outer: env.length - 1 - i, rest: segments.slice(1) };
+    }
+    return { set, outer: env.length, rest: segments };
+  }
+
+  private resolveFrom(set: EntitySetInfo, segments: string[], where: string): ColumnRef {
     let cur = set;
     const via: string[] = [];
     for (const [i, seg] of segments.entries()) {
@@ -160,7 +216,7 @@ export class Planner<C> {
       const nav = cur.navigations[seg];
       if (!nav) throw badRequest('PropertyNotFound', `${where}: '${segments.slice(0, i + 1).join('/')}' is not a property of ${set.name}.`, segments.join('/'));
       if (last) throw badRequest('InvalidPath', `${where}: '${segments.join('/')}' is a navigation property, not a property.`);
-      if (nav.collection) throw notImplemented(`${where}: '${segments.slice(0, i + 1).join('/')}' is a collection; any() and all() are not supported.`);
+      if (nav.collection) throw badRequest('InvalidPath', `${where}: '${segments.slice(0, i + 1).join('/')}' is a collection; use any() or all().`);
       if (!nav.join) throw notImplemented(`Navigation '${seg}' of ${cur.name} has no referential constraints in $metadata.`);
       via.push(seg);
       cur = this.set(nav.target);
@@ -169,25 +225,25 @@ export class Planner<C> {
   }
 
   /** Binds a $filter AST to the entity set. */
-  bind(set: EntitySetInfo, e: Expr, where: string): BoundExpr {
+  bind(set: EntitySetInfo, e: Expr, where: string, env: LambdaVar[] = []): BoundExpr {
     const bindOperand = (x: Expr, other: Expr | undefined): BoundExpr => {
       if (x.kind === 'literal') {
-        const otherBound = other && other.kind !== 'literal' ? this.bind(set, other, where) : undefined;
+        const otherBound = other && other.kind !== 'literal' ? this.bind(set, other, where, env) : undefined;
         return typedValue(x, otherBound ? typeOf(otherBound) : undefined, where);
       }
-      return this.bind(set, x, where);
+      return this.bind(set, x, where, env);
     };
     switch (e.kind) {
       case 'literal':
         if (e.type === 'boolean') return { kind: 'const', value: e.value };
         throw badRequest('InvalidFilter', `${where}: the literal ${JSON.stringify(e.value)} is not a condition.`);
       case 'path':
-        return { kind: 'column', ref: this.resolve(set, e.segments, where) };
+        return { kind: 'column', ref: this.resolve(set, e.segments, where, env) };
       case 'and':
       case 'or':
-        return { kind: e.kind, left: this.condition(set, e.left, where), right: this.condition(set, e.right, where) };
+        return { kind: e.kind, left: this.condition(set, e.left, where, env), right: this.condition(set, e.right, where, env) };
       case 'not':
-        return { kind: 'not', operand: this.condition(set, e.operand, where) };
+        return { kind: 'not', operand: this.condition(set, e.operand, where, env) };
       case 'compare': {
         const left = bindOperand(e.left, e.right);
         const right = bindOperand(e.right, e.left);
@@ -200,7 +256,7 @@ export class Planner<C> {
         return { kind: 'compare', op: e.op, left, right };
       }
       case 'in': {
-        const left = this.bind(set, e.left, where);
+        const left = this.bind(set, e.left, where, env);
         const list = e.list.map((x) => {
           if (x.kind !== 'literal') throw notImplemented(`${where}: only literals are supported in "in (...)".`);
           return typedValue(x, typeOf(left), where);
@@ -208,21 +264,23 @@ export class Planner<C> {
         return { kind: 'in', left, list };
       }
       case 'call':
-        return this.bindCall(set, e, where);
+        return this.bindCall(set, e, where, env);
+      case 'lambda':
+        return this.bindLambda(set, e, where, env);
     }
   }
 
   /** Binds an expression that must be a condition (Edm.Boolean). */
-  condition(set: EntitySetInfo, e: Expr, where: string): BoundExpr {
-    const b = this.bind(set, e, where);
+  condition(set: EntitySetInfo, e: Expr, where: string, env: LambdaVar[] = []): BoundExpr {
+    const b = this.bind(set, e, where, env);
     if (typeOf(b) !== 'Edm.Boolean') throw badRequest('InvalidFilter', `${where}: expected a condition, got a ${typeOf(b) ?? 'value'}.`);
     return b;
   }
 
-  private bindCall(set: EntitySetInfo, e: Extract<Expr, { kind: 'call' }>, where: string): BoundExpr {
+  private bindCall(set: EntitySetInfo, e: Extract<Expr, { kind: 'call' }>, where: string, env: LambdaVar[]): BoundExpr {
     const stringArg = (x: Expr | undefined) => {
       if (!x) throw badRequest('InvalidFilter', `${where}: ${e.name}() needs more arguments.`);
-      const b = this.bind(set, x, where);
+      const b = this.bind(set, x, where, env);
       if (typeOf(b) !== 'Edm.String') throw badRequest('TypeMismatch', `${where}: ${e.name}() needs a string argument.`);
       return b;
     };
@@ -245,6 +303,35 @@ export class Planner<C> {
       default:
         throw notImplemented(`${where}: the function ${e.name}() is not supported.`);
     }
+  }
+
+  /** `path/any(x: body)`, `path/all(x: body)`: the path ends at a collection navigation (single-valued ones before it). */
+  private bindLambda(set: EntitySetInfo, e: Extract<Expr, { kind: 'lambda' }>, where: string, env: LambdaVar[]): BoundExpr {
+    const text = `${e.path.join('/')}/${e.op}(...)`;
+    const start = this.start(set, e.path, env, where);
+    if (!start.rest.length) throw badRequest('InvalidPath', `${where}: ${text} needs a collection navigation property before ${e.op}().`);
+    let cur = start.set;
+    const via: string[] = [];
+    for (const [i, seg] of start.rest.entries()) {
+      const nav = cur.navigations[seg];
+      const last = i === start.rest.length - 1;
+      if (!nav) {
+        if (cur.columns[seg] && last) throw notImplemented(`${where}: ${text}: '${seg}' is a property; lambda operators over collections of primitive values are not supported.`);
+        throw badRequest('PropertyNotFound', `${where}: '${start.rest.slice(0, i + 1).join('/')}' is not a navigation property of ${start.set.name}.`, e.path.join('/'));
+      }
+      if (!nav.join) throw notImplemented(`Navigation '${seg}' of ${cur.name} has no referential constraints in $metadata (and no join in the storage mapping).`);
+      if (last) {
+        if (!nav.collection) throw badRequest('InvalidPath', `${where}: ${text}: '${seg}' is single-valued; ${e.op}() needs a collection navigation property.`);
+        const target = this.set(nav.target);
+        if (e.variable && (e.variable === '$it' || env.some((v) => v.name === e.variable))) throw badRequest('InvalidFilter', `${where}: the lambda variable '${e.variable}' is already in use.`);
+        const body = e.body ? this.condition(set, e.body, where, [...env, { name: e.variable!, set: target }]) : undefined;
+        return { kind: 'lambda', op: e.op, source: { via, outer: start.outer || undefined, set: cur }, navigation: nav, target, body, scoped: !this.inScope };
+      }
+      if (nav.collection) throw notImplemented(`${where}: '${start.rest.slice(0, i + 1).join('/')}' is a collection; put the lambda operator right after it.`);
+      via.push(seg);
+      cur = this.set(nav.target);
+    }
+    throw badRequest('InvalidPath', `${where}: empty path.`);
   }
 
   // ---------------------------------------------------------------- capabilities
@@ -293,6 +380,10 @@ export class Planner<C> {
           }
           break;
         }
+        case 'lambda':
+          // the collection navigation itself (NonFilterableProperties may list it); the body is about the target
+          usageOf(x.path.join('/')).negated ||= negated;
+          break;
         case 'call': {
           const p = pathOf(x);
           if (p) {
@@ -347,8 +438,16 @@ export class Planner<C> {
       ast = parseFilter(text, `scope of ${set.name}`);
       this.scopeCache.set(text, ast);
     }
-    const bound = this.condition(set, ast, `scope of ${set.name}`);
-    if (containsNavigation(bound)) throw new Error(`[smart-kit-server] the scope of ${set.name} may only use the set's own properties: ${text}`);
+    const before = this.inScope;
+    this.inScope = true;
+    let bound: BoundExpr;
+    try {
+      bound = this.condition(set, ast, `scope of ${set.name}`);
+    } finally {
+      this.inScope = before;
+    }
+    if (navigatesFromRoot(bound, 0))
+      throw new Error(`[smart-kit-server] the scope of ${set.name} may use the set's own properties and any() / all() over its collection navigations, but no other navigation paths: ${text}`);
     return [bound];
   }
 
@@ -524,23 +623,31 @@ export class Planner<C> {
   }
 }
 
-function containsNavigation(e: BoundExpr): boolean {
+/**
+ * Does the expression follow a single-valued navigation from the entity it is bound to (`depth` lambda levels below
+ * it)? Such joins are not possible in a scope condition (it is also rendered inside JOIN ... ON and EXISTS clauses);
+ * navigations from a lambda variable are (the lambda's subquery holds their joins).
+ */
+function navigatesFromRoot(e: BoundExpr, depth: number): boolean {
+  const fromRoot = (r: { via: string[]; outer?: number }) => r.via.length > 0 && (r.outer ?? 0) === depth;
   switch (e.kind) {
     case 'column':
-      return e.ref.via.length > 0;
+      return fromRoot(e.ref);
     case 'compare':
     case 'and':
     case 'or':
-      return containsNavigation(e.left) || containsNavigation(e.right);
+      return navigatesFromRoot(e.left, depth) || navigatesFromRoot(e.right, depth);
     case 'in':
-      return containsNavigation(e.left);
+      return navigatesFromRoot(e.left, depth);
     case 'not':
-      return containsNavigation(e.operand);
+      return navigatesFromRoot(e.operand, depth);
     case 'func':
     case 'like':
-      return containsNavigation(e.arg);
+      return navigatesFromRoot(e.arg, depth);
     case 'search':
-      return e.fields.some((f) => f.via.length > 0);
+      return e.fields.some(fromRoot);
+    case 'lambda':
+      return fromRoot(e.source) || (!!e.body && navigatesFromRoot(e.body, depth + 1));
     default:
       return false;
   }

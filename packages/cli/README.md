@@ -24,4 +24,6 @@ npx smart-kit generate --config smart-kit.config.json
 }
 ```
 
+Views have no foreign keys: declare their navigations in `navigations`, e.g.
+`"user_roles": { "from": "user_list", "to": "user_role_list", "on": { "id": "user_id" }, "toMany": "_Roles" }`.
 Naming rules and all options: `docs/README.md` in the package. Node ≥ 24. MIT License.

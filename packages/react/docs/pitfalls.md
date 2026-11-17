@@ -19,6 +19,10 @@
 | Call the generated CSDL file your annotation file | Keep annotations in their own file; rerun `smart-kit generate` after schema changes | `generate` overwrites the generated files only and then checks that the annotation targets still exist. |
 | Use the names `SAP`, `Fiori`, `UI5` in your component or CSS names when wrapping smart-kit | Neutral names | Trademarks; smart-kit's own names avoid them (vocabulary namespaces are standard and fine). |
 | Change `locale` without reloading the services | Pass the language to `loadService` and reload when it changes | Labels come from `$metadata` per language. |
+| Set `data-theme` on `<html>` for the host's own themes and wonder why smart-kit's colours change | Switch smart-kit with `data-sk-theme` / `data-sk-density`; set `data-sk-theme="host"` on `<html>` to make smart-kit ignore `data-theme` | `data-theme` / `data-density` are only read for compatibility while `<html>` has no `data-sk-theme` / `data-sk-density`. |
+| `@import '@rhfan2019/smart-kit/styles.css' layer(smart-kit)` and fight the order with Tailwind / Mantine | `@import '@rhfan2019/smart-kit/styles.layered.css'` and one `@layer …, smart-kit, …;` order statement | The layered stylesheet is already inside `@layer smart-kit`; unlayered host rules always win over it. |
+| Import smart-kit components in a Next.js server component (`page.tsx` without `'use client'`) and pass functions to them | Render them in a client component; pass only serializable props from the server | The entries are client modules (`'use client'`); callbacks such as `onRowNavigate` cannot cross from a server component. |
+| Store "this month" as two dates in a saved view or default | Use the relative operators (`THISMONTH`, `LASTDAYS` with a number …) in the condition | They are resolved against today each time the list is read (`toFilter`, in the time zone of `SmartKitProvider`). |
 
 ## Build warnings you can ignore
 

@@ -1,17 +1,21 @@
 /**
- * Condition editor of one filter field: tokens with typed conditions, fixed-value multi-select, date range (LR-10, LR-11);
- * the control follows Capabilities.FilterExpressionRestrictions (P2-LR-19): one value, values only, one range, or
- * search patterns.
+ * Condition editor of one filter field: tokens with typed conditions, fixed-value multi-select, date range (LR-10, LR-11),
+ * relative dates (today, this month, last X days …); the control follows Capabilities.FilterExpressionRestrictions
+ * (P2-LR-19): one value, values only, one range, or search patterns. Values of a value list are shown according to
+ * UI.TextArrangement (TextOnly: the text alone; TextSeparate is shown like TextFirst here).
  */
-import { ActionIcon, Select, TagsInput } from '@mantine/core';
+import { ActionIcon, Button, Group, NumberInput, Popover, Select, TagsInput } from '@mantine/core';
 import { DateInput, DatePickerInput } from '@mantine/dates';
-import { conditionAllowed, filterExpressionRules, getProperty, isComplete, type Condition, type PropertyModel } from '@rhfan2019/smart-kit-core';
+import {
+  arrangeText, conditionAllowed, filterExpressionRules, getProperty, isComplete, isRelativeDateOperator, OPERATOR_ARITY, RELATIVE_DATE_OPERATORS, valueListTextArrangement,
+  type Condition, type Operator, type PropertyModel, type TextArrangement,
+} from '@rhfan2019/smart-kit-core';
 import dayjs from 'dayjs';
-import { Copy } from 'lucide-react';
+import { CalendarClock, Copy } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useService, useSmartKit, useText } from '../context/SmartKitProvider';
 import { getPath } from '../field/values';
-import { conditionText, parseConditionText } from './conditionText';
+import { conditionText, parseConditionText, sameCondition } from './conditionText';
 import { useValueList } from './useValueList';
 
 export interface ConditionInputProps {
@@ -69,6 +73,13 @@ export function ConditionInput(p: ConditionInputProps) {
   const fixed = useValueList(vl, { top: 200, enabled: Boolean(vl?.fixedValues) }, p.service);
   const suggest = useValueList(vl, { search: typed, top: 10, enabled: Boolean(vl && !vl.fixedValues && typed.trim().length > 0) }, p.service);
 
+  // UI.TextArrangement of the values; TextSeparate has no second column in a field, so it reads like TextFirst.
+  const annotated = valueListTextArrangement(service.model, prop);
+  const arrangement: TextArrangement | undefined = annotated === 'TextSeparate' ? 'TextFirst' : annotated;
+  const valueLabel = (d: { key: string; text?: string }) => arrangeText(d.key, d.text, arrangement);
+  const relativeOps = isDateType(prop) ? RELATIVE_DATE_OPERATORS.filter((o) => rules.operators.includes(o)) : [];
+  const hasRelative = p.conditions.some((c) => isRelativeDateOperator(c.operator));
+
   const describe = (row: Record<string, unknown>) => {
     const key = String(getPath(row, vl!.keyProperty) ?? '');
     const text = vl!.descriptionProperty ? getPath(row, vl!.descriptionProperty) : undefined;
@@ -96,13 +107,14 @@ export function ConditionInput(p: ConditionInputProps) {
 
   if (rules.expression === 'SingleValue' && vl?.fixedValues) {
     const v = p.conditions[0]?.values[0];
-    const data = (fixed.data?.rows ?? []).map(describe).map((d) => ({ value: d.key, label: d.text ? `${d.text} (${d.key})` : d.key }));
+    const described = (fixed.data?.rows ?? []).map(describe);
+    const data = described.map((d) => ({ value: d.key, label: valueLabel(d) }));
     return (
       <Select
         {...common} clearable searchable data={data} value={v === undefined ? null : String(v)} data-sk-single-select
         onChange={(val) => {
-          const d = data.find((x) => x.value === val);
-          p.onChange(val === null ? [] : [{ operator: 'EQ', values: [val], text: d && d.label !== val ? d.label.replace(/ \([^)]*\)$/, '') : undefined }]);
+          const d = described.find((x) => x.key === val);
+          p.onChange(val === null ? [] : [{ operator: 'EQ', values: [val], text: d?.text }]);
         }}
       />
     );
@@ -117,11 +129,23 @@ export function ConditionInput(p: ConditionInputProps) {
     );
   }
 
-  const range = isDateType(prop) ? rangeOf(p.conditions) ?? (rules.expression === 'SingleRange' ? [null, null] : undefined) : undefined;
+  const range = isDateType(prop) && !hasRelative ? rangeOf(p.conditions) ?? (rules.expression === 'SingleRange' ? [null, null] : undefined) : undefined;
+  const relative = relativeOps.length ? (
+    <RelativeDateButton
+      operators={relativeOps}
+      onPick={(c) => {
+        if (range) { p.onChange([c]); return; }
+        const next = [...p.conditions.filter((x) => !sameCondition(x, c)), c];
+        p.onChange(rules.max !== undefined ? next.slice(-rules.max) : next);
+      }}
+    />
+  ) : undefined;
   if (range) {
     return (
       <DatePickerInput
         {...common}
+        leftSection={relative}
+        leftSectionPointerEvents="all"
         type="range"
         allowSingleDateInRange
         clearable
@@ -146,12 +170,14 @@ export function ConditionInput(p: ConditionInputProps) {
     );
   }
 
-  const tokens = p.conditions.map((c) => conditionText(c, prop, intlLocale, timeZone));
+  const tokens = p.conditions.map((c) => conditionText(c, prop, intlLocale, timeZone, { t, textArrangement: arrangement }));
   const suggestions = ((vl?.fixedValues ? fixed.data?.rows : suggest.data?.rows) ?? []).map(describe);
-  const suggestionLabel = (d: { key: string; text?: string }) => (d.text ? `${d.text} (${d.key})` : d.key);
+  const suggestionLabel = valueLabel;
   return (
     <TagsInput
       {...common}
+      leftSection={relative}
+      leftSectionPointerEvents="all"
       value={tokens}
       searchValue={typed}
       onSearchChange={setTyped}
@@ -187,6 +213,46 @@ export function ConditionInput(p: ConditionInputProps) {
         p.onChange(kept);
       }}
     />
+  );
+}
+
+/** Button with the relative dates of a date filter field (S6): today, this week, last X days … */
+function RelativeDateButton(p: { operators: readonly Operator[]; onPick(c: Condition): void }) {
+  const t = useText();
+  const [opened, setOpened] = useState(false);
+  const [days, setDays] = useState<Record<string, number>>({ LASTDAYS: 7, NEXTDAYS: 7 });
+  const pick = (c: Condition) => { setOpened(false); p.onPick(c); };
+  const plain = p.operators.filter((o) => OPERATOR_ARITY[o] === 0);
+  const counted = p.operators.filter((o) => OPERATOR_ARITY[o] === 1);
+  return (
+    <Popover opened={opened} onChange={setOpened} position="bottom-start" trapFocus returnFocus>
+      <Popover.Target>
+        <ActionIcon variant="subtle" aria-label={t('dateRange.button')} title={t('dateRange.button')} aria-expanded={opened} onClick={() => setOpened((o) => !o)} data-sk-relative-dates>
+          <CalendarClock className="sk-icon" />
+        </ActionIcon>
+      </Popover.Target>
+      <Popover.Dropdown className="sk-relative-dates">
+        <div className="sk-relative-dates__list" role="group" aria-label={t('dateRange.button')}>
+          {plain.map((o) => (
+            <Button key={o} variant="subtle" size="xs" justify="flex-start" onClick={() => pick({ operator: o, values: [] })} data-sk-relative-date={o}>
+              {t(`dateRange.${o}` as 'dateRange.TODAY')}
+            </Button>
+          ))}
+        </div>
+        {counted.map((o) => (
+          <Group key={o} gap="xs" wrap="nowrap" className="sk-relative-dates__days">
+            <NumberInput
+              size="xs" min={1} max={9999} allowDecimal={false} allowNegative={false} value={days[o]} aria-label={t('dateRange.dayCount')}
+              onChange={(v) => setDays({ ...days, [o]: typeof v === 'number' ? v : Number(v) || 0 })}
+              className="sk-relative-dates__count"
+            />
+            <Button variant="subtle" size="xs" justify="flex-start" disabled={!(days[o]! >= 1)} onClick={() => pick({ operator: o, values: [days[o]] })} data-sk-relative-date={o} className="sk-grow">
+              {t(`dateRange.${o}` as 'dateRange.LASTDAYS', { count: days[o] ?? 0 })}
+            </Button>
+          </Group>
+        ))}
+      </Popover.Dropdown>
+    </Popover>
   );
 }
 

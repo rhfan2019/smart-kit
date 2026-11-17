@@ -54,7 +54,7 @@ test('P2-OP-17 direct save: PATCH with If-Match; a stale ETag is reported as a c
   await input(page, 'Description').fill('Mine');
   await page.locator('[data-sk-save]').click();
   await page.locator('[data-sk-message-button]').click();
-  await expect(page.locator('[data-sk-message="error"]')).toContainText('changed by someone else');
+  await expect(page.locator('[data-sk-message="error"]')).toContainText(/changed this/);
   expect((await get(page, 'purchasing', "PurchaseOrders('4500000003')")).Description).toBe('Changed by someone else');
 });
 

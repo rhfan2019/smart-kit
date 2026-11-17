@@ -10,6 +10,7 @@ export type {
 export { buildModel, resolvePath, parseAnnotationPath, DEFAULT_CAPABILITIES, type BuildModelOptions } from './model/buildModel';
 export { DERIVED_GENERAL_SECTION, deriveColumns } from './model/derive';
 export { humanize } from './model/labels';
+export { arrangeText, valueListTextArrangement } from './model/textArrangement';
 export { calculateCriticality, calculateTrend } from './model/criticality';
 export { getEntitySet, getEntityType, getUi, getProperty, capabilitiesFor, targetEntitySet, isFilterable, isSortable, UnknownEntitySetError } from './model/access';
 export { csdlJsonToXml } from './csdl/csdlJsonToXml';
@@ -17,7 +18,8 @@ export { ModelError, toCsdlXml, type CsdlSource } from './csdl/load';
 
 export {
   OPERATORS, OPERATOR_ARITY, toFilter, propertyFilter, isComplete, activeFilterPaths, matches, compareValues, compareDecimal, startOfDayIso,
-  type Condition, type FilterState, type Operator, type FilterOptions,
+  RELATIVE_DATE_OPERATORS, isRelativeDateOperator, relativeDateRange, resolveCondition, todayIn,
+  type Condition, type FilterState, type Operator, type ValueOperator, type RelativeDateOperator, type FilterOptions,
 } from './conditions/conditions';
 export { filterExpressionRules, conditionAllowed, restrictConditions, type FilterExpressionRules } from './conditions/filterExpressions';
 export { toLiteral, LiteralError } from './query/literals';
@@ -42,7 +44,7 @@ export { ODataV4Provider, loadService, type ODataV4ProviderOptions, type LoadSer
 export { MemoryProvider, type MemoryProviderOptions } from './data/memory';
 export { ODataError, ConcurrencyError, errorFromResponse, isAbortError, type ODataErrorDetail } from './data/errors';
 
-export { MemoryVariantStore, ODataVariantStore, STANDARD_VARIANT_ID, type Variant, type VariantContent, type VariantStore } from './state/variants';
+export { MemoryVariantStore, ODataVariantStore, STANDARD_VARIANT_ID, type ODataVariantStoreOptions, type Variant, type VariantContent, type VariantStore } from './state/variants';
 export { MemoryPageStateStore, createSessionPageStateStore, type PageStateStore } from './state/pageState';
 export type { NavigationAdapter, NavigationTarget } from './state/navigation';
 export { DirectEditStrategy, DraftEditStrategy, editStrategyFor, siblingPath, isDraftRow, type EditSession, type EditStrategy } from './state/edit';

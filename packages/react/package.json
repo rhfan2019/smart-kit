@@ -1,6 +1,6 @@
 {
   "name": "@rhfan2019/smart-kit",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Metadata-driven, white-box, themeable React building blocks for list and object pages.",
   "keywords": [
     "react",
@@ -118,6 +118,10 @@
     "./styles.css": {
       "smart-kit-source": "./src/theme/styles.css",
       "default": "./dist/styles.css"
+    },
+    "./styles.layered.css": {
+      "smart-kit-source": "./src/theme/styles.layered.css",
+      "default": "./dist/styles.layered.css"
     }
   },
   "publishConfig": {
@@ -132,7 +136,7 @@
     "build": "vite build && node ../../scripts/copy-css.mjs && node ../../scripts/fix-dts-imports.mjs ."
   },
   "dependencies": {
-    "@rhfan2019/smart-kit-core": "0.1.0",
+    "@rhfan2019/smart-kit-core": "0.2.0",
     "lucide-react": "1.73.0",
     "write-excel-file": "4.1.1"
   },

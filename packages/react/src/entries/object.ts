@@ -1,3 +1,5 @@
+'use client';
+
 /** `@rhfan2019/smart-kit/object`: object page layout, header facets, forms. */
 export { useObject, useObjectTitle, type ObjectResult, type UseObjectOptions } from '../object/useObject';
 export { useSectionScrollSpy } from '../object/useSectionScrollSpy';

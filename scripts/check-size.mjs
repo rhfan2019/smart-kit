@@ -20,8 +20,9 @@ const CORE_DIST = join(ROOT, 'packages/core/dist');
 const ENTRY_BUDGETS = {
   'core:.': 60,
   '.': 95, // everything, all subpaths together; 80 → 95 with the cards (ADR-028, /cards ≈ 18 KB)
-  context: 8, i18n: 7, theme: 2, util: 1, field: 15, filter: 11, variants: 4, table: 36, chart: 12,
-  object: 30, page: 7, actions: 3, edit: 19, messages: 2, templates: 69, cards: 23,
+  // context, i18n, table, templates +1 to +2: the texts and the code of relative dates and the FCL separator (S6, S23)
+  context: 9, i18n: 8, theme: 2, util: 1, field: 15, filter: 11, variants: 4, table: 39, chart: 12,
+  object: 30, page: 7, actions: 3, edit: 19, messages: 2, templates: 73, cards: 23,
 };
 
 /** Budgets for what an application ships when it imports only this (React and React DOM excluded). */
@@ -101,7 +102,8 @@ for (const name of entryNames) {
 }
 // P5: one stylesheet for all components (styles.css imports tokens.css). 13 → 16 KB with the cards (ADR-028, about 4 KB).
 const css = ['styles.css', 'tokens.css'].reduce((n, f) => n + gzipSync(readFileSync(join(REACT_DIST, f))).length, 0) / 1024;
-report('@rhfan2019/smart-kit/styles.css (with tokens.css)', css, 16);
+// 16 → 17 KB: data-sk-theme selectors beside the former data-theme ones (S7), FCL separator, relative dates (S6, S23)
+report('@rhfan2019/smart-kit/styles.css (with tokens.css)', css, 17);
 
 console.log('\nWhat an application ships (everything except React):');
 for (const s of SCENARIOS) report(s.name, await bundle(s.code, reactOnly), s.budget);

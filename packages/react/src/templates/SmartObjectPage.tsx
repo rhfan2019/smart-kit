@@ -14,7 +14,7 @@ import { ChevronDown, ChevronUp, PanelRight } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import {
   actionPaths, DraftMarker, fieldErrors, getPath, HeaderFacet, isActionAvailable, isEditable, MessageButton, MessageProvider, ObjectPageLayout, ShareMenu, SmartField,
-  SmartForm, SmartTable, useActionRunner, useColumn, useEditStrategy, useMessages, useObject, useObjectTitle, usePageState, useService, useSmartKit, useText,
+  SmartForm, SmartTable, typedText, useActionRunner, useColumn, useEditStrategy, useMessages, useObject, useObjectTitle, usePageState, useService, useSmartKit, useText,
   validate, type ExtendEntry, type SectionItem, type TableExtendEntry, type ToolbarAction,
 } from '../index';
 
@@ -61,6 +61,21 @@ export interface SmartObjectPageProps {
   showAllThreshold?: number;
   /** Letterboxing of the page (DP Responsiveness). */
   letterboxing?: boolean;
+  /**
+   * "Edit Header" for the header fields in a dialog (OP partial edit; default true). Turn it off when the host's
+   * `editStrategy` saves the whole page at once; "Edit" still changes the header fields.
+   */
+  partialHeaderEdit?: boolean;
+  /** "Share" in the header actions (default true). */
+  share?: boolean;
+}
+
+/** Initials from a title: the first letters of up to two words (Latin), else the first character. */
+function initialsOf(title: string): string {
+  const words = title.trim().split(/\s+/).filter(Boolean);
+  if (!words.length) return '';
+  if (/^[A-Za-z]/.test(words[0]!)) return words.slice(0, 2).map((w) => w[0]!.toUpperCase()).join('');
+  return [...words[0]!][0] ?? '';
 }
 
 function Crumb({ path, service, onClick }: { path: string; service?: string; onClick(): void }) {
@@ -224,7 +239,7 @@ function ObjectPageInner(p: SmartObjectPageProps & { registerNavigate(fn: (m: Me
         r = await s.save();
       }
       messages.clear();
-      messages.add([...r.messages, { id: `saved-${Date.now()}`, type: 'success', message: creating ? t('create.done') : t('edit.saved'), source: 'server' }]);
+      messages.add([...r.messages, { id: `saved-${Date.now()}`, type: 'success', message: creating ? typedText(t, 'create.done', ui.headerInfo.typeName) : t('edit.saved'), source: 'server' }]);
       setSession(null);
       setDraftStatus(null);
       void invalidate();
@@ -237,7 +252,7 @@ function ObjectPageInner(p: SmartObjectPageProps & { registerNavigate(fn: (m: Me
       if (p.path.includes('IsActiveEntity=false')) navigation?.toObject(activePath, service.name);
       obj.refresh();
     } catch (e) {
-      messages.add(e instanceof ConcurrencyError ? [{ id: `conflict-${Date.now()}`, type: 'error', message: t('edit.conflict'), source: 'server' }] : messagesFromError(e));
+      messages.add(e instanceof ConcurrencyError ? [{ id: `conflict-${Date.now()}`, type: 'error', message: typedText(t, 'edit.conflict', ui.headerInfo.typeName), source: 'server' }] : messagesFromError(e));
     } finally {
       setBusy(false);
     }
@@ -329,10 +344,19 @@ function ObjectPageInner(p: SmartObjectPageProps & { registerNavigate(fn: (m: Me
   const image = ui.headerInfo.imageUrl ? ('path' in ui.headerInfo.imageUrl ? getPath(data, ui.headerInfo.imageUrl.path) : ui.headerInfo.imageUrl.value) : undefined;
   // OP Image Facet: pressing the image enlarges it.
   const [enlarged, setEnlarged] = useState(false);
+  // Without an image: initials from UI.HeaderInfo/Initials; for persons (Communication.Contact) else from the title.
+  // Round for persons, a rounded square otherwise (Fiori avatar).
+  const givenInitials = ui.headerInfo.initials ? ('path' in ui.headerInfo.initials ? getPath(data, ui.headerInfo.initials.path) : ui.headerInfo.initials.value) : undefined;
+  const initials = image || creating || !data ? ''
+    : givenInitials !== undefined && givenInitials !== null && givenInitials !== '' ? String(givenInitials).slice(0, 3)
+      : ui.headerInfo.person && titleValue !== undefined && titleValue !== null && titleValue !== '' ? initialsOf(String(titleValue)) : '';
+  const avatarRadius = ui.headerInfo.person ? 'xl' : 'md';
   const avatar = (size: 'sm' | 'lg') => (image ? (
     <UnstyledButton onClick={() => setEnlarged(true)} aria-label={t('object.enlargeImage', { name: heading })} className="sk-object-avatar__button" data-sk-avatar-enlarge={size}>
-      <Avatar src={String(image)} alt={t('object.image', { name: heading })} size={size} radius="md" className="sk-object-avatar" />
+      <Avatar src={String(image)} alt={t('object.image', { name: heading })} size={size} radius={avatarRadius} className="sk-object-avatar" />
     </UnstyledButton>
+  ) : initials ? (
+    <Avatar size={size} radius={avatarRadius} className="sk-object-avatar sk-object-avatar--initials" aria-hidden data-sk-avatar-initials={initials}>{initials}</Avatar>
   ) : undefined);
 
   // Tab navigation: every tab with a table shows its item count (OP Tab Navigation), also before the tab is opened.
@@ -468,13 +492,13 @@ function ObjectPageInner(p: SmartObjectPageProps & { registerNavigate(fn: (m: Me
     ...(deletable ? [{ id: 'Delete', label: t('actions.delete'), onPress: () => setConfirm('delete') }] : []),
     ...headerModelActions.map((a) => ({ id: a.id, label: a.label, onPress: () => runner.run(a, [objectTarget]) })),
     ...(side ? [{ id: 'SideContent', label: sideOpen ? t('object.hideSideContent') : t('object.showSideContent'), icon: <PanelRight className="sk-icon" />, onPress: () => setSideOpen((o) => !o) }] : []),
-    { id: 'Share', label: t('actions.share'), onPress: () => undefined, render: () => <ShareMenu title={heading} href={navigation?.href?.({ kind: 'object', path: activePath, service: service.name })} /> },
+    ...(p.share === false ? [] : [{ id: 'Share', label: t('actions.share'), onPress: () => undefined, render: () => <ShareMenu title={heading} href={navigation?.href?.({ kind: 'object', path: activePath, service: service.name })} /> }]),
   ];
 
   const message = typeof p.headerMessage === 'function' ? p.headerMessage(data) : p.headerMessage;
   const errorStrip = obj.error && !creating ? (
     <Alert color="red" variant="light" role="alert" data-sk-object-error>
-      {'status' in obj.error && (obj.error as { status: number }).status === 404 ? t('object.notFound') : t('object.loadError', { message: obj.error.message })}
+      {'status' in obj.error && (obj.error as { status: number }).status === 404 ? typedText(t, 'object.notFound', ui.headerInfo.typeName) : typedText(t, 'object.loadError', ui.headerInfo.typeName, { message: obj.error.message })}
     </Alert>
   ) : null;
 
@@ -500,7 +524,7 @@ function ObjectPageInner(p: SmartObjectPageProps & { registerNavigate(fn: (m: Me
 
   const marker = draftEnabled && (mode === 'edit' || obj.data?.HasDraftEntity === true) ? <DraftMarker row={session?.draft ? { ...obj.data, IsActiveEntity: false, DraftAdministrativeData: { DraftIsCreatedByMe: true, ...(obj.data?.DraftAdministrativeData as Row | undefined) } } : obj.data} /> : undefined;
   const keyInfo = typeof p.keyInfo === 'function' ? p.keyInfo(data) : p.keyInfo;
-  const editHeaderButton = !editing && editable && headerFields.length && ui.headerFacets.length ? (
+  const editHeaderButton = p.partialHeaderEdit !== false && !editing && editable && headerFields.length && ui.headerFacets.length ? (
     <Button variant="subtle" size="xs" onClick={() => setPartialEdit(true)} data-sk-edit-header>{t('actions.editHeader')}</Button>
   ) : null;
 
@@ -581,7 +605,8 @@ function PartialEditDialog(p: { path: string; row: Row | undefined; fields: Fiel
       await session.save();
       p.onClose(true);
     } catch (e) {
-      if (session?.draft) await session.cancel().catch(() => undefined);
+      // End the session whatever started it (draft, direct save, host editStrategy), so the host leaves edit mode.
+      if (session) await session.cancel().catch(() => undefined);
       const ms = messagesFromError(e);
       const fe = fieldErrors(ms);
       setErrors(Object.keys(fe).length ? fe : { $form: ms.map((m) => m.message).join(' ') });

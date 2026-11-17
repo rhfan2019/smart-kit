@@ -5,7 +5,7 @@
 
 ## `@rhfan2019/smart-kit-cli`
 
-`agents` (function) · `agentsBlock` (function) · `AgentsResult` (interface) · `check` (function) · `checkAnnotations` (function) · `CheckProblem` (interface) · `CliConfig` (interface) · `CsdlIndex` (interface) · `EntityConfig` (interface) · `GenEntity` (interface) · `generate` (function) · `GenerateResult` (interface) · `GenModel` (interface) · `GenNavigation` (interface) · `GenProperty` (interface) · `indexCsdl` (function) · `introspect` (function) · `loadConfig` (function) · `LoadedConfig` (interface) · `NavigationConfig` (interface) · `pascal` (function) · `plural` (function) · `Queryable` (interface) · `toCsdl` (function) · `toStorage` (function)
+`agents` (function) · `agentsBlock` (function) · `AgentsResult` (interface) · `check` (function) · `checkAnnotations` (function) · `checkDeclaredNavigations` (function) · `CheckProblem` (interface) · `CliConfig` (interface) · `CsdlIndex` (interface) · `DeclaredNavigationConfig` (interface) · `EntityConfig` (interface) · `GenEntity` (interface) · `generate` (function) · `GenerateResult` (interface) · `GenModel` (interface) · `GenNavigation` (interface) · `GenProperty` (interface) · `indexCsdl` (function) · `introspect` (function) · `loadConfig` (function) · `LoadedConfig` (interface) · `NavigationConfig` (interface) · `pascal` (function) · `plural` (function) · `Queryable` (interface) · `StorageFile` (interface) · `toCsdl` (function) · `toStorage` (function)
 
 ### `agents` — function
 
@@ -32,10 +32,10 @@ agentsBlock(cwd: string): { text: string; packages: AgentsResult["packages"]; }
 
 ### `check` — function
 
-`smart-kit check`: the annotation files against the generated CSDL file on disk.
+`smart-kit check`: the annotation files, and the navigations declared in the configuration, against the generated CSDL file and storage mapping on disk.
 
 ```ts
-check(config: LoadedConfig, csdl?: string): CheckProblem[]
+check(config: LoadedConfig, csdl?: string, storage?: string): CheckProblem[]
 ```
 
 ### `checkAnnotations` — function
@@ -44,6 +44,14 @@ Checks the annotation files against the CSDL index.
 
 ```ts
 checkAnnotations(index: CsdlIndex, files: { name: string; xml: string; }[]): CheckProblem[]
+```
+
+### `checkDeclaredNavigations` — function
+
+Checks the navigations declared in the configuration (`navigations.<name>` with `from`) against the generated CSDL and storage mapping: `from` and `to` are entities, every column of `on` exists, and the navigation properties were generated.
+
+```ts
+checkDeclaredNavigations(config: Pick<CliConfig, "schema" | "navigations">, index: CsdlIndex, storage: StorageFile, file?: string): CheckProblem[]
 ```
 
 ### `CheckProblem` — interface
@@ -65,7 +73,7 @@ checkAnnotations(index: CsdlIndex, files: { name: string; xml: string; }[]): Che
 | `container` |  | `string` |  |
 | `annotations` |  | `string[]` | Hand-written annotation files, checked after generation. |
 | `entities` |  | `Record&lt;string, EntityConfig>` |  |
-| `navigations` |  | `Record&lt;string, NavigationConfig>` | Per foreign-key constraint name. |
+| `navigations` |  | `Record&lt;string, NavigationConfig \| DeclaredNavigationConfig>` | Per foreign-key constraint name: the names of its navigation properties. Entries with `from` declare navigations without a foreign key (views): see DeclaredNavigationConfig. |
 
 ### `CsdlIndex` — interface
 
@@ -77,6 +85,19 @@ checkAnnotations(index: CsdlIndex, files: { name: string; xml: string; }[]): Che
 | `sets` | **yes** | `Map&lt;string, string>` |  |
 | `operations` | **yes** | `Set&lt;string>` |  |
 | `alias` |  | `string` |  |
+
+### `DeclaredNavigationConfig` — interface
+
+A navigation the database has no foreign key for, e.g. between views (`navigations.<any name>` with `from`): { "from": "user_list", "to": "user_role_list", "on": { "id": "user_id" }, "toMany": "_Roles", "partner": "_User" } gives user_list the collection navigation _Roles (and user_role_list the single-valued _User).
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `from` | **yes** | `string` | Table or view the navigation starts from (its name in the schema, as in "entities"). |
+| `to` | **yes** | `string` | Table or view the navigation leads to. |
+| `on` | **yes** | `Record&lt;string, string>` | Join: column of `from` -> column of `to` (column names; the property names of the entities work too). |
+| `toOne` |  | `string` | Name of a single-valued navigation from `from` to `to` (one target row at most). Give this or `toMany`. |
+| `toMany` |  | `string` | Name of a collection navigation from `from` to `to`. Give this or `toOne`. |
+| `partner` |  | `string` | Name of the navigation back from `to` to `from`: single-valued for `toMany`, a collection for `toOne`. |
 
 ### `EntityConfig` — interface
 
@@ -138,6 +159,7 @@ generate(config: LoadedConfig, o?: { url?: string; db?: Queryable; }): Promise<G
 | `nullable` | **yes** | `boolean` |  |
 | `partner` |  | `string` |  |
 | `constraints` |  | `{ property: string; referencedProperty: string }[]` | Dependent side only: own property -> property of the target. |
+| `on` |  | `Record&lt;string, string>` | Declared navigations (no foreign key): own property -> property of the target, written to the storage mapping. |
 
 ### `GenProperty` — interface
 
@@ -184,13 +206,16 @@ loadConfig(file: string): LoadedConfig
 | `schema` | **yes** | `string` | PostgreSQL schema to read. |
 | `namespace` | **yes** | `string` |  |
 | `output` | **yes** | `{ csdl: string; storage: string }` |  |
+| `file` |  | `string` | Path of the configuration file (used in messages). |
 | `connection` |  | `string` | Connection string. --url and the environment variable SMART_KIT_DATABASE_URL take precedence; without any, pg reads PG*. |
 | `container` |  | `string` |  |
 | `annotations` |  | `string[]` | Hand-written annotation files, checked after generation. |
 | `entities` |  | `Record&lt;string, EntityConfig>` |  |
-| `navigations` |  | `Record&lt;string, NavigationConfig>` | Per foreign-key constraint name. |
+| `navigations` |  | `Record&lt;string, NavigationConfig \| DeclaredNavigationConfig>` | Per foreign-key constraint name: the names of its navigation properties. Entries with `from` declare navigations without a foreign key (views): see DeclaredNavigationConfig. |
 
 ### `NavigationConfig` — interface
+
+Names of the navigation properties generated from a foreign key constraint (`navigations.<constraint name>`).
 
 | Member | Required | Type | Description |
 | --- | --- | --- | --- |
@@ -220,6 +245,14 @@ Anything with pg's `query(text, values)`: a pg.Client or pg.Pool.
 | Member | Required | Type | Description |
 | --- | --- | --- | --- |
 | `query` | **yes** | `(text: string, values?: unknown[]) => Promise&lt;{ rows: R[] }>` |  |
+
+### `StorageFile` — interface
+
+The generated storage mapping (*.storage.json), as far as the check needs it.
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `entitySets` | **yes** | `Record&lt;string, { table: string; columns?: Record&lt;string, string>; navigations?: Record&lt;string, { on: Record&lt;string, string> }> }>` |  |
 
 ### `toCsdl` — function
 

@@ -684,6 +684,8 @@ function buildUi(fullName: string, ctx: UiContext): EntityUi {
         title: pathOf(hi.Title?.Value),
         description: pathOf(hi.Description?.Value),
         imageUrl: valueRef(hi.ImageUrl),
+        initials: valueRef(hi.Initials),
+        person: Boolean(ann.Communication?.Contact) || undefined,
       }
     : undefined;
 

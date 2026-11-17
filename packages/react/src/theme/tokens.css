@@ -1,7 +1,10 @@
 /*
  * smart-kit design tokens. The ONLY file in packages/react that may contain literal colors and sizes
  * (checked by scripts/check-tokens.mjs). Three layers: primitives → semantics → component tokens.
- * Themes switch with [data-theme], density with [data-density]. See docs/06-extension-and-theming.md §3.
+ * Themes switch with [data-sk-theme], density with [data-sk-density] (on the root element or any container). See
+ * docs/06-extension-and-theming.md §3. The former [data-theme] / [data-density] still work while the root element has no
+ * data-sk-theme / data-sk-density: a host that uses those attribute names for its own themes sets
+ * data-sk-theme (e.g. "host", which matches no built-in theme) on <html>, and smart-kit then ignores its data-theme.
  */
 
 /* ---------------------------------------------------------------- 1. primitives (no meaning) */
@@ -172,6 +175,11 @@
   --sk-size-max-content: 1680px;
   --sk-size-letterbox: 1280px;
   --sk-size-side-content: 320px;
+  /* Height of the host's own sticky bars above the page (set by the host; pages that scroll with the window) */
+  --sk-sticky-top: 0px;
+  --sk-sticky-offset-none: 0px;
+  /* Pop-in rows of responsive tables: minimum width of the labels */
+  --sk-size-popin-label: 96px;
   /* Sticky offsets set at runtime (dynamic page title, list tabs, table toolbar) */
   --sk-sticky-offset: 0px;
   --sk-tabs-height: 0px;
@@ -239,7 +247,8 @@
 
 /* ---------------------------------------------------------------- 2. semantics: yellow (default) */
 :root,
-[data-theme='yellow'] {
+[data-sk-theme='yellow'],
+[data-theme='yellow']:where(:root:not([data-sk-theme]), :root:not([data-sk-theme]) *) {
   --sk-color-page: var(--sk-ink-100);
   --sk-color-surface: var(--sk-ink-0);
   --sk-color-surface-2: var(--sk-ink-50);
@@ -305,7 +314,8 @@
 }
 
 /* ---------------------------------------------------------------- navy (light) */
-[data-theme='navy'] {
+[data-sk-theme='navy'],
+[data-theme='navy']:where(:root:not([data-sk-theme]), :root:not([data-sk-theme]) *) {
   --sk-color-page: var(--sk-slate-100);
   --sk-color-surface: var(--sk-slate-0);
   --sk-color-surface-2: var(--sk-slate-50);
@@ -349,7 +359,8 @@
 }
 
 /* ---------------------------------------------------------------- sky (light; Horizon-like colours, docs/20 §10) */
-[data-theme='sky'] {
+[data-sk-theme='sky'],
+[data-theme='sky']:where(:root:not([data-sk-theme]), :root:not([data-sk-theme]) *) {
   --sk-color-page: var(--sk-sky-50);
   --sk-color-surface: var(--sk-sky-0);
   --sk-color-surface-2: var(--sk-sky-50);
@@ -413,7 +424,8 @@
 }
 
 /* ---------------------------------------------------------------- dark */
-[data-theme='dark'] {
+[data-sk-theme='dark'],
+[data-theme='dark']:where(:root:not([data-sk-theme]), :root:not([data-sk-theme]) *) {
   --sk-color-page: var(--sk-ink-1000);
   --sk-color-surface: var(--sk-ink-950);
   --sk-color-surface-2: var(--sk-ink-900);
@@ -476,7 +488,8 @@
 
 /* ---------------------------------------------------------------- density and size semantics */
 :root,
-[data-density='comfortable'] {
+[data-sk-density='comfortable'],
+[data-density='comfortable']:where(:root:not([data-sk-density]), :root:not([data-sk-density]) *) {
   --sk-control-height: var(--sk-size-control-comfortable);
   --sk-row-height: var(--sk-size-row-comfortable);
   --sk-header-row-height: var(--sk-size-header-row-comfortable);
@@ -489,7 +502,8 @@
   --sk-text-small: var(--sk-font-size-2);
 }
 
-[data-density='compact'] {
+[data-sk-density='compact'],
+[data-density='compact']:where(:root:not([data-sk-density]), :root:not([data-sk-density]) *) {
   --sk-control-height: var(--sk-size-control-compact);
   --sk-row-height: var(--sk-size-row-compact);
   --sk-header-row-height: var(--sk-size-header-row-compact);
@@ -522,6 +536,8 @@
 
 /* ---------------------------------------------------------------- 3. component tokens */
 :root,
+[data-sk-theme],
+[data-sk-density],
 [data-theme],
 [data-density] {
   --sk-table-header-bg: var(--sk-color-surface-2);
@@ -531,6 +547,10 @@
   --sk-page-header-bg: var(--sk-color-surface);
   --sk-facet-kpi-size: var(--sk-text-kpi);
   --sk-filterbar-gap: var(--sk-space-field);
+  /* flexible column layout separator (S23) and the day count of relative dates (S6) */
+  --sk-fcl-separator-width: var(--sk-space-5);
+  --sk-fcl-separator-bg: var(--sk-color-page);
+  --sk-relative-dates-count-width: 72px;
   /* charts (ADR-021) */
   --sk-chart-color: var(--sk-color-link);
   --sk-chart-selected-color: var(--sk-color-accent);
@@ -580,8 +600,10 @@
 
 /* ---------------------------------------------------------------- Mantine bridge
  * Mantine also receives these values through cssVariablesResolver (theme/mantine.ts); the selectors here
- * make nested [data-theme] / [data-density] containers re-resolve them. */
+ * make nested [data-sk-theme] / [data-sk-density] containers re-resolve them. */
 :root,
+[data-sk-theme],
+[data-sk-density],
 [data-theme],
 [data-density] {
   --mantine-font-family: var(--sk-font-sans);
@@ -677,6 +699,7 @@
 }
 
 /* sky: charts use the first qualitative colour (as the Horizon charts do), not the link colour */
-[data-theme='sky'] {
+[data-sk-theme='sky'],
+[data-theme='sky']:where(:root:not([data-sk-theme]), :root:not([data-sk-theme]) *) {
   --sk-chart-color: var(--sk-color-chart-1);
 }

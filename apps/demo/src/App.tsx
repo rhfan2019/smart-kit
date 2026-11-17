@@ -46,8 +46,8 @@ export function App() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    document.documentElement.dataset.theme = theme;
-    document.documentElement.dataset.density = density;
+    document.documentElement.dataset.skTheme = theme;
+    document.documentElement.dataset.skDensity = density;
     document.documentElement.lang = locale;
   }, [theme, density, locale]);
 

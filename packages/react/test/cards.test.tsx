@@ -222,7 +222,7 @@ describe('docs/20 card details from the SAPUI5 samples (highlight, state icons, 
 describe('docs/20 sky theme', () => {
   it('CD-19 the sky theme redefines the semantic colours with the measured Horizon values (contrast: tests/unit/arch.test.ts)', () => {
     const css = readFileSync(join(import.meta.dirname, '../src/theme/tokens.css'), 'utf8');
-    const block = css.slice(css.indexOf("[data-theme='sky'] {"), css.indexOf('}', css.indexOf("[data-theme='sky'] {")));
+    const block = css.slice(css.indexOf("[data-sk-theme='sky'],"), css.indexOf('}', css.indexOf("[data-sk-theme='sky'],")));
     for (const token of ['--sk-color-page', '--sk-color-surface', '--sk-color-text', '--sk-color-link', '--sk-color-positive', '--sk-color-critical', '--sk-color-negative', '--sk-color-icon-negative']) expect(block).toContain(`${token}:`);
     expect(css).toContain('--sk-sky-link: #0064d9;');
     expect(css).toContain('--sk-sky-chart-1: #168eff;');

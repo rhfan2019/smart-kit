@@ -72,13 +72,19 @@ class Source {
     readonly set: EntitySetInfo,
     readonly alias: string,
     private readonly b: SqlBuilder,
+    /** The source of the enclosing query (lambda subqueries): `ref.outer` counts up this chain. */
+    private readonly outer?: Source,
   ) {}
 
   /** The SQL of a column reference; adds the joins on the way. */
   col(ref: ColumnRef): Sql {
+    if (ref.outer) {
+      if (!this.outer) throw new Error('[smart-kit-server] a lambda path points outside the query');
+      return this.outer.col({ ...ref, outer: ref.outer - 1 || undefined });
+    }
     let alias = this.alias;
     let set = this.set;
-    let key = '';
+    let key = ref.unscoped ? '!' : '';
     for (const navName of ref.via) {
       key += `/${navName}`;
       let j = this.joins.get(key);
@@ -87,7 +93,7 @@ class Source {
         const target = this.b.schema.entitySets[nav.target]!;
         const ta = this.b.aliases.next();
         const on = nav.join!.map((p) => sql`${sql.id(ta, target.columns[p.target]!.column)} = ${sql.id(alias, set.columns[p.source]!.column)}`);
-        const scope = this.b.scopeOf(target).map((e) => new Source(target, ta, this.b).expr(e));
+        const scope = ref.unscoped ? [] : this.b.scopeOf(target).map((e) => new Source(target, ta, this.b).expr(e));
         j = { alias: ta, set: target, sql: sql`left join ${table(target)} as ${sql.id(ta)} on ${sql.join([...on, ...scope], sql` and `)}` };
         this.joins.set(key, j);
       }
@@ -174,10 +180,28 @@ class Source {
       }
       case 'search':
         return this.search(e.expr, e.fields, negated);
+      case 'lambda':
+        return this.lambda(e);
       case 'value':
       case 'func':
         throw new Error(`[smart-kit-server] ${e.kind} is not a condition`);
     }
+  }
+
+  /**
+   * any: EXISTS (rows of the navigation target joined to this row, within the target's scope, matching the body);
+   * all: NOT EXISTS (such rows not matching the body). Both are true or false, never null.
+   */
+  private lambda(e: Extract<BoundExpr, { kind: 'lambda' }>): Sql {
+    const inner = new Source(e.target, this.b.aliases.next(), this.b, this);
+    const conds = e.navigation.join!.map(
+      (p) => sql`${inner.own(p.target)} = ${this.col({ via: e.source.via, outer: e.source.outer, column: e.source.set.columns[p.source]!, unscoped: !e.scoped || undefined })}`,
+    );
+    if (e.scoped) conds.push(...this.b.scopeOf(e.target).map((w) => inner.expr(w)));
+    if (e.body) conds.push(e.op === 'all' ? sql`not (${inner.expr(e.body, true)})` : inner.expr(e.body));
+    // FROM after the conditions: they may have added joins to the inner source.
+    const sub = sql`select 1 from ${inner.from()} where ${sql.join(conds, sql` and `)}`;
+    return e.op === 'all' ? sql`not exists (${sub})` : sql`exists (${sub})`;
   }
 
   /** $search: every term matches (case-insensitively, as a substring) one of the search fields. */

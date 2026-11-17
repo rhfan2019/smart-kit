@@ -7,6 +7,7 @@
 ### 值（运行时导出）
 
 - `activeFilterPaths`
+- `arrangeText`
 - `buildAggregateRequest`
 - `buildListRequest`
 - `buildModel`
@@ -64,6 +65,7 @@
 - `isComplete`
 - `isDraftRow`
 - `isFilterable`
+- `isRelativeDateOperator`
 - `isSortable`
 - `keyPredicate`
 - `LiteralError`
@@ -89,6 +91,9 @@
 - `parseEntityPath`
 - `propertyFilter`
 - `readQueryString`
+- `RELATIVE_DATE_OPERATORS`
+- `relativeDateRange`
+- `resolveCondition`
 - `resolveEntityPath`
 - `resolvePath`
 - `restrictConditions`
@@ -100,12 +105,14 @@
 - `startOfDayIso`
 - `targetEntitySet`
 - `toCsdlXml`
+- `todayIn`
 - `toFilter`
 - `toLiteral`
 - `toQueryString`
 - `TOTAL_COUNT_ALIAS`
 - `unitPathOf`
 - `UnknownEntitySetError`
+- `valueListTextArrangement`
 
 ### 类型
 
@@ -157,6 +164,7 @@
 - `NavigationTarget`
 - `ODataErrorDetail`
 - `ODataV4ProviderOptions`
+- `ODataVariantStoreOptions`
 - `Operator`
 - `PageStateStore`
 - `PathSegment`
@@ -168,6 +176,7 @@
 - `QuerySource`
 - `ReadDataProvider`
 - `ReadRequest`
+- `RelativeDateOperator`
 - `RequestOptions`
 - `ResolvedPath`
 - `Row`
@@ -184,6 +193,7 @@
 - `ValueHelpRequestOptions`
 - `ValueListModel`
 - `ValueListParameter`
+- `ValueOperator`
 - `ValueRef`
 - `Variant`
 - `VariantContent`
@@ -241,6 +251,7 @@ AG Grid（`ag-grid-community`、`ag-grid-react`）是可选的 peer 依赖：不
 - `DraftMarker`
 - `draftState`
 - `DynamicPage`
+- `fclArrows`
 - `FieldEditor`
 - `fieldErrors`
 - `fieldValue`
@@ -273,6 +284,7 @@ AG Grid（`ag-grid-community`、`ag-grid-react`）是可选的 peer 依赖：不
 - `parseConditionText`
 - `QuickViewLink`
 - `readToken`
+- `relativeDateText`
 - `resolveRef`
 - `ResponsiveTable`
 - `ShareMenu`
@@ -291,6 +303,7 @@ AG Grid（`ag-grid-community`、`ag-grid-react`）是可选的 peer 依赖：不
 - `TableContent`
 - `TableP13nDialog`
 - `TimelineContent`
+- `typedText`
 - `useActionRunner`
 - `useColumn`
 - `useDynamicPage`
@@ -338,14 +351,17 @@ AG Grid（`ag-grid-community`、`ag-grid-react`）是可选的 peer 依赖：不
 - `ColumnContextValue`
 - `ColumnItem`
 - `ConditionInputProps`
+- `ConditionTextOptions`
 - `CreateDialogProps`
 - `DeviationIndicator`
 - `DraftState`
 - `DynamicPageProps`
 - `EntitySetHandle`
 - `EventItemPaths`
+- `ExportEvent`
 - `ExtendEntry`
 - `ExtendPosition`
+- `FclArrow`
 - `FclLayout`
 - `FclPaging`
 - `FieldEditorProps`
@@ -408,6 +424,7 @@ AG Grid（`ag-grid-community`、`ag-grid-react`）是可选的 peer 依赖：不
 - `TextParams`
 - `TimelineContentProps`
 - `ToolbarAction`
+- `TypedKey`
 - `UseFilterStateOptions`
 - `UseObjectOptions`
 - `UseVariantsOptions`
@@ -426,6 +443,7 @@ AG Grid（`ag-grid-community`、`ag-grid-react`）是可选的 peer 依赖：不
 - `boundActions`
 - `buildSchema`
 - `createODataService`
+- `createKysely`
 - `createPostgresDb`
 - `errorBody`
 - `escapeLike`
@@ -450,6 +468,7 @@ AG Grid（`ag-grid-community`、`ag-grid-react`）是可选的 peer 依赖：不
 - `ColumnInfo`
 - `EntitySetHooks`
 - `EntitySetInfo`
+- `KyselyOnPoolOptions`
 - `Expr`
 - `Literal`
 - `MetadataSource`
@@ -466,7 +485,7 @@ AG Grid（`ag-grid-community`、`ag-grid-react`）是可选的 peer 依赖：不
 - `StorageMapping`
 - `WriteContext`
 
-`createODataService(options)` 的选项：`basePath`（服务根路径）、`metadata`（生成的 CSDL、手写的注解文件、各语言的标签包）、`storage`（实体集对应的表和列，CLI 生成）、`db`（Kysely）、`maxPageSize`（默认 1000）、`searchFields`（各实体集 `$search` 查哪些字段）、`context`（每个请求的上下文，比如当前用户）、`scope`（数据范围：每个实体集返回一个 `$filter` 条件，所有读到这个实体集的地方都加上，写也只能写范围内的行）、`entitySets`（允许写的实体集和它们的业务规则：`creatable`、`updatable` 字段清单，`beforeCreate` / `afterCreate` / `beforeUpdate` / `afterUpdate` / `beforeDelete` / `afterDelete` 钩子；没列出的实体集只读）、`actions`（绑定动作的实现，按全名，例如 `Purchasing.approve`；动作要在注解文件里声明）、`afterRead`（返回前改写每一行，例如按语言替换代码表文字）、`readOnly`、`onError`。钩子拿到本次请求的事务（`db`）、语言、`messages`（写进 `sap-messages` 头），出错时抛 `validationError(message, details)`（400，带字段目标）。返回 `{ handle(request): Promise<Response>, schema, model, metadata(lang) }`。
+`createODataService(options)` 的选项：`basePath`（服务根路径）、`metadata`（生成的 CSDL、手写的注解文件、各语言的标签包）、`storage`（实体集对应的表和列，CLI 生成）、`db`（Kysely）、`maxPageSize`（默认 1000）、`searchFields`（各实体集 `$search` 查哪些字段）、`context`（每个请求的上下文，比如当前用户）、`scope`（数据范围：每个实体集返回一个 `$filter` 条件，条件里可以对集合导航用 `any` / `all`，所有读到这个实体集的地方都加上，写也只能写范围内的行）、`entitySets`（允许写的实体集和它们的业务规则：`creatable`、`updatable` 字段清单，`beforeCreate` / `afterCreate` / `beforeUpdate` / `afterUpdate` / `beforeDelete` / `afterDelete` 钩子；没列出的实体集只读）、`actions`（绑定动作的实现，按全名，例如 `Purchasing.approve`；动作要在注解文件里声明）、`afterRead`（返回前改写每一行，例如按语言替换代码表文字）、`readOnly`、`onError`。钩子拿到本次请求的事务（`db`）、语言、`messages`（写进 `sap-messages` 头），出错时抛 `validationError(message, details)`（400，带字段目标）。返回 `{ handle(request): Promise<Response>, schema, model, metadata(lang) }`。
 
 ## `@rhfan2019/smart-kit-cli`
 
@@ -478,6 +497,7 @@ AG Grid（`ag-grid-community`、`ag-grid-react`）是可选的 peer 依赖：不
 - `agentsBlock`
 - `check`
 - `checkAnnotations`
+- `checkDeclaredNavigations`
 - `generate`
 - `indexCsdl`
 - `introspect`
@@ -493,6 +513,7 @@ AG Grid（`ag-grid-community`、`ag-grid-react`）是可选的 peer 依赖：不
 - `CheckProblem`
 - `CliConfig`
 - `CsdlIndex`
+- `DeclaredNavigationConfig`
 - `EntityConfig`
 - `GenEntity`
 - `GenerateResult`
@@ -502,3 +523,4 @@ AG Grid（`ag-grid-community`、`ag-grid-react`）是可选的 peer 依赖：不
 - `LoadedConfig`
 - `NavigationConfig`
 - `Queryable`
+- `StorageFile`

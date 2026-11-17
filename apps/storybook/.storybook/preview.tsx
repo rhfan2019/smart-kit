@@ -13,8 +13,8 @@ const preview: Preview = {
   initialGlobals: { theme: 'yellow', density: 'comfortable', locale: 'en' },
   decorators: [
     (Story, ctx) => {
-      document.documentElement.dataset.theme = ctx.globals.theme as string;
-      document.documentElement.dataset.density = ctx.globals.density as string;
+      document.documentElement.dataset.skTheme = ctx.globals.theme as string;
+      document.documentElement.dataset.skDensity = ctx.globals.density as string;
       return (
         <Providers locale={(ctx.globals.locale as 'en' | 'zh') ?? 'en'}>
           <Story />

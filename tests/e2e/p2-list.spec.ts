@@ -426,11 +426,11 @@ test('AC-LR-05 date range: two clicks pick a range; the field shows formatted da
     await open(page, '/po', { lang });
     await showFilters(page);
     const field = page.locator('[data-sk-filter="OrderDate"]');
-    await field.locator('button').first().click();
+    await field.locator('button:not([data-sk-relative-dates])').first().click();
     const day = (n: number) => page.locator('.mantine-DatePickerInput-day:not([data-outside])', { hasText: new RegExp(`^${n}$`) }).first();
     await day(2).click();
     await day(13).click();
-    await expect(field.locator('button').first()).toHaveText(re);
+    await expect(field.locator('button:not([data-sk-relative-dates])').first()).toHaveText(re);
     await expect.poll(() => rec.urls.some((u) => u.includes('OrderDate ge 2026-11-02 and OrderDate le 2026-11-13'))).toBe(true);
   }
 });

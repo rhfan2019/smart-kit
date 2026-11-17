@@ -1,7 +1,7 @@
 // Reads tables, columns, primary keys, foreign keys and comments of one PostgreSQL schema from pg_catalog and turns
 // them into the entity model: table -> entity type, primary key -> key, foreign key -> navigation property,
 // column comment -> Common.Label (ADR-027).
-import type { CliConfig } from './config';
+import { isDeclaredNavigation, type CliConfig } from './config';
 import { pascal, plural, type GenEntity, type GenModel, type GenProperty } from './model';
 
 /** Anything with pg's `query(text, values)`: a pg.Client or pg.Pool. */
@@ -125,7 +125,8 @@ export async function introspect(db: Queryable, config: CliConfig): Promise<GenM
       warnings.push(`${child.table}: foreign key ${fk.name} points to a table outside schema "${config.schema}" or to a left-out table; no navigation property.`);
       continue;
     }
-    const nc = config.navigations?.[fk.name] ?? {};
+    const configured = config.navigations?.[fk.name];
+    const nc = configured && !isDeclaredNavigation(configured) ? configured : {};
     const own = fk.key.map((n) => colName.get(`${fk.rel}:${n}`));
     const ref = (fk.fkey ?? []).map((n) => colName.get(`${fk.frel}:${n}`));
     if (own.some((x) => !x) || ref.some((x) => !x)) {
@@ -148,6 +149,8 @@ export async function introspect(db: Queryable, config: CliConfig): Promise<GenM
     if (toMany) parent.navigations.push({ name: toMany, targetType: child.type, targetSet: child.set, collection: true, nullable: false, partner: toOne });
   }
 
+  declaredNavigations(config, [...byOid.values()], warnings);
+
   const entities = [...byOid.values()];
   const sets = new Map<string, string>();
   for (const e of entities) {
@@ -155,4 +158,51 @@ export async function introspect(db: Queryable, config: CliConfig): Promise<GenM
     sets.set(e.set, e.table);
   }
   return { namespace: config.namespace, container: config.container ?? 'Container', entities, warnings };
+}
+
+/**
+ * Navigations declared in the configuration (`navigations.<name>` with `from`, typically between views): a
+ * declaration that names a missing table, view or column is left out with a warning (`smart-kit check` reports it).
+ */
+function declaredNavigations(config: CliConfig, entities: GenEntity[], warnings: string[]) {
+  for (const [key, n] of Object.entries(config.navigations ?? {})) {
+    if (!isDeclaredNavigation(n)) continue;
+    const label = `navigations.${key}`;
+    const from = entities.find((e) => e.table === n.from);
+    const to = entities.find((e) => e.table === n.to);
+    const missing = [!from && n.from, !to && n.to].filter(Boolean);
+    if (missing.length) {
+      warnings.push(`${label}: ${missing.map((t) => `"${t}"`).join(' and ')} ${missing.length > 1 ? 'are' : 'is'} not an entity (no such table or view in schema "${config.schema}", left out, or without keys); no navigation property.`);
+      continue;
+    }
+    const prop = (e: GenEntity, name: string) => e.properties.find((p) => p.column === name) ?? e.properties.find((p) => p.name === name);
+    const pairs = Object.entries(n.on).map(([a, b]) => ({ a, b, source: prop(from!, a), target: prop(to!, b) }));
+    const bad = pairs.flatMap((p) => [...(p.source ? [] : [`${n.from}.${p.a}`]), ...(p.target ? [] : [`${n.to}.${p.b}`])]);
+    if (bad.length) {
+      warnings.push(`${label}: column ${bad.join(', ')} does not exist (or is left out); no navigation property.`);
+      continue;
+    }
+    const on = Object.fromEntries(pairs.map((p) => [p.source!.name, p.target!.name]));
+    const back = Object.fromEntries(pairs.map((p) => [p.target!.name, p.source!.name]));
+    const name = (n.toMany ?? n.toOne)!;
+    for (const [e, nav] of [[from!, name], ...(n.partner ? [[to!, n.partner]] : [])] as [GenEntity, string][]) {
+      if (e.properties.some((p) => p.name === nav) || e.navigations.some((x) => x.name === nav))
+        throw new Error(`${e.table}: navigation property ${nav} (from "${label}") clashes with an existing name; choose another name in the configuration.`);
+    }
+    // no foreign key: nothing guarantees that the target row exists, so a single-valued navigation is nullable
+    if (n.toMany) {
+      from!.navigations.push({ name, targetType: to!.type, targetSet: to!.set, collection: true, nullable: false, partner: n.partner, on });
+      if (n.partner)
+        to!.navigations.push({
+          name: n.partner, targetType: from!.type, targetSet: from!.set, collection: false, nullable: true, partner: name,
+          constraints: Object.entries(back).map(([property, referencedProperty]) => ({ property, referencedProperty })), on: back,
+        });
+    } else {
+      from!.navigations.push({
+        name, targetType: to!.type, targetSet: to!.set, collection: false, nullable: true, partner: n.partner,
+        constraints: Object.entries(on).map(([property, referencedProperty]) => ({ property, referencedProperty })), on,
+      });
+      if (n.partner) to!.navigations.push({ name: n.partner, targetType: from!.type, targetSet: from!.set, collection: true, nullable: false, partner: name, on: back });
+    }
+  }
 }

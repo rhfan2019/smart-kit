@@ -1,6 +1,6 @@
 # invoice-assure 用 smart-kit 0.1.0 发现的问题
 
-> 最后更新：2026-11-17（由 invoice-assure 的会话写入）。invoice-assure 把列表页、记录页改用 smart-kit 0.1.0 时发现的问题，在本仓库修。修好一条、发版后，在这里写上本仓库的提交号和版本；invoice-assure 升级、拆掉绕行办法后，由那边在它的待办（TECH-054～TECH-076）里关掉，并从这里删掉那一条。
+> 最后更新：2026-11-17（由 invoice-assure 的会话写入；同日本仓库修好 21 条，见“修复状态”）。invoice-assure 把列表页、记录页改用 smart-kit 0.1.0 时发现的问题，在本仓库修。修好一条、发版后，在这里写上本仓库的提交号和版本；invoice-assure 升级、拆掉绕行办法后，由那边在它的待办（TECH-054～TECH-076）里关掉，并从这里删掉那一条。
 
 ## 怎么用
 
@@ -8,6 +8,34 @@
 - **约定**：invoice-assure 不改 `node_modules`、不拷 smart-kit 的源码。下面的“本项目现在怎么绕”指 invoice-assure 的临时办法，修好后由那边拆掉。
 - **能直接看的例子**：用户页（系统管理 → 用户）已经整页用 smart-kit：清单 + 弹性分栏（FCL）里的对象页，代码在 invoice-assure 的 `src/features/users/components/users-client.tsx`、`src/components/smart-kit/`、`src/server/odata/`。
 - **编号**：S 是 invoice-assure 决策第 8 节的编号，TECH 是它的待办编号。代码位置指本仓库（核对时 `main` 在 e016471）。“本项目”都指 invoice-assure。
+
+## 修复状态（2026-11-17，本仓库，未提交、未发版）
+
+下一版（0.3.0，Changesets minor；0.2.0 是 ADR-031 的分组和合计）带上这些修改。发版后在这里补提交号和版本号；本项目升级、拆掉绕行办法后，按“怎么用”里的约定删掉对应的条目。讨论记录见 `docs/12-discussion-log.md` D29。
+
+| 编号 | 状态 | 怎么用 |
+| --- | --- | --- |
+| S1 | 已修 | `scope` 返回的条件里可以对集合导航用 `any` / `all`（`_ScopeKeys/any(k: k/CompanyCode eq '1000')`），列表、`$count`、按键读（404）、别的集合的 `$expand` 和 `$filter`、`$apply`、写都套上；范围条件里的导航不再套目标的范围（不会递归）。`$filter` 本身也支持 `any` / `all` 了。注意：`Invoices('B')/_Lines` 在 B 超出范围时返回空列表（200），不是 404，和以前经父路径读的行为一致 |
+| S2 | 已修 | `smart-kit.config.json` 的 `navigations` 里写 `{"from": "user_list", "to": "user_role_list", "on": {"id": "user_id"}, "toMany": "_Roles", "partner": "_User"}`；`generate` 写进 CSDL 和存储映射，`check --strict` 查出写错的表、视图和列。见 smart-kit-cli 的 `docs/README.md`“Navigations without a foreign key” |
+| S3 | 已修 | 网格表也能分组了（D30）：视图设置的“分组”页选一列（或 `UI.PresentationVariant/GroupBy` 给默认值），每组前有一行组头，显示组值、行数和合计列的组小计，表尾有合计，都由服务按当前筛选算。只能按一列分组，不能折叠；分组时每次读 100 行，滚到底再读。用 AG Grid 免费版自己做，不需要 Enterprise 许可证 |
+| S4 | 已修 | `SmartListReport` / `SmartTable` 的 `exportable={false}` 去掉导出按钮；`onBeforeExport(e)` 在读完要导出的行、写文件之前调用，`e` 带清单、条件、搜索、排序、列和行数，返回 `false` 不生成文件；`onExported(e)` 在写完后调用 |
+| S5 | 已核实 | `MemoryProvider` 就是“宿主给行”的数据源：全部条件运算（含相对日期）、搜索、排序、计数、分组、合计和小计都在前端算；行变了调 `provider.setRows(集合, 行)`，再改 `SmartListReport` 的 `refreshToken`。见 React 包 `docs/recipes.md` 第 13 节 |
+| S6 | 已修 | 日期筛选有“相对日期”按钮（今天、昨天、明天、本周/上周/下周、本月…、本季、本年、最近 / 未来 N 天、年初至今）；视图里存相对的说法，每次读清单按当天（服务的时区）算 |
+| S7 | 已修 | 配色改用 `html[data-sk-theme]` 和 `data-sk-density`。本项目在 `<html>` 上写 `data-sk-theme="host"`，smart-kit 就不理 `data-theme`，全听宿主的 `--sk-*` |
+| S8 | 已修 | `@import '@rhfan2019/smart-kit/styles.layered.css';`：同样的样式，放在 `@layer smart-kit` 里 |
+| S9 | 已修 | 除 `/i18n` 外，各 React 入口的第一行都是 `'use client'` |
+| S10–S12 | 只记录 | 未做 |
+| S13 | 已修 | `createKysely(pool, { statementTimeout })`：用本项目已有的 `pg` 池；拿连接时设 UTC 和语句超时，还回池时恢复，本项目自己的查询不受影响。见 smart-kit-server 的 `docs/README.md`“Using the host's pg pool” |
+| S14 | 已修 | 值列表的下拉、输入建议和令牌按 `UI.TextArrangement` 显示，`TextOnly` 只显示文字；没有注解时仍是“文字 (代码)” |
+| S15 | 已修 | 保存、另存、管理失败时显示 `VariantStore` 抛出的文字，另存对话框保持打开。按权限关掉保存：`new ODataVariantStore(provider, 'Variants', { canSave })`（或自己的 `VariantStore` 带 `canSave`），也可以用 `SmartListReport` 的 `canSaveVariants`；为假时菜单里只剩选视图 |
+| S16 | 已修 | `SmartListReport` 的 `refreshToken`：改它就重读表格、页签计数和图表（第一次的值不算） |
+| S17 | 已修 | 自定义列可以写 `importance: 'High'`；弹入行的标签列至少 `--sk-size-popin-label`（96px）宽；本项目的吸顶横幅高度写进 `--sk-sticky-top`，随窗口滚动的页面就吸在它下面 |
+| S18 | 已修 | 点“另存为”“管理”时先关菜单，再开对话框 |
+| S19 | 已修 | 没有图片时，按 `UI.HeaderInfo/Initials` 显示缩写头像；类型带 `Communication.Contact`（人）时，没有 `Initials` 也按标题取首字，圆形；其他对象圆角方形 |
+| S20 | 已修 | `SmartObjectPage` 的 `partialHeaderEdit={false}` 去掉“编辑页头”；开着时，保存失败对任何会话（草稿、直接保存、宿主的 `editStrategy`）都调 `session.cancel()`。保存那一下正文闪成编辑状态，是因为部分编辑也经宿主的 `begin`；接管保存的页面建议直接关掉部分编辑 |
+| S21 | 已修 | `SmartObjectPage` 的 `share={false}` |
+| S22 | 已修 | 文案带类型名：“用户已创建。”“这个用户已被别人改过，请重新加载后再试。”“没有这个用户。”；没有类型名时“已创建。”“没有找到。”。英文同理 |
+| S23 | 已修 | 两栏、三栏之间有分隔条和箭头按钮，在 67/33、33/67 等比例之间切换；箭头只调 `onLayoutChange`，布局仍由宿主的路由决定（新布局名 `TwoColumnsBeginExpanded` 等）；`separatorArrows={false}` 去掉箭头。不能拖动 |
 
 ## 先修哪几条
 

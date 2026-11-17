@@ -18,7 +18,13 @@ export type Expr =
   | { kind: 'in'; left: Expr; list: Expr[] }
   | { kind: 'and' | 'or'; left: Expr; right: Expr }
   | { kind: 'not'; operand: Expr }
-  | { kind: 'call'; name: string; args: Expr[] };
+  | { kind: 'call'; name: string; args: Expr[] }
+  /**
+   * Lambda operator over a collection navigation: `path/any(variable: body)`, `path/any()`, `path/all(variable: body)`.
+   * `path` may start with `$it` or an enclosing lambda variable. In `body`, paths start with `variable` (the member of
+   * the collection), an enclosing variable, or `$it`; any other path is relative to `$it`, the entity being filtered.
+   */
+  | { kind: 'lambda'; op: 'any' | 'all'; path: string[]; variable?: string; body?: Expr };
 
 /** A $search expression (OData URL conventions §5.1.7): terms, "phrases", AND / OR / NOT, parentheses. */
 export type SearchExpr =

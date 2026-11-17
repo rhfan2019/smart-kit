@@ -25,9 +25,11 @@ export interface ODataServiceOptions<C = undefined> {
   /** Per-request context (the user, the tenant …), passed to `scope`. */
   context?: (request: Request) => C | Promise<C>;
   /**
-   * Data scope (permissions) per entity set: an OData $filter over the set's own properties, or undefined for no
-   * restriction. Applied wherever the set is read: the addressed set, parents in the path, $expand, navigation paths
-   * in $filter and $orderby, $apply. Rows outside the scope do not exist for the request (404 for a key).
+   * Data scope (permissions) per entity set: an OData $filter over the set's own properties and any() / all() over
+   * its collection navigations (e.g. `_ScopeKeys/any(k: k/CompanyCode eq '1000')`), or undefined for no restriction.
+   * Applied wherever the set is read: the addressed set, $count, parents in the path, $expand, navigation paths and
+   * lambda operators in $filter and $orderby, $apply, and the reads of writes. Rows outside the scope do not exist
+   * for the request (404 for a key). Navigations inside a scope condition see all rows of their targets.
    */
   scope?: ScopeFunction<C>;
   /**

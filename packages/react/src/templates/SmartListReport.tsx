@@ -14,7 +14,7 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import {
   ChartView, DynamicPage, FilterSummary, MessageButton, MessageProvider, ShareMenu, SmartFilterBar, SmartTable, SmartVariantManagement, useFilterState, useMessages,
   useMetaModel, usePageState, useService, useSmartKit, useText, useVariants,
-  type ActionGroup, type ExtendEntry, type FilterFieldItem, type TableExtendEntry,
+  type ActionGroup, type ExportEvent, type ExtendEntry, type FilterFieldItem, type TableExtendEntry,
 } from '../index';
 
 export interface ListContentItem {
@@ -78,6 +78,22 @@ export interface SmartListReportProps {
   share?: boolean;
   /** Loaded rows of the main table (e.g. paging buttons in a flexible column layout). */
   onRowsChange?(rows: Row[]): void;
+  /**
+   * Change this value to reload the tables, tab counts and chart (after the host changed data elsewhere, e.g. in a
+   * drawer or dialog). The first value does not reload.
+   */
+  refreshToken?: number | string;
+  /** Offer "Export to Spreadsheet" in the table toolbars (default true). */
+  exportable?: boolean;
+  /** Before an export is written; return false to cancel (see `SmartTable` `onBeforeExport`). */
+  onBeforeExport?(e: ExportEvent): boolean | void | Promise<boolean | void>;
+  /** After an export was written. */
+  onExported?(e: ExportEvent): void;
+  /**
+   * Whether views may be saved (default: the service's `VariantStore.canSave`, else true). False: the view menu only
+   * selects views (no Save, Save As, Manage).
+   */
+  canSaveVariants?: boolean;
 }
 
 const EDITING_STATUS = '$editingStatus';
@@ -259,11 +275,20 @@ function ListReportInner(props: SmartListReportProps) {
     return { query: { filters: { ...r.filters, ...viewConditions(v, viewPaths) }, search: filter.applied.search }, ignored: r.ignored };
   };
 
+  // Host refresh (refreshToken): counts the changes, so the first value does not reload.
+  const [refreshRevision, setRefreshRevision] = useState(0);
+  const lastToken = useRef(p.refreshToken);
+  useEffect(() => {
+    if (lastToken.current === p.refreshToken) return;
+    lastToken.current = p.refreshToken;
+    setRefreshRevision((n) => n + 1);
+  }, [p.refreshToken]);
+
   // Tab counts (LR Icon Tab Bar: display the number of items of each table).
   const countable = tabs.map((x) => ({ ...x, q: queryFor(x.entitySet, views.find((v) => v.id === x.key)) }));
   const counts = useQueries({
     queries: (p.views?.mode === 'tabs' || p.contents?.length ? countable : []).map((x) => ({
-      queryKey: ['smart-kit', 'tab-count', service.name, x.entitySet, JSON.stringify(x.q.query)],
+      queryKey: ['smart-kit', 'tab-count', service.name, x.entitySet, JSON.stringify(x.q.query), refreshRevision],
       enabled: Boolean(x.q.query) && model.entitySets[x.entitySet]!.capabilities.countable,
       queryFn: ({ signal }: { signal: AbortSignal }) => service.dataProvider.query({ source: { entitySet: x.entitySet }, select: model.entityTypes[model.entitySets[x.entitySet]!.typeName]!.keys, expand: [], orderBy: [], filters: x.q.query!.filters, search: model.entitySets[x.entitySet]!.capabilities.searchable && x.q.query!.search ? x.q.query!.search : undefined, top: 0, count: true }, { signal }),
     })),
@@ -302,7 +327,7 @@ function ListReportInner(props: SmartListReportProps) {
   const table = (entitySet: string, key: string, v: ViewModel | undefined, extend: TableExtendEntry[] | undefined, title: string, withSwitch: boolean) => {
     const q = queryFor(entitySet, v);
     if (showChart && chartModel && entitySet === p.entitySet) {
-      return <ChartView entitySet={entitySet} service={p.service} chart={chartModel} filters={q.query?.filters ?? {}} search={q.query?.search} executed={q.query !== null} title={title} titleAddon={withSwitch ? contentSwitch : undefined} toolbarEnd={chartToggle} onDrilldown={drilldown} />;
+      return <ChartView revision={refreshRevision} entitySet={entitySet} service={p.service} chart={chartModel} filters={q.query?.filters ?? {}} search={q.query?.search} executed={q.query !== null} title={title} titleAddon={withSwitch ? contentSwitch : undefined} toolbarEnd={chartToggle} onDrilldown={drilldown} />;
     }
     return (
       <>
@@ -333,6 +358,10 @@ function ListReportInner(props: SmartListReportProps) {
           actionGroups={p.actionGroups}
           workingMode={p.workingMode}
           onRowsChange={entitySet === p.entitySet ? p.onRowsChange : undefined}
+          refreshToken={refreshRevision}
+          exportable={p.exportable}
+          onBeforeExport={p.onBeforeExport}
+          onExported={p.onExported}
         />
       </>
     );
@@ -374,7 +403,7 @@ function ListReportInner(props: SmartListReportProps) {
         pinned={view.headerPinned ?? false}
         onPinnedChange={(v) => setView((s) => ({ ...s, headerPinned: v }))}
         heading={p.title ?? ui.headerInfo.typeNamePlural}
-        headingContent={<SmartVariantManagement variants={variants} content={content} onApply={apply} standardName={p.title} autoApplyOption={!p.liveMode} />}
+        headingContent={<SmartVariantManagement variants={variants} content={content} onApply={apply} standardName={p.title} autoApplyOption={!p.liveMode} canSave={p.canSaveVariants} />}
         actions={<Group gap="xs" wrap="nowrap">{p.headerActions}{share}</Group>}
         summary={<FilterSummary entitySet={p.entitySet} service={p.service} filters={Object.fromEntries(Object.entries(filter.filters).filter(([k]) => k !== EDITING_STATUS))} search={filter.search} />}
         header={<SmartFilterBar state={barState} extend={filterExtend} />}

@@ -397,7 +397,7 @@ export function DynamicPage(p: DynamicPageProps) {
 
   return (
     <Ctx.Provider value={ctx}>
-      <div ref={rootRef} className={['sk-dynamic-page', `sk-dynamic-page--${p.layout ?? 'flow'}`, p.letterboxing ? 'sk-dynamic-page--letterboxing' : '', p.className].filter(Boolean).join(' ')} data-testid={p['data-testid']} data-wide={wide || undefined} style={{ ['--sk-sticky-offset' as string]: `${titleHeight}px` }}>
+      <div ref={rootRef} className={['sk-dynamic-page', `sk-dynamic-page--${p.layout ?? 'flow'}`, p.letterboxing ? 'sk-dynamic-page--letterboxing' : '', p.className].filter(Boolean).join(' ')} data-testid={p['data-testid']} data-wide={wide || undefined} style={{ ['--sk-sticky-offset' as string]: `calc(var(--sk-sticky-top) + ${titleHeight}px)` }}>
         <div className="sk-dynamic-page__sticky" ref={stickyRef}>
           {titleArea}
           {pinned || !pageSnap ? headerContent : null}
@@ -411,7 +411,7 @@ export function DynamicPage(p: DynamicPageProps) {
           </>
         ) : null}
         {p.navigation ? (
-          <div className="sk-dynamic-page__navigation" ref={navRef} style={{ top: titleHeight }}>
+          <div className="sk-dynamic-page__navigation" ref={navRef} style={{ top: `calc(var(--sk-sticky-top) + ${titleHeight}px)` }}>
             {p.navigation}
           </div>
         ) : null}

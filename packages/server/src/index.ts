@@ -1,7 +1,7 @@
 /** Public API of @rhfan2019/smart-kit-server (Node only; never imported by browser code). Listed in docs/api.md. */
 export { createODataService, type ODataService, type ODataServiceOptions } from './handler';
 export { toNodeListener } from './node';
-export { createPostgresDb, type PostgresDbOptions } from './db';
+export { createPostgresDb, createKysely, type PostgresDbOptions, type KyselyOnPoolOptions } from './db';
 export { ODataServerError, errorBody } from './errors';
 export { mergeMetadata, applyLabels, boundActions, MetadataDocuments, type MetadataSource } from './metadata';
 export { validationError, type EntitySetHooks, type ActionHandler, type WriteContext, type ServiceMessage, type Row } from './write';

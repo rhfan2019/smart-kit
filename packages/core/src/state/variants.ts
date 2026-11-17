@@ -30,6 +30,11 @@ export interface Variant {
 }
 
 export interface VariantStore {
+  /**
+   * Whether the current user may save views (default true). When false, the view menu only selects views:
+   * no Save, Save As or Manage. A host derives it from its permissions.
+   */
+  readonly canSave?: boolean;
   list(pageKey: string): Promise<Variant[]>;
   /** Creates (when `id` is empty) or updates a variant. */
   save(v: Variant): Promise<Variant>;
@@ -75,9 +80,17 @@ const fromRow = (r: VariantRow): Variant => ({
   modifiedAt: r.ModifiedAt,
 });
 
+export interface ODataVariantStoreOptions {
+  /** See {@link VariantStore.canSave}. */
+  canSave?: boolean;
+}
+
 /** Stores variants in an OData entity set (default "Variants"). */
 export class ODataVariantStore implements VariantStore {
-  constructor(private readonly provider: ODataV4Provider, private readonly entitySet = 'Variants') {}
+  readonly canSave: boolean;
+  constructor(private readonly provider: ODataV4Provider, private readonly entitySet = 'Variants', options: ODataVariantStoreOptions = {}) {
+    this.canSave = options.canSave ?? true;
+  }
 
   async list(pageKey: string): Promise<Variant[]> {
     const q = `$filter=${encodeURIComponent(`PageKey eq '${pageKey.replace(/'/g, "''")}'`)}&$orderby=Name`;

@@ -1,4 +1,4 @@
-/** Personalization dialog: column visibility and order, sort, grouping for responsive tables (LR-19, docs/12 U-5) and totals (docs/23). */
+/** Personalization dialog: column visibility and order, sort, grouping (LR-19, docs/12 U-5, docs/23) and totals (docs/23). */
 import { ActionIcon, Button, Checkbox, Group, Modal, ScrollArea, Select, Stack, Tabs, Text } from '@mantine/core';
 import type { SortItem } from '@rhfan2019/smart-kit-core';
 import { ArrowDown, ArrowUp, Plus, Trash2 } from 'lucide-react';
@@ -16,7 +16,7 @@ export interface TableP13nDialogProps {
   onOk(visible: string[], sort: SortItem[], groupBy?: string | null, totals?: string[]): void;
   /** Called when the user cancels or closes the dialog. */
   onCancel(): void;
-  /** Columns that can be grouped by; the "Group" tab is shown only when given (responsive table). */
+  /** Columns that can be grouped by; the "Group" tab is shown only when given. */
   groupable?: { id: string; label: string }[];
   groupBy?: string | null;
   /** Columns whose totals can be shown; the "Totals" tab is shown only when given and not empty (docs/23). */

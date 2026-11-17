@@ -19,6 +19,8 @@ export interface ExportOptions {
   t: TextFn;
   /** Injected for tests; defaults to downloading an .xlsx file. */
   write?(rows: string[][], fileName: string): Promise<void>;
+  /** Called with the collected rows before the file is written; false cancels the export (no file). */
+  before?(r: { count: number; truncated: boolean }): Promise<boolean>;
 }
 
 export async function collectRows(o: Pick<ExportOptions, 'service' | 'pageRequest' | 'limit'>): Promise<{ rows: Row[]; truncated: boolean }> {
@@ -52,8 +54,9 @@ async function downloadXlsx(cells: string[][], fileName: string): Promise<void> 
   await writeXlsxFile(data).toFile(fileName);
 }
 
-export async function exportRows(o: ExportOptions): Promise<{ count: number; truncated: boolean }> {
+export async function exportRows(o: ExportOptions): Promise<{ count: number; truncated: boolean; cancelled?: boolean }> {
   const { rows, truncated } = await collectRows(o);
+  if (o.before && !(await o.before({ count: rows.length, truncated }))) return { count: rows.length, truncated, cancelled: true };
   const cells = toCells(o, rows);
   const safe = o.title.replace(/[\\/:*?"<>|]+/g, ' ').trim() || 'export';
   await (o.write ?? downloadXlsx)(cells, `${safe}.xlsx`);

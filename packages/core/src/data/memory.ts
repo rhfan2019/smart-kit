@@ -32,8 +32,18 @@ function setPath(row: Row, path: string, value: unknown) {
   cur[segs[segs.length - 1]!] = value;
 }
 
+/**
+ * In-memory data provider. Also the supported "host gives the rows" source (worklists the host computes): it evaluates
+ * every filter operator, search, sort, paging, `$count`, grouping and `$apply` totals and subtotals in the browser.
+ * After the host's rows change, call `setRows` and reload the page (`SmartListReport` `refreshToken`).
+ */
 export class MemoryProvider implements DataProvider {
   constructor(private readonly o: MemoryProviderOptions) {}
+
+  /** Replaces the rows of an entity set (the host computed new rows). Reload the tables afterwards (`refreshToken`). */
+  setRows(entitySet: string, rows: Row[]): void {
+    this.o.data[entitySet] = rows;
+  }
 
   private rows(entitySet: string): Row[] {
     return this.o.data[entitySet] ?? [];

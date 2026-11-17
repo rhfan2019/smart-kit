@@ -35,7 +35,7 @@ const { model, provider } = await loadService({ serviceUrl: '/odata/purchasing/'
 
 只用一部分组件时，可以从子路径引入，例如 `import { MicroChart } from '@rhfan2019/smart-kit/chart'`；应用只打包用到的代码，不用表格时也不必安装 AG Grid。子路径清单见 [docs/api.md](docs/api.md)，打包规则见 [ADR-026](docs/adr/026-bundling-and-subpaths.md)。
 
-导航适配器的写法见 [apps/demo/src/navigation.ts](apps/demo/src/navigation.ts)；主题用根元素的 `data-theme`（`yellow` / `navy` / `sky` / `dark`；`sky` 是接近 SAP Horizon 的浅色配色）和 `data-density`（`comfortable` / `compact`）切换。
+导航适配器的写法见 [apps/demo/src/navigation.ts](apps/demo/src/navigation.ts)；主题用根元素的 `data-sk-theme`（`yellow` / `navy` / `sky` / `dark`；`sky` 是接近 SAP Horizon 的浅色配色）和 `data-sk-density`（`comfortable` / `compact`）切换（旧的 `data-theme` / `data-density` 仍然有效，见 docs/06 第 3.4 节）。
 
 ## 在其他项目中使用
 

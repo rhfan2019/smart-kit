@@ -259,7 +259,7 @@ test('AC-OP-08 message strips: header and section positions; page-level error', 
   expect(strip!.y).toBeLessThan(secTitle!.y);
   // object that does not exist
   await open(page, poPath('9999999999'));
-  await expect(page.locator('[data-sk-object-error]')).toHaveText('The object does not exist.');
+  await expect(page.locator('[data-sk-object-error]')).toHaveText(/^This .+ does not exist\.$/);
 });
 
 test('AC-OP-09 sub-object page with breadcrumbs and two sub-tables', async ({ page }) => {

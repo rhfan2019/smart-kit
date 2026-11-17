@@ -1,8 +1,9 @@
-import { readFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import pg from 'pg';
 import { describe, expect, it } from 'vitest';
-import { checkAnnotations, indexCsdl, introspect, loadConfig, pascal, plural, toCsdl, toStorage, type Queryable } from '../src/index';
+import { checkAnnotations, checkDeclaredNavigations, indexCsdl, introspect, loadConfig, pascal, plural, toCsdl, toStorage, type Queryable } from '../src/index';
 
 const APP = join(import.meta.dirname, '../../../apps/pg-server');
 
@@ -86,6 +87,60 @@ describe('introspection -> CSDL', () => {
     expect(m.entities[0]).toMatchObject({ set: 'Orders', navigations: [{ name: '_Lines', targetType: 'Line' }] });
     expect(m.entities[0]!.properties.map((p) => p.name)).toContain('Amount');
     expect(m.entities[1]!.navigations[0]).toMatchObject({ name: '_Header', targetSet: 'Orders', partner: '_Lines' });
+  });
+});
+
+describe('navigations declared in the configuration (views, TECH-055)', () => {
+  /** Two views without foreign keys: user_list (id) and user_role_list (user_id, role_id). */
+  const viewsDb = (): Queryable => {
+    const tables = [
+      { oid: 1, name: 'user_list', comment: null, kind: 'v' },
+      { oid: 2, name: 'user_role_list', comment: null, kind: 'v' },
+    ];
+    const columns = [
+      { oid: 1, name: 'id', num: 1, notnull: false, typname: 'text', typmod: -1, comment: null },
+      { oid: 1, name: 'name', num: 2, notnull: false, typname: 'text', typmod: -1, comment: null },
+      { oid: 2, name: 'user_id', num: 1, notnull: false, typname: 'text', typmod: -1, comment: null },
+      { oid: 2, name: 'role_id', num: 2, notnull: false, typname: 'text', typmod: -1, comment: null },
+    ];
+    return { async query<R>(text: string) { return { rows: (text.includes('pg_constraint') ? [] : text.includes('pg_attribute') ? columns : tables) as R[] }; } };
+  };
+  const config = {
+    schema: 'app', namespace: 'App', output: { csdl: 'x', storage: 'y' },
+    entities: { user_list: { set: 'Users', keys: ['Id'] }, user_role_list: { set: 'UserRoles', keys: ['UserId', 'RoleId'] } },
+    navigations: { user_roles: { from: 'user_list', to: 'user_role_list', on: { Id: 'user_id' }, toMany: '_Roles', partner: '_User' } },
+  };
+
+  it('generates the navigation, its partner and the join in the storage mapping', async () => {
+    const m = await introspect(viewsDb(), config);
+    expect(m.warnings).toEqual([]);
+    const xml = toCsdl(m, 'test');
+    expect(xml).toContain('<NavigationProperty Name="_Roles" Type="Collection(App.UserRoleList)" Partner="_User"/>');
+    expect(xml).toMatch(/<NavigationProperty Name="_User" Type="App.UserList" Partner="_Roles">\s*<ReferentialConstraint Property="UserId" ReferencedProperty="Id"\/>/);
+    expect(xml).toContain('<NavigationPropertyBinding Path="_Roles" Target="UserRoles"/>');
+    const storage = toStorage(m);
+    expect(storage.entitySets.Users).toMatchObject({ navigations: { _Roles: { on: { Id: 'UserId' } } } });
+    expect(storage.entitySets.UserRoles).toMatchObject({ navigations: { _User: { on: { UserId: 'Id' } } } });
+    expect(checkDeclaredNavigations(config, indexCsdl(xml), storage)).toEqual([]);
+  });
+
+  it('warns about and reports missing views and columns; refuses incomplete declarations', async () => {
+    const bad = { ...config, navigations: { user_roles: { ...config.navigations.user_roles, on: { id: 'usr' } }, gone: { from: 'nobody', to: 'user_list', on: { a: 'id' }, toOne: '_X' } } };
+    const m = await introspect(viewsDb(), bad);
+    expect(m.warnings).toEqual([expect.stringMatching(/navigations\.user_roles: column user_role_list\.usr does not exist/), expect.stringMatching(/navigations\.gone: "nobody" is not an entity/)]);
+    expect(checkDeclaredNavigations(bad, indexCsdl(toCsdl(m, 'test')), toStorage(m), 'smart-kit.config.json').map((p) => `${p.file} ${p.target}: ${p.message}`)).toEqual([
+      "smart-kit.config.json navigations.user_roles: \"on\": column 'usr' does not exist in 'user_role_list'",
+      expect.stringMatching(/^smart-kit\.config\.json navigations\.gone: "from": table or view 'nobody' is not an entity/),
+    ]);
+    const dir = mkdtempSync(join(tmpdir(), 'smart-kit-cli-'));
+    const write = (nav: unknown) => {
+      writeFileSync(join(dir, 'c.json'), JSON.stringify({ ...config, navigations: { n: nav } }));
+      return () => loadConfig(join(dir, 'c.json'));
+    };
+    expect(write({ from: 'a', to: 'b', on: { x: 'y' } })).toThrow(/exactly one of "toOne" and "toMany"/);
+    expect(write({ from: 'a', to: 'b', on: {}, toMany: '_B' })).toThrow(/needs "on"/);
+    expect(write({ from: 'a', on: { x: 'y' }, toMany: '_B' })).toThrow(/needs "from" and "to"/);
+    expect(write({ from: 'a', to: 'b', on: { x: 'y' }, toMany: '_B' })().navigations?.n).toMatchObject({ toMany: '_B' });
   });
 });
 

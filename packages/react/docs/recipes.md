@@ -327,3 +327,101 @@ export function OrdersWithExtras() {
   return <SmartListReport entitySet="PurchaseOrders" tableExtend={tableExtend} />;
 }
 ```
+
+## 13. Host-controlled lists: refresh, export, view permissions, rows from the host
+
+```tsx
+import { MemoryProvider, ODataVariantStore, type MetaModel, type ODataV4Provider, type Row } from '@rhfan2019/smart-kit-core';
+import type { ServiceConfig } from '@rhfan2019/smart-kit/context';
+import { SmartListReport } from '@rhfan2019/smart-kit/templates';
+import type { ExportEvent } from '@rhfan2019/smart-kit/table';
+
+// Views: users without the permission only select views (no Save, Save As, Manage).
+export const variantsFor = (provider: ODataV4Provider, canSave: boolean) => new ODataVariantStore(provider, 'Variants', { canSave });
+
+// Rows computed by the host (a worklist): MemoryProvider filters, searches, sorts, counts, groups and totals them.
+export function worklistService(model: MetaModel, rows: Row[]): { service: ServiceConfig; provider: MemoryProvider } {
+  const provider = new MemoryProvider({ model, data: { Worklist: rows } });
+  return { service: { model, dataProvider: provider }, provider };
+}
+
+export function Worklist(p: { revision: number; log(e: ExportEvent): Promise<boolean> }) {
+  return (
+    <SmartListReport
+      entitySet="Worklist"
+      refreshToken={p.revision} // change it after provider.setRows(...) or after the host changed data elsewhere
+      exportable // false removes "Export to Spreadsheet"
+      onBeforeExport={(e) => p.log(e)} // rows, filters and count of the file; false cancels (no file)
+      // grouping with row counts and subtotals: grid and responsive tables (view settings → Group, or `UI.PresentationVariant/GroupBy`)
+    />
+  );
+}
+```
+
+- A failed save in the view dialogs (the `VariantStore` throws) shows the thrown message in the dialog, which stays open.
+- `SmartObjectPage`: `partialHeaderEdit={false}` removes "Edit Header" (when the host's `editStrategy` saves the whole
+  page at once), `share={false}` removes "Share". A failed partial edit always calls `session.cancel()`.
+- Custom columns (`tableExtend`) take `importance: 'High' | 'Medium' | 'Low'` for the pop-in of responsive tables.
+- Host sticky bars above a page that scrolls with the window: set `--sk-sticky-top` to their height.
+- Object page header without an image: `UI.HeaderInfo/Initials` (or, for types with `Communication.Contact`, the
+  title's initials) in an avatar; round for persons, a rounded square otherwise.
+
+## 14. Next.js App Router, CSS layers, theming, relative dates, FCL ratios
+
+The React entries carry `'use client'` (all except `/i18n`), so a server component that imports one gets a client
+reference, not a hooks error. Keep smart-kit in client components:
+
+```tsx
+'use client';
+import { SmartListReport } from '@rhfan2019/smart-kit/templates';
+
+export function OrdersList() {
+  return <SmartListReport entitySet="Orders" />;
+}
+```
+
+With Tailwind 4 or other layered styles, import the layered stylesheet once and declare the layer order; unlayered
+host rules always win over smart-kit, so the host can redefine any `--sk-*` token:
+
+```css
+@layer theme, base, mantine, smart-kit, components, utilities;
+@import '@mantine/core/styles.layer.css';
+@import '@mantine/dates/styles.layer.css';
+@import '@rhfan2019/smart-kit/styles.layered.css';
+
+/* the host's own colours for smart-kit (unlayered: wins over @layer smart-kit) */
+:root { --sk-color-link: var(--color-brand-600); --sk-color-accent: var(--color-brand-500); }
+```
+
+Themes: `data-sk-theme` (`yellow`, `navy`, `sky`, `dark`) and `data-sk-density` (`comfortable`, `compact`) on `<html>`
+or a container. If the host uses `data-theme` itself, put `data-sk-theme="host"` on `<html>`: smart-kit then ignores
+`data-theme` / `data-density` and keeps its defaults until the host overrides the tokens.
+
+Relative dates in conditions (defaults, `initialFilters`, saved views): the condition stores the operator and is
+resolved against today (in `SmartKitProvider` `timeZone`) whenever the list is read. Users pick them with the
+calendar-clock button of date filter fields or in the value help ("Define Conditions").
+
+```ts
+import type { FilterState } from '@rhfan2019/smart-kit-core';
+
+export const recent: FilterState = {
+  OrderDate: [{ operator: 'LASTDAYS', values: [30] }], // the 30 days before today (today excluded, as in SAPUI5)
+  DeliveryDate: [{ operator: 'THISMONTH', values: [] }],
+  ChangedAt: [{ operator: 'TODAY', values: [], exclude: true }],
+};
+```
+
+`FlexibleColumnLayout` shows arrow buttons on the separators between columns that switch between the ratios
+(`TwoColumnsMidExpanded` 33/67 ↔ `TwoColumnsBeginExpanded` 67/33; three columns 25/50/25 ↔ 25/25/50 ↔ 67/33/0 …).
+The arrows only call `onLayoutChange`; the host's router stores the layout (ADR-022). `separatorArrows={false}` hides
+them.
+
+```tsx
+import { FlexibleColumnLayout, type FclLayout } from '@rhfan2019/smart-kit/page';
+import { useState, type ReactNode } from 'react';
+
+export function TwoColumns(p: { list: ReactNode; detail: ReactNode; onClose(): void }) {
+  const [layout, setLayout] = useState<FclLayout>('TwoColumnsMidExpanded'); // usually a URL parameter
+  return <FlexibleColumnLayout layout={layout} onLayoutChange={setLayout} begin={p.list} mid={p.detail} onCloseMid={p.onClose} />;
+}
+```

@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
   buildListRequest, buildModel, buildObjectRequest, buildValueHelpRequest, childPathOf, entityPathOf, parseEntityPath, propertyFilter,
-  readQueryString, resolveEntityPath, sourcePath, startOfDayIso, toFilter, toLiteral, toQueryString, OPERATORS, type Condition,
+  readQueryString, resolveEntityPath, sourcePath, startOfDayIso, toFilter, toLiteral, toQueryString, OPERATORS, RELATIVE_DATE_OPERATORS, type Condition,
   conditionAllowed, filterExpressionRules, restrictConditions,
 } from '../src';
 
@@ -133,7 +133,7 @@ describe('FilterExpressionRestrictions (P2-LR-19, ANN-40)', () => {
     expect(filterExpressionRules('SingleRange').operators).toContain('BT');
     expect(filterExpressionRules('SearchExpression').operators).toEqual(['Contains', 'StartsWith', 'EndsWith']);
     for (const e of [undefined, 'MultiRange', 'MultiRangeOrSearchExpression'] as const) {
-      expect(filterExpressionRules(e)).toMatchObject({ operators: OPERATORS, exclude: true });
+      expect(filterExpressionRules(e)).toMatchObject({ operators: [...OPERATORS, ...RELATIVE_DATE_OPERATORS], exclude: true });
     }
   });
   it('P2-LR-19 conditions outside the rules are dropped; single expressions keep the last one', () => {
