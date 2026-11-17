@@ -60,8 +60,10 @@ npm install -D @rhfan2019/smart-kit-cli
 版本和发布用 [Changesets](https://github.com/changesets/changesets)，四个包同步版本（ADR-029）：
 
 1. 每个要发布的改动：`npx changeset`，选 patch / minor / major，写一句给使用方看的说明，和代码一起提交。
-2. 合并到 `main` 后，GitHub Actions（`.github/workflows/release.yml`）开一个"chore: version packages"拉取请求（改版本号、内部依赖、各包 `CHANGELOG.md`）。
-3. 合并这个拉取请求，工作流构建并用 npm 可信发布（OIDC，带 provenance，不存 token）发布四个包。
+2. 推送到 `main`，CI 通过后 GitHub Actions（`.github/workflows/release.yml`）开一个"chore: version packages"拉取请求（改版本号、内部依赖、各包 `CHANGELOG.md`）。
+3. 合并这个拉取请求，CI 再次通过后，工作流构建并用 npm 可信发布（OIDC，带 provenance，不存 token）发布四个包，然后从 npm 安装刚发布的版本逐项检查。
+
+没有 changeset 的推送不会发布任何东西。发布后也可以在本地检查：`node scripts/verify-pack.mjs --registry`。
 
 本地检查打出来的包：`npm run build && npm run verify:pack`（在仓库外新建项目，从 tgz 安装后逐项检查）。第一次发布和配置可信发布者的步骤见 ADR-029。
 

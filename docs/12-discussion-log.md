@@ -565,3 +565,13 @@ ADR-027 定的范围是"只实现 smart-kit 会发的请求"，用户也定过�
 **验证**：`scripts/verify-pack.mjs` 新增 `--registry` 模式（从 npm 安装已发布的版本，而不是本地 tgz；`npm view` / `npm install` 用 `--prefer-online` 避开本机缓存的 404）。新包要过几分钟才能公开查到、tgz 才能从 CDN 下载（本次约 5 分钟）。结果全部通过：四个包 0.1.0 都在 npm 上；18 个入口能导入、导出与 `docs/api.md` 一致；类型在 `bundler` 和 `nodenext` 下都能解析；只用 `MicroChart` 5.1 KB；`styles.css`、随包文档和 Skill 都在；`smart-kit --help` / `check --strict` / `agents` 能运行；server 返回 `$metadata` 并从 PostgreSQL 读到数据。
 
 **以后发版**：`npx changeset` → 推送到 GitHub → `release.yml` 用可信发布（需要先在 npmjs.com 给四个包配置可信发布者，见 D24 第 6 步）；发布后执行 `node scripts/verify-pack.mjs --registry`。
+
+## D26 推送到 GitHub 后自动发布到 npm（2026-11-17）
+
+**用户的要求**：配置成提交到 GitHub 后自动发布到 npm。
+
+**做法**（ADR-029 更新）：`release.yml` 改为在 main 上的 CI 通过后运行（`workflow_run`），CI 失败就不发布；可以手动触发。流程仍是 Changesets：带 changeset 的提交推到 main → 自动开"chore: version packages"拉取请求 → 合并后自动发布四个包（npm 可信发布，不存 token），再从 npm 安装检查（`verify-pack.mjs --registry`，最多重试 10 分钟）。没有 changeset 的推送不发布，避免每次推送都发一个版本。
+
+**一次性设置（用户在网页上做，或同意后由 AI 用 gh 设置第 2 项）**
+1. npmjs.com：四个包各自 Settings → Trusted Publisher → GitHub Actions，`rhfan2019` / `smart-kit` / `release.yml`。
+2. GitHub 仓库 Settings → Actions → General → Workflow permissions：勾选"Allow GitHub Actions to create and approve pull requests"（现在是关闭的）。

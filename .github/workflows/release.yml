@@ -1,14 +1,21 @@
 name: Release
 
-# ADR-029: Changesets opens a "Version Packages" pull request while unreleased changesets are on main; merging it
-# publishes the four packages (one version, `fixed` group) with npm trusted publishing (OIDC, provenance, no token).
-# The first publish of each package is done by hand (npm needs the package to exist before a trusted publisher can be
-# configured); see README "发版".
+# ADR-029. Runs after CI succeeded on main (so a red build never publishes):
+# - unreleased changesets on main  -> opens / updates the "chore: version packages" pull request
+#   (bumps the four packages together, writes their CHANGELOG.md);
+# - that pull request merged       -> publishes every package whose version is not on npm yet, with npm trusted
+#   publishing (OIDC, provenance, no token), then installs the published versions from npm and checks them.
+# Needs, once: a trusted publisher on npmjs.com for each package (repository rhfan2019/smart-kit, workflow
+# release.yml) and "Allow GitHub Actions to create and approve pull requests" in the repository settings.
 on:
-  push:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
     branches: [main]
+  # manual re-run, e.g. after configuring the trusted publishers
+  workflow_dispatch:
 
-concurrency: ${{ github.workflow }}-${{ github.ref }}
+concurrency: release
 
 permissions:
   contents: write
@@ -17,9 +24,15 @@ permissions:
 
 jobs:
   release:
+    if: github.event_name == 'workflow_dispatch' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push')
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
+        with:
+          # the commit CI tested
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: 24
@@ -28,11 +41,8 @@ jobs:
       # trusted publishing needs npm >= 11.5.1
       - run: npm install -g npm@latest
       - run: npm ci
-      - name: Type check, lint, unit tests (no PostgreSQL here; the full checks run in ci.yml)
-        run: |
-          npm run typecheck
-          npm run lint
       - name: Version pull request or publish
+        id: changesets
         uses: changesets/action@v1
         with:
           version: npm run version-packages
@@ -41,3 +51,12 @@ jobs:
           commit: 'chore: version packages'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # a new version takes a few minutes to become installable from npm
+      - name: Install the published packages from npm and check them
+        if: steps.changesets.outputs.published == 'true'
+        run: |
+          for i in $(seq 1 20); do
+            node scripts/verify-pack.mjs --registry && exit 0
+            echo "not installable yet, retrying in 30 s ($i/20)"; sleep 30
+          done
+          exit 1
