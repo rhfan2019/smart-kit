@@ -1,5 +1,7 @@
 // ADR-029: installs the packed tarballs into fresh projects outside the repository and checks what a user gets.
 //   node scripts/verify-pack.mjs [--keep]        (after `npm run build`; needs network access for the registry)
+//   node scripts/verify-pack.mjs --registry      (after a release: installs the published versions from npm instead of
+//                                                 tarballs of this checkout; the tarball checks are skipped)
 //
 // Web project (Vite + React + TypeScript, the peer dependencies at the tested versions):
 //   - every subpath of @rhfan2019/smart-kit (and core) imports at runtime and exports what docs/api.md lists;
@@ -18,6 +20,7 @@ import { gzipSync } from 'node:zlib';
 
 const ROOT = join(import.meta.dirname, '..');
 const keep = process.argv.includes('--keep');
+const fromRegistry = process.argv.includes('--registry');
 const work = mkdtempSync(join(tmpdir(), 'smart-kit-verify-'));
 const PACKAGES = { core: 'packages/core', react: 'packages/react', server: 'packages/server', cli: 'packages/cli' };
 const json = (f) => JSON.parse(readFileSync(f, 'utf8'));
@@ -29,8 +32,22 @@ const check = (ok, label, detail = '') => {
 };
 
 // 1. pack -------------------------------------------------------------------------------------------------------
-for (const dir of Object.values(PACKAGES)) if (!existsSync(join(ROOT, dir, 'dist'))) throw new Error(`${dir}/dist is missing: run npm run build first`);
 const tgz = {};
+if (fromRegistry) {
+  // the published version of this checkout, e.g. "0.1.0"; tgz[key] becomes that version range
+  for (const [key, dir] of Object.entries(PACKAGES)) {
+    const { name, version } = json(join(ROOT, dir, 'package.json'));
+    let published = '';
+    try { published = run('npm', ['view', '--prefer-online', `${name}@${version}`, 'version'], work).trim(); } catch { /* 404: not (yet) published */ }
+    check(published === version, `${name}@${version} is on the registry`, published || 'not found');
+    tgz[key] = version;
+  }
+  if (failures) {
+    console.log('\nverify-pack: not every package is on the registry yet (a new package can take a few minutes to appear)');
+    process.exit(1);
+  }
+} else {
+for (const dir of Object.values(PACKAGES)) if (!existsSync(join(ROOT, dir, 'dist'))) throw new Error(`${dir}/dist is missing: run npm run build first`);
 mkdirSync(join(work, 'tarballs'));
 for (const [key, dir] of Object.entries(PACKAGES)) {
   const [info] = JSON.parse(run('npm', ['pack', '--json', '--pack-destination', join(work, 'tarballs')], join(ROOT, dir)));
@@ -42,6 +59,8 @@ for (const [key, dir] of Object.entries(PACKAGES)) {
   const targets = JSON.stringify(manifest.exports);
   const missing = [...targets.matchAll(/"(\.\/dist\/[^"]+)"/g)].map((m) => m[1].slice(2)).filter((f) => !files.includes(f));
   check(missing.length === 0, `${info.name}: every exports target is in the tarball`, missing.join(', '));
+}
+
 }
 
 // 2. web project ------------------------------------------------------------------------------------------------
@@ -60,7 +79,7 @@ writeFileSync(join(web, 'package.json'), JSON.stringify({
   },
 }, null, 2));
 console.log(`\ninstalling the web project in ${web} …`);
-run('npm', ['install', '--no-audit', '--no-fund', '--loglevel=error'], web);
+run('npm', ['install', '--no-audit', '--no-fund', '--loglevel=error', ...(fromRegistry ? ['--prefer-online'] : [])], web);
 
 // runtime: every entry imports in Node (no bundler) and exports the documented names
 const api = readFileSync(join(ROOT, 'docs/api.md'), 'utf8');
@@ -165,7 +184,7 @@ writeFileSync(join(node, 'package.json'), JSON.stringify({
   devDependencies: { '@rhfan2019/smart-kit-cli': tgz.cli },
 }, null, 2));
 console.log(`\ninstalling the Node project in ${node} …`);
-run('npm', ['install', '--no-audit', '--no-fund', '--loglevel=error'], node);
+run('npm', ['install', '--no-audit', '--no-fund', '--loglevel=error', ...(fromRegistry ? ['--prefer-online'] : [])], node);
 for (const d of ['generated', 'annotations']) cpSync(join(ROOT, 'apps/pg-server', d), join(node, d), { recursive: true });
 cpSync(join(ROOT, 'apps/mock/Csdl/labels.en.json'), join(node, 'labels.en.json'));
 cpSync(join(ROOT, 'apps/pg-server/smart-kit.config.json'), join(node, 'smart-kit.config.json'));

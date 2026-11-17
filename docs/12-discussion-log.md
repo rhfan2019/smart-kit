@@ -557,3 +557,11 @@ ADR-027 定的范围是"只实现 smart-kit 会发的请求"，用户也定过�
    `npm publish -w @rhfan2019/smart-kit-core`、`npm publish -w @rhfan2019/smart-kit`、`npm publish -w @rhfan2019/smart-kit-server`、`npm publish -w @rhfan2019/smart-kit-cli`（`publishConfig.access` 已是 public）。
 6. 在 npmjs.com 给每个包配置可信发布者：包页面 → Settings → Trusted Publisher → GitHub Actions，组织或用户 `rhfan2019`、仓库 `smart-kit`、工作流 `release.yml`。之后可以在同一页选择"禁止 token 发布"。
 7. 之后的发版都走 Changesets 和 `release.yml`（需要先把仓库推送到 GitHub；provenance 要求仓库是公开的）。
+
+## D25 第一次发布 0.1.0 和发布后的验证（2026-11-17）
+
+**用户操作**：合并 `claude/npm-publish` 到 `main` 后，在本机发布四个包 0.1.0。第一次 `npm publish` 返回 E403（"Two-factor authentication … is required to publish packages"）：账号没开 2FA。用户开启 2FA（安全密钥）、重新登录后发布成功。
+
+**验证**：`scripts/verify-pack.mjs` 新增 `--registry` 模式（从 npm 安装已发布的版本，而不是本地 tgz；`npm view` / `npm install` 用 `--prefer-online` 避开本机缓存的 404）。新包要过几分钟才能公开查到、tgz 才能从 CDN 下载（本次约 5 分钟）。结果全部通过：四个包 0.1.0 都在 npm 上；18 个入口能导入、导出与 `docs/api.md` 一致；类型在 `bundler` 和 `nodenext` 下都能解析；只用 `MicroChart` 5.1 KB；`styles.css`、随包文档和 Skill 都在；`smart-kit --help` / `check --strict` / `agents` 能运行；server 返回 `$metadata` 并从 PostgreSQL 读到数据。
+
+**以后发版**：`npx changeset` → 推送到 GitHub → `release.yml` 用可信发布（需要先在 npmjs.com 给四个包配置可信发布者，见 D24 第 6 步）；发布后执行 `node scripts/verify-pack.mjs --registry`。
