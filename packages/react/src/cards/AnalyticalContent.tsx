@@ -16,12 +16,17 @@ import { CardMessage, CardPlaceholder } from './CardStates';
 const KINDS: Record<string, 'column' | 'bar' | 'line' | 'donut'> = { Column: 'column', Bar: 'bar', Line: 'line', Donut: 'donut' };
 
 export interface AnalyticalContentProps {
+  /** Entity set name as in `$metadata`, e.g. "Orders". */
   entitySet: string;
+  /** Name of the service in `SmartKitProvider` `services`; default: the provider's `defaultService`. */
   service?: string;
   /** UI.Chart, e.g. "com.sap.vocabularies.UI.v1.Chart#ByStatus"; default: from the presentation variant, else the unqualified chart. */
   chartAnnotationPath?: string;
+  /** Qualified `UI.PresentationVariant` term, e.g. "@UI.PresentationVariant#Top5" (sort, MaxItems, chart). */
   presentationAnnotationPath?: string;
+  /** Qualified `UI.SelectionVariant` term, e.g. "@UI.SelectionVariant#Open" (fixed filters). */
   selectionAnnotationPath?: string;
+  /** Filter state (from `useFilterState` / `SmartFilterBar`), applied to the request. */
   filters?: FilterState;
   /** Maximum number of data points (default 4 for column, bar and donut; OVP fixed card layout). */
   maxItems?: number;

@@ -4,13 +4,13 @@
   "description": "The purchasing service on PostgreSQL, served by @rhfan2019/smart-kit-server on http://localhost:4402 (read-only)",
   "type": "module",
   "scripts": {
-    "setup": "tsx setup.ts",
+    "setup": "tsx --conditions=smart-kit-source setup.ts",
     "generate": "tsx ../../packages/cli/src/bin.ts generate --config smart-kit.config.json",
-    "start": "tsx server.ts"
+    "start": "tsx --conditions=smart-kit-source server.ts"
   },
   "dependencies": {
-    "@rhfan2019/smart-kit-cli": "0.1.0",
-    "@rhfan2019/smart-kit-server": "0.1.0",
+    "@rhfan2019/smart-kit-cli": "*",
+    "@rhfan2019/smart-kit-server": "*",
     "kysely": "0.29.9",
     "pg": "8.23.1"
   }

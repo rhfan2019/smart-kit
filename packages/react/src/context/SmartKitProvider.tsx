@@ -18,20 +18,27 @@ export interface ServiceConfig {
 }
 
 export interface SmartKitProviderProps {
+  /** Services by name: `{ model, dataProvider, variants? }` each, usually from `loadService({ serviceUrl, fetch })` of `@rhfan2019/smart-kit-core`. Required. */
   services: Record<string, ServiceConfig>;
   /** Service used when a building block does not name one. Defaults to the first service. */
   defaultService?: string;
+  /** UI language of the library texts and number / date formats: "en" or "zh". Required. */
   locale: Locale;
   /** Overrides of library texts. */
   messages?: Partial<Messages>;
   /** IANA time zone for Edm.DateTimeOffset display and filtering. Defaults to the browser's zone. */
   timeZone?: string;
+  /** Connects the library to the host router: `toObject`, `toList`, `href`, `hasObjectPage`, `toTable`. Without it rows do not navigate. */
   navigation?: NavigationAdapter;
+  /** Where page state (filters, sort, scroll) is kept for back navigation; default in memory. `createSessionPageStateStore()` keeps it in sessionStorage. */
   pageState?: PageStateStore;
   /** Prefix of every page state key and query key, e.g. "my-app". */
   namespace: string;
+  /** Custom renderers for fields by type name or property (white-box extension point). */
   renderers?: RendererRegistry;
+  /** TanStack Query client; default: one created by the provider. */
   queryClient?: QueryClient;
+  /** The application (pages using smart-kit building blocks). */
   children?: ReactNode;
 }
 

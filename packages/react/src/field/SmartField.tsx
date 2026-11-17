@@ -14,22 +14,31 @@ import { QuickViewLink } from './QuickView';
 export interface SmartFieldProps {
   /** Entity type full name the field belongs to. Use `entitySet` instead when convenient. */
   typeName?: string;
+  /** Entity set the row belongs to (alternative to `typeName`). */
   entitySet?: string;
+  /** Name of the service in `SmartKitProvider` `services`; default: the provider's `defaultService`. */
   service?: string;
   /** A field from the model, or just a property path. */
   field?: FieldModel;
+  /** Property path, e.g. "GrossAmount" or "_Owner/Name" (alternative to `field`). */
   path?: string;
+  /** The row to show the value of. Required (undefined while loading). Text, unit, criticality and links come from the annotations of the property. */
   row: Row | undefined;
+  /** "display" (default): formatted value with text arrangement, unit, criticality; "edit": the editor for the Edm type (value help from `Common.ValueList`). */
   mode?: 'display' | 'edit';
   /** Edit mode: controlled value and change handler. */
   value?: unknown;
+  /** Edit mode: called with the new value. */
   onChange?(value: unknown): void;
   /** Label for accessibility when used without a visible label. */
   'aria-label'?: string;
   /** Edit mode: error text, mandatory marker, read-only, element id. */
   error?: string;
+  /** Edit mode: mandatory marker. */
   required?: boolean;
+  /** Edit mode: show the value read-only. */
   readOnly?: boolean;
+  /** Edit mode: element id of the input. */
   id?: string;
   /** Edit mode: show the label above the editor (dialogs). */
   showLabel?: boolean;

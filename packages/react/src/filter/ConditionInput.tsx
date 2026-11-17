@@ -15,16 +15,25 @@ import { conditionText, parseConditionText } from './conditionText';
 import { useValueList } from './useValueList';
 
 export interface ConditionInputProps {
+  /** Entity set of the filtered property. */
   entitySet: string;
+  /** Filtered property path, e.g. "Status". */
   path: string;
+  /** Name of the service in `SmartKitProvider` `services`; default: the provider's `defaultService`. */
   service?: string;
+  /** Conditions of the field (controlled). */
   conditions: Condition[];
+  /** Called with the new conditions (typed values become "EQ" conditions; "=x", ">x", "a...b", "*x*" are parsed). */
   onChange(conditions: Condition[]): void;
+  /** Accessible name, usually the property label. */
   label: string;
+  /** Error text shown under the field. */
   error?: string;
+  /** Shows the mandatory marker and validates that a value is entered. */
   required?: boolean;
   /** Opens the value help dialog (rendered by the caller). */
   onValueHelp?(): void;
+  /** Element id (e.g. for an external `<label htmlFor>`). */
   id?: string;
 }
 

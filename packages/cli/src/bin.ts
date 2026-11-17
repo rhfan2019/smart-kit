@@ -5,13 +5,20 @@
 //   check [--config smart-kit.config.json] [--strict]
 //       Checks the annotation files against the generated CSDL on disk (no database).
 // --strict: exit code 1 when an annotation points at something that does not exist.
+//   agents
+//       Writes or refreshes the smart-kit block in AGENTS.md (and `@AGENTS.md` in CLAUDE.md): points coding agents at
+//       the docs inside the installed packages (ADR-030).
 import { relative } from 'node:path';
 import { parseArgs } from 'node:util';
+import { agents } from './agents';
 import { loadConfig } from './config';
 import { check, generate } from './generate';
 import type { CheckProblem } from './check';
 
-const USAGE = `Usage: smart-kit <generate|check> [--config smart-kit.config.json] [--url postgres://…] [--strict]`;
+const USAGE = `Usage: smart-kit <command>
+  generate [--config smart-kit.config.json] [--url postgres://…] [--strict]   CSDL + storage mapping from PostgreSQL, then check
+  check    [--config smart-kit.config.json] [--strict]                        check the annotation files (no database)
+  agents                                                                      AGENTS.md / CLAUDE.md block for coding agents`;
 
 function report(problems: CheckProblem[]) {
   if (!problems.length) {
@@ -30,6 +37,11 @@ async function main() {
   const command = positionals[0];
   if (values.help || !command) {
     console.log(USAGE);
+    return;
+  }
+  if (command === 'agents') {
+    const r = agents();
+    console.log(`Wrote ${r.written.map((f) => relative(process.cwd(), f)).join(', ')} (${r.packages.map((p) => `${p.name}@${p.version}`).join(', ') || 'no smart-kit packages installed'})`);
     return;
   }
   const config = loadConfig(values.config!);

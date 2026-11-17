@@ -6,17 +6,27 @@ import dayjs from 'dayjs';
 import { useValueList } from '../filter/useValueList';
 
 export interface FieldEditorProps {
+  /** Property model of the field (`model.entityTypes[type].properties[name]`). */
   property?: PropertyModel;
+  /** Value (controlled). */
   value: unknown;
+  /** Called with the new value. */
   onChange?(value: unknown): void;
+  /** Accessible name / visible label. */
   label: string;
   /** Visible label (forms in dialogs); without it the label is only the accessible name. */
   showLabel?: boolean;
+  /** Unit or currency code shown with the value. */
   unit?: string;
+  /** Error text shown under the field. */
   error?: string;
+  /** Shows the mandatory marker and validates that a value is entered. */
   required?: boolean;
+  /** Disables the input. */
   disabled?: boolean;
+  /** Element id (e.g. for an external `<label htmlFor>`). */
   id?: string;
+  /** Name of the service in `SmartKitProvider` `services`; default: the provider's `defaultService`. */
   service?: string;
 }
 

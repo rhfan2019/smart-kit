@@ -9,13 +9,21 @@ import { conditionText, sameCondition } from './conditionText';
 import { useValueList } from './useValueList';
 
 export interface ValueHelpDialogProps {
+  /** Whether the dialog is open (controlled). */
   opened: boolean;
+  /** Entity set of the filtered (or edited) property. */
   entitySet: string;
+  /** Property with a `Common.ValueList` annotation, e.g. "Owner". */
   path: string;
+  /** Name of the service in `SmartKitProvider` `services`; default: the provider's `defaultService`. */
   service?: string;
+  /** Dialog title, usually the property label. */
   title: string;
+  /** Current conditions (pre-selected in the dialog). */
   conditions: Condition[];
+  /** Called with the chosen conditions (selected values as "EQ" conditions, plus the defined conditions). */
   onOk(conditions: Condition[]): void;
+  /** Called when the user cancels or closes the dialog. */
   onCancel(): void;
 }
 

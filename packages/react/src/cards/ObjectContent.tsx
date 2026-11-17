@@ -16,7 +16,9 @@ import { qualifierOf } from './annotations';
 import { criticalityState } from './ListContent';
 
 export interface ObjectContentProps {
+  /** Entity set name as in `$metadata`, e.g. "Orders". */
   entitySet: string;
+  /** Name of the service in `SmartKitProvider` `services`; default: the provider's `defaultService`. */
   service?: string;
   /** Key values of the object, e.g. { ID: '42' }. */
   keys?: Row;

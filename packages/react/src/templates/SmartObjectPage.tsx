@@ -21,8 +21,11 @@ import {
 export interface SmartObjectPageProps {
   /** Entity path, e.g. "Orders('1')". Ignored in create mode. */
   path: string;
+  /** Name of the service in `SmartKitProvider` `services`; default: the provider's `defaultService`. */
   service?: string;
+  /** "anchor" (default): sections in one scrolling page with an anchor bar; "tabs": one section at a time. */
   navigation?: 'anchor' | 'tabs';
+  /** Extra buttons in the header toolbar, before the model actions (`UI.Identification` DataFieldForAction). */
   headerActions?: ReactNode;
   /** Message strip under the title (OP-17). */
   headerMessage?: ReactNode | ((row: Row | undefined) => ReactNode);
@@ -34,6 +37,7 @@ export interface SmartObjectPageProps {
   extraSelect?: string[];
   /** Navigation of a sub-table row; default: NavigationAdapter.toObject when the adapter has an object page. */
   onRowNavigate?(row: Row, path: string): void;
+  /** Extra CSS class on the root element. */
   className?: string;
   /** Create mode (OP Create): a new object of this entity set. */
   create?: { entitySet: string; initial?: Row };
@@ -49,6 +53,7 @@ export interface SmartObjectPageProps {
   keyInfo?: ReactNode | ((row: Row | undefined) => ReactNode);
   /** Dynamic side content (OP Dynamic Side Content). */
   sideContent?: ReactNode | ((row: Row | undefined) => ReactNode);
+  /** Title of the side content panel. */
   sideContentTitle?: string;
   /** Paging buttons for sub-object pages (OP Representation of Child Pages; default true). */
   paging?: boolean;

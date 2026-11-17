@@ -34,12 +34,15 @@ export interface CalendarLegendItem {
 }
 
 export interface CalendarContentProps {
+  /** Entity set name as in `$metadata`, e.g. "Orders". */
   entitySet: string;
+  /** Name of the service in `SmartKitProvider` `services`; default: the provider's `defaultService`. */
   service?: string;
   /** Property paths of the appointments; default Communication.Event. */
   item?: EventItemPaths;
   /** UI.SelectionVariant that filters the appointments. */
   selectionAnnotationPath?: string;
+  /** Filter state (from `useFilterState` / `SmartFilterBar`), applied to the request. */
   filters?: FilterState;
   /** Initially selected day, "YYYY-MM-DD" (default today). */
   date?: string;
@@ -47,6 +50,7 @@ export interface CalendarContentProps {
   maxItems?: number;
   /** Visible legend items (default 2); the rest are counted in "More (x)". */
   maxLegendItems?: number;
+  /** Text when there are no items. */
   noItemsText?: string;
   specialDates?: CalendarSpecialDate[];
   /** Legend items (texts of special day types, for example); the appointment types found are added (one circle each). */

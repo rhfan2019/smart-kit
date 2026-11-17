@@ -1,5 +1,5 @@
 import react from '@vitejs/plugin-react';
-import { defineConfig } from 'vite';
+import { defaultClientConditions, defineConfig } from 'vite';
 
 const mock = process.env.MOCK_URL ?? 'http://localhost:4400';
 // PURCHASING_URL: serve /odata/purchasing/ from another service, e.g. the PostgreSQL one (http://localhost:4402,
@@ -14,6 +14,8 @@ const proxy = {
 
 export default defineConfig({
   plugins: [react()],
+  // workspace packages from their sources (exports condition `smart-kit-source`, ADR-029)
+  resolve: { conditions: ['smart-kit-source', ...defaultClientConditions] },
   server: { port: 4401, strictPort: true, proxy },
   preview: { port: 4401, strictPort: true, proxy },
 });

@@ -16,7 +16,9 @@ export interface SimpleChartProps {
   measureLabel: string;
   dimensionLabel: string;
   data: ChartDatum[];
+  /** Shows a busy indicator. */
   loading?: boolean;
+  /** Formats a number for display. */
   format?(n: number): string;
   /** Called when a data point is selected (click or Enter / Space on a focused bar); `anchor` is the bar element, e.g. for a popover. */
   onSelect?(d: ChartDatum, anchor: Element): void;

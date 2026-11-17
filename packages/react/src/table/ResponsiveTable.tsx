@@ -22,6 +22,7 @@ export interface ResponsiveColumn {
 }
 
 export interface ResponsiveTableProps {
+  /** Accessible name / visible label. */
   label: string;
   columns: ResponsiveColumn[];
   rows: Row[];
@@ -32,6 +33,7 @@ export interface ResponsiveTableProps {
   navigable: boolean;
   onNavigate(row: Row): void;
   hasMore: boolean;
+  /** Shows a busy indicator. */
   loading: boolean;
   loadMore(): void;
   /** Show the columns hidden on this width below each row (pop-in). */

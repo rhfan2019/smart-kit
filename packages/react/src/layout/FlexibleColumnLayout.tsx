@@ -28,6 +28,7 @@ export interface FlexibleColumnLayoutProps {
   /** Paging buttons of the mid / end column (DP Header Title Guidelines: paging buttons left of the layout actions). */
   midPaging?: FclPaging;
   endPaging?: FclPaging;
+  /** Extra CSS class on the root element. */
   className?: string;
 }
 

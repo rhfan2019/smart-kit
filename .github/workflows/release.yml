@@ -1,0 +1,43 @@
+name: Release
+
+# ADR-029: Changesets opens a "Version Packages" pull request while unreleased changesets are on main; merging it
+# publishes the four packages (one version, `fixed` group) with npm trusted publishing (OIDC, provenance, no token).
+# The first publish of each package is done by hand (npm needs the package to exist before a trusted publisher can be
+# configured); see README "发版".
+on:
+  push:
+    branches: [main]
+
+concurrency: ${{ github.workflow }}-${{ github.ref }}
+
+permissions:
+  contents: write
+  pull-requests: write
+  id-token: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          registry-url: https://registry.npmjs.org
+      # trusted publishing needs npm >= 11.5.1
+      - run: npm install -g npm@latest
+      - run: npm ci
+      - name: Type check, lint, unit tests (no PostgreSQL here; the full checks run in ci.yml)
+        run: |
+          npm run typecheck
+          npm run lint
+      - name: Version pull request or publish
+        uses: changesets/action@v1
+        with:
+          version: npm run version-packages
+          publish: npm run release
+          title: 'chore: version packages'
+          commit: 'chore: version packages'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

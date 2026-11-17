@@ -12,9 +12,13 @@ export function filterSummaryText(t: ReturnType<typeof useText>, labels: string[
 }
 
 export interface FilterSummaryProps {
+  /** Entity set name as in `$metadata`, e.g. "Orders". */
   entitySet: string;
+  /** Name of the service in `SmartKitProvider` `services`; default: the provider's `defaultService`. */
   service?: string;
+  /** Filter state (from `useFilterState` / `SmartFilterBar`), applied to the request. */
   filters: FilterState;
+  /** Search term ($search). */
   search?: string;
   searchLabel?: string;
 }

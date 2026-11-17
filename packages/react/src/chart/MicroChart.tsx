@@ -35,6 +35,7 @@ export interface MicroChartAreaThresholds {
 export interface MicroChartThreshold { value: number; criticality: MicroChartCriticality }
 
 export interface MicroChartProps {
+  /** Chart type: "bullet" | "radial" | "harvey" | "delta" | "column" | "line" | "comparison" | "area" | "stackedBar" (from `UI.Chart/ChartType` when model-driven). */
   kind: MicroChartKind;
   /** Accessible name, e.g. the facet title or the column header. */
   label: string;
@@ -52,6 +53,7 @@ export interface MicroChartProps {
   thresholds?: MicroChartThreshold[];
   /** Bullet: 'delta' shows the difference between the value and the target (DeltaBulletChart, MC-24). */
   mode?: 'actual' | 'delta';
+  /** Semantic colour of the value (from `UI.DataPoint/Criticality` or `CriticalityCalculation`). */
   criticality?: MicroChartCriticality;
   /** Qualitative palette colour 1–11, used when there is no criticality (Harvey Ball, MC-56). Default 1. */
   color?: number;

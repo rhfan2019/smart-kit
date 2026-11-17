@@ -51,6 +51,10 @@ jobs:
         run: |
           npm run build
           npm run size
+      - name: Agent docs are up to date (ADR-030)
+        run: node scripts/gen-agent-docs.mjs --check
+      - name: Packed tarballs install and work in fresh projects (ADR-029)
+        run: npm run verify:pack
       - name: Storybook build
         run: npm run build-storybook
       - name: Install Playwright browser

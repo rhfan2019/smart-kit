@@ -13,15 +13,21 @@ export interface FormFieldItem {
 }
 
 export interface SmartFormProps {
+  /** Full name of the entity type, e.g. "Shop.Order" (`model.entitySets[set].typeName`). */
   typeName: string;
+  /** Name of the service in `SmartKitProvider` `services`; default: the provider's `defaultService`. */
   service?: string;
+  /** The entity row as read from the service (`Row`, property paths as keys, expanded navigations as nested objects); undefined while loading. */
   row: Row | undefined;
+  /** Field groups to show, e.g. `subSection.content.groups` of the model or `ui.fieldGroups[qualifier]`. */
   groups: FormGroupModel[];
+  /** "display" (default) or "edit" (then pass `values`, `onChange`, `errors`). */
   mode?: 'display' | 'edit';
   /** Insert or replace fields (ids as in the model; anchors may be in any group). */
   extend?: ExtendEntry<FormFieldItem>[];
   /** Edit mode values and changes (edit seam). */
   values?: Row;
+  /** Edit mode: called with the property path and the new value. */
   onChange?(path: string, value: unknown): void;
   /** Show group titles (hidden when a group title would repeat the subsection title). */
   showGroupTitles?: boolean;

@@ -22,9 +22,11 @@ export interface ToolbarAction {
 }
 
 export interface OverflowActionsProps {
+  /** Items to show. */
   items: ToolbarAction[];
   /** Text of the overflow button. */
   label?: string;
+  /** Extra CSS class on the root element. */
   className?: string;
   'data-sk'?: string;
   /** Width available to the toolbar (default: the parent's width minus its other children). */

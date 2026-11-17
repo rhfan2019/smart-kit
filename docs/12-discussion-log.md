@@ -501,3 +501,59 @@ ADR-027 定的范围是"只实现 smart-kit 会发的请求"，用户也定过�
 **答复**：能。本库所有颜色都是 CSS 变量，组件只引用语义层（`--sk-color-*`）；宿主在带 `data-theme` 的元素上把语义令牌指向自己的变量（例如 `html[data-theme] { --sk-color-link: var(--my-brand-primary); }`），卡片和其他组件就用宿主的颜色，图表色等组件层令牌也跟着变。已在演示页验证。写法见 `06-extension-and-theming.md` 第 3 节"从宿主应用继承配色"。
 
 **合并**：`claude/cards` 合并进本地 `main`（main 已含打包改造和 OData 服务）；卡片的讨论编号由 D16～D18 改为 D19～D21，避开 OData 服务占用的编号。未推送。
+
+## D23 npm 发布准备和给 AI 编程工具的文档：方案（2026-11-16）
+
+**用户的要求**：让四个包能在其他项目里通过 npm 安装使用；让 Codex、Claude Code 等工具在别的项目里准确知道组件怎么用。先出方案，确认后再动手；登录 npm、token、2FA、第一次 `npm publish` 由用户自己做。
+
+**核查结果**
+1. **`publishConfig.exports` 在 npm 下不生效**：在 `packages/core` 执行 `npm pack`，包里的 `package.json` 仍是 `exports → ./src/index.ts`，而 `files` 只有 `dist`。照现在的配置发布，四个包都无法导入。只有 pnpm（和部分 Yarn 版本）会用 `publishConfig` 覆盖 `exports`；npm 的 `publishConfig` 只覆盖 registry、tag、access 等配置（npm/cli#7586）。
+2. peer 依赖写成了精确版本（`react: 19.3.1`、`@mantine/core: 9.8.0`……），使用方的小版本稍有不同就会装不上或报冲突。
+3. 缺 `repository`、`homepage`、`bugs`、`keywords`、`publishConfig.access`；各包目录里没有 `README`、`LICENSE`；React 包没有 `engines`。
+4. 内部依赖已经是真实版本号 `0.1.0`（npm workspaces 不用 `workspace:` 协议），由发版工具统一改。
+5. CLI 的 `dist/bin.js` 带 shebang，可以作为 bin。
+
+**方案（待用户确认）**
+- A. exports：开发时走源码改用**自定义导出条件**（`"@rhfan2019/source": "./src/…"` 放在 `types` / `import` 前面，`tsconfig` 的 `customConditions`、Vite / Vitest 的 `resolve.conditions`、Node 的 `--conditions` 打开它），`types` / `import` 直接指向 `dist`。发布的清单就是仓库里的清单，不在发布前改写文件；使用方不认识这个条件，自然走 `dist`。备选：React Native 的做法，`prepack` 脚本把 `publishConfig.exports` 拷进 `exports`、`postpack` 还原。
+- B. peer 依赖改成范围（`^19.0.0`、`^9.0.0`……），AG Grid 仍是可选 peer。
+- C. 发版用 Changesets，四个包放进一个 `fixed` 组同步版本（ADR-027）；GitHub Actions 用 npm 可信发布（OIDC，自动带 provenance），新 ADR-029。第一次发布只能由用户手工做（npm 要求包已存在才能配置可信发布者），之后在 npmjs.com 给每个包配置可信发布者。
+- D. `scripts/verify-pack.mjs`：打 tgz，在仓库外新建 Vite + React + TS 项目和 Node 项目，从 tgz 安装，检查每个子路径的导入和类型、只用 `MicroChart` 的体积与 `check-size.mjs` 一致、`styles.css`、server 能起服务、`smart-kit` 命令能运行；加进 CI。
+- E. 给 AI 的文档：包里附带文档（`node_modules/@rhfan2019/smart-kit/docs/`），使用方项目的 `AGENTS.md` 里放一段索引（`CLAUDE.md` 用 `@AGENTS.md` 引用），由 CLI 命令 `smart-kit agents` 写入和更新；另附 Agent Skills 格式的"新项目起步"（`skills/*/SKILL.md`）；公开属性补 TSDoc；文档代码块做类型检查；不做 MCP 服务；`llms.txt` 从同一份文档生成，优先级低。
+
+## D24 npm 发布准备和 AI 文档：实施、实测、第一次发布的步骤（2026-11-16）
+
+**用户的决定**：按 D23 的推荐方案做（导出条件、Changesets、包内文档 + `AGENTS.md` 索引）。
+
+**做了什么**（分支 `claude/npm-publish`，ADR-029、ADR-030）
+1. **发布清单**：`exports` 改成 `{ "smart-kit-source": src, "types": dist, "import": dist }`，仓库里由 `tsconfig` 的 `customConditions`、Vitest / 示例应用 / Storybook 的 Vite `resolve.conditions`、`tsx --conditions` 打开源码条件；`publishConfig` 只留 `access: public`；补 `keywords`、`homepage`、`bugs`、`repository.directory`；每个包有 `README.md`（npm 页面）和 `LICENSE`；peer 依赖改成 `^` 范围；示例应用依赖写 `*`。`tests/unit/packaging.test.ts` 检查这些规则。
+2. **版本和发版**：Changesets（`fixed` 组，四包同步），`.github/workflows/release.yml`（`changesets/action`，npm 可信发布，provenance）。根 README 增加"在其他项目中使用"和"发版"两节。
+3. **打包验证** `npm run verify:pack`（已进 CI）：在仓库外新建 Vite + React 和 Node 项目，从 tgz 安装后检查 18 个入口的运行时导入、`docs/api.md` 的每个名字的类型（`bundler` 和 `nodenext`，检查本库的 `.d.ts`）、只用 `MicroChart` 的体积（5.1 KB，与 `check-size.mjs` 相同）、`styles.css`、随包文档、`smart-kit --help` / `check --strict` / `agents`、server 的 `$metadata` 和读数。**它发现的真问题**：`.d.ts` 里的相对导入没有扩展名，`moduleResolution: nodenext` 的项目（常见于 Node 服务端）用不了类型。修法：构建后 `scripts/fix-dts-imports.mjs` 补成 `./x.js` / `./x/index.js`。
+4. **给 AI 的文档**：React 包 `docs/README.md`（起步、应用骨架、子路径表）、`recipes.md`（12 个场景）、`annotations.md`（注解与界面的对应、注解文件模板、带颜色的状态）、`pitfalls.md`；server、cli、core 各有 `docs/README.md`；各包 `docs/reference.md` 由 `scripts/gen-agent-docs.mjs` 从类型和 TSDoc 生成（组件属性的 TSDoc 补了约 150 条）；Skill `skills/smart-kit-getting-started/SKILL.md`。`tests/unit/agent-docs.test.ts`：文档和包 README 里的 `ts` / `tsx` 代码块全部按使用方的导入方式编译、参考文档不过期、子路径表与导出一致。CLI 新命令 `smart-kit agents`。
+
+**AI 实测**（仓库外的空目录，只装 4 个 tgz，一个全新的 AI 只看 `node_modules` 里的文档，做"项目和任务"应用：PostgreSQL 表、CLI 生成、手写注解、服务、列表页和对象页、直接保存）：
+- 结果：做出来了，所有要求的检查都通过（`check --strict`、`$metadata`、列表和 `$expand`、带 `If-Match` 的 PATCH、`tsc`、`vite build`），没有去读 `.d.ts`。我在内置浏览器里补看了页面：列表页（状态颜色、币种）、对象页（表单、任务子表）、编辑名称并保存都正常。
+- 它卡住或发现不一致的 10 处，已全部处理：
+  1. 注解文件还不存在时 `smart-kit generate` 直接报 ENOENT 退出 → 改成作为检查问题报告（不加 `--strict` 时不算错误），加了测试。
+  2. 文档写"不带 `If-Match` 的 PATCH 返回 412"，实际会接受 → 改文档（见下面待定）。
+  3. 没写服务端会把版本号加 1 → 补上。
+  4. 表注释生成的是 `Core.Description` 而不是 `Common.Label` → 改 CLI 文档。
+  5. 状态颜色的数值从哪来没写；生成列没有标 `Core.Computed` → CLI 现在给生成列和标识列加 `Core.Computed`；`annotations.md` 加"带颜色的状态"一节。
+  6. `ValueListWithFixedValues` 要不要和 `ValueList` 一起用 → 写明要一起用。
+  7. 注解模板缺 `Core` 词汇表引用、ETag 和 `Version` 的标注 → 模板补齐。
+  8. 文档推荐的 `npx -p @rhfan2019/smart-kit-cli` 会从 npm 下载 → 改为先装成开发依赖。
+  9. `vite build` 的 `stream` 外部化警告和大块警告 → `pitfalls.md` 说明可忽略的原因。
+  10. 服务端文档的钩子 SQL 没带 schema 前缀 → 与 `storage.json` 一致，写成 `shop.sales_order`。
+
+**检查**：typecheck、lint（含令牌和商标）、单元测试 378 个、build、size、e2e 198 个、e2e:pg 141 个、`trace --strict` 全部通过；`verify:pack` 通过。（本机 4400 / 4401 被用户自己启动的测试服务和示例应用占用，e2e 用 `E2E_MOCK_PORT=4410 E2E_DEMO_PORT=4411` 跑。）
+
+**待用户决定**：不带 `If-Match` 的 PATCH / DELETE 现在会被接受（覆盖别人的修改也不报错）。smart-kit 前端总会带上，所以只影响别的调用方。可以改成：实体集声明了 `Core.OptimisticConcurrency` 时，缺少 `If-Match` 就返回 428（Precondition Required）。
+
+**第一次发布（由用户执行，不要把密码、token、验证码交给 AI）**
+1. 前提：npm 账号的用户名必须是 `rhfan2019`（或者有名为 `rhfan2019` 的 npm 组织），否则先用 `node scripts/rename-scope.mjs @新scope` 改 scope。账号开启 2FA。
+2. `npm login`（浏览器里登录，完成 2FA），`npm whoami` 确认。
+3. `npm run build && npm run verify:pack`。
+4. 先预演：`npm publish --dry-run -w @rhfan2019/smart-kit-core`（其余三个同样），看文件清单。
+5. 按依赖顺序发布（每条都会要求输入 2FA 验证码，也可以加 `--otp=<验证码>`）：
+   `npm publish -w @rhfan2019/smart-kit-core`、`npm publish -w @rhfan2019/smart-kit`、`npm publish -w @rhfan2019/smart-kit-server`、`npm publish -w @rhfan2019/smart-kit-cli`（`publishConfig.access` 已是 public）。
+6. 在 npmjs.com 给每个包配置可信发布者：包页面 → Settings → Trusted Publisher → GitHub Actions，组织或用户 `rhfan2019`、仓库 `smart-kit`、工作流 `release.yml`。之后可以在同一页选择"禁止 token 发布"。
+7. 之后的发版都走 Changesets 和 `release.yml`（需要先把仓库推送到 GitHub；provenance 要求仓库是公开的）。

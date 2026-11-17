@@ -2,6 +2,26 @@
   "name": "@rhfan2019/smart-kit",
   "version": "0.1.0",
   "description": "Metadata-driven, white-box, themeable React building blocks for list and object pages.",
+  "keywords": [
+    "react",
+    "odata",
+    "odata-v4",
+    "annotations",
+    "list-report",
+    "object-page",
+    "smart-table",
+    "mantine",
+    "enterprise"
+  ],
+  "homepage": "https://github.com/rhfan2019/smart-kit/tree/main/packages/react#readme",
+  "bugs": {
+    "url": "https://github.com/rhfan2019/smart-kit/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rhfan2019/smart-kit.git",
+    "directory": "packages/react"
+  },
   "license": "MIT",
   "type": "module",
   "sideEffects": [
@@ -11,153 +31,105 @@
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "types": "./src/index.ts",
-      "import": "./src/index.ts"
+      "smart-kit-source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
     },
     "./context": {
-      "types": "./src/entries/context.ts",
-      "import": "./src/entries/context.ts"
+      "smart-kit-source": "./src/entries/context.ts",
+      "types": "./dist/entries/context.d.ts",
+      "import": "./dist/entries/context.js"
     },
     "./i18n": {
-      "types": "./src/entries/i18n.ts",
-      "import": "./src/entries/i18n.ts"
+      "smart-kit-source": "./src/entries/i18n.ts",
+      "types": "./dist/entries/i18n.d.ts",
+      "import": "./dist/entries/i18n.js"
     },
     "./theme": {
-      "types": "./src/entries/theme.ts",
-      "import": "./src/entries/theme.ts"
+      "smart-kit-source": "./src/entries/theme.ts",
+      "types": "./dist/entries/theme.d.ts",
+      "import": "./dist/entries/theme.js"
     },
     "./util": {
-      "types": "./src/entries/util.ts",
-      "import": "./src/entries/util.ts"
+      "smart-kit-source": "./src/entries/util.ts",
+      "types": "./dist/entries/util.d.ts",
+      "import": "./dist/entries/util.js"
     },
     "./field": {
-      "types": "./src/entries/field.ts",
-      "import": "./src/entries/field.ts"
+      "smart-kit-source": "./src/entries/field.ts",
+      "types": "./dist/entries/field.d.ts",
+      "import": "./dist/entries/field.js"
     },
     "./filter": {
-      "types": "./src/entries/filter.ts",
-      "import": "./src/entries/filter.ts"
+      "smart-kit-source": "./src/entries/filter.ts",
+      "types": "./dist/entries/filter.d.ts",
+      "import": "./dist/entries/filter.js"
     },
     "./variants": {
-      "types": "./src/entries/variants.ts",
-      "import": "./src/entries/variants.ts"
+      "smart-kit-source": "./src/entries/variants.ts",
+      "types": "./dist/entries/variants.d.ts",
+      "import": "./dist/entries/variants.js"
     },
     "./table": {
-      "types": "./src/entries/table.ts",
-      "import": "./src/entries/table.ts"
+      "smart-kit-source": "./src/entries/table.ts",
+      "types": "./dist/entries/table.d.ts",
+      "import": "./dist/entries/table.js"
     },
     "./chart": {
-      "types": "./src/entries/chart.ts",
-      "import": "./src/entries/chart.ts"
+      "smart-kit-source": "./src/entries/chart.ts",
+      "types": "./dist/entries/chart.d.ts",
+      "import": "./dist/entries/chart.js"
     },
     "./object": {
-      "types": "./src/entries/object.ts",
-      "import": "./src/entries/object.ts"
+      "smart-kit-source": "./src/entries/object.ts",
+      "types": "./dist/entries/object.d.ts",
+      "import": "./dist/entries/object.js"
     },
     "./page": {
-      "types": "./src/entries/page.ts",
-      "import": "./src/entries/page.ts"
+      "smart-kit-source": "./src/entries/page.ts",
+      "types": "./dist/entries/page.d.ts",
+      "import": "./dist/entries/page.js"
     },
     "./actions": {
-      "types": "./src/entries/actions.ts",
-      "import": "./src/entries/actions.ts"
+      "smart-kit-source": "./src/entries/actions.ts",
+      "types": "./dist/entries/actions.d.ts",
+      "import": "./dist/entries/actions.js"
     },
     "./edit": {
-      "types": "./src/entries/edit.ts",
-      "import": "./src/entries/edit.ts"
+      "smart-kit-source": "./src/entries/edit.ts",
+      "types": "./dist/entries/edit.d.ts",
+      "import": "./dist/entries/edit.js"
     },
     "./messages": {
-      "types": "./src/entries/messages.ts",
-      "import": "./src/entries/messages.ts"
+      "smart-kit-source": "./src/entries/messages.ts",
+      "types": "./dist/entries/messages.d.ts",
+      "import": "./dist/entries/messages.js"
     },
     "./templates": {
-      "types": "./src/entries/templates.ts",
-      "import": "./src/entries/templates.ts"
+      "smart-kit-source": "./src/entries/templates.ts",
+      "types": "./dist/entries/templates.d.ts",
+      "import": "./dist/entries/templates.js"
     },
     "./cards": {
-      "types": "./src/entries/cards.ts",
-      "import": "./src/entries/cards.ts"
+      "smart-kit-source": "./src/entries/cards.ts",
+      "types": "./dist/entries/cards.d.ts",
+      "import": "./dist/entries/cards.js"
     },
-    "./styles.css": "./src/theme/styles.css"
-  },
-  "publishConfig": {
-    "exports": {
-      ".": {
-        "types": "./dist/index.d.ts",
-        "import": "./dist/index.js"
-      },
-      "./context": {
-        "types": "./dist/entries/context.d.ts",
-        "import": "./dist/entries/context.js"
-      },
-      "./i18n": {
-        "types": "./dist/entries/i18n.d.ts",
-        "import": "./dist/entries/i18n.js"
-      },
-      "./theme": {
-        "types": "./dist/entries/theme.d.ts",
-        "import": "./dist/entries/theme.js"
-      },
-      "./util": {
-        "types": "./dist/entries/util.d.ts",
-        "import": "./dist/entries/util.js"
-      },
-      "./field": {
-        "types": "./dist/entries/field.d.ts",
-        "import": "./dist/entries/field.js"
-      },
-      "./filter": {
-        "types": "./dist/entries/filter.d.ts",
-        "import": "./dist/entries/filter.js"
-      },
-      "./variants": {
-        "types": "./dist/entries/variants.d.ts",
-        "import": "./dist/entries/variants.js"
-      },
-      "./table": {
-        "types": "./dist/entries/table.d.ts",
-        "import": "./dist/entries/table.js"
-      },
-      "./chart": {
-        "types": "./dist/entries/chart.d.ts",
-        "import": "./dist/entries/chart.js"
-      },
-      "./object": {
-        "types": "./dist/entries/object.d.ts",
-        "import": "./dist/entries/object.js"
-      },
-      "./page": {
-        "types": "./dist/entries/page.d.ts",
-        "import": "./dist/entries/page.js"
-      },
-      "./actions": {
-        "types": "./dist/entries/actions.d.ts",
-        "import": "./dist/entries/actions.js"
-      },
-      "./edit": {
-        "types": "./dist/entries/edit.d.ts",
-        "import": "./dist/entries/edit.js"
-      },
-      "./messages": {
-        "types": "./dist/entries/messages.d.ts",
-        "import": "./dist/entries/messages.js"
-      },
-      "./templates": {
-        "types": "./dist/entries/templates.d.ts",
-        "import": "./dist/entries/templates.js"
-      },
-      "./cards": {
-        "types": "./dist/entries/cards.d.ts",
-        "import": "./dist/entries/cards.js"
-      },
-      "./styles.css": "./dist/styles.css"
+    "./styles.css": {
+      "smart-kit-source": "./src/theme/styles.css",
+      "default": "./dist/styles.css"
     }
   },
+  "publishConfig": {
+    "access": "public"
+  },
   "files": [
-    "dist"
+    "dist",
+    "docs",
+    "skills"
   ],
   "scripts": {
-    "build": "vite build && node ../../scripts/copy-css.mjs"
+    "build": "vite build && node ../../scripts/copy-css.mjs && node ../../scripts/fix-dts-imports.mjs ."
   },
   "dependencies": {
     "@rhfan2019/smart-kit-core": "0.1.0",
@@ -165,15 +137,15 @@
     "write-excel-file": "4.1.1"
   },
   "peerDependencies": {
-    "react": "19.3.1",
-    "react-dom": "19.3.1",
-    "@mantine/core": "9.8.0",
-    "@mantine/hooks": "9.8.0",
-    "@mantine/dates": "9.8.0",
-    "dayjs": "1.11.23",
-    "ag-grid-community": "36.3.0",
-    "ag-grid-react": "36.3.0",
-    "@tanstack/react-query": "5.107.1"
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "@mantine/core": "^9.8.0",
+    "@mantine/hooks": "^9.8.0",
+    "@mantine/dates": "^9.8.0",
+    "dayjs": "^1.11.23",
+    "ag-grid-community": "^36.3.0",
+    "ag-grid-react": "^36.3.0",
+    "@tanstack/react-query": "^5.107.1"
   },
   "peerDependenciesMeta": {
     "ag-grid-community": {

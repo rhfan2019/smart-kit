@@ -1,6 +1,6 @@
 # 交接文档
 
-> 最后更新：2026-11-16（自写 OData 服务：读、直接保存、视图、绑定动作；PostgreSQL 测试床）。新会话先读本文，再读 `docs/prompt/项目目标与范围-v5.md`。
+> 最后更新：2026-11-16（npm 发布准备和给 AI 编程工具的文档，ADR-029、ADR-030，D23、D24）。新会话先读本文，再读 `docs/prompt/项目目标与范围-v5.md`。
 
 ## 1. 现状
 
@@ -12,6 +12,8 @@
 - **二期完成（2026-11-15）**：计划 `12-phase2-plan.md`，验收条目 `13-phase2-acceptance.md`（三篇基准规范每个示意图编号和行为规则，共 132 条，另 10 个二期注解术语），结果 `14-phase2-acceptance-report.md`（142/142 对应到通过的测试；端到端 181 个用例完整跑两遍都通过）。设计决定 ADR-018–024。二期在分支 `claude/phase-2-a32ce7` 上本地提交，**没有推送**。
 
 - **自写 OData 服务（2026-11-16，ADR-027，讨论记录 D16、D17）**：新包 `@rhfan2019/smart-kit-server`（OData V4 服务，PostgreSQL：读、直接保存、绑定动作，业务规则是钩子；没有草稿）和 `@rhfan2019/smart-kit-cli`（命令 `smart-kit`：从表结构生成 CSDL、检查注解）；测试床 `apps/pg-server`（数据库 `smart_kit_purchasing`，端口 4402）。示例应用的读写场景在它上面全部通过（`npm run e2e:pg`，141 个），和内存测试服务的一致性测试 38 个请求形状全部相同。分支 `claude/odata-server-8d02a5`，从 `build/subpath-exports` 开出，**没有推送**。
+
+- **npm 发布准备和给 AI 的文档（2026-11-16，ADR-029、ADR-030，讨论记录 D23、D24）**：分支 `claude/npm-publish`。`exports` 改为指向 `dist`，仓库里用自定义条件 `smart-kit-source` 走源码（npm 不认 `publishConfig.exports`，原配置发布后无法导入）；peer 依赖改成范围；Changesets 四包同步版本，`release.yml` 用 npm 可信发布；`npm run verify:pack` 在仓库外从 tgz 安装后逐项检查（已进 CI）；构建后 `scripts/fix-dts-imports.mjs` 给 `.d.ts` 的相对导入补扩展名（`nodenext` 项目才能用类型）。每个包带 `docs/`（React 包另有 `skills/smart-kit-getting-started/SKILL.md`），`docs/reference.md` 由 `scripts/gen-agent-docs.mjs` 从类型和 TSDoc 生成；文档代码块的类型检查在 `tests/unit/agent-docs.test.ts`；CLI 新命令 `smart-kit agents` 写使用方的 `AGENTS.md` / `CLAUDE.md`。**还没有发布到 npm**：第一次发布由用户手工执行（D24 列出命令）。
 
 ## 2. 下一步
 
@@ -61,6 +63,9 @@
 | `npm run pg` | 启动 PostgreSQL 上的采购订单服务（http://localhost:4402/odata/purchasing/）；示例应用接它：`PURCHASING_URL=http://localhost:4402 npm run dev` |
 | `npm run e2e:pg` | 示例应用对 PostgreSQL 服务的端到端测试（`playwright.pg.config.ts`，演示应用在 4403）；需要先 `npm run pg:setup` |
 | `node scripts/rename-scope.mjs <@scope> --dry-run` | 改 npm scope |
+| `npm run verify:pack` | 构建后执行：打 tgz，在仓库外新建 Vite + React 和 Node 项目从 tgz 安装，检查子路径、类型（bundler / nodenext）、体积、样式、随包文档、server 和 CLI（ADR-029） |
+| `node scripts/gen-agent-docs.mjs` | 重新生成各包 `docs/reference.md`（改了导出或 TSDoc 后执行；`--check` 只检查） |
+| `npx changeset` | 为要发布的改动写一条 changeset（四包同步版本，ADR-029） |
 
 ## 5. 环境
 
