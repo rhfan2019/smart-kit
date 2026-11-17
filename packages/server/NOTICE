@@ -1,0 +1,14 @@
+@rhfan2019/smart-kit-server
+Copyright (c) 2026 smart-kit contributors. Licensed under the MIT License.
+
+This package contains code adapted from @sap-ux/fe-mockserver-core
+(https://github.com/SAP/open-ux-odata, packages/fe-mockserver-core):
+  src/parser/filter.ts — token patterns and rule structure of src/request/filterParser.ts and commonTokens.ts
+Copyright (c) 2021-2026 SAP SE or an SAP affiliate company and open-ux-odata contributors.
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use that code except in compliance
+with the License. You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+Changes: see the header of src/parser/filter.ts.
+
+Runtime dependencies: chevrotain (Apache-2.0), kysely (MIT), pg (MIT), xml-js (MIT), @rhfan2019/smart-kit-core (MIT).

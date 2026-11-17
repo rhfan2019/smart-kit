@@ -9,10 +9,23 @@ import noLiteralUiText from './tools/eslint/no-literal-ui-text.js';
 const FRONTEND = ['react', 'react-dom', 'react/*', 'react-dom/*', '@mantine/*', 'ag-grid-*', '@tanstack/*', 'lucide-react', 'write-excel-file', 'write-excel-file/*'];
 const ROUTERS = ['react-router', 'react-router/*', 'react-router-dom', 'react-router-dom/*', '@tanstack/react-router', '@tanstack/router*', 'next', 'next/*', 'wouter'];
 const APPS = ['demo', 'demo/*', 'mock', '**/apps/**'];
+// Node-only packages (ADR-027): never in browser code.
+const NODE_ONLY = ['@rhfan2019/smart-kit-server', '@rhfan2019/smart-kit-server/*', '@rhfan2019/smart-kit-cli', '@rhfan2019/smart-kit-cli/*', 'pg', 'pg/*', 'kysely', 'kysely/*', 'chevrotain', 'node:*'];
 
 export const boundaryRules = {
-  core: { patterns: [{ group: [...FRONTEND, '@rhfan2019/smart-kit', ...APPS], message: 'packages/core is pure TypeScript: no React, DOM libraries, UI packages or apps' }] },
-  react: { patterns: [{ group: [...APPS, ...ROUTERS], message: 'packages/react must not depend on apps/* or any router library (docs/06 §5)' }] },
+  core: {
+    patterns: [
+      { group: [...FRONTEND, '@rhfan2019/smart-kit', ...APPS], message: 'packages/core is pure TypeScript: no React, DOM libraries, UI packages or apps' },
+      { group: NODE_ONLY, message: 'packages/core runs in the browser: no server packages, database drivers or Node modules (ADR-027)' },
+    ],
+  },
+  react: {
+    patterns: [
+      { group: [...APPS, ...ROUTERS], message: 'packages/react must not depend on apps/* or any router library (docs/06 §5)' },
+      { group: NODE_ONLY, message: 'packages/react runs in the browser: no server packages, database drivers or Node modules (ADR-027)' },
+    ],
+  },
+  server: { patterns: [{ group: [...FRONTEND, '@rhfan2019/smart-kit', '@rhfan2019/smart-kit/*', ...APPS, '@rhfan2019/smart-kit-cli'], message: 'packages/server is Node only: no React, UI packages, apps or the CLI (ADR-027)' }] },
   templates: {
     patterns: [
       { group: [...APPS, ...ROUTERS], message: 'templates must not depend on apps/* or routers' },
@@ -47,6 +60,7 @@ export default tseslint.config(
   },
   { files: ['packages/core/src/**'], rules: { 'no-restricted-imports': ['error', boundaryRules.core], ...noUrlAccess } },
   { files: ['packages/react/src/**'], rules: { 'no-restricted-imports': ['error', boundaryRules.react], ...noUrlAccess } },
+  { files: ['packages/server/src/**', 'packages/cli/src/**'], rules: { 'no-restricted-imports': ['error', boundaryRules.server] } },
   { files: ['packages/react/src/**/*.tsx'], ignores: ['packages/react/src/i18n/**'], rules: { 'smart-kit/no-literal-ui-text': 'error' } },
   { files: ['packages/react/src/templates/**'], rules: { 'no-restricted-imports': ['error', boundaryRules.templates] } },
 );

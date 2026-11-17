@@ -23,6 +23,15 @@ export default defineConfig({
       },
       {
         test: {
+          name: 'server',
+          include: ['packages/server/test/**/*.test.ts', 'packages/cli/test/**/*.test.ts'],
+          environment: 'node',
+          testTimeout: 60_000,
+          hookTimeout: 120_000,
+        },
+      },
+      {
+        test: {
           name: 'repo',
           include: ['tests/unit/**/*.test.ts'],
           environment: 'node',

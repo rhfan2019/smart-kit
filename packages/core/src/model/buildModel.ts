@@ -117,6 +117,10 @@ export function fromConverted(c: ConvertedMetadata, diagnostics: string[] = []):
     for (const [path, target] of Object.entries((es.navigationPropertyBinding ?? {}) as Any)) bindings[path] = (target as Any).name;
     const { capabilities, navigationCapabilities } = buildCapabilities(es.annotations?.Capabilities ?? {}, es.annotations?.Core ?? {});
     entitySets[es.name] = { name: es.name, typeName: es.entityTypeName ?? es.entityType?.fullyQualifiedName, navigationBindings: bindings, capabilities, navigationCapabilities };
+    // Core.OptimisticConcurrency applies to entity sets (Core vocabulary); the ETag property is kept on the type.
+    const concurrency = es.annotations?.Core?.OptimisticConcurrency;
+    const type = entityTypes[entitySets[es.name]!.typeName];
+    if (type && !type.etag && Array.isArray(concurrency) && concurrency.length) type.etag = pathOf(concurrency[0]);
   }
 
   // Draft (ADR-018): Common.DraftRoot on the root entity set, Common.DraftNode on the sets reached from it.

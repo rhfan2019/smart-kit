@@ -1,0 +1,17 @@
+{
+  "name": "pg-server",
+  "private": true,
+  "description": "The purchasing service on PostgreSQL, served by @rhfan2019/smart-kit-server on http://localhost:4402 (read-only)",
+  "type": "module",
+  "scripts": {
+    "setup": "tsx setup.ts",
+    "generate": "tsx ../../packages/cli/src/bin.ts generate --config smart-kit.config.json",
+    "start": "tsx server.ts"
+  },
+  "dependencies": {
+    "@rhfan2019/smart-kit-cli": "0.1.0",
+    "@rhfan2019/smart-kit-server": "0.1.0",
+    "kysely": "0.29.9",
+    "pg": "8.23.1"
+  }
+}

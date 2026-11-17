@@ -1,0 +1,44 @@
+{
+  "name": "@rhfan2019/smart-kit-server",
+  "version": "0.1.0",
+  "description": "A limited OData V4 service on PostgreSQL for smart-kit: URL -> AST -> query plan -> SQL (Node only).",
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": false,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "engines": { "node": ">=24" },
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "import": "./src/index.ts"
+    }
+  },
+  "publishConfig": {
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "import": "./dist/index.js"
+      }
+    }
+  },
+  "files": [
+    "dist",
+    "NOTICE"
+  ],
+  "scripts": {
+    "build": "vite build"
+  },
+  "dependencies": {
+    "@rhfan2019/smart-kit-core": "0.1.0",
+    "chevrotain": "13.2.0",
+    "kysely": "0.29.9",
+    "pg": "8.23.1",
+    "xml-js": "1.6.11"
+  },
+  "devDependencies": {
+    "@types/pg": "8.23.1",
+    "vite": "8.3.8",
+    "vite-plugin-dts": "5.1.2"
+  }
+}
