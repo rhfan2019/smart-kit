@@ -74,6 +74,10 @@
       "types": "./src/entries/templates.ts",
       "import": "./src/entries/templates.ts"
     },
+    "./cards": {
+      "types": "./src/entries/cards.ts",
+      "import": "./src/entries/cards.ts"
+    },
     "./styles.css": "./src/theme/styles.css"
   },
   "publishConfig": {
@@ -141,6 +145,10 @@
       "./templates": {
         "types": "./dist/entries/templates.d.ts",
         "import": "./dist/entries/templates.js"
+      },
+      "./cards": {
+        "types": "./dist/entries/cards.d.ts",
+        "import": "./dist/entries/cards.js"
       },
       "./styles.css": "./dist/styles.css"
     }

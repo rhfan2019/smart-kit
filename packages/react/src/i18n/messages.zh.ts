@@ -1,9 +1,11 @@
 /** 简体中文库文案。键必须与 messages.en.ts 一致（单元测试检查）。 */
 import type { Messages } from './messages.en';
+import { cardsZh } from './messages.cards.zh';
 import { p2zh } from './messages.p2.zh';
 
 export const zh: Messages = {
   ...p2zh,
+  ...cardsZh,
   'filterBar.search': '搜索',
   'filterBar.go': '执行',
   'filterBar.adaptFilters': { one: '适配筛选 ({count})', other: '适配筛选 ({count})', zero: '适配筛选' },

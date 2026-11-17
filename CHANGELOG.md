@@ -5,6 +5,17 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+### Added (cards, ADR-028, see docs/20)
+
+- New subpath `@rhfan2019/smart-kit/cards` with SAP Fiori cards named as in SAPUI5: `Card` (sap.f.Card), `Header`, `NumericHeader`, `NumericSideIndicator` (sap.f.cards), and the annotation-driven contents `ListContent` (standard, extended, bar), `TableContent`, `ObjectContent`, `AnalyticalContent`, `TimelineContent`, `CalendarContent` (sap.ui.integration.cards). Settings use the OVP card names (`annotationPath`, `presentationAnnotationPath`, `selectionAnnotationPath`, `chartAnnotationPath`, `dataPointAnnotationPath`, `identificationAnnotationPath`, `maxItems`, `listType`, `listFlavor`).
+- Header counter ("5 of 40"), default header title and navigation from the content; numeric KPI header from a `UI.DataPoint` summed on the server (state from `CriticalityCalculation`, trend from `TrendCalculation`, target and deviation).
+- Calendar card with week numbers, special days, legend, appointments of the selected day and the four-level date drill-down (days, months, years, year ranges); two columns above 589 px.
+- Sizes measured on the SAPUI5 1.154 integration cards (Horizon) as card tokens `--sk-card-*`; comparison in docs/20 §9, screenshots in docs/21-evidence, acceptance criteria in docs/22 (checked by `npm run trace -- --strict`).
+- `SimpleChart` draws `line` and `donut` too.
+- Core: `parseAnnotationPath`, `calculateTrend`; the model keeps every qualified `UI.LineItem`, `UI.PresentationVariant` (with `MaxItems`), `UI.SelectionVariant`, `UI.DataPoint`, `UI.FieldGroup`, the `UI.Identification` fields, `Communication.Event` and `UI.TrendCalculation` (types `PresentationVariantModel`, `EventModel`, `TrendCalculationModel`); `$apply` without dimensions is `aggregate(…)`.
+- Test service: `SupplierMeetings` (Communication.Event) and card annotations on `PurchaseOrders`. Demo: card page `/cards`.
+- `npm run size` budgets for `/cards` and the card scenarios; with the cards the stylesheet budget is 16 KB (was 13 KB) and the root entry (all subpaths together) 95 KB (was 80 KB, AC-Q-02).
+
 ### Changed (bundling, ADR-026)
 
 - `@rhfan2019/smart-kit` now builds one output file per source file and offers subpath entries (`/context`, `/i18n`, `/theme`, `/util`, `/field`, `/filter`, `/variants`, `/table`, `/chart`, `/object`, `/page`, `/actions`, `/edit`, `/messages`, `/templates`). The root entry still exports everything. An application that imports only `MicroChart` now ships 5.1 KB gzip instead of about 505 KB.

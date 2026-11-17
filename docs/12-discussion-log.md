@@ -349,3 +349,37 @@
 **检查**：类型检查、lint（含令牌、商标）、单元测试 231 个（新增 2 个：各子路径合起来正好等于根入口）、构建（两个包、示例应用、Storybook）、`npm run size` 全部通过；端到端测试 189 个全部通过；可追溯检查 `trace --strict`（一期 33/33、72/72，二期 143/143，三期 58/58）通过。
 
 **下一步**：P4（首屏不出现的大块懒加载）和 AG Grid 只注册用到的模块，把列表页、对象页降下来；然后 P6、P8；再做 ADR-027 的服务端。
+
+## D16 卡片（Card）调研和方案（2026-11-16）
+
+> 编号以合并时为准（并行分支 `odata-server` 也可能新增 D16）。
+
+**用户的要求**：实现 SAP Fiori 风格的各类卡片（日历、列表、表格、对象、分析、时间线、组件、Adaptive 等），先调研、出方案，确认后再写代码。
+
+**调研**（2026-11-16 用内置浏览器读 SAP Fiori Design Guidelines v1.154：Card、Calendar Card、Overview Page 及其 Cards、List Card、Table Card、Analytical Card、Stack / Quick View Card 各页）：
+1. SAP 有两套卡片：Integration Card（JSON manifest 驱动，可放进任何宿主，有日历、时间线）和概览页卡片（OData 注解驱动，只能放在概览页）。两者不互通。
+2. 重名：本库没有导出 `Card` / `ObjectCard`；Mantine 有 `Card`。本库不导出 `Card`，外壳叫 `CardShell`，数据卡片叫 `Smart*Card`。
+
+**方案**（`docs/20-research-cards.md`、ADR-028）：注解驱动为主，外观借 Integration Card，不做 manifest；第一批做列表、表格、分析、对象、时间线、日历卡片和 `CardShell` / `CardHeader`；不做 Adaptive、WebPage、Stack、概览页框架；新子路径 `/cards`，不引入新依赖。
+
+**待用户确认**：`20-research-cards.md` 第 8 节的 5 个问题。
+
+## D17 卡片：确认方案，名字与 SAP 一致，按 SAP 成品验收（2026-11-16）
+
+> 编号以合并时为准（并行分支 `odata-server` 也可能新增 D17）。
+
+**用户的决定**：同意 D16 的方案（`20-research-cards.md` 第 8 节 1～5 条）；另外两条：
+1. **组件名必须与 SAP 的组件命名一致**——用户是 UI5 开发者，同名可以减少理解成本。
+2. **验收标准是成品效果与 SAP 官方成品严格一致**，中间不停，做到为止。
+
+**据此改的地方**：
+- 名字：方案初稿的 `CardShell`、`CardHeader`、`Smart*Card` 改成 SAPUI5 的名字：`Card`（sap.f.Card）、`Header`、`NumericHeader`、`NumericSideIndicator`（sap.f.cards）、`ListContent`、`TableContent`、`ObjectContent`、`AnalyticalContent`、`TimelineContent`、`CalendarContent`（sap.ui.integration.cards）。属性名也沿用 SAPUI5（`statusText`、`unitOfMeasurement`、`iconSrc`、`maxItems`……）和 OVP 卡片设置（`annotationPath`、`presentationAnnotationPath`、`selectionAnnotationPath`……）。和 Mantine 的 `Card` 同名不冲突（本库内部不用 Mantine 的 `Card`）。
+- 怎样"严格一致"：在本机用 SAPUI5 1.154 运行时渲染同样数据的 7 种集成卡片（Horizon 主题），读出每个元素的位置、尺寸、字号、颜色，写成卡片令牌，再用同样的方法量本库的卡片逐项比对（`20` 第 9 节，截图 `21-evidence/`）。布局尺寸一致；颜色和字体按 D08 沿用本库主题（"72" 字体是 SAP 的，不随库分发）。比对中发现并改掉：表格单元格内边距（首列 16、其余 8）、对象卡片组标题与第一个标签之间的外边距合并、数值页头的行距、日历左栏宽度和图例两列宽、其他月份的周末不加底色、布尔值显示成"是/否"、数值带上币种。
+- 日历没有用 `@mantine/dates`：SAP 的日历卡片有周数列、四级下钻和特定的格子尺寸，Mantine 的 `Calendar` 只有三级、要大量覆盖样式，还会把 dayjs 带进只用卡片的应用；自己画约 3 KB（ADR-028）。
+- 分析卡片的图表：SAP 用 VizFrame（`sap.viz`，SAPUI5 专有、很重）画；本库沿用 `SimpleChart`（ADR-021），扩展了 Line、Donut，只对齐图表区的位置和大小。
+
+**做了什么**（分支 `claude/cards`）：子路径 `/cards`（10 个组件）；core 模型增加按限定符保留的 LineItem、PresentationVariant（含 MaxItems）、SelectionVariant、DataPoint、FieldGroup、Identification 字段，以及 `Communication.Event`、`UI.TrendCalculation`；测试服务新增 `SupplierMeetings` 和卡片注解；演示页 `/cards`；验收条目 `22-cards-acceptance.md`，`trace --strict` 增加卡片一节。
+
+**体积**（gzip，不含 React）：只用 `Card` + `Header` 1.3 KB；列表卡片 39.6 KB；日历卡片 40.8 KB；分析卡片 45.8 KB；都不含 AG Grid。样式文件上限由 13 KB 调到 16 KB（卡片样式约 4 KB）；根入口（全部子路径之和）由 80 KB 调到 95 KB，修订 AC-Q-02（应用实际按子路径付费）。
+
+**未做 / 待定**：Stack 卡片和对象流、Adaptive、WebPage、页头溢出菜单（刷新、添加到我的首页）、链接列表卡片、视图切换（CD-10 第二批）。

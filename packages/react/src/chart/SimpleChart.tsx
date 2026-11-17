@@ -1,15 +1,16 @@
 /**
  * SimpleChart: the list report chart view (ADR-021): one dimension, one measure, column or bar, inline SVG.
+ * Analytical cards (docs/20) also use "line" (the column layout with a line through the points) and "donut".
  * Bars are buttons with a roving tab stop (Tab enters at the selected or first bar, arrow keys move, Enter / Space select).
  */
 import { Skeleton, VisuallyHidden } from '@mantine/core';
-import { useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react';
+import { useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { useSmartKit } from '../context/SmartKitProvider';
 
 export interface ChartDatum { key: string; label: string; value: number; formatted?: string }
 
 export interface SimpleChartProps {
-  kind: 'column' | 'bar';
+  kind: 'column' | 'bar' | 'line' | 'donut';
   /** Visible title; a visually hidden caption is used when omitted. */
   title?: string;
   measureLabel: string;
@@ -29,6 +30,8 @@ const FALLBACK_WIDTH = 640;
 /** Approximate glyph width of the small text, for label truncation and margins. */
 const CHAR = 7;
 const TICK_GAP = 6;
+/** Radius of a line chart marker. */
+const MARKER = 4;
 
 /** 4–6 "nice" ticks covering [min, max] (both extended to include 0). */
 export function niceTicks(min: number, max: number, count = 5): number[] {
@@ -99,12 +102,15 @@ export function SimpleChart(p: SimpleChartProps) {
     );
   }
 
+  if (p.kind === 'donut') return <DonutChart {...p} data={data} width={width} height={height} chartRef={ref} header={header} caption={caption} fmt={fmt} />;
+
   const ticks = niceTicks(Math.min(...data.map((d) => d.value)), Math.max(...data.map((d) => d.value)));
   const lo = ticks[0]!;
   const hi = ticks[ticks.length - 1]!;
   const tickLabels = ticks.map(fmt);
   const valueText = (d: ChartDatum) => d.formatted ?? fmt(d.value);
-  const vertical = p.kind === 'column';
+  const vertical = p.kind === 'column' || p.kind === 'line';
+  const line = p.kind === 'line';
 
   // Plot rectangle.
   const tickWidth = Math.max(...tickLabels.map((s) => s.length)) * CHAR + TICK_GAP;
@@ -180,6 +186,13 @@ export function SimpleChart(p: SimpleChartProps) {
             );
           })}
         </g>
+        {line && (
+          <polyline
+            className="sk-chart__line"
+            aria-hidden
+            points={data.map((d, i) => `${left + band * i + band / 2},${top + plotH - pos(d.value)}`).join(' ')}
+          />
+        )}
         {data.map((d, i) => {
           const a = pos(d.value);
           const thick = Math.min(band * 0.7, 64);
@@ -200,11 +213,58 @@ export function SimpleChart(p: SimpleChartProps) {
                 : { 'aria-hidden': true })}
             >
               <title>{label}</title>
-              <rect {...rect} />
+              {line ? <circle cx={left + band * i + band / 2} cy={top + plotH - a} r={MARKER} /> : <rect {...rect} />}
             </g>
           );
         })}
       </svg>
     </div>
   );
+}
+
+/** Donut: one ring, one segment per category (qualitative palette), the legend below with the values. */
+function DonutChart(p: SimpleChartProps & { width: number; height: number; chartRef: ReturnType<typeof useWidth>[0]; header: ReactNode; caption: string; fmt(n: number): string }) {
+  const { t } = useSmartKit();
+  const total = p.data.reduce((n, d) => n + Math.max(0, d.value), 0);
+  const size = Math.min(p.width, p.height - LEGEND_ROW * Math.min(p.data.length, 4));
+  const r = Math.max(size / 2 - 2, 10);
+  const inner = r * 0.6;
+  let angle = -Math.PI / 2;
+  const valueText = (d: ChartDatum) => d.formatted ?? p.fmt(d.value);
+  const arcs = p.data.map((d, i) => {
+    const share = total ? Math.max(0, d.value) / total : 0;
+    const a0 = angle;
+    const a1 = angle + share * 2 * Math.PI;
+    angle = a1;
+    return { d, i, path: share >= 0.9999 ? ring(r, inner) : arc(r, inner, a0, a1) };
+  });
+  const label = t('chart.series', { label: p.caption, points: p.data.map((d) => t('chart.seriesItem', { name: d.label, value: valueText(d) })).join(t('chart.listSeparator')) });
+  return (
+    <div ref={p.chartRef} className="sk-chart sk-chart--donut" data-sk-chart="donut">
+      {p.header}
+      <svg className="sk-chart__svg" width={p.width} height={2 * r + 4} viewBox={`${-p.width / 2} ${-r - 2} ${p.width} ${2 * r + 4}`} role="img" aria-label={label}>
+        {arcs.map((a) => (
+          <path key={a.d.key} className={`sk-chart__segment sk-chart--palette-${(a.i % 11) + 1}`} d={a.path} data-sk-chart-bar={a.d.key} onClick={p.onSelect ? (e) => p.onSelect!(a.d, e.currentTarget) : undefined}>
+            <title>{t('chart.point', { dimension: p.dimensionLabel, label: a.d.label, value: valueText(a.d) })}</title>
+          </path>
+        ))}
+      </svg>
+      <ul className="sk-chart__legend" aria-hidden>
+        {p.data.map((d, i) => (
+          <li key={d.key}><span className={`sk-chart__swatch sk-chart--palette-${(i % 11) + 1}`} />{d.label}<span className="sk-chart__legend-value">{valueText(d)}</span></li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+/** Height of one legend row of the donut chart (px). */
+const LEGEND_ROW = 22;
+const pt = (r: number, a: number) => `${(r * Math.cos(a)).toFixed(2)} ${(r * Math.sin(a)).toFixed(2)}`;
+function arc(r: number, inner: number, a0: number, a1: number): string {
+  const large = a1 - a0 > Math.PI ? 1 : 0;
+  return `M ${pt(r, a0)} A ${r} ${r} 0 ${large} 1 ${pt(r, a1)} L ${pt(inner, a1)} A ${inner} ${inner} 0 ${large} 0 ${pt(inner, a0)} Z`;
+}
+function ring(r: number, inner: number): string {
+  return `M ${r} 0 A ${r} ${r} 0 1 1 ${-r} 0 A ${r} ${r} 0 1 1 ${r} 0 Z M ${inner} 0 A ${inner} ${inner} 0 1 0 ${-inner} 0 A ${inner} ${inner} 0 1 0 ${inner} 0 Z`;
 }

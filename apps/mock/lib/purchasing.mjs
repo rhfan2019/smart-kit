@@ -3,6 +3,8 @@
 import { Fake, day, round } from './fake.mjs';
 
 export const TODAY = '2026-11-14';
+/** The Monday after TODAY: the day with four supplier meetings (cards demo and tests). */
+export const MEETING_DAY = '2026-11-16';
 
 /** Status code -> [English, Chinese, criticality]. */
 export const STATUS = () => Object.fromEntries(STATUSES.map(([c, en, zh, crit]) => [c, { en, zh, criticality: crit }]));
@@ -51,6 +53,19 @@ const CONDITION_TYPES = [
   ['FRA1', 'Freight', '运费'],
   ['ZSUR', 'Surcharge', '附加费'],
 ];
+// cards (docs/20): supplier meeting categories — code, English, Chinese
+const MEETING_CATEGORIES = [
+  ['NEGO', 'Negotiation', '谈判'],
+  ['REVW', 'Quality Review', '质量评审'],
+  ['DELV', 'Delivery Planning', '交货计划'],
+  ['AUDT', 'Audit', '审核'],
+];
+const MEETING_SUBJECTS = {
+  NEGO: ['Price negotiation', 'Framework contract', 'Volume discount'],
+  REVW: ['Quality review', 'Defect analysis', 'Supplier scorecard'],
+  DELV: ['Delivery planning', 'Logistics alignment', 'Forecast review'],
+  AUDT: ['Site audit', 'Compliance check'],
+};
 const HISTORY_CATEGORIES = [
   ['GR', 'Goods Receipt', '收货'],
   ['IR', 'Invoice Receipt', '发票'],
@@ -61,6 +76,7 @@ export const ZH_TEXTS = {
   Name: Object.fromEntries([...STATUSES, ...ORDER_TYPES].map((s) => [s[1], s[2]])),
   ConditionTypeName: Object.fromEntries(CONDITION_TYPES.map((s) => [s[1], s[2]])),
   CategoryText: Object.fromEntries(HISTORY_CATEGORIES.map((s) => [s[1], s[2]])),
+  CategoryName: Object.fromEntries(MEETING_CATEGORIES.map((s) => [s[1], s[2]])),
 };
 
 export const COMPANIES = [
@@ -280,11 +296,44 @@ export function generatePurchasing() {
     deriveOrder(po);
   }
   const MaterialPrices = Object.fromEntries(materials.map((m) => [m.m.Material, m.priceEur]));
+  const SupplierMeetings = generateMeetings(Suppliers);
 
   return {
     OrderStatuses, PurchaseOrderTypes, Suppliers, Materials: materials.map((m) => m.m), Plants,
-    PurchaseOrders, PurchaseOrderItems, PricingConditions, ItemHistory, Variants: [], MaterialPrices,
+    PurchaseOrders, PurchaseOrderItems, PricingConditions, ItemHistory, Variants: [], MaterialPrices, SupplierMeetings,
   };
+}
+
+/**
+ * Supplier meetings (cards, docs/20) with an own seed: working days from 20 days before TODAY to 30 days after,
+ * 0–3 meetings a day and exactly 4 on MEETING_DAY (calendar card "3 of 4"). Times are UTC on the hour or half hour.
+ */
+function generateMeetings(suppliers) {
+  const f = new Fake(20261116);
+  const rows = [];
+  let n = 0;
+  for (let d = -20; d <= 30; d++) {
+    const date = day.add(TODAY, d);
+    const dow = new Date(`${date}T00:00:00Z`).getUTCDay();
+    if (dow === 0 || dow === 6) continue;
+    const count = date === MEETING_DAY ? 4 : f.weighted([[0, 25], [1, 35], [2, 25], [3, 15]]);
+    let hour = 7 + f.next(2);
+    for (let k = 0; k < count && hour < 16; k++) {
+      const [cat, en] = f.pick(MEETING_CATEGORIES);
+      const sup = f.pick(suppliers.slice(0, 20));
+      const minutes = f.pick([30, 60, 60, 90]);
+      const start = new Date(`${date}T00:00:00Z`);
+      start.setUTCHours(hour, f.pick([0, 30]));
+      const end = new Date(start.getTime() + minutes * 60000);
+      rows.push({
+        Meeting: `M${String(++n).padStart(5, '0')}`, Supplier: sup.Supplier, Subject: f.pick(MEETING_SUBJECTS[cat]),
+        StartAt: start.toISOString().replace('.000Z', 'Z'), EndAt: end.toISOString().replace('.000Z', 'Z'),
+        Location: f.pick(['Room A', 'Room B', 'Online', sup.City]), Category: cat, CategoryName: en,
+      });
+      hour = end.getUTCHours() + 1 + f.next(2);
+    }
+  }
+  return rows;
 }
 
 /** Typical price of a material in a currency (null for unknown materials). */

@@ -10,6 +10,7 @@ import { createNavigationAdapter } from './navigation';
 import { AboutPage, HomePage } from './pages/HostPages';
 import { FreestylePage } from './pages/FreestylePage';
 import { HooksOnlyPage } from './pages/HooksOnlyPage';
+import { CardsPage } from './pages/CardsPage';
 import { MicroChartsPage } from './pages/MicroChartsPage';
 import { NorthwindListPage } from './pages/NorthwindPages';
 import { ObjectRoute } from './pages/ObjectRoute';
@@ -87,6 +88,7 @@ export function App() {
                 <NavLink to="/freestyle">{shell.s('freestyle')}</NavLink>
                 <NavLink to="/hooks">{shell.s('hooks')}</NavLink>
                 <NavLink to="/microcharts">{shell.s('microcharts')}</NavLink>
+                <NavLink to="/cards">{shell.s('cards')}</NavLink>
                 <NavLink to="/about">{shell.s('about')}</NavLink>
               </nav>
               <SegmentedControl size="xs" aria-label={shell.s('language')} value={locale} onChange={(v) => { setLocale(v as Locale); remember('lang', v); }} data={[{ value: 'zh', label: '中文' }, { value: 'en', label: 'English' }]} data-demo-lang />
@@ -111,6 +113,7 @@ export function App() {
                     <Route path="/freestyle" element={<FreestylePage />} />
                     <Route path="/hooks" element={<HooksOnlyPage />} />
                     <Route path="/microcharts" element={<MicroChartsPage />} />
+                    <Route path="/cards" element={<CardsPage />} />
                     <Route path="/:service/object" element={<ObjectRoute />} />
                     <Route path="/about" element={<AboutPage />} />
                   </Routes>

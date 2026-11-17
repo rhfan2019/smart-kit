@@ -51,6 +51,8 @@ npm run mock
 npm run dev
 ```
 
+两个都启动后，浏览器打开 <http://localhost:4401/cards> 就是卡片演示页（列表、表格、对象、分析、时间线、日历等各类卡片，组件名与 SAPUI5 相同，见 [docs/20-research-cards.md](docs/20-research-cards.md)）；也可以在演示应用顶部导航点"卡片"。
+
 其余命令（测试、端到端、构建、Storybook）见 [docs/handoff.md](docs/handoff.md)。
 
 ## License

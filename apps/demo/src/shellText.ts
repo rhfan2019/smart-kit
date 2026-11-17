@@ -1,7 +1,7 @@
 /** Texts of the demo shell (not part of the library). */
 export const SHELL = {
   zh: {
-    app: 'smart-kit 示例', po: '采购订单', products: '产品', orders: '订单', freestyle: '自由拼装', hooks: '只用 hook', microcharts: '微型图表', about: '关于',
+    app: 'smart-kit 示例', po: '采购订单', products: '产品', orders: '订单', freestyle: '自由拼装', hooks: '只用 hook', microcharts: '微型图表', cards: '卡片', about: '关于',
     language: '语言', theme: '主题', density: '密度', yellow: '明黄', navy: '海军蓝', dark: '深色', comfortable: '标准', compact: '紧凑',
     loading: '正在加载元数据…', loadFailed: '元数据加载失败', home: '首页', homeText: '从左侧选择一个页面。',
     aboutText: '这是宿主应用自己的页面，用来验证组件库不影响宿主路由。', back: '返回',
@@ -14,7 +14,7 @@ export const SHELL = {
     items: '采购订单项目', statusTag: '状态', fclEmpty: '在左侧选择一行。',
   },
   en: {
-    app: 'smart-kit demo', po: 'Purchase Orders', products: 'Products', orders: 'Orders', freestyle: 'Freestyle', hooks: 'Hooks only', microcharts: 'Micro Charts', about: 'About',
+    app: 'smart-kit demo', po: 'Purchase Orders', products: 'Products', orders: 'Orders', freestyle: 'Freestyle', hooks: 'Hooks only', microcharts: 'Micro Charts', cards: 'Cards', about: 'About',
     language: 'Language', theme: 'Theme', density: 'Density', yellow: 'Yellow', navy: 'Navy', dark: 'Dark', comfortable: 'Comfortable', compact: 'Compact',
     loading: 'Loading metadata…', loadFailed: 'Could not load metadata', home: 'Home', homeText: 'Choose a page on the left.',
     aboutText: 'This page belongs to the host application; it shows that the library does not affect host routing.', back: 'Back',

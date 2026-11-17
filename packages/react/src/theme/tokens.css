@@ -142,6 +142,56 @@
   --sk-size-generic-tag: 28px;
   --sk-duration-fast: 120ms;
   --sk-duration-base: 200ms;
+
+  /* Cards (docs/20 §9): sizes measured on SAPUI5 1.154 integration cards (Horizon); colours stay in the theme. */
+  --sk-card-radius: 16px;
+  --sk-card-padding: 16px;
+  --sk-card-gap: 8px;
+  --sk-card-avatar: 48px;
+  --sk-card-avatar-radius: 12px;
+  --sk-card-avatar-text: 18px;
+  --sk-card-avatar-gap: 12px;
+  --sk-card-font: 14px;
+  --sk-card-font-small: 12px;
+  --sk-card-font-group: 16px;
+  --sk-card-font-number: 36px;
+  --sk-card-line: 16px;
+  --sk-card-line-small: 14px;
+  --sk-card-list-item-gap: 12px;
+  --sk-card-table-head-top: 14px;
+  --sk-card-table-row-h: 44px;
+  --sk-card-object-label-gap: 6px;
+  --sk-card-object-item-gap: 16px;
+  --sk-card-object-group-gap: 28px;
+  --sk-card-button-height: 36px;
+  --sk-card-button-pad-x: 10px;
+  --sk-card-footer-y: 12px;
+  --sk-card-timeline-icon: 22px;
+  --sk-card-timeline-pad-top: 13px;
+  --sk-card-timeline-pad-bottom: 29px;
+  --sk-card-timeline-pad-x: 14px;
+  --sk-card-timeline-box-gap: 16px;
+  --sk-card-timeline-item-gap: 21px;
+  --sk-card-timeline-box-pad: 8px;
+  --sk-card-timeline-box-radius: 3px;
+  --sk-card-timeline-arrow: 12px;
+  --sk-card-calendar-cell-w: 38px;
+  --sk-card-calendar-cell-h: 46px;
+  --sk-card-calendar-head-h: 32px;
+  --sk-card-calendar-nav-h: 44px;
+  --sk-card-calendar-min: 295px;
+  --sk-card-calendar-special: 5px;
+  --sk-card-calendar-today-ring: 4px;
+  --sk-card-legend-swatch: 16px;
+  --sk-card-legend-row: 28px;
+  --sk-card-legend-col: 148px;
+  --sk-card-legend-pad-x: 8px;
+  --sk-card-appointment-h: 48px;
+  --sk-card-appointment-gap: 15px;
+  --sk-card-appointment-time: 19px;
+  --sk-card-appointment-bar: 4px;
+  --sk-card-placeholder-bar: 8px;
+  --sk-card-chart-height: 212px;
 }
 
 /* ---------------------------------------------------------------- 2. semantics: yellow (default) */
@@ -196,6 +246,14 @@
   --sk-color-chart-9: var(--sk-slate-600);
   --sk-color-chart-10: var(--sk-coral-600);
   --sk-color-chart-11: var(--sk-navy-500);
+  --sk-card-shadow: 0 0 2px rgba(34, 53, 72, 0.2), 0 2px 4px rgba(34, 53, 72, 0.2);
+  --sk-card-weekend: var(--sk-ink-150);
+  --sk-color-card-category-1: var(--sk-orange-600);
+  --sk-color-card-category-2: var(--sk-magenta-600);
+  --sk-color-card-category-3: var(--sk-teal-600);
+  --sk-color-card-category-4: var(--sk-purple-600);
+  --sk-color-card-category-5: var(--sk-cyan-600);
+  --sk-color-card-category-6: var(--sk-coral-600);
   color-scheme: light;
 }
 
@@ -239,6 +297,7 @@
   --sk-color-chart-9: var(--sk-slate-600);
   --sk-color-chart-10: var(--sk-coral-600);
   --sk-color-chart-11: var(--sk-navy-500);
+  --sk-card-weekend: var(--sk-slate-100);
   color-scheme: light;
 }
 
@@ -293,6 +352,14 @@
   --sk-color-chart-9: var(--sk-slate-300);
   --sk-color-chart-10: var(--sk-coral-300);
   --sk-color-chart-11: var(--sk-navy-300);
+  --sk-card-shadow: 0 0 2px rgba(0, 0, 0, 0.6), 0 2px 4px rgba(0, 0, 0, 0.5);
+  --sk-card-weekend: var(--sk-ink-900);
+  --sk-color-card-category-1: var(--sk-orange-300);
+  --sk-color-card-category-2: var(--sk-magenta-300);
+  --sk-color-card-category-3: var(--sk-teal-300);
+  --sk-color-card-category-4: var(--sk-purple-300);
+  --sk-color-card-category-5: var(--sk-cyan-300);
+  --sk-color-card-category-6: var(--sk-coral-300);
   color-scheme: dark;
 }
 

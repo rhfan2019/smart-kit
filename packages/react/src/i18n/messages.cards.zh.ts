@@ -1,0 +1,32 @@
+/** Chinese texts of the cards (docs/20, spread into messages.zh.ts). Keys must match messages.cards.en.ts. */
+import type { cardsEn } from './messages.cards.en';
+
+export const cardsZh: Record<keyof typeof cardsEn, string> = {
+  'card.counter': '{visible} / {total}',
+  'card.noItems': '没有项目。',
+  'card.error': '无法加载数据。',
+  'card.more': '更多',
+  'card.today': '今天',
+  'card.todayAt': '今天 {time}',
+  'card.yesterdayAt': '昨天 {time}',
+  'card.tomorrowAt': '明天 {time}',
+  'card.dateAt': '{date} {time}',
+  'card.minutes': '{count} 分钟',
+  'card.hours': '{count} 小时',
+  'card.previous': '上一页',
+  'card.next': '下一页',
+  'card.calendarWeek': '周数',
+  'card.noAppointments': '没有日程',
+  'card.legendMore': '更多（{count}）',
+  'card.target': '目标',
+  'card.deviation': '偏差',
+  'card.unsupportedChart': '不支持图表类型"{type}"。',
+  'card.header': '卡片标题',
+  'card.label': '{label}：',
+  'card.typeList': '列表卡片',
+  'card.typeTable': '表格卡片',
+  'card.typeObject': '对象卡片',
+  'card.typeAnalytical': '分析卡片',
+  'card.typeTimeline': '时间线卡片',
+  'card.typeCalendar': '日历卡片',
+};

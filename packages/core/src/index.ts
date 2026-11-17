@@ -1,16 +1,16 @@
 /** Public API of @rhfan2019/smart-kit-core. Everything exported here is listed in docs/api.md. */
 export { MODEL_VERSION } from './model/types';
 export type {
-  ActionModel, ChartModel, DraftModel, Importance, ViewModel,
+  ActionModel, ChartModel, DraftModel, EventModel, Importance, PresentationVariantModel, ViewModel,
   CapabilityModel, ColumnModel, Criticality, CriticalityCalculationModel, ImprovementDirection, DataPointModel, EdmType, EntitySetModel, EntityTypeModel, EntityUi, FieldModel,
   FilterExpression, FormGroupModel, HeaderFacetModel, HeaderInfoModel, InitialCondition, MetaModel, ModelWarning, NavigationModel,
-  PresentationModel, PropertyModel, SectionModel, SubSectionContent, SubSectionModel, TextArrangement, ValueListModel,
+  PresentationModel, PropertyModel, TrendCalculationModel, SectionModel, SubSectionContent, SubSectionModel, TextArrangement, ValueListModel,
   ValueListParameter, ValueRef,
 } from './model/types';
-export { buildModel, resolvePath, DEFAULT_CAPABILITIES, type BuildModelOptions } from './model/buildModel';
+export { buildModel, resolvePath, parseAnnotationPath, DEFAULT_CAPABILITIES, type BuildModelOptions } from './model/buildModel';
 export { DERIVED_GENERAL_SECTION, deriveColumns } from './model/derive';
 export { humanize } from './model/labels';
-export { calculateCriticality } from './model/criticality';
+export { calculateCriticality, calculateTrend } from './model/criticality';
 export { getEntitySet, getEntityType, getUi, getProperty, capabilitiesFor, targetEntitySet, isFilterable, isSortable, UnknownEntitySetError } from './model/access';
 export { csdlJsonToXml } from './csdl/csdlJsonToXml';
 export { ModelError, toCsdlXml, type CsdlSource } from './csdl/load';

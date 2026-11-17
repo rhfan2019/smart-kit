@@ -152,5 +152,15 @@
   "F.Draft.DraftIsKeptByUser": "Draft Kept by User",
   "F.Draft.CreatedByUserDescription": "Draft Created By (Name)",
   "F.Draft.LastChangedByUserDescription": "Draft Last Changed By (Name)",
-  "F.Draft.InProcessByUserDescription": "Draft In Process By (Name)"
+  "F.Draft.InProcessByUserDescription": "Draft In Process By (Name)",
+  "T.SupplierMeeting": "Supplier Meeting",
+  "T.SupplierMeetings": "Supplier Meetings",
+  "F.Meeting": "Meeting",
+  "F.Subject": "Subject",
+  "F.StartAt": "Start",
+  "F.EndAt": "End",
+  "F.Location": "Location",
+  "F.MeetingCategory": "Category",
+  "F.MeetingCategoryName": "Category Name",
+  "DP.CardSpend": "Purchasing Spend"
 }
