@@ -22,7 +22,7 @@ export type ActionHandler<C> = (e: WriteContext<C> & { entitySet: string; entity
 | `set` | **yes** | `EntitySetInfo` |  |
 | `where` | **yes** | `BoundExpr[]` |  |
 | `groupBy` | **yes** | `{ ref: ColumnRef; path: string[] }[]` |  |
-| `aggregates` | **yes** | `{ ref: ColumnRef; method: AggregateMethod; alias: string; edmType: EdmType }[]` |  |
+| `aggregates` | **yes** | `{ ref?: ColumnRef; method: AggregateMethod; alias: string; edmType: EdmType }[]` | `ref` is absent for `$count as alias`. |
 | `orderBy` | **yes** | `{ target: { kind: 'group' \| 'aggregate'; index: number }; descending: boolean }[]` |  |
 | `skip` | **yes** | `number` |  |
 | `count` | **yes** | `boolean` | $count=true: the number of groups. |

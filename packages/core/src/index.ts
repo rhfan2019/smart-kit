@@ -1,7 +1,7 @@
 /** Public API of @rhfan2019/smart-kit-core. Everything exported here is listed in docs/api.md. */
 export { MODEL_VERSION } from './model/types';
 export type {
-  ActionModel, ChartModel, DraftModel, EventModel, Importance, PresentationVariantModel, ViewModel,
+  ActionModel, AggregationModel, ChartModel, DraftModel, EventModel, Importance, PresentationVariantModel, ViewModel,
   CapabilityModel, ColumnModel, Criticality, CriticalityCalculationModel, ImprovementDirection, DataPointModel, EdmType, EntitySetModel, EntityTypeModel, EntityUi, FieldModel,
   FilterExpression, FormGroupModel, HeaderFacetModel, HeaderInfoModel, InitialCondition, MetaModel, ModelWarning, NavigationModel,
   PresentationModel, PropertyModel, TrendCalculationModel, SectionModel, SubSectionContent, SubSectionModel, TextArrangement, ValueListModel,
@@ -31,6 +31,10 @@ export {
   type QueryRequest, type QueryResult, type ReadRequest, type Row, type SortItem, type ExpandSpec, type QuerySource,
   type ListRequestOptions, type ValueHelpRequestOptions, type AggregateRequestOptions, type SourceInfo,
 } from './query/request';
+export {
+  buildTotalsRequest, collectTotals, canTotal, canGroup, canSubtotal, unitPathOf, groupKey, TOTAL_COUNT_ALIAS, MAX_GROUP_VALUES,
+  type TotalsRequestOptions, type TotalsEntry, type TotalAmount,
+} from './query/totals';
 
 export type { DataProvider, ReadDataProvider, WriteDataProvider, WriteResult, FetchLike, RequestOptions } from './data/provider';
 export { messagesFromHeader, messagesFromError, createMessage, highestSeverity, type Message, type MessageType } from './data/messages';

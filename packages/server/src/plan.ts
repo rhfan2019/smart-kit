@@ -65,7 +65,8 @@ export interface AggregatePlan {
   set: EntitySetInfo;
   where: BoundExpr[];
   groupBy: { ref: ColumnRef; path: string[] }[];
-  aggregates: { ref: ColumnRef; method: AggregateMethod; alias: string; edmType: EdmType }[];
+  /** `ref` is absent for `$count as alias`. */
+  aggregates: { ref?: ColumnRef; method: AggregateMethod; alias: string; edmType: EdmType }[];
   orderBy: { target: { kind: 'group' | 'aggregate'; index: number }; descending: boolean }[];
   skip: number;
   top?: number;
@@ -497,10 +498,11 @@ export class Planner<C> {
     if (!grouped) throw notImplemented('$apply without groupby() or aggregate() is not supported.');
     const groupBy = grouped.paths.map((path) => ({ ref: this.resolve(set, path, '$apply groupby'), path }));
     const aliases = new Set<string>();
-    const aggregates = grouped.aggregates.map((a) => {
-      const ref = this.resolve(set, a.path, '$apply aggregate');
+    const aggregates: AggregatePlan['aggregates'] = grouped.aggregates.map((a) => {
       if (aliases.has(a.alias) || groupBy.some((g) => g.path[0] === a.alias)) throw badRequest('InvalidApply', `$apply: alias '${a.alias}' is used twice.`);
       aliases.add(a.alias);
+      if (a.method === 'count') return { method: a.method, alias: a.alias, edmType: 'Edm.Int64' as EdmType };
+      const ref = this.resolve(set, a.path, '$apply aggregate');
       const t = ref.column.edmType;
       if (a.method !== 'countdistinct' && a.method !== 'min' && a.method !== 'max' && !NUMERIC.has(t)) throw badRequest('InvalidApply', `$apply: ${a.method} needs a numeric property, '${a.path.join('/')}' is ${t}.`);
       const edmType: EdmType = a.method === 'countdistinct' ? 'Edm.Int64' : a.method === 'average' ? 'Edm.Decimal' : t;

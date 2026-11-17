@@ -40,7 +40,8 @@ export interface QueryRequest {
   /** Time zone for calendar-day filters on Edm.DateTimeOffset properties. */
   timeZone?: string;
   /** Server-side aggregation ($apply, OData Data Aggregation): group by `groupBy` and aggregate the measures (ADR-021). */
-  aggregate?: { groupBy: string[]; measures: { path: string; with: 'sum' | 'average' | 'min' | 'max' }[] };
+  aggregate?: { groupBy: string[]; measures: { path: string; with: 'sum' | 'average' | 'min' | 'max' | 'countdistinct' | 'count'; as?: string }[] };
+  // `with: 'count'` is `$count as <as>` (rows of the group; `path` is ignored).
 }
 
 export interface ReadRequest {
@@ -474,7 +475,9 @@ export function toQueryString(model: MetaModel, req: QueryRequest): string {
   if (req.aggregate) {
     // $apply is evaluated before $filter: filters go into a filter() transformation (OData Data Aggregation §3).
     const filter = filterString(model, info.typeName, req);
-    const aggregates = req.aggregate.measures.map((m) => `${m.path} with ${m.with} as ${m.path.replace(/\//g, '_')}`).join(',');
+    const aggregates = req.aggregate.measures
+      .map((m) => (m.with === 'count' ? `$count as ${m.as ?? 'count'}` : `${m.path} with ${m.with} as ${m.as ?? m.path.replace(/\//g, '_')}`))
+      .join(',');
     const steps = [
       ...(filter ? [`filter(${filter})`] : []),
       ...(req.search ? [`search(${req.search})`] : []),

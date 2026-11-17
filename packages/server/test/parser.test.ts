@@ -109,6 +109,10 @@ describe('query options', () => {
       { kind: 'search', expr: { kind: 'term', text: 'pen' } },
       { kind: 'groupby', paths: [['Status'], ['_Status', 'Name']], aggregates: [{ path: ['NetAmount'], method: 'sum', alias: 'NetAmount' }, { path: ['Rating'], method: 'average', alias: 'R' }] },
     ]);
+    expect(parseQueryOptions('$apply=groupby((Status),aggregate($count as N,NetAmount with sum as S))').apply).toEqual([
+      { kind: 'groupby', paths: [['Status']], aggregates: [{ path: [], method: 'count', alias: 'N' }, { path: ['NetAmount'], method: 'sum', alias: 'S' }] },
+    ]);
+    fails(() => parseQueryOptions('$apply=groupby((Status),aggregate($count with N))'), 400);
     fails(() => parseQueryOptions('$apply=topcount(3,NetAmount)'), 501);
     fails(() => parseQueryOptions('$apply=groupby((A),aggregate(B with median as M))'), 501);
   });

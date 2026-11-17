@@ -1,8 +1,9 @@
 /**
  * Responsive table (ADR-020, LR Table / Sticky Behavior / Responsiveness): a semantic table that scrolls with the
  * page, loads more rows when its end comes into view ("scroll to load"), keeps the column headers sticky, hides
- * columns by UI.Importance on narrow widths and shows them below the row with "Show Details" (pop-in), groups rows,
- * and navigates by clicking the whole row.
+ * columns by UI.Importance on narrow widths and shows them below the row with "Show Details" (pop-in), groups rows
+ * (with subtotals and counts in the group header) and shows a totals row at the end (docs/23), and navigates by
+ * clicking the whole row.
  */
 import { Checkbox, Loader, Text } from '@mantine/core';
 import type { Row } from '@rhfan2019/smart-kit-core';
@@ -47,6 +48,15 @@ export interface ResponsiveTableProps {
   rowMarker?(row: Row): ReactNode;
   /** Reports the ids of the columns hidden on the current width. */
   onHiddenColumnsChange?(ids: string[]): void;
+  /** Subtotals of the group starting with `row`: row count and cells by column id (docs/23). */
+  groupSummary?(row: Row): GroupSummary | undefined;
+  /** Totals row after the last row: cells by column id (docs/23). */
+  totals?: { label: ReactNode; cells: Record<string, ReactNode> };
+}
+
+export interface GroupSummary {
+  count?: number;
+  cells: Record<string, ReactNode>;
 }
 
 /** Widths below which Low, then Medium columns move out of the table (sap.m.Table pop-in by importance). */
@@ -107,6 +117,29 @@ export function ResponsiveTable(p: ResponsiveTableProps) {
   };
   const span = visible.length + (p.selectable ? 1 : 0) + (p.inlineActions ? 1 : 0) + (p.navigable ? 1 : 0);
 
+  /**
+   * A group header or totals row: the label spans the columns before the first column with a value; values sit in
+   * their columns. Values of columns that are not in the table on this width follow the label.
+   */
+  const summaryCells = (label: ReactNode, cells: Record<string, ReactNode> | undefined, scope: 'rowgroup' | 'row') => {
+    const ids = Object.keys(cells ?? {});
+    const first = visible.findIndex((c) => ids.includes(c.id));
+    if (!cells || !ids.length) return <th colSpan={span} scope={scope}>{label}</th>;
+    const lead = Math.max(1, first < 0 ? visible.length : first);
+    const extra = p.columns.filter((c) => ids.includes(c.id) && !visible.slice(lead).includes(c));
+    return (
+      <>
+        <th colSpan={lead + (p.selectable ? 1 : 0)} scope={scope}>
+          {label}
+          {extra.map((c) => <span key={c.id} className="sk-rtable__summary-extra" data-sk-summary-extra={c.id}>{c.label}: {cells[c.id]}</span>)}
+        </th>
+        {visible.slice(lead).map((c) => <td key={c.id} data-col={c.id} className={c.align === 'end' ? 'sk-rtable__end' : undefined}>{cells[c.id] ?? null}</td>)}
+        {p.inlineActions ? <td /> : null}
+        {p.navigable ? <td /> : null}
+      </>
+    );
+  };
+
   // Grid keyboard navigation (arrow keys between cells, Enter navigates, Space selects).
   const onKeyDown = (e: KeyboardEvent<HTMLTableElement>) => {
     const cell = (e.target as HTMLElement).closest<HTMLElement>('[data-sk-cell]');
@@ -158,11 +191,16 @@ export function ResponsiveTable(p: ResponsiveTableProps) {
           {p.rows.map((row) => {
             const k = p.keyOf(row);
             const group = groupCol ? (groupCol.groupValue?.(row) ?? '') : undefined;
-            const header = groupCol && group !== lastGroup ? (
-              <tr key={`g:${group}`} className="sk-rtable__group" data-sk-group-row={group}>
-                <th colSpan={span} scope="rowgroup">{t('table.groupHeader', { label: groupCol.label, value: group || '–' })}</th>
-              </tr>
-            ) : null;
+            let header: ReactNode = null;
+            if (groupCol && group !== lastGroup) {
+              const summary = p.groupSummary?.(row);
+              const title = t('table.groupHeader', { label: groupCol.label, value: group || '–' }) + (summary?.count !== undefined ? t('table.groupCount', { count: summary.count }) : '');
+              header = (
+                <tr key={`g:${group}`} className="sk-rtable__group" data-sk-group-row={group} data-sk-group-count={summary?.count}>
+                  {summaryCells(title, summary?.cells, 'rowgroup')}
+                </tr>
+              );
+            }
             lastGroup = group;
             const selected = p.selectedKeys.has(k);
             return [
@@ -204,6 +242,11 @@ export function ResponsiveTable(p: ResponsiveTableProps) {
             ];
           })}
         </tbody>
+        {p.totals && p.rows.length ? (
+          <tfoot>
+            <tr className="sk-rtable__total" data-sk-total-row>{summaryCells(p.totals.label, p.totals.cells, 'row')}</tr>
+          </tfoot>
+        ) : null}
       </table>
       {!p.rows.length && !p.loading ? <div className="sk-table__nodata sk-rtable__nodata" data-sk-nodata><Text c="dimmed">{p.noData}</Text></div> : null}
       <div ref={sentinelRef} className="sk-rtable__sentinel" aria-hidden />

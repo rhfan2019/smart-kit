@@ -5,7 +5,7 @@
 
 ## `@rhfan2019/smart-kit-core`
 
-`ActionModel` (interface) · `activeFilterPaths` (function) · `AggregateRequestOptions` (interface) · `buildAggregateRequest` (function) · `buildListRequest` (function) · `buildModel` (function) · `BuildModelOptions` (interface) · `buildObjectRequest` (function) · `buildValueHelpRequest` (function) · `calculateCriticality` (function) · `calculateTrend` (function) · `capabilitiesFor` (function) · `CapabilityModel` (interface) · `chartExpand` (function) · `chartFields` (function) · `chartIsSeries` (function) · `ChartModel` (interface) · `chartSeriesSelect` (function) · `childPathOf` (function) · `ColumnModel` (type) · `companionPaths` (function) · `compareDecimal` (function) · `compareValues` (function) · `ConcurrencyError` (class) · `Condition` (interface) · `conditionAllowed` (function) · `createMessage` (function) · `createSessionPageStateStore` (function) · `Criticality` (type) · `CriticalityCalculationModel` (interface) · `csdlJsonToXml` (function) · `CsdlSource` (type) · `currencyDigits` (function) · `DataPointModel` (interface) · `dataPointPaths` (function) · `DataProvider` (type) · `DEFAULT_CAPABILITIES` (const) · `deriveColumns` (function) · `DERIVED_GENERAL_SECTION` (const) · `DirectEditStrategy` (class) · `DraftEditStrategy` (class) · `DraftModel` (interface) · `EditSession` (interface) · `EditStrategy` (interface) · `editStrategyFor` (function) · `EdmType` (type) · `encodeOption` (function) · `EntityPath` (type) · `EntityPathError` (class) · `entityPathOf` (function) · `EntitySetModel` (interface) · `EntityTypeModel` (interface) · `EntityUi` (interface) · `errorFromResponse` (function) · `EventModel` (interface) · `ExpandSpec` (interface) · `FetchLike` (type) · `FieldModel` (interface) · `fieldPaths` (function) · `FilterExpression` (type) · `filterExpressionRules` (function) · `FilterExpressionRules` (interface) · `FilterOptions` (interface) · `FilterState` (type) · `filterString` (function) · `formatDate` (function) · `formatDateTime` (function) · `formatNumber` (function) · `FormatOptions` (interface) · `formatTime` (function) · `formatValue` (function) · `FormGroupModel` (interface) · `getEntitySet` (function) · `getEntityType` (function) · `getProperty` (function) · `getUi` (function) · `HeaderFacetModel` (type) · `HeaderInfoModel` (interface) · `highestSeverity` (function) · `humanize` (function) · `Importance` (type) · `ImprovementDirection` (type) · `InitialCondition` (interface) · `isAbortError` (function) · `isComplete` (function) · `isDraftRow` (function) · `isFilterable` (function) · `isSortable` (function) · `keyPredicate` (function) · `ListRequestOptions` (interface) · `LiteralError` (class) · `loadService` (function) · `LoadServiceOptions` (interface) · `matches` (function) · `MemoryPageStateStore` (class) · `MemoryProvider` (class) · `MemoryProviderOptions` (interface) · `MemoryVariantStore` (class) · `Message` (interface) · `messagesFromError` (function) · `messagesFromHeader` (function) · `MessageType` (type) · `MetaModel` (interface) · `MICRO_CHART_MAX_POINTS` (const) · `MICRO_COMPARISON_MAX_BARS` (const) · `MODEL_VERSION` (const) · `ModelError` (class) · `ModelWarning` (interface) · `NavigationAdapter` (interface) · `NavigationModel` (interface) · `NavigationTarget` (type) · `objectFields` (function) · `ODataError` (class) · `ODataErrorDetail` (interface) · `ODataV4Provider` (class) · `ODataV4ProviderOptions` (interface) · `ODataVariantStore` (class) · `Operator` (type) · `OPERATOR_ARITY` (const) · `OPERATORS` (const) · `PageStateStore` (interface) · `parseAnnotationPath` (function) · `parseEntityPath` (function) · `PathSegment` (interface) · `PresentationModel` (interface) · `PresentationVariantModel` (interface) · `propertyFilter` (function) · `PropertyModel` (interface) · `QueryRequest` (interface) · `QueryResult` (interface) · `QuerySource` (type) · `ReadDataProvider` (interface) · `readQueryString` (function) · `ReadRequest` (interface) · `RequestOptions` (interface) · `ResolvedPath` (interface) · `resolveEntityPath` (function) · `resolvePath` (function) · `restrictConditions` (function) · `Row` (type) · `SectionModel` (interface) · `selectAndExpand` (function) · `siblingPath` (function) · `SortItem` (interface) · `sourceInfo` (function) · `SourceInfo` (interface) · `sourcePath` (function) · `STANDARD_VARIANT_ID` (const) · `startOfDayIso` (function) · `SubSectionContent` (type) · `SubSectionModel` (interface) · `targetEntitySet` (function) · `TextArrangement` (type) · `toCsdlXml` (function) · `toFilter` (function) · `toLiteral` (function) · `toQueryString` (function) · `TrendCalculationModel` (interface) · `UnknownEntitySetError` (class) · `ValueHelpRequestOptions` (interface) · `ValueListModel` (interface) · `ValueListParameter` (interface) · `ValueRef` (type) · `Variant` (interface) · `VariantContent` (interface) · `VariantStore` (interface) · `ViewModel` (interface) · `WriteDataProvider` (interface) · `WriteResult` (interface)
+`ActionModel` (interface) · `activeFilterPaths` (function) · `AggregateRequestOptions` (interface) · `AggregationModel` (interface) · `buildAggregateRequest` (function) · `buildListRequest` (function) · `buildModel` (function) · `BuildModelOptions` (interface) · `buildObjectRequest` (function) · `buildTotalsRequest` (function) · `buildValueHelpRequest` (function) · `calculateCriticality` (function) · `calculateTrend` (function) · `canGroup` (function) · `canSubtotal` (function) · `canTotal` (function) · `capabilitiesFor` (function) · `CapabilityModel` (interface) · `chartExpand` (function) · `chartFields` (function) · `chartIsSeries` (function) · `ChartModel` (interface) · `chartSeriesSelect` (function) · `childPathOf` (function) · `collectTotals` (function) · `ColumnModel` (type) · `companionPaths` (function) · `compareDecimal` (function) · `compareValues` (function) · `ConcurrencyError` (class) · `Condition` (interface) · `conditionAllowed` (function) · `createMessage` (function) · `createSessionPageStateStore` (function) · `Criticality` (type) · `CriticalityCalculationModel` (interface) · `csdlJsonToXml` (function) · `CsdlSource` (type) · `currencyDigits` (function) · `DataPointModel` (interface) · `dataPointPaths` (function) · `DataProvider` (type) · `DEFAULT_CAPABILITIES` (const) · `deriveColumns` (function) · `DERIVED_GENERAL_SECTION` (const) · `DirectEditStrategy` (class) · `DraftEditStrategy` (class) · `DraftModel` (interface) · `EditSession` (interface) · `EditStrategy` (interface) · `editStrategyFor` (function) · `EdmType` (type) · `encodeOption` (function) · `EntityPath` (type) · `EntityPathError` (class) · `entityPathOf` (function) · `EntitySetModel` (interface) · `EntityTypeModel` (interface) · `EntityUi` (interface) · `errorFromResponse` (function) · `EventModel` (interface) · `ExpandSpec` (interface) · `FetchLike` (type) · `FieldModel` (interface) · `fieldPaths` (function) · `FilterExpression` (type) · `filterExpressionRules` (function) · `FilterExpressionRules` (interface) · `FilterOptions` (interface) · `FilterState` (type) · `filterString` (function) · `formatDate` (function) · `formatDateTime` (function) · `formatNumber` (function) · `FormatOptions` (interface) · `formatTime` (function) · `formatValue` (function) · `FormGroupModel` (interface) · `getEntitySet` (function) · `getEntityType` (function) · `getProperty` (function) · `getUi` (function) · `groupKey` (function) · `HeaderFacetModel` (type) · `HeaderInfoModel` (interface) · `highestSeverity` (function) · `humanize` (function) · `Importance` (type) · `ImprovementDirection` (type) · `InitialCondition` (interface) · `isAbortError` (function) · `isComplete` (function) · `isDraftRow` (function) · `isFilterable` (function) · `isSortable` (function) · `keyPredicate` (function) · `ListRequestOptions` (interface) · `LiteralError` (class) · `loadService` (function) · `LoadServiceOptions` (interface) · `matches` (function) · `MAX_GROUP_VALUES` (const) · `MemoryPageStateStore` (class) · `MemoryProvider` (class) · `MemoryProviderOptions` (interface) · `MemoryVariantStore` (class) · `Message` (interface) · `messagesFromError` (function) · `messagesFromHeader` (function) · `MessageType` (type) · `MetaModel` (interface) · `MICRO_CHART_MAX_POINTS` (const) · `MICRO_COMPARISON_MAX_BARS` (const) · `MODEL_VERSION` (const) · `ModelError` (class) · `ModelWarning` (interface) · `NavigationAdapter` (interface) · `NavigationModel` (interface) · `NavigationTarget` (type) · `objectFields` (function) · `ODataError` (class) · `ODataErrorDetail` (interface) · `ODataV4Provider` (class) · `ODataV4ProviderOptions` (interface) · `ODataVariantStore` (class) · `Operator` (type) · `OPERATOR_ARITY` (const) · `OPERATORS` (const) · `PageStateStore` (interface) · `parseAnnotationPath` (function) · `parseEntityPath` (function) · `PathSegment` (interface) · `PresentationModel` (interface) · `PresentationVariantModel` (interface) · `propertyFilter` (function) · `PropertyModel` (interface) · `QueryRequest` (interface) · `QueryResult` (interface) · `QuerySource` (type) · `ReadDataProvider` (interface) · `readQueryString` (function) · `ReadRequest` (interface) · `RequestOptions` (interface) · `ResolvedPath` (interface) · `resolveEntityPath` (function) · `resolvePath` (function) · `restrictConditions` (function) · `Row` (type) · `SectionModel` (interface) · `selectAndExpand` (function) · `siblingPath` (function) · `SortItem` (interface) · `sourceInfo` (function) · `SourceInfo` (interface) · `sourcePath` (function) · `STANDARD_VARIANT_ID` (const) · `startOfDayIso` (function) · `SubSectionContent` (type) · `SubSectionModel` (interface) · `targetEntitySet` (function) · `TextArrangement` (type) · `toCsdlXml` (function) · `toFilter` (function) · `toLiteral` (function) · `toQueryString` (function) · `TOTAL_COUNT_ALIAS` (const) · `TotalAmount` (interface) · `TotalsEntry` (interface) · `TotalsRequestOptions` (interface) · `TrendCalculationModel` (interface) · `unitPathOf` (function) · `UnknownEntitySetError` (class) · `ValueHelpRequestOptions` (interface) · `ValueListModel` (interface) · `ValueListParameter` (interface) · `ValueRef` (type) · `Variant` (interface) · `VariantContent` (interface) · `VariantStore` (interface) · `ViewModel` (interface) · `WriteDataProvider` (interface) · `WriteResult` (interface)
 
 ### `ActionModel` — interface
 
@@ -41,6 +41,16 @@ activeFilterPaths(state: FilterState): string[]
 | `search` |  | `string` |  |
 | `timeZone` |  | `string` |  |
 | `top` |  | `number` | Maximum number of groups. |
+
+### `AggregationModel` — interface
+
+Aggregation.ApplySupported.
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `transformations` | **yes** | `string[]` | Supported transformations (filter, search, groupby, aggregate, …); empty when the annotation does not list them. |
+| `groupable` | **yes** | `string[]` | GroupableProperties; empty means any property may be grouped by. |
+| `aggregatable` | **yes** | `{ path: string; methods: string[] }[]` | AggregatableProperties; empty means any numeric property may be aggregated. |
 
 ### `buildAggregateRequest` — function
 
@@ -81,6 +91,14 @@ Builds the read request of an object page (Q-08).
 buildObjectRequest(model: MetaModel, typeName: string, ui: EntityUi, extra?: FieldModel[], extraSelect?: string[]): ReadRequest
 ```
 
+### `buildTotalsRequest` — function
+
+Builds the $apply request of totals: `filter(…)/groupby((Group,GroupText,Currency),aggregate(NetAmount with sum as NetAmount,$count as smartkit_count))`. Units of the measures are always grouped by, so amounts in different currencies are never added up.
+
+```ts
+buildTotalsRequest(model: MetaModel, o: TotalsRequestOptions): QueryRequest
+```
+
 ### `buildValueHelpRequest` — function
 
 Builds the value help request (Q-09).
@@ -101,6 +119,30 @@ Trend of a value from UI.TrendCalculation (numeric card header, docs/20): "Up" w
 
 ```ts
 calculateTrend(calc: TrendCalculationModel, value: number, resolve: (ref: ValueRef | undefined) => number | undefined): "Up" | "Down" | "None"
+```
+
+### `canGroup` — function
+
+Whether a list can be grouped by `path`. With Aggregation.ApplySupported only GroupableProperties (when listed); otherwise any sortable property (grouping without subtotals).
+
+```ts
+canGroup(model: MetaModel, source: QuerySource, path: string): boolean
+```
+
+### `canSubtotal` — function
+
+Whether group subtotals (and counts) can be requested when grouping by `path`.
+
+```ts
+canSubtotal(model: MetaModel, source: QuerySource, path: string): boolean
+```
+
+### `canTotal` — function
+
+Whether totals can be requested for `path`: Aggregation.ApplySupported is declared, the property is numeric and aggregatable with sum.
+
+```ts
+canTotal(model: MetaModel, source: QuerySource, path: string): boolean
 ```
 
 ### `capabilitiesFor` — function
@@ -129,6 +171,7 @@ capabilitiesFor(model: MetaModel, parentSet: string, navigation?: string): Capab
 | `insertable` | **yes** | `boolean` |  |
 | `updatable` | **yes** | `boolean` |  |
 | `deletable` | **yes** | `boolean` |  |
+| `aggregation` |  | `AggregationModel` | Aggregation.ApplySupported on the entity set or its type ($apply: groups and totals, docs/23). Absent: no aggregation. |
 
 ### `chartExpand` — function
 
@@ -183,6 +226,14 @@ Path of a child row reached through `navigation` from `parent`.
 
 ```ts
 childPathOf(model: MetaModel, parent: EntityPath, navigation: string, row: Record<string, unknown>): EntityPath
+```
+
+### `collectTotals` — function
+
+Turns the rows of a totals request into one entry per group (key: `groupKey(value)`; '' also for grand totals), merging the rows of the different units.
+
+```ts
+collectTotals(model: MetaModel, o: Pick<TotalsRequestOptions, "source" | "measures" | "groupBy">, rows: Row[]): Map<string, TotalsEntry>
 ```
 
 ### `ColumnModel` — type
@@ -671,6 +722,14 @@ getProperty(model: MetaModel, typeName: string, path: string): PropertyModel | u
 getUi(model: MetaModel, typeName: string): EntityUi
 ```
 
+### `groupKey` — function
+
+Key of a group value in `collectTotals` results: '' for the empty group.
+
+```ts
+groupKey(v: unknown): string
+```
+
 ### `HeaderFacetModel` — type
 
 ```ts
@@ -812,6 +871,14 @@ Evaluates conditions against a value in memory (used by the in-memory provider).
 
 ```ts
 matches(value: unknown, conditions: Condition[], type: EdmType): boolean
+```
+
+### `MAX_GROUP_VALUES` — const
+
+Maximum number of group values in one subtotal request (URL length).
+
+```ts
+const MAX_GROUP_VALUES: 50
 ```
 
 ### `MemoryPageStateStore` — class
@@ -1057,6 +1124,8 @@ parseEntityPath(path: EntityPath): PathSegment[]
 | --- | --- | --- | --- |
 | `sortOrder` | **yes** | `{ path: string; descending: boolean }[]` |  |
 | `requestAtLeast` | **yes** | `string[]` |  |
+| `groupBy` | **yes** | `string[]` | UI.PresentationVariant/GroupBy: default grouping (the table uses the first path, docs/23). |
+| `total` | **yes** | `string[]` | UI.PresentationVariant/Total: properties whose totals are shown by default (docs/23). |
 
 ### `PresentationVariantModel` — interface
 
@@ -1126,7 +1195,7 @@ propertyFilter(path: string, conditions: Condition[], type: EdmType, opts?: Filt
 | `skip` |  | `number` |  |
 | `top` |  | `number` |  |
 | `timeZone` |  | `string` | Time zone for calendar-day filters on Edm.DateTimeOffset properties. |
-| `aggregate` |  | `{ groupBy: string[]; measures: { path: string; with: 'sum' \| 'average' \| 'min' \| 'max' }[] }` | Server-side aggregation ($apply, OData Data Aggregation): group by `groupBy` and aggregate the measures (ADR-021). |
+| `aggregate` |  | `{ groupBy: string[]; measures: { path: string; with: 'sum' \| 'average' \| 'min' \| 'max' \| 'countdistinct' \| 'count'; as?: string }[] }` | Server-side aggregation ($apply, OData Data Aggregation): group by `groupBy` and aggregate the measures (ADR-021). |
 
 ### `QueryResult` — interface
 
@@ -1342,6 +1411,44 @@ The query string (without "?") of a list request. Options are emitted in a stabl
 toQueryString(model: MetaModel, req: QueryRequest): string
 ```
 
+### `TOTAL_COUNT_ALIAS` — const
+
+Alias of the number of rows of a group in a totals result.
+
+```ts
+const TOTAL_COUNT_ALIAS: "smartkit_count"
+```
+
+### `TotalAmount` — interface
+
+One amount of a total: the sum for one unit (unit is undefined when the measure has none).
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `value` | **yes** | `number` |  |
+| `unit` |  | `string` |  |
+
+### `TotalsEntry` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `values` | **yes** | `Record&lt;string, TotalAmount[]>` | Amounts by measure path, one per unit, largest first. |
+| `group` |  | `unknown` | Value of the group property (undefined for grand totals). |
+| `groupText` |  | `string` | Text of the group value (Common.Text of the group property), when returned. |
+| `count` |  | `number` | Number of rows of the group (subtotals only). |
+
+### `TotalsRequestOptions` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `source` | **yes** | `QuerySource` |  |
+| `measures` | **yes** | `string[]` | Properties to sum. |
+| `filters` |  | `FilterState` |  |
+| `search` |  | `string` |  |
+| `timeZone` |  | `string` |  |
+| `groupBy` |  | `string` | Group property: one result row per group (and unit). Without it: grand totals. |
+| `groupValues` |  | `unknown[]` | Only these groups (values of `groupBy`; null or '' for the empty group), at most MAX_GROUP_VALUES. |
+
 ### `TrendCalculationModel` — interface
 
 UI.TrendCalculationType: differences to the reference value that make the trend up or down.
@@ -1354,6 +1461,14 @@ UI.TrendCalculationType: differences to the reference value that make the trend 
 | `strongUpDifference` |  | `ValueRef` |  |
 | `downDifference` |  | `ValueRef` |  |
 | `strongDownDifference` |  | `ValueRef` |  |
+
+### `unitPathOf` — function
+
+Unit or currency property of a measure (Measures.ISOCurrency / Measures.Unit given by a path).
+
+```ts
+unitPathOf(model: MetaModel, typeName: string, path: string): string | undefined
+```
 
 ### `UnknownEntitySetError` — class
 
@@ -1420,6 +1535,8 @@ export type ValueRef = { path: string } | { value: string | number | boolean };
 | `filterFields` |  | `string[]` | Filter field ids visible in the filter bar. |
 | `columns` |  | `string[]` | Visible column ids, in order. |
 | `sort` |  | `SortItem[]` |  |
+| `groupBy` |  | `string \| null` | Group property of the table (responsive table, docs/23); null: explicitly not grouped. |
+| `totals` |  | `string[]` | Properties whose totals are shown (docs/23). |
 | `custom` |  | `Record&lt;string, unknown>` | Free-form extra state of custom content. |
 
 ### `VariantStore` — interface

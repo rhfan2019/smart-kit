@@ -104,6 +104,18 @@ export interface CapabilityModel {
   insertable: boolean;
   updatable: boolean;
   deletable: boolean;
+  /** Aggregation.ApplySupported on the entity set or its type ($apply: groups and totals, docs/23). Absent: no aggregation. */
+  aggregation?: AggregationModel;
+}
+
+/** Aggregation.ApplySupported. */
+export interface AggregationModel {
+  /** Supported transformations (filter, search, groupby, aggregate, …); empty when the annotation does not list them. */
+  transformations: string[];
+  /** GroupableProperties; empty means any property may be grouped by. */
+  groupable: string[];
+  /** AggregatableProperties; empty means any numeric property may be aggregated. */
+  aggregatable: { path: string; methods: string[] }[];
 }
 
 export interface DataPointModel {
@@ -278,6 +290,10 @@ export type HeaderFacetModel =
 export interface PresentationModel {
   sortOrder: { path: string; descending: boolean }[];
   requestAtLeast: string[];
+  /** UI.PresentationVariant/GroupBy: default grouping (the table uses the first path, docs/23). */
+  groupBy: string[];
+  /** UI.PresentationVariant/Total: properties whose totals are shown by default (docs/23). */
+  total: string[];
 }
 
 export interface InitialCondition {

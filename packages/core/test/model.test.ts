@@ -55,7 +55,7 @@ describe('UI annotations', () => {
   });
 
   it('ANN-04 PresentationVariant: sort order and RequestAtLeast', () => {
-    expect(ui.presentation).toEqual({ sortOrder: [{ path: 'ReleaseDate', descending: true }], requestAtLeast: ['Version'] });
+    expect(ui.presentation).toEqual({ sortOrder: [{ path: 'ReleaseDate', descending: true }], requestAtLeast: ['Version'], groupBy: [], total: [] });
   });
 
   it('ANN-05 SelectionVariant: ranges become initial conditions (CP → Contains)', () => {

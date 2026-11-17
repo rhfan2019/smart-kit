@@ -594,3 +594,23 @@ ADR-027 定的范围是"只实现 smart-kit 会发的请求"，用户也定过�
 5. 不拷贝项目：拷贝出来会有两份代码同时演进（第 4 周的工作还在进行），数据库、端口、.env 也会冲突。按页面逐个迁移，每一步都过 `npm run check`，不需要一次性大改。真要隔离就临时开一个分支（这违反"只在 main 上开发"，要用户同意），也比拷贝便宜。smart-kit 也不要把源码拷进去：用 npm 包；发现问题回 smart-kit 修好再发版，联调时可以用本地 tgz 或 `npm link`。
 
 **待用户决定**：是否按上面的分批方式做；先拿哪个列表做试点（推荐"用户"或"规则"这类普通列表，再加一个工作清单，例如"待过账"）。
+
+## D28 列表页的分组和小计（2026-11-17）
+
+**问题**：列表页有筛选和排序，能不能有分组和小计？
+
+**核对到的事实**：分组只在响应式表格里有（单级，只有组标题，P2-LR-12）；网格表格（AG Grid Community）没有分组（ADR-002、`12` U-5）；两种表格都没有小计和总计；`UI.PresentationVariant` 的 `Total` 注解当初决定不做。服务端和内存数据提供者已经支持 `$apply` 的 `groupby` / `aggregate`，`PurchaseOrders` 声明了 `Aggregation.ApplySupported`，但 core 没有读取。分组没有保存进视图。
+
+**结论**
+1. 小计和总计必须由服务端算（列表分页续载，浏览器里累加是错的），按单位或币种分开。
+2. 范围：响应式表格做"分组 + 组小计和条数 + 总计"，网格表格只做总计（底部固定行）；网格表格的分组和多级分组不做。
+3. 读取 `Aggregation.ApplySupported` 决定能分组、能合计的字段；`UI.PresentationVariant` 的 `GroupBy`、`Total` 作为默认值；分组和合计保存进视图。
+
+方案见 `23-grouping-totals-plan.md`。
+
+**用户决定**（2026-11-17）：按方案实施。
+
+**实施结果**（ADR-031，`23` 第 8 节，报告 `24-grouping-totals-report.md`）
+1. 已做：两种表格的总计、个性化对话框的"合计"页、响应式表格的组小计和条数、分组字段按 `GroupableProperties` 限制、`GroupBy` / `Total` 注解作为默认值、分组和合计保存进视图。
+2. 与方案不同：条数改用标准的 `$count as`（fe-mockserver 对字符串键的 `countdistinct` 算错），smart-kit-server 为此支持了 `$count as`；续载时只请求新出现的组；`onGroupByChange` / `onTotalsChange` 存在时完全受控（GT-07 发现切回"标准"视图分组没清掉）。
+3. 测试服务：采购的默认 `UI.PresentationVariant` 加了 `Total`（净值），所以列表页默认显示合计行。

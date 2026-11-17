@@ -20,7 +20,8 @@
 | `UI.LineItem` | 表格列：`DataField`、`DataFieldWithUrl`、`DataFieldForAnnotation`（指向 DataPoint，即评分和进度）、`DataFieldWithNavigationPath`（显示为文本）；`DataFieldForAction` 和 `DataFieldForIntentBasedNavigation` 在一期忽略 | 一期（动作二期） | LR-18、LR-31 | ANN-01 |
 | `UI.SelectionFields` | 筛选栏默认字段，按顺序 | 一期 | LR-09、LR-10 | ANN-02 |
 | `UI.HeaderInfo` | 列表表标题（`TypeNamePlural`）、对象页标题和副标题（`Title`、`Description`）、图片（`ImageUrl`）、面包屑文字 | 一期 | OP-01、NAV-03 | ANN-03 |
-| `UI.PresentationVariant` | 默认排序（`SortOrder`）、使用的 LineItem 限定符（`Visualizations`）、`RequestAtLeast` | 一期（分组由个性化对话框提供，`GroupBy`、`Total` 注解不做） | LR-32 | ANN-04 |
+| `UI.PresentationVariant` | 默认排序（`SortOrder`）、使用的 LineItem 限定符（`Visualizations`）、`RequestAtLeast`；2026-11-17 起 `GroupBy`（响应式表格的默认分组，只用第一个）、`Total`（默认合计的列） | 一期；`GroupBy`、`Total`：见 `23`（GT-07） | LR-32 | ANN-04 |
+| `Aggregation.ApplySupported` | 实体集或实体类型上：`Transformations`、`GroupableProperties`（能分组的字段）、`AggregatableProperties`（能合计的字段，`SupportedAggregationMethods` 要含 `sum`）。没有它就没有合计，分组不带小计 | 见 `23`（GT-01、GT-06） | — | — |
 | `UI.SelectionVariant` | 默认筛选条件（`SelectOptions`）、默认参数 | 一期（用作初始条件） | LR-06 | ANN-05 |
 | `UI.SelectionPresentationVariant` | 列表页的默认组合 | 一期（只取它引用的 SV 和 PV） | LR-06 | ANN-05 |
 | `UI.Facets` | 对象页区块：`CollectionFacet` 是区块，它的子 Facet 是子区块；顶层的 `ReferenceFacet` 是只有一个子区块的区块 | 一期 | OP-10、OP-12 | ANN-06 |

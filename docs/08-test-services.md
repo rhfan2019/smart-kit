@@ -22,7 +22,7 @@
 - 支持 `$metadata`（XML，以及 `?$format=json` 的 CSDL JSON）；
 - 支持 `$select`、`$expand`、`$filter`、`$orderby`、`$top`、`$skip`、`$count`；
 - 支持 `IEEE754Compatible=true`；
-- 支持 `$apply`（`filter`、`groupby`、`aggregate`，由引擎实现），可以和 `$count=true` 一起用；Decimal 聚合值按属性的小数位返回。
+- 支持 `$apply`（`filter`、`groupby`、`aggregate`，由引擎实现），可以和 `$count=true` 一起用；Decimal 聚合值按属性的小数位返回。组内条数用标准写法 `$count as 别名`：fe-mockserver 对字符串字段的 `countdistinct` 结果是拼接的字符串而不是个数（2026-11-17 核实），所以不用 `countdistinct`。`PurchaseOrders` 的默认 `UI.PresentationVariant` 带 `Total`（净值，`23`）。
 
 ## 2. 仿 Northwind 服务（无 UI 注解）
 

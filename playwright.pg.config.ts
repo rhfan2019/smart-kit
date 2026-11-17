@@ -22,7 +22,7 @@ export default defineConfig({
   // The draft scenarios of p2-edit / p2-server use the draft service, which stays on the in-memory test service.
   testMatch: [
     'list.spec.ts', 'object.spec.ts', 'nav.spec.ts', 'edit-seam.spec.ts', 'p2-list.spec.ts', 'p2-object.spec.ts', 'p2-edit.spec.ts',
-    'p2-dynamic-page.spec.ts', 'p2-server.spec.ts', 'p3-microcharts.spec.ts', 'pg/**/*.spec.ts',
+    'p2-dynamic-page.spec.ts', 'p2-server.spec.ts', 'p3-microcharts.spec.ts', 'p5-totals.spec.ts', 'pg/**/*.spec.ts',
   ],
   timeout: 60_000,
   expect: { timeout: 10_000 },

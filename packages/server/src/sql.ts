@@ -295,8 +295,10 @@ export class SqlBuilder {
     const conds = this.where(plan, src);
     const groups = plan.groupBy.map((g) => src.col(g.ref));
     const aggs = plan.aggregates.map((a) => {
+      if (!a.ref) return sql`count(*)`;
       const c = src.col(a.ref);
       switch (a.method) {
+        case 'count': return sql`count(*)`;
         case 'sum': return sql`sum(${c})`;
         case 'min': return sql`min(${c})`;
         case 'max': return sql`max(${c})`;
@@ -306,7 +308,7 @@ export class SqlBuilder {
     });
     const cols: Sql[] = [
       ...groups.map((g, i) => sql`${outputExpr(g, plan.groupBy[i]!.ref.column)} as ${sql.id(`g${i}`)}`),
-      ...aggs.map((a, i) => sql`${outputExpr(a, { edmType: plan.aggregates[i]!.edmType, precision: plan.aggregates[i]!.ref.column.precision })} as ${sql.id(`a${i}`)}`),
+      ...aggs.map((a, i) => sql`${outputExpr(a, { edmType: plan.aggregates[i]!.edmType, precision: plan.aggregates[i]!.ref?.column.precision })} as ${sql.id(`a${i}`)}`),
     ];
     if (!cols.length) cols.push(sql`count(*) as ${sql.id('@n')}`);
     if (plan.count) cols.push(sql`count(*) over () as ${sql.id('@count')}`);

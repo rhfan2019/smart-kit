@@ -134,19 +134,32 @@ export class MemoryProvider implements DataProvider {
     }
     if (req.aggregate) {
       const agg = req.aggregate;
-      const groups = new Map<string, Row>();
+      const alias = (m: (typeof agg.measures)[number]) => m.as ?? (m.with === 'count' ? 'count' : m.path.replace(/\//g, '_'));
+      const groups = new Map<string, { row: Row; seen: Map<string, Set<string>> }>();
       for (const r of rows) {
         const key = JSON.stringify(agg.groupBy.map((g) => val(r, g)));
         let g = groups.get(key);
         if (!g) {
-          g = {};
-          for (const p of agg.groupBy) setPath(g, p, val(r, p));
-          for (const m of agg.measures) g[m.path.replace(/\//g, '_')] = 0;
+          g = { row: {}, seen: new Map() };
+          for (const p of agg.groupBy) setPath(g.row, p, val(r, p));
+          for (const m of agg.measures) g.row[alias(m)] = 0;
           groups.set(key, g);
         }
-        for (const m of agg.measures) g[m.path.replace(/\//g, '_')] = Number(g[m.path.replace(/\//g, '_')]) + Number(val(r, m.path) ?? 0);
+        for (const m of agg.measures) {
+          if (m.with === 'count') {
+            g.row[alias(m)] = Number(g.row[alias(m)]) + 1;
+            continue;
+          }
+          const v = val(r, m.path);
+          if (m.with === 'countdistinct') {
+            const seen = g.seen.get(alias(m)) ?? new Set<string>();
+            g.seen.set(alias(m), seen);
+            if (v !== null && v !== undefined) seen.add(String(v));
+            g.row[alias(m)] = seen.size;
+          } else g.row[alias(m)] = Number(g.row[alias(m)]) + Number(v ?? 0);
+        }
       }
-      return { rows: [...groups.values()].slice(0, req.top) };
+      return { rows: [...groups.values()].map((g) => g.row).slice(0, req.top) };
     }
     const count = rows.length;
     const skip = req.skip ?? 0;

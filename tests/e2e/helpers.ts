@@ -37,7 +37,7 @@ export const table = (page: Page, entitySet: string) => page.locator(`[data-sk-t
 export async function waitForRows(page: Page, entitySet: string) {
   const t = table(page, entitySet);
   // a loaded row, not the placeholder the infinite row model shows while the first block loads
-  await expect(t.locator('.ag-row[row-index]:not(.ag-row-loading) [col-id]:not([col-id="ag-Grid-SelectionColumn"])').first()).not.toBeEmpty();
+  await expect(t.locator('.ag-row[row-index]:not(.ag-row-loading):not(.ag-row-pinned) [col-id]:not([col-id="ag-Grid-SelectionColumn"])').first()).not.toBeEmpty();
   return t;
 }
 
@@ -48,7 +48,7 @@ export async function titleCount(page: Page, entitySet: string): Promise<number>
 
 /** Cell texts of a column (by col-id) in the visible rows. */
 export async function columnTexts(page: Page, entitySet: string, colId: string): Promise<string[]> {
-  return table(page, entitySet).locator(`.ag-row[row-index] [col-id="${colId}"]`).allInnerTexts();
+  return table(page, entitySet).locator(`.ag-row[row-index]:not(.ag-row-pinned) [col-id="${colId}"]`).allInnerTexts();
 }
 
 /** The visible input of a filter field. */
@@ -69,9 +69,9 @@ export async function showFilters(page: Page) {
 }
 
 /** Saves a screenshot as evidence for docs/14 when E2E_EVIDENCE=1 (docs/13 "S"). */
-export async function evidence(page: Page, id: string, target?: import('@playwright/test').Locator) {
+export async function evidence(page: Page, id: string, target?: import('@playwright/test').Locator, dir = '14-evidence') {
   if (process.env.E2E_EVIDENCE !== '1') return;
-  const path = `docs/14-evidence/${id}.png`;
+  const path = `docs/${dir}/${id}.png`;
   if (target) await target.screenshot({ path, animations: 'disabled' });
   else await page.screenshot({ path, animations: 'disabled' });
 }

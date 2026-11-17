@@ -114,6 +114,8 @@ describe('SQL: OData semantics', () => {
     const c = compile('PurchaseOrders', "$apply=filter(CompanyCode eq '1000')/groupby((Status,_Status/Name),aggregate(NetAmount with sum as NetAmount))&$orderby=NetAmount desc&$top=5");
     expect(c.sql).toContain('sum("t0"."net_amount")');
     expect(c.sql).toMatch(/group by "t0"\."status", "t\d"\."name" order by sum\("t0"\."net_amount"\) desc, "t0"\."status" asc, "t\d"\."name" asc limit/);
+    expect(compile('PurchaseOrders', '$apply=groupby((Status,Currency),aggregate(NetAmount with sum as NetAmount,$count as N))').sql).toContain('count(*)');
+    rejects(() => compile('PurchaseOrders', '$apply=groupby((Status),aggregate($count as Status))'), 400, 'InvalidApply');
     rejects(() => compile('PurchaseOrders', '$apply=groupby((Status),aggregate(Description with sum as D))'), 400, 'InvalidApply');
     rejects(() => compile('PurchaseOrders', '$apply=groupby((Status))&$orderby=NetAmount'), 400, 'InvalidOrderBy');
   });

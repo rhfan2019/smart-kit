@@ -29,6 +29,11 @@ function normalize(body: unknown, selected?: Set<string>): unknown {
   for (const [k, v] of Object.entries(body)) {
     if (k === '@odata.context' || k === '@odata.etag' || k === '@odata.metadataEtag') continue;
     if (k === 'Version' && selected && !selected.has('Version')) continue;
+    // `$count as smartkit_count` is Edm.Int64: a string with IEEE754Compatible=true (PostgreSQL), a number in the mock.
+    if (k === 'smartkit_count') {
+      out[k] = Number(v);
+      continue;
+    }
     out[k] = normalize(v, selected);
   }
   return out;
@@ -69,6 +74,9 @@ const SHAPES: [name: string, path: string][] = [
   ['chart by status', 'PurchaseOrders?$apply=groupby((Status,_Status/Name),aggregate(NetAmount with sum as NetAmount))&$orderby=Status'],
   ['chart with filter', "PurchaseOrders?$apply=filter(CompanyCode eq '2000' and OrderDate ge 2026-01-01)/groupby((PurchaseOrderType),aggregate(NetAmount with sum as NetAmount,InvoicedAmount with sum as InvoicedAmount))&$orderby=PurchaseOrderType"],
   ['chart with search', 'PurchaseOrders?$apply=search(steel)/groupby((CompanyCode),aggregate(NetAmount with sum as NetAmount))&$orderby=CompanyCode'],
+  // table totals and group subtotals (docs/23)
+  ['grand totals by currency', "PurchaseOrders?$apply=filter(CompanyCode eq '1000')/groupby((Currency),aggregate(NetAmount with sum as NetAmount))&$orderby=Currency"],
+  ['group subtotals with $count', "PurchaseOrders?$apply=filter((Supplier eq '0000100001' or Supplier eq '0000100007'))/groupby((Supplier,_Supplier/SupplierName,Currency),aggregate(NetAmount with sum as NetAmount,$count as smartkit_count))&$orderby=Supplier,Currency"],
   ['chart of a child collection', "PurchaseOrders('4500000001')/_Item?$apply=groupby((Plant),aggregate(NetAmount with sum as NetAmount))&$orderby=Plant"],
   // micro chart series: a collection expand with $select / $orderby (the mock ignores a nested $top, so none here)
   ['micro chart series', "PurchaseOrderItems(PurchaseOrder='4500000003',PurchaseOrderItem=10)?$select=PurchaseOrder,PurchaseOrderItem,OrderQuantity&$expand=_History($select=HistoryCounter,PostingDate,Quantity;$orderby=PostingDate)"],
