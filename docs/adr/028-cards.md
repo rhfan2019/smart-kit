@@ -1,10 +1,8 @@
 # ADR-028 卡片：与 SAPUI5 同名，注解驱动，外观对齐集成卡片，不做 manifest
 
-> 编号以合并时为准（并行分支 `odata-server` 也可能新增 ADR-028）。
-
-- **背景**：用户要求实现 SAP Fiori 风格的各类卡片（讨论记录 D16）。SAP 有两套卡片：Integration Card 由 JSON manifest 描述，可放进任何宿主；概览页（OVP）卡片由 OData 注解驱动，只能放在概览页。调研和规则清单见 `20-research-cards.md`。
-- **决定**（2026-11-16 用户确认，D16、D17）：
-  - **名字与 SAPUI5 一致**（D17）：`Card`（sap.f.Card）、`Header`、`NumericHeader`、`NumericSideIndicator`（sap.f.cards）、`ListContent`、`TableContent`、`ObjectContent`、`AnalyticalContent`、`TimelineContent`、`CalendarContent`（sap.ui.integration.cards）；属性名沿用 SAPUI5 和 OVP 卡片设置。
+- **背景**：用户要求实现 SAP Fiori 风格的各类卡片（讨论记录 D19）。SAP 有两套卡片：Integration Card 由 JSON manifest 描述，可放进任何宿主；概览页（OVP）卡片由 OData 注解驱动，只能放在概览页。调研和规则清单见 `20-research-cards.md`。
+- **决定**（2026-11-16 用户确认，D19、D20）：
+  - **名字与 SAPUI5 一致**（D20）：`Card`（sap.f.Card）、`Header`、`NumericHeader`、`NumericSideIndicator`（sap.f.cards）、`ListContent`、`TableContent`、`ObjectContent`、`AnalyticalContent`、`TimelineContent`、`CalendarContent`（sap.ui.integration.cards）；属性名沿用 SAPUI5 和 OVP 卡片设置。
   - **注解驱动为主**：各 `*Content` 从 `UI.LineItem`、`UI.Chart`、`UI.DataPoint`、`UI.HeaderInfo`、`UI.FieldGroup` / `UI.QuickViewFacets`、`Communication.Event` 取字段、标签、格式和语义色；注解给不出的（卡片标题、导航目标、日历特殊日）用 React props 补。
   - **外观和结构借 Integration Card**：页头 / 内容 / 页脚；默认页头和数值页头；计数"5 of 40"；日历卡片的交互（[CAL]）。
   - **不做 manifest**，不做 Adaptive、WebPage、Stack / 对象流、概览页布局框架。

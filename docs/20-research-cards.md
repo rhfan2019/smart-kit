@@ -1,6 +1,6 @@
 # 20 卡片（Card）调研与方案
 
-> 状态：**现行** · 2026-11-16 用户确认（讨论记录 D16、D17，ADR-028）。验收条目见 `22-cards-acceptance.md`，截图见 `21-evidence/`。编号以合并时为准：并行的 `odata-server` 分支也可能新增文档、ADR 和 Dxx，合并时若撞号，由主会话统一改号。
+> 状态：**现行** · 2026-11-16 用户确认（讨论记录 D19、D20，ADR-028）。验收条目见 `22-cards-acceptance.md`，截图见 `21-evidence/`。讨论编号合并时已改为 D19～D21（D16～D18 被 OData 服务的讨论占用）。
 >
 > 出处缩写：
 > - **[IC]** SAP Fiori Design Guidelines v1.154《Card》（`ui-elements/cards`，即 Integration Card，`sap.ui.integration.widgets.Card`），2026-11-16 用内置浏览器通读。
@@ -20,10 +20,10 @@
 2. **建议 smart-kit 走注解驱动为主**（与本库其他 Smart 组件一致，ADR-011），借用 Integration Card 的**外观与结构**（header / content / footer、默认页头和数值页头、计数"5 of 40"），因为 Integration Card 的设计规范比 OVP 卡片新、更完整，并且日历、时间线卡片只在 Integration Card 里有。
 3. **不照搬 manifest**：manifest 本质是"在 JSON 里重写一遍注解已经表达的东西"，UI5 为此还要在运行时下载卡片运行时、解析 manifest——正是 ADR-026 要避免的。需要手工配置的地方用 React props 表达（类型检查、按需打包），不发明 JSON 格式。
 4. **做了 7 种**：列表（含扩展项、条形图列表）、表格、对象、分析、时间线、日历，以及自定义（Component 卡片：`Card` 里放任意 React 内容）。**不做**：Adaptive Card、WebPage 卡片、Stack 卡片（对象流覆盖层）、可拖拽调大小的卡片布局、"添加到我的首页"。理由见第 4 节。
-5. **组件名与 SAPUI5 一致**（D17，用户是 UI5 开发者）：容器 `Card`（`sap.f.Card`），页头 `Header`、`NumericHeader`、`NumericSideIndicator`（`sap.f.cards.*`），内容 `ListContent`、`TableContent`、`ObjectContent`、`AnalyticalContent`、`TimelineContent`、`CalendarContent`（`sap.ui.integration.cards.*Content`）。属性名沿用 SAPUI5（`statusText`、`unitOfMeasurement`、`iconSrc`、`maxItems`……）和 OVP 卡片设置（`annotationPath`、`presentationAnnotationPath`、`selectionAnnotationPath`、`chartAnnotationPath`、`dataPointAnnotationPath`、`identificationAnnotationPath`、`listType`、`listFlavor`）。
+5. **组件名与 SAPUI5 一致**（D20，用户是 UI5 开发者）：容器 `Card`（`sap.f.Card`），页头 `Header`、`NumericHeader`、`NumericSideIndicator`（`sap.f.cards.*`），内容 `ListContent`、`TableContent`、`ObjectContent`、`AnalyticalContent`、`TimelineContent`、`CalendarContent`（`sap.ui.integration.cards.*Content`）。属性名沿用 SAPUI5（`statusText`、`unitOfMeasurement`、`iconSrc`、`maxItems`……）和 OVP 卡片设置（`annotationPath`、`presentationAnnotationPath`、`selectionAnnotationPath`、`chartAnnotationPath`、`dataPointAnnotationPath`、`identificationAnnotationPath`、`listType`、`listFlavor`）。
 6. 全部放进新子路径 **`@rhfan2019/smart-kit/cards`**；图表复用 `/chart` 的 `SimpleChart`（扩展了 Line、Donut），**不引入新依赖**。日历没有用 `@mantine/dates` 的 `Calendar`，自己画网格（约 3 KB），理由见第 6 节。
 
-## 1. 重名检查与命名（D17 修订）
+## 1. 重名检查与命名（D20 修订）
 
 方案初稿为了避开 Mantine 的 `Card` 用了 `CardShell`、`Smart*Card`；用户确认时要求**与 SAP 的组件命名保持一致**（用户是 UI5 开发者，同名可以减少理解成本），改成下表。
 
@@ -173,7 +173,7 @@ import { Card, Header, NumericHeader, ListContent, TableContent, ObjectContent,
 - `PurchaseOrders` 新增 `UI.LineItem#CardList`、`#CardTable`，`UI.DataPoint#CardAmount`、`#CardSpend`（含 `CriticalityCalculation`、`TrendCalculation`），`UI.PresentationVariant#CardLarge`（`MaxItems` 5），`UI.SelectionVariant#CardNew`、`#CardEur`，`UI.Chart#CardTypeShare`（Donut）。
 - `Suppliers` 的 `UI.QuickViewFacets` 已有，对象卡片直接用。
 
-## 8. 用户的决定（D17）
+## 8. 用户的决定（D20）
 
 1～5 条全部同意（注解驱动为主、第一批 7 种、`SimpleChart` 扩展 Line 和 Donut、`Communication.Event` 驱动日历和时间线、子路径 `/cards`），另加两条：组件名与 SAP 一致；验收标准是成品效果与 SAP 官方成品严格一致。
 
@@ -198,7 +198,7 @@ import { Card, Header, NumericHeader, ListContent, TableContent, ObjectContent,
 
 已知差异：分析卡片的图表区由 SAPUI5 的 VizFrame（`sap.viz`，SAPUI5 专有、体积大）画，本库用 `SimpleChart`（ADR-021），坐标轴和数据标签的样式不同；只对齐了图表区的位置和大小（x20、高 212）。
 
-## 10. 第二轮：对照 Card Explorer 补齐（D18）
+## 10. 第二轮：对照 Card Explorer 补齐（D21）
 
 用户把演示页和 SAPUI5 Card Explorer 的"Integration Card Types"页（`ui5.sap.com/test-resources/sap/ui/integration/demokit/cardExplorer/webapp/index.html#/overview/cardTypes`）对比，觉得差距大。逐张看过后，差距有三类：
 

@@ -1,6 +1,6 @@
 # 22 卡片验收条目
 
-> 状态：现行 · 2026-11-16（讨论记录 D16、D17，ADR-028）。规则和调研见 `20-research-cards.md`，截图见 `21-evidence/`。编号以合并时为准：并行分支 `odata-server` 也可能新增 20 号以后的文档。
+> 状态：现行 · 2026-11-16（讨论记录 D19、D20，ADR-028）。规则和调研见 `20-research-cards.md`，截图见 `21-evidence/`。
 >
 > 写法沿用 `17-phase3-acceptance.md`：每条一个编号 CD-xx（CD-01～CD-10 直接用 `20` 第 2.1 节的规则编号），测试名称里带这个编号；`npm run trace -- --strict` 检查验收方式含 U 或 E 的条目都有**通过**的测试。
 >
@@ -26,7 +26,7 @@
 | CD-16 | `UI.PresentationVariant/GroupBy`：列表和表格在每组前加组标题行（44 px、粗体），行先按分组字段排序。 | [CE] List / Table `group`；[VOC] UI | U、E |
 | CD-17 | `listFlavor="bar"` 时，带目标值的数据点画成 Bullet 微型图表（复用 `MicroChart`，颜色来自 `CriticalityCalculation`）。 | [CE] List item `chart`（Bullet）；Card Explorer 样例 | U、E |
 | CD-18 | 表格的标识列（语义键或 `HeaderInfo/Title`）可点时是蓝色链接，下方一行灰色 `HeaderInfo/Description`；`Visualization/Progress` 的数据点画成进度条（百分比在上，状态色）。 | [CE] Table `identifier`、`progressIndicator`；Card Explorer 样例 | U、E、S、V |
-| CD-19 | 天蓝主题（`data-theme="sky"`）：浅灰页面、白卡片、蓝色强调、语义色和图表色取自 Horizon 实测值；对比度满足 AC-THEME-04。 | D18 | U、S、V |
+| CD-19 | 天蓝主题（`data-theme="sky"`）：浅灰页面、白卡片、蓝色强调、语义色和图表色取自 Horizon 实测值；对比度满足 AC-THEME-04。 | D21 | U、S、V |
 | CD-20 | 对象卡片：页头来自 `UI.HeaderInfo`；分组来自 `UI.QuickViewFacets`（默认）、`UI.Facets` 或一个 `UI.FieldGroup`；组标题 16 px 粗体，"标签：值"，项间距 16 px，组间距 28 px。 | [IC] Object；[OVP] Quick View Card | U、E、S、V |
 | CD-21 | 对象卡片页脚：`UI.Identification` 的 `DataFieldForAction`，第一个是强调按钮；无参数的绑定动作直接执行并刷新。 | [OVP] Quick View Card footer | U |
 | CD-30 | 分析卡片：`UI.Chart` 在服务端聚合，Column、Bar、Line、Donut 用 `SimpleChart` 画（ADR-021），默认最多 4 个数据点；三种导航模式。 | [OVP] Analytical Card | U、E、S |
@@ -36,7 +36,7 @@
 | CD-36 | 日历卡片宽于 589 px 时两栏，否则一栏；最小宽度 295 px。 | [CAL] Width | U、E |
 | CD-37 | 日期选择在卡片内逐级下钻：日 → 月 → 年 → 年区间，每级有上一页、下一页；"今天"回到今天。 | [CAL] Selecting a Date | U、E |
 | CD-40 | 打包：子路径 `/cards`，只用 `Card` + `Header` 不超过 2 KB，列表卡片 45 KB、日历卡片 46 KB、分析卡片 52 KB（gzip，含 TanStack Query 和 core，不含 React、不含 AG Grid）。 | ADR-026、ADR-028 | Z |
-| CD-41 | 组件名与 SAPUI5 一致：`Card`（sap.f.Card）、`Header`、`NumericHeader`、`NumericSideIndicator`（sap.f.cards）、`ListContent` 等（sap.ui.integration.cards）；属性名沿用 SAPUI5 和 OVP 卡片设置（`statusText`、`unitOfMeasurement`、`annotationPath`、`maxItems`……）。 | D17 | D |
+| CD-41 | 组件名与 SAPUI5 一致：`Card`（sap.f.Card）、`Header`、`NumericHeader`、`NumericSideIndicator`（sap.f.cards）、`ListContent` 等（sap.ui.integration.cards）；属性名沿用 SAPUI5 和 OVP 卡片设置（`statusText`、`unitOfMeasurement`、`annotationPath`、`maxItems`……）。 | D20 | D |
 | CD-50 | 模型保留卡片按限定符选用的注解：各 `UI.LineItem`、`UI.PresentationVariant`（含 `MaxItems`）、`UI.SelectionVariant`、`UI.DataPoint`、`UI.FieldGroup`、`UI.Identification`；注解路径设置接受 OVP 写法和短写法。 | [OVP] 卡片设置 | U |
 | CD-51 | `Communication.Event` 进入模型（`dtstart`、`dtend`、`summary`、`description`、`location`、`categories`）。 | [VOC] Communication | U |
 | CD-52 | `UI.TrendCalculation` 进入模型，算出 Up / Down / None（绝对或相对差）。 | [VOC] UI | U |
