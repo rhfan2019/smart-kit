@@ -170,8 +170,9 @@ describe('contrast (AC-THEME-04)', () => {
 });
 
 describe('bundle size (AC-Q-02, P2-GEN-08)', () => {
+  // check-size.mjs also measures smart-kit-server and smart-kit-cli (ADR-027), so they are built here too: CI runs this test on a clean checkout.
   it('P2-GEN-08 both packages build and stay within the gzip budgets', () => {
-    execSync('npm run build -w @rhfan2019/smart-kit-core && npm run build -w @rhfan2019/smart-kit', { cwd: ROOT, stdio: 'pipe' });
+    execSync('npm run build -w @rhfan2019/smart-kit-core && npm run build -w @rhfan2019/smart-kit && npm run build -w @rhfan2019/smart-kit-server && npm run build -w @rhfan2019/smart-kit-cli', { cwd: ROOT, stdio: 'pipe' });
     const out = execSync('node scripts/check-size.mjs', { cwd: ROOT, encoding: 'utf8' });
     expect(out).not.toContain('FAIL');
   }, 180_000);
