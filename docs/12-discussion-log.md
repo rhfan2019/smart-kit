@@ -575,3 +575,22 @@ ADR-027 定的范围是"只实现 smart-kit 会发的请求"，用户也定过�
 **一次性设置（用户在网页上做，或同意后由 AI 用 gh 设置第 2 项）**
 1. npmjs.com：四个包各自 Settings → Trusted Publisher → GitHub Actions，`rhfan2019` / `smart-kit` / `release.yml`。
 2. GitHub 仓库 Settings → Actions → General → Workflow permissions：勾选"Allow GitHub Actions to create and approve pull requests"（现在是关闭的）。
+
+## D27 invoice-assure 是否全面改用 smart-kit 做列表页（2026-11-17）
+
+**问题**：invoice-assure 里凡是列表相关的页面都改用 smart-kit，让风格统一，是否可行？要不要把项目拷贝一份出来做大改？
+
+**核对到的事实**（invoice-assure，2026-11-17）
+- 技术栈：Next.js 16.4 App Router、React 19.3.1（和 smart-kit 的 peer 依赖一致）、Tailwind 4 + shadcn/Radix、Drizzle、Better Auth、ECharts。
+- 已有一套自建列表组件 `src/components/list-report/`（约 1700 行，25 个文件在用），保存的视图存在自己的表里（`features/list-views`）。
+- 列表类页面大致三种：普通对象列表（用户、角色、规则、单据、SAP 数据、接口等）；工作清单（待我处理、待过账，按人和权限算出来）；报表（`purchase-invoices/reports/` 下 12 个，很多是跨表计算）。发票处理页不是列表。
+- 项目规定：业务数据只在 `features/*/server` 取，经过 `requirePermission`；Server Action 走 `defineAction`；界面只用 `theme.css` 的令牌；布局参考 Fiori、外观照 DESIGN.md（甲方已认可现在的外观）；只在 main 上开发。
+
+**结论**
+1. 方向可行，而且合理：invoice-assure 的列表本来就照 Fiori 的列表页做，正是 smart-kit 要做的事；它也是 smart-kit 的第一个真实使用方，能把缺口暴露出来。
+2. 难点不在界面，在取数路线。smart-kit 要一个 OData 服务；用 smart-kit-server 就多了一条绕开 `features/*/server` 的取数路线。必须先定一个方案并写成 invoice-assure 的方向决策：OData 服务挂在 Next 的路由处理函数下；认证用 Better Auth 的会话；权限点和数据范围从权限目录来（`scope` 钩子）；写操作和动作在钩子里调用现有的 mutation，审计照旧。
+3. "统一"指 smart-kit 换上 invoice-assure 已认可的外观（把 `--sk-*` 指到 `theme.css` 的令牌），不是反过来。要核对两边是否都用 `html[data-theme]`。
+4. 分批做：普通列表最合适 → 工作清单 → 报表逐个判断（计算能写成数据库视图的才迁，复杂计算的留着）。全部迁完后删掉自建的 `list-report`，不让两套列表组件并存。保存的视图要从 `list-views` 表迁到 smart-kit 的视图存储（`ODataVariantStore`），或者给 smart-kit 加一个适配。
+5. 不拷贝项目：拷贝出来会有两份代码同时演进（第 4 周的工作还在进行），数据库、端口、.env 也会冲突。按页面逐个迁移，每一步都过 `npm run check`，不需要一次性大改。真要隔离就临时开一个分支（这违反"只在 main 上开发"，要用户同意），也比拷贝便宜。smart-kit 也不要把源码拷进去：用 npm 包；发现问题回 smart-kit 修好再发版，联调时可以用本地 tgz 或 `npm link`。
+
+**待用户决定**：是否按上面的分批方式做；先拿哪个列表做试点（推荐"用户"或"规则"这类普通列表，再加一个工作清单，例如"待过账"）。
