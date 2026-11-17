@@ -26,7 +26,7 @@ jobs:
     env:
       SMART_KIT_PG_ADMIN_URL: postgresql://postgres:postgres@localhost:5432/postgres
       SMART_KIT_DB_PASSWORD: smart_kit_ci
-      SMART_KIT_DATABASE_URL: postgresql://smart_kit_reader:smart_kit_ci@localhost:5432/smart_kit_purchasing
+      SMART_KIT_DATABASE_URL: postgresql://smart_kit_app:smart_kit_ci@localhost:5432/smart_kit_purchasing
       SMART_KIT_REQUIRE_PG: '1'
     steps:
       - uses: actions/checkout@v4

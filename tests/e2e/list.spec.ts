@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { clearFilter, columnTexts, filterInput, MOCK, open, recordOData, resetServer, showFilters, table, titleCount, waitForRows } from './helpers';
+import { clearFilter, columnTexts, filterInput, open, recordOData, resetServer, showFilters, table, titleCount, waitForRows, PURCHASING } from './helpers';
 
 /** The demo list in manual update mode ("Go"); the template default is live update (LR Filters). */
 const MANUAL = '/po?mode=manual';
@@ -142,7 +142,7 @@ test.describe('list report: purchase orders', () => {
     await dialog.locator('[data-sk-variant-saveas-ok]').click();
     await expect(page.locator('[data-sk-variant]')).toHaveText('Approved only');
     // stored on the server
-    const res = await page.request.get(`${MOCK}/odata/purchasing/Variants?$filter=PageKey eq 'po'`);
+    const res = await page.request.get(`${PURCHASING}/Variants?$filter=PageKey eq 'po'`);
     const body = await res.json();
     expect(body.value.map((v: { Name: string; IsDefault: boolean; AutoApply: boolean }) => [v.Name, v.IsDefault, v.AutoApply])).toEqual([['Approved only', true, false]]);
     // new session: default variant without auto-apply → header expanded and "To start"

@@ -69,6 +69,8 @@ export interface AggregatePlan {
   orderBy: { target: { kind: 'group' | 'aggregate'; index: number }; descending: boolean }[];
   skip: number;
   top?: number;
+  /** $count=true: the number of groups. */
+  count: boolean;
   parent?: ParentLink;
 }
 
@@ -477,7 +479,7 @@ export class Planner<C> {
 
   aggregate(set: EntitySetInfo, o: QueryOptions, parent?: ParentLink): AggregatePlan {
     const steps = o.apply as ApplyStep[];
-    if (o.filter || o.search || o.select || o.expand || o.count) throw notImplemented('$apply cannot be combined with $filter, $search, $select, $expand or $count in this service; put filters into filter() of $apply.');
+    if (o.filter || o.search || o.select || o.expand) throw notImplemented('$apply cannot be combined with $filter, $search, $select or $expand in this service; put filters into filter() of $apply.');
     const caps = this.capsFor(set, parent);
     const where: BoundExpr[] = [...this.scope(set)];
     let grouped: { paths: string[][]; aggregates: { path: string[]; method: AggregateMethod; alias: string }[] } | undefined;
@@ -515,7 +517,8 @@ export class Planner<C> {
     }
     for (const [i] of groupBy.entries()) if (!orderBy.some((x) => x.target.kind === 'group' && x.target.index === i)) orderBy.push({ target: { kind: 'group', index: i }, descending: false });
     const max = this.o.maxPageSize;
-    return { set, where, groupBy, aggregates, orderBy, skip: o.skip ?? 0, top: Math.min(o.top ?? max, max), parent };
+    if (o.count && !caps.countable) throw badRequest('CountNotSupported', `Entity set '${set.name}' is not countable (Capabilities.CountRestrictions/Countable is false).`);
+    return { set, where, groupBy, aggregates, orderBy, skip: o.skip ?? 0, top: Math.min(o.top ?? max, max), count: !!o.count, parent };
   }
 }
 

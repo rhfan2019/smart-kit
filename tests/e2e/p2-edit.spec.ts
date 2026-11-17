@@ -1,13 +1,13 @@
 /** Phase 2 · Object page editing (docs/13 §7): direct save on /odata/purchasing/, draft on /odata/purchasing-draft/. */
 import { expect, test, type Page } from '@playwright/test';
-import { evidence, MOCK, open, orderPath, resetServer } from './helpers';
+import { evidence, MOCK, open, orderPath, PURCHASING, resetServer } from './helpers';
 
 test.beforeEach(async ({ page }) => resetServer(page));
 
 const field = (page: Page, path: string) => page.locator(`[data-sk-field-path="${path}"]`).first();
 const input = (page: Page, path: string) => field(page, path).locator('input:not([type="hidden"]), textarea').first();
 const footer = (page: Page) => page.locator('.sk-dynamic-page__footer');
-const get = async (page: Page, svc: string, path: string) => (await page.request.get(`${MOCK}/odata/${svc}/${path}`)).json();
+const get = async (page: Page, svc: string, path: string) => (await page.request.get(`${svc === 'purchasing' ? PURCHASING : `${MOCK}/odata/${svc}`}/${path}`)).json();
 
 test('P2-OP-15 P2-OP-16 edit keeps the layout; the footer offers Save and Cancel; initial focus on the first editable field', async ({ page }) => {
   await open(page, orderPath('4500000001'));
@@ -50,7 +50,7 @@ test('P2-OP-17 direct save: PATCH with If-Match; a stale ETag is reported as a c
   // someone else changes the order while we edit
   await page.locator('[data-sk-action="Edit"]').click();
   const current = await get(page, 'purchasing', "PurchaseOrders('4500000003')");
-  await page.request.patch(`${MOCK}/odata/purchasing/PurchaseOrders('4500000003')`, { data: { Description: 'Changed by someone else' }, headers: { 'If-Match': current['@odata.etag'] } });
+  await page.request.patch(`${PURCHASING}/PurchaseOrders('4500000003')`, { data: { Description: 'Changed by someone else' }, headers: { 'If-Match': current['@odata.etag'] } });
   await input(page, 'Description').fill('Mine');
   await page.locator('[data-sk-save]').click();
   await page.locator('[data-sk-message-button]').click();
@@ -103,7 +103,7 @@ test('P2-OP-22 inline create of a subobject: "Create" adds a row at the top of t
   await evidence(page, 'P2-OP-22', items);
   await row.locator('[data-sk-create-field="OrderQuantity"] input:not([type="hidden"])').press('Control+Enter');
   await expect(row).toHaveCount(0);
-  await expect.poll(async () => Number(await (await page.request.get(`${MOCK}/odata/purchasing/PurchaseOrders('4500000003')/_Item/$count`)).text())).toBe(Number(countBefore) + 1);
+  await expect.poll(async () => Number(await (await page.request.get(`${PURCHASING}/PurchaseOrders('4500000003')/_Item/$count`)).text())).toBe(Number(countBefore) + 1);
   // Ctrl+Enter in the table opens a new row as well
   await items.locator('.sk-table__search input').focus();
   await page.keyboard.press('Control+Enter');
@@ -117,11 +117,11 @@ test('P2-OP-24 delete in display mode asks for confirmation and goes back to the
   await expect(dialog).toBeVisible();
   await evidence(page, 'P2-OP-24', dialog);
   await dialog.getByRole('button', { name: 'Cancel' }).click();
-  expect((await page.request.get(`${MOCK}/odata/purchasing/PurchaseOrders('4500000007')`)).status()).toBe(200);
+  expect((await page.request.get(`${PURCHASING}/PurchaseOrders('4500000007')`)).status()).toBe(200);
   await page.locator('[data-sk-action="Delete"]').click();
   await page.locator('[data-sk-confirm-ok]').click();
   await expect(page).toHaveURL(/\/po(\?|$)/);
-  expect((await page.request.get(`${MOCK}/odata/purchasing/PurchaseOrders('4500000007')`)).status()).toBe(404);
+  expect((await page.request.get(`${PURCHASING}/PurchaseOrders('4500000007')`)).status()).toBe(404);
 });
 
 test('P2-OP-25 create mode: the title shows "New Purchase Order" until the object has its number', async ({ page }) => {

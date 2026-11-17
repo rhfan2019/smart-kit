@@ -3,7 +3,8 @@ export { createODataService, type ODataService, type ODataServiceOptions } from 
 export { toNodeListener } from './node';
 export { createPostgresDb, type PostgresDbOptions } from './db';
 export { ODataServerError, errorBody } from './errors';
-export { mergeMetadata, applyLabels, MetadataDocuments, type MetadataSource } from './metadata';
+export { mergeMetadata, applyLabels, boundActions, MetadataDocuments, type MetadataSource } from './metadata';
+export { validationError, type EntitySetHooks, type ActionHandler, type WriteContext, type ServiceMessage, type Row } from './write';
 export { buildSchema, type ServiceSchema, type StorageMapping, type EntitySetInfo, type ColumnInfo, type NavigationInfo } from './schema';
 export { Planner, type ScopeFunction, type CollectionPlan, type AggregatePlan, type BoundExpr } from './plan';
 export { SqlBuilder, escapeLike } from './sql';

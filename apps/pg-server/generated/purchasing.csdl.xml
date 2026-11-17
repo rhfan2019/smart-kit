@@ -139,6 +139,16 @@
         <Property Name="IsBlocked" Type="Edm.Boolean" Nullable="false"/>
         <Property Name="RatingCount" Type="Edm.Int32" Nullable="false"/>
       </EntityType>
+      <EntityType Name="Variant">
+        <Key><PropertyRef Name="ID"/></Key>
+        <Property Name="ID" Type="Edm.Guid" Nullable="false"/>
+        <Property Name="PageKey" Type="Edm.String" Nullable="false" MaxLength="200"/>
+        <Property Name="Name" Type="Edm.String" Nullable="false" MaxLength="100"/>
+        <Property Name="IsDefault" Type="Edm.Boolean" Nullable="false"/>
+        <Property Name="AutoApply" Type="Edm.Boolean" Nullable="false"/>
+        <Property Name="Content" Type="Edm.String" Nullable="false"/>
+        <Property Name="ModifiedAt" Type="Edm.DateTimeOffset" Nullable="false" Precision="3"/>
+      </EntityType>
       <EntityContainer Name="Container">
         <EntitySet Name="ItemHistory" EntityType="Purchasing.ItemHistory">
           <NavigationPropertyBinding Path="_Item" Target="PurchaseOrderItems"/>
@@ -164,6 +174,7 @@
           <NavigationPropertyBinding Path="_Plant" Target="Plants"/>
         </EntitySet>
         <EntitySet Name="Suppliers" EntityType="Purchasing.Supplier"/>
+        <EntitySet Name="Variants" EntityType="Purchasing.Variant"/>
       </EntityContainer>
       <Annotations Target="Purchasing.ItemHistory"><Annotation Term="Core.Description" String="Goods and invoice receipts of an item (series for the micro charts)"/></Annotations>
       <Annotations Target="Purchasing.ItemHistory/PurchaseOrder"><Annotation Term="Common.Label" String="Purchase Order"/></Annotations>
@@ -245,6 +256,14 @@
       <Annotations Target="Purchasing.Supplier/LogoUrl"><Annotation Term="Common.Label" String="Logo"/></Annotations>
       <Annotations Target="Purchasing.Supplier/IsBlocked"><Annotation Term="Common.Label" String="Blocked"/></Annotations>
       <Annotations Target="Purchasing.Supplier/RatingCount"><Annotation Term="Common.Label" String="Number of Ratings"/></Annotations>
+      <Annotations Target="Purchasing.Variant"><Annotation Term="Core.Description" String="Saved view of a page"/></Annotations>
+      <Annotations Target="Purchasing.Variant/ID"><Annotation Term="Common.Label" String="ID"/></Annotations>
+      <Annotations Target="Purchasing.Variant/PageKey"><Annotation Term="Common.Label" String="Page"/></Annotations>
+      <Annotations Target="Purchasing.Variant/Name"><Annotation Term="Common.Label" String="View"/></Annotations>
+      <Annotations Target="Purchasing.Variant/IsDefault"><Annotation Term="Common.Label" String="Default"/></Annotations>
+      <Annotations Target="Purchasing.Variant/AutoApply"><Annotation Term="Common.Label" String="Apply Automatically"/></Annotations>
+      <Annotations Target="Purchasing.Variant/Content"><Annotation Term="Common.Label" String="Content"/></Annotations>
+      <Annotations Target="Purchasing.Variant/ModifiedAt"><Annotation Term="Common.Label" String="Changed On"/></Annotations>
     </Schema>
   </edmx:DataServices>
 </edmx:Edmx>

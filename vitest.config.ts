@@ -26,6 +26,8 @@ export default defineConfig({
           name: 'server',
           include: ['packages/server/test/**/*.test.ts', 'packages/cli/test/**/*.test.ts'],
           environment: 'node',
+          // conformance and write tests share the PostgreSQL test database: one file after another
+          fileParallelism: false,
           testTimeout: 60_000,
           hookTimeout: 120_000,
         },

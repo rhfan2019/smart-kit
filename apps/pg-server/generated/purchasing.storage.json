@@ -119,6 +119,18 @@
         "IsBlocked": "is_blocked",
         "RatingCount": "rating_count"
       }
+    },
+    "Variants": {
+      "table": "purchasing.variant",
+      "columns": {
+        "ID": "id",
+        "PageKey": "page_key",
+        "Name": "name",
+        "IsDefault": "is_default",
+        "AutoApply": "auto_apply",
+        "Content": "content",
+        "ModifiedAt": "modified_at"
+      }
     }
   }
 }

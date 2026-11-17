@@ -2,12 +2,12 @@
 import { expect, test } from '@playwright/test';
 import { ConcurrencyError, loadService, type FetchLike } from '../../packages/core/src';
 import { DirectEditStrategy } from '../../spikes/edit-seam/directEditStrategy';
-import { MOCK, resetServer } from './helpers';
+import { PURCHASING, resetServer } from './helpers';
 
 test('edit seam: direct save with PATCH and ETag conflict', async ({ page }) => {
   await resetServer(page);
   const fetchLike: FetchLike = (url, init) => fetch(url, init);
-  const { provider } = await loadService({ serviceUrl: `${MOCK}/odata/purchasing/`, fetch: fetchLike, language: 'en' });
+  const { provider } = await loadService({ serviceUrl: `${PURCHASING}/`, fetch: fetchLike, language: 'en' });
   const path = "PurchaseOrders('4500000002')";
   const row = await provider.read(path, { select: ['PurchaseOrder', 'Description', 'Version'], expand: [] });
   const strategy = new DirectEditStrategy(provider);

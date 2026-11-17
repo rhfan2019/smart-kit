@@ -6,13 +6,14 @@ import { spawn, type ChildProcess } from 'node:child_process';
 import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createODataService, createPostgresDb, type ODataService } from '../src/index';
+import { actions, entitySets } from '../../../apps/pg-server/rules';
 import { metadataSource, storage } from './fixture';
 
 const ROOT = join(import.meta.dirname, '../../..');
 const MOCK_PORT = Number(process.env.CONFORMANCE_MOCK_PORT ?? 4495);
 const MOCK = `http://localhost:${MOCK_PORT}/odata/purchasing/`;
 const PG = 'http://pg.test/odata/purchasing/';
-const DATABASE_URL = process.env.SMART_KIT_DATABASE_URL ?? 'postgresql://smart_kit_reader@localhost:5432/smart_kit_purchasing';
+const DATABASE_URL = process.env.SMART_KIT_DATABASE_URL ?? 'postgresql://smart_kit_app@localhost:5432/smart_kit_purchasing';
 const HEADERS = { Accept: 'application/json;odata.metadata=minimal;IEEE754Compatible=true', 'Accept-Language': 'en' };
 
 const { db, pool } = createPostgresDb({ connectionString: DATABASE_URL });
@@ -99,6 +100,57 @@ async function waitFor(url: string, ms: number) {
   throw new Error(`${url} did not start`);
 }
 
+const resetBoth = async () => {
+  await fetch(MOCK.replace('/odata/purchasing/', '/test/reset'), { method: 'POST' });
+  await pool.query('select purchasing_seed.reset()');
+};
+
+const WRITE_HEADERS = { ...HEADERS, 'Content-Type': 'application/json;IEEE754Compatible=true', Prefer: 'return=representation' };
+/** One request to both services; returns status, body (or null), sap-messages and ETag of each. */
+async function send(method: string, path: string, body?: unknown, headers: Record<string, string> = {}) {
+  const init = { method, headers: { ...WRITE_HEADERS, ...headers }, body: body === undefined ? undefined : JSON.stringify(body) };
+  const [m, p] = await Promise.all([fetch(MOCK + path, init), pgService.handle(new Request(PG + path, init))]);
+  const read = async (r: Response) => {
+    const text = await r.text();
+    return { status: r.status, body: text ? JSON.parse(text) : null, messages: JSON.parse(r.headers.get('sap-messages') ?? '[]'), etag: r.headers.get('etag') };
+  };
+  return { mock: await read(m), pg: await read(p) };
+}
+
+/** Write responses without what differs by nature: timestamps of "now", generated IDs, context URLs. */
+function normalizeWrite(x: { status: number; body: unknown; messages: unknown; etag: string | null }) {
+  const strip = (v: unknown): unknown => {
+    if (Array.isArray(v)) return v.map(strip);
+    if (!v || typeof v !== 'object') return v;
+    const out: Record<string, unknown> = {};
+    for (const [k, val] of Object.entries(v)) {
+      if (['@odata.context', '@odata.metadataEtag', 'CreatedAt', 'ModifiedAt', 'ID'].includes(k)) continue;
+      out[k] = strip(val);
+    }
+    return out;
+  };
+  return { status: x.status, body: strip(x.body), messages: x.messages, etag: x.etag };
+}
+
+const NEW_ORDER = { Supplier: '0000100001', CompanyCode: '1000', PurchaseOrderType: 'NB', PurchasingGroup: 'P01', OrderDate: '2026-11-20' };
+const same = (r: Awaited<ReturnType<typeof send>>, path = '') => {
+  const select = /\$select=([^&]*)/.exec(path)?.[1];
+  const drop = (x: ReturnType<typeof normalizeWrite>) => {
+    if (!select || select.split(',').includes('Version') || !x.body || typeof x.body !== 'object') return x;
+    const body = x.body as Record<string, unknown> & { value?: Record<string, unknown>[] };
+    for (const row of [body, ...(body.value ?? [])]) delete row.Version;
+    return x;
+  };
+  expect(drop(normalizeWrite(r.pg))).toEqual(drop(normalizeWrite(r.mock)));
+};
+/** Protocol errors: same status and error code (the wording of the two engines differs). */
+const sameError = (r: Awaited<ReturnType<typeof send>>, status: number) => {
+  expect(r.mock.status).toBe(status);
+  expect(r.pg.status).toBe(status);
+  // (the mock answers some 404s without a body)
+  if (r.mock.body) expect((r.pg.body as { error: { code: string } }).error.code).toBe((r.mock.body as { error: { code: string } }).error.code);
+};
+
 const get = async (path: string) => {
   const [m, p] = await Promise.all([fetch(MOCK + path, { headers: HEADERS }), pgService.handle(new Request(PG + path, { headers: HEADERS }))]);
   return { mock: { status: m.status, body: await m.json() }, pg: { status: p.status, body: await p.json() } };
@@ -111,6 +163,8 @@ describe.skipIf(!available)('conformance: smart-kit-server on PostgreSQL vs. fe-
       metadata: metadataSource(),
       storage: storage(),
       db,
+      entitySets,
+      actions,
       searchFields: {
         PurchaseOrders: ['PurchaseOrder', 'Description', '_Supplier/SupplierName'],
         PurchaseOrderItems: ['Material', 'Plant', '_Material/MaterialName'],
@@ -118,10 +172,11 @@ describe.skipIf(!available)('conformance: smart-kit-server on PostgreSQL vs. fe-
         Materials: ['Material', 'MaterialName'],
       },
     });
-    mock = spawn(process.execPath, [join(ROOT, 'apps/mock/run.mjs')], { env: { ...process.env, MOCK_PORT: String(MOCK_PORT), E2E: '' }, stdio: 'ignore' });
+    mock = spawn(process.execPath, [join(ROOT, 'apps/mock/run.mjs')], { env: { ...process.env, MOCK_PORT: String(MOCK_PORT), E2E: '1' }, stdio: 'ignore' });
     await waitFor(`${MOCK}$metadata`, 90_000);
   });
   afterAll(async () => {
+    await resetBoth().catch(() => undefined);
     mock?.kill();
     await pool.end();
   });
@@ -140,6 +195,76 @@ describe.skipIf(!available)('conformance: smart-kit-server on PostgreSQL vs. fe-
     expect(r.mock.status).toBe(400);
     expect(r.pg.status).toBe(400);
     expect(r.pg.body.error.code).toBe(r.mock.body.error.code);
+  });
+
+  // ---------------------------------------------------------------- writes (ADR-018 direct save, ADR-024 actions)
+  describe('writes', () => {
+    beforeAll(resetBoth);
+
+    it('create an order: number, defaults, warning without description; validation errors with targets', async () => {
+      const created = await send('POST', 'PurchaseOrders', NEW_ORDER);
+      expect(created.pg.status).toBe(201);
+      same(created);
+      same(await send('POST', 'PurchaseOrders', { Description: 'Incomplete' }));
+      same(await send('POST', 'PurchaseOrders', { ...NEW_ORDER, Supplier: 'NOPE', OrderDate: '2100-01-01' }));
+      sameError(await send('POST', 'PurchaseOrders', { ...NEW_ORDER, Status: 'CLOSED' }), 400);
+      same(await send('GET', "PurchaseOrders('4500010001')"), "PurchaseOrders('4500010001')");
+    });
+
+    it('items: number, price and amount, order totals; invalid quantity', async () => {
+      same(await send('POST', "PurchaseOrders('4500010001')/_Item", { Material: 'MAT-10001', Plant: '1010', OrderQuantity: 4 }));
+      same(await send('POST', 'PurchaseOrderItems', { PurchaseOrder: '4500010001', Material: 'MAT-10002', Plant: '1020', OrderQuantity: '2.5' }));
+      same(await send('POST', "PurchaseOrders('4500010001')/_Item", { Material: 'MAT-10003', Plant: '1010', OrderQuantity: 0 }));
+      same(await send('GET', "PurchaseOrders('4500010001')?$select=NetAmount,InvoicedAmount,BudgetAmount,Version"), "PurchaseOrders('4500010001')?$select=NetAmount,InvoicedAmount,BudgetAmount,Version");
+      same(await send('PATCH', "PurchaseOrderItems(PurchaseOrder='4500010001',PurchaseOrderItem=10)", { OrderQuantity: 10 }));
+      same(await send('GET', "PurchaseOrders('4500010001')?$select=NetAmount,BudgetAmount"), "PurchaseOrders('4500010001')?$select=NetAmount,BudgetAmount");
+      same(await send('DELETE', "PurchaseOrderItems(PurchaseOrder='4500010001',PurchaseOrderItem=20)"));
+      same(await send('GET', "PurchaseOrders('4500010001')/_Item?$select=PurchaseOrderItem,NetAmount"), "PurchaseOrders('4500010001')/_Item?$select=PurchaseOrderItem,NetAmount");
+    });
+
+    it('update with ETag: 412 on a stale one, the version counts up; validation; not updatable properties', async () => {
+      const path = "PurchaseOrders('4500000001')";
+      sameError(await send('PATCH', path, { Description: 'x' }, { 'If-Match': 'W/"OTk="' }), 412);
+      same(await send('PATCH', path, { Description: 'Changed', PurchasingGroup: 'P02' }, { 'If-Match': 'W/"MQ=="' }));
+      same(await send('PATCH', path, { Description: '' }));
+      same(await send('PATCH', path, { Supplier: 'NOPE' }));
+      sameError(await send('PATCH', path, { NetAmount: 1 }), 400);
+    });
+
+    it('bound actions: approve, reject, close with messages; not available in the wrong status', async () => {
+      const { rows } = await pool.query<{ po: string }>("select purchase_order as po from purchasing.purchase_order where status = 'NEW' order by 1 limit 2");
+      same(await send('POST', `PurchaseOrders('${rows[0]!.po}')/Purchasing.approve`, {}));
+      same(await send('POST', `PurchaseOrders('${rows[0]!.po}')/Purchasing.approve`, {}));
+      same(await send('POST', `PurchaseOrders('${rows[1]!.po}')/Purchasing.reject`, {}, { 'If-Match': 'W/"MQ=="' }));
+      same(await send('POST', `PurchaseOrders('${rows[0]!.po}')/Purchasing.close`, {}));
+      sameError(await send('POST', `PurchaseOrders('${rows[1]!.po}')/Purchasing.close`, {}, { 'If-Match': 'W/"MQ=="' }), 412);
+    });
+
+    it('delete an order with its items; then 404', async () => {
+      same(await send('DELETE', "PurchaseOrders('4500010001')"));
+      sameError(await send('GET', "PurchaseOrders('4500010001')"), 404);
+      same(await send('GET', "PurchaseOrderItems?$filter=PurchaseOrder eq '4500010001'&$count=true"), "PurchaseOrderItems?$filter=PurchaseOrder eq '4500010001'&$count=true");
+    });
+
+    it('saved views (Variants): create, change, list, delete', async () => {
+      const view = { PageKey: 'po', Name: 'Mine', IsDefault: false, AutoApply: true, Content: '{"filters":{}}' };
+      const created = await send('POST', 'Variants', view);
+      same(created);
+      const ids = { mock: (created.mock.body as { ID: string }).ID, pg: (created.pg.body as { ID: string }).ID };
+      const both = async (method: string, path: (id: string) => string, body?: unknown) => {
+        const init = { method, headers: WRITE_HEADERS, body: body === undefined ? undefined : JSON.stringify(body) };
+        const [m, p] = await Promise.all([fetch(MOCK + path(ids.mock), init), pgService.handle(new Request(PG + path(ids.pg), init))]);
+        const read = async (r: Response) => {
+          const text = await r.text();
+          return normalizeWrite({ status: r.status, body: text ? JSON.parse(text) : null, messages: [], etag: null });
+        };
+        expect(await read(p)).toEqual(await read(m));
+      };
+      await both('PATCH', (id) => `Variants(${id})`, { Name: 'Renamed', IsDefault: true });
+      same(await send('GET', "Variants?$filter=PageKey eq 'po'&$orderby=Name"), "Variants?$filter=PageKey eq 'po'&$orderby=Name");
+      await both('DELETE', (id) => `Variants(${id})`);
+      same(await send('GET', "Variants?$filter=PageKey eq 'po'&$count=true"), "Variants?$filter=PageKey eq 'po'&$count=true");
+    });
   });
 
   it('$count of a collection', async () => {

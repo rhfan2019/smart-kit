@@ -58,6 +58,11 @@ export function indexCsdl(xml: string): CsdlIndex {
 /** Checks the annotation files against the CSDL index. */
 export function checkAnnotations(index: CsdlIndex, files: { name: string; xml: string }[]): CheckProblem[] {
   const problems: CheckProblem[] = [];
+  // Actions and functions may be declared in the hand-written files themselves (the database knows none).
+  index = { ...index, operations: new Set(index.operations) };
+  for (const f of files)
+    for (const s of schemas(f.xml))
+      for (const op of kids(s).filter((e) => ['Action', 'Function'].includes(local(e.name)))) index.operations.add(`${index.namespace}.${attr(op, 'Name')}`);
   const qualify = (name: string) => (index.alias && name.startsWith(`${index.alias}.`) ? `${index.namespace}${name.slice(index.alias.length)}` : name);
 
   /** Resolves a path relative to a type; returns an error text or undefined. */

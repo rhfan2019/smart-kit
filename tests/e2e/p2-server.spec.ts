@@ -1,8 +1,8 @@
 /** Phase 2 test services on the API level: writes, bound actions, sap-messages, $apply, draft (docs/08-test-services.md). */
 import { expect, test, type APIResponse } from '@playwright/test';
-import { MOCK } from './helpers';
+import { MOCK, PURCHASING } from './helpers';
 
-const PO = `${MOCK}/odata/purchasing`;
+const PO = PURCHASING;
 const DRAFT = `${MOCK}/odata/purchasing-draft`;
 const JSON_HEADERS = { 'Content-Type': 'application/json', Accept: 'application/json' };
 const NEW_ORDER = { Supplier: '0000100001', CompanyCode: '2000', PurchaseOrderType: 'NB', PurchasingGroup: 'P01', OrderDate: '2026-11-15', Description: 'Created by p2-server' };
@@ -15,6 +15,7 @@ const draftKey = (id: string, active: boolean) => `PurchaseOrders(PurchaseOrder=
 
 test.beforeEach(async ({ request }) => {
   expect((await request.post(`${MOCK}/test/reset`)).ok()).toBeTruthy();
+  if (process.env.E2E_EXTRA_RESET) expect((await request.post(process.env.E2E_EXTRA_RESET)).ok()).toBeTruthy();
 });
 
 test('p2-server: create a purchase order (number, defaults, ETag, Location)', async ({ request }) => {

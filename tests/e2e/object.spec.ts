@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { MOCK, open, recordOData, resetServer, table } from './helpers';
+import { open, recordOData, resetServer, table, PURCHASING } from './helpers';
 
 const PO = '4500000001';
 /** Anchor navigation unless `layout` says otherwise (purchase orders default to tabs, see AC-OP-03). */
@@ -240,7 +240,7 @@ test('AC-OP-07 sub-table: 10 rows, More adds 20, search, sort, lazy request', as
 });
 
 test('AC-OP-08 message strips: header and section positions; page-level error', async ({ page }) => {
-  const res = await page.request.get(`${MOCK}/odata/purchasing/PurchaseOrders?$filter=StatusCriticality eq 1&$top=1&$select=PurchaseOrder`);
+  const res = await page.request.get(`${PURCHASING}/PurchaseOrders?$filter=StatusCriticality eq 1&$top=1&$select=PurchaseOrder`);
   const overdue = (await res.json()).value[0].PurchaseOrder as string;
   await open(page, poPath(overdue));
   const title = page.locator('.sk-dynamic-page__title');

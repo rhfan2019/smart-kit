@@ -201,3 +201,31 @@ comment on column purchasing.item_history.unit is 'Unit';
 comment on column purchasing.item_history.amount is 'Amount';
 comment on column purchasing.item_history.currency is 'Currency';
 comment on column purchasing.item_history.movement_type is 'Movement Type';
+
+-- Saved views of the list report (ODataVariantStore, ADR-014).
+create table if not exists purchasing.variant (
+  id          uuid           primary key,
+  page_key    varchar(200)   not null,
+  name        varchar(100)   not null,
+  is_default  boolean        not null,
+  auto_apply  boolean        not null,
+  content     text           not null,
+  modified_at timestamptz(3) not null
+);
+create index if not exists variant_page_key_ix on purchasing.variant (page_key);
+comment on table purchasing.variant is 'Saved view of a page';
+comment on column purchasing.variant.id is 'ID';
+comment on column purchasing.variant.page_key is 'Page';
+comment on column purchasing.variant.name is 'View';
+comment on column purchasing.variant.is_default is 'Default';
+comment on column purchasing.variant.auto_apply is 'Apply Automatically';
+comment on column purchasing.variant.content is 'Content';
+comment on column purchasing.variant.modified_at is 'Changed On';
+
+-- Typical price of a material in EUR: read by the business rules (price of a new item), not part of the service
+-- (smart-kit.config.json skips the table).
+create table if not exists purchasing.material_price (
+  material  varchar(10)   primary key,
+  price_eur numeric(11,2) not null,
+  constraint material_price_material_fk foreign key (material) references purchasing.material (material)
+);

@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  Hand-written annotations of the purchasing service on PostgreSQL (apps/pg-server). smart-kit-cli never writes this
-  file; "smart-kit generate" checks that every target and path in it still exists.
-  Started from the in-memory test service's template (apps/mock/Csdl/purchasing.template.xml), adapted to the
-  read-only service: no bound actions (approve, reject, close), no variants entity set, Updatable / Insertable /
-  Deletable false. "{{label:<key>}}" placeholders are filled from apps/mock/Csdl/labels.<lang>.json.
+  Hand-written part of the purchasing service on PostgreSQL (apps/pg-server): the bound actions (the database does
+  not know them) and all annotations. smart-kit-cli never writes this file; "smart-kit generate" checks that every
+  target and path in it still exists. The actions are implemented in rules.ts.
+  Started from the in-memory test service's template (apps/mock/Csdl/purchasing.template.xml), so that both services
+  look the same. "{{label:<key>}}" placeholders are filled from apps/mock/Csdl/labels.<lang>.json.
 -->
 <edmx:Edmx Version="4.0" xmlns:edmx="http://docs.oasis-open.org/odata/ns/edmx">
   <edmx:Reference Uri="https://sap.github.io/odata-vocabularies/vocabularies/UI.xml">
@@ -27,6 +27,18 @@
   </edmx:Reference>
   <edmx:DataServices>
     <Schema Namespace="Purchasing" xmlns="http://docs.oasis-open.org/odata/ns/edm">
+      <Action Name="approve" IsBound="true">
+        <Parameter Name="_it" Type="Purchasing.PurchaseOrder" Nullable="false"/>
+        <ReturnType Type="Purchasing.PurchaseOrder" Nullable="false"/>
+      </Action>
+      <Action Name="reject" IsBound="true">
+        <Parameter Name="_it" Type="Purchasing.PurchaseOrder" Nullable="false"/>
+        <ReturnType Type="Purchasing.PurchaseOrder" Nullable="false"/>
+      </Action>
+      <Action Name="close" IsBound="true">
+        <Parameter Name="_it" Type="Purchasing.PurchaseOrder" Nullable="false"/>
+        <ReturnType Type="Purchasing.PurchaseOrder" Nullable="false"/>
+      </Action>
       <Annotations Target="Purchasing.Container/PurchaseOrders">
         <Annotation Term="Capabilities.SearchRestrictions">
           <Record Type="Capabilities.SearchRestrictionsType">
@@ -78,17 +90,17 @@
         </Annotation>
         <Annotation Term="Capabilities.UpdateRestrictions">
           <Record Type="Capabilities.UpdateRestrictionsType">
-            <PropertyValue Property="Updatable" Bool="false"/>
+            <PropertyValue Property="Updatable" Bool="true"/>
           </Record>
         </Annotation>
         <Annotation Term="Capabilities.InsertRestrictions">
           <Record Type="Capabilities.InsertRestrictionsType">
-            <PropertyValue Property="Insertable" Bool="false"/>
+            <PropertyValue Property="Insertable" Bool="true"/>
           </Record>
         </Annotation>
         <Annotation Term="Capabilities.DeleteRestrictions">
           <Record Type="Capabilities.DeleteRestrictionsType">
-            <PropertyValue Property="Deletable" Bool="false"/>
+            <PropertyValue Property="Deletable" Bool="true"/>
           </Record>
         </Annotation>
         <Annotation Term="Core.OptimisticConcurrency">
@@ -105,17 +117,17 @@
         </Annotation>
         <Annotation Term="Capabilities.UpdateRestrictions">
           <Record Type="Capabilities.UpdateRestrictionsType">
-            <PropertyValue Property="Updatable" Bool="false"/>
+            <PropertyValue Property="Updatable" Bool="true"/>
           </Record>
         </Annotation>
         <Annotation Term="Capabilities.InsertRestrictions">
           <Record Type="Capabilities.InsertRestrictionsType">
-            <PropertyValue Property="Insertable" Bool="false"/>
+            <PropertyValue Property="Insertable" Bool="true"/>
           </Record>
         </Annotation>
         <Annotation Term="Capabilities.DeleteRestrictions">
           <Record Type="Capabilities.DeleteRestrictionsType">
-            <PropertyValue Property="Deletable" Bool="false"/>
+            <PropertyValue Property="Deletable" Bool="true"/>
           </Record>
         </Annotation>
         <Annotation Term="Core.OptimisticConcurrency">
@@ -172,6 +184,13 @@
         </Annotation>
       </Annotations>
       <Annotations Target="Purchasing.Container/PurchaseOrderTypes">
+        <Annotation Term="Capabilities.SearchRestrictions">
+          <Record Type="Capabilities.SearchRestrictionsType">
+            <PropertyValue Property="Searchable" Bool="false"/>
+          </Record>
+        </Annotation>
+      </Annotations>
+      <Annotations Target="Purchasing.Container/Variants">
         <Annotation Term="Capabilities.SearchRestrictions">
           <Record Type="Capabilities.SearchRestrictionsType">
             <PropertyValue Property="Searchable" Bool="false"/>
@@ -237,6 +256,19 @@
               <PropertyValue Property="Target" AnnotationPath="@UI.Chart#BudgetBullet"/>
               <Annotation Term="UI.Importance" EnumMember="UI.ImportanceType/Low"/>
             </Record>
+            <Record Type="UI.DataFieldForAction">
+              <PropertyValue Property="Label" String="{{label:A.Approve}}"/>
+              <PropertyValue Property="Action" String="Purchasing.approve"/>
+            </Record>
+            <Record Type="UI.DataFieldForAction">
+              <PropertyValue Property="Label" String="{{label:A.Reject}}"/>
+              <PropertyValue Property="Action" String="Purchasing.reject"/>
+            </Record>
+            <Record Type="UI.DataFieldForAction">
+              <PropertyValue Property="Label" String="{{label:A.Close}}"/>
+              <PropertyValue Property="Action" String="Purchasing.close"/>
+              <PropertyValue Property="Inline" Bool="true"/>
+            </Record>
           </Collection>
         </Annotation>
         <Annotation Term="UI.LineItem" Qualifier="Delivery">
@@ -260,7 +292,22 @@
           </Collection>
         </Annotation>
         <Annotation Term="UI.Identification">
-          <Collection/>
+          <Collection>
+            <Record Type="UI.DataFieldForAction">
+              <PropertyValue Property="Label" String="{{label:A.Approve}}"/>
+              <PropertyValue Property="Action" String="Purchasing.approve"/>
+              <PropertyValue Property="Determining" Bool="true"/>
+            </Record>
+            <Record Type="UI.DataFieldForAction">
+              <PropertyValue Property="Label" String="{{label:A.Reject}}"/>
+              <PropertyValue Property="Action" String="Purchasing.reject"/>
+              <PropertyValue Property="Determining" Bool="true"/>
+            </Record>
+            <Record Type="UI.DataFieldForAction">
+              <PropertyValue Property="Label" String="{{label:A.Close}}"/>
+              <PropertyValue Property="Action" String="Purchasing.close"/>
+            </Record>
+          </Collection>
         </Annotation>
         <Annotation Term="UI.SelectionFields">
           <Collection>
@@ -1009,6 +1056,18 @@
         <Annotation Term="Common.Label" String="{{label:F.CloseEnabled}}"/>
         <Annotation Term="UI.Hidden" Bool="true"/>
         <Annotation Term="Core.Computed" Bool="true"/>
+      </Annotations>
+      <Annotations Target="Purchasing.approve(Purchasing.PurchaseOrder)">
+        <Annotation Term="Common.Label" String="{{label:A.Approve}}"/>
+        <Annotation Term="Core.OperationAvailable" Path="_it/ApproveEnabled"/>
+      </Annotations>
+      <Annotations Target="Purchasing.reject(Purchasing.PurchaseOrder)">
+        <Annotation Term="Common.Label" String="{{label:A.Reject}}"/>
+        <Annotation Term="Core.OperationAvailable" Path="_it/ApproveEnabled"/>
+      </Annotations>
+      <Annotations Target="Purchasing.close(Purchasing.PurchaseOrder)">
+        <Annotation Term="Common.Label" String="{{label:A.Close}}"/>
+        <Annotation Term="Core.OperationAvailable" Path="_it/CloseEnabled"/>
       </Annotations>
       <Annotations Target="Purchasing.PurchaseOrderItem">
         <Annotation Term="UI.HeaderInfo">
@@ -1804,6 +1863,29 @@
       </Annotations>
       <Annotations Target="Purchasing.OrderType/Name">
         <Annotation Term="Common.Label" String="{{label:F.PurchaseOrderTypeName}}"/>
+      </Annotations>
+      <Annotations Target="Purchasing.Variant/ID">
+        <Annotation Term="Common.Label" String="{{label:F.VariantID}}"/>
+        <Annotation Term="Core.Computed" Bool="true"/>
+      </Annotations>
+      <Annotations Target="Purchasing.Variant/PageKey">
+        <Annotation Term="Common.Label" String="{{label:F.PageKey}}"/>
+      </Annotations>
+      <Annotations Target="Purchasing.Variant/Name">
+        <Annotation Term="Common.Label" String="{{label:F.VariantName}}"/>
+      </Annotations>
+      <Annotations Target="Purchasing.Variant/IsDefault">
+        <Annotation Term="Common.Label" String="{{label:F.IsDefault}}"/>
+      </Annotations>
+      <Annotations Target="Purchasing.Variant/AutoApply">
+        <Annotation Term="Common.Label" String="{{label:F.AutoApply}}"/>
+      </Annotations>
+      <Annotations Target="Purchasing.Variant/Content">
+        <Annotation Term="Common.Label" String="{{label:F.Content}}"/>
+      </Annotations>
+      <Annotations Target="Purchasing.Variant/ModifiedAt">
+        <Annotation Term="Common.Label" String="{{label:F.ModifiedAt}}"/>
+        <Annotation Term="Core.Computed" Bool="true"/>
       </Annotations>
     </Schema>
   </edmx:DataServices>

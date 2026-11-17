@@ -1,6 +1,6 @@
 # 交接文档
 
-> 最后更新：2026-11-16（自写 OData 服务的读部分、PostgreSQL 测试床）。新会话先读本文，再读 `docs/prompt/项目目标与范围-v5.md`。
+> 最后更新：2026-11-16（自写 OData 服务：读、直接保存、视图、绑定动作；PostgreSQL 测试床）。新会话先读本文，再读 `docs/prompt/项目目标与范围-v5.md`。
 
 ## 1. 现状
 
@@ -11,11 +11,11 @@
 
 - **二期完成（2026-11-15）**：计划 `12-phase2-plan.md`，验收条目 `13-phase2-acceptance.md`（三篇基准规范每个示意图编号和行为规则，共 132 条，另 10 个二期注解术语），结果 `14-phase2-acceptance-report.md`（142/142 对应到通过的测试；端到端 181 个用例完整跑两遍都通过）。设计决定 ADR-018–024。二期在分支 `claude/phase-2-a32ce7` 上本地提交，**没有推送**。
 
-- **自写 OData 服务（2026-11-16，ADR-027，讨论记录 D16）**：新包 `@rhfan2019/smart-kit-server`（只读的 OData V4 服务，PostgreSQL）和 `@rhfan2019/smart-kit-cli`（命令 `smart-kit`：从表结构生成 CSDL、检查注解）；测试床 `apps/pg-server`（数据库 `smart_kit_purchasing`，端口 4402）。示例应用的读场景在它上面全部通过（`npm run e2e:pg`，104 个），和内存测试服务的一致性测试 38 个请求形状全部相同。分支 `claude/odata-server-8d02a5`，从 `build/subpath-exports` 开出，**没有推送**。
+- **自写 OData 服务（2026-11-16，ADR-027，讨论记录 D16、D17）**：新包 `@rhfan2019/smart-kit-server`（OData V4 服务，PostgreSQL：读、直接保存、绑定动作，业务规则是钩子；没有草稿）和 `@rhfan2019/smart-kit-cli`（命令 `smart-kit`：从表结构生成 CSDL、检查注解）；测试床 `apps/pg-server`（数据库 `smart_kit_purchasing`，端口 4402）。示例应用的读写场景在它上面全部通过（`npm run e2e:pg`，141 个），和内存测试服务的一致性测试 38 个请求形状全部相同。分支 `claude/odata-server-8d02a5`，从 `build/subpath-exports` 开出，**没有推送**。
 
 ## 2. 下一步
 
-0. 自写服务的写部分（PATCH + ETag、POST、DELETE、绑定动作、草稿、变体实体集）等用户决定范围，见 D16；做完后把 `playwright.pg.config.ts` 里 `NEEDS_WRITES` 的场景放回来。
+0. 自写服务的草稿（D16 的 D 部分）还没做，要不要做由用户决定；`$batch`、深层新建、PUT 也没做。
 
 1. 用户决定是否推送；推送后看 CI，第一次运行时生成 Linux 截图基准（`npx playwright test tests/e2e/quality.spec.ts -g AC-THEME-01 --update-snapshots`）并提交。
 2. `14` 第 6 节列出的限制（草稿"保持草稿"、动作参数对话框只支持基本类型、二期页面没有像素级截图回归）可以按需要再做。

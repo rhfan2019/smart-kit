@@ -102,8 +102,11 @@ export function mergeMetadata(source: Pick<MetadataSource, 'csdl' | 'annotations
     if (!list) byTarget.set(b.target, (list = []));
     list.push(b.ann);
   });
+  // Operations (actions, functions) may be declared in a hand-written file: the database knows nothing about them.
+  const operations = files.flatMap((f) => kids(f.schema).filter((e) => ['Action', 'Function'].includes(local(e.name))));
   schema.elements = [
     ...kids(schema).filter((e) => local(e.name) !== 'Annotations'),
+    ...operations,
     ...[...byTarget].map(([target, elements]): Element => ({ type: 'element', name: 'Annotations', attributes: { Target: target }, elements })),
   ];
   return `<?xml version="1.0" encoding="utf-8"?>\n${js2xml({ elements: doc.elements!.filter((e) => e.type === 'element') }, { spaces: 0 })}`;
@@ -124,6 +127,25 @@ export function applyLabels(xml: string, labels: Record<string, string>, lang: s
 }
 
 /** The $metadata documents of a service, one per language. */
+/** Bound actions of a CSDL document: qualified name -> qualified binding type. */
+export function boundActions(xml: string): Map<string, string> {
+  const doc = parseXml(xml, '$metadata');
+  const { edmx, schema } = schemaOf(doc, '$metadata');
+  const ns = String(schema.attributes?.Namespace);
+  const alias = aliases(edmx);
+  const qualify = (t: string) => {
+    const dot = t.lastIndexOf('.');
+    return dot > 0 && alias[t.slice(0, dot)] ? `${alias[t.slice(0, dot)]}${t.slice(dot)}` : t;
+  };
+  const out = new Map<string, string>();
+  for (const a of kids(schema, 'Action')) {
+    if (String(a.attributes?.IsBound) !== 'true') continue;
+    const first = kids(a, 'Parameter')[0];
+    if (first) out.set(`${ns}.${a.attributes?.Name}`, qualify(String(first.attributes?.Type)));
+  }
+  return out;
+}
+
 export class MetadataDocuments {
   readonly merged: string;
   private readonly byLang = new Map<string, string>();

@@ -3,11 +3,12 @@ import { buildModel, type MetaModel } from '@rhfan2019/smart-kit-core';
 import type { Kysely } from 'kysely';
 import { badRequest, errorBody, notFound, notImplemented, ODataServerError } from './errors';
 import { etagOf, formatGroup, formatRow, type FormatOptions } from './format';
-import { MetadataDocuments, type MetadataSource } from './metadata';
+import { boundActions, MetadataDocuments, type MetadataSource } from './metadata';
 import { parseQueryOptions, parseResourcePath } from './parser/url';
 import { Planner, type CollectionPlan, type ScopeFunction } from './plan';
 import { buildSchema, type ServiceSchema, type StorageMapping } from './schema';
 import { SqlBuilder } from './sql';
+import { Writer, type ActionHandler, type EntitySetHooks } from './write';
 
 export interface ODataServiceOptions<C = undefined> {
   /** URL path of the service root, e.g. "/odata/purchasing/" (requests outside it get 404). */
@@ -29,6 +30,23 @@ export interface ODataServiceOptions<C = undefined> {
    * in $filter and $orderby, $apply. Rows outside the scope do not exist for the request (404 for a key).
    */
   scope?: ScopeFunction<C>;
+  /**
+   * The entity sets that accept writes, with their business rules: which properties a POST / PATCH may set, and hooks
+   * before and after create, update and delete (numbers, defaults, totals, validation). An entity set not listed here
+   * is read-only (405); a listed one (`{}` for no rules) is writable as far as its Capabilities Insert-, Update- and
+   * DeleteRestrictions allow.
+   */
+  entitySets?: Record<string, EntitySetHooks<C>>;
+  /** Bound actions by qualified name ("Purchasing.approve"); they must be declared in $metadata (annotation file). */
+  actions?: Record<string, ActionHandler<C>>;
+  /**
+   * Called for every entity written to a read or write response (also expanded entities and the objects of grouped
+   * paths in $apply), with the language of the request: e.g. language-dependent texts of code lists. Changes only
+   * what is returned; filters and sorting still see the stored values.
+   */
+  afterRead?: (e: { entitySet: string; row: Record<string, unknown>; language: string; context: C }) => void;
+  /** Refuse every write with 501, whatever the annotations say (default false). */
+  readOnly?: boolean;
   /** Called for 5xx errors (logging). */
   onError?: (error: unknown, request: Request) => void;
 }
@@ -80,7 +98,8 @@ export function createODataService<C = undefined>(options: ODataServiceOptions<C
     const planner = new Planner<C>({ schema, maxPageSize, searchFields: options.searchFields, scope: options.scope, context: ctx });
     const target = planner.resolvePath(segments);
     const builder = new SqlBuilder(schema, (s) => planner.scope(s));
-    const fmt: FormatOptions = { ieee754, serviceRoot: `${url.origin}${basePath}` };
+    const language = docs.language(request.headers.get('accept-language'));
+    const fmt: FormatOptions = { ieee754, serviceRoot: `${url.origin}${basePath}`, entitySets: schema.entitySets, afterRead: options.afterRead && ((entitySet, row) => options.afterRead!({ entitySet, row, language, context: ctx })) };
     const exec = async (q: ReturnType<SqlBuilder['collection']>) => (await q.execute(options.db)).rows as Record<string, unknown>[];
 
     if (count) {
@@ -96,7 +115,10 @@ export function createODataService<C = undefined>(options: ODataServiceOptions<C
       if (target.single) throw badRequest('InvalidPath', '$apply needs a collection.');
       const plan = planner.aggregate(target.set, o, target.parent);
       const rows = await exec(builder.aggregate(plan));
-      return json(200, { '@odata.context': `$metadata#${target.set.name}`, value: rows.map((r) => formatGroup(plan, r, fmt)) }, ieee754);
+      const body: Record<string, unknown> = { '@odata.context': `$metadata#${target.set.name}` };
+      if (plan.count) body['@odata.count'] = rows.length ? Number(rows[0]!['@count']) : 0;
+      body.value = rows.map((r) => formatGroup(plan, r, fmt));
+      return json(200, body, ieee754);
     }
 
     if (target.single) {
@@ -131,6 +153,74 @@ export function createODataService<C = undefined>(options: ODataServiceOptions<C
     return json(200, body, ieee754);
   }
 
+  const declaredActions = boundActions(docs.merged);
+
+  async function write(request: Request, url: URL): Promise<Response> {
+    const ieee754 = /IEEE754Compatible=true/i.test(request.headers.get('accept') ?? '') || /IEEE754Compatible=true/i.test(request.headers.get('content-type') ?? '');
+    const rel = url.pathname.slice(basePath.length);
+    if (rel === '$batch') throw notImplemented('$batch is not supported; send single requests.');
+    if (rel === '' || rel === '/' || rel === '$metadata') throw new ODataServerError(405, 'MethodNotAllowed', `${request.method} is not allowed on ${url.pathname}.`);
+    if (request.method === 'PUT') throw notImplemented('PUT is not supported; change entities with PATCH.');
+    const raw = rel.split('/').filter((s, i, all) => s !== '' || i < all.length - 1);
+    let action: string | undefined;
+    const last = decodeURIComponent(raw[raw.length - 1] ?? '');
+    if (raw.length > 1 && /^[A-Za-z_][\w]*(\.[A-Za-z_]\w*)+$/.test(last)) {
+      action = last;
+      raw.pop();
+    }
+    const { segments, count } = parseResourcePath(raw);
+    if (!segments.length || count) throw notFound(`No resource at ${url.pathname}`);
+    const ctx = (await options.context?.(request)) as C;
+    const planner = new Planner<C>({ schema, maxPageSize, searchFields: options.searchFields, scope: options.scope, context: ctx });
+    const target = planner.resolvePath(segments);
+    const text = await request.text();
+    let body: unknown;
+    if (text.trim()) {
+      try {
+        body = JSON.parse(text);
+      } catch {
+        throw badRequest('InvalidBody', 'The request body is not valid JSON.');
+      }
+    }
+    const language = docs.language(request.headers.get('accept-language')) || (request.headers.get('accept-language') ?? '').split(/[-,;]/)[0]!.trim() || 'en';
+    const writer = new Writer<C>({ schema, hooks: options.entitySets ?? {}, actions: options.actions ?? {}, declaredActions, planner: () => planner, context: ctx, request, language });
+    const fmt: FormatOptions = { ieee754, serviceRoot: `${url.origin}${basePath}`, entitySets: schema.entitySets, afterRead: options.afterRead && ((entitySet, row) => options.afterRead!({ entitySet, row, language, context: ctx })) };
+    const label = decodeURIComponent(rel);
+    const minimal = /return=minimal/i.test(request.headers.get('prefer') ?? '');
+    const headers = (extra: Record<string, string> = {}) => {
+      const h: Record<string, string> = { ...extra };
+      const m = writer.sapMessages();
+      if (m) h['sap-messages'] = m;
+      return h;
+    };
+    const entityResponse = async (status: number, key: Record<string, unknown>, extra: Record<string, string> = {}) => {
+      const row = await writer.read(options.db, target.set, key, fmt);
+      if (!row) throw notFound(`${label} not found.`);
+      const etag = row['@odata.etag'] as string | undefined;
+      const h = headers({ ...extra, ...(etag ? { ETag: etag } : {}) });
+      if (minimal) return new Response(null, { status: 204, headers: { 'OData-Version': '4.0', ...h } });
+      return json(status, { '@odata.context': `$metadata#${target.set.name}/$entity`, ...row }, ieee754, h);
+    };
+    const keyOnly = () => {
+      if (!target.single || !target.key) throw badRequest('InvalidPath', `${request.method} needs a single entity addressed by its key.`);
+      return target.key;
+    };
+
+    if (request.method === 'POST' && action) return entityResponse(200, await writer.action(options.db, target.set, keyOnly(), action, body, label));
+    if (request.method === 'POST') {
+      if (target.single) throw new ODataServerError(405, 'MethodNotAllowed', `POST to a single ${target.set.name} entity is not supported.`);
+      const parent = target.parent ? { set: target.parent.set, key: target.parent.key, join: target.parent.navigation.join! } : undefined;
+      const key = await writer.create(options.db, target.set, body, parent);
+      return entityResponse(201, key, { Location: writer.location(fmt.serviceRoot, target.set, key) });
+    }
+    if (request.method === 'PATCH' || request.method === 'MERGE') return entityResponse(200, await writer.update(options.db, target.set, keyOnly(), body, label));
+    if (request.method === 'DELETE') {
+      await writer.remove(options.db, target.set, keyOnly(), label);
+      return new Response(null, { status: 204, headers: { 'OData-Version': '4.0', ...headers() } });
+    }
+    throw notImplemented(`${request.method} is not supported.`);
+  }
+
   return {
     schema,
     model,
@@ -140,10 +230,10 @@ export function createODataService<C = undefined>(options: ODataServiceOptions<C
       try {
         const url = new URL(request.url);
         if (!url.pathname.startsWith(basePath) && `${url.pathname}/` !== basePath) throw notFound(`No resource at ${url.pathname}`);
-        if (request.method !== 'GET' && request.method !== 'HEAD')
-          throw notImplemented(`${request.method} is not supported: this service is read-only (writes, actions and drafts are not implemented yet).`);
         if (`${url.pathname}/` === basePath) return Response.redirect(`${url.origin}${basePath}${url.search}`, 307);
-        return await run(request, url);
+        if (request.method === 'GET' || request.method === 'HEAD') return await run(request, url);
+        if (options.readOnly) throw notImplemented(`${request.method} is not supported: this service is read-only.`);
+        return await write(request, url);
       } catch (e) {
         if (e instanceof ODataServerError) return json(e.status, errorBody(e), ieee754);
         options.onError?.(e, request);

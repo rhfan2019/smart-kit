@@ -309,6 +309,7 @@ export class SqlBuilder {
       ...aggs.map((a, i) => sql`${outputExpr(a, { edmType: plan.aggregates[i]!.edmType, precision: plan.aggregates[i]!.ref.column.precision })} as ${sql.id(`a${i}`)}`),
     ];
     if (!cols.length) cols.push(sql`count(*) as ${sql.id('@n')}`);
+    if (plan.count) cols.push(sql`count(*) over () as ${sql.id('@count')}`);
     const where = conds.length ? sql`where ${sql.join(conds, sql` and `)}` : sql``;
     const groupBy = groups.length ? sql`group by ${sql.join(groups)}` : sql``;
     const order = plan.orderBy.length

@@ -12,7 +12,7 @@
 | --- | --- |
 | `@rhfan2019/smart-kit-core` | 纯 TypeScript：CSDL 与注解解析、模型、查询生成、OData V4 和内存数据提供者、变体与页面状态存储 |
 | `@rhfan2019/smart-kit` | React 积木：`SmartFilterBar`、`SmartTable`、`SmartField`、`SmartForm`、`ObjectPageLayout`、`SmartListReport`、`SmartObjectPage` 等；令牌与主题；中英文文案 |
-| `@rhfan2019/smart-kit-server` | 只在 Node 里用：自写的 OData V4 服务（只读），把请求翻译成 PostgreSQL 的 SQL（ADR-027） |
+| `@rhfan2019/smart-kit-server` | 只在 Node 里用：自写的 OData V4 服务，把请求翻译成 PostgreSQL 的 SQL；支持读、直接保存（修改、新建、删除）和绑定动作，业务规则写成钩子（ADR-027） |
 | `@rhfan2019/smart-kit-cli` | 开发时用的命令 `smart-kit`：从 PostgreSQL 的表结构生成 CSDL，检查手写的注解是否失效 |
 
 公开 API 见 [docs/api.md](docs/api.md)。
@@ -57,7 +57,7 @@ npm run dev
 
 ## 在 PostgreSQL 上手工测试
 
-除了内存里的测试服务，还有一个真正接数据库的采购订单服务：数据放在 PostgreSQL 里，由本仓库自写的 `smart-kit-server` 提供 OData V4 接口（ADR-027）。数据和内存测试服务完全相同（同一个生成器），所以两边看到的页面应该一样。这个服务**只读**：没有新建、编辑、删除、审批这些按钮。
+除了内存里的测试服务，还有一个真正接数据库的采购订单服务：数据放在 PostgreSQL 里，由本仓库自写的 `smart-kit-server` 提供 OData V4 接口（ADR-027）。数据和内存测试服务完全相同（同一个生成器），业务规则也相同，所以两边看到的页面应该一样。它支持查看、编辑保存、新建、删除、审批 / 拒绝 / 关闭和保存视图；**草稿**不在其中（草稿服务 `/purchasing-draft` 仍由内存测试服务提供）。
 
 **1. 准备**
 
@@ -74,7 +74,7 @@ psql -h localhost -d postgres -c "select version()"
 npm run pg:setup
 ```
 
-它只创建这几样东西，不碰服务器上的其他数据库：角色 `smart_kit`（所有者）和 `smart_kit_reader`（服务用它连接，只能读），数据库 `smart_kit_purchasing`，其中的 schema `purchasing` 和 9 张表，并写入 1 万张采购订单及其行项目、定价条件、收货和发票历史。想把数据恢复成初始状态：`npm run pg:setup -- --reseed`。管理员连接不是默认值时，设环境变量 `SMART_KIT_PG_ADMIN_URL`（例如 `postgresql://postgres:密码@localhost:5432/postgres`）。
+它只创建这几样东西，不碰服务器上的其他数据库：角色 `smart_kit`（所有者）、`smart_kit_app`（服务用它连接，能读写这些表，不能改表结构）和 `smart_kit_reader`（只能读），数据库 `smart_kit_purchasing`，其中的 schema `purchasing`（11 张表）和 `purchasing_seed`（初始数据的副本，用来恢复），并写入 1 万张采购订单及其行项目、定价条件、收货和发票历史。想把数据恢复成初始状态：`npm run pg:setup -- --reseed`。管理员连接不是默认值时，设环境变量 `SMART_KIT_PG_ADMIN_URL`（例如 `postgresql://postgres:密码@localhost:5432/postgres`）。
 
 **3. 重新生成 CSDL**（只有改了表结构才需要；仓库里已经有生成好的文件）
 
@@ -108,16 +108,22 @@ PURCHASING_URL=http://localhost:4402 npm run dev
 | --- | --- |
 | http://localhost:4401/po | 列表页：标题里的条数是 10000；试搜索（例如 `steel`）、筛选（状态、公司代码、订单日期）、点列头排序、往下滚动加载更多；值帮助（供应商、物料）能打开、能搜索 |
 | http://localhost:4401/po?chart=1 | 列表页上方的图表视图：按状态汇总的金额（`$apply`） |
-| 在列表里点 4500000001 | 对象页：页头的微图表、各区块的表单、150 行的行项目表（"更多"按钮继续加载）；没有编辑、删除按钮 |
+| 在列表里点 4500000001 | 对象页：页头的微图表、各区块的表单、150 行的行项目表（"更多"按钮继续加载） |
+| 对象页上点"编辑"，改描述，点"保存" | 改动写进数据库（刷新后还在）；描述清空再保存，会出现"没有描述"的提示 |
+| 列表里选一张"新建"状态的订单，点"审批" | 状态变成"已审批"，底部出现消息按钮，里面是成功消息 |
+| 列表上点"新建"，填完必填字段 | 生成新订单号（从 4500010001 起），打开新订单的对象页 |
+| 列表上"另存为"一个视图 | 视图存进数据库表 `purchasing.variant`，刷新后还能选 |
 | 在行项目表里点一行 | 子对象页：定价条件、收货和发票历史，页头的折线图、面积图等系列图表 |
 | http://localhost:4401/microcharts | 九种微图表的场景页（数据来自同一个服务） |
-| 页面右上角切换中文 | 字段标签变成中文（来自标签包）；状态名称等代码表文字仍是英文，这是已知限制 |
+| 页面右上角切换中文 | 字段标签变成中文（来自标签包），状态名称等代码表文字也变成中文 |
 | http://localhost:4402/odata/purchasing/$metadata | 合并后的元数据：生成的实体定义 + 手写的注解 |
 | http://localhost:4402/odata/purchasing/PurchaseOrders?$top=3&$count=true | 原始的 OData 响应 |
 
 想看服务实际执行的 SQL：在 PostgreSQL 里打开语句日志（`alter role smart_kit_reader set log_statement = 'all'`，日志位置见 `brew services info postgresql@17`），看完再 `alter role smart_kit_reader reset log_statement`。
 
-想试数据范围（权限）：`PG_SCOPE_COMPANY=1000 npm run pg` 启动后，列表只剩公司代码 1000 的订单，其他订单的对象页返回"找不到"。
+想试数据范围（权限）：`PG_SCOPE_COMPANY=1000 npm run pg` 启动后，列表只剩公司代码 1000 的订单，其他订单的对象页返回"找不到"，也改不了、删不了。
+
+想把数据恢复到初始状态（手工试过编辑之后）：`npm run pg:setup -- --reseed`，或者在 PostgreSQL 里执行 `select purchasing_seed.reset()`（约 1.5 秒）。
 
 **6. 自动测试**
 
@@ -125,7 +131,7 @@ PURCHASING_URL=http://localhost:4402 npm run dev
 npm run e2e:pg
 ```
 
-用 PostgreSQL 服务重跑示例应用的列表页、对象页、微图表和图表视图的端到端测试（需要写入的场景跳过），三个服务会自动启动。单元测试 `npm test` 里还有一组一致性测试：同样的请求分别发给内存测试服务和 PostgreSQL 服务，比较响应。
+用 PostgreSQL 服务重跑示例应用的列表页、对象页、编辑、动作、视图、微图表和图表视图的端到端测试，三个服务会自动启动；每个用例之前数据会恢复到初始状态。单元测试 `npm test` 里还有一组一致性测试：同样的读写请求分别发给内存测试服务和 PostgreSQL 服务，比较响应。
 
 ## License
 

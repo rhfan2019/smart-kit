@@ -1,6 +1,6 @@
 /** Phase 2 · List Report (docs/13 §1–3): Components and Actions figures, behaviour rules. */
 import { expect, test, type Page } from '@playwright/test';
-import { clearFilter, columnTexts, evidence, filterInput, mainScroll, showFilters, MOCK, open, recordOData, resetServer, table, waitForRows } from './helpers';
+import { clearFilter, columnTexts, evidence, filterInput, mainScroll, showFilters, open, recordOData, resetServer, table, waitForRows, PURCHASING } from './helpers';
 
 test.beforeEach(async ({ page }) => resetServer(page));
 
@@ -127,13 +127,13 @@ test('P2-LR-14 partial processing: "x of y cannot be processed" with the reason;
   await evidence(page, 'P2-LR-14');
   await page.locator('[data-sk-partial-cancel]').click();
   await expect(dialog).toHaveCount(0);
-  let status = await page.request.get(`${MOCK}/odata/purchasing/PurchaseOrders('${ids.neu}')?$select=Status`).then((r) => r.json());
+  let status = await page.request.get(`${PURCHASING}/PurchaseOrders('${ids.neu}')?$select=Status`).then((r) => r.json());
   expect(status.Status).toBe('NEW');
   await table(page, 'PurchaseOrders').locator('[data-sk-action-group="decide"]').click();
   await page.getByRole('menuitem', { name: 'Approve' }).click();
   await page.locator('[data-sk-partial-continue]').click();
-  await expect.poll(async () => (await page.request.get(`${MOCK}/odata/purchasing/PurchaseOrders('${ids.neu}')?$select=Status`).then((r) => r.json())).Status).toBe('APPR');
-  status = await page.request.get(`${MOCK}/odata/purchasing/PurchaseOrders('${ids.ord}')?$select=Status`).then((r) => r.json());
+  await expect.poll(async () => (await page.request.get(`${PURCHASING}/PurchaseOrders('${ids.neu}')?$select=Status`).then((r) => r.json())).Status).toBe('APPR');
+  status = await page.request.get(`${PURCHASING}/PurchaseOrders('${ids.ord}')?$select=Status`).then((r) => r.json());
   expect(status.Status).toBe('ORD');
 });
 
@@ -246,7 +246,7 @@ test('P2-LRC-03 the page variant stores the selected tab', async ({ page }) => {
   await dialog.getByRole('checkbox', { name: 'Set as Default' }).check();
   await dialog.locator('[data-sk-variant-saveas-ok]').click();
   await expect(page.locator('[data-sk-variant]')).toHaveText('Closed tab');
-  const body = await page.request.get(`${MOCK}/odata/purchasing/Variants?$filter=PageKey eq 'po'`).then((r) => r.json());
+  const body = await page.request.get(`${PURCHASING}/Variants?$filter=PageKey eq 'po'`).then((r) => r.json());
   expect(JSON.parse(body.value[0].Content).custom.tab).toBe('Closed');
   await page.evaluate(() => sessionStorage.clear());
   await page.reload();
@@ -407,7 +407,7 @@ test('P2-LR-02 views by order type from local annotations (overlay): tabs with c
   await waitForRows(page, 'PurchaseOrders');
   // the counts add up to the unfiltered total of the same filters
   const counts = (await tabs.allInnerTexts()).map((x) => Number(x.match(/\((\d+)\)/)![1]));
-  const total = await page.request.get(`${MOCK}/odata/purchasing/PurchaseOrders/$count?$filter=${encodeURIComponent("Status ne 'CLOSED' and CompanyCode eq '1000'")}`).then((r) => r.text());
+  const total = await page.request.get(`${PURCHASING}/PurchaseOrders/$count?$filter=${encodeURIComponent("Status ne 'CLOSED' and CompanyCode eq '1000'")}`).then((r) => r.text());
   expect(counts.reduce((a, b) => a + b, 0)).toBe(Number(total));
   // the tab bar sits above the table toolbar (no overlap with a grid table)
   const bar = await page.locator('.sk-list-tabs__list').boundingBox();

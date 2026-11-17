@@ -164,9 +164,10 @@
 
 ## 5. PostgreSQL 上的采购订单服务（`apps/pg-server`，ADR-027）
 
-- 地址 `http://localhost:4402/odata/purchasing/`（`PG_SERVER_PORT` 可改），由 `@rhfan2019/smart-kit-server` 提供，**只读**；写请求返回 501。
-- 数据在本机 PostgreSQL 的数据库 `smart_kit_purchasing`、schema `purchasing` 里，由 `npm run pg:setup` 建立并写入（可重复执行，只建缺少的；`-- --reseed` 重新写入数据）。数据来自本服务同一个生成器（`apps/mock/lib/purchasing.mjs`），所以和 `/odata/purchasing/` 完全相同。
-- 元数据：`generated/purchasing.csdl.xml`（`npm run pg:generate` 从表结构生成，不要手改）+ `annotations/purchasing.annotations.xml`（手写，从本服务的模板开始，去掉了动作和变体，新建 / 编辑 / 删除的能力设为 false）+ 标签包 `apps/mock/Csdl/labels.<语言>.json`。
-- 与 `/odata/purchasing/` 的差别：没有 `Variants`、没有绑定动作和写操作；代码表文字（状态名称等）只有英文；`$metadata` 只有 XML；嵌套 `$expand` 的 `$top` 生效（测试服务的引擎忽略它）；未知属性返回 400（测试服务返回空结果）。
+- 地址 `http://localhost:4402/odata/purchasing/`（`PG_SERVER_PORT` 可改），由 `@rhfan2019/smart-kit-server` 提供：读、直接保存（PATCH + ETag、POST、DELETE）、视图（`Variants`）、绑定动作审批 / 拒绝 / 关闭；**没有草稿**（草稿服务仍是 §3.4）。
+- 数据在本机 PostgreSQL 的数据库 `smart_kit_purchasing`、schema `purchasing` 里，由 `npm run pg:setup` 建立并写入（可重复执行，只建缺少的；`-- --reseed` 重新写入数据）。数据来自本服务同一个生成器（`apps/mock/lib/purchasing.mjs`），所以和 `/odata/purchasing/` 完全相同。服务用角色 `smart_kit_app` 连接（只能读写这些表）。
+- 业务规则在 `apps/pg-server/rules.ts`，是 `smart-kit-server` 的钩子，规则和文案与 `lib/rules.mjs`、`lib/messages.mjs` 相同（直接引用后者的文案）：订单号取最大值加 1，项目号加 10，默认值、价格、订单合计、校验错误（带字段目标）、没有描述的警告、动作的状态检查和成功消息、中文的代码表文字。
+- 元数据：`generated/purchasing.csdl.xml`（`npm run pg:generate` 从表结构生成，不要手改）+ `annotations/purchasing.annotations.xml`（手写：三个绑定动作的声明和全部注解，从本服务的模板开始）+ 标签包 `apps/mock/Csdl/labels.<语言>.json`。
+- `E2E=1` 时有 `POST /test/reset`：调用 `purchasing_seed.reset()` 把会被修改的表恢复成初始数据（约 1.5 秒；上次恢复后没有写过就什么也不做）。
+- 与 `/odata/purchasing/` 的差别：`$metadata` 只有 XML；嵌套 `$expand` 的 `$top` 生效（测试服务的引擎忽略它）；未知属性返回 400（测试服务返回空结果）；单页最多 10 000 行。
 - 示例应用接它：`PURCHASING_URL=http://localhost:4402 npm run dev`，见 README"在 PostgreSQL 上手工测试"。
-

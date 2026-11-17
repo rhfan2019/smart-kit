@@ -1,11 +1,14 @@
 import { expect, type Page, type Request } from '@playwright/test';
 
 export const MOCK = `http://localhost:${process.env.E2E_MOCK_PORT ?? '4400'}`;
+/** The service behind the demo's /odata/purchasing/: the test service, or the PostgreSQL one (playwright.pg.config.ts). */
+export const PURCHASING = process.env.E2E_PURCHASING_URL ?? `${MOCK}/odata/purchasing`;
 
-/** Resets the test service data (variants, patched rows) before a test. */
+/** Resets the test service data (variants, patched rows) before a test; also the PostgreSQL service when it is in use. */
 export async function resetServer(page: Page) {
   const res = await page.request.post(`${MOCK}/test/reset`);
   expect(res.ok()).toBeTruthy();
+  if (process.env.E2E_EXTRA_RESET) expect((await page.request.post(process.env.E2E_EXTRA_RESET)).ok()).toBeTruthy();
 }
 
 /** Opens a demo route with language, theme and density. */

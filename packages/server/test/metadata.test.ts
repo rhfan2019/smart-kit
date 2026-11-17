@@ -1,6 +1,6 @@
 import { buildModel } from '@rhfan2019/smart-kit-core';
 import { describe, expect, it } from 'vitest';
-import { applyLabels, mergeMetadata, MetadataDocuments } from '../src/index';
+import { applyLabels, boundActions, mergeMetadata, MetadataDocuments } from '../src/index';
 import { metadataSource } from './fixture';
 
 const edmx = (refs: string, schema: string) =>
@@ -42,8 +42,10 @@ describe('$metadata: generated CSDL + hand-written annotations', () => {
   it('builds the purchasing model of apps/pg-server with the UI annotations of the test service', () => {
     const docs = new MetadataDocuments(metadataSource());
     const model = buildModel(docs.xml('en'));
-    expect(Object.keys(model.entitySets).sort()).toEqual(['ItemHistory', 'Materials', 'OrderStatuses', 'Plants', 'PricingConditions', 'PurchaseOrderItems', 'PurchaseOrderTypes', 'PurchaseOrders', 'Suppliers']);
-    expect(model.entitySets.PurchaseOrders!.capabilities).toMatchObject({ searchable: true, updatable: false, insertable: false, deletable: false });
+    expect(Object.keys(model.entitySets).sort()).toEqual(['ItemHistory', 'Materials', 'OrderStatuses', 'Plants', 'PricingConditions', 'PurchaseOrderItems', 'PurchaseOrderTypes', 'PurchaseOrders', 'Suppliers', 'Variants']);
+    expect(model.entitySets.PurchaseOrders!.capabilities).toMatchObject({ searchable: true, updatable: true, insertable: true, deletable: true });
+    // the bound actions come from the hand-written file (the database knows none)
+    expect(boundActions(docs.merged)).toEqual(new Map([['Purchasing.approve', 'Purchasing.PurchaseOrder'], ['Purchasing.reject', 'Purchasing.PurchaseOrder'], ['Purchasing.close', 'Purchasing.PurchaseOrder']]));
     expect(model.entityTypes['Purchasing.PurchaseOrder']!.etag).toBe('Version');
     expect(model.ui['Purchasing.PurchaseOrder']!.lineItem.length).toBeGreaterThan(5);
     expect(buildModel(docs.xml('zh')).entityTypes['Purchasing.PurchaseOrder']!.properties.NetAmount!.label).toBe('净值');
