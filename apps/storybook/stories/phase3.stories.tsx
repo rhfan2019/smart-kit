@@ -94,7 +94,7 @@ export const PaletteInThemes: Story = {
   render: () => (
     <div>
       {(['yellow', 'navy', 'dark'] as const).map((theme) => (
-        <div key={theme} data-theme={theme} style={{ display: 'flex', gap: 16, padding: 16, background: 'var(--sk-color-surface)', color: 'var(--sk-color-text)' }}>
+        <div key={theme} data-sk-theme={theme} style={{ display: 'flex', gap: 16, padding: 16, background: 'var(--sk-color-surface)', color: 'var(--sk-color-text)' }}>
           <span style={{ width: 60 }}>{theme}</span>
           {Array.from({ length: 11 }, (_, i) => (
             <div key={i} style={{ width: 64, height: 40 }}><MicroChart kind="harvey" label={`Palette ${i + 1}`} value={i + 1} max={11} color={i + 1} /></div>

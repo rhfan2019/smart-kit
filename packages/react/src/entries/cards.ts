@@ -1,3 +1,5 @@
+'use client';
+
 /**
  * `@rhfan2019/smart-kit/cards`: Fiori cards (docs/20, ADR-028). Names follow SAPUI5: the container `Card` and the
  * headers (sap.f.Card, sap.f.cards.*), the annotation-driven contents (sap.ui.integration.cards.*Content).

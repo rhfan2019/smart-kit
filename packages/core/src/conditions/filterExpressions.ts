@@ -8,10 +8,11 @@
  * - MultiRange (default when not restricted): any conditions, including exclusions
  * - SearchExpression: text patterns (contains, starts with, ends with)
  * - MultiRangeOrSearchExpression: like MultiRange
+ * Relative date operators (TODAY, THISMONTH …) count as ranges: allowed by SingleRange and MultiRange.
  */
 import type { FilterExpression } from '../model/types';
 import type { Condition, Operator } from './conditions';
-import { OPERATORS } from './conditions';
+import { OPERATORS, RELATIVE_DATE_OPERATORS } from './conditions';
 
 export interface FilterExpressionRules {
   /** The restriction, or undefined when the field is not restricted. */
@@ -23,7 +24,8 @@ export interface FilterExpressionRules {
   max?: number;
 }
 
-const RANGE: Operator[] = ['EQ', 'BT', 'LT', 'LE', 'GT', 'GE'];
+const RANGE: Operator[] = ['EQ', 'BT', 'LT', 'LE', 'GT', 'GE', ...RELATIVE_DATE_OPERATORS];
+const ALL: Operator[] = [...OPERATORS, ...RELATIVE_DATE_OPERATORS];
 
 export function filterExpressionRules(expression: FilterExpression | undefined): FilterExpressionRules {
   switch (expression) {
@@ -31,7 +33,7 @@ export function filterExpressionRules(expression: FilterExpression | undefined):
     case 'MultiValue': return { expression, operators: ['EQ'], exclude: false };
     case 'SingleRange': return { expression, operators: RANGE, exclude: false, max: 1 };
     case 'SearchExpression': return { expression, operators: ['Contains', 'StartsWith', 'EndsWith'], exclude: false };
-    default: return { expression, operators: OPERATORS, exclude: true };
+    default: return { expression, operators: ALL, exclude: true };
   }
 }
 

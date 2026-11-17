@@ -73,7 +73,7 @@ test.describe('list report: purchase orders', () => {
     await po.press('Enter');
     await expect(page.locator('[data-sk-filter="PurchaseOrder"]')).toContainText('4500000001...4500000100');
     await expect(page.locator('[data-sk-filter="PurchaseOrder"]')).toContainText('!(=4500000050)');
-    await page.locator('[data-sk-filter="OrderDate"] button').first().click();
+    await page.locator('[data-sk-filter="OrderDate"] button:not([data-sk-relative-dates])').first().click();
     await page.locator('.mantine-DatePickerInput-dropdown, [data-dates-dropdown]').waitFor({ state: 'visible' }).catch(() => undefined);
     await page.keyboard.press('Escape');
     await filterInput(page, '$search').fill('Ltd');

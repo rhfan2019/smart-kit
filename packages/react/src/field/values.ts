@@ -1,5 +1,5 @@
 /** Value helpers shared by fields, cells and exports. */
-import { formatValue, resolvePath, type FieldModel, type MetaModel, type PropertyModel, type Row, type ValueRef } from '@rhfan2019/smart-kit-core';
+import { arrangeText, formatValue, resolvePath, type FieldModel, type MetaModel, type PropertyModel, type Row, type ValueRef } from '@rhfan2019/smart-kit-core';
 
 /** Reads a value by property path, following expanded navigation objects ("_Partner/PartnerName"). */
 export function getPath(row: Row | undefined, path: string): unknown {
@@ -54,12 +54,7 @@ export function fieldValue(ctx: ValueContext, field: FieldModel, row: Row | unde
   if (prop?.text) {
     const text = getPath(row, sibling(path, prop.text));
     if (text !== undefined && text !== null && text !== '') {
-      switch (prop.textArrangement ?? 'TextFirst') {
-        case 'TextOnly': display = String(text); break;
-        case 'TextLast': display = formatted ? `${formatted} (${String(text)})` : String(text); break;
-        case 'TextSeparate': display = formatted; break;
-        default: display = formatted ? `${String(text)} (${formatted})` : String(text);
-      }
+      display = arrangeText(formatted, String(text), prop.textArrangement);
     }
   }
   const critRef = field.kind === 'dataPoint' ? field.dataPoint!.criticality : field.criticality ?? (prop?.criticality && 'path' in prop.criticality ? { path: sibling(path, prop.criticality.path) } : prop?.criticality);

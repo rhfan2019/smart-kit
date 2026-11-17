@@ -1,5 +1,7 @@
 /** Typed conditions in filter fields ("=A", ">10", "1...5", "*pen*") and their token texts. */
-import { formatValue, type Condition, type Operator, type PropertyModel } from '@rhfan2019/smart-kit-core';
+import { arrangeText, formatValue, isRelativeDateOperator, type Condition, type Operator, type PropertyModel, type TextArrangement } from '@rhfan2019/smart-kit-core';
+import type { MessageKey } from '../i18n/messages.en';
+import type { TextFn } from '../i18n/text';
 
 const NUMERIC = /Int|Decimal|Double|Single|Byte/;
 
@@ -30,13 +32,32 @@ export function parseConditionText(input: string, prop: PropertyModel | undefine
   return { operator: 'EQ', values: [norm(s)] };
 }
 
-/** Token text of a condition, e.g. "Office (C1)", ">10", "!(=X)". */
-export function conditionText(c: Condition, prop: PropertyModel | undefined, locale: string, timeZone?: string): string {
+/** Options of `conditionText`. */
+export interface ConditionTextOptions {
+  /** Texts for relative dates ("This month", "Last 7 days"); without it the operator name is shown ("THISMONTH"). */
+  t?: TextFn;
+  /** How a selected value's text and code are shown (UI.TextArrangement); default: the property's, else TextFirst. */
+  textArrangement?: TextArrangement;
+}
+
+/** Token text of a relative date condition, e.g. "This month", "Last 7 days". */
+export function relativeDateText(c: Condition, t?: TextFn): string {
+  const n = c.values[0];
+  if (!t) return n === undefined ? c.operator : `${c.operator} ${String(n)}`;
+  return t(`dateRange.${c.operator}` as MessageKey, { count: Number(n ?? 0) });
+}
+
+/** Token text of a condition, e.g. "Office (C1)", ">10", "!(=X)", "This month". */
+export function conditionText(c: Condition, prop: PropertyModel | undefined, locale: string, timeZone?: string, options: ConditionTextOptions = {}): string {
   const fmt = (v: unknown) => (prop ? formatValue(v, prop, { locale, timeZone }) || String(v ?? '') : String(v ?? ''));
   const [a, b] = c.values;
   let s: string;
+  if (isRelativeDateOperator(c.operator)) {
+    s = relativeDateText(c, options.t);
+    return c.exclude ? `!(${s})` : s;
+  }
   switch (c.operator) {
-    case 'EQ': s = c.text ? `${c.text} (${fmt(a)})` : c.exclude ? `=${fmt(a)}` : fmt(a); break;
+    case 'EQ': s = c.text ? arrangeText(fmt(a), c.text, options.textArrangement ?? prop?.textArrangement) : c.exclude ? `=${fmt(a)}` : fmt(a); break;
     case 'NE': s = `!=${fmt(a)}`; break;
     case 'GT': s = `>${fmt(a)}`; break;
     case 'GE': s = `>=${fmt(a)}`; break;
@@ -50,6 +71,7 @@ export function conditionText(c: Condition, prop: PropertyModel | undefined, loc
     case 'EndsWith': s = `*${String(a)}`; break;
     case 'Empty': s = '<empty>'; break;
     case 'NotEmpty': s = '!(<empty>)'; break;
+    default: s = c.operator;
   }
   return c.exclude ? `!(${s})` : s;
 }

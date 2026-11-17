@@ -3,8 +3,9 @@
 //   generate [--config smart-kit.config.json] [--url postgres://…] [--strict]
 //       Reads the PostgreSQL schema, writes the generated CSDL and storage mapping, checks the annotation files.
 //   check [--config smart-kit.config.json] [--strict]
-//       Checks the annotation files against the generated CSDL on disk (no database).
-// --strict: exit code 1 when an annotation points at something that does not exist.
+//       Checks the annotation files and the declared navigations against the generated CSDL and storage mapping on
+//       disk (no database).
+// --strict: exit code 1 when an annotation or a declared navigation points at something that does not exist.
 //   agents
 //       Writes or refreshes the smart-kit block in AGENTS.md (and `@AGENTS.md` in CLAUDE.md): points coding agents at
 //       the docs inside the installed packages (ADR-030).
@@ -17,15 +18,15 @@ import type { CheckProblem } from './check';
 
 const USAGE = `Usage: smart-kit <command>
   generate [--config smart-kit.config.json] [--url postgres://…] [--strict]   CSDL + storage mapping from PostgreSQL, then check
-  check    [--config smart-kit.config.json] [--strict]                        check the annotation files (no database)
+  check    [--config smart-kit.config.json] [--strict]                        check annotations and declared navigations (no database)
   agents                                                                      AGENTS.md / CLAUDE.md block for coding agents`;
 
 function report(problems: CheckProblem[]) {
   if (!problems.length) {
-    console.log('Annotations: every target and path exists.');
+    console.log('Annotations and declared navigations: every target, path and column exists.');
     return;
   }
-  console.log(`Annotations: ${problems.length} target(s) or path(s) no longer exist:`);
+  console.log(`Annotations and declared navigations: ${problems.length} target(s), path(s) or column(s) do not exist:`);
   for (const p of problems) console.log(`  ${p.file}  ${p.target}: ${p.message}`);
 }
 

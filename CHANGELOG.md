@@ -5,6 +5,41 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+### Added (issues found by invoice-assure on 0.1.0, docs/25)
+
+- smart-kit-server: `$filter` supports the lambda operators `any` / `all` over collection navigations (`_Item/any(i: i/Plant eq '1010')`, `any()`, nested lambdas, `$it`); the target's data scope applies to the rows a lambda sees.
+- smart-kit-server: a data scope may use `any` / `all` over the set's collection navigations (`_ScopeKeys/any(k: k/CompanyCode eq '1000')`; inside the lambda body also single-valued navigations); it applies to reads, `$count`, key reads (404), the set as parent in a path, `$expand`, navigation paths and lambdas of other sets, `$apply` and writes. Navigations inside a scope condition see all rows of their targets (no recursion) (S1).
+- smart-kit-server: the storage mapping can carry the join of a navigation (`entitySets.<Set>.navigations.<name>.on`), used when `$metadata` has no referential constraints.
+- smart-kit-server: `createKysely(pool, { statementTimeout, keepSettings })` builds Kysely on the host's `pg` pool with the session settings of `createPostgresDb` (UTC, statement timeout), restored when the connection goes back to the pool; `KyselyOnPoolOptions` (S13).
+- smart-kit-cli: navigations without a foreign key (views) are declared in `smart-kit.config.json` (`navigations.<name>` with `from`, `to`, `on`, `toMany` or `toOne`, optional `partner`) and generated into the CSDL and the storage mapping; `generate` warns about, and `check` (`--strict`) reports, declarations whose tables, views or columns do not exist; `checkDeclaredNavigations`, `DeclaredNavigationConfig`, `StorageFile` exported (S2).
+- Tables: `exportable` (default true) and `onBeforeExport` / `onExported` with `ExportEvent` (filters, search, sort, columns, row count of the file); `onBeforeExport` returning false writes no file; also on `SmartListReport` (S4).
+- `MemoryProvider` is documented as the "rows from the host" source (filters, search, sort, count, grouping, totals in the browser); `setRows(entitySet, rows)` (S5).
+- Date filter conditions take relative dates (today, yesterday, tomorrow, this / last / next week, month, quarter and year, last / next X days, year to date): views store the operator, resolved against today in the provider's time zone each time the list is read (`RELATIVE_DATE_OPERATORS`, `relativeDateRange`, `resolveCondition`, `todayIn`, `isRelativeDateOperator`, types `RelativeDateOperator`, `ValueOperator`; `FilterOptions.today` / `weekStartsOn`). Date filter fields get a "Relative dates" button, the value help offers them under "Define Conditions"; `relativeDateText` (S6).
+- New stylesheet `@rhfan2019/smart-kit/styles.layered.css`: the same styles inside `@layer smart-kit` (S8).
+- The React entries (all except `/i18n`) start with `'use client'` for the Next.js App Router (S9).
+- Views: `VariantStore.canSave` (`ODataVariantStore` option `canSave`, `ODataVariantStoreOptions`), `SmartVariantManagement` `canSave`, `SmartListReport` `canSaveVariants`, `VariantsApi.canSave`: false leaves only selecting views (S15).
+- `SmartListReport` `refreshToken`: reloads the tables, tab counts and chart (S16).
+- Custom columns take `importance` (responsive table pop-in); CSS variable `--sk-sticky-top` for host sticky bars above pages that scroll with the window (S17).
+- Object page header without an image: an initials avatar from `UI.HeaderInfo/Initials`, for types with `Communication.Contact` from the title; round for persons, rounded square otherwise (`HeaderInfoModel.initials`, `person`) (S19).
+- `SmartObjectPage` `partialHeaderEdit` (default true) and `share` (default true) (S20, S21).
+- `FlexibleColumnLayout` shows column separators with arrow buttons that switch between the column ratios through `onLayoutChange`; new layouts `TwoColumnsBeginExpanded`, `ThreeColumnsEndExpanded`, `ThreeColumnsMidExpandedEndHidden`, `ThreeColumnsBeginExpandedEndHidden`; `separatorArrows={false}` hides the arrows; `fclArrows`, type `FclArrow` (S23).
+- `typedText`, type `TypedKey`.
+- Grid tables group too (docs/23 §9, D30): a group header row before each group with the group value, the row count and the subtotals of the totaled columns, computed by the service; grouped grid tables load rows in blocks of 100 while scrolling; group rows cannot be selected or opened; one level, no collapsing; without AG Grid Enterprise. The "Group" tab of the view settings and `UI.PresentationVariant/GroupBy` apply to grid tables; `Subtotals.version` (S3).
+
+### Changed (docs/25)
+
+- Texts no longer say "object": "User created.", "This User does not exist.", without a type name "Created." (`create.done`, `delete.done`, `edit.conflict`, `object.notFound`, `object.loadError` and new `…Type` keys) (S22).
+- Themes and densities switch with `data-sk-theme` / `data-sk-density`. The former `data-theme` / `data-density` still work while `<html>` has no `data-sk-theme` / `data-sk-density`; a host that uses `data-theme` itself sets `data-sk-theme="host"` (S7).
+- Value list values in filter fields (dropdown, suggestions, tokens) follow `UI.TextArrangement`: `TextOnly` shows the text without the code (`arrangeText`, `valueListTextArrangement`; `conditionText` takes `{ t, textArrangement }`) (S14).
+- Pop-in labels of responsive tables are at least `--sk-size-popin-label` wide and no longer wrap short labels (S17).
+
+### Fixed (docs/25)
+
+- A failed view save (Save, Save As, Manage) shows the store's error; the Save As dialog stays open (S15).
+- The view menu closes before its dialogs open, so it no longer floats above the dialog overlay (S18).
+- A failed "Edit Header" save cancels the edit session of any strategy (draft, direct, host `editStrategy`), not only drafts (S20).
+- Export errors are shown as messages instead of an unhandled promise.
+
 ### Added (grouping, subtotals and totals, ADR-031)
 
 - Tables: a "Totals" tab in the view settings (columns from `Aggregation.ApplySupported` `AggregatableProperties`, default from `UI.PresentationVariant/Total`); grid tables show a pinned totals row, responsive tables a sticky totals row; amounts per currency or unit, computed by the service for the current filters and search (`$apply`), not from the loaded rows.

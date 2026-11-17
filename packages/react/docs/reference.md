@@ -107,7 +107,7 @@ useText(): TextFn
 
 ## `@rhfan2019/smart-kit/i18n`
 
-`createText` (function) · `INTL_LOCALE` (const) · `Locale` (type) · `MessageKey` (type) · `Messages` (type) · `MESSAGES` (const) · `TextFn` (type) · `TextParams` (type)
+`createText` (function) · `INTL_LOCALE` (const) · `Locale` (type) · `MessageKey` (type) · `Messages` (type) · `MESSAGES` (const) · `TextFn` (type) · `TextParams` (type) · `TypedKey` (type) · `typedText` (function)
 
 ### `createText` — function
 
@@ -155,6 +155,22 @@ export type TextFn = (key: MessageKey, params?: TextParams) => string;
 
 ```ts
 export type TextParams = Record<string, string | number>;
+```
+
+### `TypedKey` — type
+
+Keys that have a variant `<key>Type` naming the kind of record (UI.HeaderInfo/TypeName).
+
+```ts
+export type TypedKey = 'create.done' | 'delete.done' | 'edit.conflict' | 'object.notFound' | 'object.loadError';
+```
+
+### `typedText` — function
+
+The message naming the record type ("用户已创建。"); without a type name the neutral text ("已创建。").
+
+```ts
+typedText(t: TextFn, key: TypedKey, typeName: string | undefined, params?: TextParams): string
 ```
 
 ## `@rhfan2019/smart-kit/theme`
@@ -355,7 +371,7 @@ Props of `SmartField` (see above).
 
 ## `@rhfan2019/smart-kit/filter`
 
-`AdaptFiltersDialog` (component) · `AdaptFiltersDialogProps` (interface) · `AppliedFilter` (interface) · `ConditionInput` (component) · `ConditionInputProps` (interface) · `conditionText` (function) · `FilterFieldItem` (interface) · `FilterSnapshot` (interface) · `FilterStateApi` (interface) · `FilterSummary` (component) · `FilterSummaryProps` (interface) · `filterSummaryText` (function) · `parseConditionText` (function) · `SmartFilterBar` (component) · `SmartFilterBarProps` (interface) · `useFilterBarContext` (hook) · `useFilterState` (hook) · `UseFilterStateOptions` (interface) · `useValueList` (hook) · `ValueHelpDialog` (component) · `ValueHelpDialogProps` (interface)
+`AdaptFiltersDialog` (component) · `AdaptFiltersDialogProps` (interface) · `AppliedFilter` (interface) · `ConditionInput` (component) · `ConditionInputProps` (interface) · `conditionText` (function) · `ConditionTextOptions` (interface) · `FilterFieldItem` (interface) · `FilterSnapshot` (interface) · `FilterStateApi` (interface) · `FilterSummary` (component) · `FilterSummaryProps` (interface) · `filterSummaryText` (function) · `parseConditionText` (function) · `relativeDateText` (function) · `SmartFilterBar` (component) · `SmartFilterBarProps` (interface) · `useFilterBarContext` (hook) · `useFilterState` (hook) · `UseFilterStateOptions` (interface) · `useValueList` (hook) · `ValueHelpDialog` (component) · `ValueHelpDialogProps` (interface)
 
 ### `AdaptFiltersDialog` — component
 
@@ -405,11 +421,20 @@ Props of `ConditionInput` (see above).
 
 ### `conditionText` — function
 
-Token text of a condition, e.g. "Office (C1)", ">10", "!(=X)".
+Token text of a condition, e.g. "Office (C1)", ">10", "!(=X)", "This month".
 
 ```ts
-conditionText(c: Condition, prop: PropertyModel | undefined, locale: string, timeZone?: string): string
+conditionText(c: Condition, prop: PropertyModel | undefined, locale: string, timeZone?: string, options?: ConditionTextOptions): string
 ```
+
+### `ConditionTextOptions` — interface
+
+Options of `conditionText`.
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `t` |  | `TextFn` | Texts for relative dates ("This month", "Last 7 days"); without it the operator name is shown ("THISMONTH"). |
+| `textArrangement` |  | `TextArrangement` | How a selected value's text and code are shown (UI.TextArrangement); default: the property's, else TextFirst. |
 
 ### `FilterFieldItem` — interface
 
@@ -479,6 +504,14 @@ Parses user input into a condition. Plain text means "equal to".
 
 ```ts
 parseConditionText(input: string, prop: PropertyModel | undefined): Condition | undefined
+```
+
+### `relativeDateText` — function
+
+Token text of a relative date condition, e.g. "This month", "Last 7 days".
+
+```ts
+relativeDateText(c: Condition, t?: TextFn): string
 ```
 
 ### `SmartFilterBar` — component
@@ -562,6 +595,7 @@ Props of `ValueHelpDialog` (see above).
 | `onApply` | **yes** | `(v: { content: VariantContent; autoApply: boolean }) => void` | Called after a variant was selected; apply its content (and execute when autoApply). |
 | `standardName` |  | `string` | Shown instead of "Standard" for the standard variant. |
 | `autoApplyOption` |  | `boolean` | Offer "Apply Automatically" (default true). The list report guideline offers it only in manual update mode. |
+| `canSave` |  | `boolean` | Whether views may be saved (default: `VariantStore.canSave`, else true). When false the menu only selects views: no Save, Save As or Manage. |
 
 ### `SmartVariantManagementProps` — interface
 
@@ -589,6 +623,7 @@ useVariants(pageKey: string, o: UseVariantsOptions): VariantsApi
 | `currentId` | **yes** | `string` | Current variant ("" is Standard). |
 | `current` | **yes** | `Variant` |  |
 | `isLoading` | **yes** | `boolean` |  |
+| `canSave` | **yes** | `boolean` | Whether views may be saved (VariantStore.canSave, default true). |
 | `select` | **yes** | `(id: string) => Variant` |  |
 | `saveAs` | **yes** | `(name: string, content: VariantContent, opts: { isDefault: boolean; autoApply: boolean }) => Promise&lt;Variant>` |  |
 | `save` | **yes** | `(content: VariantContent) => Promise&lt;Variant \| undefined>` |  |
@@ -599,7 +634,7 @@ useVariants(pageKey: string, o: UseVariantsOptions): VariantsApi
 
 ## `@rhfan2019/smart-kit/table`
 
-`ActionGroup` (interface) · `ActionItem` (interface) · `ColumnItem` (interface) · `hiddenByImportance` (function) · `ListQueryOptions` (interface) · `ListQueryResult` (interface) · `ResponsiveColumn` (interface) · `ResponsiveTable` (component) · `ResponsiveTableProps` (interface) · `smartKitGridTheme` (const) · `SmartTable` (component) · `SmartTableProps` (interface) · `TableContextValue` (interface) · `TableExtendEntry` (type) · `TableP13nDialog` (component) · `TableP13nDialogProps` (interface) · `TableQuery` (interface) · `useListQuery` (hook) · `useTableContext` (hook)
+`ActionGroup` (interface) · `ActionItem` (interface) · `ColumnItem` (interface) · `ExportEvent` (interface) · `hiddenByImportance` (function) · `ListQueryOptions` (interface) · `ListQueryResult` (interface) · `ResponsiveColumn` (interface) · `ResponsiveTable` (component) · `ResponsiveTableProps` (interface) · `smartKitGridTheme` (const) · `SmartTable` (component) · `SmartTableProps` (interface) · `TableContextValue` (interface) · `TableExtendEntry` (type) · `TableP13nDialog` (component) · `TableP13nDialogProps` (interface) · `TableQuery` (interface) · `useListQuery` (hook) · `useTableContext` (hook)
 
 ### `ActionGroup` — interface
 
@@ -630,6 +665,23 @@ useVariants(pageKey: string, o: UseVariantsOptions): VariantsApi
 | `render` |  | `(row: Row) => ReactNode` | Custom cell content. |
 | `width` |  | `number` |  |
 | `select` |  | `string[]` | Extra paths to select for custom columns. |
+| `importance` |  | `'High' \| 'Medium' \| 'Low'` | Importance in responsive tables (pop-in on narrow screens); default the field's `UI.Importance`, else Medium. |
+
+### `ExportEvent` — interface
+
+What is exported (`onBeforeExport`, `onExported`); the same filters, search and sort as the file.
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `entitySet` | **yes** | `string` |  |
+| `title` | **yes** | `string` | Title of the table (also the file name). |
+| `filters` | **yes** | `FilterState` |  |
+| `search` | **yes** | `string` |  |
+| `sort` | **yes** | `SortItem[]` |  |
+| `columns` | **yes** | `string[]` | Ids of the exported columns, in order. |
+| `rowCount` | **yes** | `number` | Number of exported rows. |
+| `truncated` | **yes** | `boolean` | More rows matched than `exportLimit`; only the first `rowCount` are exported. |
+| `request` | **yes** | `QueryRequest` | The request that read the rows (without paging). |
 
 ### `hiddenByImportance` — function
 
@@ -744,6 +796,9 @@ const smartKitGridTheme: Theme<ThemeDefaultParams>
 | `pageKey` |  | `string` | Key for restoring sort, columns, scroll and selection on back navigation. |
 | `overlay` |  | `boolean` | Grey out the table (filters changed in manual mode). |
 | `exportLimit` |  | `number` | Maximum rows of the Excel export (default 10 000). |
+| `exportable` |  | `boolean` | Offer "Export to Spreadsheet" in the toolbar (default true). |
+| `onBeforeExport` |  | `(e: ExportEvent) => boolean \| void \| Promise&lt;boolean \| void>` | Called when the rows to export are loaded, before the file is written. Return false (or a promise of false) to cancel: no file is written. Use it to check permissions or to log the export. |
+| `onExported` |  | `(e: ExportEvent) => void` | Called after the file was written. |
 | `showSearch` |  | `boolean` | Search field in the toolbar (sub-tables, when searchable). |
 | `children` |  | `ReactNode` | Replace the default parts: &lt;SmartTable.Toolbar> etc. |
 | `className` |  | `string` | Extra CSS class on the root element. |
@@ -764,7 +819,7 @@ const smartKitGridTheme: Theme<ThemeDefaultParams>
 | `lineItem` |  | `FieldModel[]` | Columns instead of UI.LineItem (multiple views with their own LineItem). |
 | `titleAddon` |  | `ReactNode` | Toolbar content after the title (content switch of multiple views, LR Multiple Views). |
 | `toolbarEnd` |  | `ReactNode` | Toolbar content before the settings (table / chart toggle). |
-| `groupBy` |  | `string \| null` | Group column id (controlled; responsive tables only, docs/23). Default: the column of the first `UI.PresentationVariant/GroupBy` path; null: not grouped. |
+| `groupBy` |  | `string \| null` | Group column id (controlled, docs/23; grid tables then load rows in blocks of 100 while scrolling and show group header rows). Default: the column of the first `UI.PresentationVariant/GroupBy` path; null: not grouped. |
 | `onGroupByChange` |  | `(id: string \| null) => void` | Called with the group column id after personalization; when given, `groupBy` is fully controlled (undefined: the default). |
 | `totals` |  | `string[]` | Column ids whose totals are shown (controlled, docs/23). Default: the columns of `UI.PresentationVariant/Total`. |
 | `onTotalsChange` |  | `(ids: string[]) => void` | Called with the total column ids after personalization; when given, `totals` is fully controlled (undefined: the default). |
@@ -808,7 +863,7 @@ export type TableExtendEntry = | (ExtendEntry<ColumnItem> & { kind?: 'column' })
 | `sortable` | **yes** | `{ path: string; label: string }[]` |  |
 | `onOk` | **yes** | `(visible: string[], sort: SortItem[], groupBy?: string \| null, totals?: string[]) => void` | Called with the result when the user confirms. |
 | `onCancel` | **yes** | `() => void` | Called when the user cancels or closes the dialog. |
-| `groupable` |  | `{ id: string; label: string }[]` | Columns that can be grouped by; the "Group" tab is shown only when given (responsive table). |
+| `groupable` |  | `{ id: string; label: string }[]` | Columns that can be grouped by; the "Group" tab is shown only when given. |
 | `groupBy` |  | `string \| null` |  |
 | `totalable` |  | `{ id: string; label: string }[]` | Columns whose totals can be shown; the "Totals" tab is shown only when given and not empty (docs/23). |
 | `totals` |  | `string[]` | Column ids whose totals are shown. |
@@ -867,6 +922,7 @@ useTableContext(): TableContextValue
 | `search` |  | `string` | Search term ($search). |
 | `titleAddon` |  | `ReactNode` | Toolbar content after the title (content switch). |
 | `toolbarEnd` |  | `ReactNode` | Toolbar content at the end (table / chart toggle). |
+| `revision` |  | `number` | Change to reload. |
 
 ### `ChartViewProps` — interface
 
@@ -1233,7 +1289,7 @@ useSectionScrollSpy(scope: string, ids: string[], enabled?: boolean): { active: 
 
 ## `@rhfan2019/smart-kit/page`
 
-`ColumnContext` (component) · `ColumnContextValue` (interface) · `DynamicPage` (component) · `DynamicPageProps` (interface) · `FclLayout` (type) · `FclPaging` (interface) · `FlexibleColumnLayout` (component) · `FlexibleColumnLayoutProps` (interface) · `OverflowActions` (component) · `OverflowActionsProps` (interface) · `ShareMenu` (component) · `ShareMenuProps` (interface) · `ToolbarAction` (interface) · `useColumn` (hook) · `useDynamicPage` (hook)
+`ColumnContext` (component) · `ColumnContextValue` (interface) · `DynamicPage` (component) · `DynamicPageProps` (interface) · `FclArrow` (interface) · `fclArrows` (function) · `FclLayout` (type) · `FclPaging` (interface) · `FlexibleColumnLayout` (component) · `FlexibleColumnLayoutProps` (interface) · `OverflowActions` (component) · `OverflowActionsProps` (interface) · `ShareMenu` (component) · `ShareMenuProps` (interface) · `ToolbarAction` (interface) · `useColumn` (hook) · `useDynamicPage` (hook)
 
 ### `ColumnContext` — component
 
@@ -1290,10 +1346,30 @@ useSectionScrollSpy(scope: string, ids: string[], enabled?: boolean): { active: 
 
 Props of `DynamicPage` (see above).
 
-### `FclLayout` — type
+### `FclArrow` — interface
+
+One arrow of a column separator: the layout it switches to and its accessible label.
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `layout` | **yes** | `FclLayout` |  |
+| `direction` | **yes** | `'left' \| 'right'` |  |
+| `label` | **yes** | `'layout.expandBegin' \| 'layout.expandMid' \| 'layout.expandEnd' \| 'layout.showEnd'` |  |
+
+### `fclArrows` — function
+
+Arrows of the separators after the begin column ([0]) and after the mid column ([1]) in a layout (UI5 FCL). The second separator's arrows need an end column (`hasEnd`).
 
 ```ts
-export type FclLayout = 'OneColumn' | 'TwoColumnsMidExpanded' | 'ThreeColumnsMidExpanded' | 'MidColumnFullScreen' | 'EndColumnFullScreen';
+fclArrows(layout: FclLayout, hasEnd: boolean): [FclArrow | undefined, FclArrow | undefined]
+```
+
+### `FclLayout` — type
+
+Column layouts and their widths (UI5 sap.f.LayoutType): begin / mid / end in percent.
+
+```ts
+export type FclLayout = | 'OneColumn' // 100 | 'TwoColumnsBeginExpanded' // 67 / 33 | 'TwoColumnsMidExpanded' // 33 / 67 | 'ThreeColumnsMidExpanded' // 25 / 50 / 25 | 'ThreeColumnsEndExpanded' // 25 / 25 / 50 | 'ThreeColumnsMidExpandedEndHidden' // 33 / 67 / 0 | 'ThreeColumnsBeginExpandedEndHidden' // 67 / 33 / 0 | 'MidColumnFullScreen' | 'EndColumnFullScreen';
 ```
 
 ### `FclPaging` — interface
@@ -1318,6 +1394,7 @@ export type FclLayout = 'OneColumn' | 'TwoColumnsMidExpanded' | 'ThreeColumnsMid
 | `onCloseEnd` |  | `() => void` |  |
 | `midPaging` |  | `FclPaging` | Paging buttons of the mid / end column (DP Header Title Guidelines: paging buttons left of the layout actions). |
 | `endPaging` |  | `FclPaging` |  |
+| `separatorArrows` |  | `boolean` | Arrow buttons on the separators between the columns (default true). |
 | `className` |  | `string` | Extra CSS class on the root element. |
 
 ### `FlexibleColumnLayoutProps` — interface
@@ -1591,6 +1668,11 @@ useMessages(): MessagesApi | null
 | `actionGroups` |  | `ActionGroup[]` | Menu buttons for similar table actions. |
 | `share` |  | `boolean` | Share button in the header toolbar (default true when the navigation adapter can build links). |
 | `onRowsChange` |  | `(rows: Row[]) => void` | Loaded rows of the main table (e.g. paging buttons in a flexible column layout). |
+| `refreshToken` |  | `number \| string` | Change this value to reload the tables, tab counts and chart (after the host changed data elsewhere, e.g. in a drawer or dialog). The first value does not reload. |
+| `exportable` |  | `boolean` | Offer "Export to Spreadsheet" in the table toolbars (default true). |
+| `onBeforeExport` |  | `(e: ExportEvent) => boolean \| void \| Promise&lt;boolean \| void>` | Before an export is written; return false to cancel (see `SmartTable` `onBeforeExport`). |
+| `onExported` |  | `(e: ExportEvent) => void` | After an export was written. |
+| `canSaveVariants` |  | `boolean` | Whether views may be saved (default: the service's `VariantStore.canSave`, else true). False: the view menu only selects views (no Save, Save As, Manage). |
 
 ### `SmartListReportProps` — interface
 
@@ -1623,6 +1705,8 @@ Props of `SmartListReport` (see above).
 | `paging` |  | `boolean` | Paging buttons for sub-object pages (OP Representation of Child Pages; default true). |
 | `showAllThreshold` |  | `number` | Limit for sub-table previews with "Show All (x)" (default 200). |
 | `letterboxing` |  | `boolean` | Letterboxing of the page (DP Responsiveness). |
+| `partialHeaderEdit` |  | `boolean` | "Edit Header" for the header fields in a dialog (OP partial edit; default true). Turn it off when the host's `editStrategy` saves the whole page at once; "Edit" still changes the header fields. |
+| `share` |  | `boolean` | "Share" in the header actions (default true). |
 
 ### `SmartObjectPageProps` — interface
 

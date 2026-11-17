@@ -121,6 +121,40 @@ test('GT-04 GT-06 responsive table grouped by status: header with count and subt
   await shot(page, 'GT-04');
 });
 
+test('GT-10 grid table grouped by supplier: group rows with count and subtotal; sorting stays inside the groups; more rows while scrolling', async ({ page, request }) => {
+  const rec = recordOData(page);
+  await open(page, '/po');
+  await waitForRows(page, PO);
+  await groupBy(page, 'Supplier');
+  const groupRows = table(page, PO).locator('.ag-row.sk-table__group-row');
+  const header = groupRows.first();
+  await expect(header.locator('[data-sk-group-count]')).toHaveAttribute('data-sk-group-count', /\d+/);
+  // the first data row after the header belongs to the group: its supplier tells the group
+  const all = await orders(request, DEFAULT_FILTER);
+  const firstPo = (await table(page, PO).locator('.ag-row:not(.sk-table__group-row)[row-index="1"] [col-id="DataField::PurchaseOrder"]').innerText()).trim();
+  const supplier = all.find((o) => o.PurchaseOrder === firstPo)?.Supplier;
+  const inGroup = all.filter((o) => o.Supplier === supplier);
+  await expect(header.locator('[data-sk-group-count]')).toHaveAttribute('data-sk-group-count', String(inGroup.length));
+  await expect(header).toContainText(`(${inGroup.length})`);
+  await expect.poll(() => lines(header.locator('[data-sk-total="NetAmount"]'))).toEqual(sums(inGroup));
+  // group rows cannot be selected
+  await expect(table(page, PO).locator('.sk-table__group-row input[type="checkbox"]:visible')).toHaveCount(0);
+  // a header click sorts inside the groups on the service: the group property stays first
+  await table(page, PO).locator('.ag-header-cell[col-id="DataField::PurchaseOrder"] .ag-header-cell-label').click();
+  await expect.poll(() => rec.urls.some((u) => /\$orderby=Supplier( asc)?,PurchaseOrder/.test(decodeURIComponent(u)))).toBe(true);
+  await expect(groupRows.first()).toBeVisible();
+  // more rows (and subtotals of the new groups) while scrolling
+  const before = await groupRows.count();
+  const asked = () => rec.urls.filter((u) => u.includes('$skip=100') || u.includes('$skip=200')).length;
+  for (let i = 0; i < 3; i++) {
+    await table(page, PO).locator('.ag-body-vertical-scroll-viewport').evaluate((el) => el.scrollTo({ top: el.scrollHeight }));
+    await page.waitForTimeout(700);
+  }
+  expect(asked()).toBeGreaterThan(0);
+  expect(before).toBeGreaterThan(0);
+  await shot(page, 'GT-10');
+});
+
 test('GT-05 more rows request subtotals only for new groups, at most 50 values per request', async ({ page }) => {
   const rec = recordOData(page);
   await open(page, '/po?table=responsive');

@@ -5,7 +5,7 @@
 
 ## `@rhfan2019/smart-kit-core`
 
-`ActionModel` (interface) · `activeFilterPaths` (function) · `AggregateRequestOptions` (interface) · `AggregationModel` (interface) · `buildAggregateRequest` (function) · `buildListRequest` (function) · `buildModel` (function) · `BuildModelOptions` (interface) · `buildObjectRequest` (function) · `buildTotalsRequest` (function) · `buildValueHelpRequest` (function) · `calculateCriticality` (function) · `calculateTrend` (function) · `canGroup` (function) · `canSubtotal` (function) · `canTotal` (function) · `capabilitiesFor` (function) · `CapabilityModel` (interface) · `chartExpand` (function) · `chartFields` (function) · `chartIsSeries` (function) · `ChartModel` (interface) · `chartSeriesSelect` (function) · `childPathOf` (function) · `collectTotals` (function) · `ColumnModel` (type) · `companionPaths` (function) · `compareDecimal` (function) · `compareValues` (function) · `ConcurrencyError` (class) · `Condition` (interface) · `conditionAllowed` (function) · `createMessage` (function) · `createSessionPageStateStore` (function) · `Criticality` (type) · `CriticalityCalculationModel` (interface) · `csdlJsonToXml` (function) · `CsdlSource` (type) · `currencyDigits` (function) · `DataPointModel` (interface) · `dataPointPaths` (function) · `DataProvider` (type) · `DEFAULT_CAPABILITIES` (const) · `deriveColumns` (function) · `DERIVED_GENERAL_SECTION` (const) · `DirectEditStrategy` (class) · `DraftEditStrategy` (class) · `DraftModel` (interface) · `EditSession` (interface) · `EditStrategy` (interface) · `editStrategyFor` (function) · `EdmType` (type) · `encodeOption` (function) · `EntityPath` (type) · `EntityPathError` (class) · `entityPathOf` (function) · `EntitySetModel` (interface) · `EntityTypeModel` (interface) · `EntityUi` (interface) · `errorFromResponse` (function) · `EventModel` (interface) · `ExpandSpec` (interface) · `FetchLike` (type) · `FieldModel` (interface) · `fieldPaths` (function) · `FilterExpression` (type) · `filterExpressionRules` (function) · `FilterExpressionRules` (interface) · `FilterOptions` (interface) · `FilterState` (type) · `filterString` (function) · `formatDate` (function) · `formatDateTime` (function) · `formatNumber` (function) · `FormatOptions` (interface) · `formatTime` (function) · `formatValue` (function) · `FormGroupModel` (interface) · `getEntitySet` (function) · `getEntityType` (function) · `getProperty` (function) · `getUi` (function) · `groupKey` (function) · `HeaderFacetModel` (type) · `HeaderInfoModel` (interface) · `highestSeverity` (function) · `humanize` (function) · `Importance` (type) · `ImprovementDirection` (type) · `InitialCondition` (interface) · `isAbortError` (function) · `isComplete` (function) · `isDraftRow` (function) · `isFilterable` (function) · `isSortable` (function) · `keyPredicate` (function) · `ListRequestOptions` (interface) · `LiteralError` (class) · `loadService` (function) · `LoadServiceOptions` (interface) · `matches` (function) · `MAX_GROUP_VALUES` (const) · `MemoryPageStateStore` (class) · `MemoryProvider` (class) · `MemoryProviderOptions` (interface) · `MemoryVariantStore` (class) · `Message` (interface) · `messagesFromError` (function) · `messagesFromHeader` (function) · `MessageType` (type) · `MetaModel` (interface) · `MICRO_CHART_MAX_POINTS` (const) · `MICRO_COMPARISON_MAX_BARS` (const) · `MODEL_VERSION` (const) · `ModelError` (class) · `ModelWarning` (interface) · `NavigationAdapter` (interface) · `NavigationModel` (interface) · `NavigationTarget` (type) · `objectFields` (function) · `ODataError` (class) · `ODataErrorDetail` (interface) · `ODataV4Provider` (class) · `ODataV4ProviderOptions` (interface) · `ODataVariantStore` (class) · `Operator` (type) · `OPERATOR_ARITY` (const) · `OPERATORS` (const) · `PageStateStore` (interface) · `parseAnnotationPath` (function) · `parseEntityPath` (function) · `PathSegment` (interface) · `PresentationModel` (interface) · `PresentationVariantModel` (interface) · `propertyFilter` (function) · `PropertyModel` (interface) · `QueryRequest` (interface) · `QueryResult` (interface) · `QuerySource` (type) · `ReadDataProvider` (interface) · `readQueryString` (function) · `ReadRequest` (interface) · `RequestOptions` (interface) · `ResolvedPath` (interface) · `resolveEntityPath` (function) · `resolvePath` (function) · `restrictConditions` (function) · `Row` (type) · `SectionModel` (interface) · `selectAndExpand` (function) · `siblingPath` (function) · `SortItem` (interface) · `sourceInfo` (function) · `SourceInfo` (interface) · `sourcePath` (function) · `STANDARD_VARIANT_ID` (const) · `startOfDayIso` (function) · `SubSectionContent` (type) · `SubSectionModel` (interface) · `targetEntitySet` (function) · `TextArrangement` (type) · `toCsdlXml` (function) · `toFilter` (function) · `toLiteral` (function) · `toQueryString` (function) · `TOTAL_COUNT_ALIAS` (const) · `TotalAmount` (interface) · `TotalsEntry` (interface) · `TotalsRequestOptions` (interface) · `TrendCalculationModel` (interface) · `unitPathOf` (function) · `UnknownEntitySetError` (class) · `ValueHelpRequestOptions` (interface) · `ValueListModel` (interface) · `ValueListParameter` (interface) · `ValueRef` (type) · `Variant` (interface) · `VariantContent` (interface) · `VariantStore` (interface) · `ViewModel` (interface) · `WriteDataProvider` (interface) · `WriteResult` (interface)
+`ActionModel` (interface) · `activeFilterPaths` (function) · `AggregateRequestOptions` (interface) · `AggregationModel` (interface) · `arrangeText` (function) · `buildAggregateRequest` (function) · `buildListRequest` (function) · `buildModel` (function) · `BuildModelOptions` (interface) · `buildObjectRequest` (function) · `buildTotalsRequest` (function) · `buildValueHelpRequest` (function) · `calculateCriticality` (function) · `calculateTrend` (function) · `canGroup` (function) · `canSubtotal` (function) · `canTotal` (function) · `capabilitiesFor` (function) · `CapabilityModel` (interface) · `chartExpand` (function) · `chartFields` (function) · `chartIsSeries` (function) · `ChartModel` (interface) · `chartSeriesSelect` (function) · `childPathOf` (function) · `collectTotals` (function) · `ColumnModel` (type) · `companionPaths` (function) · `compareDecimal` (function) · `compareValues` (function) · `ConcurrencyError` (class) · `Condition` (interface) · `conditionAllowed` (function) · `createMessage` (function) · `createSessionPageStateStore` (function) · `Criticality` (type) · `CriticalityCalculationModel` (interface) · `csdlJsonToXml` (function) · `CsdlSource` (type) · `currencyDigits` (function) · `DataPointModel` (interface) · `dataPointPaths` (function) · `DataProvider` (type) · `DEFAULT_CAPABILITIES` (const) · `deriveColumns` (function) · `DERIVED_GENERAL_SECTION` (const) · `DirectEditStrategy` (class) · `DraftEditStrategy` (class) · `DraftModel` (interface) · `EditSession` (interface) · `EditStrategy` (interface) · `editStrategyFor` (function) · `EdmType` (type) · `encodeOption` (function) · `EntityPath` (type) · `EntityPathError` (class) · `entityPathOf` (function) · `EntitySetModel` (interface) · `EntityTypeModel` (interface) · `EntityUi` (interface) · `errorFromResponse` (function) · `EventModel` (interface) · `ExpandSpec` (interface) · `FetchLike` (type) · `FieldModel` (interface) · `fieldPaths` (function) · `FilterExpression` (type) · `filterExpressionRules` (function) · `FilterExpressionRules` (interface) · `FilterOptions` (interface) · `FilterState` (type) · `filterString` (function) · `formatDate` (function) · `formatDateTime` (function) · `formatNumber` (function) · `FormatOptions` (interface) · `formatTime` (function) · `formatValue` (function) · `FormGroupModel` (interface) · `getEntitySet` (function) · `getEntityType` (function) · `getProperty` (function) · `getUi` (function) · `groupKey` (function) · `HeaderFacetModel` (type) · `HeaderInfoModel` (interface) · `highestSeverity` (function) · `humanize` (function) · `Importance` (type) · `ImprovementDirection` (type) · `InitialCondition` (interface) · `isAbortError` (function) · `isComplete` (function) · `isDraftRow` (function) · `isFilterable` (function) · `isRelativeDateOperator` (function) · `isSortable` (function) · `keyPredicate` (function) · `ListRequestOptions` (interface) · `LiteralError` (class) · `loadService` (function) · `LoadServiceOptions` (interface) · `matches` (function) · `MAX_GROUP_VALUES` (const) · `MemoryPageStateStore` (class) · `MemoryProvider` (class) · `MemoryProviderOptions` (interface) · `MemoryVariantStore` (class) · `Message` (interface) · `messagesFromError` (function) · `messagesFromHeader` (function) · `MessageType` (type) · `MetaModel` (interface) · `MICRO_CHART_MAX_POINTS` (const) · `MICRO_COMPARISON_MAX_BARS` (const) · `MODEL_VERSION` (const) · `ModelError` (class) · `ModelWarning` (interface) · `NavigationAdapter` (interface) · `NavigationModel` (interface) · `NavigationTarget` (type) · `objectFields` (function) · `ODataError` (class) · `ODataErrorDetail` (interface) · `ODataV4Provider` (class) · `ODataV4ProviderOptions` (interface) · `ODataVariantStore` (class) · `ODataVariantStoreOptions` (interface) · `Operator` (type) · `OPERATOR_ARITY` (const) · `OPERATORS` (const) · `PageStateStore` (interface) · `parseAnnotationPath` (function) · `parseEntityPath` (function) · `PathSegment` (interface) · `PresentationModel` (interface) · `PresentationVariantModel` (interface) · `propertyFilter` (function) · `PropertyModel` (interface) · `QueryRequest` (interface) · `QueryResult` (interface) · `QuerySource` (type) · `ReadDataProvider` (interface) · `readQueryString` (function) · `ReadRequest` (interface) · `RELATIVE_DATE_OPERATORS` (const) · `RelativeDateOperator` (type) · `relativeDateRange` (function) · `RequestOptions` (interface) · `resolveCondition` (function) · `ResolvedPath` (interface) · `resolveEntityPath` (function) · `resolvePath` (function) · `restrictConditions` (function) · `Row` (type) · `SectionModel` (interface) · `selectAndExpand` (function) · `siblingPath` (function) · `SortItem` (interface) · `sourceInfo` (function) · `SourceInfo` (interface) · `sourcePath` (function) · `STANDARD_VARIANT_ID` (const) · `startOfDayIso` (function) · `SubSectionContent` (type) · `SubSectionModel` (interface) · `targetEntitySet` (function) · `TextArrangement` (type) · `toCsdlXml` (function) · `todayIn` (function) · `toFilter` (function) · `toLiteral` (function) · `toQueryString` (function) · `TOTAL_COUNT_ALIAS` (const) · `TotalAmount` (interface) · `TotalsEntry` (interface) · `TotalsRequestOptions` (interface) · `TrendCalculationModel` (interface) · `unitPathOf` (function) · `UnknownEntitySetError` (class) · `ValueHelpRequestOptions` (interface) · `ValueListModel` (interface) · `ValueListParameter` (interface) · `valueListTextArrangement` (function) · `ValueOperator` (type) · `ValueRef` (type) · `Variant` (interface) · `VariantContent` (interface) · `VariantStore` (interface) · `ViewModel` (interface) · `WriteDataProvider` (interface) · `WriteResult` (interface)
 
 ### `ActionModel` — interface
 
@@ -51,6 +51,14 @@ Aggregation.ApplySupported.
 | `transformations` | **yes** | `string[]` | Supported transformations (filter, search, groupby, aggregate, …); empty when the annotation does not list them. |
 | `groupable` | **yes** | `string[]` | GroupableProperties; empty means any property may be grouped by. |
 | `aggregatable` | **yes** | `{ path: string; methods: string[] }[]` | AggregatableProperties; empty means any numeric property may be aggregated. |
+
+### `arrangeText` — function
+
+The display of a code with its text: TextFirst (default) "Text (Code)", TextLast "Code (Text)", TextOnly "Text", TextSeparate "Code" (the text goes in a column of its own). Without a text, the code; without a code, the text (except TextSeparate).
+
+```ts
+arrangeText(code: string, text: string | undefined, arrangement?: TextArrangement): string
+```
 
 ### `buildAggregateRequest` — function
 
@@ -625,11 +633,13 @@ filterExpressionRules(expression: FilterExpression | undefined): FilterExpressio
 
 ### `FilterOptions` — interface
 
-Options for date-only filtering of Edm.DateTimeOffset properties.
+Options for date filtering.
 
 | Member | Required | Type | Description |
 | --- | --- | --- | --- |
-| `timeZone` |  | `string` | IANA time zone used to turn a calendar day into a DateTimeOffset range. Defaults to UTC. |
+| `timeZone` |  | `string` | IANA time zone used to turn a calendar day into a DateTimeOffset range and to find today. Defaults to UTC. |
+| `today` |  | `string` | Today (YYYY-MM-DD) for relative date operators; default: the current date in `timeZone`. |
+| `weekStartsOn` |  | `number` | First day of the week for THISWEEK / LASTWEEK / NEXTWEEK: 0 Sunday … 6 Saturday; default 1 (Monday, ISO 8601). |
 
 ### `FilterState` — type
 
@@ -745,6 +755,8 @@ export type HeaderFacetModel = | { id: string; kind: 'form'; label?: string; fie
 | `title` |  | `string` |  |
 | `description` |  | `string` |  |
 | `imageUrl` |  | `ValueRef` |  |
+| `initials` |  | `ValueRef` | UI.HeaderInfo/Initials: shown in an avatar when there is no image. |
+| `person` |  | `boolean` | The type describes a person (Communication.Contact): the avatar is round, otherwise a rounded square. |
 
 ### `highestSeverity` — function
 
@@ -811,6 +823,12 @@ isDraftRow(row: Row | undefined): boolean
 isFilterable(caps: CapabilityModel, path: string): boolean
 ```
 
+### `isRelativeDateOperator` — function
+
+```ts
+isRelativeDateOperator(op: string): op is RelativeDateOperator
+```
+
 ### `isSortable` — function
 
 ```ts
@@ -867,10 +885,10 @@ loadService(o: LoadServiceOptions): Promise<{ model: MetaModel; provider: ODataV
 
 ### `matches` — function
 
-Evaluates conditions against a value in memory (used by the in-memory provider).
+Evaluates conditions against a value in memory (used by the in-memory provider). Relative dates resolve as in `toFilter`.
 
 ```ts
-matches(value: unknown, conditions: Condition[], type: EdmType): boolean
+matches(value: unknown, conditions: Condition[], type: EdmType, opts?: FilterOptions): boolean
 ```
 
 ### `MAX_GROUP_VALUES` — const
@@ -890,6 +908,8 @@ new MemoryPageStateStore()
 ```
 
 ### `MemoryProvider` — class
+
+In-memory data provider. Also the supported "host gives the rows" source (worklists the host computes): it evaluates every filter operator, search, sort, paging, `$count`, grouping and `$apply` totals and subtotals in the browser. After the host's rows change, call `setRows` and reload the page (`SmartListReport` `refreshToken`).
 
 ```ts
 new MemoryProvider(o: MemoryProviderOptions)
@@ -1065,13 +1085,19 @@ new ODataV4Provider(o: ODataV4ProviderOptions)
 Stores variants in an OData entity set (default "Variants").
 
 ```ts
-new ODataVariantStore(provider: ODataV4Provider, entitySet?: string)
+new ODataVariantStore(provider: ODataV4Provider, entitySet?: string, options?: ODataVariantStoreOptions)
 ```
+
+### `ODataVariantStoreOptions` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `canSave` |  | `boolean` | See {@link VariantStore.canSave}. |
 
 ### `Operator` — type
 
 ```ts
-export type Operator = | 'EQ' | 'NE' | 'BT' | 'NB' | 'LT' | 'LE' | 'GT' | 'GE' | 'Contains' | 'NotContains' | 'StartsWith' | 'EndsWith' | 'Empty' | 'NotEmpty';
+export type Operator = ValueOperator | RelativeDateOperator;
 ```
 
 ### `OPERATOR_ARITY` — const
@@ -1084,8 +1110,10 @@ const OPERATOR_ARITY: Record<Operator, 0 | 1 | 2>
 
 ### `OPERATORS` — const
 
+The value operators (relative date operators are in RELATIVE_DATE_OPERATORS).
+
 ```ts
-const OPERATORS: readonly Operator[]
+const OPERATORS: readonly ValueOperator[]
 ```
 
 ### `PageStateStore` — interface
@@ -1141,7 +1169,7 @@ UI.PresentationVariant with its qualifier (cards, docs/20).
 
 ### `propertyFilter` — function
 
-Builds the $filter expression for one property. Returns undefined when there is nothing to filter.
+Builds the $filter expression for one property. Returns undefined when there is nothing to filter. Relative date conditions are resolved against `opts.today` (default: the current date in `opts.timeZone`).
 
 ```ts
 propertyFilter(path: string, conditions: Condition[], type: EdmType, opts?: FilterOptions): string | undefined
@@ -1234,11 +1262,41 @@ readQueryString(req: ReadRequest): string
 | `select` | **yes** | `string[]` |  |
 | `expand` | **yes** | `ExpandSpec[]` |  |
 
+### `RELATIVE_DATE_OPERATORS` — const
+
+```ts
+const RELATIVE_DATE_OPERATORS: readonly RelativeDateOperator[]
+```
+
+### `RelativeDateOperator` — type
+
+Relative date operators (date and date-time properties), after SAPUI5's DynamicDateRange. A condition stores the operator, not dates; `toFilter` and `matches` resolve it against the current date each time they run. LASTDAYS / NEXTDAYS take a number of days and, as in SAPUI5, exclude today.
+
+```ts
+export type RelativeDateOperator = | 'TODAY' | 'YESTERDAY' | 'TOMORROW' | 'LASTDAYS' | 'NEXTDAYS' | 'THISWEEK' | 'LASTWEEK' | 'NEXTWEEK' | 'THISMONTH' | 'LASTMONTH' | 'NEXTMONTH' | 'THISQUARTER' | 'LASTQUARTER' | 'NEXTQUARTER' | 'THISYEAR' | 'LASTYEAR' | 'NEXTYEAR' | 'YEARTODATE';
+```
+
+### `relativeDateRange` — function
+
+The calendar days [from, to] (YYYY-MM-DD, both included) of a relative date operator on `today`, or undefined for other operators or an invalid number of days.
+
+```ts
+relativeDateRange(operator: Operator, value: unknown, today: string, weekStartsOn?: number): [string, string] | undefined
+```
+
 ### `RequestOptions` — interface
 
 | Member | Required | Type | Description |
 | --- | --- | --- | --- |
 | `signal` |  | `AbortSignal` |  |
+
+### `resolveCondition` — function
+
+Replaces a relative date condition by the fixed one it means today ("EQ" for one day, "BT" otherwise, keeping `exclude`); other conditions are returned as they are. Undefined when a relative condition cannot be resolved.
+
+```ts
+resolveCondition(c: Condition, opts?: FilterOptions): Condition | undefined
+```
 
 ### `ResolvedPath` — interface
 
@@ -1387,6 +1445,14 @@ Normalizes any CSDL source to CSDL XML text.
 toCsdlXml(source: CsdlSource): string
 ```
 
+### `todayIn` — function
+
+The current calendar day (YYYY-MM-DD) in `timeZone` (default UTC).
+
+```ts
+todayIn(timeZone?: string, now?: Date): string
+```
+
 ### `toFilter` — function
 
 Builds the complete $filter. Properties are combined with "and"; "or" groups are already parenthesized.
@@ -1506,6 +1572,22 @@ new UnknownEntitySetError(message?: string)
 | `local` |  | `string` | Property of the source entity (InOut, Out, In). |
 | `constant` |  | `string` |  |
 
+### `valueListTextArrangement` — function
+
+Text arrangement for the values of a property's value list: the property's own (Common.Text@UI.TextArrangement or the entity type's UI.TextArrangement), else the one of the value list's key property; undefined when neither says.
+
+```ts
+valueListTextArrangement(model: MetaModel, prop: PropertyModel | undefined): TextArrangement | undefined
+```
+
+### `ValueOperator` — type
+
+Operators that compare with fixed values.
+
+```ts
+export type ValueOperator = | 'EQ' | 'NE' | 'BT' | 'NB' | 'LT' | 'LE' | 'GT' | 'GE' | 'Contains' | 'NotContains' | 'StartsWith' | 'EndsWith' | 'Empty' | 'NotEmpty';
+```
+
 ### `ValueRef` — type
 
 A value that is either a constant or a path relative to the row.
@@ -1546,6 +1628,7 @@ export type ValueRef = { path: string } | { value: string | number | boolean };
 | `list` | **yes** | `(pageKey: string) => Promise&lt;Variant[]>` |  |
 | `save` | **yes** | `(v: Variant) => Promise&lt;Variant>` | Creates (when `id` is empty) or updates a variant. |
 | `remove` | **yes** | `(id: string) => Promise&lt;void>` |  |
+| `canSave` |  | `boolean` | Whether the current user may save views (default true). When false, the view menu only selects views: no Save, Save As or Manage. A host derives it from its permissions. |
 
 ### `ViewModel` — interface
 

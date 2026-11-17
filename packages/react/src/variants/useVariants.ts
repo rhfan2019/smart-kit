@@ -21,6 +21,8 @@ export interface VariantsApi {
   currentId: string;
   current: Variant;
   isLoading: boolean;
+  /** Whether views may be saved (VariantStore.canSave, default true). */
+  canSave: boolean;
   select(id: string): Variant;
   saveAs(name: string, content: VariantContent, opts: { isDefault: boolean; autoApply: boolean }): Promise<Variant>;
   save(content: VariantContent): Promise<Variant | undefined>;
@@ -75,6 +77,7 @@ export function useVariants(pageKey: string, o: UseVariantsOptions): VariantsApi
     currentId,
     current,
     isLoading: q.isLoading,
+    canSave: store.canSave !== false,
     select,
     async saveAs(name, content, opts) {
       const v = await store.save({ id: '', pageKey, name, content, isDefault: opts.isDefault, autoApply: opts.autoApply });

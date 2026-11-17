@@ -6,7 +6,8 @@
 // Changes: an operator-precedence grammar (or < and < not < comparison) instead of the flat AND/OR list;
 // whitespace is skipped by the lexer; string literals may contain '' (an escaped quote) and any character;
 // every literal is typed (string, number, date, dateTimeOffset, timeOfDay, guid, boolean, null) so that the
-// query plan can check it against the property type; lambda operators are rejected (501) instead of parsed.
+// query plan can check it against the property type; lambda operators any / all over collection navigations
+// (`_Item/any(i: i/Plant eq '1010')`, `$it/...` for the outer entity) are parsed into a `lambda` node.
 import { createToken, EmbeddedActionsParser, Lexer, type IToken, type TokenType } from 'chevrotain';
 import { badRequest, notImplemented } from '../errors';
 import type { AggregateItem, AggregateMethod, CompareOp, Expr, Literal } from './ast';
@@ -19,7 +20,7 @@ const LParen = createToken({ name: 'LParen', pattern: /\(/ });
 const RParen = createToken({ name: 'RParen', pattern: /\)/ });
 const Comma = createToken({ name: 'Comma', pattern: /,/ });
 const Slash = createToken({ name: 'Slash', pattern: /\// });
-const Colon = createToken({ name: 'Colon', pattern: /:/ }); // only so that lambda expressions reach the 501 below
+const Colon = createToken({ name: 'Colon', pattern: /:/ });
 const StringLit = createToken({ name: 'StringLit', pattern: /'(?:[^']|'')*'/ });
 const GuidLit = createToken({ name: 'GuidLit', pattern: /[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}(?![0-9A-Za-z_])/ });
 const DateTimeOffsetLit = createToken({ name: 'DateTimeOffsetLit', pattern: /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2}(?:\.\d{1,12})?)?(?:Z|[+-]\d{2}:\d{2})/i });
@@ -35,16 +36,18 @@ const True = keyword('True', 'true');
 const False = keyword('False', 'false');
 const Null = keyword('Null', 'null');
 const DollarCount = createToken({ name: 'DollarCount', pattern: /\$count(?![A-Za-z0-9_])/ });
+const DollarIt = createToken({ name: 'DollarIt', pattern: /\$it(?![A-Za-z0-9_])/ });
+const Any = keyword('Any', 'any');
+const All = keyword('All', 'all');
 
 const TOKENS: TokenType[] = [
   WhiteSpace, LParen, RParen, Comma, Slash, Colon, StringLit,
   GuidLit, DateTimeOffsetLit, DateLit, TimeOfDayLit, NumberLit,
-  And, Or, Not, In, CompareOpTok, True, False, Null, DollarCount, Identifier,
+  And, Or, Not, In, CompareOpTok, True, False, Null, DollarCount, DollarIt, Any, All, Identifier,
 ];
 const FilterLexer = new Lexer(TOKENS, { positionTracking: 'onlyOffset', ensureOptimizations: false });
 
 const AGGREGATE_METHODS = new Set<AggregateMethod>(['sum', 'min', 'max', 'average', 'countdistinct']);
-const LAMBDA = new Set(['any', 'all']);
 
 class FilterParser extends EmbeddedActionsParser {
   constructor() {
@@ -139,17 +142,44 @@ class FilterParser extends EmbeddedActionsParser {
     return { kind: 'call', name, args };
   });
 
+  /** A property path, or a lambda operator at its end: `_Item/any(i: i/Plant eq '1010')`, `_Item/all(i: ...)`. */
   private path = this.RULE('path', (): Expr => {
-    const segments = [this.CONSUME(Identifier).image];
+    const segments = [this.OR([{ ALT: () => this.CONSUME(Identifier).image }, { ALT: () => this.CONSUME(DollarIt).image }])];
+    let lambda: Extract<Expr, { kind: 'lambda' }> | undefined;
     this.MANY(() => {
       this.CONSUME(Slash);
-      const seg = this.CONSUME2(Identifier).image;
-      this.ACTION(() => {
-        if (LAMBDA.has(seg)) throw notImplemented(`Lambda operators (${seg}) are not supported by this service.`);
-      });
-      segments.push(seg);
+      this.OR2([
+        {
+          ALT: () => {
+            const seg = this.CONSUME2(Identifier).image;
+            this.ACTION(() => {
+              if (lambda) throw badRequest('InvalidSyntax', `$filter: nothing may follow ${lambda.op}(...) in a path ('${seg}').`);
+              segments.push(seg);
+            });
+          },
+        },
+        {
+          ALT: () => {
+            const op = this.OR3([{ ALT: () => this.CONSUME(Any).image }, { ALT: () => this.CONSUME(All).image }]) as 'any' | 'all';
+            this.CONSUME(LParen);
+            let variable: string | undefined;
+            let body: Expr | undefined;
+            this.OPTION(() => {
+              variable = this.CONSUME3(Identifier).image;
+              this.CONSUME(Colon);
+              body = this.SUBRULE(this.expression);
+            });
+            this.CONSUME(RParen);
+            this.ACTION(() => {
+              if (lambda) throw badRequest('InvalidSyntax', `$filter: nothing may follow ${lambda.op}(...) in a path.`);
+              if (op === 'all' && !body) throw badRequest('InvalidSyntax', '$filter: all() needs a condition: all(x: ...).');
+              lambda = { kind: 'lambda', op, path: [...segments], variable, body };
+            });
+          },
+        },
+      ]);
     });
-    return { kind: 'path', segments };
+    return lambda ?? { kind: 'path', segments };
   });
 
   private literal = this.RULE('literal', (): Literal =>

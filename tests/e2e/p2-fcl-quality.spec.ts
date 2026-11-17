@@ -16,8 +16,9 @@ test('P2-FCL-01 P2-FCL-05 P2-DPL-01 list in the first column, object page in the
   await table(page, 'PurchaseOrders').locator('[data-sk-row-nav]').first().click();
   await expect(page.locator('[data-sk-fcl="TwoColumnsMidExpanded"]')).toBeVisible();
   await expect(col(page, 1).locator('.sk-dynamic-page__heading')).toHaveText(/^45\d{8}$/);
-  expect(Math.round(await width(page, 0) / 1600 * 100)).toBe(33);
-  expect(Math.round(await width(page, 1) / 1600 * 100)).toBe(67);
+  // the separators between the columns take a few pixels (S23)
+  expect(Math.abs(await width(page, 0) / 1600 * 100 - 33)).toBeLessThan(1.5);
+  expect(Math.abs(await width(page, 1) / 1600 * 100 - 67)).toBeLessThan(1.5);
   // items: the item opens in the third column
   await col(page, 1).locator('[data-sk-anchor="Items"]').click();
   await col(page, 1).locator('[data-sk-section="Items"] [data-sk-row-nav]').first().click();

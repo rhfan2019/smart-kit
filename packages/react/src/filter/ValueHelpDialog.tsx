@@ -1,6 +1,9 @@
 /** Value help dialog: "Search and Select" from the value list and "Define Conditions" (include / exclude) (LR-11). */
 import { ActionIcon, Button, Checkbox, Group, Modal, Pill, ScrollArea, SegmentedControl, Select, Stack, Table, Tabs, Text, TextInput } from '@mantine/core';
-import { filterExpressionRules, getProperty, OPERATOR_ARITY, OPERATORS, restrictConditions, type Condition, type Operator, type PropertyModel } from '@rhfan2019/smart-kit-core';
+import {
+  filterExpressionRules, getProperty, isComplete, OPERATOR_ARITY, OPERATORS, RELATIVE_DATE_OPERATORS, restrictConditions, valueListTextArrangement,
+  type Condition, type Operator, type PropertyModel,
+} from '@rhfan2019/smart-kit-core';
 import { Plus, Search, Trash2 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useService, useSmartKit, useText } from '../context/SmartKitProvider';
@@ -29,6 +32,9 @@ export interface ValueHelpDialogProps {
 
 const STRING_OPS: Operator[] = ['EQ', 'NE', 'Contains', 'NotContains', 'StartsWith', 'EndsWith', 'BT', 'NB', 'LT', 'LE', 'GT', 'GE', 'Empty', 'NotEmpty'];
 const OTHER_OPS: Operator[] = OPERATORS.filter((o) => !['Contains', 'NotContains', 'StartsWith', 'EndsWith'].includes(o));
+/** Date and date-time properties also get the relative dates (today, this month, last X days …). */
+const DATE_OPS: Operator[] = [...OTHER_OPS, ...RELATIVE_DATE_OPERATORS];
+const isDate = (p: PropertyModel | undefined) => p?.edmType === 'Edm.Date' || p?.edmType === 'Edm.DateTimeOffset';
 
 const PAGE = 50;
 
@@ -79,7 +85,8 @@ export function ValueHelpDialog(p: ValueHelpDialogProps) {
 
   const conditionRows = selected.map((c, i) => ({ c, i })).filter(({ c }) => !(c.operator === 'EQ' && !c.exclude && c.text !== undefined));
   const updateCondition = (i: number, next: Condition) => setSelected(selected.map((c, j) => (j === i ? next : c)));
-  const ops = (prop?.edmType === 'Edm.String' ? STRING_OPS : OTHER_OPS).filter((o) => rules.operators.includes(o));
+  const ops = (prop?.edmType === 'Edm.String' ? STRING_OPS : isDate(prop) ? DATE_OPS : OTHER_OPS).filter((o) => rules.operators.includes(o));
+  const arrangement = valueListTextArrangement(service.model, prop);
   const count = list.data?.count;
 
   return (
@@ -140,13 +147,13 @@ export function ValueHelpDialog(p: ValueHelpDialogProps) {
         <Group gap="xs" className="sk-vh__pills">
           {selected.length === 0 ? <Text size="sm" c="dimmed">{t('vh.noneSelected')}</Text> : null}
           {selected.map((c, i) => {
-            const label = conditionText(c, prop, intlLocale, timeZone);
+            const label = conditionText(c, prop, intlLocale, timeZone, { t, textArrangement: arrangement === 'TextSeparate' ? 'TextFirst' : arrangement });
             return <Pill key={i} withRemoveButton removeButtonProps={{ 'aria-label': t('common.remove', { name: label }) }} onRemove={() => setSelected(selected.filter((_, j) => j !== i))}>{label}</Pill>;
           })}
         </Group>
       </div>
       <Group justify="flex-end" className="sk-dialog-footer">
-        <Button onClick={() => p.onOk(dedupe(selected.filter((c) => OPERATOR_ARITY[c.operator] === 0 || c.values.slice(0, OPERATOR_ARITY[c.operator]).every((v) => v !== '' && v !== undefined))))}>{t('common.ok')}</Button>
+        <Button onClick={() => p.onOk(dedupe(selected.filter(isComplete)))}>{t('common.ok')}</Button>
         <Button variant="default" onClick={p.onCancel}>{t('common.cancel')}</Button>
       </Group>
     </Modal>
@@ -161,10 +168,12 @@ function ConditionRow(p: { condition: Condition; prop: PropertyModel | undefined
   const t = useText();
   const c = p.condition;
   const arity = OPERATOR_ARITY[c.operator];
-  const inputType = p.prop?.edmType === 'Edm.Date' || p.prop?.edmType === 'Edm.DateTimeOffset' ? 'date' : 'text';
+  const counted = c.operator === 'LASTDAYS' || c.operator === 'NEXTDAYS';
+  const inputType = counted ? 'number' : isDate(p.prop) ? 'date' : 'text';
   const valueInput = (i: number, label: string) => (
     <TextInput
       type={inputType}
+      min={counted ? 1 : undefined}
       aria-label={label}
       placeholder={label}
       value={String(c.values[i] ?? '')}
@@ -191,10 +200,16 @@ function ConditionRow(p: { condition: Condition; prop: PropertyModel | undefined
         value={c.operator}
         allowDeselect={false}
         data={p.ops.map((o) => ({ value: o, label: t(`op.${o}`) }))}
-        onChange={(v) => v && p.onChange({ ...c, operator: v as Operator, values: c.values.slice(0, OPERATOR_ARITY[v as Operator]) })}
+        onChange={(v) => {
+          if (!v) return;
+          const op = v as Operator;
+          // A number of days and a date do not carry over into each other.
+          const keep = (op === 'LASTDAYS' || op === 'NEXTDAYS') === counted;
+          p.onChange({ ...c, operator: op, values: keep ? c.values.slice(0, OPERATOR_ARITY[op]) : [] });
+        }}
         className="sk-vh__operator"
       />
-      {arity >= 1 ? valueInput(0, arity === 2 ? t('vh.from') : t('vh.value')) : <span className="sk-grow" />}
+      {arity >= 1 ? valueInput(0, arity === 2 ? t('vh.from') : counted ? t('dateRange.dayCount') : t('vh.value')) : <span className="sk-grow" />}
       {arity === 2 ? valueInput(1, t('vh.to')) : null}
       <ActionIcon onClick={p.onRemove} aria-label={t('vh.removeCondition')} title={t('vh.removeCondition')}>
         <Trash2 className="sk-icon" />

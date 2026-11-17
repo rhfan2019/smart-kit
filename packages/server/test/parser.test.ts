@@ -53,13 +53,29 @@ describe('$filter parser', () => {
     expect(parseFilter("Status in ('NEW','APPR')")).toMatchObject({ kind: 'in', list: [{ value: 'NEW' }, { value: 'APPR' }] });
   });
 
-  it('rejects syntax errors with 400 and lambda operators with 501', () => {
+  it('rejects syntax errors with 400', () => {
     fails(() => parseFilter('Status eq'), 400, 'InvalidSyntax');
     fails(() => parseFilter("Status eq 'open"), 400, 'InvalidSyntax');
     fails(() => parseFilter('Status eq 1; drop table x'), 400, 'InvalidSyntax');
     fails(() => parseFilter('(Status eq 1'), 400);
-    fails(() => parseFilter('_Item/any(i:i/Plant eq 1)'), 501, 'NotImplemented');
     fails(() => parseFilter(''), 400);
+  });
+
+  it('reads lambda operators any / all, with $it and nested variables (TECH-054)', () => {
+    expect(parseFilter("_Item/any(i:i/Plant eq '1010')")).toEqual({
+      kind: 'lambda', op: 'any', path: ['_Item'], variable: 'i',
+      body: { kind: 'compare', op: 'eq', left: { kind: 'path', segments: ['i', 'Plant'] }, right: { kind: 'literal', type: 'string', value: '1010' } },
+    });
+    expect(parseFilter('_Item/any()')).toEqual({ kind: 'lambda', op: 'any', path: ['_Item'], variable: undefined, body: undefined });
+    expect(parseFilter('_Supplier/_Orders/all(o: o/NetAmount gt $it/NetAmount)')).toMatchObject({ kind: 'lambda', op: 'all', path: ['_Supplier', '_Orders'], body: { right: { segments: ['$it', 'NetAmount'] } } });
+    expect(parseFilter("not _Item/any(i: i/_History/any(h: h/Kind eq 'x') and i/Plant eq '1')")).toMatchObject({
+      kind: 'not', operand: { kind: 'lambda', body: { kind: 'and', left: { kind: 'lambda', path: ['i', '_History'], variable: 'h' } } },
+    });
+    // property names that start with the keywords stay identifiers
+    expect(parseFilter('anything eq allowed')).toMatchObject({ kind: 'compare', left: { segments: ['anything'] }, right: { segments: ['allowed'] } });
+    fails(() => parseFilter('_Item/all()'), 400, 'InvalidSyntax');
+    fails(() => parseFilter('_Item/any(i: i/Plant eq 1)/Plant eq 1'), 400, 'InvalidSyntax');
+    fails(() => parseFilter('_Item/any(i i/Plant eq 1)'), 400, 'InvalidSyntax');
   });
 });
 

@@ -5,7 +5,7 @@
 > `node_modules/@rhfan2019/smart-kit/skills/smart-kit-getting-started/SKILL.md`.
 
 A **limited OData V4 service on PostgreSQL**, written for what the smart-kit front end sends: reads (`$select`,
-`$expand`, `$filter`, `$orderby`, `$top`/`$skip`, `$count`, `$search`, `$apply` with `filter`/`search`/`groupby`/
+`$expand`, `$filter` (with `any` / `all` over collection navigations), `$orderby`, `$top`/`$skip`, `$count`, `$search`, `$apply` with `filter`/`search`/`groupby`/
 `aggregate` (`sum`, `min`, `max`, `average`, `countdistinct`, `$count as`)), value helps, `$metadata`, direct save (PATCH with ETag, POST to a set or a collection navigation,
 DELETE), bound actions. **Not** supported (answers 501): drafts, `$batch`, deep insert, PUT, functions, `$compute`.
 Node only (≥ 24); never import it in browser code.
@@ -132,7 +132,60 @@ export function withScope(options: ODataServiceOptions<Ctx>) {
 }
 ```
 
+The scope applies wherever the set is touched: the list and `$count`, a key read (404 outside the scope), the set as
+parent in a path, `$expand` from other sets, navigation paths and `any` / `all` in `$filter` / `$orderby` of other sets,
+`$apply`, and writes (PATCH / DELETE / actions answer 404, a POST whose new row falls outside answers 403).
+
+**Scope through a collection navigation.** When the set's own fields cannot express the scope (an invoice belongs to
+several orders, each with a company code), give the set a collection navigation to a "scope keys" set (one row per
+dimension combination; for views declare it in `smart-kit.config.json`, see the CLI docs) and use `any`:
+
+```ts
+import type { ScopeFunction } from '@rhfan2019/smart-kit-server';
+
+type User = { companies: string[] };
+const quote = (s: string) => `'${s.replace(/'/g, "''")}'`;
+
+export const scope: ScopeFunction<User> = (entitySet, user) => {
+  if (entitySet !== 'Invoices') return undefined;
+  if (!user.companies.length) return 'false'; // sees nothing
+  return `_ScopeKeys/any(k: k/CompanyCode in (${user.companies.map(quote).join(',')}))`;
+};
+```
+
+What a scope condition may use: the set's own properties, and `any(…)` / `all(…)` over its collection navigations;
+inside a lambda body, paths through the lambda variable may also follow single-valued navigations
+(`k/_Order/PurchasingGroup eq 'P01'`), and `$it/…` refers to the scoped entity. A single-valued navigation outside a
+lambda (`_Supplier/Country eq 'DE'`) is refused when the scope is first used (a 500 with a clear message: fix the
+scope). Navigations inside a scope condition see **all** rows of their targets (the scope of `InvoiceScopeKeys`, if
+any, is not applied inside the scope of `Invoices`), so scopes never recurse. Always quote values as above: the
+condition is OData `$filter` text.
+
 Authentication itself is the host's job (middleware before `service.handle`).
+
+## Using the host's `pg` pool
+
+`createPostgresDb` opens a pool of its own. When the application already has a `pg` `Pool`, build Kysely on it with
+`createKysely` instead: the service's queries run in UTC with a statement timeout, as with `createPostgresDb`.
+
+```ts
+import pg from 'pg';
+import { createKysely } from '@rhfan2019/smart-kit-server';
+
+const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL }); // the application's pool
+
+// each time the service takes a connection it sets TimeZone=UTC and statement_timeout, and resets both when it gives
+// the connection back, so the application's own queries keep their settings
+export const db = createKysely(pool, { statementTimeout: 15_000 });
+```
+
+Pass `db` to `createODataService`. Options: `statementTimeout` (milliseconds, default 15000), `keepSettings: true` to
+set both once per connection and leave them (saves two short statements per use; then every query on that pool runs in
+UTC with that timeout). `db.destroy()` does not end the pool; the application does. Without `createKysely`, build
+Kysely yourself only on a pool whose sessions are already in UTC, e.g.
+`new pg.Pool({ options: '-c TimeZone=UTC -c statement_timeout=15000' })` and
+`new Kysely({ dialect: new PostgresDialect({ pool }) })`: dates and times are written in UTC, and
+`timestamp without time zone` columns are read as UTC only in a UTC session.
 
 ## Other options
 

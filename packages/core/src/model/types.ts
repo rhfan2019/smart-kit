@@ -251,6 +251,10 @@ export interface HeaderInfoModel {
   title?: string;
   description?: string;
   imageUrl?: ValueRef;
+  /** UI.HeaderInfo/Initials: shown in an avatar when there is no image. */
+  initials?: ValueRef;
+  /** The type describes a person (Communication.Contact): the avatar is round, otherwise a rounded square. */
+  person?: boolean;
 }
 
 export interface FormGroupModel {

@@ -7,7 +7,10 @@ import type { Row } from '@rhfan2019/smart-kit-core';
 import { useMemo, useRef } from 'react';
 import { useSearchParams } from 'react-router';
 
-const LAYOUTS: FclLayout[] = ['OneColumn', 'TwoColumnsMidExpanded', 'ThreeColumnsMidExpanded', 'MidColumnFullScreen', 'EndColumnFullScreen'];
+const LAYOUTS: FclLayout[] = [
+  'OneColumn', 'TwoColumnsBeginExpanded', 'TwoColumnsMidExpanded', 'ThreeColumnsMidExpanded', 'ThreeColumnsEndExpanded',
+  'ThreeColumnsMidExpandedEndHidden', 'ThreeColumnsBeginExpandedEndHidden', 'MidColumnFullScreen', 'EndColumnFullScreen',
+];
 
 export function FclPage() {
   const [params, setParams] = useSearchParams();

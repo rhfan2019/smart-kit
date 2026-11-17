@@ -31,6 +31,8 @@ export interface ChartViewProps {
   toolbarEnd?: ReactNode;
   /** Drilldown: the dimension value of the selected element. */
   onDrilldown(dimension: string, value: string): void;
+  /** Change to reload. */
+  revision?: number;
 }
 
 export function ChartView(p: ChartViewProps) {
@@ -45,7 +47,7 @@ export function ChartView(p: ChartViewProps) {
   const measureProp = resolvePath(model.entityTypes, typeName, measure).property;
   const req = buildAggregateRequest(model, p.chart, { source: { entitySet: p.entitySet }, filters: p.filters, search: p.search, timeZone });
   const q = useQuery({
-    queryKey: ['smart-kit', namespace, service.name, locale, 'chart', JSON.stringify(req)],
+    queryKey: ['smart-kit', namespace, service.name, locale, 'chart', JSON.stringify(req), p.revision ?? 0],
     queryFn: ({ signal }) => service.dataProvider.query(req, { signal }),
     enabled: p.executed,
   });

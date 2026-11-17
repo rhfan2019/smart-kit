@@ -1,4 +1,4 @@
-/** Reading tokens in JS (charts, avatars). Re-reads when data-theme / data-density changes. */
+/** Reading tokens in JS (charts, avatars). Re-reads when data-sk-theme / data-sk-density (or the former data-theme / data-density) change. */
 import { useEffect, useState } from 'react';
 
 export function readToken(name: string, el?: Element | null): string {
@@ -14,7 +14,7 @@ export function useThemeTokens<const T extends readonly string[]>(names: T): Rec
   useEffect(() => {
     if (typeof MutationObserver === 'undefined' || typeof document === 'undefined') return;
     const obs = new MutationObserver(() => setValues(read()));
-    obs.observe(document.documentElement, { attributes: true, subtree: true, attributeFilter: ['data-theme', 'data-density'] });
+    obs.observe(document.documentElement, { attributes: true, subtree: true, attributeFilter: ['data-sk-theme', 'data-sk-density', 'data-theme', 'data-density'] });
     return () => obs.disconnect();
     // eslint-disable-next-line react-hooks/exhaustive-deps -- names are a static list
   }, []);

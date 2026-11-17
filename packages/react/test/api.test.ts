@@ -1,5 +1,5 @@
 /** AC-Q-03: the package entries export exactly the names listed in docs/api.md. */
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import * as core from '../../core/src';
@@ -25,7 +25,7 @@ describe('subpath entries (ADR-026)', () => {
   const pkg = JSON.parse(readFileSync(join(import.meta.dirname, '../package.json'), 'utf8')) as {
     exports: Record<string, Record<string, string>>;
   };
-  const subpaths = Object.keys(pkg.exports).filter((k) => k !== '.' && k !== './styles.css');
+  const subpaths = Object.keys(pkg.exports).filter((k) => k !== '.' && !k.endsWith('.css'));
 
   it('every subpath has a source entry and a published entry (ADR-029)', () => {
     expect(subpaths.length).toBeGreaterThan(0);
@@ -50,5 +50,23 @@ describe('subpath entries (ADR-026)', () => {
     }
     expect(new Set(seen).size).toBe(seen.length);
     expect(seen.sort()).toEqual(Object.keys(react).sort());
+  });
+});
+
+describe("'use client' (S9)", () => {
+  it('the root entry and every React entry start with the directive; /i18n (no React) does not', () => {
+    const src = join(import.meta.dirname, '../src');
+    const first = (f: string) => readFileSync(join(src, f), 'utf8').split('\n')[0];
+    expect(first('index.ts')).toBe("'use client';");
+    for (const f of readdirSync(join(src, 'entries'))) expect(first(`entries/${f}`), f).toBe(f === 'i18n.ts' ? first('entries/i18n.ts') : "'use client';");
+    expect(first('entries/i18n.ts')).not.toContain('use client');
+  });
+});
+
+describe('layered stylesheet (S8)', () => {
+  it('styles.layered.css is exported and imports styles.css into the smart-kit layer', () => {
+    const pkg = JSON.parse(readFileSync(join(import.meta.dirname, '../package.json'), 'utf8')) as { exports: Record<string, Record<string, string>> };
+    expect(pkg.exports['./styles.layered.css']).toEqual({ 'smart-kit-source': './src/theme/styles.layered.css', default: './dist/styles.layered.css' });
+    expect(readFileSync(join(import.meta.dirname, '../src/theme/styles.layered.css'), 'utf8')).toContain("@import './styles.css' layer(smart-kit);");
   });
 });

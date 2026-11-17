@@ -19,9 +19,9 @@
 
 | 项 | 响应式表格 | 网格表格 |
 | --- | --- | --- |
-| 分组（单级） | 保留，改为只能选可分组字段 | 不做 |
-| 组小计（在组标题行上） | **做** | 不做 |
-| 每组条数 | **做**（显示在组标题里） | 不做 |
+| 分组（单级） | 保留，改为只能选可分组字段 | 不做（2026-11-17 补做，见第 9 节） |
+| 组小计（在组标题行上） | **做** | 不做（同上） |
+| 每组条数 | **做**（显示在组标题里） | 不做（同上） |
 | 总计 | **做**（表尾一行） | **做**（AG Grid 底部固定行） |
 | 分组和合计进视图 | **做** | 合计进视图 |
 | 默认值来自注解 | `UI.PresentationVariant/GroupBy`、`Total` | `Total` |
@@ -119,6 +119,7 @@ $apply=filter((CompanyCode eq '1000') and (Supplier in ('0000100001','0000100007
 | GT-07 | `UI.PresentationVariant` 的 `GroupBy`、`Total` 作为默认值；分组和合计保存进视图并能恢复 | U、E |
 | GT-08 | 筛选、搜索、保存、删除、动作后合计跟着刷新；合计请求失败时显示"–"和提示，明细照常 | E |
 | GT-09 | 中英文文案、暗色主题、紧凑密度下显示正常；合计行有可读的无障碍名称 | E、S |
+| GT-10 | 网格表格按供应商分组：组头行显示组值、条数和净值小计（与服务端一致），不能选中；点表头排序后分组字段仍排在最前；滚到底续载 | E、S |
 
 U 单元测试，E 端到端，S 截图。
 
@@ -132,4 +133,15 @@ U 单元测试，E 端到端，S 截图。
 | 每组条数 | 只在能求小计时显示（有 `ApplySupported` 且分组字段可分组） | 条数也来自 `$apply` |
 
 公开 API 新增：core 的 `buildTotalsRequest`、`collectTotals`、`canTotal`、`canGroup`、`canSubtotal`、`unitPathOf`、`groupKey`、`TOTAL_COUNT_ALIAS`、`MAX_GROUP_VALUES` 和类型 `AggregationModel`、`TotalsEntry`、`TotalAmount`、`TotalsRequestOptions`；`CapabilityModel.aggregation`；`PresentationModel.groupBy`、`total`；`VariantContent.groupBy`、`totals`。react：`SmartTable` 的 `groupBy`、`onGroupByChange`、`totals`、`onTotalsChange`、`presentation`；`TableP13nDialog` 的 `totalable`、`totals`；`ResponsiveTable` 的 `groupSummary`、`totals`。
+
+## 9. 网格表格的分组（2026-11-17 补，讨论记录 D30）
+
+invoice-assure 的工作清单要在网格表格里按供应商、到期日分组看小计（`25` S3）。AG Grid 的行分组只在 Enterprise 版，所以自己做：
+
+- 分组时网格表格从无限行模型（`rowModelType: 'infinite'`）换成客户端行模型：行由 `useListQuery` 读，每次 100 行，滚到最后 20 行以内时读下一批。行模型在表格创建时定死，所以分组和不分组是两个实例（`key`）。
+- 在每组第一行前插一行组头（数据 `{ $smartKitGroup: { key, display, first } }`）：第一列显示“分组列: 值 (条数)”，跨到第一个合计列；合计列显示组小计。组小计、条数和响应式表格一样来自 `useSubtotals`（只请求已加载的组，每批最多 50 个）。小计到达后刷新组头单元格和行高（多币种时行高增加）。
+- 组头不能选中（`isRowSelectable`），没有行内动作和导航，双击、回车不打开。
+- 排序仍由服务端做：点表头改的是请求的排序，分组字段总在最前；客户端行模型自己的排序被 `postSortRows` 还原成服务端的顺序。
+- 分组时第一列不固定在左边：AG Grid 的跨列不能从固定区跨到滚动区。
+- 不做：多级分组、折叠和展开、恢复返回时的滚动位置（不分组时照旧）。
 

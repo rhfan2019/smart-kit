@@ -7,7 +7,8 @@
 //   - every subpath of @rhfan2019/smart-kit (and core) imports at runtime and exports what docs/api.md lists;
 //   - the types are found: every value and type name from docs/api.md, with moduleResolution "bundler" and "nodenext";
 //   - an app that imports only MicroChart ships what scripts/check-size.mjs measures (same method, ± 0.3 KB);
-//   - styles.css resolves and ends up in the built app;
+//   - styles.css and styles.layered.css resolve and end up in the built app (the layered one inside `@layer smart-kit`);
+//   - the React entries (all but /i18n) start with the 'use client' directive (Next.js App Router);
 //   - the docs for coding agents are in the package (node_modules/@rhfan2019/smart-kit/docs, skills).
 // Node project: smart-kit-server answers $metadata (and reads rows when the PostgreSQL test bed is there),
 //   the `smart-kit` command runs (`--help`, `check --strict` on the test bed's annotations), and `smart-kit agents`
@@ -59,6 +60,12 @@ for (const [key, dir] of Object.entries(PACKAGES)) {
   const targets = JSON.stringify(manifest.exports);
   const missing = [...targets.matchAll(/"(\.\/dist\/[^"]+)"/g)].map((m) => m[1].slice(2)).filter((f) => !files.includes(f));
   check(missing.length === 0, `${info.name}: every exports target is in the tarball`, missing.join(', '));
+  if (key === 'react') {
+    // S9: each React entry keeps its 'use client' directive at the very top of the built file.
+    const entries = Object.entries(manifest.exports).filter(([k]) => !k.endsWith('.css') && k !== './i18n').map(([, v]) => v.import.slice(2));
+    const without = entries.filter((f) => !/^["']use client["'];/.test(run('tar', ['-xOzf', tgz[key], `package/${f}`], work)));
+    check(without.length === 0, `${info.name}: ${entries.length} entries start with 'use client'`, without.join(', '));
+  }
 }
 
 }
@@ -88,7 +95,7 @@ const documented = (pkg, kind) => {
   const part = kind === 'values' ? section.split('### 类型')[0] : section.split('### 类型')[1] ?? '';
   return [...part.matchAll(/^- `([\w$]+)`/gm)].map((m) => m[1]).sort();
 };
-const subpaths = Object.keys(reactPkg.exports).filter((k) => k !== './styles.css').map((k) => (k === '.' ? '@rhfan2019/smart-kit' : `@rhfan2019/smart-kit/${k.slice(2)}`));
+const subpaths = Object.keys(reactPkg.exports).filter((k) => !k.endsWith('.css')).map((k) => (k === '.' ? '@rhfan2019/smart-kit' : `@rhfan2019/smart-kit/${k.slice(2)}`));
 writeFileSync(join(web, 'exports.mjs'), `const out = {};\nfor (const s of ${JSON.stringify(['@rhfan2019/smart-kit-core', ...subpaths])}) out[s] = Object.keys(await import(s)).sort();\nconsole.log(JSON.stringify(out));\n`);
 let exportsBySubpath = {};
 try {
@@ -149,6 +156,20 @@ try {
   check(css.includes('--sk-') && css.includes('.sk-'), 'styles.css: resolves and ends up in the built app', `${(gzipSync(css).length / 1024).toFixed(1)} KB gzip`);
 } catch (e) {
   check(false, 'vite build of the MicroChart app', String(e.stderr ?? e).split('\n').slice(0, 5).join(' | '));
+}
+// S8: the layered stylesheet resolves and keeps its layer through a bundler
+writeFileSync(join(web, 'src/layered.js'), "import '@rhfan2019/smart-kit/styles.layered.css';\n");
+writeFileSync(join(web, 'layered.mjs'), `import { build } from 'vite';
+import { readdirSync, readFileSync } from 'node:fs';
+await build({ configFile: false, logLevel: 'silent', build: { outDir: 'dist-layered', emptyOutDir: true, rollupOptions: { input: 'src/layered.js' } } });
+const css = readdirSync('dist-layered/assets').filter((f) => f.endsWith('.css')).map((f) => readFileSync('dist-layered/assets/' + f, 'utf8')).join('');
+console.log(JSON.stringify({ layered: /^@layer smart-kit\\s*\\{/.test(css.trim()), tokens: css.includes('--sk-'), classes: css.includes('.sk-') }));
+`);
+try {
+  const r = JSON.parse(run('node', ['layered.mjs'], web).trim().split('\n').pop());
+  check(r.layered && r.tokens && r.classes, 'styles.layered.css: resolves, ends up in the built app inside @layer smart-kit', JSON.stringify(r));
+} catch (e) {
+  check(false, 'vite build of styles.layered.css', String(e.stderr ?? e).split('\n').slice(0, 5).join(' | '));
 }
 // same measurement as check-size.mjs ("MicroChart only", everything except React), but resolved through node_modules
 writeFileSync(join(web, 'measure.mjs'), `import { build } from 'vite';

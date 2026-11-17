@@ -65,6 +65,8 @@ export interface Subtotals {
   get(value: unknown): TotalsEntry | undefined;
   error: Error | null;
   loading: boolean;
+  /** Changes when new subtotals arrived. */
+  version: string;
 }
 
 /**
@@ -112,6 +114,7 @@ export function useSubtotals(o: SubtotalsQueryOptions): Subtotals {
     },
     error,
     loading: results.some((r) => r.isFetching),
+    version: dataKey,
   };
 }
 

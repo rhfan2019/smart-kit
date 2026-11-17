@@ -165,3 +165,59 @@ describe('SQL: data scope (permissions) at the query-plan layer', () => {
     expect(expanded.sql).toMatch(/"is_blocked" = \$\d+::boolean/);
   });
 });
+
+describe('SQL: lambda operators any / all (TECH-054)', () => {
+  const enc = encodeURIComponent;
+
+  it('any: EXISTS over the collection navigation, correlated by the join, within the target scope', () => {
+    const c = compile('PurchaseOrders', `$filter=${enc("_Item/any(i: i/Plant eq '1010')")}`);
+    expect(c.sql).toMatch(/exists \(select 1 from "purchasing"\."purchase_order_item" as "t\d+" where "t\d+"\."purchase_order" = "t0"\."purchase_order" and "t\d+"\."plant" = \$1::text\)/);
+    expect(compile('PurchaseOrders', `$filter=${enc('_Item/any()')}`).sql).toMatch(/exists \(select 1 from "purchasing"\."purchase_order_item" as "t\d+" where "t\d+"\."purchase_order" = "t0"\."purchase_order"\)/);
+    // the scope of the target applies to the rows the lambda looks at
+    const scoped = compile('PurchaseOrders', `$filter=${enc("_Item/any(i: i/Plant eq '1010')")}`, { scope: (s) => (s === 'PurchaseOrderItems' ? "Material ne 'MAT-X'" : undefined) });
+    expect(scoped.sql).toMatch(/exists \(select 1 from "purchasing"\."purchase_order_item" as "t(\d+)" where "t\1"\."purchase_order" = "t0"\."purchase_order" and "t\1"\."material" <> \$1::text and "t\1"\."plant" = \$2::text\)/);
+  });
+
+  it('all: NOT EXISTS of a row that does not match (two-valued under the negation)', () => {
+    const c = compile('PurchaseOrders', `$filter=${enc("_Item/all(i: i/Plant eq '1010')")}`);
+    expect(c.sql).toMatch(/not exists \(select 1 from "purchasing"\."purchase_order_item" as "t\d+" where "t\d+"\."purchase_order" = "t0"\."purchase_order" and not \("t\d+"\."plant" = \$1::text\)\)/);
+    const nullable = compile('PurchaseOrderItems', `$filter=${enc("_History/all(h: h/MovementType eq '101')")}`);
+    expect(nullable.sql).toContain('not (coalesce(');
+  });
+
+  it('nests lambdas, refers to $it and to outer variables, joins single-valued navigations inside', () => {
+    const c = compile('PurchaseOrders', `$filter=${enc("_Item/any(i: i/_History/any(h: h/Currency eq $it/Currency and h/Category eq 'GR') and i/_Material/MaterialName eq 'x')")}`);
+    expect(c.sql).toMatch(/exists \(select 1 from "purchasing"\."purchase_order_item" as "t(\d+)" left join "purchasing"\."material" as "t\d+" on .* where "t\1"\."purchase_order" = "t0"\."purchase_order" and \(exists \(select 1 from "purchasing"\."item_history" as "t(\d+)" where .*"t\2"\."currency" = "t0"\."currency"/);
+    rejects(() => compile('PurchaseOrders', `$filter=${enc("_Item/any(i: x/Plant eq '1')")}`), 400, 'PropertyNotFound');
+    rejects(() => compile('PurchaseOrders', `$filter=${enc("_Supplier/any(s: s/Country eq 'DE')")}`), 400, 'InvalidPath');
+    rejects(() => compile('PurchaseOrders', `$filter=${enc("_Item/Plant eq '1'")}`), 400, 'InvalidPath');
+    rejects(() => compile('PurchaseOrders', `$filter=${enc("_Item/any(i: i/_History/any(i: i/Category eq 'GR'))")}`), 400, 'InvalidFilter');
+    rejects(() => compile('PurchaseOrders', `$filter=${enc('_Item/any(i: i/Plant)')}`), 400, 'InvalidFilter');
+  });
+
+  it('a scope may use any() / all() over collection navigations; it applies to reads, $count, keys, $expand, paths and lambdas of other sets', () => {
+    const scope = (s: string) => (s === 'PurchaseOrders' ? "_Item/any(i: i/Plant eq '1010' and i/_Material/MaterialName ne 'x')" : undefined);
+    const root = compile('PurchaseOrders', '$top=5', { scope });
+    expect(root.sql).toMatch(/where exists \(select 1 from "purchasing"\."purchase_order_item" as "t\d+" left join "purchasing"\."material"/);
+    expect(compile("PurchaseOrders('4500000001')", '', { scope }).sql).toMatch(/exists \(select 1 from "purchasing"\."purchase_order_item"/);
+    // from other sets: single-valued path (LEFT JOIN ... ON), parent in the path, $expand, a lambda of the filter
+    const path = compile('PurchaseOrderItems', `$filter=${enc("_PurchaseOrder/Status eq 'NEW'")}`, { scope });
+    expect(path.sql).toMatch(/left join "purchasing"\."purchase_order" as "t(\d+)" on "t\1"\."purchase_order" = "t0"\."purchase_order" and exists \(select 1 from "purchasing"\."purchase_order_item" as "t\d+" .*= "t\1"\."purchase_order"/);
+    const parent = compile("PurchaseOrders('4500000001')/_Item", '', { scope });
+    expect(parent.sql).toMatch(/exists \(select 1 from "purchasing"\."purchase_order" as "(p\d+)" where .* and exists \(select 1 from "purchasing"\."purchase_order_item" as "t\d+" .*= "\1"\."purchase_order"/);
+    const expand = compile('PurchaseOrderItems', '$expand=_PurchaseOrder', { scope });
+    expect(expand.sql.match(/exists \(select 1 from "purchasing"\."purchase_order_item"/g)).toHaveLength(1);
+    // navigations inside the scope condition see all rows: the items' scope is not applied there (no recursion)
+    const both = (s: string) => (s === 'PurchaseOrders' ? "_Item/any(i: i/Plant eq '1010')" : s === 'PurchaseOrderItems' ? "_PurchaseOrder/CompanyCode eq '1000' or Plant eq '1010'" : undefined);
+    expect(compile('PurchaseOrders', '', { scope: both }).parameters).not.toContain('1000'); // the items' scope is not used here
+    expect(() => compile('PurchaseOrderItems', '', { scope: both })).toThrow(/scope of PurchaseOrderItems/);
+    const fine = (s: string) => (s === 'PurchaseOrders' ? "_Item/any(i: i/Plant eq '1010')" : s === 'PurchaseOrderItems' ? "Material ne 'MAT-X'" : undefined);
+    expect(compile('PurchaseOrders', '', { scope: fine }).parameters).not.toContain('MAT-X');
+    expect(compile('PurchaseOrders', `$filter=${enc('_Item/any()')}`, { scope: fine }).parameters).toContain('MAT-X');
+  });
+
+  it('a scope may not follow single-valued navigations outside a lambda', () => {
+    expect(() => compile('PurchaseOrders', '', { scope: () => "_Supplier/Country eq 'DE'" })).toThrow(/scope of PurchaseOrders/);
+    expect(() => compile('PurchaseOrders', '', { scope: (s) => (s === 'PurchaseOrders' ? "_Supplier/_Orders/any(o: o/Status eq 'NEW')" : undefined) })).toThrow(/scope of PurchaseOrders/);
+  });
+});

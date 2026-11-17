@@ -1,0 +1,7 @@
+/*
+ * smart-kit styles in the cascade layer "smart-kit" (S8): `@import '@rhfan2019/smart-kit/styles.layered.css';`. The
+ * host declares the order of its layers, e.g. `@layer base, mantine, smart-kit, components, utilities;`, and any
+ * unlayered host rule wins over smart-kit. In the published package this file is styles.css and tokens.css inlined in
+ * `@layer smart-kit { … }` (scripts/copy-css.mjs), so it does not depend on the bundler supporting `@import … layer()`.
+ */
+@import './styles.css' layer(smart-kit);

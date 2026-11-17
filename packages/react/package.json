@@ -118,6 +118,10 @@
     "./styles.css": {
       "smart-kit-source": "./src/theme/styles.css",
       "default": "./dist/styles.css"
+    },
+    "./styles.layered.css": {
+      "smart-kit-source": "./src/theme/styles.layered.css",
+      "default": "./dist/styles.layered.css"
     }
   },
   "publishConfig": {

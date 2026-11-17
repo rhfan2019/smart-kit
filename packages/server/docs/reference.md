@@ -5,7 +5,7 @@
 
 ## `@rhfan2019/smart-kit-server`
 
-`ActionHandler` (type) · `AggregatePlan` (interface) · `applyLabels` (function) · `boundActions` (function) · `BoundExpr` (type) · `buildSchema` (function) · `CollectionPlan` (interface) · `ColumnInfo` (interface) · `createODataService` (function) · `createPostgresDb` (function) · `EntitySetHooks` (interface) · `EntitySetInfo` (interface) · `errorBody` (function) · `escapeLike` (function) · `Expr` (type) · `Literal` (type) · `mergeMetadata` (function) · `MetadataDocuments` (class) · `MetadataSource` (interface) · `NavigationInfo` (interface) · `ODataServerError` (class) · `ODataService` (interface) · `ODataServiceOptions` (interface) · `parseFilter` (function) · `parseQueryOptions` (function) · `parseResourcePath` (function) · `parseSearch` (function) · `Planner` (class) · `PostgresDbOptions` (interface) · `QueryOptions` (interface) · `Row` (type) · `ScopeFunction` (type) · `SearchExpr` (type) · `ServiceMessage` (interface) · `ServiceSchema` (interface) · `SqlBuilder` (class) · `StorageMapping` (interface) · `toNodeListener` (function) · `validationError` (function) · `WriteContext` (interface)
+`ActionHandler` (type) · `AggregatePlan` (interface) · `applyLabels` (function) · `boundActions` (function) · `BoundExpr` (type) · `buildSchema` (function) · `CollectionPlan` (interface) · `ColumnInfo` (interface) · `createKysely` (function) · `createODataService` (function) · `createPostgresDb` (function) · `EntitySetHooks` (interface) · `EntitySetInfo` (interface) · `errorBody` (function) · `escapeLike` (function) · `Expr` (type) · `KyselyOnPoolOptions` (interface) · `Literal` (type) · `mergeMetadata` (function) · `MetadataDocuments` (class) · `MetadataSource` (interface) · `NavigationInfo` (interface) · `ODataServerError` (class) · `ODataService` (interface) · `ODataServiceOptions` (interface) · `parseFilter` (function) · `parseQueryOptions` (function) · `parseResourcePath` (function) · `parseSearch` (function) · `Planner` (class) · `PostgresDbOptions` (interface) · `QueryOptions` (interface) · `Row` (type) · `ScopeFunction` (type) · `SearchExpr` (type) · `ServiceMessage` (interface) · `ServiceSchema` (interface) · `SqlBuilder` (class) · `StorageMapping` (interface) · `toNodeListener` (function) · `validationError` (function) · `WriteContext` (interface)
 
 ### `ActionHandler` — type
 
@@ -88,6 +88,14 @@ buildSchema(model: MetaModel, storage?: StorageMapping): ServiceSchema
 | `scale` |  | `number \| 'variable'` |  |
 | `precision` |  | `number` |  |
 
+### `createKysely` — function
+
+Kysely on a `pg` pool the host already has (instead of the separate pool of `createPostgresDb`), with the session settings this package relies on: TimeZone UTC and a statement timeout. `db.destroy()` does not end the host's pool; the host ends it.
+
+```ts
+createKysely(pool: pg.Pool, o?: KyselyOnPoolOptions): Kysely<any>
+```
+
 ### `createODataService` — function
 
 Creates the OData service. Throws when $metadata and the storage mapping do not fit together.
@@ -152,8 +160,15 @@ escapeLike(text: string): string
 A $filter expression.
 
 ```ts
-export type Expr = | Literal | { kind: 'path'; segments: string[] } | { kind: 'compare'; op: CompareOp; left: Expr; right: Expr } | { kind: 'in'; left: Expr; list: Expr[] } | { kind: 'and' | 'or'; left: Expr; right: Expr } | { kind: 'not'; operand: Expr } | { kind: 'call'; name: string; args: Expr[] };
+export type Expr = | Literal | { kind: 'path'; segments: string[] } | { kind: 'compare'; op: CompareOp; left: Expr; right: Expr } | { kind: 'in'; left: Expr; list: Expr[] } | { kind: 'and' | 'or'; left: Expr; right: Expr } | { kind: 'not'; operand: Expr } | { kind: 'call'; name: string; args: Expr[] } /** * Lambda operator over a collection navigation: `path/any(variable: body)`, `path/any()`, …
 ```
+
+### `KyselyOnPoolOptions` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `statementTimeout` |  | `number` | Statement timeout in milliseconds (default 15000) for the queries of the service. |
+| `keepSettings` |  | `boolean` | false (default): the settings are made each time the service takes a connection from the pool and reset (`RESET TimeZone`, `RESET statement_timeout`) when it gives the connection back, so the host's own queries on the same pool keep the host's settings; two short statements per connection use. true: the settings are made once per connection and stay; cheaper, for a pool whose connections may all run in UTC with this statement timeout. |
 
 ### `Literal` — type
 
@@ -222,7 +237,7 @@ new ODataServerError(status: number, code: string, message: string, target?: str
 | `maxPageSize` |  | `number` | Most rows per response; more rows are reached through |
 | `searchFields` |  | `Record&lt;string, string[]>` | $search: property paths searched per entity set (default: the string properties of the entity type). |
 | `context` |  | `(request: Request) => C \| Promise&lt;C>` | Per-request context (the user, the tenant …), passed to `scope`. |
-| `scope` |  | `ScopeFunction&lt;C>` | Data scope (permissions) per entity set: an OData $filter over the set's own properties, or undefined for no restriction. Applied wherever the set is read: the addressed set, parents in the path, $expand, navigation paths in $filter and $orderby, $apply. Rows outside the scope do not exist for the request (404 for a key). |
+| `scope` |  | `ScopeFunction&lt;C>` | Data scope (permissions) per entity set: an OData $filter over the set's own properties and any() / all() over its collection navigations (e.g. `_ScopeKeys/any(k: k/CompanyCode eq '1000')`), or undefined for no restriction. Applied wherever the set is read: the addressed set, $count, parents in the path, $expand, navigation paths and lambda operators in $filter and $orderby, $apply, and the reads of writes. Rows outside the scope do not exist for the request (404 for a key). Navigations inside a scope condition see all rows of their targets. |
 | `entitySets` |  | `Record&lt;string, EntitySetHooks&lt;C>>` | The entity sets that accept writes, with their business rules: which properties a POST / PATCH may set, and hooks before and after create, update and delete (numbers, defaults, totals, validation). An entity set not listed here is read-only (405); a listed one (`{}` for no rules) is writable as far as its Capabilities Insert-, Update- and DeleteRestrictions allow. |
 | `actions` |  | `Record&lt;string, ActionHandler&lt;C>>` | Bound actions by qualified name ("Purchasing.approve"); they must be declared in $metadata (annotation file). |
 | `afterRead` |  | `(e: { entitySet: string; row: Record&lt;string, unknown>; language: string; context: C }) => void` | Called for every entity written to a read or write response (also expanded entities and the objects of grouped paths in $apply), with the language of the request: e.g. language-dependent texts of code lists. Changes only what is returned; filters and sorting still see the stored values. |
@@ -299,7 +314,7 @@ export type Row = Record<string, unknown>;
 
 ### `ScopeFunction` — type
 
-Data scope of an entity set for the current request: an OData $filter expression, or nothing (no restriction).
+Data scope of an entity set for the current request: an OData $filter expression, or nothing (no restriction). The expression may use the set's own properties and lambda operators over its collection navigations (`_ScopeKeys/any(k: k/CompanyCode in ('1000','2000'))`); inside a lambda body, paths through the lambda variable may also follow single-valued navigations. Navigations inside a scope condition see all rows of their targets (the targets' own scopes do not apply there, so scopes cannot recurse).
 
 ```ts
 export type ScopeFunction<C> = (entitySet: string, context: C) => string | undefined;
@@ -346,7 +361,7 @@ Where the data of an entity set lives. Written by `smart-kit generate` (the *.st
 
 | Member | Required | Type | Description |
 | --- | --- | --- | --- |
-| `entitySets` | **yes** | `Record&lt;string, { table: string; columns?: Record&lt;string, string> }>` |  |
+| `entitySets` | **yes** | `Record&lt; string, { table: string; columns?: Record&lt;string, string>; /** * Join of a navigation property whose $metadata has no referential…` |  |
 
 ### `toNodeListener` — function
 

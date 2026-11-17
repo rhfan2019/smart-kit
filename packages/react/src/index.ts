@@ -1,3 +1,5 @@
+'use client';
+
 /**
  * Public API of @rhfan2019/smart-kit. Everything exported here is listed in docs/api.md (AC-Q-03).
  * The root entry only re-exports the subpath entries in ./entries (ADR-026); add new exports there.

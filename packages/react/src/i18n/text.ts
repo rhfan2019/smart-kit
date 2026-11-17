@@ -24,3 +24,11 @@ export function createText(locale: Locale, overrides?: Partial<Messages>): TextF
     return template.replace(/\{(\w+)\}/g, (_, name: string) => (params[name] === undefined ? `{${name}}` : String(params[name])));
   };
 }
+
+/** Keys that have a variant `<key>Type` naming the kind of record (UI.HeaderInfo/TypeName). */
+export type TypedKey = 'create.done' | 'delete.done' | 'edit.conflict' | 'object.notFound' | 'object.loadError';
+
+/** The message naming the record type ("用户已创建。"); without a type name the neutral text ("已创建。"). */
+export function typedText(t: TextFn, key: TypedKey, typeName: string | undefined, params: TextParams = {}): string {
+  return typeName ? t(`${key}Type` as MessageKey, { ...params, type: typeName }) : t(key, params);
+}

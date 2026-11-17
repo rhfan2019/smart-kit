@@ -49,6 +49,10 @@ import '@mantine/dates/styles.css';
 import '@rhfan2019/smart-kit/styles.css';
 ```
 
+With CSS cascade layers (Tailwind 4, Mantine's layered styles), import `@rhfan2019/smart-kit/styles.layered.css`
+instead: the same rules inside `@layer smart-kit`; declare the order of your layers and any unlayered host rule wins.
+See `docs/recipes.md` § 14.
+
 ## App setup (copy this)
 
 Every smart-kit component must be inside `MantineProvider` (with the smart-kit theme) and `SmartKitProvider` (with
@@ -160,6 +164,7 @@ ships about 5 KB gzip of smart-kit).
 | `@rhfan2019/smart-kit/templates` | `SmartListReport`, `SmartObjectPage` | **yes** |
 | `@rhfan2019/smart-kit/cards` | `Card`, `Header`, `NumericHeader`, `NumericSideIndicator`, `ListContent`, `TableContent`, `ObjectContent`, `AnalyticalContent`, `TimelineContent`, `CalendarContent` | no |
 | `@rhfan2019/smart-kit/styles.css` | the one stylesheet of all components | — |
+| `@rhfan2019/smart-kit/styles.layered.css` | the same stylesheet inside `@layer smart-kit` | — |
 
 `@rhfan2019/smart-kit-core` (no React): `loadService`, `ODataV4Provider`, `MemoryProvider` (tests), `buildModel`,
 `keyPredicate`, `ODataVariantStore`, `createSessionPageStateStore`, the types `Row`, `MetaModel`, `NavigationAdapter`,
@@ -167,9 +172,14 @@ ships about 5 KB gzip of smart-kit).
 
 ## Theme, texts
 
-- Colours, spacing and sizes are CSS variables (`--sk-*`). Themes: set `data-theme="yellow" | "navy" | "sky" | "dark"`
-  and `data-density="comfortable" | "compact"` on `<html>` (defaults: yellow, comfortable). To use the host app's
-  colours, point the semantic tokens at your variables: `html[data-theme] { --sk-color-link: var(--my-brand); }`.
+- Colours, spacing and sizes are CSS variables (`--sk-*`). Themes: set `data-sk-theme="yellow" | "navy" | "sky" | "dark"`
+  and `data-sk-density="comfortable" | "compact"` on `<html>` or any container (defaults: yellow, comfortable). The
+  former `data-theme` / `data-density` still work while `<html>` has no `data-sk-theme` / `data-sk-density`; a host
+  that uses `data-theme` for its own themes sets `data-sk-theme="host"` (no built-in theme by that name) on `<html>`,
+  so smart-kit ignores it. To use the host app's colours, point the semantic tokens at your variables:
+  `:root { --sk-color-link: var(--my-brand); }` (after smart-kit's stylesheet, or unlayered with `styles.layered.css`).
+- The React entries start with `'use client'` (all except `/i18n`): in Next.js App Router import them from client
+  components; a server component importing one gets a client reference instead of a hooks error.
 - Library texts are English and Chinese (`locale`); override any text with `messages` on `SmartKitProvider`.
 - Labels of fields come from `Common.Label` in the service (per language from the server), not from React.
 

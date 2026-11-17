@@ -16,7 +16,7 @@ const TARGETS = [
     out: 'packages/react/docs/reference.md',
     title: '@rhfan2019/smart-kit — API reference',
     entries: Object.keys(react.exports)
-      .filter((k) => k !== '.' && k !== './styles.css')
+      .filter((k) => k !== '.' && !k.endsWith('.css'))
       .map((k) => ({ spec: `@rhfan2019/smart-kit/${k.slice(2)}`, file: `packages/react/${react.exports[k]['smart-kit-source'].slice(2)}` })),
   },
   { out: 'packages/core/docs/reference.md', title: '@rhfan2019/smart-kit-core — API reference', entries: [{ spec: '@rhfan2019/smart-kit-core', file: 'packages/core/src/index.ts' }] },

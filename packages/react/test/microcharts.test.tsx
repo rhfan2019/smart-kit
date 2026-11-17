@@ -62,7 +62,7 @@ describe('docs/15 shared rules', () => {
 
   it('MC-08 every theme defines the eleven palette colours; components only reference tokens', () => {
     const css = readFileSync(join(import.meta.dirname, '../src/theme/tokens.css'), 'utf8');
-    for (const theme of [":root,\n[data-theme='yellow']", "[data-theme='navy']", "[data-theme='sky']", "[data-theme='dark']"]) {
+    for (const theme of [":root,\n[data-sk-theme='yellow']", "[data-sk-theme='navy']", "[data-sk-theme='sky']", "[data-sk-theme='dark']"]) {
       const block = css.slice(css.indexOf(theme), css.indexOf('}', css.indexOf(theme)));
       for (let i = 1; i <= 11; i++) expect(block).toContain(`--sk-color-chart-${i}: var(--sk-`);
     }

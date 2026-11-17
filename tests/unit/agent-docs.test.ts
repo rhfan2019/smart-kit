@@ -83,7 +83,7 @@ describe('docs for coding agents (ADR-030)', () => {
     const listed = rows.map((r) => `./${r[1]}`).sort();
     expect(listed).toEqual(Object.keys(pkg.exports).filter((k) => k !== '.').sort());
     for (const [, sub, names] of rows) {
-      if (sub === 'styles.css') continue;
+      if (sub.endsWith('.css')) continue;
       const mod = (await import(join(ROOT, `packages/react/src/entries/${sub}.ts`))) as Record<string, unknown>;
       for (const [, name] of names!.matchAll(/`(\w+)`/g)) expect(Object.keys(mod), `${name} in /${sub}`).toContain(name);
     }

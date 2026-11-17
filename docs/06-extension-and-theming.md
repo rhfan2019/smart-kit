@@ -87,7 +87,7 @@
 
 ### 3.4 主题与密度
 
-- **主题**：根元素（或任意容器）上的 `data-theme`，只重新定义语义层：
+- **主题**：根元素（或任意容器）上的 `data-sk-theme`，只重新定义语义层（S7：原来的 `data-theme` 和宿主的同名属性冲突，改用本库自己的属性名；旧的 `data-theme` / `data-density` 在 `<html>` 没有 `data-sk-theme` / `data-sk-density` 时仍然有效，见下面的“关掉旧属性”）：
 
   | 值 | 主色 | 强调色 |
   | --- | --- | --- |
@@ -96,22 +96,24 @@
   | `sky` | 蓝（#0064d9 链接、#0070f2 按钮） | 浅灰底白卡片；颜色取自 SAP Horizon 实测值（docs/20 第 10 节，D21） |
   | `dark` | 深色表面 | 明黄（作为线条和底色） |
 
-- **从宿主应用继承配色**（D22）：所有颜色都是 CSS 变量，组件只引用语义层；宿主把语义令牌指向自己的变量即可，不用改本库。写在带 `data-theme` 的元素上（通常是 `html`），组件层令牌（图表色、表头底色等）会跟着重新计算：
+- **从宿主应用继承配色**（D22）：所有颜色都是 CSS 变量，组件只引用语义层；宿主把语义令牌指向自己的变量即可，不用改本库。写在带 `data-sk-theme` 的元素上（通常是 `html`），组件层令牌（图表色、表头底色等）会跟着重新计算：
 
   ```css
-  html[data-theme] {
+  html[data-sk-theme] {
     --sk-color-link: var(--my-brand-primary);
     --sk-color-primary: var(--my-brand-primary);
     --sk-color-surface: var(--my-card-background);
   }
   ```
 
-  选择器 `html[data-theme]` 比 `tokens.css` 里的 `[data-theme='…']` 更具体，所以不受样式文件加载顺序影响。只想让页面的一部分换色时，把 `data-theme` 和这些变量放在那一部分的容器上。2026-11-16 在演示页验证过：链接色、卡片底色、图表色都随宿主变量变化。
+  选择器 `html[data-sk-theme]` 比 `tokens.css` 里的 `[data-sk-theme='…']` 更具体，所以不受样式文件加载顺序影响（旧写法 `html[data-theme]` 同样有效）。用 `@rhfan2019/smart-kit/styles.layered.css`（整份样式在 `@layer smart-kit` 里，S8）时，宿主不分层的规则总是优先，写在 `:root` 上即可。只想让页面的一部分换色时，把 `data-sk-theme` 和这些变量放在那一部分的容器上。
 
-- **密度**：`data-density`，`comfortable`（默认）或 `compact`。只重新定义尺寸令牌，例如控件高 32 → 26、行高 36 → 28。
-- **Mantine 桥接**：Mantine 的 CSS 变量（`--mantine-color-body`、`--mantine-color-text`、`--mantine-primary-color-filled`，以及 Alert、Badge 等用到的 red / blue / green / yellow / orange 色板）通过 `smartKitCssVariablesResolver` 和 `tokens.css` 指向语义层。宿主用 `forceColorScheme="light"`，深色由我们的 `data-theme="dark"` 实现，颜色完全由我们的变量决定。
+- **关掉旧属性**（S7）：宿主自己用 `data-theme` 时，在 `<html>` 上设 `data-sk-theme="host"`（任何不是内置主题名的值都行）：本库不再看 `data-theme` / `data-density`，`:root` 上的默认值只作后备，配色全听宿主的 `--sk-*`。实现：旧选择器写成 `[data-theme='navy']:where(:root:not([data-sk-theme]), :root:not([data-sk-theme]) *)`，`:where()` 不增加优先级。2026-11-16 在演示页验证过：链接色、卡片底色、图表色都随宿主变量变化。
+
+- **密度**：`data-sk-density`（旧名 `data-density`），`comfortable`（默认）或 `compact`。只重新定义尺寸令牌，例如控件高 32 → 26、行高 36 → 28。
+- **Mantine 桥接**：Mantine 的 CSS 变量（`--mantine-color-body`、`--mantine-color-text`、`--mantine-primary-color-filled`，以及 Alert、Badge 等用到的 red / blue / green / yellow / orange 色板）通过 `smartKitCssVariablesResolver` 和 `tokens.css` 指向语义层。宿主用 `forceColorScheme="light"`，深色由我们的 `data-sk-theme="dark"` 实现，颜色完全由我们的变量决定。
 - **AG Grid 桥接**：主题参数全部写成 `var(--sk-…)`，例如 `backgroundColor: 'var(--sk-color-surface)'`。切换主题时不重建表格。
-- **JS 里的颜色**：图表、头像等需要在 JS 里用颜色的地方，用 `readToken('--sk-color-accent')` 读取计算后的值；`useThemeTokens()` 在 `data-theme` 变化时（通过 `MutationObserver`）重新读取。
+- **JS 里的颜色**：图表、头像等需要在 JS 里用颜色的地方，用 `readToken('--sk-color-accent')` 读取计算后的值；`useThemeTokens()` 在 `data-sk-theme` / `data-sk-density`（以及旧的 `data-theme` / `data-density`）变化时（通过 `MutationObserver`）重新读取。
 - **检查**：
   - `npm run lint:tokens`：组件的 TS、TSX 和 CSS 里不出现颜色字面量（`#…`、`rgb(`、`hsl(`、颜色名）和像素字面量的间距、字号，只有 `tokens.css` 例外。
   - 对比度测试：读出四个组合下语义文字色和背景色的计算值，校验对比度不低于 4.5:1。

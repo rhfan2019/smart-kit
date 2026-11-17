@@ -28,6 +28,9 @@ const service = createODataService({
 createServer(toNodeListener((request) => service.handle(request))).listen(4004);
 ```
 
+Already have a `pg` pool? `createKysely(pool)` builds the `db` on it (UTC sessions, statement timeout). Data scopes
+may go through collection navigations: `scope: (set, user) => set === 'Invoices' ? "_ScopeKeys/any(k: k/CompanyCode eq '1000')" : undefined`.
+
 Every value is a SQL parameter; table and column names come only from the generated mapping. Documentation in the
 package: `docs/README.md` (options, hooks, actions, data scope, pitfalls), `docs/reference.md`. The full flow from
 tables to React pages: `@rhfan2019/smart-kit` `skills/smart-kit-getting-started/SKILL.md`.

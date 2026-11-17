@@ -1,7 +1,9 @@
 // After a regeneration: do the hand-written annotations still point at existing types, properties, navigation
 // properties and entity sets? Checks every <Annotations Target>, and the paths inside the annotations
 // (Path, PropertyPath, NavigationPropertyPath, AnnotationPath, ValueList CollectionPath and ValueListProperty).
+// Also: do the navigations declared in smart-kit.config.json (views) point at existing entities and columns?
 import { xml2js, type Element } from 'xml-js';
+import { isDeclaredNavigation, type CliConfig } from './config';
 
 interface TypeInfo {
   properties: Set<string>;
@@ -181,4 +183,42 @@ function walk(el: Element, base: string, visit: (kind: PathKind, path: string, e
     }
     walk(child, base, visit, coll);
   }
+}
+
+/** The generated storage mapping (*.storage.json), as far as the check needs it. */
+export interface StorageFile {
+  entitySets: Record<string, { table: string; columns?: Record<string, string>; navigations?: Record<string, { on: Record<string, string> }> }>;
+}
+
+/**
+ * Checks the navigations declared in the configuration (`navigations.<name>` with `from`) against the generated
+ * CSDL and storage mapping: `from` and `to` are entities, every column of `on` exists, and the navigation
+ * properties were generated.
+ */
+export function checkDeclaredNavigations(config: Pick<CliConfig, 'schema' | 'navigations'>, index: CsdlIndex, storage: StorageFile, file = 'smart-kit.config.json'): CheckProblem[] {
+  const problems: CheckProblem[] = [];
+  const setOf = (table: string) => Object.entries(storage.entitySets).find(([, s]) => s.table === `${config.schema}.${table}` || s.table === table);
+  for (const [key, n] of Object.entries(config.navigations ?? {})) {
+    if (!isDeclaredNavigation(n)) continue;
+    const target = `navigations.${key}`;
+    const report = (message: string) => problems.push({ file, target, message });
+    const from = setOf(n.from);
+    const to = setOf(n.to);
+    if (!from) report(`"from": table or view '${n.from}' is not an entity of the generated service (no such table or view in schema "${config.schema}", left out, or without keys)`);
+    if (!to) report(`"to": table or view '${n.to}' is not an entity of the generated service (no such table or view in schema "${config.schema}", left out, or without keys)`);
+    if (!from || !to) continue;
+    const has = (s: StorageFile['entitySets'][string], name: string) => Object.entries(s.columns ?? {}).some(([p, c]) => c === name || p === name);
+    const before = problems.length;
+    for (const [a, b] of Object.entries(n.on)) {
+      if (!has(from[1], a)) report(`"on": column '${a}' does not exist in '${n.from}'`);
+      if (!has(to[1], b)) report(`"on": column '${b}' does not exist in '${n.to}'`);
+    }
+    if (problems.length > before) continue;
+    const name = (n.toMany ?? n.toOne)!;
+    const fromType = index.types.get(index.sets.get(from[0]) ?? '');
+    const toType = index.types.get(index.sets.get(to[0]) ?? '');
+    if (!fromType?.navigations.has(name) || !from[1].navigations?.[name]) report(`navigation property '${name}' of ${from[0]} is not in the generated files (run smart-kit generate)`);
+    if (n.partner && (!toType?.navigations.has(n.partner) || !to[1].navigations?.[n.partner])) report(`navigation property '${n.partner}' of ${to[0]} is not in the generated files (run smart-kit generate)`);
+  }
+  return problems;
 }
