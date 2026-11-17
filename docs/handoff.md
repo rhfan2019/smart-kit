@@ -17,6 +17,7 @@
 
 ## 2. 下一步
 
+0. invoice-assure 试用 0.1.0 发现的 23 个问题在 `docs/25-invoice-assure-issues.md`，那里排了先修哪几条（S15、S22、S20，再 S1、S2、S4）。
 0. 自写服务的草稿（D16 的 D 部分）还没做，要不要做由用户决定；`$batch`、深层新建、PUT 也没做。
 
 1. 用户决定是否推送；推送后看 CI，第一次运行时生成 Linux 截图基准（`npx playwright test tests/e2e/quality.spec.ts -g AC-THEME-01 --update-snapshots`）并提交。
