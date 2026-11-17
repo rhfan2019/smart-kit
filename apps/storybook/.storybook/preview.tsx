@@ -6,7 +6,7 @@ import { Providers } from '../stories/providers';
 
 const preview: Preview = {
   globalTypes: {
-    theme: { description: 'smart-kit theme', toolbar: { icon: 'paintbrush', items: ['yellow', 'navy', 'dark'] } },
+    theme: { description: 'smart-kit theme', toolbar: { icon: 'paintbrush', items: ['yellow', 'navy', 'sky', 'dark'] } },
     density: { description: 'density', toolbar: { icon: 'component', items: ['comfortable', 'compact'] } },
     locale: { description: 'language', toolbar: { icon: 'globe', items: ['en', 'zh'] } },
   },

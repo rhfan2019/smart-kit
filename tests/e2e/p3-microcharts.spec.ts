@@ -30,8 +30,8 @@ test('MC-02 MC-27 header facet: the chart fills the facet; MC-24 the item shows 
   await open(page, orderPath('4500000001'));
   const bullet = page.locator('[data-sk-facet="HeaderBudget"] [data-sk-microchart="bullet"]');
   await expect(bullet).toBeVisible();
-  const box = (await bullet.boundingBox())!;
-  expect(box.height).toBeGreaterThanOrEqual(56);
+  // the facet re-renders when its data arrives: read the box once it is stable (boundingBox() is null while detached)
+  await expect.poll(async () => (await bullet.boundingBox())?.height ?? 0).toBeGreaterThanOrEqual(56);
   await expect(bullet.locator('.sk-microchart__lane').first()).toBeVisible();
   await shot(page.locator('.sk-object-header'), 'MC-02-order');
   await open(page, `/purchasing/object?path=${encodeURIComponent("PurchaseOrders('4500000001')/_Item(PurchaseOrder='4500000001',PurchaseOrderItem=10)")}`);

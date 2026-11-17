@@ -31,3 +31,4 @@
 | [025](025-micro-chart-series.md) | 导航集合上的微型图表用 `$expand` 带 `$orderby`、`$top` 一起读 | 采纳 |
 | [026](026-bundling-and-subpaths.md) | 打包规则：用多少付多少；React 包按领域分子路径 | 采纳（P4、P6、P8 待做） |
 | [027](027-odata-server-package.md) | 自写 OData V4 服务：`smart-kit-server`、`smart-kit-cli` 两个新包 | 采纳，未实施 |
+| [028](028-cards.md) | 卡片：与 SAPUI5 同名（`Card`、`Header`、`*Content`），注解驱动，外观对齐集成卡片，不做 manifest | 采纳 |

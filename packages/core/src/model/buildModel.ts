@@ -17,6 +17,8 @@ import {
   type EntitySetModel,
   type EntityTypeModel,
   type EntityUi,
+  type EventModel,
+  type PresentationVariantModel,
   type FieldModel,
   type FilterExpression,
   type FormGroupModel,
@@ -386,6 +388,16 @@ function buildDataPoint(dp: Any, id: string, prefix: string, typeName: string, c
     criticalityCalculation: criticalityCalculation(dp.CriticalityCalculation, prefix),
     deltaBullet: viz === 'DeltaBulletChart' || undefined,
     fractionDigits: typeof dp.ValueFormat?.NumberOfFractionalDigits === 'number' ? dp.ValueFormat.NumberOfFractionalDigits : undefined,
+    trendCalculation: dp.TrendCalculation && typeof dp.TrendCalculation === 'object'
+      ? {
+          referenceValue: valueRef(dp.TrendCalculation.ReferenceValue, prefix),
+          isRelative: bool(dp.TrendCalculation.IsRelativeDifference, false),
+          upDifference: valueRef(dp.TrendCalculation.UpDifference, prefix),
+          strongUpDifference: valueRef(dp.TrendCalculation.StrongUpDifference, prefix),
+          downDifference: valueRef(dp.TrendCalculation.DownDifference, prefix),
+          strongDownDifference: valueRef(dp.TrendCalculation.StrongDownDifference, prefix),
+        }
+      : undefined,
   };
 }
 
@@ -714,7 +726,61 @@ function buildUi(fullName: string, ctx: UiContext): EntityUi {
     charts,
     views,
     quickView,
+    ...cardAnnotations(fullName, ui, ann, ui2.lineItem, ctx, semanticKey),
   };
+}
+
+const qualifierOf = (key: string, term: string): string | undefined =>
+  key === term ? '' : key.startsWith(`${term}#`) ? key.slice(term.length + 1) : undefined;
+
+/** Annotations that cards select by qualifier (docs/20): line items, presentation and selection variants, data points, field groups, events. */
+function cardAnnotations(fullName: string, ui: Any, ann: Any, lineItem: ColumnModel[], ctx: UiContext, semanticKey: string[]): Pick<EntityUi, 'lineItems' | 'presentationVariants' | 'selectionVariants' | 'dataPoints' | 'fieldGroups' | 'identification' | 'event'> {
+  const lineItems: Record<string, ColumnModel[]> = { '': lineItem };
+  const presentationVariants: Record<string, PresentationVariantModel> = {};
+  const selectionVariants: Record<string, InitialCondition[]> = {};
+  const dataPoints: Record<string, DataPointModel> = {};
+  const fieldGroups: Record<string, FormGroupModel> = {};
+  for (const key of Object.keys(ui)) {
+    let q: string | undefined;
+    if ((q = qualifierOf(key, 'LineItem')) !== undefined) {
+      if (q) lineItems[q] = buildFields(ui[key], fullName, ctx, `${fullName}@UI.LineItem#${q}`, semanticKey);
+    } else if ((q = qualifierOf(key, 'PresentationVariant')) !== undefined) {
+      const pv = ui[key] as Any;
+      const { presentation } = presentationFrom(pv);
+      const vizs = ((pv?.Visualizations ?? []) as unknown[]).map((v) => str((v as Any)?.value) ?? pathOf(v) ?? '');
+      const qual = (term: string) => {
+        const v = vizs.find((x) => x.includes(term));
+        return v === undefined ? undefined : v.includes('#') ? v.split('#')[1]! : '';
+      };
+      const max = Number(pv?.MaxItems?.valueOf?.() ?? pv?.MaxItems);
+      const groupBy = ((pv?.GroupBy ?? []) as unknown[]).map(pathOf).filter((x): x is string => Boolean(x));
+      presentationVariants[q] = { presentation, maxItems: Number.isFinite(max) && max > 0 ? max : undefined, lineItemQualifier: qual('LineItem'), chartQualifier: qual('Chart'), groupBy };
+    } else if ((q = qualifierOf(key, 'SelectionVariant')) !== undefined) {
+      selectionVariants[q] = selectionVariantFrom(ui[key]);
+    } else if ((q = qualifierOf(key, 'DataPoint')) !== undefined) {
+      const dp = buildDataPoint(ui[key], q || 'DataPoint', '', fullName, ctx);
+      if (dp) dataPoints[q] = dp;
+    } else if ((q = qualifierOf(key, 'FieldGroup')) !== undefined) {
+      const fg = ui[key] as Any;
+      fieldGroups[q] = { id: q || 'FieldGroup', label: str(fg?.Label), fields: buildFields(fg?.Data, fullName, ctx, `${fullName}@UI.FieldGroup#${q}`, semanticKey) };
+    }
+  }
+  const identification = buildFields(ui.Identification, fullName, ctx, `${fullName}@UI.Identification`, semanticKey);
+  const ev = ann.Communication?.Event as Any | undefined;
+  const event: EventModel | undefined = ev
+    ? { dtstart: pathOf(ev.dtstart), dtend: pathOf(ev.dtend), summary: pathOf(ev.summary), description: pathOf(ev.description), location: pathOf(ev.location), categories: pathOf(ev.categories) }
+    : undefined;
+  return { lineItems, presentationVariants, selectionVariants, dataPoints, fieldGroups, identification, event };
+}
+
+/**
+ * Splits an annotation path as written in card settings — "com.sap.vocabularies.UI.v1.LineItem#Card", "@UI.LineItem#Card",
+ * "UI.Chart" — into its term ("LineItem") and qualifier ("" when unqualified).
+ */
+export function parseAnnotationPath(path: string): { term: string; qualifier: string } {
+  const rest = path.slice(path.lastIndexOf('@') + 1);
+  const [termFull, qualifier] = rest.split('#');
+  return { term: termFull!.split('.').pop()!, qualifier: qualifier ?? '' };
 }
 
 /** Builds the table content for a "nav/@UI.LineItem" facet target. */

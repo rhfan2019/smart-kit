@@ -152,5 +152,15 @@
   "F.Draft.DraftIsKeptByUser": "用户保留的草稿",
   "F.Draft.CreatedByUserDescription": "草稿创建人姓名",
   "F.Draft.LastChangedByUserDescription": "草稿上次更改人姓名",
-  "F.Draft.InProcessByUserDescription": "草稿处理人姓名"
+  "F.Draft.InProcessByUserDescription": "草稿处理人姓名",
+  "T.SupplierMeeting": "供应商会议",
+  "T.SupplierMeetings": "供应商会议",
+  "F.Meeting": "会议",
+  "F.Subject": "主题",
+  "F.StartAt": "开始",
+  "F.EndAt": "结束",
+  "F.Location": "地点",
+  "F.MeetingCategory": "类别",
+  "F.MeetingCategoryName": "类别名称",
+  "DP.CardSpend": "采购支出"
 }

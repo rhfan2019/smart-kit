@@ -447,3 +447,57 @@ ADR-027 定的范围是"只实现 smart-kit 会发的请求"，用户也定过�
 - PUT：等有人需要再做。
 
 **用户的决定**（2026-11-16）：没有这类使用者，保持现状；`$batch`、深层新建、PUT 都不做，草稿也暂不做。
+
+## D19 卡片（Card）调研和方案（2026-11-16）
+
+> 编号以合并时为准（并行分支 `odata-server` 也可能新增 D19）。
+
+**用户的要求**：实现 SAP Fiori 风格的各类卡片（日历、列表、表格、对象、分析、时间线、组件、Adaptive 等），先调研、出方案，确认后再写代码。
+
+**调研**（2026-11-16 用内置浏览器读 SAP Fiori Design Guidelines v1.154：Card、Calendar Card、Overview Page 及其 Cards、List Card、Table Card、Analytical Card、Stack / Quick View Card 各页）：
+1. SAP 有两套卡片：Integration Card（JSON manifest 驱动，可放进任何宿主，有日历、时间线）和概览页卡片（OData 注解驱动，只能放在概览页）。两者不互通。
+2. 重名：本库没有导出 `Card` / `ObjectCard`；Mantine 有 `Card`。本库不导出 `Card`，外壳叫 `CardShell`，数据卡片叫 `Smart*Card`。
+
+**方案**（`docs/20-research-cards.md`、ADR-028）：注解驱动为主，外观借 Integration Card，不做 manifest；第一批做列表、表格、分析、对象、时间线、日历卡片和 `CardShell` / `CardHeader`；不做 Adaptive、WebPage、Stack、概览页框架；新子路径 `/cards`，不引入新依赖。
+
+**待用户确认**：`20-research-cards.md` 第 8 节的 5 个问题。
+
+## D20 卡片：确认方案，名字与 SAP 一致，按 SAP 成品验收（2026-11-16）
+
+> 编号以合并时为准（并行分支 `odata-server` 也可能新增 D20）。
+
+**用户的决定**：同意 D19 的方案（`20-research-cards.md` 第 8 节 1～5 条）；另外两条：
+1. **组件名必须与 SAP 的组件命名一致**——用户是 UI5 开发者，同名可以减少理解成本。
+2. **验收标准是成品效果与 SAP 官方成品严格一致**，中间不停，做到为止。
+
+**据此改的地方**：
+- 名字：方案初稿的 `CardShell`、`CardHeader`、`Smart*Card` 改成 SAPUI5 的名字：`Card`（sap.f.Card）、`Header`、`NumericHeader`、`NumericSideIndicator`（sap.f.cards）、`ListContent`、`TableContent`、`ObjectContent`、`AnalyticalContent`、`TimelineContent`、`CalendarContent`（sap.ui.integration.cards）。属性名也沿用 SAPUI5（`statusText`、`unitOfMeasurement`、`iconSrc`、`maxItems`……）和 OVP 卡片设置（`annotationPath`、`presentationAnnotationPath`、`selectionAnnotationPath`……）。和 Mantine 的 `Card` 同名不冲突（本库内部不用 Mantine 的 `Card`）。
+- 怎样"严格一致"：在本机用 SAPUI5 1.154 运行时渲染同样数据的 7 种集成卡片（Horizon 主题），读出每个元素的位置、尺寸、字号、颜色，写成卡片令牌，再用同样的方法量本库的卡片逐项比对（`20` 第 9 节，截图 `21-evidence/`）。布局尺寸一致；颜色和字体按 D08 沿用本库主题（"72" 字体是 SAP 的，不随库分发）。比对中发现并改掉：表格单元格内边距（首列 16、其余 8）、对象卡片组标题与第一个标签之间的外边距合并、数值页头的行距、日历左栏宽度和图例两列宽、其他月份的周末不加底色、布尔值显示成"是/否"、数值带上币种。
+- 日历没有用 `@mantine/dates`：SAP 的日历卡片有周数列、四级下钻和特定的格子尺寸，Mantine 的 `Calendar` 只有三级、要大量覆盖样式，还会把 dayjs 带进只用卡片的应用；自己画约 3 KB（ADR-028）。
+- 分析卡片的图表：SAP 用 VizFrame（`sap.viz`，SAPUI5 专有、很重）画；本库沿用 `SimpleChart`（ADR-021），扩展了 Line、Donut，只对齐图表区的位置和大小。
+
+**做了什么**（分支 `claude/cards`）：子路径 `/cards`（10 个组件）；core 模型增加按限定符保留的 LineItem、PresentationVariant（含 MaxItems）、SelectionVariant、DataPoint、FieldGroup、Identification 字段，以及 `Communication.Event`、`UI.TrendCalculation`；测试服务新增 `SupplierMeetings` 和卡片注解；演示页 `/cards`；验收条目 `22-cards-acceptance.md`，`trace --strict` 增加卡片一节。
+
+**体积**（gzip，不含 React）：只用 `Card` + `Header` 1.3 KB；列表卡片 39.6 KB；日历卡片 40.8 KB；分析卡片 45.8 KB；都不含 AG Grid。样式文件上限由 13 KB 调到 16 KB（卡片样式约 4 KB）；根入口（全部子路径之和）由 80 KB 调到 95 KB，修订 AC-Q-02（应用实际按子路径付费）。
+
+**未做 / 待定**：Stack 卡片和对象流、Adaptive、WebPage、页头溢出菜单（刷新、添加到我的首页）、链接列表卡片、视图切换（CD-10 第二批）。
+
+## D21 卡片：对照 Card Explorer 补齐；天蓝主题（2026-11-16）
+
+**用户的反馈**：在 4401 端口看不到卡片（卡片在 `claude/cards` 分支的工作树里，还没合并；演示在 4421 端口）；看到演示页后，和 SAPUI5 Card Explorer 的 Card Types 页对比，"感觉差距比较大"。
+
+**分析和处理**（详见 `20-research-cards.md` 第 10 节）：
+1. 最大的差距是配色：演示页用的是本库默认的"明黄"主题。新增**天蓝主题**（`sky`），配色取自 Horizon 实测值；原有三套主题不动，D08"配色沿用本库令牌"的原则仍然成立（天蓝也是本库令牌的一套）。
+2. 列表项：左侧状态色条、状态图标、分组、Bullet 图。
+3. 表格：链接式标识列加说明行、进度条、分组行。
+4. 演示数据：列表标题用描述、时间按柏林时区。
+
+**检查**：单元测试、e2e、`trace --strict`（卡片条目增加 CD-15～CD-19）重新通过。
+
+## D22 卡片主题能否继承宿主应用的变量；合并到 main（2026-11-16）
+
+**用户的问题**：主题配色能不能从宿主 web 应用的一个变量继承过来？能的话，直接把卡片分支合并到 main。
+
+**答复**：能。本库所有颜色都是 CSS 变量，组件只引用语义层（`--sk-color-*`）；宿主在带 `data-theme` 的元素上把语义令牌指向自己的变量（例如 `html[data-theme] { --sk-color-link: var(--my-brand-primary); }`），卡片和其他组件就用宿主的颜色，图表色等组件层令牌也跟着变。已在演示页验证。写法见 `06-extension-and-theming.md` 第 3 节"从宿主应用继承配色"。
+
+**合并**：`claude/cards` 合并进本地 `main`（main 已含打包改造和 OData 服务）；卡片的讨论编号由 D16～D18 改为 D19～D21，避开 OData 服务占用的编号。未推送。

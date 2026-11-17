@@ -93,7 +93,20 @@
   | --- | --- | --- |
   | `yellow`（默认） | 墨黑 | 明黄 |
   | `navy` | 海军蓝 | 海军蓝的浅色 |
+  | `sky` | 蓝（#0064d9 链接、#0070f2 按钮） | 浅灰底白卡片；颜色取自 SAP Horizon 实测值（docs/20 第 10 节，D21） |
   | `dark` | 深色表面 | 明黄（作为线条和底色） |
+
+- **从宿主应用继承配色**（D22）：所有颜色都是 CSS 变量，组件只引用语义层；宿主把语义令牌指向自己的变量即可，不用改本库。写在带 `data-theme` 的元素上（通常是 `html`），组件层令牌（图表色、表头底色等）会跟着重新计算：
+
+  ```css
+  html[data-theme] {
+    --sk-color-link: var(--my-brand-primary);
+    --sk-color-primary: var(--my-brand-primary);
+    --sk-color-surface: var(--my-card-background);
+  }
+  ```
+
+  选择器 `html[data-theme]` 比 `tokens.css` 里的 `[data-theme='…']` 更具体，所以不受样式文件加载顺序影响。只想让页面的一部分换色时，把 `data-theme` 和这些变量放在那一部分的容器上。2026-11-16 在演示页验证过：链接色、卡片底色、图表色都随宿主变量变化。
 
 - **密度**：`data-density`，`comfortable`（默认）或 `compact`。只重新定义尺寸令牌，例如控件高 32 → 26、行高 36 → 28。
 - **Mantine 桥接**：Mantine 的 CSS 变量（`--mantine-color-body`、`--mantine-color-text`、`--mantine-primary-color-filled`，以及 Alert、Badge 等用到的 red / blue / green / yellow / orange 色板）通过 `smartKitCssVariablesResolver` 和 `tokens.css` 指向语义层。宿主用 `forceColorScheme="light"`，深色由我们的 `data-theme="dark"` 实现，颜色完全由我们的变量决定。

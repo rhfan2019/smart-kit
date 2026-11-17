@@ -6,22 +6,11 @@ import { Button, Group, Modal, Stack, Text, TextInput } from '@mantine/core';
 import { messagesFromError, type ActionModel, type Message, type Row } from '@rhfan2019/smart-kit-core';
 import { useState, type ReactNode } from 'react';
 import { useService, useText } from '../context/SmartKitProvider';
-import { getPath } from '../field/values';
 import { useMessages } from '../messages/MessageContext';
 
-/** Whether an action can be applied to a row (Core.OperationAvailable; missing means available). */
-export function isActionAvailable(action: ActionModel, row: Row | undefined): boolean {
-  const a = action.operationAvailable;
-  if (!a) return true;
-  if ('value' in a) return a.value !== false && a.value !== 'false';
-  const v = getPath(row, a.path);
-  return v === true || v === 'true';
-}
+import { isActionAvailable } from './availability';
 
-/** Paths an action needs in $select to decide its availability. */
-export function actionPaths(actions: ActionModel[]): string[] {
-  return actions.flatMap((a) => (a.operationAvailable && 'path' in a.operationAvailable ? [a.operationAvailable.path] : []));
-}
+export { actionPaths, isActionAvailable } from './availability';
 
 export interface ActionTarget {
   row: Row;

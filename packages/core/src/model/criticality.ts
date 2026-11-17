@@ -5,7 +5,7 @@
  * → neutral; otherwise positive. Minimize mirrors this with the High values. Target applies both sides. A missing
  * threshold is skipped.
  */
-import type { Criticality, CriticalityCalculationModel, ValueRef } from './types';
+import type { Criticality, CriticalityCalculationModel, TrendCalculationModel, ValueRef } from './types';
 
 export function calculateCriticality(
   calc: CriticalityCalculationModel,
@@ -26,4 +26,25 @@ function side(v: number, deviation: number | undefined, tolerance: number | unde
   if (tolerance !== undefined && worse(v, tolerance)) return 2;
   if (acceptance !== undefined && worse(v, acceptance)) return 0;
   return 3;
+}
+
+/**
+ * Trend of a value from UI.TrendCalculation (numeric card header, docs/20): "Up" when the difference to the reference
+ * reaches UpDifference (or StrongUpDifference), "Down" when it reaches DownDifference (or StrongDownDifference),
+ * otherwise "None". Relative differences compare value / reference − 1.
+ */
+export function calculateTrend(
+  calc: TrendCalculationModel,
+  value: number,
+  resolve: (ref: ValueRef | undefined) => number | undefined,
+): 'Up' | 'Down' | 'None' {
+  const ref = resolve(calc.referenceValue);
+  if (!Number.isFinite(value) || ref === undefined) return 'None';
+  const diff = calc.isRelative ? (ref === 0 ? Number.NaN : value / ref - 1) : value - ref;
+  if (!Number.isFinite(diff)) return 'None';
+  const up = resolve(calc.upDifference) ?? resolve(calc.strongUpDifference);
+  const down = resolve(calc.downDifference) ?? resolve(calc.strongDownDifference);
+  if (up !== undefined && diff >= up) return 'Up';
+  if (down !== undefined && diff <= down) return 'Down';
+  return 'None';
 }

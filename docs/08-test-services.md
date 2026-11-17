@@ -139,6 +139,12 @@
 
 已有的 `F.InvoicedAmount` 同时用于订单的 `InvoicedAmount`。
 
+### 3.6 卡片用的数据和注解（docs/20，ADR-028）
+
+- 新实体集 `SupplierMeetings`（实体类型 `SupplierMeeting`）：`Meeting`（键）、`Supplier`（文本 `_Supplier/SupplierName`）、`Subject`、`StartAt`、`EndAt`（DateTimeOffset）、`Location`、`Category`（文本 `CategoryName`，中英文）；注解 `UI.HeaderInfo`、`UI.LineItem`、`UI.PresentationVariant`（按开始时间升序）、`Communication.Event`。数据由固定种子生成（与订单的随机序列分开）：2026-10-26 到 2026-12-14 的工作日每天 0～3 个会议，2026-11-16（`MEETING_DAY`）正好 4 个，共 50 个。
+- `PurchaseOrders` 新增：`UI.LineItem#CardList`、`#CardTable`，`UI.DataPoint#CardAmount`（净值，状态色）、`#CardSpend`（目标 6 亿、`CriticalityCalculation`、`TrendCalculation`），`UI.PresentationVariant#CardLarge`（净值降序，`MaxItems` 5），`UI.SelectionVariant#CardNew`（状态 NEW）、`#CardEur`（币种 EUR），`UI.Chart#CardTypeShare`（Donut）。
+- 词汇表引用加了 `Communication`。`packages/core/test/samples` 已重新导出（原样例停在三期页头 Facet 增加之前，`samples.test.ts` 的页头 Facet 数随之从 4 改为 7）。
+
 ## 4. 一致性
 
 - `npm run samples` 从运行中的服务导出 `$metadata`（两种语言 × XML 和 JSON），存到 `packages/core/test/samples/`，供单元测试离线使用。

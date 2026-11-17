@@ -41,6 +41,22 @@
      "$Alias": "Core"
     }
    ]
+  },
+  "https://oasis-tcs.github.io/odata-vocabularies/vocabularies/Org.OData.Aggregation.V1.xml": {
+   "$Include": [
+    {
+     "$Namespace": "Org.OData.Aggregation.V1",
+     "$Alias": "Aggregation"
+    }
+   ]
+  },
+  "https://sap.github.io/odata-vocabularies/vocabularies/Communication.xml": {
+   "$Include": [
+    {
+     "$Namespace": "com.sap.vocabularies.Communication.v1",
+     "$Alias": "Communication"
+    }
+   ]
   }
  },
  "Purchasing": {
@@ -100,6 +116,22 @@
    },
    "Version": {
     "$Type": "Edm.Int32"
+   },
+   "BudgetAmount": {
+    "$Type": "Edm.Decimal",
+    "$Precision": 15,
+    "$Scale": 2
+   },
+   "InvoicedAmount": {
+    "$Type": "Edm.Decimal",
+    "$Precision": 15,
+    "$Scale": 2
+   },
+   "ApproveEnabled": {
+    "$Type": "Edm.Boolean"
+   },
+   "CloseEnabled": {
+    "$Type": "Edm.Boolean"
    },
    "_Supplier": {
     "$Kind": "NavigationProperty",
@@ -355,6 +387,48 @@
    },
    "IsBlocked": {
     "$Type": "Edm.Boolean"
+   },
+   "RatingCount": {
+    "$Type": "Edm.Int32"
+   }
+  },
+  "SupplierMeeting": {
+   "$Kind": "EntityType",
+   "$Key": [
+    "Meeting"
+   ],
+   "Meeting": {
+    "$MaxLength": 10
+   },
+   "Supplier": {
+    "$MaxLength": 10
+   },
+   "Subject": {
+    "$MaxLength": 80
+   },
+   "StartAt": {
+    "$Type": "Edm.DateTimeOffset",
+    "$Precision": 0
+   },
+   "EndAt": {
+    "$Type": "Edm.DateTimeOffset",
+    "$Precision": 0
+   },
+   "Location": {
+    "$MaxLength": 40
+   },
+   "Category": {
+    "$MaxLength": 4
+   },
+   "CategoryName": {
+    "$MaxLength": 40
+   },
+   "_Supplier": {
+    "$Kind": "NavigationProperty",
+    "$Type": "Purchasing.Supplier",
+    "$ReferentialConstraint": {
+     "Supplier": "Supplier"
+    }
    }
   },
   "Material": {
@@ -443,6 +517,51 @@
     "$Precision": 3
    }
   },
+  "approve": [
+   {
+    "$Kind": "Action",
+    "$IsBound": true,
+    "$Parameter": [
+     {
+      "$Name": "_it",
+      "$Type": "Purchasing.PurchaseOrder"
+     }
+    ],
+    "$ReturnType": {
+     "$Type": "Purchasing.PurchaseOrder"
+    }
+   }
+  ],
+  "reject": [
+   {
+    "$Kind": "Action",
+    "$IsBound": true,
+    "$Parameter": [
+     {
+      "$Name": "_it",
+      "$Type": "Purchasing.PurchaseOrder"
+     }
+    ],
+    "$ReturnType": {
+     "$Type": "Purchasing.PurchaseOrder"
+    }
+   }
+  ],
+  "close": [
+   {
+    "$Kind": "Action",
+    "$IsBound": true,
+    "$Parameter": [
+     {
+      "$Name": "_it",
+      "$Type": "Purchasing.PurchaseOrder"
+     }
+    ],
+    "$ReturnType": {
+     "$Type": "Purchasing.PurchaseOrder"
+    }
+   }
+  ],
   "Container": {
    "$Kind": "EntityContainer",
    "PurchaseOrders": {
@@ -484,6 +603,13 @@
     "$Collection": true,
     "$Type": "Purchasing.Supplier"
    },
+   "SupplierMeetings": {
+    "$Collection": true,
+    "$Type": "Purchasing.SupplierMeeting",
+    "$NavigationPropertyBinding": {
+     "_Supplier": "Suppliers"
+    }
+   },
    "Materials": {
     "$Collection": true,
     "$Type": "Purchasing.Material"
@@ -522,6 +648,36 @@
       {
        "$PropertyPath": "CompanyCode"
       }
+     ],
+     "FilterExpressionRestrictions": [
+      {
+       "@type": "Org.OData.Capabilities.V1.FilterExpressionRestrictionType",
+       "Property": {
+        "$PropertyPath": "OrderDate"
+       },
+       "AllowedExpressions": "SingleRange"
+      },
+      {
+       "@type": "Org.OData.Capabilities.V1.FilterExpressionRestrictionType",
+       "Property": {
+        "$PropertyPath": "PurchaseOrderType"
+       },
+       "AllowedExpressions": "SingleValue"
+      },
+      {
+       "@type": "Org.OData.Capabilities.V1.FilterExpressionRestrictionType",
+       "Property": {
+        "$PropertyPath": "PurchasingGroup"
+       },
+       "AllowedExpressions": "MultiValue"
+      },
+      {
+       "@type": "Org.OData.Capabilities.V1.FilterExpressionRestrictionType",
+       "Property": {
+        "$PropertyPath": "Description"
+       },
+       "AllowedExpressions": "SearchExpression"
+      }
      ]
     },
     "@Capabilities.SortRestrictions": {
@@ -538,11 +694,11 @@
     },
     "@Capabilities.InsertRestrictions": {
      "@type": "Org.OData.Capabilities.V1.InsertRestrictionsType",
-     "Insertable": false
+     "Insertable": true
     },
     "@Capabilities.DeleteRestrictions": {
      "@type": "Org.OData.Capabilities.V1.DeleteRestrictionsType",
-     "Deletable": false
+     "Deletable": true
     },
     "@Core.OptimisticConcurrency": [
      {
@@ -554,6 +710,18 @@
     "@Capabilities.SearchRestrictions": {
      "@type": "Org.OData.Capabilities.V1.SearchRestrictionsType",
      "Searchable": true
+    },
+    "@Capabilities.UpdateRestrictions": {
+     "@type": "Org.OData.Capabilities.V1.UpdateRestrictionsType",
+     "Updatable": true
+    },
+    "@Capabilities.InsertRestrictions": {
+     "@type": "Org.OData.Capabilities.V1.InsertRestrictionsType",
+     "Insertable": true
+    },
+    "@Capabilities.DeleteRestrictions": {
+     "@type": "Org.OData.Capabilities.V1.DeleteRestrictionsType",
+     "Deletable": true
     },
     "@Core.OptimisticConcurrency": [
      {
@@ -639,26 +807,30 @@
       "@type": "com.sap.vocabularies.UI.v1.DataField",
       "Value": {
        "$Path": "PurchaseOrder"
-      }
+      },
+      "@UI.Importance": "High"
      },
      {
       "@type": "com.sap.vocabularies.UI.v1.DataField",
       "Value": {
        "$Path": "Supplier"
-      }
+      },
+      "@UI.Importance": "High"
      },
      {
       "@type": "com.sap.vocabularies.UI.v1.DataFieldForAnnotation",
       "Label": "Supplier Rating",
       "Target": {
        "$AnnotationPath": "_Supplier/@UI.DataPoint#Rating"
-      }
+      },
+      "@UI.Importance": "Low"
      },
      {
       "@type": "com.sap.vocabularies.UI.v1.DataField",
       "Value": {
        "$Path": "OrderDate"
-      }
+      },
+      "@UI.Importance": "Medium"
      },
      {
       "@type": "com.sap.vocabularies.UI.v1.DataField",
@@ -667,12 +839,66 @@
       },
       "Criticality": {
        "$Path": "StatusCriticality"
-      }
+      },
+      "@UI.Importance": "High"
      },
      {
       "@type": "com.sap.vocabularies.UI.v1.DataField",
       "Value": {
        "$Path": "NetAmount"
+      },
+      "@UI.Importance": "High"
+     },
+     {
+      "@type": "com.sap.vocabularies.UI.v1.DataFieldForAnnotation",
+      "Label": "Delivery Progress",
+      "Target": {
+       "$AnnotationPath": "@UI.DataPoint#Delivery"
+      },
+      "@UI.Importance": "Low"
+     },
+     {
+      "@type": "com.sap.vocabularies.UI.v1.DataField",
+      "Value": {
+       "$Path": "PurchaseOrderType"
+      },
+      "@UI.Importance": "Low"
+     },
+     {
+      "@type": "com.sap.vocabularies.UI.v1.DataFieldForAnnotation",
+      "Target": {
+       "$AnnotationPath": "@UI.Chart#BudgetBullet"
+      },
+      "@UI.Importance": "Low"
+     },
+     {
+      "@type": "com.sap.vocabularies.UI.v1.DataFieldForAction",
+      "Label": "Approve",
+      "Action": "Purchasing.approve"
+     },
+     {
+      "@type": "com.sap.vocabularies.UI.v1.DataFieldForAction",
+      "Label": "Reject",
+      "Action": "Purchasing.reject"
+     },
+     {
+      "@type": "com.sap.vocabularies.UI.v1.DataFieldForAction",
+      "Label": "Close",
+      "Action": "Purchasing.close",
+      "Inline": true
+     }
+    ],
+    "@UI.LineItem#Delivery": [
+     {
+      "@type": "com.sap.vocabularies.UI.v1.DataField",
+      "Value": {
+       "$Path": "PurchaseOrder"
+      }
+     },
+     {
+      "@type": "com.sap.vocabularies.UI.v1.DataField",
+      "Value": {
+       "$Path": "Supplier"
       }
      },
      {
@@ -685,8 +911,33 @@
      {
       "@type": "com.sap.vocabularies.UI.v1.DataField",
       "Value": {
-       "$Path": "PurchaseOrderType"
+       "$Path": "OrderDate"
       }
+     },
+     {
+      "@type": "com.sap.vocabularies.UI.v1.DataField",
+      "Value": {
+       "$Path": "NetAmount"
+      }
+     }
+    ],
+    "@UI.Identification": [
+     {
+      "@type": "com.sap.vocabularies.UI.v1.DataFieldForAction",
+      "Label": "Approve",
+      "Action": "Purchasing.approve",
+      "Determining": true
+     },
+     {
+      "@type": "com.sap.vocabularies.UI.v1.DataFieldForAction",
+      "Label": "Reject",
+      "Action": "Purchasing.reject",
+      "Determining": true
+     },
+     {
+      "@type": "com.sap.vocabularies.UI.v1.DataFieldForAction",
+      "Label": "Close",
+      "Action": "Purchasing.close"
      }
     ],
     "@UI.SelectionFields": [
@@ -765,6 +1016,371 @@
       }
      ]
     },
+    "@UI.SelectionPresentationVariant#All": {
+     "@type": "com.sap.vocabularies.UI.v1.SelectionPresentationVariantType",
+     "Text": "All Orders",
+     "SelectionVariant": {
+      "@type": "com.sap.vocabularies.UI.v1.SelectionVariantType",
+      "Text": "All Orders",
+      "SelectOptions": [
+       {
+        "@type": "com.sap.vocabularies.UI.v1.SelectOptionType",
+        "PropertyName": {
+         "$PropertyPath": "CompanyCode"
+        },
+        "Ranges": [
+         {
+          "@type": "com.sap.vocabularies.UI.v1.SelectionRangeType",
+          "Sign": "I",
+          "Option": "EQ",
+          "Low": "1000"
+         }
+        ]
+       }
+      ]
+     },
+     "PresentationVariant": {
+      "@type": "com.sap.vocabularies.UI.v1.PresentationVariantType",
+      "SortOrder": [
+       {
+        "@type": "com.sap.vocabularies.Common.v1.SortOrderType",
+        "Property": {
+         "$PropertyPath": "OrderDate"
+        },
+        "Descending": true
+       }
+      ],
+      "Visualizations": [
+       {
+        "$AnnotationPath": "@UI.LineItem"
+       },
+       {
+        "$AnnotationPath": "@UI.Chart#ByStatus"
+       }
+      ]
+     }
+    },
+    "@UI.SelectionPresentationVariant#Open": {
+     "@type": "com.sap.vocabularies.UI.v1.SelectionPresentationVariantType",
+     "Text": "Open Orders",
+     "SelectionVariant": {
+      "@type": "com.sap.vocabularies.UI.v1.SelectionVariantType",
+      "Text": "Open Orders",
+      "SelectOptions": [
+       {
+        "@type": "com.sap.vocabularies.UI.v1.SelectOptionType",
+        "PropertyName": {
+         "$PropertyPath": "Status"
+        },
+        "Ranges": [
+         {
+          "@type": "com.sap.vocabularies.UI.v1.SelectionRangeType",
+          "Sign": "I",
+          "Option": "EQ",
+          "Low": "NEW"
+         },
+         {
+          "@type": "com.sap.vocabularies.UI.v1.SelectionRangeType",
+          "Sign": "I",
+          "Option": "EQ",
+          "Low": "APPR"
+         },
+         {
+          "@type": "com.sap.vocabularies.UI.v1.SelectionRangeType",
+          "Sign": "I",
+          "Option": "EQ",
+          "Low": "ORD"
+         }
+        ]
+       },
+       {
+        "@type": "com.sap.vocabularies.UI.v1.SelectOptionType",
+        "PropertyName": {
+         "$PropertyPath": "CompanyCode"
+        },
+        "Ranges": [
+         {
+          "@type": "com.sap.vocabularies.UI.v1.SelectionRangeType",
+          "Sign": "I",
+          "Option": "EQ",
+          "Low": "1000"
+         }
+        ]
+       }
+      ]
+     },
+     "PresentationVariant": {
+      "@type": "com.sap.vocabularies.UI.v1.PresentationVariantType",
+      "SortOrder": [
+       {
+        "@type": "com.sap.vocabularies.Common.v1.SortOrderType",
+        "Property": {
+         "$PropertyPath": "OrderDate"
+        },
+        "Descending": true
+       }
+      ],
+      "Visualizations": [
+       {
+        "$AnnotationPath": "@UI.LineItem"
+       }
+      ]
+     }
+    },
+    "@UI.SelectionPresentationVariant#InDelivery": {
+     "@type": "com.sap.vocabularies.UI.v1.SelectionPresentationVariantType",
+     "Text": "In Delivery",
+     "SelectionVariant": {
+      "@type": "com.sap.vocabularies.UI.v1.SelectionVariantType",
+      "Text": "In Delivery",
+      "SelectOptions": [
+       {
+        "@type": "com.sap.vocabularies.UI.v1.SelectOptionType",
+        "PropertyName": {
+         "$PropertyPath": "Status"
+        },
+        "Ranges": [
+         {
+          "@type": "com.sap.vocabularies.UI.v1.SelectionRangeType",
+          "Sign": "I",
+          "Option": "EQ",
+          "Low": "PART"
+         }
+        ]
+       },
+       {
+        "@type": "com.sap.vocabularies.UI.v1.SelectOptionType",
+        "PropertyName": {
+         "$PropertyPath": "CompanyCode"
+        },
+        "Ranges": [
+         {
+          "@type": "com.sap.vocabularies.UI.v1.SelectionRangeType",
+          "Sign": "I",
+          "Option": "EQ",
+          "Low": "1000"
+         }
+        ]
+       }
+      ]
+     },
+     "PresentationVariant": {
+      "@type": "com.sap.vocabularies.UI.v1.PresentationVariantType",
+      "SortOrder": [
+       {
+        "@type": "com.sap.vocabularies.Common.v1.SortOrderType",
+        "Property": {
+         "$PropertyPath": "OrderDate"
+        },
+        "Descending": true
+       }
+      ],
+      "Visualizations": [
+       {
+        "$AnnotationPath": "@UI.LineItem#Delivery"
+       }
+      ]
+     }
+    },
+    "@UI.SelectionPresentationVariant#Closed": {
+     "@type": "com.sap.vocabularies.UI.v1.SelectionPresentationVariantType",
+     "Text": "Closed Orders",
+     "SelectionVariant": {
+      "@type": "com.sap.vocabularies.UI.v1.SelectionVariantType",
+      "Text": "Closed Orders",
+      "SelectOptions": [
+       {
+        "@type": "com.sap.vocabularies.UI.v1.SelectOptionType",
+        "PropertyName": {
+         "$PropertyPath": "Status"
+        },
+        "Ranges": [
+         {
+          "@type": "com.sap.vocabularies.UI.v1.SelectionRangeType",
+          "Sign": "I",
+          "Option": "EQ",
+          "Low": "CLOSED"
+         }
+        ]
+       },
+       {
+        "@type": "com.sap.vocabularies.UI.v1.SelectOptionType",
+        "PropertyName": {
+         "$PropertyPath": "CompanyCode"
+        },
+        "Ranges": [
+         {
+          "@type": "com.sap.vocabularies.UI.v1.SelectionRangeType",
+          "Sign": "I",
+          "Option": "EQ",
+          "Low": "1000"
+         }
+        ]
+       }
+      ]
+     },
+     "PresentationVariant": {
+      "@type": "com.sap.vocabularies.UI.v1.PresentationVariantType",
+      "SortOrder": [
+       {
+        "@type": "com.sap.vocabularies.Common.v1.SortOrderType",
+        "Property": {
+         "$PropertyPath": "OrderDate"
+        },
+        "Descending": true
+       }
+      ],
+      "Visualizations": [
+       {
+        "$AnnotationPath": "@UI.LineItem"
+       }
+      ]
+     }
+    },
+    "@Aggregation.ApplySupported": {
+     "@type": "Org.OData.Aggregation.V1.ApplySupportedType",
+     "Transformations": [
+      "filter",
+      "groupby",
+      "aggregate"
+     ],
+     "GroupableProperties": [
+      {
+       "$PropertyPath": "Status"
+      },
+      {
+       "$PropertyPath": "PurchaseOrderType"
+      },
+      {
+       "$PropertyPath": "CompanyCode"
+      },
+      {
+       "$PropertyPath": "Supplier"
+      }
+     ],
+     "AggregatableProperties": [
+      {
+       "@type": "Org.OData.Aggregation.V1.AggregatablePropertyType",
+       "Property": {
+        "$PropertyPath": "NetAmount"
+       }
+      }
+     ]
+    },
+    "@UI.Chart#ByStatus": {
+     "@type": "com.sap.vocabularies.UI.v1.ChartDefinitionType",
+     "Title": "Net Amount by Status",
+     "ChartType": "Column",
+     "Dimensions": [
+      {
+       "$PropertyPath": "Status"
+      }
+     ],
+     "Measures": [
+      {
+       "$PropertyPath": "NetAmount"
+      }
+     ]
+    },
+    "@UI.Chart#ByType": {
+     "@type": "com.sap.vocabularies.UI.v1.ChartDefinitionType",
+     "Title": "Net Amount by Order Type",
+     "ChartType": "Bar",
+     "Dimensions": [
+      {
+       "$PropertyPath": "PurchaseOrderType"
+      }
+     ],
+     "Measures": [
+      {
+       "$PropertyPath": "NetAmount"
+      }
+     ]
+    },
+    "@UI.DataPoint#Budget": {
+     "@type": "com.sap.vocabularies.UI.v1.DataPointType",
+     "Title": "Budget",
+     "Value": {
+      "$Path": "NetAmount"
+     },
+     "TargetValue": {
+      "$Path": "BudgetAmount"
+     },
+     "MinimumValue": 0,
+     "CriticalityCalculation": {
+      "@type": "com.sap.vocabularies.UI.v1.CriticalityCalculationType",
+      "ImprovementDirection": "Minimize",
+      "DeviationRangeHighValue": {
+       "$Path": "BudgetAmount"
+      }
+     }
+    },
+    "@UI.DataPoint#Invoiced": {
+     "@type": "com.sap.vocabularies.UI.v1.DataPointType",
+     "Title": "Invoiced Amount",
+     "Value": {
+      "$Path": "InvoicedAmount"
+     },
+     "TargetValue": {
+      "$Path": "NetAmount"
+     }
+    },
+    "@UI.Chart#BudgetBullet": {
+     "@type": "com.sap.vocabularies.UI.v1.ChartDefinitionType",
+     "Title": "Budget Usage",
+     "ChartType": "Bullet",
+     "Measures": [
+      {
+       "$PropertyPath": "NetAmount"
+      }
+     ],
+     "MeasureAttributes": [
+      {
+       "@type": "com.sap.vocabularies.UI.v1.ChartMeasureAttributeType",
+       "Measure": {
+        "$PropertyPath": "NetAmount"
+       },
+       "Role": "Axis1",
+       "DataPoint": {
+        "$AnnotationPath": "@UI.DataPoint#Budget"
+       }
+      }
+     ]
+    },
+    "@UI.Chart#DeliveryRadial": {
+     "@type": "com.sap.vocabularies.UI.v1.ChartDefinitionType",
+     "Title": "Delivery Progress",
+     "ChartType": "Donut",
+     "Measures": [
+      {
+       "$PropertyPath": "DeliveredPercent"
+      }
+     ],
+     "MeasureAttributes": [
+      {
+       "@type": "com.sap.vocabularies.UI.v1.ChartMeasureAttributeType",
+       "Measure": {
+        "$PropertyPath": "DeliveredPercent"
+       },
+       "Role": "Axis1",
+       "DataPoint": {
+        "$AnnotationPath": "@UI.DataPoint#Delivery"
+       }
+      }
+     ]
+    },
+    "@UI.FieldGroup#NotesText": {
+     "@type": "com.sap.vocabularies.UI.v1.FieldGroupType",
+     "Label": "Notes",
+     "Data": [
+      {
+       "@type": "com.sap.vocabularies.UI.v1.DataField",
+       "Value": {
+        "$Path": "Notes"
+       }
+      }
+     ]
+    },
     "@UI.DataPoint#Delivery": {
      "@type": "com.sap.vocabularies.UI.v1.DataPointType",
      "Title": "Delivery Progress",
@@ -779,6 +1395,286 @@
      "Title": "Net Amount",
      "Value": {
       "$Path": "NetAmount"
+     }
+    },
+    "@UI.LineItem#CardList": [
+     {
+      "@type": "com.sap.vocabularies.UI.v1.DataField",
+      "Value": {
+       "$Path": "Description"
+      }
+     },
+     {
+      "@type": "com.sap.vocabularies.UI.v1.DataField",
+      "Value": {
+       "$Path": "_Supplier/SupplierName"
+      }
+     },
+     {
+      "@type": "com.sap.vocabularies.UI.v1.DataFieldForAnnotation",
+      "Label": "Net Amount",
+      "Target": {
+       "$AnnotationPath": "@UI.DataPoint#CardAmount"
+      }
+     },
+     {
+      "@type": "com.sap.vocabularies.UI.v1.DataField",
+      "Value": {
+       "$Path": "Status"
+      },
+      "Criticality": {
+       "$Path": "StatusCriticality"
+      }
+     },
+     {
+      "@type": "com.sap.vocabularies.UI.v1.DataField",
+      "Value": {
+       "$Path": "PurchaseOrder"
+      }
+     },
+     {
+      "@type": "com.sap.vocabularies.UI.v1.DataField",
+      "Value": {
+       "$Path": "OrderDate"
+      }
+     }
+    ],
+    "@UI.LineItem#CardBudget": [
+     {
+      "@type": "com.sap.vocabularies.UI.v1.DataField",
+      "Value": {
+       "$Path": "Description"
+      }
+     },
+     {
+      "@type": "com.sap.vocabularies.UI.v1.DataField",
+      "Value": {
+       "$Path": "_Supplier/SupplierName"
+      }
+     },
+     {
+      "@type": "com.sap.vocabularies.UI.v1.DataFieldForAnnotation",
+      "Label": "Budget",
+      "Target": {
+       "$AnnotationPath": "@UI.DataPoint#CardBudget"
+      }
+     }
+    ],
+    "@UI.DataPoint#CardBudget": {
+     "@type": "com.sap.vocabularies.UI.v1.DataPointType",
+     "Title": "Budget",
+     "Value": {
+      "$Path": "InvoicedAmount"
+     },
+     "TargetValue": {
+      "$Path": "NetAmount"
+     },
+     "CriticalityCalculation": {
+      "@type": "com.sap.vocabularies.UI.v1.CriticalityCalculationType",
+      "ImprovementDirection": "Minimize",
+      "ToleranceRangeHighValue": {
+       "$Path": "NetAmount"
+      },
+      "DeviationRangeHighValue": {
+       "$Path": "BudgetAmount"
+      }
+     }
+    },
+    "@UI.DataPoint#CardDelivery": {
+     "@type": "com.sap.vocabularies.UI.v1.DataPointType",
+     "Title": "Delivery Progress",
+     "Value": {
+      "$Path": "DeliveredPercent"
+     },
+     "TargetValue": 100,
+     "Criticality": {
+      "$Path": "StatusCriticality"
+     },
+     "Visualization": "Progress"
+    },
+    "@UI.PresentationVariant#CardTable": {
+     "@type": "com.sap.vocabularies.UI.v1.PresentationVariantType",
+     "MaxItems": 5,
+     "GroupBy": [
+      {
+       "$PropertyPath": "Status"
+      }
+     ],
+     "SortOrder": [
+      {
+       "@type": "com.sap.vocabularies.Common.v1.SortOrderType",
+       "Property": {
+        "$PropertyPath": "Status"
+       }
+      },
+      {
+       "@type": "com.sap.vocabularies.Common.v1.SortOrderType",
+       "Property": {
+        "$PropertyPath": "NetAmount"
+       },
+       "Descending": true
+      }
+     ],
+     "Visualizations": [
+      {
+       "$AnnotationPath": "@UI.LineItem#CardTable"
+      }
+     ]
+    },
+    "@UI.SelectionVariant#CardInDelivery": {
+     "@type": "com.sap.vocabularies.UI.v1.SelectionVariantType",
+     "SelectOptions": [
+      {
+       "@type": "com.sap.vocabularies.UI.v1.SelectOptionType",
+       "PropertyName": {
+        "$PropertyPath": "Status"
+       },
+       "Ranges": [
+        {
+         "@type": "com.sap.vocabularies.UI.v1.SelectionRangeType",
+         "Sign": "I",
+         "Option": "EQ",
+         "Low": "ORD"
+        },
+        {
+         "@type": "com.sap.vocabularies.UI.v1.SelectionRangeType",
+         "Sign": "I",
+         "Option": "EQ",
+         "Low": "PART"
+        }
+       ]
+      }
+     ]
+    },
+    "@UI.LineItem#CardTable": [
+     {
+      "@type": "com.sap.vocabularies.UI.v1.DataField",
+      "Value": {
+       "$Path": "PurchaseOrder"
+      }
+     },
+     {
+      "@type": "com.sap.vocabularies.UI.v1.DataField",
+      "Value": {
+       "$Path": "NetAmount"
+      }
+     },
+     {
+      "@type": "com.sap.vocabularies.UI.v1.DataField",
+      "Value": {
+       "$Path": "Status"
+      },
+      "Criticality": {
+       "$Path": "StatusCriticality"
+      }
+     },
+     {
+      "@type": "com.sap.vocabularies.UI.v1.DataFieldForAnnotation",
+      "Label": "Delivery Progress",
+      "Target": {
+       "$AnnotationPath": "@UI.DataPoint#CardDelivery"
+      }
+     }
+    ],
+    "@UI.DataPoint#CardAmount": {
+     "@type": "com.sap.vocabularies.UI.v1.DataPointType",
+     "Title": "Net Amount",
+     "Value": {
+      "$Path": "NetAmount"
+     },
+     "Criticality": {
+      "$Path": "StatusCriticality"
+     }
+    },
+    "@UI.PresentationVariant#CardLarge": {
+     "@type": "com.sap.vocabularies.UI.v1.PresentationVariantType",
+     "MaxItems": 5,
+     "SortOrder": [
+      {
+       "@type": "com.sap.vocabularies.Common.v1.SortOrderType",
+       "Property": {
+        "$PropertyPath": "NetAmount"
+       },
+       "Descending": true
+      }
+     ],
+     "Visualizations": [
+      {
+       "$AnnotationPath": "@UI.LineItem#CardList"
+      }
+     ]
+    },
+    "@UI.SelectionVariant#CardNew": {
+     "@type": "com.sap.vocabularies.UI.v1.SelectionVariantType",
+     "SelectOptions": [
+      {
+       "@type": "com.sap.vocabularies.UI.v1.SelectOptionType",
+       "PropertyName": {
+        "$PropertyPath": "Status"
+       },
+       "Ranges": [
+        {
+         "@type": "com.sap.vocabularies.UI.v1.SelectionRangeType",
+         "Sign": "I",
+         "Option": "EQ",
+         "Low": "NEW"
+        }
+       ]
+      }
+     ]
+    },
+    "@UI.SelectionVariant#CardEur": {
+     "@type": "com.sap.vocabularies.UI.v1.SelectionVariantType",
+     "SelectOptions": [
+      {
+       "@type": "com.sap.vocabularies.UI.v1.SelectOptionType",
+       "PropertyName": {
+        "$PropertyPath": "Currency"
+       },
+       "Ranges": [
+        {
+         "@type": "com.sap.vocabularies.UI.v1.SelectionRangeType",
+         "Sign": "I",
+         "Option": "EQ",
+         "Low": "EUR"
+        }
+       ]
+      }
+     ]
+    },
+    "@UI.Chart#CardTypeShare": {
+     "@type": "com.sap.vocabularies.UI.v1.ChartDefinitionType",
+     "Title": "Net Amount by Order Type",
+     "ChartType": "Donut",
+     "Dimensions": [
+      {
+       "$PropertyPath": "PurchaseOrderType"
+      }
+     ],
+     "Measures": [
+      {
+       "$PropertyPath": "NetAmount"
+      }
+     ]
+    },
+    "@UI.DataPoint#CardSpend": {
+     "@type": "com.sap.vocabularies.UI.v1.DataPointType",
+     "Title": "Purchasing Spend",
+     "Value": {
+      "$Path": "NetAmount"
+     },
+     "TargetValue": 600000000,
+     "CriticalityCalculation": {
+      "@type": "com.sap.vocabularies.UI.v1.CriticalityCalculationType",
+      "ImprovementDirection": "Minimize",
+      "ToleranceRangeHighValue": 600000000,
+      "DeviationRangeHighValue": 650000000
+     },
+     "TrendCalculation": {
+      "@type": "com.sap.vocabularies.UI.v1.TrendCalculationType",
+      "ReferenceValue": 550000000,
+      "UpDifference": 10000000,
+      "DownDifference": -10000000
      }
     },
     "@UI.HeaderFacets": [
@@ -809,6 +1705,28 @@
       "ID": "HeaderRating",
       "Target": {
        "$AnnotationPath": "_Supplier/@UI.DataPoint#Rating"
+      }
+     },
+     {
+      "@type": "com.sap.vocabularies.UI.v1.ReferenceFacet",
+      "ID": "HeaderBudget",
+      "Target": {
+       "$AnnotationPath": "@UI.Chart#BudgetBullet"
+      }
+     },
+     {
+      "@type": "com.sap.vocabularies.UI.v1.ReferenceFacet",
+      "ID": "HeaderDeliveryRadial",
+      "Target": {
+       "$AnnotationPath": "@UI.Chart#DeliveryRadial"
+      }
+     },
+     {
+      "@type": "com.sap.vocabularies.UI.v1.ReferenceFacet",
+      "ID": "HeaderNotes",
+      "Label": "Notes",
+      "Target": {
+       "$AnnotationPath": "@UI.FieldGroup#NotesText"
       }
      }
     ],
@@ -874,7 +1792,8 @@
        "@type": "com.sap.vocabularies.UI.v1.DataField",
        "Value": {
         "$Path": "PurchasingGroup"
-       }
+       },
+       "@UI.Importance": "Medium"
       },
       {
        "@type": "com.sap.vocabularies.UI.v1.DataField",
@@ -895,13 +1814,15 @@
        "@type": "com.sap.vocabularies.UI.v1.DataField",
        "Value": {
         "$Path": "Description"
-       }
+       },
+       "@UI.Importance": "Medium"
       },
       {
        "@type": "com.sap.vocabularies.UI.v1.DataField",
        "Value": {
         "$Path": "CreatedAt"
-       }
+       },
+       "@UI.Importance": "Low"
       }
      ]
     },
@@ -970,7 +1891,7 @@
       "ID": "Items",
       "Label": "Items",
       "Target": {
-       "$AnnotationPath": "_Item/@UI.LineItem"
+       "$AnnotationPath": "_Item/@UI.LineItem#InOrder"
       }
      },
      {
@@ -1000,6 +1921,7 @@
     "@Common.Label": "Purchase Order"
    },
    "Purchasing.PurchaseOrder/PurchaseOrderType": {
+    "@Common.FieldControl": "Mandatory",
     "@Common.Label": "Order Type",
     "@Common.Text": {
      "$Path": "_PurchaseOrderType/Name"
@@ -1026,6 +1948,7 @@
     }
    },
    "Purchasing.PurchaseOrder/Supplier": {
+    "@Common.FieldControl": "Mandatory",
     "@Common.Label": "Supplier",
     "@Common.Text": {
      "$Path": "_Supplier/SupplierName"
@@ -1056,12 +1979,16 @@
     }
    },
    "Purchasing.PurchaseOrder/CompanyCode": {
+    "@Common.FieldControl": "Mandatory",
+    "@Core.Immutable": true,
     "@Common.Label": "Company Code"
    },
    "Purchasing.PurchaseOrder/PurchasingGroup": {
+    "@Common.FieldControl": "Mandatory",
     "@Common.Label": "Purchasing Group"
    },
    "Purchasing.PurchaseOrder/OrderDate": {
+    "@Common.FieldControl": "Mandatory",
     "@Common.Label": "Order Date"
    },
    "Purchasing.PurchaseOrder/CreatedAt": {
@@ -1126,6 +2053,48 @@
     "@UI.HiddenFilter": true,
     "@Core.Computed": true
    },
+   "Purchasing.PurchaseOrder/BudgetAmount": {
+    "@Common.Label": "Budget",
+    "@Measures.ISOCurrency": {
+     "$Path": "Currency"
+    },
+    "@Core.Computed": true
+   },
+   "Purchasing.PurchaseOrder/InvoicedAmount": {
+    "@Common.Label": "Invoiced Amount",
+    "@Measures.ISOCurrency": {
+     "$Path": "Currency"
+    },
+    "@Core.Computed": true
+   },
+   "Purchasing.PurchaseOrder/ApproveEnabled": {
+    "@Common.Label": "Can Be Approved",
+    "@UI.Hidden": true,
+    "@Core.Computed": true
+   },
+   "Purchasing.PurchaseOrder/CloseEnabled": {
+    "@Common.Label": "Can Be Closed",
+    "@UI.Hidden": true,
+    "@Core.Computed": true
+   },
+   "Purchasing.approve(Purchasing.PurchaseOrder)": {
+    "@Common.Label": "Approve",
+    "@Core.OperationAvailable": {
+     "$Path": "_it/ApproveEnabled"
+    }
+   },
+   "Purchasing.reject(Purchasing.PurchaseOrder)": {
+    "@Common.Label": "Reject",
+    "@Core.OperationAvailable": {
+     "$Path": "_it/ApproveEnabled"
+    }
+   },
+   "Purchasing.close(Purchasing.PurchaseOrder)": {
+    "@Common.Label": "Close",
+    "@Core.OperationAvailable": {
+     "$Path": "_it/CloseEnabled"
+    }
+   },
    "Purchasing.PurchaseOrderItem": {
     "@UI.HeaderInfo": {
      "@type": "com.sap.vocabularies.UI.v1.HeaderInfoType",
@@ -1188,6 +2157,173 @@
       }
      }
     ],
+    "@UI.LineItem#InOrder": [
+     {
+      "@type": "com.sap.vocabularies.UI.v1.DataField",
+      "Value": {
+       "$Path": "PurchaseOrderItem"
+      }
+     },
+     {
+      "@type": "com.sap.vocabularies.UI.v1.DataField",
+      "Value": {
+       "$Path": "Material"
+      }
+     },
+     {
+      "@type": "com.sap.vocabularies.UI.v1.DataField",
+      "Value": {
+       "$Path": "Plant"
+      }
+     },
+     {
+      "@type": "com.sap.vocabularies.UI.v1.DataField",
+      "Value": {
+       "$Path": "OrderQuantity"
+      }
+     },
+     {
+      "@type": "com.sap.vocabularies.UI.v1.DataField",
+      "Value": {
+       "$Path": "NetPrice"
+      }
+     },
+     {
+      "@type": "com.sap.vocabularies.UI.v1.DataField",
+      "Value": {
+       "$Path": "NetAmount"
+      }
+     },
+     {
+      "@type": "com.sap.vocabularies.UI.v1.DataField",
+      "Value": {
+       "$Path": "DeliveryDate"
+      }
+     },
+     {
+      "@type": "com.sap.vocabularies.UI.v1.DataFieldForAnnotation",
+      "Target": {
+       "$AnnotationPath": "_History/@UI.Chart#Quantities"
+      },
+      "@UI.Importance": "Low"
+     }
+    ],
+    "@UI.HeaderFacets": [
+     {
+      "@type": "com.sap.vocabularies.UI.v1.ReferenceFacet",
+      "ID": "ItemHarvey",
+      "Target": {
+       "$AnnotationPath": "@UI.Chart#ReceivedShare"
+      }
+     },
+     {
+      "@type": "com.sap.vocabularies.UI.v1.ReferenceFacet",
+      "ID": "ItemDelta",
+      "Target": {
+       "$AnnotationPath": "@UI.Chart#InvoiceDelta"
+      }
+     },
+     {
+      "@type": "com.sap.vocabularies.UI.v1.ReferenceFacet",
+      "ID": "ItemConditions",
+      "Target": {
+       "$AnnotationPath": "_PricingCondition/@UI.Chart#Amounts"
+      }
+     },
+     {
+      "@type": "com.sap.vocabularies.UI.v1.ReferenceFacet",
+      "ID": "ItemPricingColumn",
+      "Target": {
+       "$AnnotationPath": "_PricingCondition/@UI.Chart#AmountColumns"
+      }
+     },
+     {
+      "@type": "com.sap.vocabularies.UI.v1.ReferenceFacet",
+      "ID": "ItemHistoryLine",
+      "Target": {
+       "$AnnotationPath": "_History/@UI.Chart#Quantities"
+      }
+     },
+     {
+      "@type": "com.sap.vocabularies.UI.v1.ReferenceFacet",
+      "ID": "ItemHistoryArea",
+      "Target": {
+       "$AnnotationPath": "_History/@UI.Chart#QuantityArea"
+      }
+     },
+     {
+      "@type": "com.sap.vocabularies.UI.v1.ReferenceFacet",
+      "ID": "ItemConditionShare",
+      "Target": {
+       "$AnnotationPath": "_PricingCondition/@UI.Chart#AmountShare"
+      }
+     }
+    ],
+    "@UI.DataPoint#Invoiced": {
+     "@type": "com.sap.vocabularies.UI.v1.DataPointType",
+     "Title": "Invoiced Amount",
+     "Value": {
+      "$Path": "InvoicedAmount"
+     },
+     "TargetValue": {
+      "$Path": "NetAmount"
+     },
+     "Visualization": "DeltaBulletChart"
+    },
+    "@UI.DataPoint#Received": {
+     "@type": "com.sap.vocabularies.UI.v1.DataPointType",
+     "Title": "Received Quantity",
+     "Value": {
+      "$Path": "ReceivedQuantity"
+     },
+     "MaximumValue": {
+      "$Path": "OrderQuantity"
+     }
+    },
+    "@UI.Chart#ReceivedShare": {
+     "@type": "com.sap.vocabularies.UI.v1.ChartDefinitionType",
+     "Title": "Received Quantity",
+     "ChartType": "Pie",
+     "Measures": [
+      {
+       "$PropertyPath": "ReceivedQuantity"
+      }
+     ],
+     "MeasureAttributes": [
+      {
+       "@type": "com.sap.vocabularies.UI.v1.ChartMeasureAttributeType",
+       "Measure": {
+        "$PropertyPath": "ReceivedQuantity"
+       },
+       "Role": "Axis1",
+       "DataPoint": {
+        "$AnnotationPath": "@UI.DataPoint#Received"
+       }
+      }
+     ]
+    },
+    "@UI.Chart#InvoiceDelta": {
+     "@type": "com.sap.vocabularies.UI.v1.ChartDefinitionType",
+     "Title": "Ordered vs. Invoiced",
+     "ChartType": "Bullet",
+     "Measures": [
+      {
+       "$PropertyPath": "InvoicedAmount"
+      }
+     ],
+     "MeasureAttributes": [
+      {
+       "@type": "com.sap.vocabularies.UI.v1.ChartMeasureAttributeType",
+       "Measure": {
+        "$PropertyPath": "InvoicedAmount"
+       },
+       "Role": "Axis1",
+       "DataPoint": {
+        "$AnnotationPath": "@UI.DataPoint#Invoiced"
+       }
+      }
+     ]
+    },
     "@UI.FieldGroup#Item": {
      "@type": "com.sap.vocabularies.UI.v1.FieldGroupType",
      "Label": "Item Data",
@@ -1312,6 +2448,8 @@
     "@Common.Label": "Item"
    },
    "Purchasing.PurchaseOrderItem/Material": {
+    "@Core.Immutable": true,
+    "@Common.FieldControl": "Mandatory",
     "@Common.Label": "Material",
     "@Common.Text": {
      "$Path": "_Material/MaterialName"
@@ -1342,6 +2480,7 @@
     }
    },
    "Purchasing.PurchaseOrderItem/Plant": {
+    "@Common.FieldControl": "Mandatory",
     "@Common.Label": "Plant",
     "@Common.Text": {
      "$Path": "_Plant/PlantName"
@@ -1371,6 +2510,7 @@
     }
    },
    "Purchasing.PurchaseOrderItem/OrderQuantity": {
+    "@Common.FieldControl": "Mandatory",
     "@Common.Label": "Order Quantity",
     "@Measures.Unit": {
      "$Path": "OrderUnit"
@@ -1467,7 +2607,52 @@
        "$Path": "IsStatistical"
       }
      }
-    ]
+    ],
+    "@UI.Chart#AmountShare": {
+     "@type": "com.sap.vocabularies.UI.v1.ChartDefinitionType",
+     "Title": "Share of Condition Amounts",
+     "ChartType": "BarStacked",
+     "Dimensions": [
+      {
+       "$PropertyPath": "ConditionTypeName"
+      }
+     ],
+     "Measures": [
+      {
+       "$PropertyPath": "ConditionAmount"
+      }
+     ]
+    },
+    "@UI.Chart#Amounts": {
+     "@type": "com.sap.vocabularies.UI.v1.ChartDefinitionType",
+     "Title": "Condition Amounts",
+     "ChartType": "Bar",
+     "Dimensions": [
+      {
+       "$PropertyPath": "ConditionTypeName"
+      }
+     ],
+     "Measures": [
+      {
+       "$PropertyPath": "ConditionAmount"
+      }
+     ]
+    },
+    "@UI.Chart#AmountColumns": {
+     "@type": "com.sap.vocabularies.UI.v1.ChartDefinitionType",
+     "Title": "Amounts by Condition",
+     "ChartType": "Column",
+     "Dimensions": [
+      {
+       "$PropertyPath": "ConditionCounter"
+      }
+     ],
+     "Measures": [
+      {
+       "$PropertyPath": "ConditionAmount"
+      }
+     ]
+    }
    },
    "Purchasing.PricingCondition/PurchaseOrder": {
     "@Common.Label": "Purchase Order"
@@ -1564,7 +2749,63 @@
        "$Path": "MovementType"
       }
      }
-    ]
+    ],
+    "@UI.DataPoint#QuantityTrend": {
+     "@type": "com.sap.vocabularies.UI.v1.DataPointType",
+     "Title": "Quantity",
+     "Value": {
+      "$Path": "Quantity"
+     },
+     "TargetValue": 150,
+     "CriticalityCalculation": {
+      "@type": "com.sap.vocabularies.UI.v1.CriticalityCalculationType",
+      "ImprovementDirection": "Maximize",
+      "DeviationRangeLowValue": 80,
+      "ToleranceRangeLowValue": 120
+     }
+    },
+    "@UI.Chart#QuantityArea": {
+     "@type": "com.sap.vocabularies.UI.v1.ChartDefinitionType",
+     "Title": "Quantity Trend vs. Target",
+     "ChartType": "Area",
+     "Dimensions": [
+      {
+       "$PropertyPath": "HistoryCounter"
+      }
+     ],
+     "Measures": [
+      {
+       "$PropertyPath": "Quantity"
+      }
+     ],
+     "MeasureAttributes": [
+      {
+       "@type": "com.sap.vocabularies.UI.v1.ChartMeasureAttributeType",
+       "Measure": {
+        "$PropertyPath": "Quantity"
+       },
+       "Role": "Axis1",
+       "DataPoint": {
+        "$AnnotationPath": "@UI.DataPoint#QuantityTrend"
+       }
+      }
+     ]
+    },
+    "@UI.Chart#Quantities": {
+     "@type": "com.sap.vocabularies.UI.v1.ChartDefinitionType",
+     "Title": "Quantities by History Entry",
+     "ChartType": "Line",
+     "Dimensions": [
+      {
+       "$PropertyPath": "HistoryCounter"
+      }
+     ],
+     "Measures": [
+      {
+       "$PropertyPath": "Quantity"
+      }
+     ]
+    }
    },
    "Purchasing.ItemHistory/PurchaseOrder": {
     "@Common.Label": "Purchase Order"
@@ -1685,8 +2926,51 @@
       "$Path": "Rating"
      },
      "TargetValue": 5,
+     "SampleSize": {
+      "$Path": "RatingCount"
+     },
      "Visualization": "Rating"
     },
+    "@UI.FieldGroup#QuickView": {
+     "@type": "com.sap.vocabularies.UI.v1.FieldGroupType",
+     "Label": "Supplier Details",
+     "Data": [
+      {
+       "@type": "com.sap.vocabularies.UI.v1.DataField",
+       "Value": {
+        "$Path": "Country"
+       }
+      },
+      {
+       "@type": "com.sap.vocabularies.UI.v1.DataField",
+       "Value": {
+        "$Path": "City"
+       }
+      },
+      {
+       "@type": "com.sap.vocabularies.UI.v1.DataField",
+       "Value": {
+        "$Path": "Rating"
+       }
+      },
+      {
+       "@type": "com.sap.vocabularies.UI.v1.DataField",
+       "Value": {
+        "$Path": "IsBlocked"
+       }
+      }
+     ]
+    },
+    "@UI.QuickViewFacets": [
+     {
+      "@type": "com.sap.vocabularies.UI.v1.ReferenceFacet",
+      "ID": "QuickView",
+      "Label": "Supplier Details",
+      "Target": {
+       "$AnnotationPath": "@UI.FieldGroup#QuickView"
+      }
+     }
+    ],
     "@Common.SemanticKey": [
      {
       "$PropertyPath": "Supplier"
@@ -1718,6 +3002,130 @@
    },
    "Purchasing.Supplier/IsBlocked": {
     "@Common.Label": "Blocked"
+   },
+   "Purchasing.Supplier/RatingCount": {
+    "@Common.Label": "Number of Ratings"
+   },
+   "Purchasing.SupplierMeeting": {
+    "@UI.HeaderInfo": {
+     "@type": "com.sap.vocabularies.UI.v1.HeaderInfoType",
+     "TypeName": "Supplier Meeting",
+     "TypeNamePlural": "Supplier Meetings",
+     "Title": {
+      "@type": "com.sap.vocabularies.UI.v1.DataField",
+      "Value": {
+       "$Path": "Subject"
+      }
+     },
+     "Description": {
+      "@type": "com.sap.vocabularies.UI.v1.DataField",
+      "Value": {
+       "$Path": "Supplier"
+      }
+     }
+    },
+    "@UI.LineItem": [
+     {
+      "@type": "com.sap.vocabularies.UI.v1.DataField",
+      "Value": {
+       "$Path": "Subject"
+      }
+     },
+     {
+      "@type": "com.sap.vocabularies.UI.v1.DataField",
+      "Value": {
+       "$Path": "Supplier"
+      }
+     },
+     {
+      "@type": "com.sap.vocabularies.UI.v1.DataField",
+      "Value": {
+       "$Path": "StartAt"
+      }
+     },
+     {
+      "@type": "com.sap.vocabularies.UI.v1.DataField",
+      "Value": {
+       "$Path": "EndAt"
+      }
+     },
+     {
+      "@type": "com.sap.vocabularies.UI.v1.DataField",
+      "Value": {
+       "$Path": "Location"
+      }
+     },
+     {
+      "@type": "com.sap.vocabularies.UI.v1.DataField",
+      "Value": {
+       "$Path": "Category"
+      }
+     }
+    ],
+    "@UI.PresentationVariant": {
+     "@type": "com.sap.vocabularies.UI.v1.PresentationVariantType",
+     "SortOrder": [
+      {
+       "@type": "com.sap.vocabularies.Common.v1.SortOrderType",
+       "Property": {
+        "$PropertyPath": "StartAt"
+       }
+      }
+     ]
+    },
+    "@Communication.Event": {
+     "@type": "com.sap.vocabularies.Communication.v1.EventType",
+     "summary": {
+      "$Path": "Subject"
+     },
+     "description": {
+      "$Path": "_Supplier/SupplierName"
+     },
+     "location": {
+      "$Path": "Location"
+     },
+     "dtstart": {
+      "$Path": "StartAt"
+     },
+     "dtend": {
+      "$Path": "EndAt"
+     },
+     "categories": {
+      "$Path": "Category"
+     }
+    }
+   },
+   "Purchasing.SupplierMeeting/Meeting": {
+    "@Common.Label": "Meeting"
+   },
+   "Purchasing.SupplierMeeting/Supplier": {
+    "@Common.Label": "Supplier",
+    "@Common.Text": {
+     "$Path": "_Supplier/SupplierName"
+    },
+    "@Common.Text@UI.TextArrangement": "TextOnly"
+   },
+   "Purchasing.SupplierMeeting/Subject": {
+    "@Common.Label": "Subject"
+   },
+   "Purchasing.SupplierMeeting/StartAt": {
+    "@Common.Label": "Start"
+   },
+   "Purchasing.SupplierMeeting/EndAt": {
+    "@Common.Label": "End"
+   },
+   "Purchasing.SupplierMeeting/Location": {
+    "@Common.Label": "Location"
+   },
+   "Purchasing.SupplierMeeting/Category": {
+    "@Common.Label": "Category",
+    "@Common.Text": {
+     "$Path": "CategoryName"
+    },
+    "@Common.Text@UI.TextArrangement": "TextOnly"
+   },
+   "Purchasing.SupplierMeeting/CategoryName": {
+    "@Common.Label": "Category Name"
    },
    "Purchasing.Material": {
     "@UI.HeaderInfo": {

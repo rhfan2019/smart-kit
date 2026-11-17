@@ -126,7 +126,7 @@ function tokenTables(): Record<string, Record<string, string>> {
   const root: Record<string, string> = {};
   for (const b of blocks) if (b.selectors.includes(':root')) Object.assign(root, decls(b.body));
   const out: Record<string, Record<string, string>> = { yellow: { ...root } };
-  for (const theme of ['navy', 'dark']) {
+  for (const theme of ['navy', 'sky', 'dark']) {
     const t = { ...root };
     for (const b of blocks) if (b.selectors.includes(`[data-theme='${theme}']`)) Object.assign(t, decls(b.body));
     out[theme] = t;

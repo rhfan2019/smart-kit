@@ -1,0 +1,147 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>UI5 cards reference</title>
+<script id="sap-ui-bootstrap" src="https://ui5.sap.com/1.154.0/resources/sap-ui-core.js"
+  data-sap-ui-theme="sap_horizon" data-sap-ui-libs="sap.m,sap.f,sap.ui.integration,sap.ui.unified"
+  data-sap-ui-language="en" data-sap-ui-async="true" data-sap-ui-compat-version="edge"></script>
+<style>
+  body { background: #f5f6f7; margin: 0; padding: 16px; }
+  #grid { display: grid; grid-template-columns: repeat(auto-fill, 340px); grid-auto-flow: dense; gap: 16px; align-items: start; }
+</style>
+</head>
+<body class="sapUiBody">
+<div id="grid"></div>
+<script>
+const today = new Date(); const d = (n, h, m = 0) => { const x = new Date(today); x.setDate(x.getDate() + n); x.setHours(h, m, 0, 0); return x.toISOString(); };
+const cards = {
+  list: {
+    "sap.app": { id: "ref.list", type: "card" },
+    "sap.card": {
+      type: "List",
+      header: { title: "Large Purchase Orders", subtitle: "Net amount above 10K", status: { text: "5 of 40" }, icon: { src: "sap-icon://sales-order" } },
+      content: {
+        data: { json: [
+          { t: "4500000001", d: "Office supplies", v: "12,500.00 EUR", s: "Success" },
+          { t: "4500000002", d: "Laptops", v: "48,900.00 EUR", s: "Warning" },
+          { t: "4500000003", d: "Raw materials", v: "23,100.00 EUR", s: "Error" },
+          { t: "4500000004", d: "Packaging", v: "11,050.00 EUR", s: "None" },
+          { t: "4500000005", d: "Spare parts", v: "15,720.00 EUR", s: "Success" } ] },
+        maxItems: 5,
+        item: { title: "{t}", description: "{d}", info: { value: "{v}", state: "{s}" } }
+      }
+    }
+  },
+  listIcon: {
+    "sap.app": { id: "ref.list2", type: "card" },
+    "sap.card": {
+      type: "List",
+      header: { title: "Suppliers", status: { text: "3 of 200" } },
+      content: {
+        data: { json: [
+          { t: "Acme Corp", d: "Berlin, DE", i: "AC", v: "4.5", s: "Success" },
+          { t: "Bolt Ltd", d: "London, GB", i: "BL", v: "2.1", s: "Error" },
+          { t: "Cobalt Inc", d: "Austin, US", i: "CI", v: "3.6", s: "Warning" } ] },
+        maxItems: 3,
+        item: { title: "{t}", description: "{d}", icon: { initials: "{i}" }, info: { value: "{v}", state: "{s}" } }
+      }
+    }
+  },
+  table: {
+    "sap.app": { id: "ref.table", type: "card" },
+    "sap.card": {
+      type: "Table",
+      header: { title: "Open Orders", subtitle: "By delivery date", status: { text: "3 of 10" } },
+      content: {
+        data: { json: [
+          { po: "4500000001", sup: "Acme Corp", amt: "12,500.00 EUR", st: "New", ss: "None" },
+          { po: "4500000002", sup: "Bolt Ltd", amt: "48,900.00 EUR", st: "Approved", ss: "Success" },
+          { po: "4500000003", sup: "Cobalt Inc", amt: "23,100.00 EUR", st: "Blocked", ss: "Error" } ] },
+        maxItems: 3,
+        row: { columns: [
+          { title: "Order", value: "{po}", identifier: true },
+          { title: "Supplier", value: "{sup}" },
+          { title: "Status", value: "{st}", state: "{ss}" } ] }
+      }
+    }
+  },
+  object: {
+    "sap.app": { id: "ref.object", type: "card" },
+    "sap.card": {
+      type: "Object",
+      header: { title: "Acme Corp", subtitle: "Supplier 100001", icon: { initials: "AC" } },
+      content: { groups: [
+        { title: "Contact", items: [
+          { label: "City", value: "Berlin" }, { label: "Country", value: "Germany" }, { label: "Email", value: "info@acme.example", type: "email" } ] },
+        { title: "Rating", items: [ { label: "Rating", value: "4.5" }, { label: "Ratings", value: "120" } ] } ] },
+      footer: { actionsStrip: [ { text: "Contact", buttonType: "Transparent" }, { text: "Open", buttonType: "Emphasized" } ] }
+    }
+  },
+  analytical: {
+    "sap.app": { id: "ref.analytical", type: "card" },
+    "sap.card": {
+      type: "Analytical",
+      header: { type: "Numeric", title: "Purchasing Spend", subtitle: "By supplier", unitOfMeasurement: "EUR",
+        mainIndicator: { number: "125.6", unit: "K", trend: "Up", state: "Good" },
+        details: "Current year", sideIndicators: [ { title: "Target", number: "150", unit: "K" }, { title: "Deviation", number: "16.3", unit: "%" } ] },
+      content: {
+        chartType: "Column",
+        chartProperties: { legend: { visible: false }, plotArea: { dataLabel: { visible: true } }, categoryAxis: { title: { visible: false } }, valueAxis: { title: { visible: false } }, title: { visible: false } },
+        data: { json: { list: [ { s: "Acme", v: 52.1 }, { s: "Bolt", v: 31.4 }, { s: "Cobalt", v: 25.0 }, { s: "Delta", v: 17.1 } ] }, path: "/list" },
+        dimensions: [ { name: "Supplier", value: "{s}" } ], measures: [ { name: "Net amount", value: "{v}" } ],
+        feeds: [ { uid: "categoryAxis", type: "Dimension", values: ["Supplier"] }, { uid: "valueAxis", type: "Measure", values: ["Net amount"] } ]
+      }
+    }
+  },
+  timeline: {
+    "sap.app": { id: "ref.timeline", type: "card" },
+    "sap.card": {
+      type: "Timeline",
+      header: { title: "Upcoming Meetings", status: { text: "3 of 12" } },
+      content: {
+        data: { json: [
+          { t: "Price negotiation", d: "Acme Corp", dt: d(0, 9) , i: "sap-icon://appointment-2" },
+          { t: "Quality review", d: "Bolt Ltd", dt: d(1, 14), i: "sap-icon://appointment-2" },
+          { t: "Contract signing", d: "Cobalt Inc", dt: d(3, 11), i: "sap-icon://appointment-2" } ] },
+        maxItems: 3,
+        item: { title: { value: "{t}" }, description: { value: "{d}" }, dateTime: { value: "{dt}" }, icon: { src: "{i}" } }
+      }
+    }
+  },
+  calendar: {
+    "sap.app": { id: "ref.calendar", type: "card" },
+    "sap.card": {
+      type: "Calendar",
+      header: { title: "My Meetings", subtitle: "Supplier meetings", status: { text: "3 of 4" } },
+      content: {
+        date: d(0, 8),
+        maxItems: 3, maxLegendItems: 3, noItemsText: "No meetings",
+        data: { json: {
+          item: [
+            { start: d(0, 9), end: d(0, 10), title: "Price negotiation", text: "Acme Corp", icon: "sap-icon://appointment-2", type: "Type01" },
+            { start: d(0, 13), end: d(0, 14, 30), title: "Quality review", text: "Bolt Ltd", icon: "sap-icon://appointment-2", type: "Type05" },
+            { start: d(0, 15), end: d(0, 16), title: "Delivery planning", text: "Cobalt Inc", icon: "sap-icon://appointment-2", type: "Type01" },
+            { start: d(0, 16, 30), end: d(0, 17), title: "Follow-up", text: "Delta GmbH", icon: "sap-icon://appointment-2", type: "Type05" },
+            { start: d(2, 11), end: d(2, 12), title: "Contract signing", text: "Cobalt Inc", icon: "sap-icon://appointment-2", type: "Type01" } ],
+          specialDate: [ { start: d(4, 0), end: d(4, 0), type: "Type08" } ],
+          legendItem: [ { category: "calendar", text: "Holiday", type: "Type08" }, { category: "appointment", text: "Negotiation", type: "Type01" }, { category: "appointment", text: "Review", type: "Type05" } ] } },
+        item: { template: { startDate: "{start}", endDate: "{end}", title: "{title}", text: "{text}", icon: { src: "{icon}" }, type: "{type}" }, path: "/item" },
+        specialDate: { template: { startDate: "{start}", endDate: "{end}", type: "{type}" }, path: "/specialDate" },
+        legendItem: { template: { category: "{category}", text: "{text}", type: "{type}" }, path: "/legendItem" },
+        moreItems: { actions: [ { type: "Navigation", parameters: { url: "https://example.com" } } ] }
+      }
+    }
+  },
+};
+sap.ui.getCore().attachInit(() => {
+  sap.ui.require(["sap/ui/integration/widgets/Card"], (Card) => {
+    for (const [id, manifest] of Object.entries(cards)) {
+      const div = document.createElement('div'); if (id==='calendar') div.style.gridColumn='span 2'; div.id = 'host-' + id; document.getElementById('grid').appendChild(div);
+      new Card({ id: 'card-' + id, manifest, width: id === 'calendar' ? '640px' : '340px' }).placeAt(div.id);
+    }
+  });
+});
+</script>
+</body>
+</html>

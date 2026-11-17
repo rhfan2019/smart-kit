@@ -474,10 +474,14 @@ export function toQueryString(model: MetaModel, req: QueryRequest): string {
   if (req.aggregate) {
     // $apply is evaluated before $filter: filters go into a filter() transformation (OData Data Aggregation §3).
     const filter = filterString(model, info.typeName, req);
+    const aggregates = req.aggregate.measures.map((m) => `${m.path} with ${m.with} as ${m.path.replace(/\//g, '_')}`).join(',');
     const steps = [
       ...(filter ? [`filter(${filter})`] : []),
       ...(req.search ? [`search(${req.search})`] : []),
-      `groupby((${req.aggregate.groupBy.join(',')}),aggregate(${req.aggregate.measures.map((m) => `${m.path} with ${m.with} as ${m.path.replace(/\//g, '_')}`).join(',')}))`,
+      // No dimensions: one total row (numeric card header, docs/20).
+      req.aggregate.groupBy.length
+        ? `groupby((${req.aggregate.groupBy.join(',')}),aggregate(${aggregates}))`
+        : `aggregate(${aggregates})`,
     ];
     opts.push(`$apply=${encodeOption(steps.join('/'))}`);
     if (req.orderBy.length) opts.push(`$orderby=${encodeOption(req.orderBy.map((s) => (s.descending ? `${s.path} desc` : s.path)).join(','))}`);

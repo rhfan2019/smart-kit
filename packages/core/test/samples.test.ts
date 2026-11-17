@@ -18,7 +18,7 @@ describe('test service samples (AC-MOD-01, AC-MOD-03)', () => {
     const ui = po.ui['Purchasing.PurchaseOrder']!;
     expect(ui.derived).toEqual({ lineItem: false, selectionFields: false, headerInfo: false, sections: false });
     expect(ui.lineItem.length).toBeGreaterThanOrEqual(6);
-    expect(ui.headerFacets.length).toBe(4);
+    expect(ui.headerFacets.length).toBe(7);
     expect(ui.sections.map((s) => s.id)).toEqual(['GeneralInformation', 'Items', 'NotesSection']);
     expect(po.entitySets.PurchaseOrders!.capabilities).toMatchObject({ searchable: true, nonFilterable: ['Notes'], requiredFilters: ['CompanyCode'], nonSortable: ['Description'] });
     expect(po.entitySets.ItemHistory!.capabilities.countable).toBe(false);

@@ -13,6 +13,7 @@
 - `buildObjectRequest`
 - `buildValueHelpRequest`
 - `calculateCriticality`
+- `calculateTrend`
 - `capabilitiesFor`
 - `chartExpand`
 - `chartFields`
@@ -77,6 +78,7 @@
 - `ODataVariantStore`
 - `OPERATOR_ARITY`
 - `OPERATORS`
+- `parseAnnotationPath`
 - `parseEntityPath`
 - `propertyFilter`
 - `readQueryString`
@@ -118,6 +120,7 @@
 - `EntitySetModel`
 - `EntityTypeModel`
 - `EntityUi`
+- `EventModel`
 - `ExpandSpec`
 - `FetchLike`
 - `FieldModel`
@@ -148,6 +151,7 @@
 - `PageStateStore`
 - `PathSegment`
 - `PresentationModel`
+- `PresentationVariantModel`
 - `PropertyModel`
 - `QueryRequest`
 - `QueryResult`
@@ -163,6 +167,7 @@
 - `SubSectionContent`
 - `SubSectionModel`
 - `TextArrangement`
+- `TrendCalculationModel`
 - `ValueHelpRequestOptions`
 - `ValueListModel`
 - `ValueListParameter`
@@ -195,6 +200,7 @@
 | `/edit` | `CreateDialog`、`useEditStrategy`、`validate` | 否 |
 | `/messages` | `MessageProvider`、`MessageButton`、`MessageIcon`、`useMessages` | 否 |
 | `/templates` | `SmartListReport`、`SmartObjectPage` | 是 |
+| `/cards` | `Card`、`Header`、`NumericHeader`、`NumericSideIndicator`、`ListContent`、`TableContent`、`ObjectContent`、`AnalyticalContent`、`TimelineContent`、`CalendarContent`（与 SAPUI5 的 `sap.f.Card`、`sap.f.cards.*`、`sap.ui.integration.cards.*Content` 同名，docs/20） | 否 |
 | `/styles.css` | 样式（所有组件共用一个文件） | — |
 
 AG Grid（`ag-grid-community`、`ag-grid-react`）是可选的 peer 依赖：不用表格时可以不装，但这时要从不需要 AG Grid 的子路径引入；从根入口引入时，打包工具仍会去解析 AG Grid。
@@ -205,8 +211,11 @@ AG Grid（`ag-grid-community`、`ag-grid-react`）是可选的 peer 依赖：不
 
 - `actionPaths`
 - `AdaptFiltersDialog`
+- `AnalyticalContent`
 - `AnchorBar`
 - `applyExtensions`
+- `CalendarContent`
+- `Card`
 - `ChartView`
 - `ColumnContext`
 - `ConditionInput`
@@ -227,12 +236,14 @@ AG Grid（`ag-grid-community`、`ag-grid-react`）是可选的 peer 依赖：不
 - `FlexibleColumnLayout`
 - `GenericTag`
 - `getPath`
+- `Header`
 - `HeaderFacet`
 - `hiddenByImportance`
 - `INTL_LOCALE`
 - `isActionAvailable`
 - `isEditable`
 - `linkify`
+- `ListContent`
 - `MessageButton`
 - `MessageIcon`
 - `MessageProvider`
@@ -241,6 +252,9 @@ AG Grid（`ag-grid-community`、`ag-grid-react`）是可选的 peer 依赖：不
 - `MicroChart`
 - `MissingProviderError`
 - `niceTicks`
+- `NumericHeader`
+- `NumericSideIndicator`
+- `ObjectContent`
 - `ObjectPageLayout`
 - `OverflowActions`
 - `parseConditionText`
@@ -261,7 +275,9 @@ AG Grid（`ag-grid-community`、`ag-grid-react`）是可选的 peer 依赖：不
 - `SmartObjectPage`
 - `SmartTable`
 - `SmartVariantManagement`
+- `TableContent`
 - `TableP13nDialog`
+- `TimelineContent`
 - `useActionRunner`
 - `useColumn`
 - `useDynamicPage`
@@ -293,19 +309,28 @@ AG Grid（`ag-grid-community`、`ag-grid-react`）是可选的 peer 依赖：不
 - `ActionRunner`
 - `ActionTarget`
 - `AdaptFiltersDialogProps`
+- `AnalyticalContentProps`
 - `AnchorBarProps`
 - `AnchorItem`
 - `AppliedFilter`
 - `BlockItem`
+- `CalendarContentProps`
+- `CalendarLegendItem`
+- `CalendarSpecialDate`
+- `CardAnnotationSettings`
+- `CardDataProps`
+- `CardProps`
 - `ChartDatum`
 - `ChartViewProps`
 - `ColumnContextValue`
 - `ColumnItem`
 - `ConditionInputProps`
 - `CreateDialogProps`
+- `DeviationIndicator`
 - `DraftState`
 - `DynamicPageProps`
 - `EntitySetHandle`
+- `EventItemPaths`
 - `ExtendEntry`
 - `ExtendPosition`
 - `FclLayout`
@@ -322,7 +347,9 @@ AG Grid（`ag-grid-community`、`ag-grid-react`）是可选的 peer 依赖：不
 - `FormFieldItem`
 - `GenericTagProps`
 - `HeaderFacetProps`
+- `HeaderProps`
 - `ListContentItem`
+- `ListContentProps`
 - `ListQueryOptions`
 - `ListQueryResult`
 - `Locale`
@@ -335,6 +362,9 @@ AG Grid（`ag-grid-community`、`ag-grid-react`）是可选的 peer 依赖：不
 - `MicroChartPoint`
 - `MicroChartProps`
 - `MicroChartThreshold`
+- `NumericHeaderProps`
+- `NumericSideIndicatorProps`
+- `ObjectContentProps`
 - `ObjectPageLayoutProps`
 - `ObjectResult`
 - `OverflowActionsProps`
@@ -356,16 +386,19 @@ AG Grid（`ag-grid-community`、`ag-grid-react`）是可选的 peer 依赖：不
 - `SmartTableProps`
 - `SmartVariantManagementProps`
 - `SubSectionItem`
+- `TableContentProps`
 - `TableContextValue`
 - `TableExtendEntry`
 - `TableP13nDialogProps`
 - `TableQuery`
 - `TextFn`
 - `TextParams`
+- `TimelineContentProps`
 - `ToolbarAction`
 - `UseFilterStateOptions`
 - `UseObjectOptions`
 - `UseVariantsOptions`
+- `ValueColor`
 - `ValueContext`
 - `ValueHelpDialogProps`
 - `VariantsApi`

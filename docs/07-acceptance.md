@@ -123,7 +123,7 @@
 | 编号 | 标准 | 怎么验 |
 | --- | --- | --- |
 | AC-Q-01 | `npm run typecheck`（strict）、`npm run lint`、`npm test`、`npm run e2e`、`npm run build`、`npm run size` 全部通过；CI 工作流里有这些步骤 | C |
-| AC-Q-02 | **性能预算**：<br>• 包体积（gzip，不含 peer 依赖 React、Mantine、AG Grid）：`@rhfan2019/smart-kit-core` ≤ 60 KB，`@rhfan2019/smart-kit` ≤ 80 KB<br>• 首屏：本地测试服务，列表页从导航到第一块数据渲染 ≤ 2.5 秒<br>• 万行：10,000 行的列表滚到底，期间没有长于 200ms 的长任务 | C、E |
+| AC-Q-02 | **性能预算**：<br>• 包体积（gzip，不含 peer 依赖 React、Mantine、AG Grid）：`@rhfan2019/smart-kit-core` ≤ 60 KB，`@rhfan2019/smart-kit` ≤ 80 KB（2026-11-16 ADR-028 起 ≤ 95 KB：根入口是全部子路径之和，加了约 18 KB 的卡片；应用实际按子路径付费，见 `npm run size` 的场景上限）<br>• 首屏：本地测试服务，列表页从导航到第一块数据渲染 ≤ 2.5 秒<br>• 万行：10,000 行的列表滚到底，期间没有长于 200ms 的长任务 | C、E |
 | AC-Q-03 | 公开 API：包的入口只导出 `docs/api.md` 里列出的名字（测试比对） | U |
 | AC-Q-04 | 商标词检查：包名、组件名、导出标识符、CSS 类名里没有独立的 `fiori`、`sap`、`sapui5`、`ui5`、`netweaver`（`npm run check:trademark`） | C |
 | AC-Q-05 | Storybook 能构建，每个公开积木至少有一个故事 | C |

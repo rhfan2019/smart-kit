@@ -126,6 +126,19 @@ export interface DataPointModel {
   deltaBullet?: boolean;
   /** UI.NumberFormat/NumberOfFractionalDigits of ValueFormat (MC-13). */
   fractionDigits?: number;
+  /** UI.TrendCalculation: the trend arrow of a KPI (numeric card header, docs/20). */
+  trendCalculation?: TrendCalculationModel;
+}
+
+/** UI.TrendCalculationType: differences to the reference value that make the trend up or down. */
+export interface TrendCalculationModel {
+  referenceValue?: ValueRef;
+  /** The differences are relative (value / reference − 1) instead of absolute. */
+  isRelative: boolean;
+  upDifference?: ValueRef;
+  strongUpDifference?: ValueRef;
+  downDifference?: ValueRef;
+  strongDownDifference?: ValueRef;
 }
 
 export type ImprovementDirection = 'Maximize' | 'Minimize' | 'Target';
@@ -294,6 +307,44 @@ export interface EntityUi {
   views: ViewModel[];
   /** UI.QuickViewFacets as form groups. */
   quickView?: FormGroupModel[];
+  /** Every UI.LineItem by qualifier ("" for the unqualified one); cards pick one with `annotationPath` (docs/20). */
+  lineItems: Record<string, ColumnModel[]>;
+  /** Every UI.PresentationVariant by qualifier ("" for the unqualified one). */
+  presentationVariants: Record<string, PresentationVariantModel>;
+  /** Every UI.SelectionVariant by qualifier ("" for the unqualified one). */
+  selectionVariants: Record<string, InitialCondition[]>;
+  /** Every UI.DataPoint by qualifier ("" for the unqualified one). */
+  dataPoints: Record<string, DataPointModel>;
+  /** Every UI.FieldGroup by qualifier ("" for the unqualified one). */
+  fieldGroups: Record<string, FormGroupModel>;
+  /** UI.Identification fields (actions are in `objectActions`). */
+  identification: FieldModel[];
+  /** Communication.Event of the entity type. */
+  event?: EventModel;
+}
+
+/** UI.PresentationVariant with its qualifier (cards, docs/20). */
+export interface PresentationVariantModel {
+  presentation: PresentationModel;
+  /** UI.PresentationVariant/MaxItems. */
+  maxItems?: number;
+  /** Qualifier of the UI.LineItem in Visualizations ("" for the unqualified one). */
+  lineItemQualifier?: string;
+  /** Qualifier of the UI.Chart in Visualizations ("" for the unqualified one). */
+  chartQualifier?: string;
+  /** UI.PresentationVariant/GroupBy: property paths the items are grouped by (group headers in cards). */
+  groupBy: string[];
+}
+
+/** Communication.Event: which properties hold the start, end and texts of an event (calendar and timeline cards). */
+export interface EventModel {
+  dtstart?: string;
+  dtend?: string;
+  summary?: string;
+  description?: string;
+  location?: string;
+  /** Category of the event (legend and colour of calendar appointments). */
+  categories?: string;
 }
 
 export interface EntitySetModel {

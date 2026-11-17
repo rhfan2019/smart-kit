@@ -34,3 +34,8 @@ body { background: var(--sk-color-page); color: var(--sk-color-text); font-famil
 .demo-mc__rules { font-size: var(--sk-font-size-1); color: var(--sk-color-text-muted); margin-top: auto; }
 .demo-mc__table td { vertical-align: middle; }
 .demo-mc__table td:not(:first-child) { width: 18%; min-width: 120px; }
+
+/* cards page (docs/20): 340 px columns like the SAPUI5 reference; the calendar spans two columns */
+.demo-cards__grid { display: grid; grid-template-columns: repeat(auto-fill, 340px); gap: 16px; align-items: start; grid-auto-flow: dense; margin-top: var(--sk-space-5); }
+.demo-cards__wide { grid-column: span 2; }
+.demo-cards__custom { margin: 0; padding: 0 16px 16px; color: var(--sk-color-text-muted); }

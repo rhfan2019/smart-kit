@@ -19,9 +19,9 @@ const CORE_DIST = join(ROOT, 'packages/core/dist');
 /** Budgets for the library's own code per entry (dependencies external). */
 const ENTRY_BUDGETS = {
   'core:.': 60,
-  '.': 80,
+  '.': 95, // everything, all subpaths together; 80 → 95 with the cards (ADR-028, /cards ≈ 18 KB)
   context: 8, i18n: 7, theme: 2, util: 1, field: 15, filter: 11, variants: 4, table: 36, chart: 12,
-  object: 30, page: 7, actions: 3, edit: 19, messages: 2, templates: 69,
+  object: 30, page: 7, actions: 3, edit: 19, messages: 2, templates: 69, cards: 23,
 };
 
 /** Budgets for what an application ships when it imports only this (React and React DOM excluded). */
@@ -31,6 +31,11 @@ const SCENARIOS = [
   { name: 'SmartField only', code: "import { SmartField } from '@rhfan2019/smart-kit/field'; console.log(SmartField);", budget: 130 },
   { name: 'List report page', code: "import { SmartListReport } from '@rhfan2019/smart-kit/templates'; console.log(SmartListReport);", budget: 560 },
   { name: 'Object page', code: "import { SmartObjectPage } from '@rhfan2019/smart-kit/templates'; console.log(SmartObjectPage);", budget: 560 },
+  // Cards (docs/20, ADR-028): a card with its content, no AG Grid.
+  { name: 'Card + Header only (Component card)', code: "import { Card, Header } from '@rhfan2019/smart-kit/cards'; console.log(Card, Header);", budget: 2 },
+  { name: 'List card (Card + Header + ListContent)', code: "import { Card, Header, ListContent } from '@rhfan2019/smart-kit/cards'; console.log(Card, Header, ListContent);", budget: 45 },
+  { name: 'Calendar card (Card + Header + CalendarContent)', code: "import { Card, Header, CalendarContent } from '@rhfan2019/smart-kit/cards'; console.log(Card, Header, CalendarContent);", budget: 46 },
+  { name: 'Analytical card (NumericHeader + AnalyticalContent)', code: "import { Card, NumericHeader, AnalyticalContent } from '@rhfan2019/smart-kit/cards'; console.log(Card, NumericHeader, AnalyticalContent);", budget: 52 },
 ];
 
 const alias = [
@@ -94,9 +99,9 @@ for (const name of entryNames) {
   }
   report(spec, await bundle(`export * from '${spec}';`, (id) => isPackage(id) && !id.startsWith('@rhfan2019/'), true), budget);
 }
-// P5: one stylesheet for all components (styles.css imports tokens.css).
+// P5: one stylesheet for all components (styles.css imports tokens.css). 13 → 16 KB with the cards (ADR-028, about 4 KB).
 const css = ['styles.css', 'tokens.css'].reduce((n, f) => n + gzipSync(readFileSync(join(REACT_DIST, f))).length, 0) / 1024;
-report('@rhfan2019/smart-kit/styles.css (with tokens.css)', css, 13);
+report('@rhfan2019/smart-kit/styles.css (with tokens.css)', css, 16);
 
 console.log('\nWhat an application ships (everything except React):');
 for (const s of SCENARIOS) report(s.name, await bundle(s.code, reactOnly), s.budget);

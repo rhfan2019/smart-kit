@@ -35,7 +35,7 @@ const { model, provider } = await loadService({ serviceUrl: '/odata/purchasing/'
 
 只用一部分组件时，可以从子路径引入，例如 `import { MicroChart } from '@rhfan2019/smart-kit/chart'`；应用只打包用到的代码，不用表格时也不必安装 AG Grid。子路径清单见 [docs/api.md](docs/api.md)，打包规则见 [ADR-026](docs/adr/026-bundling-and-subpaths.md)。
 
-导航适配器的写法见 [apps/demo/src/navigation.ts](apps/demo/src/navigation.ts)；主题用根元素的 `data-theme`（`yellow` / `navy` / `dark`）和 `data-density`（`comfortable` / `compact`）切换。
+导航适配器的写法见 [apps/demo/src/navigation.ts](apps/demo/src/navigation.ts)；主题用根元素的 `data-theme`（`yellow` / `navy` / `sky` / `dark`；`sky` 是接近 SAP Horizon 的浅色配色）和 `data-density`（`comfortable` / `compact`）切换。
 
 ## 开发
 
@@ -52,6 +52,8 @@ npm run mock
 ```bash
 npm run dev
 ```
+
+两个都启动后，浏览器打开 <http://localhost:4401/cards> 就是卡片演示页（右上角主题选"天蓝"最接近 SAPUI5 的样子；列表、表格、对象、分析、时间线、日历等各类卡片，组件名与 SAPUI5 相同，见 [docs/20-research-cards.md](docs/20-research-cards.md)）；也可以在演示应用顶部导航点"卡片"。
 
 其余命令（测试、端到端、构建、Storybook）见 [docs/handoff.md](docs/handoff.md)。
 

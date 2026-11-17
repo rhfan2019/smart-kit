@@ -1,8 +1,10 @@
 /** English library texts. Keys must match messages.zh.ts (checked by a unit test). */
+import { cardsEn } from './messages.cards.en';
 import { p2en } from './messages.p2.en';
 
 export const en = {
   ...p2en,
+  ...cardsEn,
   'filterBar.search': 'Search',
   'filterBar.go': 'Go',
   'filterBar.adaptFilters': { one: 'Adapt Filters ({count})', other: 'Adapt Filters ({count})', zero: 'Adapt Filters' },
