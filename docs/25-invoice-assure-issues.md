@@ -123,6 +123,22 @@
 - **本项目现在怎么绕**：没有。
 - **验收**：用户页新建、保存冲突、打开不存在的人，界面上都没有“对象”二字。
 
+### S24 · TECH-077：对象页的区块和抬头关键值不能按数据隐藏
+
+- **现象**：`UI.Hidden` 只认常量（`buildModel` 里按 `bool(...)` 读），`UI.Facets`、`UI.HeaderFacets` 里的 `ReferenceFacet` 写 `<Annotation Term="UI.Hidden" Path="…"/>` 不起作用；`SmartObjectPage` 也没有扩展抬头关键值的属性（只有 `sectionExtend`）。
+- **为什么要**：invoice-assure 的发票对象页按“情形”换内容（疑似重复、确认订单、差异、补单据、会计复核、在等别人、已了结）：同一个实体类型，抬头关键值（匹配度环形图、单价对比微图、付款到期、复核进度）和第一个区块按每张发票的数据决定显示哪些。Fiori elements 用的就是路径式 `UI.Hidden`。
+- **期望**：`UI.Facets`、`UI.HeaderFacets` 的 facet（含 `CollectionFacet`、`ReferenceFacet`）和 `UI.DataField` 支持 `UI.Hidden` 的 `Path`（布尔字段，按当前这一行算；编辑中按草稿值算），被隐藏的区块同时从锚点栏里拿掉。
+- **本项目现在怎么绕**：发票页不用 `SmartObjectPage`，改用下一层的 `ObjectPageLayout`，由宿主按行给 `facets`、`sections`；代价是区块和字段不再来自注解。补上后可以回到 `SmartObjectPage`。
+- **验收**：一个字段为真时区块和锚点都不出现、为假时出现；抬头关键值同理；切换到另一行（FCL 翻页）时跟着变。
+
+### S25 · TECH-078：对象页的页脚不能放宿主自己的决定按钮
+
+- **现象**：页脚的动作只来自 `UI.Identification` 里 `Determining` 的 `DataFieldForAction`，调服务端绑定动作；`SmartObjectPage` 没有 `footer` 之类的属性。
+- **为什么要**：invoice-assure 的发票页把了结这一步的决定放在固定页脚（如“接受差异，交财务”“退回供应商”“确认，转待预制”），点了先弹本项目的对话框（选依据类型、写原因、带上数字员工起草的文字），再走本项目的 Server Action；按钮按人、按情形现算；缺条件时左边写缺什么（“还差 1 条复核打勾”）并能点过去。
+- **期望**：`SmartObjectPage` 有一个页脚扩展（如 `footerActions: ReactNode | (row) => ReactNode`，再加一个页脚左侧的消息位），和模型动作排在一起，照 Fiori 的顺序（主按钮在前），保持固定、不随滚动消失。
+- **本项目现在怎么绕**：同 S24，用 `ObjectPageLayout` 的 `footer`。
+- **验收**：宿主给的按钮出现在页脚、按行变化；编辑状态下页脚仍是保存 / 取消。
+
 ## 可以先绕开
 
 ### S6 · TECH-059：条件没有相对日期
