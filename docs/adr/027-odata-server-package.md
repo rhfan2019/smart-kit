@@ -14,4 +14,8 @@
   - 一致性测试：同一组请求同时发给本服务和 fe-mockserver，比较响应。
 - **理由**：服务端依赖不能进浏览器包；CLI 不该成为生产依赖；同仓库便于一处改动跨包一次提交。选型理由见 `19` 第 3 节和 D13。
 - **代价**：要自己维护一个受限的 OData 实现；Kysely 尚未到 1.0，要锁版本，升级时跑一致性测试。
-- **状态**：采纳（2026-11-16），尚未实施。
+- **状态**：采纳（2026-11-16）；**读部分已实施**（2026-11-16，讨论记录 D16）。
+  - 已做：`packages/server`（只读：列表、按键读取、子集合、值帮助、`$apply` 的 `filter`/`search`/`groupby`/`aggregate`、`$metadata` 与单独的注解文件、标准错误体；其余返回 501）、`packages/cli`（`generate`、`check`）、`apps/pg-server`（PostgreSQL 上的采购订单测试床，端口 4402）、一致性测试（`packages/server/test/conformance.test.ts`）、端到端（`npm run e2e:pg`）。
+  - 与上面文字的出入：`contains` / `startswith` / `endswith` 按 OData 规范区分大小写，生成 `LIKE`；`$search` 不区分大小写，生成 `ILIKE`（两者都转义 `%`、`_`、`\`）。集合 `$expand` 用 `LEFT JOIN LATERAL` + `json_agg`，单值 `$expand` 用 `LEFT JOIN LATERAL` + `row_to_json`；分页在内层查询先做完，展开只对返回的行执行。
+  - 数据范围（`scope`）目前只能用实体集自己的属性写条件（不能经过导航），在被读到的每个地方生效：被访问的实体集、路径里的父对象、`$expand`、`$filter`/`$orderby` 里经过的导航、`$apply`。
+  - 未做（下一步，需要用户确认）：写操作（PATCH + ETag、POST、DELETE）、绑定动作、草稿、变体实体集、按语言的代码表文字、`$batch`；ADR-026 P6 的元数据预编译。

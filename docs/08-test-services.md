@@ -161,3 +161,12 @@
 - 引擎把 `$top=0` 当成不限条数；前置层在这种情况下返回空的 `value`（`@odata.count` 照常）。
 - `$batch` 直接交给引擎，不经过前置层的检查（与一期相同）。
 - 数据量与 .NET 版本相同的规则生成，但随机数生成器不同，具体数值和名称与 2026-11-14 之前不同（例如默认筛选下的采购订单是 1616 张）。
+
+## 5. PostgreSQL 上的采购订单服务（`apps/pg-server`，ADR-027）
+
+- 地址 `http://localhost:4402/odata/purchasing/`（`PG_SERVER_PORT` 可改），由 `@rhfan2019/smart-kit-server` 提供，**只读**；写请求返回 501。
+- 数据在本机 PostgreSQL 的数据库 `smart_kit_purchasing`、schema `purchasing` 里，由 `npm run pg:setup` 建立并写入（可重复执行，只建缺少的；`-- --reseed` 重新写入数据）。数据来自本服务同一个生成器（`apps/mock/lib/purchasing.mjs`），所以和 `/odata/purchasing/` 完全相同。
+- 元数据：`generated/purchasing.csdl.xml`（`npm run pg:generate` 从表结构生成，不要手改）+ `annotations/purchasing.annotations.xml`（手写，从本服务的模板开始，去掉了动作和变体，新建 / 编辑 / 删除的能力设为 false）+ 标签包 `apps/mock/Csdl/labels.<语言>.json`。
+- 与 `/odata/purchasing/` 的差别：没有 `Variants`、没有绑定动作和写操作；代码表文字（状态名称等）只有英文；`$metadata` 只有 XML；嵌套 `$expand` 的 `$top` 生效（测试服务的引擎忽略它）；未知属性返回 400（测试服务返回空结果）。
+- 示例应用接它：`PURCHASING_URL=http://localhost:4402 npm run dev`，见 README"在 PostgreSQL 上手工测试"。
+

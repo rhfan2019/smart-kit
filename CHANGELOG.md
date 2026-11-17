@@ -1,9 +1,20 @@
 # Changelog
 
-All notable changes to `@rhfan2019/smart-kit` and `@rhfan2019/smart-kit-core` are documented here.
+All notable changes to `@rhfan2019/smart-kit`, `@rhfan2019/smart-kit-core`, `@rhfan2019/smart-kit-server` and `@rhfan2019/smart-kit-cli` are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the packages use [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
+
+### Added (OData service on PostgreSQL, ADR-027)
+
+- New package `@rhfan2019/smart-kit-server` (Node only): a read-only OData V4 service on PostgreSQL. URL -> AST -> query plan -> SQL: own `$filter` / `$search` / `$apply` parsers on chevrotain (grammar adapted from `@sap-ux/fe-mockserver-core`, Apache-2.0, see its NOTICE) with typed literals checked against `$metadata`; Capabilities annotations enforced; a data scope (permissions) per entity set added wherever the set is read; SQL composed with Kysely (every value a parameter, names only from the metadata, LIKE escaping, key appended to ORDER BY, `COUNT(*) OVER()`, `$expand` via `LEFT JOIN LATERAL` + `json_agg`, max page size with next links). `$metadata` merges the generated CSDL with hand-written annotation files and per-language label bundles. Web-standard `Request` -> `Response` handler (`createODataService`), `toNodeListener`, `createPostgresDb`. Anything outside what smart-kit sends answers `501`.
+- New package `@rhfan2019/smart-kit-cli` (command `smart-kit`): `generate` reads a PostgreSQL schema (tables, primary and foreign keys, column comments) and writes the generated CSDL and storage mapping, then reports annotation targets and paths that no longer exist; `check` does the latter without a database.
+- `apps/pg-server`: the purchasing test bed on PostgreSQL (`npm run pg:setup`, `npm run pg`, port 4402), same data as the in-memory test service; `npm run e2e:pg` runs the demo's read scenarios against it; a conformance test compares both services.
+- Demo: `PURCHASING_URL` serves `/odata/purchasing/` from another service.
+
+### Fixed
+
+- core: `Core.OptimisticConcurrency` on the entity set (where the Core vocabulary applies it) now sets the ETag property of the model, not only the annotation on the entity type.
 
 ### Changed (bundling, ADR-026)
 
