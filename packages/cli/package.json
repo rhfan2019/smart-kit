@@ -1,6 +1,6 @@
 {
   "name": "@rhfan2019/smart-kit-cli",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Development tool for smart-kit: generates CSDL from a PostgreSQL schema and checks hand-written annotation files.",
   "keywords": [
     "odata",
