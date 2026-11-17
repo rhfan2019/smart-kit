@@ -749,7 +749,8 @@ function cardAnnotations(fullName: string, ui: Any, ann: Any, lineItem: ColumnMo
         return v === undefined ? undefined : v.includes('#') ? v.split('#')[1]! : '';
       };
       const max = Number(pv?.MaxItems?.valueOf?.() ?? pv?.MaxItems);
-      presentationVariants[q] = { presentation, maxItems: Number.isFinite(max) && max > 0 ? max : undefined, lineItemQualifier: qual('LineItem'), chartQualifier: qual('Chart') };
+      const groupBy = ((pv?.GroupBy ?? []) as unknown[]).map(pathOf).filter((x): x is string => Boolean(x));
+      presentationVariants[q] = { presentation, maxItems: Number.isFinite(max) && max > 0 ? max : undefined, lineItemQualifier: qual('LineItem'), chartQualifier: qual('Chart'), groupBy };
     } else if ((q = qualifierOf(key, 'SelectionVariant')) !== undefined) {
       selectionVariants[q] = selectionVariantFrom(ui[key]);
     } else if ((q = qualifierOf(key, 'DataPoint')) !== undefined) {

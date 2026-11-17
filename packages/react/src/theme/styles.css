@@ -609,4 +609,29 @@
 .sk-card__appointment-title .sk-card__icon { color: var(--sk-color-text-muted); }
 .sk-card__appointment-text { font-size: var(--sk-card-font-small); line-height: var(--sk-card-line-small); color: var(--sk-color-text-muted); overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .sk-card__more { display: flex; justify-content: center; margin-block-start: var(--sk-card-gap); }
+/* list highlight (6 px line at the start), state icons, group headers, bullet chart in items */
+.sk-card__item--highlight { border-inline-start: var(--sk-card-highlight) solid var(--sk-card-hl, transparent); }
+.sk-card__item--hl-success { --sk-card-hl: var(--sk-color-icon-positive); }
+.sk-card__item--hl-warning { --sk-card-hl: var(--sk-color-icon-critical); }
+.sk-card__item--hl-error { --sk-card-hl: var(--sk-color-icon-negative); }
+.sk-card__item--hl-information { --sk-card-hl: var(--sk-color-info); }
+.sk-card__item-info { display: inline-flex; align-items: center; }
+.sk-card__state-icon { inline-size: var(--sk-card-state-icon); block-size: var(--sk-card-state-icon); margin-inline-end: var(--sk-space-2); flex: none; fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.sk-card__state-icon--positive { stroke: var(--sk-color-icon-positive); }
+.sk-card__state-icon--critical { stroke: var(--sk-color-icon-critical); }
+.sk-card__state-icon--negative { stroke: var(--sk-color-icon-negative); }
+.sk-card__state-icon--info { stroke: var(--sk-color-info); }
+.sk-card__group { display: flex; align-items: center; block-size: var(--sk-card-group-row); padding-inline: var(--sk-card-padding); font-weight: var(--sk-font-weight-bold); border-block-end: var(--sk-size-border) solid var(--sk-color-border); }
+.sk-card__item-chart { display: flex; align-items: center; }
+.sk-card__item-bullet { inline-size: 70%; block-size: var(--sk-card-bullet-height); }
+/* table: identifier (link + description), group rows, progress */
+.sk-card__group-row th { block-size: var(--sk-card-group-row); padding: 0 var(--sk-card-padding); text-align: start; font-weight: var(--sk-font-weight-bold); border-block-end: var(--sk-size-border) solid var(--sk-color-border); }
+.sk-card__identifier { display: block; }
+.sk-card__identifier--link { color: var(--sk-color-link); font-weight: var(--sk-font-weight-regular); }
+.sk-card__identifier-text { display: block; margin-block-start: var(--sk-card-identifier-gap); color: var(--sk-color-text-muted); font-weight: var(--sk-font-weight-regular); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sk-card__table .sk-card__cell--identifier:has(.sk-card__identifier-text) { padding-block: var(--sk-card-gap); }
+.sk-card__table .sk-card__cell--identifier:has(.sk-card__identifier--link) { font-weight: var(--sk-font-weight-regular); }
+.sk-card__progress { display: flex; flex-direction: column; gap: var(--sk-space-2); }
+.sk-card__progress-track { display: block; block-size: var(--sk-card-progress-bar); border-radius: var(--sk-radius-1); background: var(--sk-color-progress-track); overflow: hidden; color: var(--sk-color-progress); }
+.sk-card__progress-bar { display: block; block-size: 100%; background: currentColor; }
 /* ================================================================ cards (docs/20, ADR-028) — end */

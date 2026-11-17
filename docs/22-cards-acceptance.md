@@ -22,6 +22,11 @@
 | CD-12 | 扩展列表项（`listType="extended"`）最多 6 个信息、默认 3 项；条形图列表（`listFlavor="bar"`）每行一根按最大值缩放的条。 | [OVP] List Item Types、Bar Chart List Card | U、E |
 | CD-13 | 表格卡片：最多 3 列（按 `UI.Importance` 选、保持行项目顺序）、默认 3 行；表头一行带下边线，行高 44 px；语义键加粗，数字右对齐，状态着色。 | [OVP] Table Card；[IC] Table | U、E、S、V |
 | CD-14 | 加载中显示与内容形状相同的占位块；无数据、出错时在卡片内显示提示，不影响其他卡片。 | [IC] 加载占位；[OVP] | U |
+| CD-15 | 列表项：`highlight` 时项目左侧 6 px 状态色条（取第一个带 Criticality 的字段；中性不画）；`showStateIcon` 时右侧数值前有 14 px 状态图标。 | [CE] List item `highlight`、`info.showStateIcon`；Card Explorer 样例 | U、E、S、V |
+| CD-16 | `UI.PresentationVariant/GroupBy`：列表和表格在每组前加组标题行（44 px、粗体），行先按分组字段排序。 | [CE] List / Table `group`；[VOC] UI | U、E |
+| CD-17 | `listFlavor="bar"` 时，带目标值的数据点画成 Bullet 微型图表（复用 `MicroChart`，颜色来自 `CriticalityCalculation`）。 | [CE] List item `chart`（Bullet）；Card Explorer 样例 | U、E |
+| CD-18 | 表格的标识列（语义键或 `HeaderInfo/Title`）可点时是蓝色链接，下方一行灰色 `HeaderInfo/Description`；`Visualization/Progress` 的数据点画成进度条（百分比在上，状态色）。 | [CE] Table `identifier`、`progressIndicator`；Card Explorer 样例 | U、E、S、V |
+| CD-19 | 天蓝主题（`data-theme="sky"`）：浅灰页面、白卡片、蓝色强调、语义色和图表色取自 Horizon 实测值；对比度满足 AC-THEME-04。 | D18 | U、S、V |
 | CD-20 | 对象卡片：页头来自 `UI.HeaderInfo`；分组来自 `UI.QuickViewFacets`（默认）、`UI.Facets` 或一个 `UI.FieldGroup`；组标题 16 px 粗体，"标签：值"，项间距 16 px，组间距 28 px。 | [IC] Object；[OVP] Quick View Card | U、E、S、V |
 | CD-21 | 对象卡片页脚：`UI.Identification` 的 `DataFieldForAction`，第一个是强调按钮；无参数的绑定动作直接执行并刷新。 | [OVP] Quick View Card footer | U |
 | CD-30 | 分析卡片：`UI.Chart` 在服务端聚合，Column、Bar、Line、Donut 用 `SimpleChart` 画（ADR-021），默认最多 4 个数据点；三种导航模式。 | [OVP] Analytical Card | U、E、S |
@@ -38,7 +43,7 @@
 
 ## 结果（2026-11-16）
 
-- 单元测试：`packages/core/test/cards.test.ts` 4 个、`packages/react/test/cards.test.tsx` 19 个，全部通过。
-- 端到端：`tests/e2e/p4-cards.spec.ts` 8 个，全部通过。
+- 单元测试：`packages/core/test/cards.test.ts` 4 个、`packages/react/test/cards.test.tsx` 24 个，全部通过。
+- 端到端：`tests/e2e/p4-cards.spec.ts` 9 个，全部通过。
 - 体积：见 CD-40，`npm run size` 通过；样式文件上限由 13 KB 调到 16 KB（ADR-028）。
 - 与 SAPUI5 成品对比：`20` 第 9 节。

@@ -40,7 +40,7 @@ export function App() {
   const navigate = useNavigate();
   const location = useLocation();
   const [locale, setLocale] = useState<Locale>(() => read('lang', 'zh', ['zh', 'en'] as const));
-  const [theme, setTheme] = useState(() => read('theme', 'yellow', ['yellow', 'navy', 'dark'] as const));
+  const [theme, setTheme] = useState(() => read('theme', 'yellow', ['yellow', 'navy', 'sky', 'dark'] as const));
   const [density, setDensity] = useState(() => read('density', 'comfortable', ['comfortable', 'compact'] as const));
   const [services, setServices] = useState<Record<string, ServiceConfig> | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -92,7 +92,7 @@ export function App() {
                 <NavLink to="/about">{shell.s('about')}</NavLink>
               </nav>
               <SegmentedControl size="xs" aria-label={shell.s('language')} value={locale} onChange={(v) => { setLocale(v as Locale); remember('lang', v); }} data={[{ value: 'zh', label: '中文' }, { value: 'en', label: 'English' }]} data-demo-lang />
-              <Select size="xs" w={120} aria-label={shell.s('theme')} value={theme} allowDeselect={false} onChange={(v) => { if (v) { setTheme(v as typeof theme); remember('theme', v); } }} data={(['yellow', 'navy', 'dark'] as const).map((v) => ({ value: v, label: shell.s(v) }))} data-demo-theme />
+              <Select size="xs" w={120} aria-label={shell.s('theme')} value={theme} allowDeselect={false} onChange={(v) => { if (v) { setTheme(v as typeof theme); remember('theme', v); } }} data={(['yellow', 'navy', 'sky', 'dark'] as const).map((v) => ({ value: v, label: shell.s(v) }))} data-demo-theme />
               <Select size="xs" w={120} aria-label={shell.s('density')} value={density} allowDeselect={false} onChange={(v) => { if (v) { setDensity(v as typeof density); remember('density', v); } }} data={(['comfortable', 'compact'] as const).map((v) => ({ value: v, label: shell.s(v) }))} data-demo-density />
             </header>
             <main className={fill ? 'demo__main demo__main--fill' : 'demo__main'} id="demo-main">

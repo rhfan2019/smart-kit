@@ -16,8 +16,9 @@ describe('card annotations (docs/20)', () => {
   });
   it('CD-50 qualified line items, presentation and selection variants, data points and field groups are kept', () => {
     expect(po.lineItems['']).toBe(po.lineItem);
-    expect(po.lineItems.CardList!.map((f) => f.path ?? f.dataPoint?.value)).toEqual(['PurchaseOrder', 'Description', 'Supplier', 'OrderDate', 'NetAmount', 'Status']);
-    expect(po.presentationVariants.CardLarge).toEqual({ presentation: { sortOrder: [{ path: 'NetAmount', descending: true }], requestAtLeast: [] }, maxItems: 5, lineItemQualifier: 'CardList', chartQualifier: undefined });
+    expect(po.lineItems.CardList!.map((f) => f.path ?? f.dataPoint?.value)).toEqual(['Description', '_Supplier/SupplierName', 'NetAmount', 'Status', 'PurchaseOrder', 'OrderDate']);
+    expect(po.presentationVariants.CardTable!.groupBy).toEqual(['Status']);
+    expect(po.presentationVariants.CardLarge).toEqual({ presentation: { sortOrder: [{ path: 'NetAmount', descending: true }], requestAtLeast: [] }, maxItems: 5, lineItemQualifier: 'CardList', chartQualifier: undefined, groupBy: [] });
     expect(po.selectionVariants.CardNew).toEqual([{ path: 'Status', exclude: false, operator: 'EQ', values: ['NEW'] }]);
     expect(po.dataPoints.CardAmount).toMatchObject({ value: 'NetAmount', criticality: { path: 'StatusCriticality' } });
     expect(po.fieldGroups.General!.fields.length).toBeGreaterThan(2);

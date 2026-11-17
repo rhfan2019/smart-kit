@@ -11,8 +11,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 - Header counter ("5 of 40"), default header title and navigation from the content; numeric KPI header from a `UI.DataPoint` summed on the server (state from `CriticalityCalculation`, trend from `TrendCalculation`, target and deviation).
 - Calendar card with week numbers, special days, legend, appointments of the selected day and the four-level date drill-down (days, months, years, year ranges); two columns above 589 px.
 - Sizes measured on the SAPUI5 1.154 integration cards (Horizon) as card tokens `--sk-card-*`; comparison in docs/20 §9, screenshots in docs/21-evidence, acceptance criteria in docs/22 (checked by `npm run trace -- --strict`).
+- `ListContent`: `highlight` (6 px state line) and `showStateIcon`; groups from `UI.PresentationVariant/GroupBy` (list and table); with `listFlavor="bar"` a data point with a target value is a bullet micro chart. `TableContent`: the identifier column is a link with the `UI.HeaderInfo` description below; `Progress` data points are progress bars.
+- New theme `sky` (light, Horizon-like colours measured on SAPUI5 1.154), next to `yellow`, `navy` and `dark`.
 - `SimpleChart` draws `line` and `donut` too.
-- Core: `parseAnnotationPath`, `calculateTrend`; the model keeps every qualified `UI.LineItem`, `UI.PresentationVariant` (with `MaxItems`), `UI.SelectionVariant`, `UI.DataPoint`, `UI.FieldGroup`, the `UI.Identification` fields, `Communication.Event` and `UI.TrendCalculation` (types `PresentationVariantModel`, `EventModel`, `TrendCalculationModel`); `$apply` without dimensions is `aggregate(…)`.
+- Core: `parseAnnotationPath`, `calculateTrend`; the model keeps every qualified `UI.LineItem`, `UI.PresentationVariant` (with `MaxItems`), `UI.SelectionVariant`, `UI.DataPoint`, `UI.FieldGroup`, the `UI.Identification` fields, `Communication.Event` and `UI.TrendCalculation` (types `PresentationVariantModel` with `groupBy`, `EventModel`, `TrendCalculationModel`); `$apply` without dimensions is `aggregate(…)`.
 - Test service: `SupplierMeetings` (Communication.Event) and card annotations on `PurchaseOrders`. Demo: card page `/cards`.
 - `npm run size` budgets for `/cards` and the card scenarios; with the cards the stylesheet budget is 16 KB (was 13 KB) and the root entry (all subpaths together) 95 KB (was 80 KB, AC-Q-02).
 

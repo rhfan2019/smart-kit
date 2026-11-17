@@ -162,7 +162,7 @@ import { Card, Header, NumericHeader, ListContent, TableContent, ObjectContent,
 - 新子路径 `/cards`，入口 `src/entries/cards.ts`，根入口转导出；模块顶层无副作用；`package.json` 的 dev `exports` 和 `publishConfig.exports` 都有 `./cards`。
 - 依赖：`/chart` 的 `SimpleChart`（分析卡片）、`/table` 的 `useListQuery`（**不含 AG Grid**，只依赖 TanStack Query）。不引入新依赖。
 - **日历没用 `@mantine/dates` 的 `Calendar`**：SAP 的日历卡片有周数列、38×46 px 的日期格、周末底色、底部特殊日色条，以及"日 → 月 → 年 → 年区间"四级下钻；Mantine 的 `Calendar` 只有三级，外观要大量覆盖，还会把 `dayjs` 和 `@mantine/dates` 带进只用卡片的应用。自己画网格约 3 KB（gzip），日期用 `Intl` 格式化，一周从哪天开始取自 `Intl.Locale` 的 `weekInfo`。
-- 实测（gzip，不含 React）：入口自身 17.7 KB；只用 `Card` + `Header` 1.3 KB；列表卡片 39.6 KB；日历卡片 40.8 KB；分析卡片 45.8 KB（多出的是 Mantine 的 `Skeleton`、`VisuallyHidden`，`SimpleChart` 用到）。上限见 `scripts/check-size.mjs` 和 `22` 的 CD-40。
+- 实测（gzip，不含 React）：入口自身 20.4 KB（列表项里的 Bullet 图懒加载）；只用 `Card` + `Header` 1.5 KB；列表卡片 41.1 KB；日历卡片 41.7 KB；分析卡片 45.8 KB（多出的是 Mantine 的 `Skeleton`、`VisuallyHidden`，`SimpleChart` 用到）。上限见 `scripts/check-size.mjs` 和 `22` 的 CD-40。
 - 样式仍是一个文件（P5）；卡片样式约 4 KB，样式上限由 13 KB 调到 16 KB。
 
 ## 7. 测试服务里加的数据
@@ -197,3 +197,16 @@ import { Card, Header, NumericHeader, ListContent, TableContent, ObjectContent,
 | 字体 | "72" | 本库字体（Inter 等） | "72" 是 SAP 的字体，不随库分发 |
 
 已知差异：分析卡片的图表区由 SAPUI5 的 VizFrame（`sap.viz`，SAPUI5 专有、体积大）画，本库用 `SimpleChart`（ADR-021），坐标轴和数据标签的样式不同；只对齐了图表区的位置和大小（x20、高 212）。
+
+## 10. 第二轮：对照 Card Explorer 补齐（D18）
+
+用户把演示页和 SAPUI5 Card Explorer 的"Integration Card Types"页（`ui5.sap.com/test-resources/sap/ui/integration/demokit/cardExplorer/webapp/index.html#/overview/cardTypes`）对比，觉得差距大。逐张看过后，差距有三类：
+
+| 差距 | 原因 | 处理 |
+| --- | --- | --- |
+| 整体色调 | 演示页用本库默认的"明黄"主题（暖米色、墨黑），官方是 Horizon（浅灰底、白卡片、蓝色强调、鲜明的语义色） | 新增**天蓝主题**（`data-theme="sky"`，演示应用右上角"天蓝"），颜色取自 Horizon 实测：页面 #f5f6f7、文字 #131e29、标签 #556b82、链接 #0064d9、强调按钮 #0070f2、正向 #256f3a、警告 #b44f00、负向 #aa0808，状态图标 #30914c / #dd6100 / #f53232，图表色 #168eff 起的 11 色。原有主题不变 |
+| 列表项 | 官方样例的列表项左侧有 6 px 状态色条（`highlight`），数值前有状态图标（`showStateIcon`），可以分组，可以内嵌 Bullet 图 | `ListContent` 增加 `highlight`、`showStateIcon`；`UI.PresentationVariant/GroupBy` 分组；`listFlavor="bar"` 且数据点有目标值时画 `MicroChart` Bullet（CD-15～CD-17） |
+| 表格 | 首列是蓝色链接加一行灰色说明，进度列是进度条，有分组行 | 标识列（语义键或 `HeaderInfo/Title`）显示为链接并带 `HeaderInfo/Description`；`Visualization/Progress` 画进度条；分组行（CD-16、CD-18） |
+| 演示数据 | 列表标题是订单号；时间线时间按浏览器时区显示 | 列表改用描述和供应商名称；演示页的卡片用柏林时区（与页面说明一致） |
+
+仍然不同的：Card Explorer 里每张卡片的数据和配置不同（例如表格列宽在 manifest 里指定、对象卡片里有可编辑字段的表单），图表区仍是 `SimpleChart`（见第 9 节），字体仍是本库字体。截图：`21-evidence/CD-15-list-sky.png`、`CD-18-table-sky.png`、`CD-page-sky.png`。

@@ -8,7 +8,9 @@ const shot = async (target: Locator, id: string) => {
   if (process.env.E2E_EVIDENCE === '1') await target.screenshot({ path: `docs/21-evidence/${id}.png`, animations: 'disabled' });
 };
 const pageShot = async (page: Page, id: string) => {
-  if (process.env.E2E_EVIDENCE === '1') await page.screenshot({ path: `docs/21-evidence/${id}.png`, fullPage: true, animations: 'disabled' });
+  if (process.env.E2E_EVIDENCE !== '1') return;
+  await page.locator('#demo-main').evaluate((el) => el.scrollTo(0, 0));
+  await page.screenshot({ path: `docs/21-evidence/${id}.png`, fullPage: true, animations: 'disabled' });
 };
 const card = (page: Page, title: string) => page.getByRole('region', { name: title, exact: true });
 /** Position of `inner` relative to the card's border box. */
@@ -21,11 +23,11 @@ const at = async (c: Locator, inner: Locator) => {
 test('CD-01 CD-02 CD-03 CD-08 CD-10 list card: 340 px from the grid, header 16 px inset, counter top right, items 80 px', async ({ page }) => {
   await open(page, '/cards');
   const c = card(page, 'Large Orders to Approve');
-  await expect(c.locator('.sk-card__item')).toHaveCount(5);
+  await expect(c.locator('.sk-card__item')).toHaveCount(3);
   expect((await c.boundingBox())!.width).toBe(340);
   expect(await at(c, c.locator('.sk-card__title'))).toMatchObject({ x: 17, y: 17 });
   const status = c.locator('.sk-card__status');
-  await expect(status).toHaveText(/^5 of \d+$/);
+  await expect(status).toHaveText(/^3 of \d+$/);
   const s = await at(c, status);
   expect(s.x + s.w).toBe(323);
   const first = await at(c, c.locator('.sk-card__item').nth(0));
@@ -38,21 +40,21 @@ test('CD-01 CD-02 CD-03 CD-08 CD-10 list card: 340 px from the grid, header 16 p
 
 test('CD-05 CD-11 the header opens the list page with the same entity set; an item opens its object page', async ({ page }) => {
   await open(page, '/cards');
-  const c = card(page, 'Large Orders to Approve');
-  await c.getByRole('button', { name: 'Large Orders to Approve' }).click();
+  const c = card(page, 'Large Orders in Delivery');
+  await c.getByRole('button', { name: 'Large Orders in Delivery' }).click();
   await expect(page).toHaveURL(/\/po\?|\/po$/);
   await open(page, '/cards');
-  await card(page, 'Large Orders to Approve').locator('.sk-card__item').first().click();
+  await card(page, 'Large Orders in Delivery').locator('.sk-card__item').first().click();
   await expect(page).toHaveURL(/\/purchasing\/object\?path=PurchaseOrders/);
 });
 
-test('CD-12 CD-13 extended list, bar list and table card', async ({ page }) => {
+test('CD-12 CD-13 extended list, bar flavor and table card', async ({ page }) => {
   await open(page, '/cards');
   const ext = card(page, 'Large Orders (Extended)');
   await expect(ext.locator('.sk-card__item')).toHaveCount(3);
   await expect(ext.locator('.sk-card__item-attributes').first()).toBeVisible();
-  const bar = card(page, 'Net Amount Comparison');
-  await expect(bar.locator('.sk-card__item-bar')).toHaveCount(5);
+  // the bar flavor with a target value draws bullets (also CD-17 below)
+  await expect(card(page, 'Invoicing vs. Budget').locator('.sk-card__item-chart')).toHaveCount(4);
   const table = card(page, 'Orders to Approve');
   await expect(table.locator('thead th')).toHaveCount(3);
   await expect(table.locator('tbody tr')).toHaveCount(5);
@@ -129,11 +131,31 @@ test('CD-35 CD-36 CD-37 calendar card: the selected day, counter "3 of 4", two c
 
 test('CD-01 the whole page in both languages and the dark theme', async ({ page }) => {
   await open(page, '/cards', { lang: 'zh' });
-  await expect(card(page, '待审批的大额订单').locator('.sk-card__status')).toHaveText(/^5 \/ \d+$/);
+  await expect(card(page, '在途大额订单').locator('.sk-card__status')).toHaveText(/^4 \/ \d+$/);
   await expect(card(page, '我的会议').locator('.sk-card__status')).toHaveText('3 / 4');
   await expect(card(page, '我的会议').locator('.sk-card__appointment')).toHaveCount(3);
   await pageShot(page, 'CD-page-zh');
   await open(page, '/cards', { theme: 'dark' });
   await expect(card(page, 'My Meetings').locator('.sk-card__appointment')).toHaveCount(3);
   await pageShot(page, 'CD-page-dark');
+});
+
+test('CD-15 CD-16 CD-17 CD-18 sky theme: highlight and state icons, grouped table with links and progress, bullet list', async ({ page }) => {
+  await open(page, '/cards', { theme: 'sky' });
+  const list = card(page, 'Large Orders in Delivery');
+  await expect(list.locator('.sk-card__item')).toHaveCount(4);
+  await expect(list.locator('.sk-card__item--highlight').first()).toBeVisible();
+  expect(await list.locator('.sk-card__item--highlight').first().evaluate((el) => getComputedStyle(el).borderInlineStartWidth)).toBe('6px');
+  await expect(list.locator('.sk-card__state-icon').first()).toBeVisible();
+  const table = card(page, 'Orders in Delivery');
+  await expect(table.locator('.sk-card__group-row')).toHaveText(['Ordered', 'Partially Delivered']);
+  await expect(table.locator('thead th')).toHaveText(['Purchase Order', 'Net Amount', 'Status', 'Delivery Progress']);
+  await expect(table.locator('.sk-card__identifier--link').first()).toHaveCSS('color', 'rgb(0, 100, 217)');
+  await expect(table.locator('.sk-card__progress')).toHaveCount(5);
+  await expect(card(page, 'Invoicing vs. Budget').locator('.sk-card__item-bullet [data-sk-microchart="bullet"]')).toHaveCount(4);
+  // Horizon-like colours: page, card and chart
+  expect(await page.locator('body').evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--sk-color-page').trim())).not.toBe('');
+  await shot(list, 'CD-15-list-sky');
+  await shot(table, 'CD-18-table-sky');
+  await pageShot(page, 'CD-page-sky');
 });

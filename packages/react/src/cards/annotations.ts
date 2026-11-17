@@ -28,7 +28,10 @@ export function resolveListSettings(ui: EntityUi, s: CardAnnotationSettings) {
   const pv = s.presentationAnnotationPath !== undefined ? ui.presentationVariants[qualifierOf(s.presentationAnnotationPath)] : undefined;
   const lineItemQualifier = s.annotationPath !== undefined ? qualifierOf(s.annotationPath) : pv?.lineItemQualifier ?? '';
   const columns = ui.lineItems[lineItemQualifier] ?? ui.lineItem;
-  const sort = pv?.presentation.sortOrder.length ? pv.presentation.sortOrder : ui.presentation.sortOrder;
+  const groupBy = pv?.groupBy[0];
+  const baseSort = pv?.presentation.sortOrder.length ? pv.presentation.sortOrder : ui.presentation.sortOrder;
+  // Groups need the rows sorted by the group property first.
+  const sort = groupBy && baseSort[0]?.path !== groupBy ? [{ path: groupBy, descending: false }, ...baseSort.filter((x) => x.path !== groupBy)] : baseSort;
   const conditions = s.selectionAnnotationPath !== undefined ? ui.selectionVariants[qualifierOf(s.selectionAnnotationPath)] : undefined;
-  return { columns, sort, maxItems: pv?.maxItems, conditions };
+  return { columns, sort, maxItems: pv?.maxItems, conditions, groupBy };
 }

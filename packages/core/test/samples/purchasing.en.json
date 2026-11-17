@@ -1401,25 +1401,13 @@
      {
       "@type": "com.sap.vocabularies.UI.v1.DataField",
       "Value": {
-       "$Path": "PurchaseOrder"
-      }
-     },
-     {
-      "@type": "com.sap.vocabularies.UI.v1.DataField",
-      "Value": {
        "$Path": "Description"
       }
      },
      {
       "@type": "com.sap.vocabularies.UI.v1.DataField",
       "Value": {
-       "$Path": "Supplier"
-      }
-     },
-     {
-      "@type": "com.sap.vocabularies.UI.v1.DataField",
-      "Value": {
-       "$Path": "OrderDate"
+       "$Path": "_Supplier/SupplierName"
       }
      },
      {
@@ -1437,8 +1425,127 @@
       "Criticality": {
        "$Path": "StatusCriticality"
       }
+     },
+     {
+      "@type": "com.sap.vocabularies.UI.v1.DataField",
+      "Value": {
+       "$Path": "PurchaseOrder"
+      }
+     },
+     {
+      "@type": "com.sap.vocabularies.UI.v1.DataField",
+      "Value": {
+       "$Path": "OrderDate"
+      }
      }
     ],
+    "@UI.LineItem#CardBudget": [
+     {
+      "@type": "com.sap.vocabularies.UI.v1.DataField",
+      "Value": {
+       "$Path": "Description"
+      }
+     },
+     {
+      "@type": "com.sap.vocabularies.UI.v1.DataField",
+      "Value": {
+       "$Path": "_Supplier/SupplierName"
+      }
+     },
+     {
+      "@type": "com.sap.vocabularies.UI.v1.DataFieldForAnnotation",
+      "Label": "Budget",
+      "Target": {
+       "$AnnotationPath": "@UI.DataPoint#CardBudget"
+      }
+     }
+    ],
+    "@UI.DataPoint#CardBudget": {
+     "@type": "com.sap.vocabularies.UI.v1.DataPointType",
+     "Title": "Budget",
+     "Value": {
+      "$Path": "InvoicedAmount"
+     },
+     "TargetValue": {
+      "$Path": "NetAmount"
+     },
+     "CriticalityCalculation": {
+      "@type": "com.sap.vocabularies.UI.v1.CriticalityCalculationType",
+      "ImprovementDirection": "Minimize",
+      "ToleranceRangeHighValue": {
+       "$Path": "NetAmount"
+      },
+      "DeviationRangeHighValue": {
+       "$Path": "BudgetAmount"
+      }
+     }
+    },
+    "@UI.DataPoint#CardDelivery": {
+     "@type": "com.sap.vocabularies.UI.v1.DataPointType",
+     "Title": "Delivery Progress",
+     "Value": {
+      "$Path": "DeliveredPercent"
+     },
+     "TargetValue": 100,
+     "Criticality": {
+      "$Path": "StatusCriticality"
+     },
+     "Visualization": "Progress"
+    },
+    "@UI.PresentationVariant#CardTable": {
+     "@type": "com.sap.vocabularies.UI.v1.PresentationVariantType",
+     "MaxItems": 5,
+     "GroupBy": [
+      {
+       "$PropertyPath": "Status"
+      }
+     ],
+     "SortOrder": [
+      {
+       "@type": "com.sap.vocabularies.Common.v1.SortOrderType",
+       "Property": {
+        "$PropertyPath": "Status"
+       }
+      },
+      {
+       "@type": "com.sap.vocabularies.Common.v1.SortOrderType",
+       "Property": {
+        "$PropertyPath": "NetAmount"
+       },
+       "Descending": true
+      }
+     ],
+     "Visualizations": [
+      {
+       "$AnnotationPath": "@UI.LineItem#CardTable"
+      }
+     ]
+    },
+    "@UI.SelectionVariant#CardInDelivery": {
+     "@type": "com.sap.vocabularies.UI.v1.SelectionVariantType",
+     "SelectOptions": [
+      {
+       "@type": "com.sap.vocabularies.UI.v1.SelectOptionType",
+       "PropertyName": {
+        "$PropertyPath": "Status"
+       },
+       "Ranges": [
+        {
+         "@type": "com.sap.vocabularies.UI.v1.SelectionRangeType",
+         "Sign": "I",
+         "Option": "EQ",
+         "Low": "ORD"
+        },
+        {
+         "@type": "com.sap.vocabularies.UI.v1.SelectionRangeType",
+         "Sign": "I",
+         "Option": "EQ",
+         "Low": "PART"
+        }
+       ]
+      }
+     ]
+    },
     "@UI.LineItem#CardTable": [
      {
       "@type": "com.sap.vocabularies.UI.v1.DataField",
@@ -1449,7 +1556,7 @@
      {
       "@type": "com.sap.vocabularies.UI.v1.DataField",
       "Value": {
-       "$Path": "Supplier"
+       "$Path": "NetAmount"
       }
      },
      {
@@ -1462,9 +1569,10 @@
       }
      },
      {
-      "@type": "com.sap.vocabularies.UI.v1.DataField",
-      "Value": {
-       "$Path": "NetAmount"
+      "@type": "com.sap.vocabularies.UI.v1.DataFieldForAnnotation",
+      "Label": "Delivery Progress",
+      "Target": {
+       "$AnnotationPath": "@UI.DataPoint#CardDelivery"
       }
      }
     ],

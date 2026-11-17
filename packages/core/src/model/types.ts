@@ -332,6 +332,8 @@ export interface PresentationVariantModel {
   lineItemQualifier?: string;
   /** Qualifier of the UI.Chart in Visualizations ("" for the unqualified one). */
   chartQualifier?: string;
+  /** UI.PresentationVariant/GroupBy: property paths the items are grouped by (group headers in cards). */
+  groupBy: string[];
 }
 
 /** Communication.Event: which properties hold the start, end and texts of an event (calendar and timeline cards). */

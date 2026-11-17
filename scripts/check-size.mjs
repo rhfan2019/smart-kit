@@ -18,7 +18,7 @@ const ENTRY_BUDGETS = {
   'core:.': 60,
   '.': 95, // everything, all subpaths together; 80 → 95 with the cards (ADR-028, /cards ≈ 18 KB)
   context: 8, i18n: 7, theme: 2, util: 1, field: 15, filter: 11, variants: 4, table: 36, chart: 12,
-  object: 30, page: 7, actions: 3, edit: 19, messages: 2, templates: 69, cards: 20,
+  object: 30, page: 7, actions: 3, edit: 19, messages: 2, templates: 69, cards: 23,
 };
 
 /** Budgets for what an application ships when it imports only this (React and React DOM excluded). */

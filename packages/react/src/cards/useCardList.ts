@@ -30,7 +30,8 @@ export function useCardList(p: CardDataProps, o: { defaultMax: number; extraSele
   const columns = useMemo(() => (o.columns ? o.columns(s.columns) : s.columns), [s.columns]); // eslint-disable-line react-hooks/exhaustive-deps
   const filters = useMemo(() => cardFilters(s.conditions, p.filters), [s.conditions, p.filters]);
   const max = p.maxItems ?? s.maxItems ?? o.defaultMax;
-  const q = useListQuery({ service: p.service, source: { entitySet: p.entitySet }, columns, filters, sort: s.sort, pageSize: max, extraSelect: o.extraSelect });
+  const extraSelect = useMemo(() => [...(o.extraSelect ?? []), ...(s.groupBy ? [s.groupBy] : [])], [o.extraSelect, s.groupBy]);
+  const q = useListQuery({ service: p.service, source: { entitySet: p.entitySet }, columns, filters, sort: s.sort, pageSize: max, extraSelect });
   const rows = useMemo(() => q.rows.slice(0, max), [q.rows, max]);
 
   const serviceName = meta.service.name;
@@ -43,5 +44,5 @@ export function useCardList(p: CardDataProps, o: { defaultMax: number; extraSele
 
   const hasObjectPage = navigation?.hasObjectPage?.(entitySet, serviceName) ?? Boolean(navigation);
   const onItemPress = p.onItemPress ?? (navigation && hasObjectPage ? (row: Row) => navigation.toObject(entityPathOf(meta.service.model, entitySet, row), serviceName) : undefined);
-  return { meta, columns, rows, query: q, onItemPress };
+  return { meta, columns, rows, query: q, onItemPress, groupBy: s.groupBy };
 }

@@ -144,8 +144,8 @@ describe('docs/20 list and table contents', () => {
     const items = await screen.findAllByRole('listitem');
     expect(items).toHaveLength(3);
     // sorted by net amount descending (PresentationVariant#CardLarge), only status NEW (SelectionVariant#CardNew)
-    expect(within(items[0]!).getByText('4500000002')).toHaveClass('sk-card__item-title');
-    expect(within(items[0]!).getByText('Order 2')).toHaveClass('sk-card__item-description');
+    expect(within(items[0]!).getByText('Order 2')).toHaveClass('sk-card__item-title');
+    expect(within(items[0]!).getByText('Bolt Ltd')).toHaveClass('sk-card__item-description');
     expect(within(items[0]!).getByText('48,900.00 EUR')).toHaveClass('sk-card__item-info');
     await waitFor(() => expect(screen.getByText('3 of 6')).toBeInTheDocument());
   });
@@ -175,7 +175,8 @@ describe('docs/20 list and table contents', () => {
     const { container } = setup(<Card><TableContent entitySet="PurchaseOrders" annotationPath="@UI.LineItem#CardTable" presentationAnnotationPath="@UI.PresentationVariant#CardLarge" maxItems={3} /></Card>);
     // 3 rows; the 4th line item field (net amount) is dropped (3 columns)
     await waitFor(() => expect(container.querySelectorAll('tbody tr')).toHaveLength(3));
-    expect([...container.querySelectorAll('th')].map((th) => th.textContent)).toEqual(['Purchase Order', 'Supplier', 'Status']);
+    expect([...container.querySelectorAll('th')].map((th) => th.textContent)).toEqual(['Purchase Order', 'Net Amount', 'Status']);
+    expect(container.querySelector('tbody td:nth-child(2)')).toHaveClass('sk-card__cell--end');
     expect(container.querySelector('tbody td')).toHaveClass('sk-card__cell--identifier');
     const approved = [...container.querySelectorAll('tbody tr')].find((tr) => tr.textContent?.includes('Approved'));
     expect(within(approved as HTMLElement).getByText(/Approved/)).toHaveClass('sk-card--state-good');
@@ -183,6 +184,48 @@ describe('docs/20 list and table contents', () => {
   it('CD-14 no items and errors are shown inside the card', async () => {
     setup(<Card><ListContent entitySet="PurchaseOrders" filters={{ Status: [{ operator: 'EQ', values: ['NONE'] }] }} /></Card>);
     expect(await screen.findByRole('status')).toHaveTextContent('There are no items.');
+  });
+});
+
+describe('docs/20 card details from the SAPUI5 samples (highlight, state icons, groups, bullet, identifier, progress)', () => {
+  it('CD-15 list items: a 6 px highlight line and a state icon from the criticality', async () => {
+    const { container } = setup(<Card><ListContent entitySet="PurchaseOrders" highlight showStateIcon presentationAnnotationPath="@UI.PresentationVariant#CardLarge" /></Card>);
+    await waitFor(() => expect(container.querySelectorAll('.sk-card__item')).toHaveLength(5));
+    // order 3 is approved (criticality 3): success highlight and check icon; the new ones are neutral: no line, no icon
+    const approved = [...container.querySelectorAll('.sk-card__item')].find((li) => li.textContent?.includes('Order 3'))!;
+    expect(approved).toHaveClass('sk-card__item--highlight', 'sk-card__item--hl-success');
+    const neutral = [...container.querySelectorAll('.sk-card__item')].find((li) => li.textContent?.includes('Order 2'))!;
+    expect(neutral).not.toHaveClass('sk-card__item--highlight');
+  });
+  it('CD-16 UI.PresentationVariant/GroupBy puts a group header before each group, in the list and in the table', async () => {
+    const list = setup(<Card><ListContent entitySet="PurchaseOrders" annotationPath="@UI.LineItem#CardList" presentationAnnotationPath="@UI.PresentationVariant#CardTable" /></Card>);
+    await waitFor(() => expect(list.container.querySelectorAll('.sk-card__group')).toHaveLength(2));
+    expect([...list.container.querySelectorAll('.sk-card__group')].map((g) => g.textContent)).toEqual(['Approved', 'New']);
+    list.unmount();
+    const table = setup(<Card><TableContent entitySet="PurchaseOrders" maxColumns={4} presentationAnnotationPath="@UI.PresentationVariant#CardTable" /></Card>);
+    await waitFor(() => expect(table.container.querySelectorAll('.sk-card__group-row')).toHaveLength(2));
+  });
+  it('CD-17 bar flavor: a data point with a target value is a bullet micro chart', async () => {
+    const { container } = setup(<Card><ListContent entitySet="PurchaseOrders" listFlavor="bar" annotationPath="@UI.LineItem#CardBudget" maxItems={2} /></Card>);
+    await waitFor(() => expect(container.querySelectorAll('.sk-card__item-bullet [data-sk-microchart="bullet"]')).toHaveLength(2));
+    expect(container.querySelector('.sk-card__item-bar')).toBeNull();
+  });
+  it('CD-18 table: the identifier is a link with the UI.HeaderInfo description below; Progress data points are progress bars', async () => {
+    const { container } = setup(<Card><TableContent entitySet="PurchaseOrders" maxColumns={4} presentationAnnotationPath="@UI.PresentationVariant#CardTable" /></Card>, { navigation: nav() });
+    await waitFor(() => expect(container.querySelectorAll('.sk-card__progress')).not.toHaveLength(0));
+    expect(container.querySelector('.sk-card__identifier--link')).toHaveTextContent(/^45000000\d\d$/);
+    expect(container.querySelector('.sk-card__identifier-text')).toHaveTextContent(/^Order \d$/);
+    expect(container.querySelector('.sk-card__progress')).toHaveAttribute('aria-valuenow', '0');
+  });
+});
+
+describe('docs/20 sky theme', () => {
+  it('CD-19 the sky theme redefines the semantic colours with the measured Horizon values (contrast: tests/unit/arch.test.ts)', () => {
+    const css = readFileSync(join(import.meta.dirname, '../src/theme/tokens.css'), 'utf8');
+    const block = css.slice(css.indexOf("[data-theme='sky'] {"), css.indexOf('}', css.indexOf("[data-theme='sky'] {")));
+    for (const token of ['--sk-color-page', '--sk-color-surface', '--sk-color-text', '--sk-color-link', '--sk-color-positive', '--sk-color-critical', '--sk-color-negative', '--sk-color-icon-negative']) expect(block).toContain(`${token}:`);
+    expect(css).toContain('--sk-sky-link: #0064d9;');
+    expect(css).toContain('--sk-sky-chart-1: #168eff;');
   });
 });
 

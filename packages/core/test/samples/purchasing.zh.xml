@@ -736,23 +736,89 @@
         </Annotation>
         <Annotation Term="UI.LineItem" Qualifier="CardList">
           <Collection>
-            <Record Type="UI.DataField"><PropertyValue Property="Value" Path="PurchaseOrder"/></Record>
             <Record Type="UI.DataField"><PropertyValue Property="Value" Path="Description"/></Record>
-            <Record Type="UI.DataField"><PropertyValue Property="Value" Path="Supplier"/></Record>
-            <Record Type="UI.DataField"><PropertyValue Property="Value" Path="OrderDate"/></Record>
+            <Record Type="UI.DataField"><PropertyValue Property="Value" Path="_Supplier/SupplierName"/></Record>
             <Record Type="UI.DataFieldForAnnotation">
               <PropertyValue Property="Label" String="净值"/>
               <PropertyValue Property="Target" AnnotationPath="@UI.DataPoint#CardAmount"/>
             </Record>
             <Record Type="UI.DataField"><PropertyValue Property="Value" Path="Status"/><PropertyValue Property="Criticality" Path="StatusCriticality"/></Record>
+            <Record Type="UI.DataField"><PropertyValue Property="Value" Path="PurchaseOrder"/></Record>
+            <Record Type="UI.DataField"><PropertyValue Property="Value" Path="OrderDate"/></Record>
           </Collection>
+        </Annotation>
+        <Annotation Term="UI.LineItem" Qualifier="CardBudget">
+          <Collection>
+            <Record Type="UI.DataField"><PropertyValue Property="Value" Path="Description"/></Record>
+            <Record Type="UI.DataField"><PropertyValue Property="Value" Path="_Supplier/SupplierName"/></Record>
+            <Record Type="UI.DataFieldForAnnotation">
+              <PropertyValue Property="Label" String="预算"/>
+              <PropertyValue Property="Target" AnnotationPath="@UI.DataPoint#CardBudget"/>
+            </Record>
+          </Collection>
+        </Annotation>
+        <Annotation Term="UI.DataPoint" Qualifier="CardBudget">
+          <Record Type="UI.DataPointType">
+            <PropertyValue Property="Title" String="预算"/>
+            <PropertyValue Property="Value" Path="InvoicedAmount"/>
+            <PropertyValue Property="TargetValue" Path="NetAmount"/>
+            <PropertyValue Property="CriticalityCalculation">
+              <Record Type="UI.CriticalityCalculationType">
+                <PropertyValue Property="ImprovementDirection" EnumMember="UI.ImprovementDirectionType/Minimize"/>
+                <PropertyValue Property="ToleranceRangeHighValue" Path="NetAmount"/>
+                <PropertyValue Property="DeviationRangeHighValue" Path="BudgetAmount"/>
+              </Record>
+            </PropertyValue>
+          </Record>
+        </Annotation>
+        <Annotation Term="UI.DataPoint" Qualifier="CardDelivery">
+          <Record Type="UI.DataPointType">
+            <PropertyValue Property="Title" String="交货进度"/>
+            <PropertyValue Property="Value" Path="DeliveredPercent"/>
+            <PropertyValue Property="TargetValue" Int="100"/>
+            <PropertyValue Property="Criticality" Path="StatusCriticality"/>
+            <PropertyValue Property="Visualization" EnumMember="UI.VisualizationType/Progress"/>
+          </Record>
+        </Annotation>
+        <Annotation Term="UI.PresentationVariant" Qualifier="CardTable">
+          <Record Type="UI.PresentationVariantType">
+            <PropertyValue Property="MaxItems" Int="5"/>
+            <PropertyValue Property="GroupBy"><Collection><PropertyPath>Status</PropertyPath></Collection></PropertyValue>
+            <PropertyValue Property="SortOrder">
+              <Collection>
+                <Record Type="Common.SortOrderType"><PropertyValue Property="Property" PropertyPath="Status"/></Record>
+                <Record Type="Common.SortOrderType"><PropertyValue Property="Property" PropertyPath="NetAmount"/><PropertyValue Property="Descending" Bool="true"/></Record>
+              </Collection>
+            </PropertyValue>
+            <PropertyValue Property="Visualizations"><Collection><AnnotationPath>@UI.LineItem#CardTable</AnnotationPath></Collection></PropertyValue>
+          </Record>
+        </Annotation>
+        <Annotation Term="UI.SelectionVariant" Qualifier="CardInDelivery">
+          <Record Type="UI.SelectionVariantType">
+            <PropertyValue Property="SelectOptions">
+              <Collection>
+                <Record Type="UI.SelectOptionType">
+                  <PropertyValue Property="PropertyName" PropertyPath="Status"/>
+                  <PropertyValue Property="Ranges">
+                    <Collection>
+                      <Record Type="UI.SelectionRangeType"><PropertyValue Property="Sign" EnumMember="UI.SelectionRangeSignType/I"/><PropertyValue Property="Option" EnumMember="UI.SelectionRangeOptionType/EQ"/><PropertyValue Property="Low" String="ORD"/></Record>
+                      <Record Type="UI.SelectionRangeType"><PropertyValue Property="Sign" EnumMember="UI.SelectionRangeSignType/I"/><PropertyValue Property="Option" EnumMember="UI.SelectionRangeOptionType/EQ"/><PropertyValue Property="Low" String="PART"/></Record>
+                    </Collection>
+                  </PropertyValue>
+                </Record>
+              </Collection>
+            </PropertyValue>
+          </Record>
         </Annotation>
         <Annotation Term="UI.LineItem" Qualifier="CardTable">
           <Collection>
             <Record Type="UI.DataField"><PropertyValue Property="Value" Path="PurchaseOrder"/></Record>
-            <Record Type="UI.DataField"><PropertyValue Property="Value" Path="Supplier"/></Record>
-            <Record Type="UI.DataField"><PropertyValue Property="Value" Path="Status"/><PropertyValue Property="Criticality" Path="StatusCriticality"/></Record>
             <Record Type="UI.DataField"><PropertyValue Property="Value" Path="NetAmount"/></Record>
+            <Record Type="UI.DataField"><PropertyValue Property="Value" Path="Status"/><PropertyValue Property="Criticality" Path="StatusCriticality"/></Record>
+            <Record Type="UI.DataFieldForAnnotation">
+              <PropertyValue Property="Label" String="交货进度"/>
+              <PropertyValue Property="Target" AnnotationPath="@UI.DataPoint#CardDelivery"/>
+            </Record>
           </Collection>
         </Annotation>
         <Annotation Term="UI.DataPoint" Qualifier="CardAmount">
