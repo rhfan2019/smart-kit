@@ -1,7 +1,7 @@
 /** AG Grid theme bridged to smart-kit tokens; switching data-theme / data-density needs no rebuild. */
 import { themeQuartz } from 'ag-grid-community';
 
-export const smartKitGridTheme = themeQuartz.withParams({
+export const smartKitGridTheme = /* @__PURE__ */ themeQuartz.withParams({
   accentColor: 'var(--sk-color-primary)',
   backgroundColor: 'var(--sk-color-surface)',
   foregroundColor: 'var(--sk-color-text)',

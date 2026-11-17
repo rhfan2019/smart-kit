@@ -14,6 +14,66 @@
       "types": "./src/index.ts",
       "import": "./src/index.ts"
     },
+    "./context": {
+      "types": "./src/entries/context.ts",
+      "import": "./src/entries/context.ts"
+    },
+    "./i18n": {
+      "types": "./src/entries/i18n.ts",
+      "import": "./src/entries/i18n.ts"
+    },
+    "./theme": {
+      "types": "./src/entries/theme.ts",
+      "import": "./src/entries/theme.ts"
+    },
+    "./util": {
+      "types": "./src/entries/util.ts",
+      "import": "./src/entries/util.ts"
+    },
+    "./field": {
+      "types": "./src/entries/field.ts",
+      "import": "./src/entries/field.ts"
+    },
+    "./filter": {
+      "types": "./src/entries/filter.ts",
+      "import": "./src/entries/filter.ts"
+    },
+    "./variants": {
+      "types": "./src/entries/variants.ts",
+      "import": "./src/entries/variants.ts"
+    },
+    "./table": {
+      "types": "./src/entries/table.ts",
+      "import": "./src/entries/table.ts"
+    },
+    "./chart": {
+      "types": "./src/entries/chart.ts",
+      "import": "./src/entries/chart.ts"
+    },
+    "./object": {
+      "types": "./src/entries/object.ts",
+      "import": "./src/entries/object.ts"
+    },
+    "./page": {
+      "types": "./src/entries/page.ts",
+      "import": "./src/entries/page.ts"
+    },
+    "./actions": {
+      "types": "./src/entries/actions.ts",
+      "import": "./src/entries/actions.ts"
+    },
+    "./edit": {
+      "types": "./src/entries/edit.ts",
+      "import": "./src/entries/edit.ts"
+    },
+    "./messages": {
+      "types": "./src/entries/messages.ts",
+      "import": "./src/entries/messages.ts"
+    },
+    "./templates": {
+      "types": "./src/entries/templates.ts",
+      "import": "./src/entries/templates.ts"
+    },
     "./styles.css": "./src/theme/styles.css"
   },
   "publishConfig": {
@@ -21,6 +81,66 @@
       ".": {
         "types": "./dist/index.d.ts",
         "import": "./dist/index.js"
+      },
+      "./context": {
+        "types": "./dist/entries/context.d.ts",
+        "import": "./dist/entries/context.js"
+      },
+      "./i18n": {
+        "types": "./dist/entries/i18n.d.ts",
+        "import": "./dist/entries/i18n.js"
+      },
+      "./theme": {
+        "types": "./dist/entries/theme.d.ts",
+        "import": "./dist/entries/theme.js"
+      },
+      "./util": {
+        "types": "./dist/entries/util.d.ts",
+        "import": "./dist/entries/util.js"
+      },
+      "./field": {
+        "types": "./dist/entries/field.d.ts",
+        "import": "./dist/entries/field.js"
+      },
+      "./filter": {
+        "types": "./dist/entries/filter.d.ts",
+        "import": "./dist/entries/filter.js"
+      },
+      "./variants": {
+        "types": "./dist/entries/variants.d.ts",
+        "import": "./dist/entries/variants.js"
+      },
+      "./table": {
+        "types": "./dist/entries/table.d.ts",
+        "import": "./dist/entries/table.js"
+      },
+      "./chart": {
+        "types": "./dist/entries/chart.d.ts",
+        "import": "./dist/entries/chart.js"
+      },
+      "./object": {
+        "types": "./dist/entries/object.d.ts",
+        "import": "./dist/entries/object.js"
+      },
+      "./page": {
+        "types": "./dist/entries/page.d.ts",
+        "import": "./dist/entries/page.js"
+      },
+      "./actions": {
+        "types": "./dist/entries/actions.d.ts",
+        "import": "./dist/entries/actions.js"
+      },
+      "./edit": {
+        "types": "./dist/entries/edit.d.ts",
+        "import": "./dist/entries/edit.js"
+      },
+      "./messages": {
+        "types": "./dist/entries/messages.d.ts",
+        "import": "./dist/entries/messages.js"
+      },
+      "./templates": {
+        "types": "./dist/entries/templates.d.ts",
+        "import": "./dist/entries/templates.js"
       },
       "./styles.css": "./dist/styles.css"
     }
@@ -46,6 +166,14 @@
     "ag-grid-community": "36.3.0",
     "ag-grid-react": "36.3.0",
     "@tanstack/react-query": "5.107.1"
+  },
+  "peerDependenciesMeta": {
+    "ag-grid-community": {
+      "optional": true
+    },
+    "ag-grid-react": {
+      "optional": true
+    }
   },
   "devDependencies": {
     "react": "19.3.1",

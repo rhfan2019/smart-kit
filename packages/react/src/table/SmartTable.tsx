@@ -36,7 +36,14 @@ import { useListQuery } from './useListQuery';
 import { InlineCreateRow } from './InlineCreateRow';
 import { groupValueOf, ResponsiveTable, type ResponsiveColumn } from './ResponsiveTable';
 
-ModuleRegistry.registerModules([AllCommunityModule]);
+let gridModulesRegistered = false;
+
+/** Registers AG Grid's modules the first time a grid table renders, not when this module loads (ADR-026 P2, P3). */
+function ensureGridModules(): void {
+  if (gridModulesRegistered) return;
+  ModuleRegistry.registerModules([AllCommunityModule]);
+  gridModulesRegistered = true;
+}
 
 export interface ColumnItem {
   id: string;
@@ -372,6 +379,7 @@ function ToolbarPart({ children, before }: { children?: ReactNode; before?: Reac
 // ---------------------------------------------------------------------------------------------- table
 
 export function SmartTable(p: SmartTableProps) {
+  ensureGridModules();
   const service = useService(p.service);
   const { navigation, intlLocale, timeZone } = useSmartKit();
   const t = useText();

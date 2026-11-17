@@ -29,3 +29,5 @@
 | [023](023-messages.md) | 消息模型 | 采纳 |
 | [024](024-actions.md) | 动作 | 采纳 |
 | [025](025-micro-chart-series.md) | 导航集合上的微型图表用 `$expand` 带 `$orderby`、`$top` 一起读 | 采纳 |
+| [026](026-bundling-and-subpaths.md) | 打包规则：用多少付多少；React 包按领域分子路径 | 采纳（P4、P6、P8 待做） |
+| [027](027-odata-server-package.md) | 自写 OData V4 服务：`smart-kit-server`、`smart-kit-cli` 两个新包 | 采纳，未实施 |

@@ -5,6 +5,12 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+### Changed (bundling, ADR-026)
+
+- `@rhfan2019/smart-kit` now builds one output file per source file and offers subpath entries (`/context`, `/i18n`, `/theme`, `/util`, `/field`, `/filter`, `/variants`, `/table`, `/chart`, `/object`, `/page`, `/actions`, `/edit`, `/messages`, `/templates`). The root entry still exports everything. An application that imports only `MicroChart` now ships 5.1 KB gzip instead of about 505 KB.
+- AG Grid modules are registered the first time a `SmartTable` renders, not when the module loads; `ag-grid-community` and `ag-grid-react` are optional peer dependencies (needed only for `/table` and `/templates`).
+- `npm run size` checks a budget per entry and per application scenario (MicroChart only, SmartField only, list report, object page).
+
 ### Added (phase 3, micro charts, see docs/15)
 
 - Demo: micro chart scenario page (`/microcharts`): every chart type in the business situation the SAP guidelines give for it, at the size of its place, with a supplier table of chart cells.

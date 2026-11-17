@@ -200,3 +200,152 @@
 1. 三期代码提交并推送到分支 `claude/loving-mclean-7bfe89`，开 PR。
 2. 演示应用新增"微型图表"页（`/microcharts`）：按 SAP 规范里每种图的"用途"挑业务场景（年初至今收入用 Bullet、费用偏差用差值 Bullet、准时交货率用 Radial、收货进度用 Harvey Ball、月度毛利用 Column、单价走势用 Line、现金余额用 Area、供应商采购额用 Comparison、订单状态构成用 Stacked Bar、季度对比用 Delta），图放在和真实位置一样大的盒子里，旁边写为什么用这种图和对应规则；另有供应商绩效表演示单元格里的图（同列同刻度、无数据留空）。页末链接到由注解驱动的真实页面。
 3. 端到端测试加一条（MC-01），`docs/17` 中 MC-01 的验收方式改为"D、E"；验收报告 `docs/18` 加第 5 节。
+
+## D12 调研 GitHub 上可参考的 OData 服务实现（2026-11-16）
+
+**用户的要求**：按 D05 的原则，调研 GitHub 上可参考的 OData 服务实现。
+
+**结论**（详见 `19-research-odata-server.md`）
+
+1. **TypeScript 生态里没有成熟、开源、输出标准 V4、能直接当服务端的现成项目**，所以自写，但每一块都照着成熟项目的做法来。
+2. **主要参考对象**：
+   - `@sap-ux/fe-mockserver-core`（Apache-2.0，SAP 维护，smart-kit 已在用）：请求解析的语法照它写；也当一致性测试的对照。
+   - PostgREST（MIT）：查询转安全 SQL、集合展开一次查出、总数统计策略。
+   - Pine.js（balena 生产在用）、Data API builder（微软）：分层架构，权限在查询计划层统一注入。
+   - ASP.NET Core OData / ODataLib（MIT）：协议细节的标准答案。
+3. **只看不用**：RESO 参考服务（TypeScript + PostgreSQL + OData 4.01，架构最接近，但许可证是可撤销的 EULA）。
+4. **不用**：jaystack 系列和 `@odata/*`（停止维护）、Pine.js 的代码（响应是 V2 风格，语法用 OMeta）、Olingo（镜像已归档）、太新或用的人太少的项目。
+
+**待定**（写 ADR 前由用户决定）：解析器自写还是借用 fe-mockserver 内部的；SQL 用 Kysely、Drizzle 还是直接写参数化 SQL；元数据从哪里来；放进 smart-kit 的新包还是独立仓库。
+
+## D13 OData 服务的三个决定；包结构和命名（2026-11-16）
+
+**用户的决定**（对 `19` 第 5 节）
+
+1. **解析器自己写**：用 chevrotain（Apache-2.0，13.2.0，月下载约 6,600 万），语法照 fe-mockserver-core 写，AST 的字面量带类型。
+2. **生成 SQL 交给我按专业判断定**：选 **Kysely**（MIT，0.29.9，1.4 万星，月下载约 1.1 亿），驱动用 `pg`（MIT）。理由：
+   - 它是查询构建器，不是 ORM，不要求先用 TypeScript 定义表。我们的表名、列名来自元数据、运行时才知道，Kysely 支持动态引用（`sql.ref`、`eb.ref`），值自动参数化。Drizzle 的长处是"先在代码里定义表"，动态查询要绕开它的类型系统，不合适。
+   - 自带 PostgreSQL 的 `jsonArrayFrom`、`jsonObjectFrom`（`LATERAL` + `json_agg`），正好是 PostgREST 一次查出子表的做法。
+   - 手写 SQL 字符串最灵活，但拼接错误和注入风险都要自己兜底，不如让 Kysely 管参数化。
+   - 风险：Kysely 还没到 1.0，小版本之间偶有破坏性变化，要锁版本并随升级跑一致性测试。
+3. **元数据**：从 PostgreSQL 的表结构自动生成（表 → 实体，主键 → 键，外键 → 导航属性，列注释 → 标签），注解单独手写一个文件；表结构变了可以重复生成。重复生成只覆盖生成的文件，不动注解文件；生成后检查注解指向的实体和字段是否还在，不在的报出来。
+
+**用户的问题**：现在的包是什么样？列出包和命名空间；后面还会加其他 UI 组件；从性能等方面给建议。
+
+**现状**（2026-11-16 实测）
+
+| 包 | 运行环境 | 依赖 | 构建 |
+| --- | --- | --- | --- |
+| `@rhfan2019/smart-kit-core` | 浏览器和 Node 都能用，纯 TypeScript | `@sap-ux/edmx-parser`、`annotation-converter`、`vocabularies-types`、`xml-js` | 单一入口 `.` |
+| `@rhfan2019/smart-kit` | 浏览器（React） | 依赖 core、`lucide-react`、`write-excel-file`；peer：React、Mantine、AG Grid、TanStack Query、dayjs | 单一入口 `.`，样式一个 `styles.css`（gzip 7 KB） |
+| `apps/demo`、`apps/mock`、`apps/storybook` | 私有，不发布 | — | — |
+
+命名依据 ADR-011（组件沿用 `Smart*`）、ADR-012（scope `@rhfan2019`，有改名脚本，不发布到 npm）。
+
+**实测发现的性能问题**：用户的应用只引入 `MicroChart` 一个组件，打包后也有约 **505 KB（gzip）**，和引入 `SmartTable` 一样大，其中 AG Grid 约 1 MB（未压缩）、Mantine 约 290 KB、整个 smart-kit 都被带进来。原因有两个：
+- 构建输出是单个 `index.js`；
+- `SmartTable.tsx` 在模块顶层执行 `ModuleRegistry.registerModules([AllCommunityModule])`，这是副作用，打包工具不敢删。
+
+所以现在"按需引入"实际不生效。以后组件越多，这个问题越严重。
+
+**建议**（待用户确认）
+
+1. **同一个仓库（monorepo），不单独建仓库。** core、服务端、React 经常要一起改（比如加一个注解，三处都动），同仓库可以一次提交、一次 CI、版本一起发。
+2. **包按"运行环境"和"重依赖"切，不按每个组件切：**
+
+   | 包 | 内容 | 运行环境 | 新/旧 |
+   | --- | --- | --- | --- |
+   | `@rhfan2019/smart-kit-core` | CSDL 与注解解析、模型、查询生成、数据提供者 | 浏览器和 Node | 已有 |
+   | `@rhfan2019/smart-kit` | 全部 React 组件，按领域分子路径（见第 3 条） | 浏览器 | 已有，改构建 |
+   | `@rhfan2019/smart-kit-server` | OData V4 服务：解析、查询计划、Kysely 生成 SQL、`$metadata`、错误格式。接口用 Web 标准的 `Request` → `Response`，Next.js、Express、Hono 都能接 | Node | 新 |
+   | `@rhfan2019/smart-kit-cli` | 开发时用：从 PostgreSQL 生成 CSDL、检查注解是否失效 | Node，只在开发时 | 新 |
+
+   服务端单独成包，是为了 `pg`、`kysely`、`chevrotain` 永远不会进浏览器的包。CLI 单独成包，是因为它只在开发时用，不该成为生产环境的依赖。
+
+3. **React 包内部改成真正按需加载**：
+   - 构建改为一个源文件一个输出文件（Vite 的 `preserveModules`），去掉模块顶层的副作用（AG Grid 的注册挪到 `SmartTable` 第一次渲染时）。
+   - 按领域提供子路径入口：`/table`、`/filter`、`/field`、`/object`、`/page`、`/chart`、`/variants`、`/theme`；根入口 `.` 保留，从各子路径转导出，方便不在乎体积的使用者。
+   - 只有表格用到的 AG Grid 改成"可选 peer 依赖"：不用表格的应用不必安装。
+   - 样式只有 7 KB（gzip），继续用一个 `styles.css`，不拆。
+   - 预计效果：只用 `MicroChart` 时从约 505 KB 降到几 KB（改完要实测）。
+4. **以后加 UI 组件的规则**：
+   - 默认放进 `@rhfan2019/smart-kit` 的某个子路径。
+   - 只有当它带来很重的第三方依赖（比如富文本编辑器、甘特图），或运行环境不同时，才新开一个包 `@rhfan2019/smart-kit-<名字>`。这和 Mantine 的做法一致：`@mantine/core` 一个包，`@mantine/dates`、`@mantine/charts` 因为依赖重才单独成包。
+   - 能脱离 OData 单独使用的展示组件（如 `MicroChart`）不依赖 Mantine 和 AG Grid，放在 `/chart` 这类轻量子路径。
+5. **防止性能回退**：`npm run size` 从"每个包一个预算"改成"每个子路径一个预算"，再加一条检查："只引入 `MicroChart` 的应用不超过 N KB"，超了 CI 失败。
+6. **命名**：现在的 `@rhfan2019` 是个人 scope。要作为对外的成熟框架发布时，建议换成组织 scope（例如 `@smart-kit/core`、`@smart-kit/react`、`@smart-kit/server`、`@smart-kit/cli`），用 ADR-012 的改名脚本一次换掉；具体名字要先查 npm 上是否被占用，并过一遍商标检查（不能含 SAP、Fiori 等）。在此之前保持 `@rhfan2019/smart-kit-*` 不变。
+
+**待用户确认**：上面 1～6 条；确认后写 ADR（服务端包、构建改造、命名），再开工。
+
+## D14 组件命名清单；打包规则（2026-11-16）
+
+**用户的问题**：像 `sap.suite.ui.microchart.ColumnMicroChart` 那样，列出现在每个组件的完整名字；打包细节不懂，原则是"不要犯 SAPUI5 的错误：太重、加载奇慢"，按这个原则定打包规则。
+
+**命名方式的对应**：UI5 用"命名空间 + 类名"（`sap.suite.ui.microchart` + `ColumnMicroChart`），运行时按命名空间去服务器取文件。本库用"包名 + 子路径 + 导出名"（`@rhfan2019/smart-kit/chart` + `MicroChart`），构建时就把用到的代码打进应用。下表"子路径"一列是 D13 建议的，**现在所有组件都只能从根入口 `@rhfan2019/smart-kit` 引入**。
+
+| 子路径（建议） | 组件 | 钩子和工具 | 对应的 UI5 |
+| --- | --- | --- | --- |
+| `/context` | `SmartKitProvider` | `useSmartKit`、`useService`、`useMetaModel`、`useText` | — |
+| `/theme` | — | `smartKitMantineTheme`、`smartKitCssVariablesResolver`、`readToken`、`useThemeTokens` | 主题 |
+| `/i18n` | — | `createText`、`MESSAGES` | 资源包 |
+| `/field` | `SmartField`、`FieldEditor`、`CriticalityIcon`、`QuickViewLink` | `fieldValue`、`getPath`、`resolveRef` | `sap.ui.comp.smartfield.SmartField` |
+| `/filter` | `SmartFilterBar`、`ConditionInput`、`ValueHelpDialog`、`AdaptFiltersDialog`、`FilterSummary` | `useFilterState`、`useValueList`、`conditionText` | `sap.ui.comp.smartfilterbar.SmartFilterBar`、`sap.ui.comp.valuehelpdialog.ValueHelpDialog` |
+| `/variants` | `SmartVariantManagement` | `useVariants` | `sap.ui.comp.smartvariants.SmartVariantManagement` |
+| `/table` | `SmartTable`、`ResponsiveTable`、`TableP13nDialog` | `useListQuery`、`smartKitGridTheme`（只有这里用 AG Grid） | `sap.ui.comp.smarttable.SmartTable`、`sap.m.Table` |
+| `/chart` | `MicroChart`（`kind` 取九种：`bullet`、`radial`、`harvey`、`delta`、`column`、`line`、`comparison`、`area`、`stackedBar`）、`SimpleChart`、`ChartView` | `niceTicks` | `sap.suite.ui.microchart.*MicroChart`（UI5 是九个类，本库是一个组件加 `kind`，因为注解驱动时类型在运行时才知道） |
+| `/object` | `ObjectPageLayout`、`HeaderFacet`、`AnchorBar`、`SmartForm`、`DraftMarker`、`GenericTag` | `useObject`、`useObjectTitle`、`useSectionScrollSpy` | `sap.uxap.ObjectPageLayout`、`sap.ui.comp.smartform.SmartForm` |
+| `/page` | `DynamicPage`、`FlexibleColumnLayout`、`OverflowActions`、`ShareMenu` | `useDynamicPage`、`useColumn` | `sap.f.DynamicPage`、`sap.f.FlexibleColumnLayout` |
+| `/actions` | — | `useActionRunner`、`isActionAvailable` | — |
+| `/edit` | `CreateDialog` | `useEditStrategy`、`validate` | — |
+| `/messages` | `MessageProvider`、`MessageButton`、`MessageIcon` | `useMessages` | `sap.m.MessagePopover` |
+| `/templates` | `SmartListReport`、`SmartObjectPage` | — | `sap.fe.templates.ListReport`、`ObjectPage` |
+
+`@rhfan2019/smart-kit-core` 没有组件，是函数和类：`buildModel`、`loadService`、`ODataV4Provider`、`MemoryProvider`、`buildListRequest`、`formatValue` 等（完整清单见 `docs/api.md`）。
+
+**UI5 为什么慢**（这些是要避开的）：
+1. 运行时才按命名空间一个个去服务器取模块和主题文件，请求多。
+2. 用一个控件，常常要加载它所在的整个库（库的预加载包）。
+3. 页面先要等框架启动，再等 `$metadata` 下载和解析，然后才开始画。
+
+**打包规则**（用户把细节交给我定，2026-11-16 定稿；ADR 待写）：
+
+| # | 规则 | 防的是 UI5 的哪个问题 | 现状 |
+| --- | --- | --- | --- |
+| P1 | 只在构建时打包，运行时不按需去服务器拉模块；只输出 ESM | 请求多 | 已满足 |
+| P2 | **用多少付多少**：每个源文件单独输出；模块顶层不能有副作用（不能一加载就注册、改全局）；`sideEffects` 只标 CSS | 用一个控件拉整个库 | **不满足**：只用 `MicroChart` 也有约 505 KB（gzip） |
+| P3 | 重依赖隔离：AG Grid 只在 `/table`，并改成可选 peer 依赖；以后再有重依赖（编辑器、甘特图等），单独成包或懒加载 | 同上 | 部分满足 |
+| P4 | 不在首屏出现的大块一律懒加载：值帮助、个性化、适配筛选、新建对话框、Excel 导出、图表视图 | 首屏慢 | 只有 Excel 导出是懒加载 |
+| P5 | 主题用 CSS 变量，一个样式文件，运行时不再下载主题文件；样式总量设上限 | 主题文件多 | 已满足（7 KB gzip） |
+| P6 | 元数据可以在构建时预编译成 JSON（CLI 生成），浏览器里就不用带 XML 解析器、也不用现场解析；仍保留运行时解析给不方便预编译的场景 | 等 `$metadata` 解析才开始画 | 未做；core 带解析器在浏览器里约 39 KB（gzip），其中解析器约占三分之二 |
+| P7 | 体积上限进 CI，超了就失败：每个子路径一个上限；再按场景设上限（只用 `MicroChart`、一个列表页、一个对象页） | 防止慢慢变重 | 只有每个包一个上限 |
+| P8 | 首屏速度进 CI：演示应用的列表页和对象页，首次加载的 JS 总量和 LCP（最大内容绘制时间）设目标值，用端到端测试量 | 实际体验 | 未做 |
+
+**下一步**：写 ADR（服务端包、打包规则 P1～P8、命名），然后先改打包（P2、P3、P7），实测"只用 `MicroChart`"的体积降下来，再做服务端。
+
+## D15 打包改造第一步：子路径和"用多少付多少"（2026-11-16）
+
+**用户的决定**：开始（写 ADR，先改打包，再做服务端）。
+
+**做了什么**（分支 `build/subpath-exports`，未提交）
+1. **ADR**：`026-bundling-and-subpaths.md`（打包规则 P1～P8、子路径、加新组件的规则），`027-odata-server-package.md`（`smart-kit-server`、`smart-kit-cli`，未实施）；ADR-004 标注"单一入口"部分被 026 修订。
+2. **React 包按领域分 15 个子路径**：`/context`、`/i18n`、`/theme`、`/util`、`/field`、`/filter`、`/variants`、`/table`、`/chart`、`/object`、`/page`、`/actions`、`/edit`、`/messages`、`/templates`。源码在 `packages/react/src/entries/`，根入口只做转导出；构建改为一个源文件一个输出文件。D14 的清单里新增了 `/util`（`applyExtensions`、`usePageState`）。
+3. **去掉模块顶层副作用**：AG Grid 的模块注册挪到 `SmartTable` 第一次渲染时；AG Grid 改为可选 peer 依赖。实测只有 `/table` 和 `/templates` 用到 AG Grid（D14 估计 `/object` 也要，实际不要）。
+4. **体积检查改写**（`scripts/check-size.mjs`）：每个入口一个上限，加上样式的上限，再按场景量"应用实际要打包多少"。
+
+**实测结果**（gzip）
+
+| 场景：应用只引入 | 改之前 | 改之后 |
+| --- | --- | --- |
+| `MicroChart` | 约 505 KB | **5.1 KB** |
+| `MicroChart`（从根入口引入） | 约 505 KB | **5.1 KB**（根入口也能按需打包） |
+| `SmartField` | 约 505 KB | 106.9 KB（主要是 Mantine） |
+| 整个列表页 `SmartListReport` | 约 521 KB | 506.9 KB |
+| 整个对象页 `SmartObjectPage` | — | 495.5 KB |
+
+以上都不含 React 本身。列表页和对象页的体积基本没变，因为它们确实要用到表格（AG Grid）和 Mantine；把它们降下来要靠 P4（值帮助、个性化、对话框等懒加载）和"AG Grid 只注册用到的模块"，下一步做。
+
+**更正**：D13、D14 说样式是 7 KB，那只是 `styles.css`；连同它引入的 `tokens.css` 是 11 KB（gzip），上限设为 13 KB。
+
+**检查**：类型检查、lint（含令牌、商标）、单元测试 231 个（新增 2 个：各子路径合起来正好等于根入口）、构建（两个包、示例应用、Storybook）、`npm run size` 全部通过；端到端测试 189 个全部通过；可追溯检查 `trace --strict`（一期 33/33、72/72，二期 143/143，三期 58/58）通过。
+
+**下一步**：P4（首屏不出现的大块懒加载）和 AG Grid 只注册用到的模块，把列表页、对象页降下来；然后 P6、P8；再做 ADR-027 的服务端。

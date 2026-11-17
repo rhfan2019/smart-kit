@@ -48,7 +48,7 @@
 | `npm run storybook` | Storybook（http://localhost:6006） |
 | `npm run typecheck` / `npm run lint` / `npm test` | 类型、lint 和令牌与商标检查、单元测试 |
 | `npm run e2e` | 端到端；会自己启动测试服务（`E2E=1`）和示例应用。本机 4400 / 4401 已被占用时：`E2E_MOCK_PORT=4410 E2E_DEMO_PORT=4411 npm run e2e` |
-| `npm run build` / `npm run size` | 构建两个包和示例应用；体积预算 |
+| `npm run build` / `npm run size` | 构建两个包和示例应用；体积预算：每个入口一个上限，再按场景（只用 `MicroChart`、只用 `SmartField`、列表页、对象页）量应用实际要打包的体积（ADR-026） |
 | `npm run trace -- --strict` | 注解覆盖与验收条目的可追溯检查；二期条目读取 `reports/` 下的测试结果，所以要先跑 `npm test` 和 `npm run e2e` |
 | `npm run samples` | 从运行中的测试服务导出 `$metadata` 样本 |
 | `node scripts/rename-scope.mjs <@scope> --dry-run` | 改 npm scope |
