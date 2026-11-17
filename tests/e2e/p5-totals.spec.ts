@@ -60,11 +60,12 @@ test('GT-01 the Totals tab lists only aggregatable columns, and only for service
   await expect(page.getByRole('checkbox', { name: 'Net Amount' })).toBeChecked();
   await shot(page, 'GT-01', page.getByRole('dialog'));
   await page.keyboard.press('Escape');
-  // Northwind declares no Aggregation.ApplySupported: no Totals tab, no totals row
+  // Northwind declares no Aggregation.ApplySupported: no Totals tab, no totals row (grouping stays, without subtotals; D30)
   await open(page, '/nw/products');
   await waitForRows(page, 'Products');
   await table(page, 'Products').locator('[data-sk-table-settings]').click();
-  await expect(page.locator('[data-sk-p13n-group-tab], [data-sk-p13n-totals-tab]')).toHaveCount(0);
+  await expect(page.locator('[data-sk-p13n-group-tab]')).toHaveCount(1);
+  await expect(page.locator('[data-sk-p13n-totals-tab]')).toHaveCount(0);
   await page.keyboard.press('Escape');
   await expect(table(page, 'Products').locator('.sk-table__total-row')).toHaveCount(0);
 });
