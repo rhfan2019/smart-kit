@@ -1,6 +1,6 @@
 {
   "name": "@rhfan2019/smart-kit-core",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Metadata model, query generation and data providers for smart-kit (pure TypeScript).",
   "keywords": [
     "odata",
