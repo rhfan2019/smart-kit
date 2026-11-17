@@ -369,3 +369,80 @@ AG Grid（`ag-grid-community`、`ag-grid-react`）是可选的 peer 依赖：不
 - `ValueContext`
 - `ValueHelpDialogProps`
 - `VariantsApi`
+
+## `@rhfan2019/smart-kit-server`
+
+> ADR-027，只在 Node 里用（`npm run size` 检查它的代码进不了浏览器包）。只读的 OData V4 服务：URL → 语法树 → 查询计划 → SQL（PostgreSQL）。用法见 `apps/pg-server/server.ts` 和 README"在 PostgreSQL 上手工测试"。测试 `packages/server/test/api.test.ts` 比对本节。
+
+### 值（运行时导出）
+
+- `applyLabels`
+- `buildSchema`
+- `createODataService`
+- `createPostgresDb`
+- `errorBody`
+- `escapeLike`
+- `mergeMetadata`
+- `MetadataDocuments`
+- `ODataServerError`
+- `parseFilter`
+- `parseQueryOptions`
+- `parseResourcePath`
+- `parseSearch`
+- `Planner`
+- `SqlBuilder`
+- `toNodeListener`
+
+### 类型
+
+- `AggregatePlan`
+- `BoundExpr`
+- `CollectionPlan`
+- `ColumnInfo`
+- `EntitySetInfo`
+- `Expr`
+- `Literal`
+- `MetadataSource`
+- `NavigationInfo`
+- `ODataService`
+- `ODataServiceOptions`
+- `PostgresDbOptions`
+- `QueryOptions`
+- `ScopeFunction`
+- `SearchExpr`
+- `ServiceSchema`
+- `StorageMapping`
+
+`createODataService(options)` 的选项：`basePath`（服务根路径）、`metadata`（生成的 CSDL、手写的注解文件、各语言的标签包）、`storage`（实体集对应的表和列，CLI 生成）、`db`（Kysely）、`maxPageSize`（默认 1000）、`searchFields`（各实体集 `$search` 查哪些字段）、`context`（每个请求的上下文，比如当前用户）、`scope`（数据范围：每个实体集返回一个 `$filter` 条件，所有读到这个实体集的地方都加上）、`onError`。返回 `{ handle(request): Promise<Response>, schema, model, metadata(lang) }`。
+
+## `@rhfan2019/smart-kit-cli`
+
+> ADR-027，开发时用的命令 `smart-kit`：`smart-kit generate`（读 PostgreSQL 的表结构，写生成的 CSDL 和存储映射，再检查注解文件）、`smart-kit check`（不连数据库，只检查注解文件）；加 `--strict` 时注解有失效的目标就以退出码 1 结束。配置文件 `smart-kit.config.json` 的写法见 `apps/pg-server/smart-kit.config.json` 和 `packages/cli/src/config.ts`。测试 `packages/server/test/api.test.ts` 比对本节。
+
+### 值（运行时导出）
+
+- `check`
+- `checkAnnotations`
+- `generate`
+- `indexCsdl`
+- `introspect`
+- `loadConfig`
+- `pascal`
+- `plural`
+- `toCsdl`
+- `toStorage`
+
+### 类型
+
+- `CheckProblem`
+- `CliConfig`
+- `CsdlIndex`
+- `EntityConfig`
+- `GenEntity`
+- `GenerateResult`
+- `GenModel`
+- `GenNavigation`
+- `GenProperty`
+- `LoadedConfig`
+- `NavigationConfig`
+- `Queryable`

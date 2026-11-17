@@ -1,0 +1,22 @@
+{
+  "connection": "postgresql://smart_kit_reader@localhost:5432/smart_kit_purchasing",
+  "schema": "purchasing",
+  "namespace": "Purchasing",
+  "container": "Container",
+  "output": {
+    "csdl": "generated/purchasing.csdl.xml",
+    "storage": "generated/purchasing.storage.json"
+  },
+  "annotations": ["annotations/purchasing.annotations.xml"],
+  "entities": {
+    "order_type": { "set": "PurchaseOrderTypes" },
+    "item_history": { "set": "ItemHistory" },
+    "order_status": { "properties": { "criticality": { "type": "Edm.Byte" } } },
+    "purchase_order": { "properties": { "status_criticality": { "type": "Edm.Byte" } } }
+  },
+  "navigations": {
+    "purchase_order_item_order_fk": { "toMany": "_Item" },
+    "pricing_condition_item_fk": { "toOne": "_Item" },
+    "item_history_item_fk": { "toOne": "_Item", "toMany": "_History" }
+  }
+}

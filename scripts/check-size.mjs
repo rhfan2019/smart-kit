@@ -10,6 +10,9 @@ import { gzipSync } from 'node:zlib';
 import { build } from 'vite';
 
 const ROOT = join(import.meta.dirname, '..');
+const SERVER_DIST = join(ROOT, 'packages/server/dist');
+const CLI_DIST = join(ROOT, 'packages/cli/dist');
+const DEMO_DIST = join(ROOT, 'apps/demo/dist');
 const REACT_DIST = join(ROOT, 'packages/react/dist');
 const CORE_DIST = join(ROOT, 'packages/core/dist');
 
@@ -97,4 +100,21 @@ report('@rhfan2019/smart-kit/styles.css (with tokens.css)', css, 13);
 
 console.log('\nWhat an application ships (everything except React):');
 for (const s of SCENARIOS) report(s.name, await bundle(s.code, reactOnly), s.budget);
+
+// ADR-027: the server packages are Node only. Their own code gets a budget like any entry (new in 2026-11: the
+// OData service is ~21 KB gzip, the CLI ~8 KB; the budgets leave room for writes and drafts), and none of their
+// code or dependencies may reach a browser bundle: core, the React package and the built demo app are scanned.
+console.log('\nNode-only packages (ADR-027):');
+const gz = (dir) => readdirSync(dir, { recursive: true }).filter((f) => String(f).endsWith('.js')).reduce((n, f) => n + gzipSync(readFileSync(join(dir, String(f)))).length, 0) / 1024;
+report('@rhfan2019/smart-kit-server (own code)', gz(SERVER_DIST), 30);
+report('@rhfan2019/smart-kit-cli (own code)', gz(CLI_DIST), 12);
+const SERVER_ONLY = /\bfrom\s*["'](?:@rhfan2019\/smart-kit-(?:server|cli)|kysely|chevrotain|pg|pg-pool|pg-protocol|node:[a-z_/]+)["']|\bclass\s+\w*SqlBuilder\b|createODataService|PostgresDialect/;
+for (const [label, dir] of [['@rhfan2019/smart-kit-core dist', CORE_DIST], ['@rhfan2019/smart-kit dist', REACT_DIST], ['apps/demo build', DEMO_DIST]]) {
+  const hits = readdirSync(dir, { recursive: true })
+    .filter((f) => String(f).endsWith('.js'))
+    .filter((f) => SERVER_ONLY.test(readFileSync(join(dir, String(f)), 'utf8')));
+  const ok = hits.length === 0;
+  failed ||= !ok;
+  console.log(`${ok ? 'ok  ' : 'FAIL'} ${`${label}: no server code`.padEnd(46)} ${ok ? '' : hits.join(', ')}`);
+}
 process.exit(failed ? 1 : 0);

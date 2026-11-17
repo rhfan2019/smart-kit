@@ -17,6 +17,8 @@ const HEADERS = { Accept: 'application/json;odata.metadata=minimal;IEEE754Compat
 
 const { db, pool } = createPostgresDb({ connectionString: DATABASE_URL });
 const available = await pool.query('select 1 from purchasing.purchase_order limit 1').then(() => true, () => false);
+// CI sets SMART_KIT_REQUIRE_PG=1: there a missing database is a failure, not a skip.
+if (!available && process.env.SMART_KIT_REQUIRE_PG === '1') throw new Error(`PostgreSQL test database not reachable (${process.env.SMART_KIT_DATABASE_URL ?? 'default URL'}); run npm run pg:setup`);
 
 /** Response bodies without what legitimately differs: context URLs, ETags, and the Version the mock always adds. */
 function normalize(body: unknown, selected?: Set<string>): unknown {

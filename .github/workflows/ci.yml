@@ -8,7 +8,26 @@ on:
 jobs:
   checks:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 60
+    # PostgreSQL for the purchasing service of apps/pg-server (smart-kit-server, ADR-027): conformance and CLI tests,
+    # and the end-to-end tests against it.
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      SMART_KIT_PG_ADMIN_URL: postgresql://postgres:postgres@localhost:5432/postgres
+      SMART_KIT_DB_PASSWORD: smart_kit_ci
+      SMART_KIT_DATABASE_URL: postgresql://smart_kit_reader:smart_kit_ci@localhost:5432/smart_kit_purchasing
+      SMART_KIT_REQUIRE_PG: '1'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -20,7 +39,13 @@ jobs:
         run: npm run typecheck
       - name: Lint, tokens, trademark
         run: npm run lint
-      - name: Unit tests
+      - name: PostgreSQL test database (roles, database, tables, data)
+        run: npm run pg:setup
+      - name: Generated CSDL is up to date and the annotations still match
+        run: |
+          npm run pg:generate -- --strict
+          git diff --exit-code -- apps/pg-server/generated
+      - name: Unit tests (incl. conformance with fe-mockserver)
         run: npm test
       - name: Build and bundle size
         run: |
@@ -32,6 +57,8 @@ jobs:
         run: npx playwright install --with-deps chromium
       - name: End-to-end tests (axe, screenshots, performance)
         run: npm run e2e
+      - name: End-to-end tests against PostgreSQL (smart-kit-server)
+        run: npm run e2e:pg
       # needs the unit and end-to-end results (reports/*.json), so it runs after both
       - name: Traceability
         run: npm run trace -- --strict

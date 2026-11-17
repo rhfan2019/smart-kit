@@ -8,6 +8,8 @@ const DEMO = `http://localhost:${DEMO_PORT}`;
 
 export default defineConfig({
   testDir: 'tests/e2e',
+  // tests/e2e/pg: the PostgreSQL-backed service, run by playwright.pg.config.ts (npm run e2e:pg)
+  testIgnore: ['pg/**'],
   timeout: 60_000,
   expect: { timeout: 10_000, toHaveScreenshot: { maxDiffPixelRatio: 0.02 } },
   fullyParallel: false,
