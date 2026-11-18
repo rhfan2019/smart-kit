@@ -101,6 +101,8 @@ const metadataDocs = {
     en: stripComments(applyLabels(draftTemplate, label('en'), 'en')),
     zh: stripComments(applyLabels(draftTemplate, label('zh'), 'zh')),
   },
+  // stage 4 tail: value help service of the purchasing service (Common.ValueListReferences / ValueListMapping)
+  'purchasing-vh': { en: stripComments(readFileSync(join(csdlDir, 'purchasing-vh.xml'), 'utf8')) },
 };
 const SERVICE_NAMES = Object.keys(metadataDocs);
 const isPurchasing = (svc) => svc === 'purchasing' || svc === DRAFT_SERVICE;
@@ -134,6 +136,17 @@ for (const svc of Object.keys(metadataDocs)) {
       nonSortable: paths(caps.SortRestrictions, 'NonSortableProperties'),
       hasVersion: es.entityType.entityProperties.some((p) => p.name === 'Version'),
     };
+    // contained result sets of parameterized entity sets ("SpendParameters/Set", Common.ResultContext): no
+    // capability annotations, everything allowed
+    for (const nav of es.entityType.navigationProperties.filter((n) => n.containsTarget)) {
+      const type = nav.targetType;
+      sets[`${es.name}/${nav.name}`] = {
+        type, keys: type.keys.map((k) => ({ name: k.name, type: k.type })), bindings: {}, searchable: true,
+        stringFields: type.entityProperties.filter((p) => p.type === 'Edm.String').map((p) => p.name),
+        countable: true, filterable: true, nonFilterable: new Set(), filterExpressions: {}, sortable: true, nonSortable: new Set(),
+        hasVersion: false,
+      };
+    }
   }
   const decimals = {};
   for (const et of meta.entityTypes)
@@ -156,7 +169,7 @@ const PURCHASING_SEARCH = {
   Materials: { fields: ['Material', 'MaterialName'] },
   CostCenters: { fields: ['CostCenter', 'CostCenterName'] },
 };
-const SEARCH = { purchasing: PURCHASING_SEARCH, [DRAFT_SERVICE]: PURCHASING_SEARCH };
+const SEARCH = { purchasing: PURCHASING_SEARCH, [DRAFT_SERVICE]: PURCHASING_SEARCH, 'purchasing-vh': { CompanyCodes: { fields: ['CompanyCode', 'CompanyCodeName', 'City'] } } };
 
 /** Properties a PATCH may change, per entity set (others: 400). Sets not listed are read-only. */
 const PURCHASING_UPDATABLE = {
@@ -238,6 +251,10 @@ function resolveTarget(svc, resourcePath) {
     if (!set) {
       set = sets[name] ? name : undefined;
       if (!set) return undefined;
+      single = !!m[2];
+    } else if (sets[`${set}/${name}`]) {
+      // contained navigation (result set of a parameterized entity set)
+      set = `${set}/${name}`;
       single = !!m[2];
     } else if (sets[set].bindings[name]) {
       const nav = sets[set].type.navigationProperties.find((n) => n.name === name);
@@ -571,7 +588,7 @@ async function handle(req, res) {
       await reset();
       return sendJson(res, 200, { reset: true });
     }
-    const m = /^\/odata\/(northwind|purchasing|purchasing-draft)(\/.*)?$/.exec(url.pathname);
+    const m = /^\/odata\/(northwind|purchasing|purchasing-draft|purchasing-vh)(\/.*)?$/.exec(url.pathname);
     if (!m) return odataError(res, 404, 'NotFound', `No resource at ${url.pathname}`);
     const svc = m[1];
     const resource = m[2] ?? '/';

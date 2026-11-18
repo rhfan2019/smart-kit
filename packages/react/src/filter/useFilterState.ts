@@ -51,6 +51,11 @@ export interface FilterStateApi extends FilterSnapshot {
   activeCount: number;
   /** Set when "Go" was pressed with missing mandatory fields. */
   showRequiredErrors: boolean;
+  /**
+   * Set to false by the list report when its table cannot search (FE hides the basic search of the filter bar then:
+   * an AnalyticalTable without `search` in ApplySupported/Transformations).
+   */
+  searchable?: boolean;
   /** Defaults from the annotations (SelectionVariant, SelectionFields), i.e. the "Standard" variant. */
   defaults: Pick<FilterSnapshot, 'filters' | 'search' | 'fields'>;
 }
@@ -83,9 +88,11 @@ export function useFilterState(entitySet: string, o: UseFilterStateOptions = {})
       !ui.selectionFields.includes(p) && type.properties[p]?.filterDefaultValue !== undefined
       && ui.selectionVariant.every((c) => c.operator === 'EQ' && !c.exclude && c.values[0] === type.properties[c.path]?.filterDefaultValue);
     const conditionFields = Object.keys(filters).filter((p) => !fromDefaultValue(p) && !isHiddenFilter(p));
-    const fields = [...new Set([...ui.selectionFields, ...capabilities.requiredFilters, ...conditionFields])].filter((p) => isFilterable(capabilities, p));
+    // a parameterized entity set (Common.ResultContext): the parameters come first (FE FilterBar getFilterFields)
+    const parameters = meta.set.parameters?.properties ?? [];
+    const fields = [...new Set([...parameters, ...ui.selectionFields, ...capabilities.requiredFilters, ...conditionFields])].filter((p) => isFilterable(capabilities, p));
     return { filters: o.initial?.filters ?? filters, search: o.initial?.search ?? '', fields: o.initial?.fields ?? fields };
-  }, [ui, capabilities, type, o.initial, propOf]);
+  }, [ui, capabilities, type, o.initial, propOf, meta.set]);
 
   const [state, setState] = usePageState<FilterSnapshot & { showRequiredErrors: boolean }>(o.pageKey ? `${o.pageKey}:filters` : undefined, () => ({ ...defaults, applied: null, showRequiredErrors: false }));
 

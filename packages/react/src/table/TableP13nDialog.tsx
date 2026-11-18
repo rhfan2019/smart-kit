@@ -36,7 +36,8 @@ export function TableP13nDialog(p: TableP13nDialogProps) {
     if (!p.opened) return;
     setGroup(p.groupBy ?? null);
     setTotals(p.totals ?? []);
-    setOrder([...p.visible, ...p.columns.map((c) => c.id).filter((id) => !p.visible.includes(id))]);
+    // sap.m.p13n.SelectionPanel: the shown columns in their order, then the others alphabetically by label
+    setOrder([...p.visible, ...p.columns.filter((c) => !p.visible.includes(c.id)).sort((x, y) => x.label.localeCompare(y.label)).map((c) => c.id)]);
     setShown(p.visible);
     setSort(p.sort.filter((s) => p.sortable.some((x) => x.path === s.path)));
     // eslint-disable-next-line react-hooks/exhaustive-deps -- reset when opened
@@ -54,7 +55,7 @@ export function TableP13nDialog(p: TableP13nDialogProps) {
       <Tabs defaultValue="columns" keepMounted={false}>
         <Tabs.List>
           <Tabs.Tab value="columns">{t('p13n.columns')}</Tabs.Tab>
-          <Tabs.Tab value="sort">{t('p13n.sort')}</Tabs.Tab>
+          <Tabs.Tab value="sort" data-sk-p13n-sort-tab>{t('p13n.sort')}</Tabs.Tab>
           {p.groupable ? <Tabs.Tab value="group" data-sk-p13n-group-tab>{t('table.group')}</Tabs.Tab> : null}
           {p.totalable?.length ? <Tabs.Tab value="totals" data-sk-p13n-totals-tab>{t('p13n.totals')}</Tabs.Tab> : null}
         </Tabs.List>
@@ -73,7 +74,7 @@ export function TableP13nDialog(p: TableP13nDialogProps) {
           <Tabs.Panel value="group" className="sk-p13n__panel">
             <Select
               label={t('p13n.groupBy')} value={group ?? '$none'} allowDeselect={false} data-sk-p13n-group
-              data={[{ value: '$none', label: t('p13n.noGroup') }, ...p.groupable.map((g) => ({ value: g.id, label: g.label }))]}
+              data={[{ value: '$none', label: t('p13n.noGroup') }, ...[...p.groupable].sort((x, y) => x.label.localeCompare(y.label)).map((g) => ({ value: g.id, label: g.label }))]}
               onChange={(v) => setGroup(!v || v === '$none' ? null : v)}
             />
           </Tabs.Panel>
@@ -83,7 +84,7 @@ export function TableP13nDialog(p: TableP13nDialogProps) {
             <Stack gap="xs">
               {order.map((id, i) => (
                 <Group key={id} justify="space-between" wrap="nowrap" className="sk-p13n__row">
-                  <Checkbox label={label(id)} checked={shown.includes(id)} onChange={(e) => setShown(e.currentTarget.checked ? [...shown, id] : shown.filter((x) => x !== id))} />
+                  <Checkbox label={label(id)} data-sk-p13n-column={id} checked={shown.includes(id)} onChange={(e) => setShown(e.currentTarget.checked ? [...shown, id] : shown.filter((x) => x !== id))} />
                   <Group gap={0} wrap="nowrap">
                     <ActionIcon onClick={() => move(i, -1)} disabled={i === 0} aria-label={`${t('p13n.moveUp')}: ${label(id)}`}><ArrowUp className="sk-icon" /></ActionIcon>
                     <ActionIcon onClick={() => move(i, 1)} disabled={i === order.length - 1} aria-label={`${t('p13n.moveDown')}: ${label(id)}`}><ArrowDown className="sk-icon" /></ActionIcon>
@@ -99,10 +100,11 @@ export function TableP13nDialog(p: TableP13nDialogProps) {
               <Group key={i} wrap="nowrap" gap="xs">
                 <Select
                   aria-label={t('p13n.sortBy')}
+                  data-sk-p13n-sort-field
                   className="sk-grow"
                   value={s.path}
                   allowDeselect={false}
-                  data={p.sortable.map((x) => ({ value: x.path, label: x.label }))}
+                  data={[...p.sortable].sort((x, y) => x.label.localeCompare(y.label)).map((x) => ({ value: x.path, label: x.label }))}
                   onChange={(v) => v && setSort(sort.map((x, j) => (j === i ? { ...x, path: v } : x)))}
                 />
                 <Select
@@ -115,7 +117,7 @@ export function TableP13nDialog(p: TableP13nDialogProps) {
                 <ActionIcon onClick={() => setSort(sort.filter((_, j) => j !== i))} aria-label={t('p13n.removeSort')}><Trash2 className="sk-icon" /></ActionIcon>
               </Group>
             ))}
-            <Button variant="subtle" className="sk-self-start" leftSection={<Plus className="sk-icon" />} disabled={!p.sortable.length}
+            <Button variant="subtle" className="sk-self-start" leftSection={<Plus className="sk-icon" />} disabled={!p.sortable.length} data-sk-p13n-sort-add
               onClick={() => setSort([...sort, { path: p.sortable.find((x) => !sort.some((s) => s.path === x.path))?.path ?? p.sortable[0]!.path, descending: false }])}>
               {t('p13n.addSort')}
             </Button>

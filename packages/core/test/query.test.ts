@@ -120,7 +120,8 @@ describe('query generation (AC-DATA-01)', () => {
   it('Q-09 value help request with contains fallback when search is not supported', () => {
     const vl = model.entityTypes['Shop.Product']!.properties.CategoryID!.valueList!;
     const req = buildValueHelpRequest(model, vl, { search: 'pap' });
-    expect(toQueryString(model, req)).toBe("$select=ID,Name&$filter=(contains(ID,'pap') or contains(Name,'pap'))&$skip=0&$top=50".replace(/ /g, '%20').replace("$select", '$count=true&$select'));
+    // type-ahead: no $count (FE ValueListHelper getTableItemsParameters; only the dialog's table counts, stage 4 tail)
+    expect(toQueryString(model, req)).toBe("$select=ID,Name&$filter=(contains(ID,'pap') or contains(Name,'pap'))&$skip=0&$top=50".replace(/ /g, '%20'));
   });
 });
 

@@ -41,3 +41,15 @@ export function compile(path: string, query = '', o: { scope?: ScopeFunction<und
     : b.collection(planner.collection(target.set, opts, { key: target.key, parent: target.parent, single: target.single }));
   return q.compile(compileDb) as { sql: string; parameters: readonly unknown[] };
 }
+
+/** The SQL of each part of a $apply request (concat() branches, Planner.apply). */
+export function compileApply(path: string, query: string) {
+  const planner = new Planner<undefined>({ schema, maxPageSize: 1000, context: undefined, searchFields: { PurchaseOrders: ['PurchaseOrder', 'Description', '_Supplier/SupplierName'] } });
+  const target = planner.resolvePath(parseResourcePath(path.split('/')).segments);
+  const b = new SqlBuilder(schema, (s) => planner.scope(s));
+  return planner.apply(target.set, parseQueryOptions(query), target.parent).map((part) => ({
+    kind: part.kind,
+    ...(part.kind === 'count' ? { alias: part.alias } : {}),
+    ...(b[part.kind === 'count' ? 'countGroups' : 'aggregate'](part.plan).compile(compileDb) as { sql: string; parameters: readonly unknown[] }),
+  }));
+}

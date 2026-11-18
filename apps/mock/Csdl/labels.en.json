@@ -187,5 +187,13 @@
   "F.Score": "Score",
   "F.ResponseRate": "Response Rate",
   "F.ResponseCriticality": "Response Criticality",
-  "F.SpendAmount": "Spend"
+  "F.SpendAmount": "Spend",
+
+  "T.SpendParameters": "Supplier Spend Parameters",
+  "T.SupplierSpend": "Supplier Spend",
+  "T.SupplierSpends": "Supplier Spend",
+  "F.P_DisplayCurrency": "Display Currency",
+  "F.P_KeyDate": "Key Date",
+  "F.OrderCount": "Orders",
+  "F.DisplayCurrency": "Display Currency"
 }

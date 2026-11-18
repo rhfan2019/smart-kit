@@ -42,6 +42,13 @@ export interface ValueListModel {
   qualifier?: string;
   /** Common.ValueList/PresentationVariantQualifier: the PV of the value list entity whose SortOrder sorts the list. */
   presentationVariantQualifier?: string;
+  /**
+   * The Common.ValueListReferences entry (URL of a value help service's `$metadata`, relative to the data service's
+   * `$metadata`) this value list comes from, as a Common.ValueListMapping of that service: `collectionPath` and the
+   * parameters' value list properties belong to that service (SAPUI5 ODataMetaModel#requestValueListInfo `$model`).
+   * Absent for a Common.ValueList of the data service itself.
+   */
+  reference?: string;
 }
 
 export interface PropertyModel {
@@ -66,6 +73,14 @@ export interface PropertyModel {
    * when there is at most one.
    */
   valueLists?: ValueListModel[];
+  /**
+   * Common.ValueListReferences: URLs of value help services' `$metadata` (relative to this service's `$metadata`) whose
+   * Common.ValueListMapping annotations describe the value lists of the property. They are loaded on demand
+   * (`ValueListReferenceService`, `referencedValueLists`); `valueList` / `valueLists` hold only the local ones.
+   */
+  valueListReferences?: string[];
+  /** Common.ValueListWithFixedValues (also for value lists that come from Common.ValueListReferences). */
+  valueListFixedValues?: boolean;
   hidden: boolean;
   hiddenFilter: boolean;
   computed: boolean;
@@ -101,6 +116,8 @@ export interface PropertyModel {
   mandatory: boolean;
   /** Common.FieldControl is the constant ReadOnly (1). */
   readOnly: boolean;
+  /** A parameter of a parameterized entity set, resolvable on its result type (EntitySetModel.parameters). */
+  parameter?: boolean;
 }
 
 export interface NavigationModel {
@@ -567,6 +584,12 @@ export interface EntitySetModel {
   navigationCapabilities: Record<string, Partial<CapabilityModel>>;
   /** Common.DraftRoot / Common.DraftNode (ADR-018). */
   draft?: DraftModel;
+  /**
+   * Parameterized entity set (Common.ResultContext): this set ("P/Set") is the result set contained in the parameter set
+   * `entitySet` through `navigation`; `properties` are the parameters (the keys of the parameter type `typeName`), in
+   * order. Requests go to "P(p1=…,p2=…)/Set" with the parameters' conditions (`sourcePath`).
+   */
+  parameters?: { entitySet: string; navigation: string; typeName: string; properties: string[] };
 }
 
 export interface ModelWarning {

@@ -874,3 +874,17 @@ ADR-027 定的范围是"只实现 smart-kit 会发的请求"，用户也定过�
 **用户的决定**："后续的问题都按你的建议进行处理，不用询问我。"
 
 **据此**：对齐工作中原来要停下来问用户的事（推翻以前有意的设计、某项 UI5 / FE 功能做不到要登记为长期偏差），改为按推荐方案直接处理，在本记录里写明决定和理由（标"按建议，D44"），并在阶段总结里告诉用户。不包括对外或难以撤销的操作：推送、发布、建 PR、升 1.0 版、改 invoice-assure、动其他项目的数据库，仍要用户明确说。
+
+## D45 阶段 4 收尾：分析表单请求、引用的值帮助、参数化实体集、列和动作的 FE 核对（2026-11-18）
+
+**问题**：阶段 4 留下的三项（D43）：分析表用 FE 的单个 `$apply` 请求；`Common.ValueListReferences` / `ValueListMapping` 和 `Common.ResultContext` / SV 的 Parameters；阶段 4 新的列类型和动作只有单元测试，要用真 FE 核对。
+
+**做法**：三个子代理并行，各用一套端口，新增 FE 对比 23 个场景（`apply`、`vhref`、`colsfe`），共 60 个。新增测试服务 `/odata/purchasing-vh/`、参数化实体 `SpendParameters/Set`、FE 应用 `purchasing-params`、示例页 `/spend`。
+
+**结果**：
+1. **分析表（未分组）**：首页只发一个 `$apply`：`filter/search/concat(aggregate(合计), groupby((键 + 可见的可分组列 + 技术属性 + 文本), aggregate(…))/orderby/concat(aggregate($count as UI5__count), top(n)))`；`orderby` 只保留分组或聚合的属性（FE `getFilteredOrderby`）；后续页是普通请求；不可分组的列按行补读；工具栏动作的可用性在选中行时读。smart-kit-server 支持 `concat`、`orderby`、`skip`、`top`、`identity`（PostgreSQL 和 mock 结果一致）。首请求失败时表格显示错误、没有合计行（原来合计单独失败、行保留）——**按 FE 推翻旧设计（按建议，D44）**。分析表只在 `Transformations` 含 `search` 时显示搜索框（FE Table 转换器）。
+2. **引用的值帮助**：按 FE 加载值帮助服务的 `$metadata`，读 `ValueListMapping`，请求发到值帮助服务；新增可选的 `DataProvider.valueListService`。值帮助对话框的键列显示"文字 (代码)"，文字参数不单独成列；类型提示不带 `$count`；手输值按"键 eq v 或 文字 eq v"校验。
+3. **参数化实体集**：参数是筛选栏最前面的必填字段，请求路径 `/P(…)/Set`，SV 的 Parameters 和参数上的 FilterDefaultValue 作默认值。
+4. **列和动作**：9 个 FE 场景核对。真 FE 对常量 `UI.Criticality` 的行**不高亮**（枚举名交给 `TableFormatter.rowHighlighting`，值不合法），smart-kit 跟着改（源码读起来是错误 / 成功，实测为准）；删除确认分单复数；工具栏放得下时不溢出；日期时间带秒（medium）；个性化的列、排序、分组选项按 FE 的属性列表。`/contacts` 页头"重新挂载"不存在（是测试自己打开了两次页面）。
+
+**偏差登记**：删掉 DV-FE-apply、DV-FE-requestPurch。这两条是 `fe:*`，原来顺带放过了四个与分析表无关的差异（页签计数 `/$count`、切换视图时 FE 发两次请求、图表 `filter()` 的括号、`$apply` 里的页大小），现在单独登记。新登记：分组的分析表按 FE 的可折叠层级（阶段 5）、编辑态的引用值帮助和参数化集的对象页（阶段 6）、启动台的用户默认值（D42，长期）。`fe-behavior` 13 → 20：不是倒退，多出的 4 条原来被宽泛的条目遮住，3 条是新功能的剩余部分。

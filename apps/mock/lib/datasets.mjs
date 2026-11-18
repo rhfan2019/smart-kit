@@ -3,11 +3,13 @@ import { generateDraftData } from './draft.mjs';
 import { checkFilterValue } from './filter.mjs';
 import { generateNorthwind } from './northwind.mjs';
 import { generatePurchasing } from './purchasing.mjs';
+import { generateValueHelp } from './spend.mjs';
 
 const generators = {
   purchasing: generatePurchasing,
   northwind: generateNorthwind,
   'purchasing-draft': () => generateDraftData(pristineOf('purchasing')),
+  'purchasing-vh': generateValueHelp, // stage 4 tail: value help service (Common.ValueListReferences)
 };
 const pristine = {};
 

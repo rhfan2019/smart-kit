@@ -41,7 +41,7 @@
 
 **表格列**
 - `DataFieldForAnnotation` 指向 FieldGroup、ConnectedFields、Contact，以及 `DataFieldWithIntentBasedNavigation`、`DataFieldWithAction`：smart-kit 整列丢掉，FE 显示；反过来 FE 不当列显示的 `DataFieldWithActionGroup`，smart-kit 显示成普通列。**阶段 4 已按 FE**（Contact 弹出框只显示第一个电话和邮件，其余阶段 6；`DataFieldWithIntentBasedNavigation` 的链接目标按 D42 由宿主的 `NavigationAdapter` 给出）。
-- 不读 `HTML5.CssDefaults/width`（列宽）、LineItem 上的 `UI.Criticality`（行高亮）；`DataFieldWithNavigationPath` 只显示文本，不是链接；个性化不能加 LineItem 以外的属性。**阶段 4 已按 FE**（行高亮的常量 VeryNegative / VeryPositive 还和 FE 不同，见 `02` 第 7.3 节）。
+- 不读 `HTML5.CssDefaults/width`（列宽）、LineItem 上的 `UI.Criticality`（行高亮）；`DataFieldWithNavigationPath` 只显示文本，不是链接；个性化不能加 LineItem 以外的属性。**阶段 4 已按 FE**；阶段 4 收尾用真 FE 核对：行高亮的常量（Negative、VeryNegative、VeryPositive 等）真 FE 不高亮，smart-kit 跟着改（`02` 第 7.3 节）；个性化的列、排序、分组候选也按 FE 的属性列表。
 - LineItem 的选定：FE 只在 SPV / PV 的 `Visualizations` 含 LineItem 或 Chart 时才用它，否则逐级回退；Chart 排第一时默认显示图表。smart-kit 都没做。**阶段 4 已按 FE**（manifest 指定默认 SPV 在阶段 5）。
 
 **动作**
@@ -53,7 +53,7 @@
 **筛选栏和值帮助**
 - `FilterExpressionRestrictions`：同一属性多条记录时没取最严格的；各表达式允许的运算符和 FE 不同；`SingleValue` 的日期字段没有单值相对日期。**阶段 4 已按 FE。**
 - `HiddenFilter`、`Hidden` 字段有 SV 默认条件时被显示出来（FE 保持隐藏，条件照样生效）。**阶段 4 已按 FE。更正**：FE 只对 `HiddenFilter` 的条件照样生效，`UI.Hidden` 属性的默认条件被丢掉、不发。
-- 未实现：`Capabilities.FilterFunctions`（`tolower`，不区分大小写）、带限定符的 ValueList 和 `ValueListRelevantQualifiers`、`ValueListReferences`、`Common.ResultContext`（参数化实体集）和 SV 的 Parameters、FROM / TO / N 周 / N 月等日期运算符。**阶段 4**：`FilterFunctions`、带限定符的 ValueList、`ValueListRelevantQualifiers`（不含 `$If` 表达式）和日期运算符已按 FE；`ValueListReferences` / `ValueListMapping`、`ResultContext` 和 SV 的 Parameters 留给阶段 4 收尾。
+- 未实现：`Capabilities.FilterFunctions`（`tolower`，不区分大小写）、带限定符的 ValueList 和 `ValueListRelevantQualifiers`、`ValueListReferences`、`Common.ResultContext`（参数化实体集）和 SV 的 Parameters、FROM / TO / N 周 / N 月等日期运算符。**阶段 4**：`FilterFunctions`、带限定符的 ValueList、`ValueListRelevantQualifiers`（不含 `$If` 表达式）和日期运算符已按 FE；**阶段 4 收尾**：`ValueListReferences` / `ValueListMapping`（筛选栏）、`ResultContext` 和 SV 的 Parameters（列表页）已按 FE；编辑态的引用值帮助和参数化实体集的对象页、图表等在阶段 6，启动台的用户默认值长期不做（D42）。
 - 值帮助的描述列应取值帮助主键属性上的 `Common.Text`，现在取第一个 DisplayOnly 参数。**阶段 4 已按 FE。**
 - 筛选令牌：遇到 `TextSeparate` FE 只显示代码，smart-kit 改成了 TextFirst。**阶段 4 已按 FE**；表格里 TextSeparate 的文本也不再请求（同 FE）。
 
@@ -66,15 +66,15 @@
 **视图、图表、聚合**
 - 图表：除 Bar 以外都画成柱状图（FE 映射约 40 种）；不用 PV 的 SortOrder；不支持 DynamicMeasures、AggregatedProperty；标题不用 `Chart.Title`；没有 `Chart.Actions`。**阶段 4**：照 FE 映射 38 种类型，其中 dual、combination、scatter、bubble、heatmap、treemap、waterfall、bullet 是近似画法；PV SortOrder、DynamicMeasures、AggregatedProperty、`Chart.Title` 已按 FE；`Chart.Actions` 只做了 DataFieldForAction。
 - 多视图的来源：FE 由 manifest 指定视图（SPV、PV 或 SV，可以带自己的实体集，引用 Chart 的视图是单独的图表视图）；smart-kit 自动收集所有带限定符的 SPV，每个视图都是"表格 + 可切换的图表"。视图没有排序时 smart-kit 回退到默认 PV 的排序；视图的 RequestAtLeast 不生效。**阶段 4**：图表视图、视图自己的排序和 RequestAtLeast 已按 FE；由属性指定视图（SPV、PV、SV）、页签计数用 `/$count`、页签结构留给阶段 5。
-- 自动判断：ApplySupported 支持全部 8 种转换时 FE 自动用分析表格，有成对的 RecursiveHierarchy 时自动用树表；树表的初始展开取 PV 的 `InitialExpansionLevel`；没有 `Total` 时默认合计所有可聚合列。smart-kit 都要手工设。**阶段 4**：分析表、树表的自动判断和初始展开已按 FE（默认合计阶段 3 已按 FE，D39）；都不满足时 smart-kit 仍默认网格表，FE 默认 ResponsiveTable，留给阶段 5；分析表的请求形状（FE 用一个 `$apply` 的 `concat` 同时取明细和合计）留给阶段 4 收尾。
+- 自动判断：ApplySupported 支持全部 8 种转换时 FE 自动用分析表格，有成对的 RecursiveHierarchy 时自动用树表；树表的初始展开取 PV 的 `InitialExpansionLevel`；没有 `Total` 时默认合计所有可聚合列。smart-kit 都要手工设。**阶段 4**：分析表、树表的自动判断和初始展开已按 FE（默认合计阶段 3 已按 FE，D39）；都不满足时 smart-kit 仍默认网格表，FE 默认 ResponsiveTable，留给阶段 5；**阶段 4 收尾**：未分组的分析表已按 FE 用一个 `$apply` 的 `concat` 同时取行、合计和条数，分组的分析表（FE 是可折叠的层级）留给阶段 5。
 - `UI.KPI`（列表页标题区的 KPI 标签）没实现；列表里没有 `Common.SideEffects`。**阶段 4**：KPI 标签已按 FE（`keyPerformanceIndicators` 属性，名字阶段 5 按 manifest 定；点标签弹出的图表卡片没做）；SideEffects 在 FE 列表页只随批量编辑和内联编辑触发，smart-kit 列表页两者都没有，留给阶段 6。
 
 **阶段 4 之后还剩的**（详见 `02` 第 7.4 节）
-- 阶段 4 收尾：分析表的单个 `$apply`（`concat`）请求；`ValueListReferences` / `ValueListMapping`；`ResultContext` 和 SV 的 Parameters；新列类型和新动作用真 FE 核对（目前只有单元测试）。
-- 阶段 5：页签计数用 `/$count`、页签结构；FE 默认的 ResponsiveTable 和 NewPage 新建方式；`keyPerformanceIndicators` 定名。
-- 阶段 6：SideEffects；对象页请求不再选 ETag 属性。
+- 阶段 4 收尾（D45）已完成：分析表的单个 `$apply`（`concat`）请求（未分组）；`ValueListReferences` / `ValueListMapping`；`ResultContext` 和 SV 的 Parameters；新列类型和新动作用真 FE 核对。剩下的已登记（DV-apply-005～010、DV-vhref-001～004），列在下面。
+- 阶段 5：分组的分析表按 FE 的可折叠层级读；页签计数用 `/$count`、页签结构；FE 默认的 ResponsiveTable 和 NewPage 新建方式；`keyPerformanceIndicators` 定名。
+- 阶段 6：SideEffects；对象页请求不再选 ETag 属性；编辑态的引用值帮助；参数化实体集的对象页、图表、树表和分析表。
 - 近似画法的图表类型（dual、combination、scatter、bubble、heatmap、treemap、waterfall、bullet），还没排。
-- D42：smart-kit 不依赖 SAP 和 Fiori 启动台；语义对象链接通过 `NavigationAdapter` 由宿主给目标，没有目标时 IBN 列只显示值。
+- D42：smart-kit 不依赖 SAP 和 Fiori 启动台；语义对象链接通过 `NavigationAdapter` 由宿主给目标，没有目标时 IBN 列只显示值；参数化实体集的参数不取启动台的用户默认值（DV-vhref-004）。
 
 ## 6. smart-kit 多做或做得不同的（要决定保留还是去掉）
 

@@ -4,9 +4,11 @@ import { resolveEntityPath, type EntityPath } from '../query/entityPath';
 import { keyPredicate } from '../query/entityPath';
 import { readQueryString, sourceInfo, sourcePath, toQueryString, type QueryRequest, type QueryResult, type QuerySource, type ReadRequest, type Row } from '../query/request';
 import { messagesFromHeader } from './messages';
+import { ANALYTICAL_COUNT_ALIAS } from '../query/analytical';
 import { buildModel, type BuildModelOptions } from '../model/buildModel';
 import { errorFromResponse } from './errors';
 import type { DataProvider, FetchLike, RequestOptions, WriteResult } from './provider';
+import { readValueListService, resolveValueListReference, serviceRootOf, type ValueListService } from '../model/valueListReferences';
 
 export interface ODataV4ProviderOptions {
   /** Service root, ending with "/". */
@@ -28,6 +30,9 @@ function join(root: string, rel: string): string {
 export class ODataV4Provider implements DataProvider {
   constructor(private readonly o: ODataV4ProviderOptions) {}
 
+  /** Value help services of Common.ValueListReferences by `$metadata` URL (SAPUI5 `mSharedModelByUrl`). */
+  private readonly valueListServices = new Map<string, Promise<ValueListService>>();
+
   private headers(extra: Record<string, string> = {}): Record<string, string> {
     const lang = this.o.getLanguage?.();
     return { Accept: ACCEPT, ...(lang ? { 'Accept-Language': lang } : {}), ...(this.o.headers?.() ?? {}), ...extra };
@@ -36,7 +41,7 @@ export class ODataV4Provider implements DataProvider {
   /** Builds the full URL of a list request (exposed for diagnostics and tests). */
   queryUrl(req: QueryRequest): string {
     const qs = toQueryString(this.o.model, req);
-    return join(this.o.serviceUrl, sourcePath(this.o.model, req.source)) + (qs ? `?${qs}` : '');
+    return join(this.o.serviceUrl, sourcePath(this.o.model, req.source, req.filters)) + (qs ? `?${qs}` : '');
   }
 
   readUrl(path: EntityPath, req: ReadRequest): string {
@@ -48,6 +53,14 @@ export class ODataV4Provider implements DataProvider {
     const res = await this.o.fetch(this.queryUrl(req), { headers: this.headers(), signal: opts.signal });
     if (!res.ok) throw await errorFromResponse(res);
     const body = JSON.parse(await res.text()) as { value?: Row[]; '@odata.count'?: number | string };
+    if (req.analytical) {
+      // concat(): the grand total row first, then the row with the number of leaves, then the leaves (AL-10)
+      const rows = [...(body.value ?? [])];
+      const grandTotal = req.analytical.grandTotal.length ? rows.shift() : undefined;
+      const countRow = req.count ? rows.shift() : undefined;
+      const n = countRow?.[ANALYTICAL_COUNT_ALIAS];
+      return { rows, count: n === undefined || n === null ? undefined : Number(n), ...(grandTotal ? { grandTotal } : {}) };
+    }
     const count = body['@odata.count'];
     return { rows: body.value ?? [], count: count === undefined ? undefined : Number(count) };
   }
@@ -97,6 +110,27 @@ export class ODataV4Provider implements DataProvider {
     const url = opts.path ? join(this.o.serviceUrl, `${resolveEntityPath(this.o.model, opts.path).canonical}/${action}`) : join(this.o.serviceUrl, action.split('.').pop()!);
     const r = await this.write('POST', url, opts.parameters ?? {}, opts);
     return { row: r.row, messages: r.messages };
+  }
+
+  /**
+   * The value help service of a Common.ValueListReferences entry: `$metadata` resolved against this service's
+   * `$metadata` URL and read with the same headers and language; its data is read by an ODataV4Provider of its own.
+   */
+  valueListService(reference: string): Promise<ValueListService> {
+    const metadataUrl = resolveValueListReference(this.o.serviceUrl, reference);
+    let loaded = this.valueListServices.get(metadataUrl);
+    if (!loaded) {
+      loaded = (async () => {
+        const lang = this.o.getLanguage?.();
+        const res = await this.o.fetch(metadataUrl, { headers: { Accept: 'application/xml', ...(lang ? { 'Accept-Language': lang } : {}), ...(this.o.headers?.() ?? {}) } });
+        if (!res.ok) throw await errorFromResponse(res);
+        const metadata = await res.text();
+        return readValueListService(reference, metadataUrl, metadata, (model) => new ODataV4Provider({ ...this.o, serviceUrl: serviceRootOf(metadataUrl), model }));
+      })();
+      loaded.catch(() => this.valueListServices.delete(metadataUrl));
+      this.valueListServices.set(metadataUrl, loaded);
+    }
+    return loaded;
   }
 
   /** Generic JSON request against the service (used by the variant store). */

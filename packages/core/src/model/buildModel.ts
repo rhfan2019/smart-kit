@@ -176,6 +176,40 @@ export function fromConverted(c: ConvertedMetadata, diagnostics: string[] = []):
   }
   if (draftEnabled) warn('DRAFT', 'The service is draft-enabled: editing uses the draft strategy (ADR-018).', undefined, 'info');
 
+  // Parameterized entity sets (stage 4 tail): an entity set whose type has Common.ResultContext holds the parameters
+  // as its keys and contains the results (ContainsTarget navigation, usually "Set"). FE's list report runs on the
+  // contained set (contextPath "/P/Set", sap.fe.core TypeGuards `isParameterizedEntitySet`, MetaModelConverter): the
+  // parameters are filter fields first, mandatory and single-valued (FilterBar definition getFilterFields, FilterRestrictions
+  // getFilterRestriction "SingleValue"), and the request path is "P(p1=…,p2=…)/Set" (FilterUtils getBindingPathForParameters).
+  // smart-kit models the contained set as an entity set "P/Set" of the result type; the parameter properties are
+  // resolvable on the result type (filter fields, conditions) without being part of it (not in propertyOrder).
+  for (const es of Object.values(entitySets)) {
+    const paramType = raw[es.typeName];
+    const resultContext = paramType?.annotations?.Common?.ResultContext;
+    if (resultContext === undefined || resultContext?.valueOf?.() === false) continue;
+    const params = entityTypes[es.typeName]!.propertyOrder;
+    for (const nav of ((paramType.navigationProperties ?? []) as Any[]).filter((n) => n.containsTarget)) {
+      const resultTypeName: string = nav.targetTypeName ?? nav.targetType?.fullyQualifiedName;
+      const resultType = entityTypes[resultTypeName];
+      if (!resultType) continue;
+      const name = `${es.name}/${nav.name}`;
+      const filterExpressions: Record<string, FilterExpression> = { ...es.capabilities.filterExpressions };
+      for (const p of params) filterExpressions[p] = 'SingleValue';
+      entitySets[name] = {
+        name,
+        typeName: resultTypeName,
+        navigationBindings: {},
+        // the contained set has no capability annotations of its own: FE falls back to the parameter set's (checkOnPath)
+        capabilities: { ...es.capabilities, requiredFilters: [...new Set([...params, ...es.capabilities.requiredFilters])], filterExpressions },
+        navigationCapabilities: {},
+        parameters: { entitySet: es.name, navigation: nav.name, typeName: es.typeName, properties: params },
+      };
+      for (const p of params) {
+        if (!resultType.properties[p]) resultType.properties[p] = { ...entityTypes[es.typeName]!.properties[p]!, isKey: false, parameter: true };
+      }
+    }
+  }
+
   // value list descriptions: the Common.Text of the key property in the value list entity (FE ValueListHelper _enrichPath)
   for (const type of Object.values(entityTypes)) {
     for (const prop of Object.values(type.properties)) {
@@ -190,6 +224,15 @@ export function fromConverted(c: ConvertedMetadata, diagnostics: string[] = []):
   const ui: Record<string, EntityUi> = {};
   const ctx: UiContext = { entityTypes, raw, warn };
   for (const fullName of Object.keys(entityTypes)) ui[fullName] = buildUi(fullName, ctx);
+  // Common.FilterDefaultValue of the parameters (FE FilterHelper: read on the parameter entity set as well)
+  for (const es of Object.values(entitySets)) {
+    if (!es.parameters) continue;
+    const sv = ui[es.typeName]!.selectionVariant;
+    for (const p of es.parameters.properties) {
+      const v = entityTypes[es.parameters.typeName]!.properties[p]?.filterDefaultValue;
+      if (v !== undefined && !sv.some((c) => c.path === p)) sv.push({ path: p, exclude: false, operator: 'EQ', values: [v] });
+    }
+  }
 
   const namespace = (c as Any).namespace ?? Object.keys(entityTypes)[0]?.split('.').slice(0, -1).join('.') ?? '';
   return { version: MODEL_VERSION, namespace, entitySets, entityTypes, ui, draftEnabled, warnings };
@@ -301,6 +344,7 @@ function buildProperty(p: Any, keys: string[], et: Any): PropertyModel {
     unit: valueRef(unit),
     isCurrency: currency !== undefined,
     ...buildValueLists(p, common),
+    ...valueListReferencesOf(common),
     // UI.Criticality on a property is not read: the vocabulary applies it to annotations (the LineItem row highlight)
     // and Fiori elements ignores it on properties (D41).
     hidden: bool(ui.Hidden, false) || (common.FieldControl !== undefined && enumName(common.FieldControl) === 'Hidden'),
@@ -346,6 +390,28 @@ function buildValueLists(p: Any, common: Any): { valueList?: ValueListModel; val
   const lists = relevant?.length ? all.filter((v) => relevant.includes(v.qualifier ?? '')) : all;
   if (!lists.length) return {};
   return lists.length > 1 ? { valueList: lists[0], valueLists: lists } : { valueList: lists[0] };
+}
+
+/** Common.ValueListReferences (and qualified variants), in annotation order: URLs of value help services' $metadata. */
+function valueListReferencesOf(common: Any): { valueListReferences?: string[]; valueListFixedValues?: boolean } {
+  const urls: string[] = [];
+  for (const [key, value] of Object.entries((common ?? {}) as Any)) {
+    if (key.split('#')[0] !== 'ValueListReferences' || !Array.isArray(value)) continue;
+    for (const v of value as unknown[]) {
+      const url = str(v);
+      if (url) urls.push(url);
+    }
+  }
+  if (!urls.length) return {};
+  return bool(common.ValueListWithFixedValues, false) ? { valueListReferences: urls, valueListFixedValues: true } : { valueListReferences: urls };
+}
+
+/**
+ * A value list from a Common.ValueList or Common.ValueListMapping record (in the converter's form) for the property
+ * `propertyName`; `fixedValues` is the property's Common.ValueListWithFixedValues.
+ */
+export function valueListFromRecord(propertyName: string, record: unknown, fixedValues: boolean): ValueListModel | undefined {
+  return buildValueList({ name: propertyName }, record as Any, { ValueListWithFixedValues: fixedValues });
 }
 
 function buildValueList(p: Any, vl: Any, common: Any): ValueListModel | undefined {
@@ -999,6 +1065,15 @@ function selectionVariantFrom(sv: Any | undefined): InitialCondition[] {
       } else if (!RANGE_OPTIONS.has(option)) continue;
       out.push({ path, exclude: sign === 'E', operator, values });
     }
+  }
+  // UI.SelectionVariant/Parameters: one "EQ" condition per parameter, replacing select options of the same name
+  // (FE FilterHelper getFiltersConditionsFromSelectionVariant, `isParameter`)
+  for (const par of (sv?.Parameters ?? []) as Any[]) {
+    const path = pathOf(par.PropertyName);
+    const value = primitive(par.PropertyValue);
+    if (!path || value === undefined) continue;
+    for (let i = out.length - 1; i >= 0; i--) if (out[i]!.path === path) out.splice(i, 1);
+    out.push({ path, exclude: false, operator: 'EQ', values: [value] });
   }
   return out;
 }

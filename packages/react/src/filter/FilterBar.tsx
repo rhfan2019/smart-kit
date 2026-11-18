@@ -191,7 +191,7 @@ function SearchPart() {
   const { p, search } = useBar();
   const t = useText();
   const { capabilities } = useMetaModel(p.state.entitySet, { service: p.state.service });
-  if (!capabilities.searchable) return null;
+  if (!capabilities.searchable || p.state.searchable === false) return null;
   return (
     <div className="sk-filterbar__search" data-sk-filter="$search">
     <TextInput

@@ -253,6 +253,26 @@
         </NavigationProperty>
       </EntityType>
 
+      <!-- stage 4 tail (tests/e2e-fe/vhref.spec.ts): parameterized entity set as SAP CDS views with parameters expose it.
+           SpendParameters (keys = the parameters, Common.ResultContext) contains the result set "Set"; requests go to
+           SpendParameters(P_DisplayCurrency='EUR',P_KeyDate=2026-11-14)/Set. -->
+      <EntityType Name="SpendParameters">
+        <Key><PropertyRef Name="P_DisplayCurrency"/><PropertyRef Name="P_KeyDate"/></Key>
+        <Property Name="P_DisplayCurrency" Type="Edm.String" Nullable="false" MaxLength="3"/>
+        <Property Name="P_KeyDate" Type="Edm.Date" Nullable="false"/>
+        <NavigationProperty Name="Set" Type="Collection(Purchasing.SupplierSpend)" ContainsTarget="true"/>
+      </EntityType>
+      <EntityType Name="SupplierSpend">
+        <Key><PropertyRef Name="Supplier"/></Key>
+        <Property Name="Supplier" Type="Edm.String" Nullable="false" MaxLength="10"/>
+        <Property Name="SupplierName" Type="Edm.String" Nullable="false" MaxLength="80"/>
+        <Property Name="Country" Type="Edm.String" Nullable="false" MaxLength="3"/>
+        <Property Name="OrderCount" Type="Edm.Int32" Nullable="false"/>
+        <Property Name="SpendAmount" Type="Edm.Decimal" Nullable="false" Precision="15" Scale="2"/>
+        <Property Name="DisplayCurrency" Type="Edm.String" Nullable="false" MaxLength="3"/>
+      </EntityType>
+      <!-- end of stage 4 tail types -->
+
       <!-- =========================================================== bound actions (ADR-024) -->
       <Action Name="approve" IsBound="true">
         <Parameter Name="_it" Type="Purchasing.PurchaseOrder" Nullable="false"/>
@@ -304,6 +324,8 @@
         <EntitySet Name="SupplierContacts" EntityType="Purchasing.SupplierContact">
           <NavigationPropertyBinding Path="_Supplier" Target="Suppliers"/>
         </EntitySet>
+        <!-- stage 4 tail: parameterized entity set (results contained in "Set") -->
+        <EntitySet Name="SpendParameters" EntityType="Purchasing.SpendParameters"/>
       </EntityContainer>
 
       <!-- =========================================================== entity set capabilities -->
@@ -2306,6 +2328,87 @@
         <Annotation Term="Common.Label" String="{{label:F.Unit}}"/>
       </Annotations>
       <!-- =========================================================== end of stage 4 value display -->
+      <!-- =========================================================== stage 4 tail: parameterized entity set (tests/e2e-fe/vhref.spec.ts)
+           Common.ResultContext on the parameter type; the list report's contextPath is /SpendParameters/Set. -->
+      <Annotations Target="Purchasing.SpendParameters">
+        <Annotation Term="Common.ResultContext"/>
+        <Annotation Term="Common.Label" String="{{label:T.SpendParameters}}"/>
+      </Annotations>
+      <Annotations Target="Purchasing.SpendParameters/P_DisplayCurrency">
+        <Annotation Term="Common.Label" String="{{label:F.P_DisplayCurrency}}"/>
+      </Annotations>
+      <Annotations Target="Purchasing.SpendParameters/P_KeyDate">
+        <Annotation Term="Common.Label" String="{{label:F.P_KeyDate}}"/>
+      </Annotations>
+      <Annotations Target="Purchasing.SupplierSpend">
+        <Annotation Term="UI.HeaderInfo">
+          <Record Type="UI.HeaderInfoType">
+            <PropertyValue Property="TypeName" String="{{label:T.SupplierSpend}}"/>
+            <PropertyValue Property="TypeNamePlural" String="{{label:T.SupplierSpends}}"/>
+            <PropertyValue Property="Title"><Record Type="UI.DataField"><PropertyValue Property="Value" Path="SupplierName"/></Record></PropertyValue>
+          </Record>
+        </Annotation>
+        <Annotation Term="UI.SelectionFields">
+          <Collection><PropertyPath>Supplier</PropertyPath><PropertyPath>Country</PropertyPath></Collection>
+        </Annotation>
+        <Annotation Term="UI.SelectionVariant">
+          <Record Type="UI.SelectionVariantType">
+            <PropertyValue Property="Parameters">
+              <Collection>
+                <Record Type="UI.Parameter">
+                  <PropertyValue Property="PropertyName" PropertyPath="P_DisplayCurrency"/>
+                  <PropertyValue Property="PropertyValue" String="EUR"/>
+                </Record>
+                <Record Type="UI.Parameter">
+                  <PropertyValue Property="PropertyName" PropertyPath="P_KeyDate"/>
+                  <PropertyValue Property="PropertyValue" String="2026-11-14"/>
+                </Record>
+              </Collection>
+            </PropertyValue>
+          </Record>
+        </Annotation>
+        <Annotation Term="UI.PresentationVariant">
+          <Record Type="UI.PresentationVariantType">
+            <PropertyValue Property="SortOrder">
+              <Collection>
+                <Record Type="Common.SortOrderType"><PropertyValue Property="Property" PropertyPath="SpendAmount"/><PropertyValue Property="Descending" Bool="true"/></Record>
+              </Collection>
+            </PropertyValue>
+            <PropertyValue Property="Visualizations"><Collection><AnnotationPath>@UI.LineItem</AnnotationPath></Collection></PropertyValue>
+          </Record>
+        </Annotation>
+        <Annotation Term="UI.LineItem">
+          <Collection>
+            <Record Type="UI.DataField"><PropertyValue Property="Value" Path="Supplier"/></Record>
+            <Record Type="UI.DataField"><PropertyValue Property="Value" Path="Country"/></Record>
+            <Record Type="UI.DataField"><PropertyValue Property="Value" Path="OrderCount"/></Record>
+            <Record Type="UI.DataField"><PropertyValue Property="Value" Path="SpendAmount"/></Record>
+          </Collection>
+        </Annotation>
+      </Annotations>
+      <Annotations Target="Purchasing.SupplierSpend/Supplier">
+        <Annotation Term="Common.Label" String="{{label:F.Supplier}}"/>
+        <Annotation Term="Common.Text" Path="SupplierName">
+          <Annotation Term="UI.TextArrangement" EnumMember="UI.TextArrangementType/TextFirst"/>
+        </Annotation>
+      </Annotations>
+      <Annotations Target="Purchasing.SupplierSpend/SupplierName">
+        <Annotation Term="Common.Label" String="{{label:F.SupplierName}}"/>
+      </Annotations>
+      <Annotations Target="Purchasing.SupplierSpend/Country">
+        <Annotation Term="Common.Label" String="{{label:F.Country}}"/>
+      </Annotations>
+      <Annotations Target="Purchasing.SupplierSpend/OrderCount">
+        <Annotation Term="Common.Label" String="{{label:F.OrderCount}}"/>
+      </Annotations>
+      <Annotations Target="Purchasing.SupplierSpend/SpendAmount">
+        <Annotation Term="Common.Label" String="{{label:F.SpendAmount}}"/>
+        <Annotation Term="Measures.ISOCurrency" Path="DisplayCurrency"/>
+      </Annotations>
+      <Annotations Target="Purchasing.SupplierSpend/DisplayCurrency">
+        <Annotation Term="Common.Label" String="{{label:F.DisplayCurrency}}"/>
+      </Annotations>
+      <!-- =========================================================== end of stage 4 tail: parameterized entity set -->
     </Schema>
   </edmx:DataServices>
 </edmx:Edmx>

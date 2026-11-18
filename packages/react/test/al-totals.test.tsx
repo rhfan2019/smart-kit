@@ -71,7 +71,8 @@ describe('AL-11 D39 totals only in the analytical table (FE updateTableVisualiza
     const model = buildModel(xml(CUSTOM));
     const { urls, wrap } = setup(model);
     render(wrap(<Table service="t" contextPath="/Sales" type="AnalyticalTable" rowCountMode="Fixed" enableExport={false} />));
-    await waitFor(() => expect(applies(urls)).toEqual(['$apply=aggregate(Amount,Currency,Cost)']));
+    // AL-10: the grand total is read with the rows and the count in one $apply (FE _AggregationHelper buildApply)
+    await waitFor(() => expect(applies(urls)).toEqual(['$apply=concat(aggregate(Amount,Currency,Cost),groupby((ID,Region),aggregate(Amount,Currency,Cost))/concat(aggregate($count as UI5__count),top(10)))']));
     await waitFor(() => expect(document.querySelector('[data-sk-total="Amount"]')).not.toBeNull());
     expect(document.querySelector('[data-sk-total="Cost"]')?.textContent).toContain('7');
   });
@@ -104,7 +105,9 @@ describe('AL-11 D39 totals only in the analytical table (FE updateTableVisualiza
     render(wrap(<Table service="t" contextPath="/Sales" type="AnalyticalTable" rowCountMode="Fixed" enableExport={false} />));
     await waitFor(() => expect(urls.length).toBeGreaterThan(0));
     await settle();
-    expect(applies(urls)).toEqual([]);
+    // the rows still come from $apply (AL-10), without a grand total
+    expect(applies(urls)).toEqual(['$apply=groupby((ID,Region),aggregate(Amount,Currency,Cost))/concat(aggregate($count as UI5__count),top(10))']);
+    expect(document.querySelector('[data-sk-total]')).toBeNull();
   });
 
   it('AL-11 D39 analytical table with PresentationVariant/Total totals only the listed custom aggregates', async () => {
@@ -112,7 +115,7 @@ describe('AL-11 D39 totals only in the analytical table (FE updateTableVisualiza
       <PropertyValue Property="Visualizations"><Collection><AnnotationPath>@UI.LineItem</AnnotationPath></Collection></PropertyValue></Record></Annotation>`));
     const { urls, wrap } = setup(model);
     render(wrap(<Table service="t" contextPath="/Sales" type="AnalyticalTable" rowCountMode="Fixed" enableExport={false} />));
-    await waitFor(() => expect(applies(urls)).toEqual(['$apply=aggregate(Amount,Currency)']));
+    await waitFor(() => expect(applies(urls)).toEqual(['$apply=concat(aggregate(Amount,Currency),groupby((ID,Region),aggregate(Amount,Currency,Cost))/concat(aggregate($count as UI5__count),top(10)))']));
   });
 
   it('AL-11 D39 no custom aggregate: no totals, even for numeric aggregatable properties (no "with sum" fallback)', async () => {
@@ -121,7 +124,8 @@ describe('AL-11 D39 totals only in the analytical table (FE updateTableVisualiza
     render(wrap(<Table service="t" contextPath="/Sales" type="AnalyticalTable" rowCountMode="Fixed" enableExport={false} />));
     await waitFor(() => expect(urls.length).toBeGreaterThan(0));
     await settle();
-    expect(applies(urls)).toEqual([]);
+    // no aggregate: the rows are grouped by everything they show (AL-10), no grand total
+    expect(applies(urls)).toEqual(['$apply=groupby((Amount,Cost,Currency,ID,Region))/concat(aggregate($count as UI5__count),top(10))']);
     expect(document.querySelector('[data-sk-total]')).toBeNull();
   });
 

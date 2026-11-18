@@ -308,7 +308,10 @@ function ListReportInner(props: SmartListReportProps) {
     },
     ...(p.filterExtend ?? []),
   ] : p.filterExtend), [draft, p.filterExtend, t]);
-  const barState = viewPaths.size ? { ...filter, fields: filter.fields.filter((f) => !viewPaths.has(f)) } : filter;
+  // FE: the basic search follows the main table; an AnalyticalTable searches only with the `search` transformation
+  const aggregation = model.entitySets[p.entitySet]?.capabilities.aggregation;
+  const noSearch = tableType === 'AnalyticalTable' && Boolean(aggregation) && !aggregation!.transformations.includes('search');
+  const barState = viewPaths.size || noSearch ? { ...filter, fields: viewPaths.size ? filter.fields.filter((f) => !viewPaths.has(f)) : filter.fields, ...(noSearch ? { searchable: false } : {}) } : filter;
 
   const queryFor = (entitySet: string, v?: ViewModel) => {
     if (filter.applied === null) return { query: null, ignored: [] as string[] };

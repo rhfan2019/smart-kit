@@ -5,6 +5,19 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+### Changed — behaviour (SAPUI5 alignment, stage 4 tail, D45)
+
+- Analytical table: one Fiori elements style `$apply` with `concat` for the first page, grand total and count; sorting only by grouped or aggregated properties; non-groupable columns read per row; basic search only with the `search` transformation; a failing first request shows the table error and no totals row.
+- smart-kit-server: `$apply` supports `concat`, `orderby`, `skip`, `top` and `identity`.
+- Value helps from `Common.ValueListReferences` / `ValueListMapping` (optional `DataProvider.valueListService`); parameterized entity sets (`Common.ResultContext`, SelectionVariant Parameters) in the list report.
+- As real FE 1.154 (checked in 60 FE comparison scenarios): no row highlight for a constant `UI.Criticality`; date-times with seconds; FE's personalization property lists; toolbar overflow only when needed; singular delete confirmation texts; typeahead requests without `$count`.
+
+### Changed — behaviour (SAPUI5 alignment, stage 4 tail: analytical table requests)
+
+- The analytical table (`type="AnalyticalTable"`, not grouped) reads as Fiori elements 1.154 does: the first page, the grand total and the count in one `$apply` (`concat(aggregate(…),groupby((keys, groupable columns),aggregate(…))/orderby(…)/concat(aggregate($count as UI5__count),top(n)))`); following pages are plain list requests; properties the first page does not deliver are read per rendered row; `$orderby` keeps only grouped and aggregated properties; the `OperationAvailable` of toolbar actions is read when a row is selected. A failing first request fails rows and totals together.
+- smart-kit-core: `buildAnalyticalRequests`, `ANALYTICAL_COUNT_ALIAS`; `QueryRequest.analytical`, `QueryResult.grandTotal`; `MemoryProvider` answers analytical requests.
+- smart-kit-server: `$apply` transformations `concat`, `orderby`, `skip`, `top`, `identity` and `aggregate($count as …)` after `groupby`.
+
 ### Changed — behaviour (SAPUI5 alignment, stage 4, D43)
 
 - List report columns and actions follow Fiori elements 1.154 (checked by `npm run e2e:fe`, 37 scenarios): one column per inline action, disabled when unavailable; data point, field group, connected fields and contact columns; row highlight from `UI.LineItem@UI.Criticality` (D41); toolbar order, action groups, copy action, `CreateHidden` / `DeleteHidden`, per-row `Deletable`, `Common.IsActionCritical`.

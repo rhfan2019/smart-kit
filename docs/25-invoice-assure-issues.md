@@ -171,3 +171,13 @@ smart-kit 按铁律（ADR-033）改名、改属性、改行为时不保留旧名
 | 4 | 不设 `type` 的表格 | 按注解自动选：`ApplySupported` 齐全 → AnalyticalTable；成对的 `RecursiveHierarchy` → TreeTable，默认展开 `InitialExpansionLevel` + 1 层 | 行为（FE 默认 ResponsiveTable 的问题在阶段 5 定） |
 | 4 | `UI.KPI` | 列表页标题旁的 KPI 标签（`v4/fe/macros/KPITag`）；模板新属性 `keyPerformanceIndicators`（阶段 5 按 manifest 改名） | 新增 |
 | 4 | core 新导出 | `strictestExpression`、`ALLOWED_EXPRESSIONS_PRIORITY`、`relativeDateValueTypes`、`COUNT_DATE_OPERATORS`、`FIXED_DAY_OPERATORS`、`MDC_DATE_OPERATORS`、`setDefaultWeekStart`、`formatDateTimeWithTimezone`、`formatTimezone`；`PropertyModel.valueLists`、`capabilities.caseInsensitive`、`QueryRequest.caseInsensitive` 等（见 `packages/core/docs/reference.md`） | 新增 |
+| 4 收尾 | 分析表的请求（未分组） | 一个 FE 形状的 `$apply`（`concat`）同时取首页行、合计和条数；排序只对分组或聚合的属性生效（默认的日期排序不再发出）；不可分组的列在行显示后逐行补读（先空一下）；工具栏动作的可用性在选中行时才读；首请求失败时表格显示错误，没有合计行 | **自己的服务要支持 `$apply` 的 `concat`、`orderby`、`top`、`skip`、`identity`**（smart-kit-server 已支持） |
+| 4 收尾 | 分析表的搜索框 | 只在 `Aggregation.ApplySupported/Transformations` 含 `search` 时显示 | 行为 |
+| 4 收尾 | `Common.ValueListReferences` | 筛选栏的值帮助从引用的值帮助服务加载 `$metadata` 和数据 | 新增；自己的 `DataProvider` 可实现可选的 `valueListService` |
+| 4 收尾 | 值帮助的请求和显示 | 对话框的键列显示"文字 (代码)"，文字参数不单独成列；类型提示和固定值请求不带 `$count`；手输值按 `键 eq v or 文字 eq v`、`$top=2` 校验 | 行为 |
+| 4 收尾 | 参数化实体集（`Common.ResultContext`） | `SmartListReport entitySet="P/Set"`：参数是最前面的必填字段，请求 `/P(…)/Set`；任何 SelectionVariant 的 Parameters 都成为条件 | 新增；`sourcePath` 多一个参数 |
+| 4 收尾 | 常量 `UI.Criticality` 的行高亮 | 不高亮（真 FE 如此）；路径值照旧 | 行为 |
+| 4 收尾 | 日期时间 | 显示到秒（medium） | 行为 |
+| 4 收尾 | 表格个性化 | 列面板先显示中的列，再按字母序；排序和响应式表的分组选项是全部可排序属性（不含 NonSortable 和只显示文本的属性，另有文本和 criticality 属性） | 行为：例如按"Status Name"分组 |
+| 4 收尾 | 工具栏和删除确认 | 动作放得下时不进"更多"；删除确认分单复数 | 行为 |
+| 4 收尾 | core 新导出 | `buildAnalyticalRequests`、`ANALYTICAL_COUNT_ALIAS`、`readValueListService`、`referencedValueLists`、`resolveValueListReference`、`serviceRootOf`；`QueryRequest.analytical` / `anyOfOnly`、`QueryResult.grandTotal`、`EntitySetModel.parameters`、`PropertyModel.valueListReferences` 等 | 新增 |

@@ -2,6 +2,7 @@
 import type { EntityPath } from '../query/entityPath';
 import type { QueryRequest, QueryResult, QuerySource, ReadRequest, Row } from '../query/request';
 import type { Message } from './messages';
+import type { ValueListService } from '../model/valueListReferences';
 
 export interface RequestOptions {
   signal?: AbortSignal;
@@ -11,6 +12,13 @@ export interface RequestOptions {
 export interface ReadDataProvider {
   query(req: QueryRequest, opts?: RequestOptions): Promise<QueryResult>;
   read(path: EntityPath, req: ReadRequest, opts?: RequestOptions): Promise<Row>;
+  /**
+   * Loads the value help service of a Common.ValueListReferences entry (`reference`: URL of its `$metadata`, relative to
+   * this service's `$metadata`): its model, its Common.ValueListMapping annotations and a provider for its data
+   * (SAPUI5 ODataMetaModel `getOrCreateSharedModel`). Loaded once per URL. Providers without it have no referenced
+   * value lists.
+   */
+  valueListService?(reference: string, opts?: RequestOptions): Promise<ValueListService>;
 }
 
 export interface WriteResult {

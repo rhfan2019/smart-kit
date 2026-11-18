@@ -76,8 +76,8 @@ async function snapshot(browser: Browser, side: Side, fe: string, sk: string, ex
       if (fe === 'purchasing' || fe === 'purchasing-draft') await openFe(page, fe);
       else await openFeApp(page, fe);
     } else {
-      // the requests of the first load: openSk expands a collapsed header (14 columns fill the page), and expanding it
-      // mounts the list again (a second load, not a difference in what is requested)
+      // the requests of the first load: openSk below loads the page a second time (page.goto) before it expands the
+      // collapsed header; expanding the header itself requests nothing (colsfe.spec.ts cols5-contacts-expand-header)
       await page.goto(`${DEMO}${sk}?lang=en`);
       await expect(page.locator('[data-sk-table] .ag-row[row-index="0"] [col-id]').first()).toBeVisible({ timeout: 60_000 });
     }

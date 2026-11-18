@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { escapeLike, ODataServerError } from '../src/index';
-import { compile } from './fixture';
+import { compile, compileApply } from './fixture';
 
 const rejects = (fn: () => unknown, status: number, code?: string) => {
   try {
@@ -132,6 +132,30 @@ describe('SQL: OData semantics', () => {
     const u = compile('PurchaseOrders', '$apply=aggregate(NetAmount,Currency)');
     expect(u.sql).toContain('case when count(distinct "t0"."currency") = 1 then min("t0"."currency") end');
     rejects(() => compile('PurchaseOrders', '$apply=aggregate(NetAmount,Status)'), 400, 'InvalidApply');
+  });
+
+  it('AL-10 answers the analytical table in one $apply: grand total, number of groups and the page of groups (concat)', () => {
+    const parts = compileApply('PurchaseOrders', "$apply=filter(CompanyCode eq '1000')/concat(aggregate(NetAmount,Currency),groupby((PurchaseOrder,Status),aggregate(NetAmount,Currency))/orderby(Status desc)/concat(aggregate($count as UI5__count),skip(10)/top(5)))");
+    expect(parts.map((p) => p.kind)).toEqual(['rows', 'count', 'rows']);
+    // every branch continues the filter before concat()
+    for (const p of parts) expect(p.sql).toMatch(/"t\d+"\."company_code" = \$1::text/);
+    expect(parts[0]!.sql).not.toContain('group by');
+    expect(parts[1]).toMatchObject({ alias: 'UI5__count' });
+    expect(parts[1]!.sql).toMatch(/^select count\(\*\)::text as "count" from \(select .* group by .*\) as "t\d+"$/);
+    expect(parts[1]!.sql).not.toMatch(/limit|order by/);
+    expect(parts[2]!.sql).toMatch(/order by "t\d+"\."status" desc, "t\d+"\."purchase_order" asc/);
+    expect(parts[2]!.sql).toMatch(/limit \$2\s+offset \$3$/);
+    expect(parts[2]!.parameters.slice(1)).toEqual([5, 10]);
+    // without concat: orderby(), skip(), top() are the follow-up page of FE (and $count still works)
+    const follow = compileApply('PurchaseOrders', '$apply=groupby((PurchaseOrder),aggregate(NetAmount,Currency))/orderby(NetAmount desc)/skip(100)/top(50)&$count=true');
+    expect(follow).toHaveLength(1);
+    expect(follow[0]!.sql).toMatch(/order by sum\("t0"\."net_amount"\) desc/);
+    expect(follow[0]!.sql).toMatch(/limit \$1\s+offset \$2$/);
+    expect(follow[0]!.parameters).toEqual([50, 100]);
+    rejects(() => compileApply('PurchaseOrders', '$apply=concat(aggregate(NetAmount),groupby((Status)))&$top=3'), 501);
+    rejects(() => compileApply('PurchaseOrders', '$apply=concat(aggregate(NetAmount),groupby((Status)))/top(3)'), 501);
+    rejects(() => compileApply('PurchaseOrders', '$apply=groupby((Status))/aggregate(NetAmount)'), 501);
+    rejects(() => compileApply('PurchaseOrders', '$apply=groupby((Status))/orderby(NetAmount)'), 400, 'InvalidOrderBy');
   });
 
   it('restricts child collections and single navigations to the parent in the path', () => {

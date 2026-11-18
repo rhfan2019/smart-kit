@@ -86,6 +86,9 @@ export interface CollectionPlan {
   parent?: ParentLink;
 }
 
+/** One part of a $apply response (`Planner.apply`): the groups of a plan, or their number under `alias`. */
+export type ApplyPart = { kind: 'rows'; plan: AggregatePlan } | { kind: 'count'; plan: AggregatePlan; alias: string };
+
 export interface AggregatePlan {
   set: EntitySetInfo;
   where: BoundExpr[];
@@ -579,14 +582,60 @@ export class Planner<C> {
 
   // ---------------------------------------------------------------- $apply
 
+  /**
+   * The parts of a $apply request, one after the other in the response: `concat(A,B)` is A's rows followed by B's,
+   * each branch continuing the steps before concat() (OData Data Aggregation §3.3.2). A part is the groups of a
+   * groupby() / aggregate() (`rows`), or the number of those groups (`count`, from a trailing
+   * `aggregate($count as alias)`). System query options ($orderby, $skip, $top, $count) apply to a request without
+   * concat() only.
+   */
+  apply(set: EntitySetInfo, o: QueryOptions, parent?: ParentLink): ApplyPart[] {
+    const steps = o.apply as ApplyStep[];
+    if (!steps.some((s) => s.kind === 'concat')) return [this.part(set, steps, o, parent)];
+    if (o.orderBy || o.skip !== undefined || o.top !== undefined || o.count) throw notImplemented('$apply with concat() cannot be combined with $orderby, $skip, $top or $count in this service; use the transformations orderby(), skip(), top() and aggregate($count as …).');
+    const linear = (before: ApplyStep[], rest: ApplyStep[]): ApplyStep[][] => {
+      const i = rest.findIndex((s) => s.kind === 'concat');
+      if (i < 0) return [[...before, ...rest]];
+      if (i < rest.length - 1) throw notImplemented('$apply: transformations after concat() are not supported.');
+      const head = [...before, ...rest.slice(0, i)];
+      return (rest[i] as Extract<ApplyStep, { kind: 'concat' }>).branches.flatMap((b) => linear(head, b));
+    };
+    return linear([], steps).map((l) => this.part(set, l, {}, parent));
+  }
+
+  /** One concat-free sequence of $apply steps: filter/search, then groupby() or aggregate(), then orderby/skip/top. */
+  private part(set: EntitySetInfo, steps: ApplyStep[], o: QueryOptions, parent?: ParentLink): ApplyPart {
+    const last = steps[steps.length - 1];
+    // `…/groupby(…)/aggregate($count as alias)`: the number of groups
+    const groupedBefore = steps.slice(0, -1).some((s) => s.kind === 'groupby' || s.kind === 'aggregate');
+    if (last?.kind === 'aggregate' && groupedBefore) {
+      if (last.aggregates.length !== 1 || last.aggregates[0]!.method !== 'count') throw notImplemented('$apply: after groupby() only aggregate($count as <alias>) is supported.');
+      if (steps.some((s) => s.kind === 'skip' || s.kind === 'top')) throw notImplemented('$apply: aggregate($count as …) after skip() or top() is not supported.');
+      const plan = this.aggregate(set, { apply: steps.slice(0, -1) }, parent);
+      return { kind: 'count', plan: { ...plan, orderBy: [], skip: 0, top: undefined }, alias: last.aggregates[0]!.alias };
+    }
+    return { kind: 'rows', plan: this.aggregate(set, { ...o, apply: steps }, parent) };
+  }
+
   aggregate(set: EntitySetInfo, o: QueryOptions, parent?: ParentLink): AggregatePlan {
     const steps = o.apply as ApplyStep[];
     if (o.filter || o.search || o.select || o.expand) throw notImplemented('$apply cannot be combined with $filter, $search, $select or $expand in this service; put filters into filter() of $apply.');
     const caps = this.capsFor(set, parent);
     const where: BoundExpr[] = [...this.scope(set)];
     let grouped: { paths: string[][]; aggregates: AggregateItem[] } | undefined;
+    // orderby(), skip() and top() after the grouping (as the system query options, which they replace here)
+    let orderItems = o.orderBy;
+    let skip = o.skip;
+    let top = o.top;
     for (const step of steps) {
-      if (grouped) throw notImplemented('$apply: transformations after groupby() or aggregate() are not supported.');
+      if (grouped) {
+        if (step.kind === 'identity') continue;
+        if (step.kind === 'orderby' && orderItems === undefined && skip === undefined && top === undefined) orderItems = step.items;
+        else if (step.kind === 'skip' && skip === undefined && top === undefined) skip = step.count;
+        else if (step.kind === 'top' && top === undefined) top = step.count;
+        else throw notImplemented(`$apply: '${step.kind}' after groupby() or aggregate() is not supported here.`);
+        continue;
+      }
       if (step.kind === 'filter') {
         this.checkFilterCapabilities(set, step.expr, caps);
         where.push(this.condition(set, step.expr, '$apply filter'));
@@ -594,7 +643,9 @@ export class Planner<C> {
         this.checkSearch(set, caps);
         where.push({ kind: 'search', expr: step.expr, fields: this.searchFields(set) });
       } else if (step.kind === 'groupby') grouped = step;
-      else grouped = { paths: [], aggregates: step.aggregates };
+      else if (step.kind === 'aggregate') grouped = { paths: [], aggregates: step.aggregates };
+      else if (step.kind === 'identity') continue;
+      else throw notImplemented(`$apply: '${step.kind}' before groupby() or aggregate() is not supported.`);
     }
     if (!grouped) throw notImplemented('$apply without groupby() or aggregate() is not supported.');
     const groupBy = grouped.paths.map((path) => ({ ref: this.resolve(set, path, '$apply groupby'), path }));
@@ -607,7 +658,7 @@ export class Planner<C> {
       return this.aggregateOf(set, a.path, a.method!, a.alias);
     });
     const orderBy: AggregatePlan['orderBy'] = [];
-    for (const item of o.orderBy ?? []) {
+    for (const item of orderItems ?? []) {
       const p = item.path.join('/');
       const gi = groupBy.findIndex((g) => g.path.join('/') === p);
       const ai = aggregates.findIndex((a) => a.alias === p);
@@ -618,7 +669,7 @@ export class Planner<C> {
     for (const [i] of groupBy.entries()) if (!orderBy.some((x) => x.target.kind === 'group' && x.target.index === i)) orderBy.push({ target: { kind: 'group', index: i }, descending: false });
     const max = this.o.maxPageSize;
     if (o.count && !caps.countable) throw badRequest('CountNotSupported', `Entity set '${set.name}' is not countable (Capabilities.CountRestrictions/Countable is false).`);
-    return { set, where, groupBy, aggregates, orderBy, skip: o.skip ?? 0, top: Math.min(o.top ?? max, max), count: !!o.count, parent };
+    return { set, where, groupBy, aggregates, orderBy, skip: skip ?? 0, top: Math.min(top ?? max, max), count: !!o.count, parent };
   }
 
   private aggregateOf(set: EntitySetInfo, path: string[], method: AggregateMethod, alias: string): AggregatePlan['aggregates'][number] {

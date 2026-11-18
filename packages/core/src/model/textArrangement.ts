@@ -1,6 +1,6 @@
 /** UI.TextArrangement (ANN-13): how a code and its text are shown together. */
 import { resolvePath } from './buildModel';
-import type { MetaModel, PropertyModel, TextArrangement } from './types';
+import type { MetaModel, PropertyModel, TextArrangement, ValueListModel } from './types';
 
 /**
  * The display of a code with its text: TextFirst (default) "Text (Code)", TextLast "Code (Text)", TextOnly "Text",
@@ -20,11 +20,13 @@ export function arrangeText(code: string, text: string | undefined, arrangement:
 /**
  * Text arrangement for the values of a property's value list: the property's own (Common.Text@UI.TextArrangement or
  * the entity type's UI.TextArrangement), else the one of the value list's key property; undefined when neither says.
+ * `valueList` (default: the property's own) is read in `model`, the value help service's model for a referenced one.
  */
-export function valueListTextArrangement(model: MetaModel, prop: PropertyModel | undefined): TextArrangement | undefined {
+export function valueListTextArrangement(model: MetaModel, prop: PropertyModel | undefined, valueList?: ValueListModel): TextArrangement | undefined {
   if (!prop) return undefined;
   if (prop.textArrangement) return prop.textArrangement;
-  const vl = prop.valueList;
+  // a value list of a value help service (Common.ValueListReferences): `model` is that service's model
+  const vl = valueList ?? prop.valueList;
   const typeName = vl ? model.entitySets[vl.collectionPath]?.typeName : undefined;
   return typeName ? resolvePath(model.entityTypes, typeName, vl!.keyProperty).property?.textArrangement : undefined;
 }

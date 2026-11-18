@@ -138,6 +138,20 @@ describe('query options', () => {
     fails(() => parseQueryOptions('$apply=groupby((A),aggregate(B with median as M))'), 501);
   });
 
+  it('AL-10 reads the $apply of the analytical table: concat(), orderby(), skip(), top(), identity (FE _AggregationHelper.buildApply)', () => {
+    const o = parseQueryOptions("$apply=filter(CompanyCode eq '1000')/concat(aggregate(NetAmount,Currency),groupby((PurchaseOrder,Status),aggregate(NetAmount,Currency))/orderby(Status desc,PurchaseOrder)/concat(aggregate($count as UI5__count),skip(10)/top(5)))");
+    expect(o.apply?.map((s) => s.kind)).toEqual(['filter', 'concat']);
+    const concat = o.apply![1] as Extract<NonNullable<typeof o.apply>[number], { kind: 'concat' }>;
+    expect(concat.branches[0]).toEqual([{ kind: 'aggregate', aggregates: [{ path: ['NetAmount'], alias: 'NetAmount', custom: true }, { path: ['Currency'], alias: 'Currency', custom: true }] }]);
+    expect(concat.branches[1]!.map((s) => s.kind)).toEqual(['groupby', 'orderby', 'concat']);
+    expect(concat.branches[1]![1]).toEqual({ kind: 'orderby', items: [{ path: ['Status'], descending: true }, { path: ['PurchaseOrder'], descending: false }] });
+    const inner = concat.branches[1]![2] as typeof concat;
+    expect(inner.branches).toEqual([[{ kind: 'aggregate', aggregates: [{ path: [], method: 'count', alias: 'UI5__count' }] }], [{ kind: 'skip', count: 10 }, { kind: 'top', count: 5 }]]);
+    expect(parseQueryOptions('$apply=groupby((Status))/concat(aggregate($count as N),identity)').apply![1]).toEqual({ kind: 'concat', branches: [[{ kind: 'aggregate', aggregates: [{ path: [], method: 'count', alias: 'N' }] }], [{ kind: 'identity' }]] });
+    fails(() => parseQueryOptions('$apply=concat(aggregate(NetAmount))'), 400);
+    fails(() => parseQueryOptions('$apply=groupby((Status))/top(x)'), 400);
+  });
+
   it('rejects what it does not support or understand', () => {
     fails(() => parseQueryOptions('$top=-1'), 400);
     fails(() => parseQueryOptions('$top=1&$top=2'), 400);

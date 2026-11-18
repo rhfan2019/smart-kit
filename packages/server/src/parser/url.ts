@@ -87,10 +87,22 @@ function parseExpand(text: string): ExpandItem[] {
 }
 
 function parseApply(text: string): ApplyStep[] {
-  return splitTopLevel(text, '/').map((step) => {
+  return splitTopLevel(text, '/').map((step): ApplyStep => {
     const { name, inner } = nameAndArgs(step.trim());
+    if (name === 'identity' && inner === undefined) return { kind: 'identity' };
     if (inner === undefined) throw badRequest('InvalidApply', `$apply: "${step}" is not a transformation.`);
     switch (name) {
+      case 'orderby':
+        return { kind: 'orderby', items: parseOrderBy(inner, '$apply orderby') };
+      case 'skip':
+        return { kind: 'skip', count: nonNegativeInt(inner, '$apply skip') };
+      case 'top':
+        return { kind: 'top', count: nonNegativeInt(inner, '$apply top') };
+      case 'concat': {
+        const branches = splitTopLevel(inner, ',').map((b) => parseApply(b));
+        if (branches.length < 2) throw badRequest('InvalidApply', '$apply: concat() needs at least two transformation sequences.');
+        return { kind: 'concat', branches };
+      }
       case 'filter':
         return { kind: 'filter', expr: parseFilter(inner, '$apply filter') };
       case 'search': {

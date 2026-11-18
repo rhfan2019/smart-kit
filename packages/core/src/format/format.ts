@@ -51,11 +51,12 @@ export function formatDate(value: unknown, locale: string): string {
   return new Intl.DateTimeFormat(locale, { dateStyle: 'medium', timeZone: 'UTC' }).format(new Date(Date.UTC(y, m - 1, d)));
 }
 
+/** Edm.DateTimeOffset: date and time in the medium style, with seconds (sap.ui.model.odata.type.DateTimeOffset default). */
 export function formatDateTime(value: unknown, locale: string, timeZone?: string): string {
   if (value === null || value === undefined || value === '') return '';
   const d = new Date(String(value));
   if (Number.isNaN(d.getTime())) return String(value);
-  return new Intl.DateTimeFormat(locale, { dateStyle: 'medium', timeStyle: 'short', ...(timeZone ? { timeZone } : {}) }).format(d);
+  return new Intl.DateTimeFormat(locale, { dateStyle: 'medium', timeStyle: 'medium', ...(timeZone ? { timeZone } : {}) }).format(d);
 }
 
 /**

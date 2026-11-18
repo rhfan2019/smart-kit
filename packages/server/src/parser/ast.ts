@@ -48,12 +48,22 @@ export interface ExpandItem {
  */
 export type AggregateMethod = 'sum' | 'min' | 'max' | 'average' | 'countdistinct' | 'count' | 'unit';
 
-/** One step of $apply (OData Data Aggregation). Only the steps smart-kit sends (ADR-021). */
+/**
+ * One step of $apply (OData Data Aggregation). Only the steps smart-kit and Fiori elements send (ADR-021): the
+ * analytical table reads its rows, grand total and count in one request (sap.ui.model.odata.v4.lib._AggregationHelper
+ * buildApply): `concat(aggregate(…),groupby((…),aggregate(…))/orderby(…)/concat(aggregate($count as UI5__count),top(n)))`.
+ */
 export type ApplyStep =
   | { kind: 'filter'; expr: Expr }
   | { kind: 'search'; expr: SearchExpr }
   | { kind: 'groupby'; paths: string[][]; aggregates: AggregateItem[] }
-  | { kind: 'aggregate'; aggregates: AggregateItem[] };
+  | { kind: 'aggregate'; aggregates: AggregateItem[] }
+  | { kind: 'orderby'; items: OrderByItem[] }
+  | { kind: 'skip'; count: number }
+  | { kind: 'top'; count: number }
+  | { kind: 'identity' }
+  /** The results of the branches one after the other; each branch continues the steps before concat(). */
+  | { kind: 'concat'; branches: ApplyStep[][] };
 
 export interface AggregateItem {
   path: string[];

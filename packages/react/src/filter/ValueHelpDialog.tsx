@@ -1,17 +1,17 @@
 /** Value help dialog: "Search and Select" from the value list and "Define Conditions" (include / exclude) (LR-11). */
 import { ActionIcon, Button, Checkbox, Group, Modal, Pill, ScrollArea, SegmentedControl, Select, Stack, Table, Tabs, Text, TextInput } from '@mantine/core';
 import {
-  filterExpressionRules, getProperty, isComplete, isRelativeDateOperator, OPERATOR_ARITY, OPERATORS, relativeDateValueTypes, resolvePath, restrictConditions, valueListTextArrangement,
+  arrangeText, filterExpressionRules, getProperty, isComplete, isRelativeDateOperator, OPERATOR_ARITY, OPERATORS, relativeDateValueTypes, resolvePath, restrictConditions, valueListTextArrangement,
   type Condition, type FilterExpressionRules, type Operator, type PropertyModel,
 } from '@rhfan2019/smart-kit-core';
 import { Plus, Search, Trash2 } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useService, useSmartKit } from '../context/SmartKitProvider';
 import { useFilterText } from './filterText';
 import { getPath } from '../field/values';
 import { optionText } from '../controls/dialogs/dateOptions';
 import { conditionText, digitSequenceValue, sameCondition } from './conditionText';
-import { useValueList } from './useValueList';
+import { useValueList, useValueListSource, useValueLists } from './useValueList';
 import { propagateOut, useValueHelpSource } from './valueHelpSource';
 
 export interface ValueHelpDialogProps {
@@ -56,10 +56,13 @@ export function ValueHelpDialog(p: ValueHelpDialogProps) {
   const { intlLocale, timeZone } = useSmartKit();
   const typeName = service.model.entitySets[p.entitySet]!.typeName;
   const prop = getProperty(service.model, typeName, p.path);
-  // qualified Common.ValueList#Q (limited by Common.ValueListRelevantQualifiers): the dialog switches between them
-  const lists = prop?.valueLists ?? (prop?.valueList ? [prop.valueList] : []);
+  // qualified Common.ValueList#Q (limited by Common.ValueListRelevantQualifiers): the dialog switches between them;
+  // Common.ValueListReferences: the mappings of the value help services (loaded when the dialog opens)
+  const lists = useValueLists(p.entitySet, p.path, p.service, p.opened).valueLists;
   const [which, setWhich] = useState(0);
   const vl = lists[which] ?? lists[0];
+  // the model of the value list entity: the value help service's for a referenced value list
+  const vlModel = useValueListSource(vl, p.service)?.model;
   // Capabilities.FilterExpressionRestrictions (P2-LR-19): allowed operators, exclusions and number of conditions.
   const expression = service.model.entitySets[p.entitySet]!.capabilities.filterExpressions[p.path];
   const rules = filterExpressionRules(expression, prop?.edmType);
@@ -69,6 +72,12 @@ export function ValueHelpDialog(p: ValueHelpDialogProps) {
   const [search, setSearch] = useState('');
   const [top, setTop] = useState(PAGE);
   const [tab, setTab] = useState<string | null>(canSelect ? 'select' : 'conditions');
+  // a value list of Common.ValueListReferences becomes known once its value help service is loaded: then the dialog
+  // opens on "Search and Select" unless the user already chose a tab
+  const tabChosen = useRef(false);
+  useEffect(() => {
+    if (p.opened && canSelect && !tabChosen.current) setTab('select');
+  }, [p.opened, canSelect]);
 
   useEffect(() => {
     if (p.opened) {
@@ -79,6 +88,7 @@ export function ValueHelpDialog(p: ValueHelpDialogProps) {
       setPicked({});
       setWhich(0);
       setTab(canSelect ? 'select' : 'conditions');
+      tabChosen.current = false;
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- reset only when (re)opened
   }, [p.opened]);
@@ -87,12 +97,28 @@ export function ValueHelpDialog(p: ValueHelpDialogProps) {
   const source = useValueHelpSource();
   const [picked, setPicked] = useState<Record<string, Record<string, unknown>>>({});
   const list = useValueList(vl, { search, top, enabled: p.opened && Boolean(vl), filters: source?.filters, purpose: 'dialog' }, p.service);
-  const vlType = vl ? service.model.entitySets[vl.collectionPath]?.typeName : undefined;
-  const columns = useMemo(
-    // the parameters except Constant ones and properties hidden in the value list entity (FE getColumnVisibility)
-    () => (vl ? vl.parameters.filter((x) => x.kind !== 'Constant' && !(vlType && resolvePath(service.model.entityTypes, vlType, x.valueListProperty).property?.hidden)).map((x) => ({ path: x.valueListProperty, label: (vlType && getProperty(service.model, vlType, x.valueListProperty)?.label) || x.valueListProperty })) : []),
-    [vl, vlType, service.model],
-  );
+  const vlType = vl && vlModel ? vlModel.entitySets[vl.collectionPath]?.typeName : undefined;
+  const columns = useMemo(() => {
+    if (!vl || !vlModel) return [];
+    const propOf = (path: string) => (vlType ? resolvePath(vlModel.entityTypes, vlType, path).property : undefined);
+    // the parameters except Constant ones and properties hidden in the value list entity (FE getColumnVisibility);
+    // a parameter that is the Common.Text of another shown parameter is not a column of its own when that one shows
+    // its text (FE getColumnVisibilityInfo: keyColumnDisplayFormat from Common.Text@UI.TextArrangement, not "Value")
+    const shown = vl.parameters.filter((x) => x.kind !== 'Constant' && !propOf(x.valueListProperty)?.hidden);
+    const textOf = (path: string) => {
+      const pr = propOf(path);
+      if (!pr?.text || !pr.textArrangement || pr.textArrangement === 'TextSeparate') return undefined;
+      return path.includes('/') ? `${path.slice(0, path.lastIndexOf('/'))}/${pr.text}` : pr.text;
+    };
+    const texts = new Map(shown.map((x) => [x.valueListProperty, textOf(x.valueListProperty)] as const));
+    const folded = new Set([...texts.values()].filter((t) => t !== undefined && shown.some((x) => x.valueListProperty === t)));
+    return shown.filter((x) => !folded.has(x.valueListProperty)).map((x) => {
+      const pr = propOf(x.valueListProperty);
+      const text = texts.get(x.valueListProperty);
+      // the key column shows its text as arranged (FE keyColumnDisplayFormat), when the row has it
+      return { path: x.valueListProperty, label: pr?.label || x.valueListProperty, text, arrangement: pr?.textArrangement };
+    });
+  }, [vl, vlType, vlModel]);
   const keyOf = (row: Record<string, unknown>) => String(getPath(row, vl!.keyProperty) ?? '');
   const isSelected = (key: string) => selected.some((c) => c.operator === 'EQ' && !c.exclude && String(c.values[0]) === key);
   const toggle = (row: Record<string, unknown>) => {
@@ -109,12 +135,12 @@ export function ValueHelpDialog(p: ValueHelpDialogProps) {
   const updateCondition = (i: number, next: Condition) => setSelected(selected.map((c, j) => (j === i ? next : c)));
   // the operators FE offers for the field (type and FilterExpressionRestrictions); DATE / DATERANGE are EQ / BT here
   const ops = [...VALUE_ORDER.filter((o) => rules.operators.includes(o) || rules.excludeOperators.includes(o)), ...rules.operators.filter((o) => isRelativeDateOperator(o) && o !== 'DATE' && o !== 'DATERANGE')];
-  const arrangement = valueListTextArrangement(service.model, prop);
+  const arrangement = valueListTextArrangement(vlModel ?? service.model, prop, vl);
   const count = list.data?.count;
 
   return (
     <Modal opened={p.opened} onClose={p.onCancel} title={p.title} size="xl" classNames={{ body: 'sk-vh' }}>
-      <Tabs value={tab} onChange={setTab} keepMounted={false}>
+      <Tabs value={tab} onChange={(v) => { tabChosen.current = true; setTab(v); }} keepMounted={false}>
         <Tabs.List>
           {canSelect ? <Tabs.Tab value="select">{t('vh.searchAndSelect')}</Tabs.Tab> : null}
           <Tabs.Tab value="conditions">{t('vh.defineConditions')}</Tabs.Tab>
@@ -150,7 +176,11 @@ export function ValueHelpDialog(p: ValueHelpDialogProps) {
                     return (
                       <Table.Tr key={key} onClick={() => toggle(row)} className="sk-clickable" aria-selected={isSelected(key)}>
                         <Table.Td><Checkbox checked={isSelected(key)} onChange={() => toggle(row)} onClick={(e) => e.stopPropagation()} aria-label={key} /></Table.Td>
-                        {columns.map((c, i) => <Table.Td key={`${c.path}-${i}`}>{String(getPath(row, c.path) ?? '')}</Table.Td>)}
+                        {columns.map((c, i) => {
+                          const value = String(getPath(row, c.path) ?? '');
+                          const text = c.text ? getPath(row, c.text) : undefined;
+                          return <Table.Td key={`${c.path}-${i}`}>{c.text ? arrangeText(value, text === undefined || text === null ? undefined : String(text), c.arrangement) : value}</Table.Td>;
+                        })}
                       </Table.Tr>
                     );
                   })}

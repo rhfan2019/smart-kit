@@ -25,6 +25,7 @@ node apps/fe-reference/server.mjs              # http://localhost:4420
 | `http://localhost:4420/index.html?app=purchasing-views` | `fe.ref.purchasingviews` (`webapp/purchasing-views/`) | `/odata/purchasing/` |
 | `http://localhost:4420/index.html?app=purchasing-analytical` | `fe.ref.purchasinganalytical` (`webapp/purchasing-analytical/`) | `/odata/purchasing/` |
 | `http://localhost:4420/index.html?app=purchasing-display` | `fe.ref.purchasingdisplay` (`webapp/purchasing-display/`) | `/odata/purchasing/` |
+| `http://localhost:4420/index.html?app=purchasing-params` | `fe.ref.purchasingparams` (`webapp/purchasing-params/`) | `/odata/purchasing/` |
 
 Both components start through `webapp/ext/start.js`; the shared extensions (custom column, custom action) are in
 `webapp/ext/`. Variants are kept in the session storage flexibility connector (no LREP backend).
@@ -44,7 +45,7 @@ The FE comparison opens `/po` and `/po-draft` of the smart-kit demo (`apps/demo/
 | multi selection (default of `Table`, `v4/fe/macros/Table`) | `tableSettings.selectionMode: "Multi"` |
 | `exportable` (default `true`) | `tableSettings.enableExport: true` |
 | `tableExtend` `Custom::Overdue` after `DataField::Supplier` | `columns["Custom::Overdue"]` with `position: { anchor: "DataField::Supplier", placement: "After" }`, template `fe.ref.ext.Overdue` |
-| `tableExtend` action `Custom::Copy` (`requiresSelection`) | `actions["Custom::Copy"]` with `requiresSelection: true`, press `fe.ref.ext.CustomActions.copy` |
+| `tableExtend` action `Custom::Copy` (`requiresSelection`, before `Create`) | `actions["Custom::Copy"]` with `requiresSelection: true`, press `fe.ref.ext.CustomActions.copy` |
 | `actionGroups` `decide` = approve, reject | `actions.decide.menu: ["DataFieldForAction::Purchasing.approve", "DataFieldForAction::Purchasing.reject"]` |
 | `workingMode="worklist"` (default) | FE default (no setting) |
 | row press → object page (`NavigationAdapter`) | `navigation.PurchaseOrders.detail.route: "PurchaseOrdersObjectPage"` |
@@ -64,8 +65,8 @@ Not reproducible in the manifest (and therefore registered as differences, regis
 
 - the demo's `tableExtend` entry `DataField::PurchaseOrderType` with `position: "replace"` (renders the raw code);
   FE has no manifest setting that replaces the template of an annotation column;
-- the custom action's position `start`: FE places custom actions by `position.anchor` relative to other actions,
-  and the order of the standard actions (Create, Delete) is fixed by FE.
+- the order of the standard actions (Create, Delete) is fixed by FE. (The demo's custom action `Custom::Copy` stands
+  before Create, where FE puts a manifest action without `position.anchor`; it used to be at the start.)
 
 ## Analytical table (`?app=purchasing-analytical` ↔ `/po?table=analytical`)
 
@@ -75,8 +76,10 @@ only FE table type with totals, group subtotals and grouping in a grid, D39). It
 and `UI.PresentationVariant/Total` = NetAmount, so both total the net amount. Used by `tests/e2e-fe/totals.spec.ts`
 (scenario `po-analytical-totals`): the collection requests of `PurchaseOrders`, the totalled columns, the
 personalization panels, the text of the totals row (several currencies: "Show Details") and the lines and request
-of its details popover; the remaining differences are in
-`tools/ui5-alignment/deviations.totals.json`.
+of its details popover. `tests/e2e-fe/apply.spec.ts` (scenarios `apply-initial`, `-sort`, `-sort-amount`, `-filter`,
+`-search`, `-paging`, `-grouped`) compares the single `$apply` (`concat`) request of rows, totals and count of the
+ungrouped analytical table, and the grouped one. The remaining differences are in `tools/ui5-alignment/deviations.json`
+(`DV-apply-*`).
 
 ## Multiple views (`?app=purchasing-views`)
 
@@ -138,3 +141,28 @@ variants, live mode, initial load) and no extensions. It corresponds to the demo
 (`apps/demo/src/pages/SupplierContactsPage.tsx`: `SmartListReport` `entitySet="SupplierContacts"` `tableType="grid"`).
 The FE comparison `tests/e2e-fe/display4.spec.ts` compares requests, structure, cell text and the cell links.
 
+## Stage 4 tail: column and action types (`tests/e2e-fe/colsfe.spec.ts`)
+
+The `cols5-*` scenarios (`?app=purchasing` ↔ `/po`) lay a LineItem with the stage 4 column and action types
+(`cols5-types`), a constant row highlight (`cols5-negative`, `-very-negative`, `-very-positive`),
+`UI.CreateHidden` / `UI.DeleteHidden` (`cols5-create-delete-hidden`) and a path `Deletable`
+(`cols5-deletable-path`) over the purchasing `$metadata`, as the overlays above. Besides requests, structure and cell
+text they compare the row highlights, column widths, toolbar actions after selecting rows and the confirmation
+texts. `cols5-p13n-GridTable` / `-ResponsiveTable` compare the personalization's columns, sort and group properties
+(FE responsive table: `purchasing/manifest.json` overlaid with `tableSettings.type`), and
+`cols5-contacts-expand-header` (`?app=purchasing-display` ↔ `/contacts`) checks that expanding the header does not
+request the list again.
+
+## Stage 4 tail: value help service and parameterized entity set (`tests/e2e-fe/vhref.spec.ts`)
+
+- **Common.ValueListReferences / ValueListMapping** (`vhref-*` scenarios, `?app=purchasing` ↔ `/po`): the test service
+  has a value help service `/odata/purchasing-vh/` (`apps/mock/Csdl/purchasing-vh.xml`, `CompanyCodes`) whose
+  `$metadata` declares `Common.ValueListMapping` for `Purchasing.PurchaseOrder/CompanyCode`. The reference
+  (`Common.ValueListReferences` = `../purchasing-vh/$metadata`) is laid over the purchasing `$metadata` in the browser
+  (`page.route`, as the filter overlays above), identically for this app and the demo, so the other scenarios keep a
+  company code field without value help. This server proxies `/odata/purchasing-vh/` like the other services.
+- **Parameterized entity set** (`params-*` scenarios): `webapp/purchasing-params/manifest.json` is a list report with
+  `contextPath: "/SpendParameters/Set"` (the result set contained in the parameter set `SpendParameters`,
+  `Common.ResultContext`), `variantManagement: "Page"`, `initialLoad: "Enabled"`, `liveMode: true`, a grid table with
+  multi selection and export, no object page. It corresponds to the demo's `/spend`
+  (`apps/demo/src/pages/SupplierSpendPage.tsx`: `SmartListReport entitySet="SpendParameters/Set" tableType="grid"`).

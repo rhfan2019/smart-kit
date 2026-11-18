@@ -44,6 +44,7 @@ import { useListQuery } from './useListQuery';
 import { InlineCreateRow } from './InlineCreateRow';
 import { groupValueOf, Table as MTable, type $ColumnSettings as MColumn, type PopinLayout, type Priority } from './ResponsiveTable';
 import { MultiUnitTotal, TotalLines, useGrandTotals, useSubtotals, useTotalFormatter } from './useTotals';
+import { useAnalyticalRequests } from './useAnalytical';
 import { TreeCell, useTree, useTreeState, type TreeMethods, type TreeTable$ToggleOpenStateEvent } from './tree';
 import { specialCell, type CellEnv } from './cells';
 
@@ -533,8 +534,6 @@ function TitlePart() {
 function ActionsPart() {
   const { actions, ctx, width } = useInternal();
   const t = useText();
-  // Narrow tables (e.g. the first column of a flexible column layout) move actions into "More" earlier.
-  const INLINE = width < 560 ? 0 : width < 900 ? 2 : 4;
   const btn = (a: ActionItem) => {
     const disabled = (a.requiresSelection && ctx.selected.length === 0) || (a.enabled ? !a.enabled(ctx.selected) : false);
     return { disabled, onPress: () => a.onPress(ctx) };
@@ -542,6 +541,19 @@ function ActionsPart() {
   // Menu buttons (UI.DataFieldForActionGroup, `actionGroups`) stand at their position and are always enabled; their
   // items are enabled by the selection (FE ActionsTemplating getMenuButton: `enabled` of the menu itself).
   const shown = actions.filter((a) => !a.hidden && (!a.menu || a.menu.length));
+  // sap.m.OverflowToolbar (FE table toolbar): actions move into "More" only when they do not fit. The widths are
+  // estimated from the labels (title, search and the table buttons keep about 520px); narrow tables (e.g. the first
+  // column of a flexible column layout) keep at most two.
+  let INLINE = 0;
+  if (width >= 560) {
+    let room = width - 520;
+    for (const a of shown) {
+      room -= a.label.length * 7.5 + 34 + (a.menu ? 20 : 0);
+      if (room < 0) break;
+      INLINE += 1;
+    }
+    if (width < 900) INLINE = Math.min(INLINE, 2);
+  }
   const inline = shown.slice(0, INLINE);
   const overflow = shown.slice(INLINE).flatMap((a) => a.menu ?? [a]);
   return (
@@ -695,8 +707,10 @@ function resolveMetaPath(ui: { lineItems: Record<string, FieldModel[]>; views: {
 }
 
 /** Entity set or sub-table source of `contextPath`, `metaPath` and `bindingContext`. */
-function sourceOf(contextPath: string | undefined, metaPath: string | undefined, bindingContext: string | undefined): { entitySet: string; parent?: { path: string; navigation: string } } {
+function sourceOf(contextPath: string | undefined, metaPath: string | undefined, bindingContext: string | undefined, model?: MetaModel): { entitySet: string; parent?: { path: string; navigation: string } } {
   const segs = (contextPath ?? '').split('/').filter(Boolean);
+  // a parameterized entity set "/P/Set" (Common.ResultContext) is one entity set of the model
+  if (!bindingContext && segs.length > 1 && model?.entitySets[segs.join('/')]?.parameters) return { entitySet: segs.join('/') };
   const metaNav = metaPath && metaPath.includes('@') ? metaPath.slice(0, metaPath.indexOf('@')).split('/').filter(Boolean).pop() : undefined;
   const navigation = segs.length > 1 ? segs[segs.length - 1] : metaNav;
   return { entitySet: segs[0] ?? '', parent: bindingContext && navigation ? { path: bindingContext, navigation } : undefined };
@@ -719,7 +733,7 @@ function TableCore(p: CoreSettings) {
   const t = useText();
   const page = useDynamicPage();
   const model = service.model;
-  const { entitySet, parent } = sourceOf(p.contextPath, p.metaPath, p.bindingContext);
+  const { entitySet, parent } = sourceOf(p.contextPath, p.metaPath, p.bindingContext, model);
   const source: QuerySource = useMemo(
     () => (parent ? { parent: parent.path, navigation: parent.navigation } : { entitySet }),
     [parent?.path, parent?.navigation, entitySet], // eslint-disable-line react-hooks/exhaustive-deps
@@ -838,13 +852,40 @@ function TableCore(p: CoreSettings) {
   // Grouping (docs/12 U-5, docs/23): rows are sorted by the group property first.
   const fieldPath = (c: ColumnItem | undefined) => (c?.field?.kind === 'field' ? c.field.path : undefined);
   const columnOfPath = (path: string | undefined) => (path ? allColumns.find((c) => fieldPath(c) === path)?.id : undefined);
-  const groupable = allColumns.filter((c) => { const path = fieldPath(c); return Boolean(path && canGroup(model, source, path)); });
+  // FE PropertyInfos (table Columns getColumnsFromEntityType, Property_Technical): the properties the sort panel offers,
+  // and the group panel of a responsive table (isGroupable = sortable). The type's properties that are not hidden, except
+  // non-sortable ones and those shown as their text only (FE display mode Description: the text is sorted instead), plus
+  // the technical properties of the LineItem columns, the texts and criticality paths (FE comparison cols5-p13n-*).
+  const p13nProps = useMemo(() => {
+    const out = new Map<string, string>();
+    const add = (path: string | undefined) => {
+      const prop = path ? resolvePath(model.entityTypes, info.typeName, path).property : undefined;
+      if (!path || !prop || out.has(path) || !isSortable(caps, path) || prop.edmType === 'Edm.Stream') return;
+      if (prop.text && prop.textArrangement === 'TextOnly') return;
+      out.set(path, prop.label);
+    };
+    for (const name of type.propertyOrder) {
+      if (!type.properties[name]!.hidden && !['IsActiveEntity', 'HasActiveEntity', 'HasDraftEntity'].includes(name)) add(name);
+    }
+    for (const f of lineItem) {
+      const prop = f.kind === 'field' && f.path ? resolvePath(model.entityTypes, info.typeName, f.path).property : undefined;
+      if (prop?.text && f.path) add([...f.path.split('/').slice(0, -1), prop.text].join('/'));
+      if (f.criticality && 'path' in f.criticality) add(f.criticality.path);
+    }
+    return [...out].map(([path, label]) => ({ path, label }));
+  }, [model, info.typeName, caps, type, lineItem]);
+  // Responsive table: group by any of them (by its column when there is one); analytical table: the groupable columns.
+  const groupable: { id: string; label: string; path: string }[] = responsive
+    ? p13nProps.map((x) => ({ id: columnOfPath(x.path) ?? x.path, label: x.label, path: x.path }))
+    : allColumns.flatMap((c) => { const path = fieldPath(c); return path && canGroup(model, source, path) ? [{ id: c.id, label: c.label, path }] : []; });
   // With onGroupByChange the parent keeps the state (a variant): undefined there means the annotation default.
   const groupOwned = p.groupBy !== undefined || Boolean(p.onGroupByChange);
   const groupChoice = (groupOwned ? p.groupBy : own.groupBy) ?? (groupOwned || own.groupBy === undefined ? columnOfPath(presentation.groupBy[0]) ?? null : null);
   const canGroupHere = !isTree && (responsive || (analytical && mode === 'grid'));
   const groupBy = canGroupHere && groupChoice && groupable.some((c) => c.id === groupChoice) ? groupChoice : null;
-  const groupPath = groupBy ? fieldPath(allColumns.find((c) => c.id === groupBy)) : undefined;
+  const groupPath = groupBy ? groupable.find((c) => c.id === groupBy)?.path : undefined;
+  // a group property without a shown column (a column text or criticality, a hidden column): read with the rows
+  if (groupPath && !fields.some((f) => f.path === groupPath)) extraSelect.push(groupPath);
   const setGroupBy = (id: string | null) => { if (!groupOwned) setOwn((x) => ({ ...x, groupBy: id })); p.onGroupByChange?.(id); };
   // Totals (docs/23, D39): analytical tables only, columns of custom aggregates (Aggregation.CustomAggregate).
   const totalPath = (c: ColumnItem | undefined) => { const path = analytical ? fieldPath(c) : undefined; return path && canTotal(model, source, path) ? path : undefined; };
@@ -876,8 +917,17 @@ function TableCore(p: CoreSettings) {
   // The grid's infinite row model with server blocks; grouped and tree grids hold client-side rows instead.
   const infinite = mode === 'grid' && !gridGrouped && !isTree;
   const sort = useMemo(() => (groupPath ? [{ path: groupPath, descending: false }, ...baseSort.filter((x) => x.path !== groupPath)] : baseSort), [groupPath, JSON.stringify(baseSort)]); // eslint-disable-line react-hooks/exhaustive-deps
+  // AL-10 (FE AnalyticalTable): the first page reads rows, grand total and count in one $apply, see useAnalytical.ts.
+  const apply = useAnalyticalRequests({
+    enabled: analytical && executed && !groupPath, service: p.service, source, columns: fields, filters, search: effectiveSearch, sort, extraSelect,
+    requestAtLeast: meta.presentation?.requestAtLeast, totals: measures,
+    groupExtra: [...visibleColumns.filter((c) => !c.field).flatMap((c) => c.select ?? []), ...(highlightRef && 'path' in highlightRef ? [highlightRef.path] : [])],
+    // toolbar actions without an inline column: their OperationAvailable is read when a row is selected
+    selectionPaths: actionPaths(modelActions).filter((x) => !actionPaths(fields.flatMap((f) => (f.kind === 'action' && f.action ? [f.action] : []))).includes(x)),
+  });
   const list = useListQuery({
     service: p.service, source, columns: fields, filters, search: effectiveSearch, sort, extraSelect, requestAtLeast: meta.presentation?.requestAtLeast,
+    blockRequest: apply.blockRequest, onBlock: apply.received,
     pageSize: gridGrouped ? GRID_GROUP_BLOCK : responsive ? p.threshold ?? 20 : Math.max(firstPage, own.loaded),
     growSize: gridGrouped ? GRID_GROUP_BLOCK : responsive ? p.threshold ?? 20 : growSize,
     enabled: !infinite && executed,
@@ -919,7 +969,7 @@ function TableCore(p: CoreSettings) {
   const stored = useStoredState<{ selectedKeys: string[]; firstRow: number }>(stateKey ? `${stateKey}:view` : undefined);
   const restore = useRef(stored.read());
 
-  const loadedRows = useMemo(() => (infinite ? [] : list.rows.map((r) => overrides[keyOf(r)] ?? r)), [infinite, list.rows, overrides, keyOf]);
+  const loadedRows = useMemo(() => (infinite ? [] : apply.withLate(list.rows).map((r) => overrides[keyOf(r)] ?? r)), [infinite, list.rows, overrides, keyOf, apply.version]); // eslint-disable-line react-hooks/exhaustive-deps
   const tree = useTree({ hierarchy, rows: loadedRows, tree: treeState, onToggleOpenState: p.onToggleOpenState });
   /** Rows that can be selected: not group headers; with `disableLeafSelection` no tree leaves. */
   const selectable = (row: Row | undefined) => Boolean(row) && !groupOf(row) && !(p.disableLeafSelection && isTree && latest.current.tree.nodeOf(row!)?.drillState === 'leaf');
@@ -959,7 +1009,8 @@ function TableCore(p: CoreSettings) {
 
   // ------------------------------------------------------------------ totals and subtotals (docs/23)
   const totalsQuery = { service: p.service, source, filters, search: effectiveSearch, measures, revision: totalsRevision };
-  const grand = useGrandTotals({ ...totalsQuery, enabled: executed });
+  const ownGrand = useGrandTotals({ ...totalsQuery, enabled: executed && !apply.active });
+  const grand = !apply.active ? ownGrand : infinite ? apply.grand : apply.grandOf(list.first, list.error, list.isFetching);
   const subtotalsOn = Boolean(analytical && groupPath && canSubtotal(model, source, groupPath));
   const groupValues = useMemo(() => {
     if (!subtotalsOn || !groupPath) return [];
@@ -998,7 +1049,9 @@ function TableCore(p: CoreSettings) {
   };
   const valueCtx = { model, typeName: info.typeName, locale: intlLocale, timeZone };
   // Grid group header rows: label and count in the first column (spanning to the first subtotal), subtotals below their columns.
-  const groupColumn = groupBy ? allColumns.find((c) => c.id === groupBy) : undefined;
+  const groupColumn: ColumnItem | undefined = groupBy
+    ? allColumns.find((c) => c.id === groupBy) ?? (groupPath ? { id: groupBy, label: groupable.find((c) => c.id === groupBy)?.label ?? groupPath, field: { id: groupBy, kind: 'field', path: groupPath, label: '', criticalityIcon: false, isSemanticKey: false } } : undefined)
+    : undefined;
   const groupDisplay = (row: Row) => (groupColumn?.field ? fieldValue(valueCtx, groupColumn.field, row).display || groupValueOf(groupPath ?? '')(row) : '');
   const groupedRows = useMemo<Row[] | undefined>(() => {
     if (!gridGrouped || !groupPath) return undefined;
@@ -1136,10 +1189,12 @@ function TableCore(p: CoreSettings) {
   }, [p.extend, p.actions, p.actionGroups, modelActions, canCreate, canDelete, t, targetOf]);
   /** Row highlight (FE TableFormatter rowHighlighting): 1 Error, 2 Warning, 3 Success, 5 Information; a new draft is Information. */
   const rowState = (row: Row): string | undefined => {
-    const v = highlightRef ? Number('path' in highlightRef ? getPath(row, highlightRef.path) : highlightRef.value) : undefined;
-    // a path value: 1, 2, 3, 5; a constant (FE getMessageTypeFromCriticalityType) also VeryNegative (-1) → error, VeryPositive (4) → success
-    const constant = highlightRef !== undefined && !('path' in highlightRef);
-    const state = ({ 1: 'error', 2: 'warning', 3: 'success', 5: 'information', ...(constant ? { [-1]: 'error', 4: 'success' } : {}) } as Record<number, string>)[v ?? 0];
+    // A constant (EnumMember) reaches FE's formatter as the enum name, which is no valid highlight: FE logs an error and
+    // shows none, not even the draft highlight (FE Table Dt → TableFormatter rowHighlighting; FE comparison cols5-negative).
+    if (highlightRef && !('path' in highlightRef)) return undefined;
+    const v = highlightRef ? Number(getPath(row, highlightRef.path)) : undefined;
+    // a path value: 1, 2, 3, 5; others none
+    const state = ({ 1: 'error', 2: 'warning', 3: 'success', 5: 'information' } as Record<number, string>)[v ?? 0];
     if (state) return state;
     return draftRoot && row.IsActiveEntity === false && row.HasActiveEntity === false ? 'information' : undefined;
   };
@@ -1190,7 +1245,9 @@ function TableCore(p: CoreSettings) {
   const deleteTexts = (rows: Row[]): string[] => {
     const ok = rows.filter(isDeletable);
     const out: string[] = [];
-    if (ok.length < rows.length) out.push(t('delete.someRestricted', { count: rows.length - ok.length, total: rows.length }), t('delete.remaining'));
+    // FE DeleteHelper: "1 out of n … has" / "k out of n … have"; "the remaining object" / "objects" by the deletable count
+    const restricted = rows.length - ok.length;
+    if (restricted) out.push(restricted === 1 ? t('delete.oneRestricted', { total: rows.length }) : t('delete.someRestricted', { count: restricted, total: rows.length }), t(ok.length === 1 ? 'delete.remainingOne' : 'delete.remaining'));
     else if (rows.length === 1) {
       const text = (path: string | undefined) => { const v = path ? getPath(rows[0], path) : undefined; return v === undefined || v === null || v === '' ? undefined : String(v); };
       const title = text(ui.headerInfo.title);
@@ -1327,21 +1384,35 @@ function TableCore(p: CoreSettings) {
     if (isTree && api && !api.isDestroyed() && visibleColumns[0]) api.refreshCells({ columns: [visibleColumns[0].id], force: true });
   }, [isTree, listRows]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Rows loaded through useListQuery (analytical table without grid blocks): their late properties once rendered.
+  useEffect(() => {
+    if (!apply.active || infinite) return;
+    const timer = setTimeout(() => apply.loadLate(apiRef.current, pathOf, replaceRow), 0);
+    return () => clearTimeout(timer);
+  }, [apply.active, infinite, list.rows]); // eslint-disable-line react-hooks/exhaustive-deps
+  /** A row of the grid got its late properties (analytical table): keep `gridRows` in step. */
+  const replaceRow = (old: Row, row: Row) => {
+    setGridRows((prev) => prev.map((r) => (r === old ? row : r)));
+    setSelected((prev) => (prev.includes(old) ? prev.map((r) => (r === old ? row : r)) : prev));
+  };
   // Grid datasource: one block per request, first block with $count.
   const datasource = useMemo<IDatasource | null>(() => {
     if (!infinite || !executed) return null;
     return {
       getRows: async (params) => {
         const top = params.endRow - params.startRow;
-        const req = list.pageRequest(params.startRow, top, params.startRow === 0);
+        const req = apply.blockRequest(params.startRow, top) ?? list.pageRequest(params.startRow, top, params.startRow === 0);
         try {
-          const res = await queryClient.fetchQuery({
+          const fetched = await queryClient.fetchQuery({
             queryKey: ['smart-kit', 'grid', service.name, JSON.stringify(req), refreshToken],
             queryFn: ({ signal }) => service.dataProvider.query(req, { signal }),
             staleTime: 10_000,
           });
+          const res = apply.active ? { ...fetched, rows: apply.withLate(fetched.rows) } : fetched;
           const last = res.count ?? (res.rows.length < top ? params.startRow + res.rows.length : undefined);
           params.successCallback(res.rows, last);
+          apply.received(params.startRow, res);
+          setTimeout(() => apply.loadLate(apiRef.current, pathOf, replaceRow), 0);
           if (params.startRow === 0) {
             setGridCount(res.count);
             setGridEmpty(res.rows.length === 0);
@@ -1362,13 +1433,14 @@ function TableCore(p: CoreSettings) {
         } catch (e) {
           if (!isAbortError(e)) {
             setGridError(e as Error);
+            apply.failed(params.startRow, e as Error);
             params.failCallback();
           }
         }
       },
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- rebuild when the request changes
-  }, [infinite, executed, JSON.stringify(list.request), refreshToken]);
+  }, [infinite, executed, JSON.stringify(list.request), apply.key, refreshToken]);
 
   useEffect(() => {
     const api = apiRef.current;
@@ -1434,7 +1506,8 @@ function TableCore(p: CoreSettings) {
   };
 
   const title = p.header ?? ui.headerInfo.typeNamePlural;
-  const searchable = caps.searchable;
+  // FE Table converter: an AnalyticalTable is searchable only when ApplySupported/Transformations contains search
+  const searchable = caps.searchable && !(analytical && !caps.aggregation!.transformations.includes('search'));
   const [hiddenCols, setHiddenCols] = useState<string[]>([]);
   const [fullScreen, setFullScreen] = useState(false);
   const [width, setWidth] = useState(1440);
@@ -1496,6 +1569,10 @@ function TableCore(p: CoreSettings) {
       groupValue: c.field ? (row: Row) => fieldValue(valueCtx, c.field!, row).display || groupValueOf(c.field!.path ?? '')(row) : undefined,
     };
   });
+  // grouped by a property that is not shown: an invisible column carries the group header
+  if (groupColumn && !visibleColumns.some((c) => c.id === groupColumn.id)) {
+    responsiveColumns.push({ id: groupColumn.id, header: groupColumn.label, visible: false, cell: () => null, groupValue: groupDisplay });
+  }
   const selectedKeys = useMemo(() => selected.map(keyOf), [selected, keyOf]);
   const responsiveTable = responsive ? (
     <MTable
@@ -1607,6 +1684,7 @@ function TableCore(p: CoreSettings) {
         if (limit && nodes.length > limit) { for (const n of nodes.slice(limit)) n.setSelected(false); return; }
         const rows = e.api.getSelectedRows() as Row[];
         setSelected(rows);
+        apply.loadSelected(e.api, rows, pathOf, replaceRow);
         p.onSelectionChange?.({ selectedContexts: rows.map((r) => contextOf(pathOf(r), r)) });
         saveView();
       }}
@@ -1617,6 +1695,7 @@ function TableCore(p: CoreSettings) {
         if (gridGrouped && l.hasMore && !l.isFetching && e.api.getLastDisplayedRowIndex() >= e.api.getDisplayedRowCount() - 20) l.loadMore();
       }}
       onBodyScrollEnd={() => saveView()}
+      onViewportChanged={() => apply.loadLate(apiRef.current, pathOf, replaceRow)}
       onSortChanged={onSortChanged}
       onColumnMoved={(e) => {
         if (!e.finished) return;
@@ -1675,7 +1754,7 @@ function TableCore(p: CoreSettings) {
         columns={allColumns}
         visible={visible}
         sort={baseSort}
-        sortable={allColumns.filter((c) => c.field?.kind === 'field' && c.field.path && isSortable(caps, c.field.path)).map((c) => ({ path: c.field!.path!, label: c.label }))}
+        sortable={p13nProps}
         groupable={canGroupHere && p13nAllows('Group') ? groupable.map((c) => ({ id: c.id, label: c.label })) : undefined}
         groupBy={groupBy}
         totalable={p13nAllows('Aggregate') ? totalable.filter((c) => visible.includes(c.id)).map((c) => ({ id: c.id, label: c.label })) : []}

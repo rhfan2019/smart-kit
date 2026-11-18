@@ -155,6 +155,17 @@ describe('AL-12 P2 list report: chart-first presentation, chart views, automatic
     expect(autoTableType(buildModel(xml('')), 'Sales')).toBe('grid');
   });
 
+  it('AL-12 P2 an analytical list report shows the basic search only with the search transformation (FE Table converter)', async () => {
+    const all = (extra: string) => ['filter', 'identity', 'orderby', 'skip', 'top', 'groupby', 'aggregate', 'concat', extra].filter(Boolean).map((x) => `<String>${x}</String>`).join('');
+    for (const [extra, shown] of [['', false], ['search', true]] as const) {
+      const { ui } = host(buildModel(xml('', all(extra))), <SmartListReport service="s" entitySet="Sales" />);
+      const view = render(ui);
+      await waitFor(() => expect(document.querySelector('[data-sk-filterbar], [data-sk-filter]')).not.toBeNull());
+      expect(Boolean(document.querySelector('[data-sk-filter="$search"]'))).toBe(shown);
+      view.unmount();
+    }
+  });
+
   it('AL-12 P2 KPI tags: UI.KPI value aggregated with its selection variant; FE label and tooltip', async () => {
     expect(kpiLabel('Net amount open')).toBe('NAO');
     expect(kpiLabel('Revenue')).toBe('REV');

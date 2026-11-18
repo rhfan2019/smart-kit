@@ -17,7 +17,9 @@
 - `activeFilterPaths`
 - `aggregateMeasure`
 - `arrangeText`
+- `ANALYTICAL_COUNT_ALIAS`
 - `buildAggregateRequest`
+- `buildAnalyticalRequests`
 - `buildChartRequest`
 - `buildHierarchyRequest`
 - `buildListRequest`
@@ -136,6 +138,10 @@
 - `unitPathOf`
 - `UnknownEntitySetError`
 - `valueListTextArrangement`
+- `readValueListService`
+- `referencedValueLists`
+- `resolveValueListReference`
+- `serviceRootOf`
 
 ### 类型
 
@@ -222,9 +228,13 @@
 - `TotalAmount`
 - `TotalsEntry`
 - `TotalsRequestOptions`
+- `AnalyticalRequestOptions`
+- `AnalyticalRequests`
+- `AnalyticalApply`
 - `TrendCalculationModel`
 - `ValueHelpRequestOptions`
 - `ValueListModel`
+- `ValueListService`
 - `ValueListParameter`
 - `ValueOperator`
 - `ValueRef`

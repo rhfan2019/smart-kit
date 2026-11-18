@@ -2,8 +2,9 @@
  * Fiori elements comparison of table totals (docs/30 §7.2, AL-10 – AL-12; D39: totals only in the analytical table,
  * only for custom aggregates). FE: apps/fe-reference `?app=purchasing-analytical` (`tableSettings.type:
  * "AnalyticalTable"`); smart-kit: the demo's `/po?table=analytical` (`tableType="AnalyticalTable"`).
- * Compared: the collection requests of PurchaseOrders (FE: one $apply with rows and grand total; smart-kit: the list
- * request and the totals request; both: the per-currency request of "Show Details"), the columns with a total
+ * Compared: the collection requests of PurchaseOrders (both: one $apply with rows, grand total and count — the page
+ * size inside it, `top(n)`, is the registered DV-FE-03 and normalized; both: the per-currency request of "Show
+ * Details"; the request shape itself is compared in apply.spec.ts), the columns with a total
  * (`structure.columns`), the personalization panels (`structure.actions`: Column, Sort, Group, Aggregate), the text of
  * the totals row (several currencies: "Show Details") and the lines of its details popover (`text` rows 1 and 2).
  */
@@ -15,8 +16,9 @@ import { compareScenario } from './harness';
 const SCENARIO = 'po-analytical-totals';
 
 const structure = (s: Partial<Structure>): Structure => ({ filterFields: [], columns: [], actions: [], editingStatus: [], viewTabs: [], chartType: '', ...s });
-/** Only the collection requests of the list (the row-by-row requests of FE are not about totals). */
-const collection = (requests: NormalizedRequest[]) => requests.filter((r) => r.resource === 'PurchaseOrders');
+/** Only the collection requests of the list (the row-by-row requests are not about totals); page size normalized. */
+const collection = (requests: NormalizedRequest[]) => requests.filter((r) => r.resource === 'PurchaseOrders')
+  .map((r) => (r.options.$apply ? { ...r, options: { ...r.options, $apply: r.options.$apply.replace(/\btop\(\d+\)/g, 'top(N)') } } : r));
 
 // ---------------------------------------------------------------------------------------------- FE
 

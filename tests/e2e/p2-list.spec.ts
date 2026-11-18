@@ -376,10 +376,11 @@ test('P2-LR-12 grouping in the view settings of the responsive table', async ({ 
   await table(page, 'PurchaseOrders').locator('[data-sk-table-settings]').click();
   await page.locator('[data-sk-p13n-group-tab]').click();
   await page.locator('[data-sk-p13n-group]').click();
-  await page.getByRole('option', { name: 'Status' }).click();
+  // FE offers the status text (the status is shown as its text only; FE comparison cols5-p13n-ResponsiveTable)
+  await page.getByRole('option', { name: 'Status Name', exact: true }).click();
   await page.locator('[data-sk-p13n-ok]').click();
   const groups = table(page, 'PurchaseOrders').locator('[data-sk-group-row]');
-  await expect(groups.first()).toContainText('Status:');
+  await expect(groups.first()).toContainText('Status Name:');
   await evidence(page, 'P2-LR-12');
 });
 

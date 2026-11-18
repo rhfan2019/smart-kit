@@ -74,8 +74,8 @@
 | AL-06 | 2 | S、U | 同上，`AL-06` 开头（含 `Field` 的 change / liveChange 时机） |
 | AL-07 | 2 | S、U | 同上，`AL-07` 开头 |
 | AL-30 | 2 | U、Z | `api.test.ts`：旧子路径全部不存在，根入口只导出基础设施；`verify:pack` |
-| AL-10 | 3、4 | F、U | `tests/e2e-fe/*.spec.ts` 的 37 个场景（请求一致或差异已登记）；`packages/core/test/al-*.test.ts`、`filter-defaults.test.ts` 里 `AL-10` 开头的测试 |
+| AL-10 | 3、4 | F、U | `tests/e2e-fe/*.spec.ts` 的 60 个场景（请求一致或差异已登记）；`packages/core/test/al-*.test.ts`、`filter-defaults.test.ts` 里 `AL-10` 开头的测试 |
 | AL-11 | 3、4 | F、U | 同上（筛选字段、列、动作、编辑状态、视图页签、图表）；`al-draft`、`al-aggr`、`al-totals`、`filter-vh-params` 里 `AL-11` 开头的测试 |
-| AL-12 | 3、4 | F、D | 各场景前 5 行单元格文本；`29` 第 4 节 P1 八项和第 5 节 P2 全部有场景（新列类型和动作在阶段 4 收尾补场景）；`02` 按 FE 源码重写，每条写明 FE 模块（核对：Claude，2026-11-18） |
+| AL-12 | 3、4 | F、D | 各场景前 5 行单元格文本；`29` 第 4 节 P1 八项和第 5 节 P2 全部有场景（新列类型和动作在阶段 4 收尾补了场景 `cols5-*`）；`02` 按 FE 源码重写，每条写明 FE 模块（核对：Claude，2026-11-18） |
 | AL-08 | 3 | S、D | `fe-behavior` 32 → 28（`fe:*` 每种原因一条），`not-implemented` 119（阶段 3 不涉及 API）（核对：Claude，2026-11-18） |
 

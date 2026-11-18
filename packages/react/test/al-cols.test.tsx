@@ -103,6 +103,27 @@ describe('AL-10 AL-12 toolbar actions (docs/29 §5 动作, DV-FE-04)', () => {
     expect(await screen.findByText(/^Delete object Item \d+ "P\d+"\?$/)).toBeInTheDocument();
   });
 
+  it('AL-12 cols5 the delete confirmation with restricted rows uses FE\'s singular / plural texts (FE DeleteHelper)', async () => {
+    const xml = shop(action('discontinue')).replace('<PropertyValue Property="Deletable" Bool="false"/>', '<PropertyValue Property="Deletable" Path="Deletable"/>')
+      .replace('<Property Name="Version" Type="Edm.Int32"/>', '<Property Name="Version" Type="Edm.Int32"/><Property Name="Deletable" Type="Edm.Boolean"/>');
+    const model = buildModel(xml);
+    expect(model.entitySets.Products!.capabilities.deletablePath).toBe('Deletable');
+    const data = structuredClone(shopData);
+    data.Products!.forEach((r, i) => { r.Deletable = i !== 1; });
+    render(
+      <MantineProvider theme={smartKitMantineTheme}>
+        <SmartKitProvider services={{ shop: { model, dataProvider: new MemoryProvider({ model, data }), variants: new MemoryVariantStore() } }} locale="en" namespace="al-cols5">
+          <Table service="shop" contextPath="/Products" type="ResponsiveTable" />
+        </SmartKitProvider>
+      </MantineProvider>,
+    );
+    const r = await rows();
+    for (const i of [0, 1]) fireEvent.click(within(r[i]!).getAllByRole('checkbox')[0]!);
+    fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
+    expect(await screen.findByText('1 out of 2 selected objects has delete restrictions, so it cannot be deleted.')).toBeInTheDocument();
+    expect(screen.getByText('Do you still want to delete the remaining object?')).toBeInTheDocument();
+  });
+
   it('AL-12 DeleteRestrictions/Deletable as a path: Delete is enabled only for deletable rows', async () => {
     const xml = shop(action('discontinue')).replace('<Annotations Target="Shop.Product">', `<Annotations Target="Shop.Container/Products"><Annotation Term="Capabilities.DeleteRestrictions"><Record><PropertyValue Property="Deletable" Path="Deletable"/></Record></Annotation></Annotations>
       <Annotations Target="Shop.Product">`).replace('<Property name="Version"', '<Property name="Version"')
@@ -130,8 +151,8 @@ describe('AL-10 AL-12 columns (docs/29 §5 表格列, DV-FE-05)', () => {
     expect(first!.getAttribute('data-sk-highlight')).toBe('success');
   });
 
-  it('AL-12 a VeryNegative / VeryPositive row highlight is error / success (FE getMessageTypeFromCriticalityType)', async () => {
-    for (const [constant, state] of [['VeryNegative', 'error'], ['VeryPositive', 'success']]) {
+  it('AL-12 cols5 a constant LineItem@UI.Criticality (Negative, VeryNegative, VeryPositive) highlights nothing (FE Table rowHighlighting gets the enum name; FE comparison cols5-negative)', async () => {
+    for (const [constant, state] of [['Negative', null], ['VeryNegative', null], ['VeryPositive', null]]) {
       const xml = shop(action('discontinue')).replace('<Annotation Term="UI.LineItem">\n          <Collection>', `<Annotation Term="UI.LineItem"><Annotation Term="UI.Criticality" EnumMember="UI.CriticalityType/${constant}"/>\n          <Collection>`);
       const view = render(host(xml, <Table service="shop" contextPath="/Products" type="ResponsiveTable" />));
       const [first] = await rows();
@@ -158,5 +179,59 @@ describe('AL-10 AL-12 columns (docs/29 §5 表格列, DV-FE-05)', () => {
   it('AL-12 ConnectedFields template parts (sap.fe.macros.ConnectedFields)', () => {
     expect(templateParts('{A} – {B}', ['A', 'B'])).toEqual([{ key: 'A' }, { literal: ' – ' }, { key: 'B' }]);
     expect(templateParts('{A}/{C}', ['A', 'B'])).toEqual([{ key: 'A' }, { key: 'B' }]);
+  });
+});
+
+describe('AL-10 AL-12 cols5 personalization and toolbar (FE comparison tests/e2e-fe/colsfe.spec.ts)', () => {
+  const settings = async () => {
+    await rows();
+    fireEvent.click(screen.getByRole('button', { name: 'Settings' }));
+    return screen.findByRole('dialog');
+  };
+  const options = async (target: HTMLElement) => {
+    fireEvent.click(target);
+    const list = await screen.findAllByRole('option');
+    return list.map((o) => (o.textContent ?? '').trim());
+  };
+
+  it('AL-12 cols5 the columns panel lists the shown columns in order, then the others alphabetically (sap.m.p13n.SelectionPanel)', async () => {
+    render(host(shop(action('discontinue')), <Table service="shop" contextPath="/Products" type="ResponsiveTable" />));
+    const dialog = await settings();
+    const items = [...dialog.querySelectorAll('.sk-p13n__row')].map((r) => ({ label: (r.querySelector('label')?.textContent ?? '').trim(), shown: r.querySelector<HTMLInputElement>('input[type="checkbox"]')!.checked }));
+    const firstHidden = items.findIndex((x) => !x.shown);
+    expect(firstHidden).toBeGreaterThan(0);
+    expect(items.slice(firstHidden).every((x) => !x.shown)).toBe(true);
+    const rest = items.slice(firstHidden).map((x) => x.label);
+    expect(rest.length).toBeGreaterThan(1);
+    expect(rest).toEqual([...rest].sort((a, b) => a.localeCompare(b)));
+  });
+
+  it('AL-12 cols5 sort and (responsive) group offer the sortable properties and the column texts and criticality paths (FE PropertyInfos)', async () => {
+    render(host(shop(action('discontinue')), <Table service="shop" contextPath="/Products" type="ResponsiveTable" />));
+    const dialog = await settings();
+    fireEvent.click(within(dialog).getByRole('tab', { name: 'Sort' }));
+    fireEvent.click(dialog.querySelector('[data-sk-p13n-sort-add]')!);
+    const sort = await options(dialog.querySelector<HTMLElement>('[data-sk-p13n-sort-field]')!);
+    // NonSortableProperties (Notes) and hidden properties are not offered; the text of CategoryID (_Category/Name) and
+    // the criticality path of the status column (StatusCriticality, hidden) are
+    expect(sort).not.toContain('Notes');
+    expect(sort).toContain('Category');
+    expect(sort.filter((x) => x === 'Notes')).toEqual([]);
+    expect(sort).toContain('Name'); // _Category/Name
+    expect(sort).toContain('Status Criticality');
+    expect(sort.length).toBeGreaterThan(5);
+    expect(sort).toEqual([...sort].sort((a, b) => a.localeCompare(b)));
+    fireEvent.keyDown(document.activeElement ?? document.body, { key: 'Escape' });
+    fireEvent.click(within(dialog).getByRole('tab', { name: 'Group' }));
+    const group = await options(dialog.querySelector<HTMLElement>('[data-sk-p13n-group]')!);
+    expect(group.slice(1).sort()).toEqual([...sort].sort());
+  });
+
+  it('AL-12 cols5 toolbar actions stay in the toolbar while they fit (sap.m.OverflowToolbar), not after four', async () => {
+    render(host(shop(`${action('discontinue')}${action('restock')}${action('close')}`, '<Annotation Term="UI.IsCopyAction" Bool="false"/>').replace('<PropertyValue Property="Deletable" Bool="false"/>', '<PropertyValue Property="Deletable" Bool="true"/>'),
+      <Table service="shop" contextPath="/Products" type="ResponsiveTable" />));
+    await rows();
+    expect(toolbar()).toEqual(['Discontinue [disabled]', 'Restock [disabled]', 'Close [disabled]', 'Create', 'Delete [disabled]']);
+    expect(screen.queryByRole('button', { name: 'More actions' })).toBeNull();
   });
 });

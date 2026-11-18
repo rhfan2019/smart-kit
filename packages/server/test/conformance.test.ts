@@ -30,7 +30,7 @@ function normalize(body: unknown, selected?: Set<string>): unknown {
     if (k === '@odata.context' || k === '@odata.etag' || k === '@odata.metadataEtag') continue;
     if (k === 'Version' && selected && !selected.has('Version')) continue;
     // `$count as smartkit_count` is Edm.Int64: a string with IEEE754Compatible=true (PostgreSQL), a number in the mock.
-    if (k === 'smartkit_count') {
+    if (k === 'smartkit_count' || k === 'UI5__count') {
       out[k] = Number(v);
       continue;
     }
@@ -84,6 +84,10 @@ const SHAPES: [name: string, path: string][] = [
   // D39: the unit with the measure, as FE (the currency when all rows share it, else null)
   ['custom aggregate with its unit, grand total', "PurchaseOrders?$apply=filter(CompanyCode eq '1000' and Status eq 'NEW')/aggregate(NetAmount,Currency)"],
   ['custom aggregate with its unit, subtotals', "PurchaseOrders?$apply=filter((Supplier eq '0000100001' or Supplier eq '0000100007'))/groupby((Supplier,_Supplier/SupplierName),aggregate(NetAmount,Currency,$count as smartkit_count))&$orderby=Supplier"],
+  // analytical table (AL-10, FE _AggregationHelper.buildApply): grand total, count and the first page in one $apply;
+  // the following pages are plain list requests (identity), see "list, second block"
+  ['analytical table, first page with grand total and count', "PurchaseOrders?$apply=filter(Status ne 'CLOSED' and CompanyCode eq '1000')/concat(aggregate(NetAmount,Currency),groupby((PurchaseOrder,PurchaseOrderType,Status,StatusCriticality,Supplier),aggregate(NetAmount,Currency))/orderby(Supplier,PurchaseOrder)/concat(aggregate($count as UI5__count),top(20)))"],
+  ['analytical table, without grand total', "PurchaseOrders?$apply=filter(CompanyCode eq '2000')/groupby((PurchaseOrder,Status),aggregate(NetAmount,Currency))/orderby(Currency,NetAmount desc,PurchaseOrder)/concat(aggregate($count as UI5__count),top(10))"],
   ['custom aggregate per unit (Show Details)', "PurchaseOrders?$apply=filter(CompanyCode eq '1000')/groupby((Currency),aggregate(NetAmount))&$orderby=Currency"],
   // micro chart series: a collection expand with $select / $orderby (the mock ignores a nested $top, so none here)
   ['micro chart series', "PurchaseOrderItems(PurchaseOrder='4500000003',PurchaseOrderItem=10)?$select=PurchaseOrder,PurchaseOrderItem,OrderQuantity&$expand=_History($select=HistoryCounter,PostingDate,Quantity;$orderby=PostingDate)"],

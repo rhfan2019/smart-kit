@@ -7,6 +7,8 @@ import { capabilitiesFor, isFilterable, isSortable } from '../model/access';
 import { resolvePath } from '../model/buildModel';
 import type { ChartModel, DataPointModel, EntityUi, FieldModel, MetaModel, PropertyModel, ValueListModel } from '../model/types';
 import { resolveEntityPath, type EntityPath } from './entityPath';
+import { encodeKeyLiteral } from './literals';
+import type { AnalyticalApply } from './analytical';
 
 export type Row = Record<string, unknown>;
 
@@ -34,6 +36,11 @@ export interface QueryRequest {
   filters?: FilterState;
   /** Conditions where any property may match (combined with "or"); used for value help search fallback. */
   anyOf?: FilterState;
+  /**
+   * `anyOf` is the whole filter and is written without parentheses ("Code eq '1' or Name eq '1'"), as the mdc field
+   * validates a typed value against the key and the description of its value list.
+   */
+  anyOfOnly?: boolean;
   search?: string;
   orderBy: SortItem[];
   skip?: number;
@@ -47,6 +54,11 @@ export interface QueryRequest {
   aggregate?: { groupBy: string[]; measures: AggregateMeasure[] };
   /** Recursive hierarchy (docs/26 §3.10): the visible nodes as `$apply=…/com.sap.vocabularies.Hierarchy.v1.TopLevels(…)`. */
   hierarchy?: HierarchyRequest;
+  /**
+   * First page of an analytical table (AL-10, ./analytical.ts): grand total, number of leaves (`count`) and the leaves
+   * from `skip` / `top`, sorted by `orderBy`, in one `$apply` with `concat`; `select` and `expand` are not sent.
+   */
+  analytical?: AnalyticalApply;
 }
 
 /**
@@ -79,6 +91,8 @@ export interface ReadRequest {
 export interface QueryResult {
   rows: Row[];
   count?: number;
+  /** The grand total row of an analytical request (`QueryRequest.analytical` with a grand total). */
+  grandTotal?: Row;
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -531,9 +545,11 @@ export interface ValueHelpRequestOptions {
    * value list's PresentationVariant, else by the key); `suggest` (default) – type-ahead and fixed values (sorted by
    * the PresentationVariant, fixed values else by their first shown parameter); `description` – the text of one
    * value (`$select` = the description, `$top=2`, no count, as the mdc field reads a token's description;
-   * `withDescription: false` when the field shows the code only).
+   * `withDescription: false` when the field shows the code only); `validate` – a typed value checked as the mdc field
+   * does (`getItemForValue` with `checkKey` and `checkDescription`): `$filter=<key> eq 'v' or <description> eq 'v'`
+   * (the key only without a description or with `withDescription: false`), no `$select`, `$top=2`.
    */
-  purpose?: 'dialog' | 'suggest' | 'description';
+  purpose?: 'dialog' | 'suggest' | 'description' | 'validate';
   /** With `purpose: 'description'`: whether the description is selected (default true). */
   withDescription?: boolean;
   search?: string;
@@ -599,6 +615,12 @@ export function buildValueHelpRequest(model: MetaModel, vl: ValueListModel, o: V
   const typeName = set?.typeName ?? '';
   const vhType = model.entityTypes[typeName];
   const vhUi = model.ui[typeName];
+  if (o.purpose === 'validate') {
+    const value = o.keys?.[0] ?? '';
+    const desc = o.withDescription === false ? undefined : vl.descriptionProperty;
+    const anyOf: FilterState = { [vl.keyProperty]: [{ operator: 'EQ', values: [value] }], ...(desc ? { [desc]: [{ operator: 'EQ', values: [value] }] } : {}) };
+    return { source: { entitySet: vl.collectionPath }, select: [], expand: [], anyOf, anyOfOnly: true, orderBy: [], skip: undefined, top: 2, count: false };
+  }
   if (o.purpose === 'description') {
     const desc = vl.descriptionProperty;
     const sel = o.withDescription === false || !desc ? { select: [], expand: [] } : selectAndExpand(model, typeName, [desc]);
@@ -642,7 +664,9 @@ export function buildValueHelpRequest(model: MetaModel, vl: ValueListModel, o: V
     orderBy,
     skip: o.skip ?? 0,
     top: o.top ?? 50,
-    count: caps?.countable ?? true,
+    // only the dialog's table counts its rows; type-ahead and fixed values do not (FE ValueListHelper
+    // getTableItemsParameters: "length: 10" without $count)
+    count: o.purpose === 'dialog' ? caps?.countable ?? true : false,
   };
 }
 
@@ -672,9 +696,13 @@ export function typeLookup(model: MetaModel, typeName: string) {
 }
 
 /** Builds the $filter string of a request (filters and anyOf). */
-export function filterString(model: MetaModel, typeName: string, req: Pick<QueryRequest, 'filters' | 'anyOf' | 'timeZone' | 'caseInsensitive'>): string | undefined {
+export function filterString(model: MetaModel, typeName: string, req: Pick<QueryRequest, 'filters' | 'anyOf' | 'anyOfOnly' | 'timeZone' | 'caseInsensitive'>): string | undefined {
   const typeOf = typeLookup(model, typeName);
   const parts: string[] = [];
+  if (req.anyOfOnly && req.anyOf && !req.filters) {
+    const ors = Object.entries(req.anyOf).map(([p, cs]) => toFilter({ [p]: cs }, typeOf, { timeZone: req.timeZone, caseInsensitive: req.caseInsensitive })).filter((x): x is string => Boolean(x));
+    return ors.length ? ors.join(' or ') : undefined;
+  }
   const all = req.filters ? toFilter(req.filters, typeOf, { timeZone: req.timeZone, caseInsensitive: req.caseInsensitive }) : undefined;
   if (all) parts.push(all);
   if (req.anyOf) {
@@ -710,9 +738,12 @@ function wrapped(f: string): boolean {
 }
 
 /** The query string (without "?") of a list request. Options are emitted in a stable order. */
-export function toQueryString(model: MetaModel, req: QueryRequest): string {
+export function toQueryString(model: MetaModel, request: QueryRequest): string {
+  // the parameters of a parameterized entity set are in the resource path (sourcePath), not in $filter
+  const req = withoutParameters(model, request);
   const info = sourceInfo(model, req.source);
   const opts: string[] = [];
+  if (req.analytical) return analyticalQueryString(model, req, req.analytical, info.typeName);
   if (req.aggregate) {
     // $apply is evaluated before $filter: filters go into a filter() transformation (OData Data Aggregation §3).
     const filter = filterString(model, info.typeName, req);
@@ -748,12 +779,36 @@ export function toQueryString(model: MetaModel, req: QueryRequest): string {
   return opts.join('&');
 }
 
+const aggregateList = (measures: AggregateMeasure[]) => measures
+  .map((m) => (m.with === 'count' ? `$count as ${m.as ?? 'count'}`
+    : m.with ? `${m.path} with ${m.with} as ${m.as ?? m.path.replace(/\//g, '_')}`
+      : m.as && m.as !== m.path ? `${m.path} as ${m.as}` : m.path))
+  .join(',');
+
+/**
+ * First page of an analytical table as sap.ui.model.odata.v4.lib._AggregationHelper buildApply writes it (AL-10):
+ * `filter(F)/search(S)/concat(aggregate(<grand total>),groupby((<leaf groups>),aggregate(<measures>))/orderby(O)/
+ * concat(aggregate($count as UI5__count),skip(s)/top(t)))`, no other system query option.
+ */
+function analyticalQueryString(model: MetaModel, req: QueryRequest, a: AnalyticalApply, typeName: string): string {
+  const filter = filterString(model, typeName, req);
+  const measures = aggregateList(a.measures);
+  let leaves = a.groupBy.length ? `groupby((${a.groupBy.join(',')})${measures ? `,aggregate(${measures})` : ''})` : measures ? `aggregate(${measures})` : 'identity';
+  if (req.orderBy.length) leaves += `/orderby(${req.orderBy.map((s) => (s.descending ? `${s.path} desc` : s.path)).join(',')})`;
+  const skipTop = [...(req.skip ? [`skip(${req.skip})`] : []), ...(req.top !== undefined ? [`top(${req.top})`] : [])].join('/');
+  if (req.count) leaves += `/concat(aggregate($count as UI5__count),${skipTop || 'identity'})`;
+  else if (skipTop) leaves += `/${skipTop}`;
+  const main = a.grandTotal.length ? `concat(aggregate(${aggregateList(a.grandTotal)}),${leaves})` : leaves;
+  const steps = [...(filter ? [`filter(${filter})`] : []), ...(req.search ? [`search(${req.search})`] : []), main];
+  return `$apply=${encodeOption(steps.join('/'))}`;
+}
+
 /**
  * TopLevels request as SAP Fiori elements sends it: filters and search keep the matching nodes with their ancestors
  * (`ancestors(…,keep start)`), the sort applies to siblings (`orderby` before TopLevels).
  */
 function hierarchyQueryString(model: MetaModel, req: QueryRequest, h: HierarchyRequest, typeName: string): string {
-  const nodes = `$root/${sourcePath(model, req.source)}`;
+  const nodes = `$root/${sourcePath(model, req.source, req.filters)}`;
   const steps: string[] = [];
   const filter = filterString(model, typeName, req);
   const limit = [...(filter ? [`filter(${filter})`] : []), ...(req.search ? [`search(${req.search})`] : [])];
@@ -780,8 +835,45 @@ export function readQueryString(req: ReadRequest): string {
   return opts.join('&');
 }
 
-/** Resource path (relative to the service root) of a request source. */
-export function sourcePath(model: MetaModel, source: QuerySource): string {
-  if ('entitySet' in source) return source.entitySet;
+/**
+ * The parameter values of a parameterized entity set from the conditions (EntitySetModel.parameters): the first value of
+ * each parameter's first complete condition (FE FilterUtils getBindingPathForParameters); undefined when the set has no
+ * parameters. Missing parameters are left out.
+ */
+export function parameterValues(model: MetaModel, entitySet: string, filters: FilterState | undefined): Record<string, unknown> | undefined {
+  const params = model.entitySets[entitySet]?.parameters;
+  if (!params) return undefined;
+  const out: Record<string, unknown> = {};
+  for (const p of params.properties) {
+    const c = (filters?.[p] ?? []).find(isComplete);
+    if (c && c.values[0] !== undefined && c.values[0] !== null && c.values[0] !== '') out[p] = c.values[0];
+  }
+  return out;
+}
+
+/** The conditions without the parameters of a parameterized entity set (they go into the resource path, not $filter). */
+function withoutParameters<T extends Pick<QueryRequest, 'source' | 'filters'>>(model: MetaModel, req: T): T {
+  if (!('entitySet' in req.source) || !req.filters) return req;
+  const params = model.entitySets[req.source.entitySet]?.parameters;
+  if (!params || !params.properties.some((p) => p in req.filters!)) return req;
+  const filters = Object.fromEntries(Object.entries(req.filters).filter(([k]) => !params.properties.includes(k)));
+  return { ...req, filters: Object.keys(filters).length ? filters : undefined };
+}
+
+/**
+ * Resource path (relative to the service root) of a request source. A parameterized entity set ("P/Set") is addressed
+ * with its parameter values from `filters`: "P(p1='EUR',p2=2026-11-14)/Set" (OData key literals, in parameter order).
+ */
+export function sourcePath(model: MetaModel, source: QuerySource, filters?: FilterState): string {
+  if ('entitySet' in source) {
+    const params = model.entitySets[source.entitySet]?.parameters;
+    if (!params) return source.entitySet;
+    const values = parameterValues(model, source.entitySet, filters)!;
+    const missing = params.properties.filter((p) => !(p in values));
+    if (missing.length) throw new Error(`Parameterized entity set "${source.entitySet}": no value for ${missing.join(', ')}`);
+    const type = model.entityTypes[params.typeName]!;
+    const keys = params.properties.map((p) => `${p}=${encodeKeyLiteral(values[p], type.properties[p]!.edmType)}`).join(',');
+    return `${params.entitySet}(${keys})/${params.navigation}`;
+  }
   return `${resolveEntityPath(model, source.parent).canonical}/${source.navigation}`;
 }

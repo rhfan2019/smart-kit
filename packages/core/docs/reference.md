@@ -5,7 +5,7 @@
 
 ## `@rhfan2019/smart-kit-core`
 
-`ActionModel` (interface) · `activeFilterPaths` (function) · `aggregateMeasure` (function) · `AggregateMeasure` (interface) · `AggregateRequestOptions` (interface) · `AggregationModel` (interface) · `ALLOWED_EXPRESSIONS_PRIORITY` (const) · `arrangeText` (function) · `buildAggregateRequest` (function) · `buildChartRequest` (function) · `buildHierarchyRequest` (function) · `buildListRequest` (function) · `buildModel` (function) · `BuildModelOptions` (interface) · `buildObjectRequest` (function) · `buildTotalsRequest` (function) · `buildValueHelpRequest` (function) · `calculateCriticality` (function) · `calculateTrend` (function) · `canGroup` (function) · `canSubtotal` (function) · `canTotal` (function) · `capabilitiesFor` (function) · `CapabilityModel` (interface) · `chartExpand` (function) · `chartFields` (function) · `chartIsSeries` (function) · `ChartModel` (interface) · `ChartRequestOptions` (interface) · `chartSeriesSelect` (function) · `childPathOf` (function) · `collectTotals` (function) · `ColumnModel` (type) · `companionPaths` (function) · `compareDecimal` (function) · `compareValues` (function) · `ConcurrencyError` (class) · `Condition` (interface) · `conditionAllowed` (function) · `COUNT_DATE_OPERATORS` (const) · `createMessage` (function) · `createSessionPageStateStore` (function) · `Criticality` (type) · `CriticalityCalculationModel` (interface) · `csdlJsonToXml` (function) · `CsdlSource` (type) · `currencyDigits` (function) · `DataPointModel` (interface) · `dataPointPaths` (function) · `DataProvider` (type) · `DEFAULT_CAPABILITIES` (const) · `deriveColumns` (function) · `DERIVED_GENERAL_SECTION` (const) · `DirectEditStrategy` (class) · `DRAFT_EDIT_STATES` (const) · `DraftEditState` (type) · `DraftEditStrategy` (class) · `DraftModel` (interface) · `DrillState` (type) · `EDIT_STATE` (const) · `EditSession` (interface) · `editStateFilter` (function) · `editStateOf` (function) · `EditStrategy` (interface) · `editStrategyFor` (function) · `EdmType` (type) · `encodeOption` (function) · `EntityPath` (type) · `EntityPathError` (class) · `entityPathOf` (function) · `EntitySetModel` (interface) · `EntityTypeModel` (interface) · `EntityUi` (interface) · `errorFromResponse` (function) · `EventModel` (interface) · `ExpandSpec` (interface) · `FetchLike` (type) · `FieldModel` (interface) · `fieldPaths` (function) · `FilterExpression` (type) · `filterExpressionRules` (function) · `FilterExpressionRules` (interface) · `FilterOptions` (interface) · `FilterState` (type) · `filterString` (function) · `FIXED_DAY_OPERATORS` (const) · `FixedDayOperator` (type) · `formatDate` (function) · `formatDateTime` (function) · `formatDateTimeWithTimezone` (function) · `formatNumber` (function) · `FormatOptions` (interface) · `formatTime` (function) · `formatTimezone` (function) · `formatValue` (function) · `FormGroupModel` (interface) · `getEntitySet` (function) · `getEntityType` (function) · `getProperty` (function) · `getUi` (function) · `groupKey` (function) · `HeaderFacetModel` (type) · `HeaderInfoModel` (interface) · `hiddenFilterPath` (function) · `hiddenFiltersOf` (function) · `HierarchyNode` (interface) · `hierarchyNodeOf` (function) · `hierarchyOf` (function) · `HierarchyRequest` (interface) · `HierarchyRequestOptions` (interface) · `highestSeverity` (function) · `humanize` (function) · `Importance` (type) · `ImprovementDirection` (type) · `InitialCondition` (interface) · `isAbortError` (function) · `isComplete` (function) · `isCustomAggregate` (function) · `isDraftRow` (function) · `isFilterable` (function) · `isRelativeDateOperator` (function) · `isSortable` (function) · `keyPredicate` (function) · `ListRequestOptions` (interface) · `LiteralError` (class) · `loadService` (function) · `LoadServiceOptions` (interface) · `matches` (function) · `matchesEditState` (function) · `MAX_GROUP_VALUES` (const) · `MDC_DATE_OPERATORS` (const) · `MemoryPageStateStore` (class) · `MemoryProvider` (class) · `MemoryProviderOptions` (interface) · `MemoryVariantStore` (class) · `Message` (interface) · `messagesFromError` (function) · `messagesFromHeader` (function) · `MessageType` (type) · `MetaModel` (interface) · `MICRO_CHART_MAX_POINTS` (const) · `MICRO_COMPARISON_MAX_BARS` (const) · `MODEL_VERSION` (const) · `ModelError` (class) · `ModelWarning` (interface) · `NavigationAdapter` (interface) · `NavigationModel` (interface) · `NavigationTarget` (type) · `objectFields` (function) · `ODataError` (class) · `ODataErrorDetail` (interface) · `ODataV4Provider` (class) · `ODataV4ProviderOptions` (interface) · `ODataVariantStore` (class) · `ODataVariantStoreOptions` (interface) · `Operator` (type) · `OPERATOR_ARITY` (const) · `OPERATORS` (const) · `PageStateStore` (interface) · `parseAnnotationPath` (function) · `parseEntityPath` (function) · `PathSegment` (interface) · `PresentationModel` (interface) · `PresentationVariantModel` (interface) · `propertyFilter` (function) · `PropertyModel` (interface) · `QueryRequest` (interface) · `QueryResult` (interface) · `QuerySource` (type) · `ReadDataProvider` (interface) · `readQueryString` (function) · `ReadRequest` (interface) · `RecursiveHierarchyModel` (interface) · `RELATIVE_DATE_OPERATORS` (const) · `RelativeDateOperator` (type) · `relativeDateRange` (function) · `relativeDateValueTypes` (function) · `RequestOptions` (interface) · `resolveCondition` (function) · `ResolvedPath` (interface) · `resolveEntityPath` (function) · `resolvePath` (function) · `restrictConditions` (function) · `Row` (type) · `SectionModel` (interface) · `selectAndExpand` (function) · `SemanticTarget` (interface) · `SemanticTargetRequest` (interface) · `setDefaultWeekStart` (function) · `siblingPath` (function) · `SortItem` (interface) · `sourceInfo` (function) · `SourceInfo` (interface) · `sourcePath` (function) · `STANDARD_VARIANT_ID` (const) · `startOfDayIso` (function) · `strictestExpression` (function) · `SubSectionContent` (type) · `SubSectionModel` (interface) · `targetEntitySet` (function) · `TextArrangement` (type) · `toCsdlXml` (function) · `todayIn` (function) · `toFilter` (function) · `toLiteral` (function) · `toQueryString` (function) · `TOTAL_COUNT_ALIAS` (const) · `TotalAmount` (interface) · `TotalsEntry` (interface) · `TotalsRequestOptions` (interface) · `TrendCalculationModel` (interface) · `unitPathOf` (function) · `UnknownEntitySetError` (class) · `ValueHelpRequestOptions` (interface) · `ValueListModel` (interface) · `ValueListParameter` (interface) · `valueListTextArrangement` (function) · `ValueOperator` (type) · `ValueRef` (type) · `Variant` (interface) · `VariantContent` (interface) · `VariantStore` (interface) · `ViewModel` (interface) · `withHiddenFilters` (function) · `WriteDataProvider` (interface) · `WriteResult` (interface)
+`ActionModel` (interface) · `activeFilterPaths` (function) · `aggregateMeasure` (function) · `AggregateMeasure` (interface) · `AggregateRequestOptions` (interface) · `AggregationModel` (interface) · `ALLOWED_EXPRESSIONS_PRIORITY` (const) · `ANALYTICAL_COUNT_ALIAS` (const) · `AnalyticalApply` (interface) · `AnalyticalRequestOptions` (interface) · `AnalyticalRequests` (interface) · `arrangeText` (function) · `buildAggregateRequest` (function) · `buildAnalyticalRequests` (function) · `buildChartRequest` (function) · `buildHierarchyRequest` (function) · `buildListRequest` (function) · `buildModel` (function) · `BuildModelOptions` (interface) · `buildObjectRequest` (function) · `buildTotalsRequest` (function) · `buildValueHelpRequest` (function) · `calculateCriticality` (function) · `calculateTrend` (function) · `canGroup` (function) · `canSubtotal` (function) · `canTotal` (function) · `capabilitiesFor` (function) · `CapabilityModel` (interface) · `chartExpand` (function) · `chartFields` (function) · `chartIsSeries` (function) · `ChartModel` (interface) · `ChartRequestOptions` (interface) · `chartSeriesSelect` (function) · `childPathOf` (function) · `collectTotals` (function) · `ColumnModel` (type) · `companionPaths` (function) · `compareDecimal` (function) · `compareValues` (function) · `ConcurrencyError` (class) · `Condition` (interface) · `conditionAllowed` (function) · `COUNT_DATE_OPERATORS` (const) · `createMessage` (function) · `createSessionPageStateStore` (function) · `Criticality` (type) · `CriticalityCalculationModel` (interface) · `csdlJsonToXml` (function) · `CsdlSource` (type) · `currencyDigits` (function) · `DataPointModel` (interface) · `dataPointPaths` (function) · `DataProvider` (type) · `DEFAULT_CAPABILITIES` (const) · `deriveColumns` (function) · `DERIVED_GENERAL_SECTION` (const) · `DirectEditStrategy` (class) · `DRAFT_EDIT_STATES` (const) · `DraftEditState` (type) · `DraftEditStrategy` (class) · `DraftModel` (interface) · `DrillState` (type) · `EDIT_STATE` (const) · `EditSession` (interface) · `editStateFilter` (function) · `editStateOf` (function) · `EditStrategy` (interface) · `editStrategyFor` (function) · `EdmType` (type) · `encodeOption` (function) · `EntityPath` (type) · `EntityPathError` (class) · `entityPathOf` (function) · `EntitySetModel` (interface) · `EntityTypeModel` (interface) · `EntityUi` (interface) · `errorFromResponse` (function) · `EventModel` (interface) · `ExpandSpec` (interface) · `FetchLike` (type) · `FieldModel` (interface) · `fieldPaths` (function) · `FilterExpression` (type) · `filterExpressionRules` (function) · `FilterExpressionRules` (interface) · `FilterOptions` (interface) · `FilterState` (type) · `filterString` (function) · `FIXED_DAY_OPERATORS` (const) · `FixedDayOperator` (type) · `formatDate` (function) · `formatDateTime` (function) · `formatDateTimeWithTimezone` (function) · `formatNumber` (function) · `FormatOptions` (interface) · `formatTime` (function) · `formatTimezone` (function) · `formatValue` (function) · `FormGroupModel` (interface) · `getEntitySet` (function) · `getEntityType` (function) · `getProperty` (function) · `getUi` (function) · `groupKey` (function) · `HeaderFacetModel` (type) · `HeaderInfoModel` (interface) · `hiddenFilterPath` (function) · `hiddenFiltersOf` (function) · `HierarchyNode` (interface) · `hierarchyNodeOf` (function) · `hierarchyOf` (function) · `HierarchyRequest` (interface) · `HierarchyRequestOptions` (interface) · `highestSeverity` (function) · `humanize` (function) · `Importance` (type) · `ImprovementDirection` (type) · `InitialCondition` (interface) · `isAbortError` (function) · `isComplete` (function) · `isCustomAggregate` (function) · `isDraftRow` (function) · `isFilterable` (function) · `isRelativeDateOperator` (function) · `isSortable` (function) · `keyPredicate` (function) · `ListRequestOptions` (interface) · `LiteralError` (class) · `loadService` (function) · `LoadServiceOptions` (interface) · `matches` (function) · `matchesEditState` (function) · `MAX_GROUP_VALUES` (const) · `MDC_DATE_OPERATORS` (const) · `MemoryPageStateStore` (class) · `MemoryProvider` (class) · `MemoryProviderOptions` (interface) · `MemoryVariantStore` (class) · `Message` (interface) · `messagesFromError` (function) · `messagesFromHeader` (function) · `MessageType` (type) · `MetaModel` (interface) · `MICRO_CHART_MAX_POINTS` (const) · `MICRO_COMPARISON_MAX_BARS` (const) · `MODEL_VERSION` (const) · `ModelError` (class) · `ModelWarning` (interface) · `NavigationAdapter` (interface) · `NavigationModel` (interface) · `NavigationTarget` (type) · `objectFields` (function) · `ODataError` (class) · `ODataErrorDetail` (interface) · `ODataV4Provider` (class) · `ODataV4ProviderOptions` (interface) · `ODataVariantStore` (class) · `ODataVariantStoreOptions` (interface) · `Operator` (type) · `OPERATOR_ARITY` (const) · `OPERATORS` (const) · `PageStateStore` (interface) · `parseAnnotationPath` (function) · `parseEntityPath` (function) · `PathSegment` (interface) · `PresentationModel` (interface) · `PresentationVariantModel` (interface) · `propertyFilter` (function) · `PropertyModel` (interface) · `QueryRequest` (interface) · `QueryResult` (interface) · `QuerySource` (type) · `ReadDataProvider` (interface) · `readQueryString` (function) · `ReadRequest` (interface) · `readValueListService` (function) · `RecursiveHierarchyModel` (interface) · `referencedValueLists` (function) · `RELATIVE_DATE_OPERATORS` (const) · `RelativeDateOperator` (type) · `relativeDateRange` (function) · `relativeDateValueTypes` (function) · `RequestOptions` (interface) · `resolveCondition` (function) · `ResolvedPath` (interface) · `resolveEntityPath` (function) · `resolvePath` (function) · `resolveValueListReference` (function) · `restrictConditions` (function) · `Row` (type) · `SectionModel` (interface) · `selectAndExpand` (function) · `SemanticTarget` (interface) · `SemanticTargetRequest` (interface) · `serviceRootOf` (function) · `setDefaultWeekStart` (function) · `siblingPath` (function) · `SortItem` (interface) · `sourceInfo` (function) · `SourceInfo` (interface) · `sourcePath` (function) · `STANDARD_VARIANT_ID` (const) · `startOfDayIso` (function) · `strictestExpression` (function) · `SubSectionContent` (type) · `SubSectionModel` (interface) · `targetEntitySet` (function) · `TextArrangement` (type) · `toCsdlXml` (function) · `todayIn` (function) · `toFilter` (function) · `toLiteral` (function) · `toQueryString` (function) · `TOTAL_COUNT_ALIAS` (const) · `TotalAmount` (interface) · `TotalsEntry` (interface) · `TotalsRequestOptions` (interface) · `TrendCalculationModel` (interface) · `unitPathOf` (function) · `UnknownEntitySetError` (class) · `ValueHelpRequestOptions` (interface) · `ValueListModel` (interface) · `ValueListParameter` (interface) · `ValueListService` (interface) · `valueListTextArrangement` (function) · `ValueOperator` (type) · `ValueRef` (type) · `Variant` (interface) · `VariantContent` (interface) · `VariantStore` (interface) · `ViewModel` (interface) · `withHiddenFilters` (function) · `WriteDataProvider` (interface) · `WriteResult` (interface)
 
 ### `ActionModel` — interface
 
@@ -83,6 +83,48 @@ CommonUtils.AllowedExpressionsPrio
 const ALLOWED_EXPRESSIONS_PRIORITY: readonly FilterExpression[]
 ```
 
+### `ANALYTICAL_COUNT_ALIAS` — const
+
+Alias of the number of leaves in the first page of an analytical table (sap.ui.model.odata.v4 "UI5__count").
+
+```ts
+const ANALYTICAL_COUNT_ALIAS: "UI5__count"
+```
+
+### `AnalyticalApply` — interface
+
+The analytical part of the first page request (`QueryRequest.analytical`).
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `groupBy` | **yes** | `string[]` | Leaf level: sorted group properties, followed by the `additionally` properties (local texts). |
+| `measures` | **yes** | `AggregateMeasure[]` | Aggregates of the leaves (custom aggregates by name), each followed by its unit unless it is grouped by. |
+| `grandTotal` | **yes** | `AggregateMeasure[]` | Grand total (`concat(aggregate(…),…)` first); empty: none. |
+
+### `AnalyticalRequestOptions` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `columns` | **yes** | `FieldModel[]` | Visible columns, in display order. |
+| `source` | **yes** | `QuerySource` |  |
+| `totals` |  | `string[]` | Measures (custom aggregates) with a grand total: the columns whose totals are shown. |
+| `groupExtra` |  | `string[]` | Further properties the visible content needs from the leaves (custom columns' `properties`): grouped by. |
+| `search` |  | `string` |  |
+| `filters` |  | `FilterState` |  |
+| `top` |  | `number` |  |
+| `sort` |  | `SortItem[]` |  |
+| `extraSelect` |  | `string[]` | Extra paths to select (e.g. requested by custom content). |
+| `timeZone` |  | `string` |  |
+| `requestAtLeast` |  | `string[]` | UI.PresentationVariant/RequestAtLeast of the table's presentation (a view's own PV, FE Table createRequestedProperties); default the entity's default presentation. |
+
+### `AnalyticalRequests` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `first` | **yes** | `QueryRequest` | First page: grand total, number of leaves (`count`) and the first `top` leaves in one `$apply`. |
+| `page` | **yes** | `(skip: number, top: number) => QueryRequest` | A following page: a plain list request without `$count`. |
+| `late` |  | `ReadRequest` | What each row of the first page still needs (late properties); undefined when the first page has everything. |
+
 ### `arrangeText` — function
 
 The display of a code with its text: TextFirst (default) "Text (Code)", TextLast "Code (Text)", TextOnly "Text", TextSeparate "Code" (the text is not shown and not requested, as in FE). Without a text, the code; without a code, the text (except TextSeparate).
@@ -97,6 +139,14 @@ Builds the aggregation request of a chart (ADR-021): group by the dimensions (an
 
 ```ts
 buildAggregateRequest(model: MetaModel, chart: { dimensions: string[]; measures: string[]; }, o: AggregateRequestOptions): QueryRequest
+```
+
+### `buildAnalyticalRequests` — function
+
+Builds the requests of an analytical table (see the module comment).
+
+```ts
+buildAnalyticalRequests(model: MetaModel, ui: EntityUi, o: AnalyticalRequestOptions): AnalyticalRequests
 ```
 
 ### `buildChartRequest` — function
@@ -629,6 +679,7 @@ entityPathOf(model: MetaModel, entitySet: string, row: Record<string, unknown>):
 | `capabilities` | **yes** | `CapabilityModel` |  |
 | `navigationCapabilities` | **yes** | `Record&lt;string, Partial&lt;CapabilityModel>>` | Per-navigation capability overrides (NavigationRestrictions). |
 | `draft` |  | `DraftModel` | Common.DraftRoot / Common.DraftNode (ADR-018). |
+| `parameters` |  | `{ entitySet: string; navigation: string; typeName: string; properties: string[] }` | Parameterized entity set (Common.ResultContext): this set ("P/Set") is the result set contained in the parameter set `entitySet` through `navigation`; `properties` are the parameters (the keys of the parameter type `typeName`), in order. Requests go to "P(p1=…,p2=…)/Set" with the parameters' conditions (`sourcePath`). |
 
 ### `EntityTypeModel` — interface
 
@@ -794,7 +845,7 @@ export type FilterState = Record<string, Condition[]>;
 Builds the $filter string of a request (filters and anyOf).
 
 ```ts
-filterString(model: MetaModel, typeName: string, req: Pick<QueryRequest, "filters" | "anyOf" | "timeZone" | "caseInsensitive">): string | undefined
+filterString(model: MetaModel, typeName: string, req: Pick<QueryRequest, "filters" | "anyOf" | "anyOfOnly" | "timeZone" | "caseInsensitive">): string | undefined
 ```
 
 ### `FIXED_DAY_OPERATORS` — const
@@ -818,6 +869,8 @@ formatDate(value: unknown, locale: string): string
 ```
 
 ### `formatDateTime` — function
+
+Edm.DateTimeOffset: date and time in the medium style, with seconds (sap.ui.model.odata.type.DateTimeOffset default).
 
 ```ts
 formatDateTime(value: unknown, locale: string, timeZone?: string): string
@@ -992,8 +1045,8 @@ Parameters of the TopLevels function (OData Hierarchy vocabulary).
 | `search` |  | `string` |  |
 | `filters` |  | `FilterState` |  |
 | `sort` |  | `SortItem[]` |  |
-| `timeZone` |  | `string` |  |
 | `extraSelect` |  | `string[]` | Extra paths to select (e.g. requested by custom content). |
+| `timeZone` |  | `string` |  |
 | `requestAtLeast` |  | `string[]` | UI.PresentationVariant/RequestAtLeast of the table's presentation (a view's own PV, FE Table createRequestedProperties); default the entity's default presentation. |
 
 ### `highestSeverity` — function
@@ -1186,6 +1239,7 @@ new MemoryProvider(o: MemoryProviderOptions)
 | `data` | **yes** | `Record&lt;string, Row[]>` |  |
 | `latency` |  | `number` | Artificial latency in milliseconds. |
 | `actions` |  | `Record&lt;string, (row: Row \| undefined, parameters: Row) => Row \| undefined>` | Bound and unbound action handlers by qualified name (MemoryProvider.invoke). |
+| `valueListServices` |  | `Record&lt;string, { metadata: CsdlSource; data: Record&lt;string, Row[]> }>` | Value help services of Common.ValueListReferences, by reference as annotated: the `$metadata` of the value help service (with its Common.ValueListMapping annotations) and its rows by entity set. |
 
 ### `MemoryVariantStore` — class
 
@@ -1471,6 +1525,8 @@ propertyFilter(path: string, conditions: Condition[], type: EdmType, opts?: Filt
 | `unit` |  | `ValueRef` |  |
 | `valueList` |  | `ValueListModel` |  |
 | `valueLists` |  | `ValueListModel[]` | All Common.ValueList annotations that apply, by qualifier, default ("") first (FE `putDefaultQualifierFirst`), limited to Common.ValueListRelevantQualifiers when it lists qualifiers; `valueList` is the first of them. Absent when there is at most one. |
+| `valueListReferences` |  | `string[]` | Common.ValueListReferences: URLs of value help services' `$metadata` (relative to this service's `$metadata`) whose Common.ValueListMapping annotations describe the value lists of the property. They are loaded on demand (`ValueListReferenceService`, `referencedValueLists`); `valueList` / `valueLists` hold only the local ones. |
+| `valueListFixedValues` |  | `boolean` | Common.ValueListWithFixedValues (also for value lists that come from Common.ValueListReferences). |
 | `isEmailAddress` |  | `boolean` | Communication.IsEmailAddress: shown as a `mailto:` link. |
 | `isPhoneNumber` |  | `boolean` | Communication.IsPhoneNumber: shown as a `tel:` link. |
 | `masked` |  | `boolean` | Common.Masked: shown as "*" characters. |
@@ -1483,6 +1539,7 @@ propertyFilter(path: string, conditions: Condition[], type: EdmType, opts?: Filt
 | `semanticObject` |  | `string` | Common.SemanticObject (constant): the value is a smart link to the semantic object's targets (D42). |
 | `filterDefaultValue` |  | `string \| number \| boolean` | Common.FilterDefaultValue: default "EQ" filter condition when there is no default selection variant (FE FilterHelper). |
 | `fieldControl` |  | `ValueRef` | Common.FieldControl constant (0 hidden, 1 read-only, 3 optional, 7 mandatory) or a path. |
+| `parameter` |  | `boolean` | A parameter of a parameterized entity set, resolvable on its result type (EntitySetModel.parameters). |
 
 ### `QueryRequest` — interface
 
@@ -1495,6 +1552,7 @@ propertyFilter(path: string, conditions: Condition[], type: EdmType, opts?: Filt
 | `count` | **yes** | `boolean` |  |
 | `filters` |  | `FilterState` | Conditions combined with "and" across properties. |
 | `anyOf` |  | `FilterState` | Conditions where any property may match (combined with "or"); used for value help search fallback. |
+| `anyOfOnly` |  | `boolean` | `anyOf` is the whole filter and is written without parentheses ("Code eq '1' or Name eq '1'"), as the mdc field validates a typed value against the key and the description of its value list. |
 | `search` |  | `string` |  |
 | `skip` |  | `number` |  |
 | `top` |  | `number` |  |
@@ -1502,6 +1560,7 @@ propertyFilter(path: string, conditions: Condition[], type: EdmType, opts?: Filt
 | `timeZone` |  | `string` |  |
 | `aggregate` |  | `{ groupBy: string[]; measures: AggregateMeasure[] }` | Server-side aggregation ($apply, OData Data Aggregation): group by `groupBy` and aggregate the measures (ADR-021). |
 | `hierarchy` |  | `HierarchyRequest` | Recursive hierarchy (docs/26 §3.10): the visible nodes as `$apply=…/com.sap.vocabularies.Hierarchy.v1.TopLevels(…)`. |
+| `analytical` |  | `AnalyticalApply` | First page of an analytical table (AL-10, ./analytical.ts): grand total, number of leaves (`count`) and the leaves from `skip` / `top`, sorted by `orderBy`, in one `$apply` with `concat`; `select` and `expand` are not sent. |
 
 ### `QueryResult` — interface
 
@@ -1509,6 +1568,7 @@ propertyFilter(path: string, conditions: Condition[], type: EdmType, opts?: Filt
 | --- | --- | --- | --- |
 | `rows` | **yes** | `Row[]` |  |
 | `count` |  | `number` |  |
+| `grandTotal` |  | `Row` | The grand total row of an analytical request (`QueryRequest.analytical` with a grand total). |
 
 ### `QuerySource` — type
 
@@ -1524,6 +1584,7 @@ Read capability: implemented in phase 1.
 | --- | --- | --- | --- |
 | `query` | **yes** | `(req: QueryRequest, opts?: RequestOptions) => Promise&lt;QueryResult>` |  |
 | `read` | **yes** | `(path: EntityPath, req: ReadRequest, opts?: RequestOptions) => Promise&lt;Row>` |  |
+| `valueListService` |  | `(reference: string, opts?: RequestOptions) => Promise&lt;ValueListService>` | Loads the value help service of a Common.ValueListReferences entry (`reference`: URL of its `$metadata`, relative to this service's `$metadata`): its model, its Common.ValueListMapping annotations and a provider for its data (SAPUI5 ODataMetaModel `getOrCreateSharedModel`). Loaded once per URL. Providers without it have no referenced value lists. |
 
 ### `readQueryString` — function
 
@@ -1539,6 +1600,14 @@ readQueryString(req: ReadRequest): string
 | --- | --- | --- | --- |
 | `select` | **yes** | `string[]` |  |
 | `expand` | **yes** | `ExpandSpec[]` |  |
+
+### `readValueListService` — function
+
+Reads a value help service's `$metadata`: its model and the value list mappings it declares for properties of other services (targets in a namespace the document does not define).
+
+```ts
+readValueListService(reference: string, metadataUrl: string, metadata: CsdlSource, provider: (model: MetaModel) => DataProvider): ValueListService
+```
 
 ### `RecursiveHierarchyModel` — interface
 
@@ -1557,6 +1626,14 @@ A recursive hierarchy: `Aggregation.RecursiveHierarchy` (node and parent) with t
 | `matchedDescendantCount` |  | `string` |  |
 | `externalKey` |  | `string` |  |
 | `paired` |  | `boolean` | Hierarchy.RecursiveHierarchy with the same (non-empty) qualifier exists (FE: the default table type is TreeTable). |
+
+### `referencedValueLists` — function
+
+The value lists of a property with Common.ValueListReferences, once its value help services are loaded (`services`, in any order): the mappings of each reference in the order of the references, then the property's own value lists; the unqualified one first. With Common.ValueListWithFixedValues only the first is kept (UI5 expects exactly one).
+
+```ts
+referencedValueLists(model: MetaModel, typeName: string, path: string, services: ValueListService[]): ValueListModel[]
+```
 
 ### `RELATIVE_DATE_OPERATORS` — const
 
@@ -1630,6 +1707,14 @@ Resolves "nav1/nav2/Prop" against an entity type; returns the property and its o
 resolvePath(entityTypes: Record<string, EntityTypeModel>, typeName: string, path: string): { property?: PropertyModel; type?: EntityTypeModel; navigationPath: string[]; }
 ```
 
+### `resolveValueListReference` — function
+
+URL of a referenced `$metadata` resolved against the data service root (SAPUI5 `_Helper.makeAbsolute`).
+
+```ts
+resolveValueListReference(serviceUrl: string, reference: string): string
+```
+
 ### `restrictConditions` — function
 
 Keeps the allowed conditions, at most `max` (the latest ones win: a new single value replaces the old one).
@@ -1683,6 +1768,14 @@ What a semantic link asks the host for (NavigationAdapter.semanticTargets).
 | `path` |  | `string` | The property shown (Common.SemanticObject) or the DataField's value path. |
 | `service` |  | `string` |  |
 
+### `serviceRootOf` — function
+
+Service root of a `$metadata` URL (the part before `$metadata`, query options dropped).
+
+```ts
+serviceRootOf(metadataUrl: string): string
+```
+
 ### `setDefaultWeekStart` — function
 
 The first day of the week used when FilterOptions.weekStartsOn is not given (0 Sunday … 6 Saturday; initially 1, ISO 8601). The React provider sets it from the locale, as SAPUI5 takes the week from the locale (en-US: Sunday).
@@ -1723,10 +1816,10 @@ sourceInfo(model: MetaModel, source: QuerySource): SourceInfo
 
 ### `sourcePath` — function
 
-Resource path (relative to the service root) of a request source.
+Resource path (relative to the service root) of a request source. A parameterized entity set ("P/Set") is addressed with its parameter values from `filters`: "P(p1='EUR',p2=2026-11-14)/Set" (OData key literals, in parameter order).
 
 ```ts
-sourcePath(model: MetaModel, source: QuerySource): string
+sourcePath(model: MetaModel, source: QuerySource, filters?: FilterState): string
 ```
 
 ### `STANDARD_VARIANT_ID` — const
@@ -1819,7 +1912,7 @@ toLiteral(value: unknown, type: EdmType): string
 The query string (without "?") of a list request. Options are emitted in a stable order.
 
 ```ts
-toQueryString(model: MetaModel, req: QueryRequest): string
+toQueryString(model: MetaModel, request: QueryRequest): string
 ```
 
 ### `TOTAL_COUNT_ALIAS` — const
@@ -1893,7 +1986,7 @@ new UnknownEntitySetError(message?: string)
 
 | Member | Required | Type | Description |
 | --- | --- | --- | --- |
-| `purpose` |  | `'dialog' \| 'suggest' \| 'description'` | What the request is for (FE ValueListHelper): `dialog` – the value help dialog's table ($select of the value list entity's UI.SelectionFields, the parameters and the keys; texts of the shown columns expanded; sorted by the value list's PresentationVariant, else by the key); `suggest` (default) – type-ahead and fixed values (sorted by the PresentationVariant, fixed values else by their first shown parameter); `description` – the text of one value (`$select` = the description, `$top=2`, no count, as the mdc field reads a token's description; `withDescription: false` when the field shows the code only). |
+| `purpose` |  | `'dialog' \| 'suggest' \| 'description' \| 'validate'` | What the request is for (FE ValueListHelper): `dialog` – the value help dialog's table ($select of the value list entity's UI.SelectionFields, the parameters and the keys; texts of the shown columns expanded; sorted by the value list's PresentationVariant, else by the key); `suggest` (default) – type-ahead and fixed values (sorted by the PresentationVariant, fixed values else by their first shown parameter); `description` – the text of one value (`$select` = the description, `$top=2`, no count, as the mdc field reads a token's description; `withDescription: false` when the field shows the code only); `validate` – a typed value checked as the mdc field does (`getItemForValue` with `checkKey` and `checkDescription`): `$filter=&lt;key> eq 'v' or &lt;description> eq 'v'` (the key only without a description or with `withDescription: false`), no `$select`, `$top=2`. |
 | `withDescription` |  | `boolean` | With `purpose: 'description'`: whether the description is selected (default true). |
 | `search` |  | `string` |  |
 | `skip` |  | `number` |  |
@@ -1914,6 +2007,7 @@ new UnknownEntitySetError(message?: string)
 | `descriptionProperty` |  | `string` | Description property shown as text: the Common.Text of the key property in the value list entity (FE ValueListHelper `_enrichPath`: "only the text annotation of the key can specify the description"). |
 | `qualifier` |  | `string` | Qualifier of the Common.ValueList annotation ("" for the unqualified one). |
 | `presentationVariantQualifier` |  | `string` | Common.ValueList/PresentationVariantQualifier: the PV of the value list entity whose SortOrder sorts the list. |
+| `reference` |  | `string` | The Common.ValueListReferences entry (URL of a value help service's `$metadata`, relative to the data service's `$metadata`) this value list comes from, as a Common.ValueListMapping of that service: `collectionPath` and the parameters' value list properties belong to that service (SAPUI5 ODataMetaModel#requestValueListInfo `$model`). Absent for a Common.ValueList of the data service itself. |
 
 ### `ValueListParameter` — interface
 
@@ -1924,12 +2018,24 @@ new UnknownEntitySetError(message?: string)
 | `local` |  | `string` | Property of the source entity (InOut, Out, In). |
 | `constant` |  | `string` |  |
 
+### `ValueListService` — interface
+
+A loaded value help service: its model, its value list mappings and the provider that reads its data.
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `reference` | **yes** | `string` | The Common.ValueListReferences entry as annotated. |
+| `metadataUrl` | **yes** | `string` | Absolute (or root-relative) URL of the value help service's `$metadata`. |
+| `model` | **yes** | `MetaModel` | Model of the value help service (entity sets, types and UI annotations of the value list entities). |
+| `mappings` | **yes** | `Record&lt;string, Record&lt;string, unknown>>` | Common.ValueListMapping and Common.ValueList annotations of the document whose target lies outside it (the data service's properties), by target (namespace unaliased, e.g. `Sales.Order/CompanyCode`), then by qualifier ("" for the unqualified one); records in the converter's form. |
+| `provider` | **yes** | `DataProvider` | Reads the value help service's data. |
+
 ### `valueListTextArrangement` — function
 
-Text arrangement for the values of a property's value list: the property's own (Common.Text@UI.TextArrangement or the entity type's UI.TextArrangement), else the one of the value list's key property; undefined when neither says.
+Text arrangement for the values of a property's value list: the property's own (Common.Text@UI.TextArrangement or the entity type's UI.TextArrangement), else the one of the value list's key property; undefined when neither says. `valueList` (default: the property's own) is read in `model`, the value help service's model for a referenced one.
 
 ```ts
-valueListTextArrangement(model: MetaModel, prop: PropertyModel | undefined): TextArrangement | undefined
+valueListTextArrangement(model: MetaModel, prop: PropertyModel | undefined, valueList?: ValueListModel): TextArrangement | undefined
 ```
 
 ### `ValueOperator` — type

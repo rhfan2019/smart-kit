@@ -115,11 +115,22 @@ export function createODataService<C = undefined>(options: ODataServiceOptions<C
 
     if (o.apply) {
       if (target.single) throw badRequest('InvalidPath', '$apply needs a collection.');
-      const plan = planner.aggregate(target.set, o, target.parent);
-      const rows = await exec(builder.aggregate(plan));
+      const parts = planner.apply(target.set, o, target.parent);
       const body: Record<string, unknown> = { '@odata.context': `$metadata#${target.set.name}` };
-      if (plan.count) body['@odata.count'] = rows.length ? Number(rows[0]!['@count']) : 0;
-      body.value = rows.map((r) => formatGroup(plan, r, fmt));
+      const value: Record<string, unknown>[] = [];
+      for (const part of parts) {
+        if (part.kind === 'count') {
+          // concat(aggregate($count as UI5__count),…) of the analytical table: one row with the number of groups
+          const [row] = await exec(builder.countGroups(part.plan));
+          const n = String(row?.count ?? '0');
+          value.push({ [part.alias]: ieee754 ? n : Number(n) }); // Edm.Int64
+          continue;
+        }
+        const rows = await exec(builder.aggregate(part.plan));
+        if (parts.length === 1 && part.plan.count) body['@odata.count'] = rows.length ? Number(rows[0]!['@count']) : 0;
+        value.push(...rows.map((r) => formatGroup(part.plan, r, fmt)));
+      }
+      body.value = value;
       return json(200, body, ieee754);
     }
 

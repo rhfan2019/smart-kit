@@ -29,7 +29,10 @@ export const p2zh: { [K in keyof typeof p2en]: string } = {
   'delete.confirmSingular': '是否删除此项？',
   'delete.confirmPlural': '是否删除所选项？',
   'delete.someRestricted': '所选 {total} 项中有 {count} 项有删除限制，无法删除。',
+  // S22: no 对象 in Chinese texts (FE zh_CN says 对象); FE's singular and plural forms are kept
+  'delete.oneRestricted': '所选 {total} 项中有 1 项有删除限制，无法删除。',
   'delete.remaining': '是否仍要删除其余各项？',
+  'delete.remainingOne': '是否仍要删除其余一项？',
   'actions.inline': '动作',
   'actions.decide': '决策',
   'delete.title': '删除',

@@ -19,6 +19,7 @@ MOCK_PORT=4500 npm start
 | `/odata/northwind/` | 仿 Northwind，命名空间 `NorthwindLike`，**没有任何注解** |
 | `/odata/purchasing/` | 采购订单，命名空间 `Purchasing`，完整 UI / Common / Measures / Capabilities / Core / Aggregation 注解，成本中心层级（`CostCenters`，Hierarchy 注解，TopLevels）；直接保存（新建、PATCH、删除、绑定动作 `approve` / `reject` / `close`） |
 | `/odata/purchasing-draft/` | 同一份模板派生的草稿服务（`IsActiveEntity` 键、`draftEdit` / `draftActivate` / `draftPrepare`、`Common.DraftRoot` / `DraftNode`）；`4500000004` 有其他用户（虚构的 Alex Miller）的草稿 |
+| `/odata/purchasing-vh/` | 采购服务的值帮助服务（阶段 4 收尾）：`CompanyCodes`，`$metadata` 里有给采购服务属性的 `Common.ValueListMapping`（目标 `Purchasing.PurchaseOrder/CompanyCode`）；采购服务里引用它的 `Common.ValueListReferences` 由 `tests/e2e-fe/vhref.spec.ts` 叠加 |
 | `GET /` | 服务列表 |
 | `…/$metadata`、`…/$metadata?$format=json` | CSDL XML / CSDL JSON |
 | `/media/suppliers/{id}.svg` | 生成的供应商标志（`Supplier.LogoUrl`） |
@@ -37,3 +38,4 @@ MOCK_PORT=4500 npm start
 | `lib/filter.mjs` | `$search` → `$filter`、字符串字面量编码、OData 语义的比较 |
 | `lib/csdl.mjs` | 标签占位符替换、CSDL XML → CSDL JSON |
 | `Csdl/` | 手写的 CSDL（采购服务是带 `{{label:键}}` 的模板）和中英文标签 |
+| `lib/spend.mjs`、`Csdl/purchasing-vh.xml` | 阶段 4 收尾：参数化实体集 `SpendParameters`（`Common.ResultContext`，结果在包含导航 `Set` 里，`SpendParameters(P_DisplayCurrency='EUR',P_KeyDate=2026-11-14)/Set` 按参数现算供应商支出）和值帮助服务 `purchasing-vh` 的数据 |

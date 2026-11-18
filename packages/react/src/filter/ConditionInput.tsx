@@ -19,7 +19,7 @@ import { getPath } from '../field/values';
 import { conditionText, parseConditionText, sameCondition } from './conditionText';
 import { RelativeDateButton } from './RelativeDateButton';
 import { useTokenDescriptions } from './useTokenDescriptions';
-import { useValueList } from './useValueList';
+import { useValueList, useValueListSource, useValueLists } from './useValueList';
 import { propagateOut, useValueHelpSource } from './valueHelpSource';
 
 export interface ConditionInputProps {
@@ -70,7 +70,6 @@ export function ConditionInput(p: ConditionInputProps) {
   const t = useFilterText();
   const typeName = service.model.entitySets[p.entitySet]!.typeName;
   const prop = getProperty(service.model, typeName, p.path);
-  const vl = prop?.valueList;
   const rules = filterExpressionRules(service.model.entitySets[p.entitySet]!.capabilities.filterExpressions[p.path], prop?.edmType);
   const [rejected, setRejected] = useState(false);
   const [typed, setTyped] = useState('');
@@ -85,6 +84,12 @@ export function ConditionInput(p: ConditionInputProps) {
   const [used, setUsed] = useState(false);
   // (a single-value select shows its value through the list)
   const needsText = p.conditions.some((c) => c.operator === 'EQ' && (c.text === undefined || rules.expression === 'SingleValue'));
+  // Common.ValueListReferences: the value help services are loaded when the field is used or a value needs its text
+  const lists = useValueLists(p.entitySet, p.path, p.service, used || needsText || typed.trim().length > 0);
+  const vl = lists.valueList;
+  const vlSource = useValueListSource(vl, p.service);
+  // values typed into the field (not chosen from a list): validated against key and description (getItemForValue)
+  const [typedValues, setTypedValues] = useState<ReadonlySet<string>>(() => new Set());
   const fixed = useValueList(vl, { top: 200, enabled: Boolean(vl?.fixedValues) && (used || needsText), filters: source?.filters }, p.service);
   const use = () => setUsed(true);
   // type-ahead after a short pause in typing, as the mdc field's delayed suggestion request
@@ -94,10 +99,10 @@ export function ConditionInput(p: ConditionInputProps) {
 
   // UI.TextArrangement of the values; TextSeparate shows the code only, as FE's filter field (FilterFieldTemplating
   // getDisplayProperty: display mode "Value").
-  const arrangement: TextArrangement | undefined = valueListTextArrangement(service.model, prop);
+  const arrangement: TextArrangement | undefined = valueListTextArrangement(vlSource?.model ?? service.model, prop, vl);
   const valueLabel = (d: { key: string; text?: string }) => arrangeText(d.key, d.text, arrangement);
   // values without a description (typed, or written back by an Out parameter) read it from the value list
-  const descriptions = useTokenDescriptions(vl, p.conditions, arrangement !== 'TextSeparate', p.service);
+  const descriptions = useTokenDescriptions(vl, p.conditions, arrangement !== 'TextSeparate', p.service, typedValues);
   const relativeOps = isDateType(prop) ? rules.operators.filter(isRelativeDateOperator).filter((o) => o !== 'DATE' && o !== 'DATERANGE') : [];
   const hasRelative = p.conditions.some((c) => isRelativeDateOperator(c.operator));
 
@@ -127,7 +132,7 @@ export function ConditionInput(p: ConditionInputProps) {
     );
   }
 
-  if (rules.expression === 'SingleValue' && vl?.fixedValues) {
+  if (rules.expression === 'SingleValue' && (vl?.fixedValues || (lists.fixedValues && lists.loading))) {
     const v = p.conditions[0]?.values[0];
     const described = (fixed.data?.rows ?? []).map(describe);
     const data = described.map((d) => ({ value: d.key, label: valueLabel(d) }));
@@ -219,7 +224,7 @@ export function ConditionInput(p: ConditionInputProps) {
       splitChars={[]}
       classNames={{ pillsList: 'sk-tokens__list', inputField: 'sk-tokens__input' }}
       rightSection={
-        vl && !vl.fixedValues && !p.disabled ? (
+        lists.hasValueHelp && !lists.fixedValues && !p.disabled ? (
           <ActionIcon onClick={p.onValueHelp} aria-label={t('filterBar.showValueHelp')} title={t('filterBar.showValueHelp')}>
             <Copy className="sk-icon" />
           </ActionIcon>
@@ -239,6 +244,10 @@ export function ConditionInput(p: ConditionInputProps) {
             continue;
           }
           let c = parseConditionText(token, prop);
+          if (c && c.operator === 'EQ' && !c.exclude && c.values[0] !== undefined) {
+            const v = String(c.values[0]);
+            setTypedValues((cur) => (cur.has(v) ? cur : new Set([...cur, v])));
+          }
           // Search expressions: plain text means "contains" (P2-LR-19).
           if (c && rules.expression === 'SearchExpression' && c.operator === 'EQ' && !/^=/.test(token.trim())) c = { operator: 'Contains', values: c.values };
           if (c && conditionAllowed(rules, c)) kept.push(c);

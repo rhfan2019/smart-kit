@@ -24,7 +24,7 @@ const ENTRY_BUDGETS = {
   // context, i18n, table, templates +1 to +2: the texts and the code of relative dates and the FCL separator (S6, S23)
   context: 13, i18n: 8, theme: 2, util: 12, // util 1 → 11 with the helpers from /controls (stage 1, ADR-033: messageTypeOf, toDates, viewSettingsFilterString …)
   // stage 2 (D38): the block subpaths are gone, the blocks are measured as modules below
-  templates: 115, // 100 → 115: list report annotations of stage 4 (FE columns and actions, semantic date operators, value help descriptions, views, KPI tags); 84 → 100: the templates compose the UI5 page controls (DynamicPageTitle, ObjectPageDynamicHeaderTitle, OverflowToolbar title actions, Paginator, FlexibleColumnLayoutActions; stage 2)
+  templates: 118, // 100 → 118: stage 4 tail single-request analytical table (useAnalytical); list report annotations of stage 4 (FE columns and actions, semantic date operators, value help descriptions, views, KPI tags); 84 → 100: the templates compose the UI5 page controls (DynamicPageTitle, ObjectPageDynamicHeaderTitle, OverflowToolbar title actions, Paginator, FlexibleColumnLayoutActions; stage 2)
 };
 
 /**

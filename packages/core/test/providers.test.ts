@@ -167,6 +167,6 @@ describe('formatting (AC-DATA-04, AC-I18N-03)', () => {
     expect(formatValue('2026-11-14', d, { locale: 'en-US', timeZone: 'Pacific/Honolulu' })).toBe('Nov 14, 2026');
     expect(formatValue('2026-11-14', d, { locale: 'zh-CN' })).toBe('2026年11月14日');
     const dt = { edmType: 'Edm.DateTimeOffset', isCurrency: false, isDigitSequence: false } as const;
-    expect(formatValue('2026-11-14T16:30:00Z', dt, { locale: 'en-US', timeZone: 'Asia/Shanghai' })).toBe('Nov 15, 2026, 12:30 AM');
+    expect(formatValue('2026-11-14T16:30:00Z', dt, { locale: 'en-US', timeZone: 'Asia/Shanghai' }).replace(/\u202f/g, ' ')).toBe('Nov 15, 2026, 12:30:00 AM'); // medium style with seconds (FE DateTimeOffset)
   });
 });

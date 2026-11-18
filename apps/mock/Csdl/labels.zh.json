@@ -187,5 +187,13 @@
   "F.Score": "评分",
   "F.ResponseRate": "响应率",
   "F.ResponseCriticality": "响应关键性",
-  "F.SpendAmount": "支出"
+  "F.SpendAmount": "支出",
+
+  "T.SpendParameters": "供应商支出参数",
+  "T.SupplierSpend": "供应商支出",
+  "T.SupplierSpends": "供应商支出",
+  "F.P_DisplayCurrency": "显示货币",
+  "F.P_KeyDate": "关键日期",
+  "F.OrderCount": "订单数",
+  "F.DisplayCurrency": "显示货币"
 }

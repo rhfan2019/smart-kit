@@ -1606,6 +1606,7 @@ default(entitySet: string, o?: UseFilterStateOptions): FilterStateApi
 | `fields` | **yes** | `string[]` |  |
 | `applied` | **yes** | `AppliedFilter \| null` | Last executed query; null until "Go" (or auto-execution) happened. |
 | `service` |  | `string` |  |
+| `searchable` |  | `boolean` | Set to false by the list report when its table cannot search (FE hides the basic search of the filter bar then: an AnalyticalTable without `search` in ApplySupported/Transformations). |
 
 ### `UseFilterStateOptions` — interface
 
@@ -1644,6 +1645,8 @@ default(o: ListQueryOptions): ListQueryResult
 | `extraSelect` |  | `string[]` |  |
 | `requestAtLeast` |  | `string[]` | RequestAtLeast of the table's own presentation variant (a view's PV); default the entity's default presentation. |
 | `hierarchy` |  | `Pick&lt;HierarchyRequestOptions, 'qualifier' \| 'levels' \| 'expandLevels'>` | Tree tables (docs/26 §3.10): one TopLevels request for the visible nodes instead of pages. |
+| `blockRequest` |  | `(skip: number, top: number) => QueryRequest \| undefined` | The request of a page instead of the list request (analytical table, AL-10); undefined: the list request. |
+| `onBlock` |  | `(skip: number, result: QueryResult) => void` | Called with each page loaded from the service. |
 
 ### `ListQueryResult` — interface
 
@@ -1659,6 +1662,7 @@ default(o: ListQueryOptions): ListQueryResult
 | `refresh` | **yes** | `() => void` |  |
 | `pageRequest` | **yes** | `(skip: number, top: number, count: boolean) => QueryRequest` | Builds a request for an arbitrary page (export, grid blocks); never hierarchical. |
 | `count` |  | `number` |  |
+| `first` |  | `QueryResult` | The result of the first page (an analytical table's grand total). |
 
 ## `@rhfan2019/smart-kit/kit/useMessages`
 

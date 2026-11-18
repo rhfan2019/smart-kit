@@ -114,8 +114,10 @@ test('GT-02 GT-03 analytical table: the totals row shows the service totals for 
   expect(sums(await orders(request, DEFAULT_FILTER)).length).toBeGreaterThan(1); // several currencies
   const total = table(page, PO).locator('.sk-table__total-row [data-sk-total="NetAmount"]');
   await expect(table(page, PO).locator('.sk-table__total-row [data-sk-total-label]')).toHaveText('Total');
-  // the custom aggregate with its currency, as FE (docs/29 §4 P1-2, D39): several currencies -> "Show Details"
-  await expect.poll(() => rec.urls.some((u) => u.includes(`$apply=filter(${DEFAULT_FILTER})/aggregate(NetAmount,Currency)`))).toBe(true);
+  // the custom aggregate with its currency, as FE (docs/29 §4 P1-2, D39): several currencies -> "Show Details";
+  // read with the rows and the count in one $apply (AL-10, FE AnalyticalTable: concat)
+  await expect.poll(() => rec.urls.some((u) => u.includes(`$apply=filter(${DEFAULT_FILTER})/concat(aggregate(NetAmount,Currency),groupby((`) && u.includes('/concat(aggregate($count as UI5__count),top('))).toBe(true);
+  expect(rec.urls.filter((u) => u.includes('/PurchaseOrders?') && !u.includes('$apply=') && u.includes('$count=true'))).toEqual([]);
   await expect(total).toHaveAttribute('data-sk-total-multi-unit');
   await shot(page, 'GT-02', table(page, PO));
   await expectTotal(page, total, await orders(request, DEFAULT_FILTER));
@@ -139,16 +141,18 @@ test('GT-04 GT-06 responsive table grouped by status: group headers with the gro
   const rec = recordOData(page);
   await open(page, '/po?table=responsive');
   await expect(table(page, PO).locator('tr[data-sk-row]').first()).toBeVisible();
-  // only GroupableProperties of the visible columns are offered
+  // FE (responsive table, isGroupable = sortable; FE comparison tests/e2e-fe/colsfe.spec.ts cols5-p13n-ResponsiveTable):
+  // every sortable property, alphabetically; the status is shown as its text only, so its text is offered instead
   await openSettings(page);
   await page.locator('[data-sk-p13n-group-tab]').click();
   await page.locator('[data-sk-p13n-group]').click();
-  await expect(page.getByRole('option')).toHaveText(['No grouping', 'Supplier', 'Status', 'Order Type', 'Company Code']);
+  await expect(page.getByRole('option')).toHaveText(['No grouping', 'Budget', 'Company Code', 'Created On', 'Currency', 'Delivery Progress', 'Invoiced Amount',
+    'Net Amount', 'Notes', 'Order Date', 'Order Type', 'Order Type Name', 'Purchase Order', 'Purchasing Group', 'Status Criticality', 'Status Name', 'Supplier', 'Supplier Name', 'Version']);
   await page.keyboard.press('Escape');
   await page.keyboard.press('Escape');
-  await groupBy(page, 'Status');
+  await groupBy(page, 'Status Name');
   const header = table(page, PO).locator('[data-sk-group-row]').first();
-  await expect(header).toContainText('Status: ');
+  await expect(header).toContainText('Status Name: ');
   await page.waitForTimeout(500);
   await expect(table(page, PO).locator('[data-sk-group-row][data-sk-group-count]')).toHaveCount(0);
   await expect(header.locator('[data-sk-total]')).toHaveCount(0);
@@ -243,7 +247,7 @@ test('GT-07 grouping and totals are stored in the variant and restored', async (
   await expect(table(page, PO).locator('.sk-table__total-row')).toHaveCount(0);
 });
 
-test('GT-08 totals follow the filters; a failing totals request shows "–" and keeps the rows', async ({ page, request }) => {
+test('GT-08 totals follow the filters; a failing request of rows and totals shows the error (AL-10)', async ({ page, request }) => {
   await open(page, ANALYTICAL);
   await waitForRows(page, PO);
   const total = table(page, PO).locator('.sk-table__total-row [data-sk-total="NetAmount"]');
@@ -265,12 +269,12 @@ test('GT-08 totals follow the filters; a failing totals request shows "–" and 
   await expect.poll(async () => (await orders(request, NEW)).length).toBe(before.length - 1);
   await page.waitForTimeout(500);
   await expectTotal(page, total, await orders(request, NEW));
-  // the totals request fails: the rows stay, the total shows "–" and the label explains why
+  // the totals are read with the rows (AL-10, one $apply as FE): when that request fails, the table shows the error
+  // and no totals row (before: a separate totals request failed alone and the rows stayed)
   await page.route(/\$apply=|%24apply=/, (route) => route.fulfill({ status: 500, contentType: 'application/json', body: JSON.stringify({ error: { code: 'X', message: 'Aggregation down' } }) }));
   await open(page, ANALYTICAL);
-  await waitForRows(page, PO);
-  await expect(table(page, PO).locator('.sk-table__total-row [data-sk-total="NetAmount"]')).toHaveText('–', { timeout: 15_000 });
-  await expect(table(page, PO).locator('.sk-table__total-row [data-sk-total-label]')).toHaveAttribute('title', /Aggregation down/);
+  await expect(table(page, PO).locator('.sk-table__error')).toContainText('Aggregation down', { timeout: 15_000 });
+  await expect(table(page, PO).locator('.sk-table__total-row')).toHaveCount(0);
 });
 
 test('GT-09 Chinese, dark theme and compact density', async ({ page, request }) => {

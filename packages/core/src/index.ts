@@ -11,6 +11,7 @@ export { buildModel, resolvePath, parseAnnotationPath, DEFAULT_CAPABILITIES, typ
 export { DERIVED_GENERAL_SECTION, deriveColumns } from './model/derive';
 export { humanize } from './model/labels';
 export { arrangeText, valueListTextArrangement } from './model/textArrangement';
+export { readValueListService, referencedValueLists, resolveValueListReference, serviceRootOf, type ValueListService } from './model/valueListReferences';
 export { calculateCriticality, calculateTrend } from './model/criticality';
 export { getEntitySet, getEntityType, getUi, getProperty, capabilitiesFor, targetEntitySet, isFilterable, isSortable, UnknownEntitySetError } from './model/access';
 export { csdlJsonToXml } from './csdl/csdlJsonToXml';
@@ -41,6 +42,7 @@ export {
   buildTotalsRequest, collectTotals, canTotal, canGroup, canSubtotal, unitPathOf, groupKey, TOTAL_COUNT_ALIAS, MAX_GROUP_VALUES,
   type TotalsRequestOptions, type TotalsEntry, type TotalAmount,
 } from './query/totals';
+export { buildAnalyticalRequests, ANALYTICAL_COUNT_ALIAS, type AnalyticalRequestOptions, type AnalyticalRequests, type AnalyticalApply } from './query/analytical';
 
 export type { DataProvider, ReadDataProvider, WriteDataProvider, WriteResult, FetchLike, RequestOptions } from './data/provider';
 export { messagesFromHeader, messagesFromError, createMessage, highestSeverity, type Message, type MessageType } from './data/messages';

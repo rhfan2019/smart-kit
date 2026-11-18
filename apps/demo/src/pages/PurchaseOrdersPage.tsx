@@ -29,9 +29,10 @@ export function PurchaseOrdersPage({ service = 'purchasing' }: { service?: strin
     },
     // Replace how the order type column is rendered.
     { id: 'DataField::PurchaseOrderType', position: 'replace', item: (col) => ({ ...col, render: (row) => <code data-demo-type>{String(row.PurchaseOrderType ?? '')}</code> }) },
-    // A toolbar action that depends on the selection.
+    // A toolbar action that depends on the selection; before Create, where FE puts a manifest action without anchor
+    // (apps/fe-reference `actions["Custom::Copy"]`, FE comparison tests/e2e-fe/colsfe.spec.ts).
     {
-      kind: 'action', id: 'Custom::Copy', position: 'start',
+      kind: 'action', id: 'Custom::Copy', position: 'before', anchor: 'Create',
       item: { id: 'Custom::Copy', label: s('copyAction'), requiresSelection: true, onPress: (ctx) => setMessage(s('copied', { ids: ctx.selected.map((r) => String(r.PurchaseOrder)).join(', ') })) },
     },
   ], [s]);

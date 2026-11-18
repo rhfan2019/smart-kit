@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Value help service of the purchasing service (docs/08-test-services.md): an own OData service whose $metadata carries
+  Common.ValueListMapping annotations for properties of the purchasing service, as the value help services of
+  SAP RAP / CDS do (Common.ValueListReferences "../purchasing-vh/$metadata" on the property in the purchasing service;
+  SAPUI5 ODataMetaModel#requestValueListInfo). The annotation targets use the namespace of the purchasing service,
+  which is referenced (not included) here. English only.
+-->
+<edmx:Edmx Version="4.0" xmlns:edmx="http://docs.oasis-open.org/odata/ns/edmx">
+  <edmx:Reference Uri="https://sap.github.io/odata-vocabularies/vocabularies/UI.xml">
+    <edmx:Include Namespace="com.sap.vocabularies.UI.v1" Alias="UI"/>
+  </edmx:Reference>
+  <edmx:Reference Uri="https://sap.github.io/odata-vocabularies/vocabularies/Common.xml">
+    <edmx:Include Namespace="com.sap.vocabularies.Common.v1" Alias="Common"/>
+  </edmx:Reference>
+  <edmx:Reference Uri="https://oasis-tcs.github.io/odata-vocabularies/vocabularies/Org.OData.Capabilities.V1.xml">
+    <edmx:Include Namespace="Org.OData.Capabilities.V1" Alias="Capabilities"/>
+  </edmx:Reference>
+  <edmx:Reference Uri="../purchasing/$metadata">
+    <edmx:Include Namespace="Purchasing"/>
+  </edmx:Reference>
+  <edmx:DataServices>
+    <Schema Namespace="PurchasingValueHelp" xmlns="http://docs.oasis-open.org/odata/ns/edm">
+      <EntityType Name="CompanyCode">
+        <Key><PropertyRef Name="CompanyCode"/></Key>
+        <Property Name="CompanyCode" Type="Edm.String" Nullable="false" MaxLength="4"/>
+        <Property Name="CompanyCodeName" Type="Edm.String" Nullable="false" MaxLength="40"/>
+        <Property Name="City" Type="Edm.String" Nullable="false" MaxLength="40"/>
+        <Property Name="Country" Type="Edm.String" Nullable="false" MaxLength="3"/>
+        <Property Name="Currency" Type="Edm.String" Nullable="false" MaxLength="3"/>
+      </EntityType>
+      <EntityContainer Name="Container">
+        <EntitySet Name="CompanyCodes" EntityType="PurchasingValueHelp.CompanyCode"/>
+      </EntityContainer>
+
+      <Annotations Target="PurchasingValueHelp.CompanyCode/CompanyCode">
+        <Annotation Term="Common.Label" String="Company Code"/>
+        <Annotation Term="Common.Text" Path="CompanyCodeName">
+          <Annotation Term="UI.TextArrangement" EnumMember="UI.TextArrangementType/TextFirst"/>
+        </Annotation>
+      </Annotations>
+      <Annotations Target="PurchasingValueHelp.CompanyCode/CompanyCodeName">
+        <Annotation Term="Common.Label" String="Company Name"/>
+      </Annotations>
+      <Annotations Target="PurchasingValueHelp.CompanyCode/City">
+        <Annotation Term="Common.Label" String="City"/>
+      </Annotations>
+      <Annotations Target="PurchasingValueHelp.CompanyCode/Country">
+        <Annotation Term="Common.Label" String="Country"/>
+      </Annotations>
+      <Annotations Target="PurchasingValueHelp.CompanyCode/Currency">
+        <Annotation Term="Common.Label" String="Currency"/>
+      </Annotations>
+      <Annotations Target="PurchasingValueHelp.Container/CompanyCodes">
+        <Annotation Term="Capabilities.SearchRestrictions">
+          <Record Type="Capabilities.SearchRestrictionsType">
+            <PropertyValue Property="Searchable" Bool="true"/>
+          </Record>
+        </Annotation>
+      </Annotations>
+
+      <!-- mappings for properties of the purchasing service (target namespace Purchasing) -->
+      <Annotations Target="Purchasing.PurchaseOrder/CompanyCode">
+        <Annotation Term="Common.ValueListMapping">
+          <Record Type="Common.ValueListMappingType">
+            <PropertyValue Property="Label" String="Company Codes"/>
+            <PropertyValue Property="CollectionPath" String="CompanyCodes"/>
+            <PropertyValue Property="Parameters">
+              <Collection>
+                <Record Type="Common.ValueListParameterInOut">
+                  <PropertyValue Property="LocalDataProperty" PropertyPath="CompanyCode"/>
+                  <PropertyValue Property="ValueListProperty" String="CompanyCode"/>
+                </Record>
+                <Record Type="Common.ValueListParameterDisplayOnly">
+                  <PropertyValue Property="ValueListProperty" String="CompanyCodeName"/>
+                </Record>
+                <Record Type="Common.ValueListParameterDisplayOnly">
+                  <PropertyValue Property="ValueListProperty" String="City"/>
+                </Record>
+                <Record Type="Common.ValueListParameterDisplayOnly">
+                  <PropertyValue Property="ValueListProperty" String="Country"/>
+                </Record>
+              </Collection>
+            </PropertyValue>
+          </Record>
+        </Annotation>
+      </Annotations>
+    </Schema>
+  </edmx:DataServices>
+</edmx:Edmx>

@@ -438,7 +438,8 @@ export function Table(p: $TableSettings) {
   const level = p.headerLevel && p.headerLevel !== 'Auto' ? Number(p.headerLevel.slice(1)) : 2;
   const Heading = `h${level}` as 'h2';
   let lastGroup: string | undefined;
-  const groupCol = p.groupBy ? columns.find((c) => c.id === p.groupBy) : undefined;
+  // the group column may be invisible (a grouping sorter does not depend on the column being shown)
+  const groupCol = p.groupBy ? p.columns.find((c) => c.id === p.groupBy) : undefined;
   const showBusy = p.busy && p.enableBusyIndicator !== false;
   const layout = p.fixedLayout === false ? 'auto' : 'fixed';
   const background = p.backgroundDesign === 'Solid' ? 'var(--sk-color-surface)' : p.backgroundDesign === 'Transparent' ? 'transparent' : undefined;

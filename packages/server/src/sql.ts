@@ -313,6 +313,12 @@ export class SqlBuilder {
     return sql`select count(*)::text as ${sql.id('count')} from ${src.from()} ${where}`;
   }
 
+  /** `…/groupby(…)/aggregate($count as alias)`: the number of groups of the plan (column "count"). */
+  countGroups(plan: AggregatePlan): Sql {
+    const inner = this.aggregate({ ...plan, orderBy: [], skip: 0, top: undefined, count: false });
+    return sql`select count(*)::text as ${sql.id('count')} from (${inner}) as ${sql.id(this.aliases.next())}`;
+  }
+
   /** $apply=…/groupby((…),aggregate(…)): one row per group; group values "g<i>", aggregates "a<i>". */
   aggregate(plan: AggregatePlan): Sql {
     const src = new Source(plan.set, this.aliases.next(), this);

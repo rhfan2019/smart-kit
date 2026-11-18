@@ -9,6 +9,8 @@ import { sourceInfo, type ExpandSpec, type HierarchyRequest, type QueryRequest, 
 import { resolvePath } from '../model/buildModel';
 import { ConcurrencyError, ODataError } from './errors';
 import type { DataProvider, RequestOptions, WriteResult } from './provider';
+import type { CsdlSource } from '../csdl/load';
+import { readValueListService, type ValueListService } from '../model/valueListReferences';
 
 /** Edm types summed by an aggregate without `with` (a custom aggregate); others are units (same value or null). */
 const NUMERIC_TYPES = new Set(['Edm.Decimal', 'Edm.Double', 'Edm.Single', 'Edm.Int16', 'Edm.Int32', 'Edm.Int64', 'Edm.Byte', 'Edm.SByte']);
@@ -20,6 +22,11 @@ export interface MemoryProviderOptions {
   latency?: number;
   /** Bound and unbound action handlers by qualified name (MemoryProvider.invoke). */
   actions?: Record<string, (row: Row | undefined, parameters: Row) => Row | undefined>;
+  /**
+   * Value help services of Common.ValueListReferences, by reference as annotated: the `$metadata` of the value help
+   * service (with its Common.ValueListMapping annotations) and its rows by entity set.
+   */
+  valueListServices?: Record<string, { metadata: CsdlSource; data: Record<string, Row[]> }>;
 }
 
 /** Pairs of (source property, target property) that link `nav` from `type` to its target. */
@@ -45,6 +52,20 @@ function setPath(row: Row, path: string, value: unknown) {
  */
 export class MemoryProvider implements DataProvider {
   constructor(private readonly o: MemoryProviderOptions) {}
+
+  private readonly vhServices = new Map<string, ValueListService>();
+
+  /** The value help service of a Common.ValueListReferences entry from `valueListServices` (an in-memory provider). */
+  async valueListService(reference: string): Promise<ValueListService> {
+    const given = this.o.valueListServices?.[reference];
+    if (!given) throw new ODataError({ status: 404, code: 'NotFound', message: `No value help service for "${reference}"` });
+    let service = this.vhServices.get(reference);
+    if (!service) {
+      service = readValueListService(reference, reference, given.metadata, (model) => new MemoryProvider({ model, data: given.data, latency: this.o.latency }));
+      this.vhServices.set(reference, service);
+    }
+    return service;
+  }
 
   /** Replaces the rows of an entity set (the host computed new rows). Reload the tables afterwards (`refreshToken`). */
   setRows(entitySet: string, rows: Row[]): void {
@@ -163,11 +184,11 @@ export class MemoryProvider implements DataProvider {
         return 0;
       });
     }
-    if (req.aggregate) {
-      const agg = req.aggregate;
+    // groupby((…),aggregate(…)) over `input`: one row per group, in the order of the (sorted) rows
+    const groupRows = (input: Row[], agg: NonNullable<QueryRequest['aggregate']>): Row[] => {
       const alias = (m: (typeof agg.measures)[number]) => m.as ?? (m.with === 'count' ? 'count' : m.path.replace(/\//g, '_'));
       const groups = new Map<string, { row: Row; seen: Map<string, Set<string>> }>();
-      for (const r of rows) {
+      for (const r of input) {
         const key = JSON.stringify(agg.groupBy.map((g) => val(r, g)));
         let g = groups.get(key);
         if (!g) {
@@ -206,8 +227,17 @@ export class MemoryProvider implements DataProvider {
           } else g.row[alias(m)] = Number(g.row[alias(m)]) + Number(v ?? 0);
         }
       }
-      return { rows: [...groups.values()].map((g) => g.row).slice(0, req.top) };
+      return [...groups.values()].map((g) => g.row);
+    };
+    if (req.analytical) {
+      // analytical table (AL-10): grand total, number of leaves and the page of leaves of one concat() request
+      const a = req.analytical;
+      const leaves = groupRows(rows, { groupBy: a.groupBy, measures: a.measures });
+      const skip = req.skip ?? 0;
+      const grandTotal = a.grandTotal.length ? groupRows(rows, { groupBy: [], measures: a.grandTotal })[0] ?? {} : undefined;
+      return { rows: req.top === undefined ? leaves.slice(skip) : leaves.slice(skip, skip + req.top), count: req.count ? leaves.length : undefined, ...(grandTotal ? { grandTotal } : {}) };
     }
+    if (req.aggregate) return { rows: groupRows(rows, req.aggregate).slice(0, req.top) };
     const count = rows.length;
     const skip = req.skip ?? 0;
     const page = req.top === undefined ? rows.slice(skip) : rows.slice(skip, skip + req.top);
