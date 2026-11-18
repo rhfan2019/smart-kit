@@ -19,9 +19,10 @@ export { ModelError, toCsdlXml, type CsdlSource } from './csdl/load';
 export {
   OPERATORS, OPERATOR_ARITY, toFilter, propertyFilter, isComplete, activeFilterPaths, matches, compareValues, compareDecimal, startOfDayIso,
   RELATIVE_DATE_OPERATORS, isRelativeDateOperator, relativeDateRange, resolveCondition, todayIn,
+  COUNT_DATE_OPERATORS, FIXED_DAY_OPERATORS, setDefaultWeekStart, MDC_DATE_OPERATORS, relativeDateValueTypes, type FixedDayOperator,
   type Condition, type FilterState, type Operator, type ValueOperator, type RelativeDateOperator, type FilterOptions,
 } from './conditions/conditions';
-export { filterExpressionRules, conditionAllowed, restrictConditions, type FilterExpressionRules } from './conditions/filterExpressions';
+export { filterExpressionRules, conditionAllowed, restrictConditions, strictestExpression, ALLOWED_EXPRESSIONS_PRIORITY, type FilterExpressionRules } from './conditions/filterExpressions';
 export { toLiteral, LiteralError } from './query/literals';
 export {
   keyPredicate, parseEntityPath, resolveEntityPath, entityPathOf, childPathOf, EntityPathError,
@@ -49,7 +50,7 @@ export { ODataError, ConcurrencyError, errorFromResponse, isAbortError, type ODa
 
 export { MemoryVariantStore, ODataVariantStore, STANDARD_VARIANT_ID, type ODataVariantStoreOptions, type Variant, type VariantContent, type VariantStore } from './state/variants';
 export { MemoryPageStateStore, createSessionPageStateStore, type PageStateStore } from './state/pageState';
-export type { NavigationAdapter, NavigationTarget } from './state/navigation';
+export type { NavigationAdapter, NavigationTarget, SemanticTarget, SemanticTargetRequest } from './state/navigation';
 export { DirectEditStrategy, DraftEditStrategy, editStrategyFor, siblingPath, isDraftRow, type EditSession, type EditStrategy } from './state/edit';
 
-export { formatValue, formatNumber, formatDate, formatDateTime, formatTime, currencyDigits, type FormatOptions } from './format/format';
+export { formatValue, formatNumber, formatDate, formatDateTime, formatDateTimeWithTimezone, formatTimezone, formatTime, currencyDigits, type FormatOptions } from './format/format';

@@ -1,6 +1,6 @@
 /** Root provider: services, language, navigation, state stores, renderers. See docs/03-component-inventory.md §1. */
 import {
-  capabilitiesFor, getEntitySet, MemoryPageStateStore, type CapabilityModel, type DataProvider, type EntitySetModel, type EntityTypeModel,
+  capabilitiesFor, getEntitySet, MemoryPageStateStore, setDefaultWeekStart, type CapabilityModel, type DataProvider, type EntitySetModel, type EntityTypeModel,
   type EditStrategy, type EntityUi, type MetaModel, type NavigationAdapter, type PageStateStore, type VariantStore,
 } from '@rhfan2019/smart-kit-core';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -9,6 +9,7 @@ import { createText, INTL_LOCALE, type Locale, type TextFn } from '../i18n/text'
 import type { Messages } from '../i18n/messages.en';
 import type { RendererRegistry } from '../field/renderers';
 import { MessageHost } from '../messages/MessageHost';
+import { weekStartOf } from '../controls/dialogs/dateOptions';
 
 export interface ServiceConfig {
   model: MetaModel;
@@ -65,6 +66,8 @@ export class MissingProviderError extends Error {
 export function SmartKitProvider(p: SmartKitProviderProps) {
   const [ownClient] = useState(() => new QueryClient({ defaultOptions: { queries: { retry: false, refetchOnWindowFocus: false, staleTime: 30_000 } } }));
   const [ownState] = useState(() => new MemoryPageStateStore());
+  // relative date filters use the locale's first day of the week, as SAPUI5 does (en-US: Sunday, zh-CN: Monday)
+  useMemo(() => setDefaultWeekStart(weekStartOf(undefined, INTL_LOCALE[p.locale])), [p.locale]);
   const value = useMemo<SmartKitContextValue>(
     () => ({
       services: p.services,

@@ -78,7 +78,7 @@ test.describe('list report: purchase orders', () => {
     await page.keyboard.press('Escape');
     await filterInput(page, '$search').fill('Ltd');
     await page.locator('[data-sk-go]').click();
-    await expect.poll(() => rec.urls.find((u) => u.includes('$search=Ltd') && u.includes("(PurchaseOrder ge '4500000001' and PurchaseOrder le '4500000100')") && u.includes("not (PurchaseOrder eq '4500000050')"))).toBeTruthy();
+    await expect.poll(() => rec.urls.find((u) => u.includes('$search=Ltd') && u.includes("PurchaseOrder ge '4500000001' and PurchaseOrder le '4500000100'") && u.includes("not (PurchaseOrder eq '4500000050')"))).toBeTruthy();
     await waitForRows(page, 'PurchaseOrders');
   });
 
@@ -199,8 +199,8 @@ test.describe('list report: purchase orders', () => {
     await table(page, 'PurchaseOrders').locator('[data-sk-table-settings]').click();
     const dialog = page.getByRole('dialog', { name: 'View Settings' });
     await dialog.getByRole('checkbox', { name: 'Net Amount' }).uncheck();
-    // the budget micro chart column (docs/15 MC-10) also reads the net amount
-    await dialog.getByRole('checkbox', { name: 'Budget Usage' }).uncheck();
+    // the budget micro chart column (docs/15 MC-10) also reads the net amount; without a Label FE names it by its key
+    await dialog.getByRole('checkbox', { name: 'DataFieldForAnnotation::Chart::BudgetBullet' }).uncheck();
     await dialog.getByRole('tab', { name: 'Sort' }).click();
     await dialog.getByRole('button', { name: 'Remove' }).first().click();
     await dialog.getByRole('button', { name: 'Add sort criterion' }).click();
@@ -388,9 +388,10 @@ test.describe('capabilities and query shapes', () => {
     await open(page, MANUAL);
     await waitForRows(page, 'PurchaseOrders');
     const list = rec.urls.find((u) => u.startsWith('/odata/purchasing/PurchaseOrders?') && !u.includes('$apply'))!;
-    // Q-01/Q-02: only visible columns and their companions; texts through $expand($select)
+    // Q-01/Q-02: only visible columns and their companions; texts through $expand($select) with the target's key, as
+    // the FE V4 model (autoExpandSelect) does; the rating's sample size is not read in a table (stage 4, D43)
     expect(list).toContain('$select=PurchaseOrder,Supplier,OrderDate,Status,StatusCriticality,NetAmount,Currency,DeliveredPercent,PurchaseOrderType');
-    expect(list).toContain('$expand=_Supplier($select=SupplierName,Rating,RatingCount),_Status($select=Name),_PurchaseOrderType($select=Name)');
+    expect(list).toContain('$expand=_Supplier($select=SupplierName,Rating,Supplier),_Status($select=Name,Code),_PurchaseOrderType($select=Name,Code)');
     // Q-05 default sort from PresentationVariant; Q-06/Q-07 first block with $count
     expect(list).toMatch(/\$count=true.*\$orderby=OrderDate desc.*\$skip=0&\$top=100/);
     // Q-05b sorting an amount sorts by currency first

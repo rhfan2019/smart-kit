@@ -5,7 +5,7 @@
 
 ## `@rhfan2019/smart-kit-core`
 
-`ActionModel` (interface) · `activeFilterPaths` (function) · `aggregateMeasure` (function) · `AggregateMeasure` (interface) · `AggregateRequestOptions` (interface) · `AggregationModel` (interface) · `arrangeText` (function) · `buildAggregateRequest` (function) · `buildChartRequest` (function) · `buildHierarchyRequest` (function) · `buildListRequest` (function) · `buildModel` (function) · `BuildModelOptions` (interface) · `buildObjectRequest` (function) · `buildTotalsRequest` (function) · `buildValueHelpRequest` (function) · `calculateCriticality` (function) · `calculateTrend` (function) · `canGroup` (function) · `canSubtotal` (function) · `canTotal` (function) · `capabilitiesFor` (function) · `CapabilityModel` (interface) · `chartExpand` (function) · `chartFields` (function) · `chartIsSeries` (function) · `ChartModel` (interface) · `ChartRequestOptions` (interface) · `chartSeriesSelect` (function) · `childPathOf` (function) · `collectTotals` (function) · `ColumnModel` (type) · `companionPaths` (function) · `compareDecimal` (function) · `compareValues` (function) · `ConcurrencyError` (class) · `Condition` (interface) · `conditionAllowed` (function) · `createMessage` (function) · `createSessionPageStateStore` (function) · `Criticality` (type) · `CriticalityCalculationModel` (interface) · `csdlJsonToXml` (function) · `CsdlSource` (type) · `currencyDigits` (function) · `DataPointModel` (interface) · `dataPointPaths` (function) · `DataProvider` (type) · `DEFAULT_CAPABILITIES` (const) · `deriveColumns` (function) · `DERIVED_GENERAL_SECTION` (const) · `DirectEditStrategy` (class) · `DRAFT_EDIT_STATES` (const) · `DraftEditState` (type) · `DraftEditStrategy` (class) · `DraftModel` (interface) · `DrillState` (type) · `EDIT_STATE` (const) · `EditSession` (interface) · `editStateFilter` (function) · `editStateOf` (function) · `EditStrategy` (interface) · `editStrategyFor` (function) · `EdmType` (type) · `encodeOption` (function) · `EntityPath` (type) · `EntityPathError` (class) · `entityPathOf` (function) · `EntitySetModel` (interface) · `EntityTypeModel` (interface) · `EntityUi` (interface) · `errorFromResponse` (function) · `EventModel` (interface) · `ExpandSpec` (interface) · `FetchLike` (type) · `FieldModel` (interface) · `fieldPaths` (function) · `FilterExpression` (type) · `filterExpressionRules` (function) · `FilterExpressionRules` (interface) · `FilterOptions` (interface) · `FilterState` (type) · `filterString` (function) · `formatDate` (function) · `formatDateTime` (function) · `formatNumber` (function) · `FormatOptions` (interface) · `formatTime` (function) · `formatValue` (function) · `FormGroupModel` (interface) · `getEntitySet` (function) · `getEntityType` (function) · `getProperty` (function) · `getUi` (function) · `groupKey` (function) · `HeaderFacetModel` (type) · `HeaderInfoModel` (interface) · `hiddenFilterPath` (function) · `hiddenFiltersOf` (function) · `HierarchyNode` (interface) · `hierarchyNodeOf` (function) · `hierarchyOf` (function) · `HierarchyRequest` (interface) · `HierarchyRequestOptions` (interface) · `highestSeverity` (function) · `humanize` (function) · `Importance` (type) · `ImprovementDirection` (type) · `InitialCondition` (interface) · `isAbortError` (function) · `isComplete` (function) · `isCustomAggregate` (function) · `isDraftRow` (function) · `isFilterable` (function) · `isRelativeDateOperator` (function) · `isSortable` (function) · `keyPredicate` (function) · `ListRequestOptions` (interface) · `LiteralError` (class) · `loadService` (function) · `LoadServiceOptions` (interface) · `matches` (function) · `matchesEditState` (function) · `MAX_GROUP_VALUES` (const) · `MemoryPageStateStore` (class) · `MemoryProvider` (class) · `MemoryProviderOptions` (interface) · `MemoryVariantStore` (class) · `Message` (interface) · `messagesFromError` (function) · `messagesFromHeader` (function) · `MessageType` (type) · `MetaModel` (interface) · `MICRO_CHART_MAX_POINTS` (const) · `MICRO_COMPARISON_MAX_BARS` (const) · `MODEL_VERSION` (const) · `ModelError` (class) · `ModelWarning` (interface) · `NavigationAdapter` (interface) · `NavigationModel` (interface) · `NavigationTarget` (type) · `objectFields` (function) · `ODataError` (class) · `ODataErrorDetail` (interface) · `ODataV4Provider` (class) · `ODataV4ProviderOptions` (interface) · `ODataVariantStore` (class) · `ODataVariantStoreOptions` (interface) · `Operator` (type) · `OPERATOR_ARITY` (const) · `OPERATORS` (const) · `PageStateStore` (interface) · `parseAnnotationPath` (function) · `parseEntityPath` (function) · `PathSegment` (interface) · `PresentationModel` (interface) · `PresentationVariantModel` (interface) · `propertyFilter` (function) · `PropertyModel` (interface) · `QueryRequest` (interface) · `QueryResult` (interface) · `QuerySource` (type) · `ReadDataProvider` (interface) · `readQueryString` (function) · `ReadRequest` (interface) · `RecursiveHierarchyModel` (interface) · `RELATIVE_DATE_OPERATORS` (const) · `RelativeDateOperator` (type) · `relativeDateRange` (function) · `RequestOptions` (interface) · `resolveCondition` (function) · `ResolvedPath` (interface) · `resolveEntityPath` (function) · `resolvePath` (function) · `restrictConditions` (function) · `Row` (type) · `SectionModel` (interface) · `selectAndExpand` (function) · `siblingPath` (function) · `SortItem` (interface) · `sourceInfo` (function) · `SourceInfo` (interface) · `sourcePath` (function) · `STANDARD_VARIANT_ID` (const) · `startOfDayIso` (function) · `SubSectionContent` (type) · `SubSectionModel` (interface) · `targetEntitySet` (function) · `TextArrangement` (type) · `toCsdlXml` (function) · `todayIn` (function) · `toFilter` (function) · `toLiteral` (function) · `toQueryString` (function) · `TOTAL_COUNT_ALIAS` (const) · `TotalAmount` (interface) · `TotalsEntry` (interface) · `TotalsRequestOptions` (interface) · `TrendCalculationModel` (interface) · `unitPathOf` (function) · `UnknownEntitySetError` (class) · `ValueHelpRequestOptions` (interface) · `ValueListModel` (interface) · `ValueListParameter` (interface) · `valueListTextArrangement` (function) · `ValueOperator` (type) · `ValueRef` (type) · `Variant` (interface) · `VariantContent` (interface) · `VariantStore` (interface) · `ViewModel` (interface) · `withHiddenFilters` (function) · `WriteDataProvider` (interface) · `WriteResult` (interface)
+`ActionModel` (interface) · `activeFilterPaths` (function) · `aggregateMeasure` (function) · `AggregateMeasure` (interface) · `AggregateRequestOptions` (interface) · `AggregationModel` (interface) · `ALLOWED_EXPRESSIONS_PRIORITY` (const) · `arrangeText` (function) · `buildAggregateRequest` (function) · `buildChartRequest` (function) · `buildHierarchyRequest` (function) · `buildListRequest` (function) · `buildModel` (function) · `BuildModelOptions` (interface) · `buildObjectRequest` (function) · `buildTotalsRequest` (function) · `buildValueHelpRequest` (function) · `calculateCriticality` (function) · `calculateTrend` (function) · `canGroup` (function) · `canSubtotal` (function) · `canTotal` (function) · `capabilitiesFor` (function) · `CapabilityModel` (interface) · `chartExpand` (function) · `chartFields` (function) · `chartIsSeries` (function) · `ChartModel` (interface) · `ChartRequestOptions` (interface) · `chartSeriesSelect` (function) · `childPathOf` (function) · `collectTotals` (function) · `ColumnModel` (type) · `companionPaths` (function) · `compareDecimal` (function) · `compareValues` (function) · `ConcurrencyError` (class) · `Condition` (interface) · `conditionAllowed` (function) · `COUNT_DATE_OPERATORS` (const) · `createMessage` (function) · `createSessionPageStateStore` (function) · `Criticality` (type) · `CriticalityCalculationModel` (interface) · `csdlJsonToXml` (function) · `CsdlSource` (type) · `currencyDigits` (function) · `DataPointModel` (interface) · `dataPointPaths` (function) · `DataProvider` (type) · `DEFAULT_CAPABILITIES` (const) · `deriveColumns` (function) · `DERIVED_GENERAL_SECTION` (const) · `DirectEditStrategy` (class) · `DRAFT_EDIT_STATES` (const) · `DraftEditState` (type) · `DraftEditStrategy` (class) · `DraftModel` (interface) · `DrillState` (type) · `EDIT_STATE` (const) · `EditSession` (interface) · `editStateFilter` (function) · `editStateOf` (function) · `EditStrategy` (interface) · `editStrategyFor` (function) · `EdmType` (type) · `encodeOption` (function) · `EntityPath` (type) · `EntityPathError` (class) · `entityPathOf` (function) · `EntitySetModel` (interface) · `EntityTypeModel` (interface) · `EntityUi` (interface) · `errorFromResponse` (function) · `EventModel` (interface) · `ExpandSpec` (interface) · `FetchLike` (type) · `FieldModel` (interface) · `fieldPaths` (function) · `FilterExpression` (type) · `filterExpressionRules` (function) · `FilterExpressionRules` (interface) · `FilterOptions` (interface) · `FilterState` (type) · `filterString` (function) · `FIXED_DAY_OPERATORS` (const) · `FixedDayOperator` (type) · `formatDate` (function) · `formatDateTime` (function) · `formatDateTimeWithTimezone` (function) · `formatNumber` (function) · `FormatOptions` (interface) · `formatTime` (function) · `formatTimezone` (function) · `formatValue` (function) · `FormGroupModel` (interface) · `getEntitySet` (function) · `getEntityType` (function) · `getProperty` (function) · `getUi` (function) · `groupKey` (function) · `HeaderFacetModel` (type) · `HeaderInfoModel` (interface) · `hiddenFilterPath` (function) · `hiddenFiltersOf` (function) · `HierarchyNode` (interface) · `hierarchyNodeOf` (function) · `hierarchyOf` (function) · `HierarchyRequest` (interface) · `HierarchyRequestOptions` (interface) · `highestSeverity` (function) · `humanize` (function) · `Importance` (type) · `ImprovementDirection` (type) · `InitialCondition` (interface) · `isAbortError` (function) · `isComplete` (function) · `isCustomAggregate` (function) · `isDraftRow` (function) · `isFilterable` (function) · `isRelativeDateOperator` (function) · `isSortable` (function) · `keyPredicate` (function) · `ListRequestOptions` (interface) · `LiteralError` (class) · `loadService` (function) · `LoadServiceOptions` (interface) · `matches` (function) · `matchesEditState` (function) · `MAX_GROUP_VALUES` (const) · `MDC_DATE_OPERATORS` (const) · `MemoryPageStateStore` (class) · `MemoryProvider` (class) · `MemoryProviderOptions` (interface) · `MemoryVariantStore` (class) · `Message` (interface) · `messagesFromError` (function) · `messagesFromHeader` (function) · `MessageType` (type) · `MetaModel` (interface) · `MICRO_CHART_MAX_POINTS` (const) · `MICRO_COMPARISON_MAX_BARS` (const) · `MODEL_VERSION` (const) · `ModelError` (class) · `ModelWarning` (interface) · `NavigationAdapter` (interface) · `NavigationModel` (interface) · `NavigationTarget` (type) · `objectFields` (function) · `ODataError` (class) · `ODataErrorDetail` (interface) · `ODataV4Provider` (class) · `ODataV4ProviderOptions` (interface) · `ODataVariantStore` (class) · `ODataVariantStoreOptions` (interface) · `Operator` (type) · `OPERATOR_ARITY` (const) · `OPERATORS` (const) · `PageStateStore` (interface) · `parseAnnotationPath` (function) · `parseEntityPath` (function) · `PathSegment` (interface) · `PresentationModel` (interface) · `PresentationVariantModel` (interface) · `propertyFilter` (function) · `PropertyModel` (interface) · `QueryRequest` (interface) · `QueryResult` (interface) · `QuerySource` (type) · `ReadDataProvider` (interface) · `readQueryString` (function) · `ReadRequest` (interface) · `RecursiveHierarchyModel` (interface) · `RELATIVE_DATE_OPERATORS` (const) · `RelativeDateOperator` (type) · `relativeDateRange` (function) · `relativeDateValueTypes` (function) · `RequestOptions` (interface) · `resolveCondition` (function) · `ResolvedPath` (interface) · `resolveEntityPath` (function) · `resolvePath` (function) · `restrictConditions` (function) · `Row` (type) · `SectionModel` (interface) · `selectAndExpand` (function) · `SemanticTarget` (interface) · `SemanticTargetRequest` (interface) · `setDefaultWeekStart` (function) · `siblingPath` (function) · `SortItem` (interface) · `sourceInfo` (function) · `SourceInfo` (interface) · `sourcePath` (function) · `STANDARD_VARIANT_ID` (const) · `startOfDayIso` (function) · `strictestExpression` (function) · `SubSectionContent` (type) · `SubSectionModel` (interface) · `targetEntitySet` (function) · `TextArrangement` (type) · `toCsdlXml` (function) · `todayIn` (function) · `toFilter` (function) · `toLiteral` (function) · `toQueryString` (function) · `TOTAL_COUNT_ALIAS` (const) · `TotalAmount` (interface) · `TotalsEntry` (interface) · `TotalsRequestOptions` (interface) · `TrendCalculationModel` (interface) · `unitPathOf` (function) · `UnknownEntitySetError` (class) · `ValueHelpRequestOptions` (interface) · `ValueListModel` (interface) · `ValueListParameter` (interface) · `valueListTextArrangement` (function) · `ValueOperator` (type) · `ValueRef` (type) · `Variant` (interface) · `VariantContent` (interface) · `VariantStore` (interface) · `ViewModel` (interface) · `withHiddenFilters` (function) · `WriteDataProvider` (interface) · `WriteResult` (interface)
 
 ### `ActionModel` — interface
 
@@ -21,6 +21,9 @@ UI.DataFieldForAction (ADR-024).
 | `inline` | **yes** | `boolean` | Line item action (UI.DataFieldForAction/Inline). |
 | `determining` | **yes** | `boolean` | Footer action of the object page (UI.DataFieldForAction/Determining). |
 | `parameters` | **yes** | `{ name: string; edmType: EdmType; label: string; nullable: boolean }[]` | Non-binding parameters. |
+| `critical` |  | `ValueRef` | Common.IsActionCritical of the action: a confirmation before it runs (FE Operation confirmAction). |
+| `copy` |  | `boolean` | UI.IsCopyAction of the record: the standard "Copy" button after "Create" (FE Table getTableAnnotationActions). |
+| `menu` |  | `string` | Id of the UI.DataFieldForActionGroup the action belongs to ("DataFieldForActionGroup::&lt;ID>"). |
 | `criticality` |  | `ValueRef` |  |
 | `operationAvailable` |  | `ValueRef` | Core.OperationAvailable: a constant or a path relative to the bound entity (binding parameter removed). |
 
@@ -70,10 +73,19 @@ Aggregation.ApplySupported.
 | `groupable` | **yes** | `string[]` | GroupableProperties; empty means any property may be grouped by. |
 | `aggregatable` | **yes** | `{ path: string; methods: string[] }[]` | AggregatableProperties; empty means any numeric property may be aggregated. |
 | `customAggregates` | **yes** | `Record&lt;string, string>` | Aggregation.CustomAggregate by qualifier (the name of the aggregate, usually the property it aggregates) → its type, e.g. `{ NetAmount: 'Edm.Decimal' }`. FE takes these as the aggregatable measures and requests `aggregate(Name)`, leaving the method to the service (docs/29 §4 P1-2). |
+| `aggregatedProperties` |  | `AggregatedPropertyModel[]` | Analytics.AggregatedProperty (qualified, preferred) or the first Analytics.AggregatedProperties of the type, restricted to aggregatable properties: the transformation aggregates of charts (FE AggregationHelper getTransAggregations), requested as `aggregate(&lt;property> with &lt;method> as &lt;name>)`. |
+
+### `ALLOWED_EXPRESSIONS_PRIORITY` — const
+
+CommonUtils.AllowedExpressionsPrio
+
+```ts
+const ALLOWED_EXPRESSIONS_PRIORITY: readonly FilterExpression[]
+```
 
 ### `arrangeText` — function
 
-The display of a code with its text: TextFirst (default) "Text (Code)", TextLast "Code (Text)", TextOnly "Text", TextSeparate "Code" (the text goes in a column of its own). Without a text, the code; without a code, the text (except TextSeparate).
+The display of a code with its text: TextFirst (default) "Text (Code)", TextLast "Code (Text)", TextOnly "Text", TextSeparate "Code" (the text is not shown and not requested, as in FE). Without a text, the code; without a code, the text (except TextSeparate).
 
 ```ts
 arrangeText(code: string, text: string | undefined, arrangement?: TextArrangement): string
@@ -92,7 +104,7 @@ buildAggregateRequest(model: MetaModel, chart: { dimensions: string[]; measures:
 The aggregation request of the list report chart as FE sends it (sap.fe.macros.Chart with sap.chart on the V4 model, docs/29 §4 P1-3): `$apply=filter(…)/groupby((<sorted groups>),aggregate(<measures>))&$count=true`. Groups are all dimensions, their Common.Text when it is groupable and not on a navigation (ChartDelegate), and the units of the measures (so amounts in different currencies are never added up); the measures are requested by `aggregateMeasure`. No `$top`; `$orderby` only from `sort`.
 
 ```ts
-buildChartRequest(model: MetaModel, chart: Pick<ChartModel, "dimensions" | "measures">, o: ChartRequestOptions): QueryRequest
+buildChartRequest(model: MetaModel, chart: Pick<ChartModel, "dimensions" | "measures" | "dynamicMeasures">, o: ChartRequestOptions): QueryRequest
 ```
 
 ### `buildHierarchyRequest` — function
@@ -214,6 +226,11 @@ capabilitiesFor(model: MetaModel, parentSet: string, navigation?: string): Capab
 | `insertable` | **yes** | `boolean` |  |
 | `updatable` | **yes** | `boolean` |  |
 | `deletable` | **yes** | `boolean` |  |
+| `insertablePath` |  | `string` | InsertRestrictions/Insertable or DeleteRestrictions/Deletable given as a path (FE isPathInsertable / isPathDeletable): the list keeps the button; a deletable path is evaluated per selected row (FE deletableContexts). |
+| `deletablePath` |  | `string` |  |
+| `caseInsensitive` |  | `boolean` | Capabilities.FilterFunctions contains "tolower": string filters are case-insensitive (`tolower(p) eq tolower('x')`). |
+| `createHidden` |  | `ValueRef` | UI.CreateHidden / UI.DeleteHidden of the entity set, else of its type (FE StandardActions isActionAnnotatedHidden). |
+| `deleteHidden` |  | `ValueRef` |  |
 | `aggregation` |  | `AggregationModel` | Aggregation.ApplySupported on the entity set or its type ($apply: groups and totals, docs/23). Absent: no aggregation. |
 
 ### `chartExpand` — function
@@ -255,6 +272,11 @@ UI.Chart (ADR-021).
 | `navigation` | **yes** | `string` | Navigation from the annotated entity to the chart's entity ("" for the entity itself). |
 | `typeName` | **yes** | `string` | Entity type the chart's paths are relative to. |
 | `dimensionRoles` |  | `Record&lt;string, string>` | UI.Chart/DimensionAttributes Role by dimension path ("Category", "Series", "Category2"); absent: Category. |
+| `chartTitle` |  | `string` | UI.Chart/Title as annotated (`title` falls back to the first measure's label); FE: the chart header. |
+| `description` |  | `string` | UI.Chart/Description. |
+| `dynamicMeasures` |  | `string[]` | UI.Chart/DynamicMeasures: names of the Analytics.AggregatedProperty they point to (FE: measures before `Measures`). |
+| `measureRoles` |  | `Record&lt;string, string>` | UI.Chart/MeasureAttributes Role by measure (or dynamic measure name): "Axis1" … "Axis4". |
+| `actions` |  | `ActionModel[]` | UI.Chart/Actions: the unbound, non-inline, non-determining UI.DataFieldForAction (FE Chart getChartActions). |
 
 ### `ChartRequestOptions` — interface
 
@@ -298,7 +320,7 @@ export type ColumnModel = FieldModel;
 
 ### `companionPaths` — function
 
-Text, unit and criticality paths of a property reached through `path`.
+Text and unit paths of a property reached through `path` (a property's UI.Criticality is not read, D41). With TextSeparate the field shows the value only (FE displayMode "Value"), so its text is not requested, as in FE.
 
 ```ts
 companionPaths(prop: PropertyModel, path: string): string[]
@@ -341,6 +363,14 @@ Whether one condition is allowed by the rules (ignoring the maximum).
 
 ```ts
 conditionAllowed(rules: FilterExpressionRules, c: Condition): boolean
+```
+
+### `COUNT_DATE_OPERATORS` — const
+
+LAST/NEXT <unit> [INCLUDED], in the sap.ui.mdc order (days, weeks, months, quarters, years).
+
+```ts
+const COUNT_DATE_OPERATORS: readonly RelativeDateOperator[]
 ```
 
 ### `createMessage` — function
@@ -422,8 +452,10 @@ currencyDigits(code: string | undefined): number | undefined
 
 ### `dataPointPaths` — function
 
+Paths a data point reads. In a table cell (`o.cell`) the rating's SampleSize is not shown (sap.fe.macros.internal.DataPoint binds it only in the header data point), so it is not requested, as in Fiori elements.
+
 ```ts
-dataPointPaths(model: MetaModel, typeName: string, dp: DataPointModel): string[]
+dataPointPaths(model: MetaModel, typeName: string, dp: DataPointModel, o?: { cell?: boolean; }): string[]
 ```
 
 ### `DataProvider` — type
@@ -634,6 +666,10 @@ entityPathOf(model: MetaModel, entitySet: string, row: Record<string, unknown>):
 | `dataPoints` | **yes** | `Record&lt;string, DataPointModel>` | Every UI.DataPoint by qualifier ("" for the unqualified one). |
 | `fieldGroups` | **yes** | `Record&lt;string, FormGroupModel>` | Every UI.FieldGroup by qualifier ("" for the unqualified one). |
 | `identification` | **yes** | `FieldModel[]` | UI.Identification fields (actions are in `objectActions`). |
+| `actionGroups` |  | `{ id: string; label: string; actions: string[] }[]` | UI.DataFieldForActionGroup records of the UI.LineItem: menu buttons of the table toolbar; their actions are in `actions` with `menu` set to the group id (FE Table getDataFieldAnnotationAction, ActionType.Menu). |
+| `rowHighlight` |  | `Record&lt;string, ValueRef>` | UI.Criticality annotated on each UI.LineItem, by qualifier ("" for the unqualified one): the row highlight (FE Table getHighlightRowBinding). |
+| `defaultChart` |  | `string` | Qualifier of the UI.Chart the default presentation shows instead of a table: the first LineItem or Chart of the visualizations of the compliant default SPV / PV is a chart (FE ListReportConverter SingleChart). |
+| `kpis` |  | `Record&lt;string, KpiModel>` | UI.KPI by qualifier (list report KPI tags, FE controls/Common/KPI); absent when the type has none. |
 | `quickView` |  | `FormGroupModel[]` | UI.QuickViewFacets as form groups. |
 | `event` |  | `EventModel` | Communication.Event of the entity type. |
 
@@ -681,15 +717,24 @@ export type FetchLike = (input: string, init?: { method?: string; headers?: Reco
 | Member | Required | Type | Description |
 | --- | --- | --- | --- |
 | `id` | **yes** | `string` |  |
-| `kind` | **yes** | `'field' \| 'dataPoint' \| 'chart'` |  |
+| `kind` | **yes** | `'field' \| 'dataPoint' \| 'chart' \| 'fieldGroup' \| 'connectedFields' \| 'contact' \| 'action'` | 'field': a DataField (also WithUrl, WithNavigationPath, WithIntentBasedNavigation, WithAction); 'dataPoint', 'chart', 'fieldGroup', 'connectedFields', 'contact': a DataFieldForAnnotation to UI.DataPoint, UI.Chart, UI.FieldGroup, UI.ConnectedFields, Communication.Contact; 'action': an inline UI.DataFieldForAction (a column of a line item). |
 | `label` | **yes** | `string` |  |
 | `criticalityIcon` | **yes** | `boolean` |  |
 | `isSemanticKey` | **yes** | `boolean` |  |
 | `path` |  | `string` | Property path relative to the row, for kind 'field'. |
+| `width` |  | `string` | HTML5.CssDefaults/width of the record (column width, FE Columns). |
+| `fields` |  | `FieldModel[]` | The fields of a field group or of connected fields, in order. |
+| `template` |  | `{ text: string; keys: string[] }` | UI.ConnectedFields/Template, e.g. "{From} – {To}", and the key of each field in `fields` (same order). |
+| `contact` |  | `ContactModel` | Communication.Contact (kind 'contact'): paths of the name and the details shown in the contact popover. |
+| `action` |  | `ActionModel` | The inline action (kind 'action') or the action a DataFieldWithAction value runs (kind 'field'). |
+| `navigationPath` |  | `string` | UI.DataFieldWithNavigationPath/Target: the value is a link to the object reached by this navigation. |
+| `intent` |  | `{ semanticObject: string; action?: string }` | UI.DataFieldWithIntentBasedNavigation: the intent (a link only where the launchpad resolves it). |
 | `dataPoint` |  | `DataPointModel` |  |
 | `chart` |  | `ChartModel` | Micro chart in a table cell or form (DataFieldForAnnotation to UI.Chart, docs/15 MC-10). |
 | `criticality` |  | `ValueRef` |  |
 | `url` |  | `ValueRef` |  |
+| `linkTarget` |  | `string` | UI.DataFieldWithUrl: HTML5.LinkTarget of the record or of the property ("_blank", "_self", …); none: the same window ("_top"). |
+| `iconUrl` |  | `ValueRef` | UI.DataFieldWithUrl/IconUrl: an icon shown before the linked value. |
 | `importance` |  | `Importance` | UI.Importance of the record (responsive table columns, forms on small screens). |
 | `quickView` |  | `{ navigation: string; typeName: string }` | The value refers to another object that has UI.QuickViewFacets (cross navigation, LR Navigation). |
 
@@ -698,7 +743,7 @@ export type FetchLike = (input: string, init?: { method?: string; headers?: Reco
 All paths a field needs: the value plus text, unit, criticality, URL.
 
 ```ts
-fieldPaths(model: MetaModel, typeName: string, field: FieldModel): string[]
+fieldPaths(model: MetaModel, typeName: string, field: FieldModel, o?: { cell?: boolean; }): string[]
 ```
 
 ### `FilterExpression` — type
@@ -709,16 +754,19 @@ export type FilterExpression = | 'SingleValue' | 'MultiValue' | 'SingleRange' | 
 
 ### `filterExpressionRules` — function
 
+The rules of a filter field. Without `type` the type is not known (e.g. a request built from a filter state only): then the expression's operators are taken for a string or date property, whichever allows more.
+
 ```ts
-filterExpressionRules(expression: FilterExpression | undefined): FilterExpressionRules
+filterExpressionRules(expression: FilterExpression | undefined, type?: EdmType): FilterExpressionRules
 ```
 
 ### `FilterExpressionRules` — interface
 
 | Member | Required | Type | Description |
 | --- | --- | --- | --- |
-| `operators` | **yes** | `readonly Operator[]` |  |
-| `exclude` | **yes** | `boolean` | Exclude conditions ("not …") allowed. |
+| `operators` | **yes** | `readonly Operator[]` | Operators allowed as include conditions. |
+| `excludeOperators` | **yes** | `readonly Operator[]` | Operators allowed with `exclude: true`. |
+| `exclude` | **yes** | `boolean` | The field offers include / exclude: there are exclusions that are no operator of their own (NOTLT, NotStartsWith …). |
 | `expression` |  | `FilterExpression` | The restriction, or undefined when the field is not restricted. |
 | `max` |  | `number` | Maximum number of conditions; undefined = any. |
 
@@ -730,7 +778,8 @@ Options for date filtering.
 | --- | --- | --- | --- |
 | `timeZone` |  | `string` | IANA time zone used to turn a calendar day into a DateTimeOffset range and to find today. Defaults to UTC. |
 | `today` |  | `string` | Today (YYYY-MM-DD) for relative date operators; default: the current date in `timeZone`. |
-| `weekStartsOn` |  | `number` | First day of the week for THISWEEK / LASTWEEK / NEXTWEEK: 0 Sunday … 6 Saturday; default 1 (Monday, ISO 8601). |
+| `weekStartsOn` |  | `number` | First day of the week for week operators: 0 Sunday … 6 Saturday; default `setDefaultWeekStart` (initially 1, Monday). |
+| `caseInsensitive` |  | `boolean` | String conditions are case-insensitive: `tolower(Path) eq tolower('x')`, as the SAPUI5 V4 model writes filters with `caseSensitive: false` (FE when Capabilities.FilterFunctions contains "tolower", ModelHelper isFilteringCaseSensitive). |
 
 ### `FilterState` — type
 
@@ -745,7 +794,21 @@ export type FilterState = Record<string, Condition[]>;
 Builds the $filter string of a request (filters and anyOf).
 
 ```ts
-filterString(model: MetaModel, typeName: string, req: Pick<QueryRequest, "filters" | "anyOf" | "timeZone">): string | undefined
+filterString(model: MetaModel, typeName: string, req: Pick<QueryRequest, "filters" | "anyOf" | "timeZone" | "caseInsensitive">): string | undefined
+```
+
+### `FIXED_DAY_OPERATORS` — const
+
+```ts
+const FIXED_DAY_OPERATORS: readonly FixedDayOperator[]
+```
+
+### `FixedDayOperator` — type
+
+The fixed single-day operators (DefaultSemanticDateOperators getFixedDateSingleValueOperations).
+
+```ts
+export type FixedDayOperator = | 'YESTERDAY' | 'TODAY' | 'TOMORROW' | 'FIRSTDAYWEEK' | 'LASTDAYWEEK' | 'FIRSTDAYMONTH' | 'LASTDAYMONTH' | 'FIRSTDAYQUARTER' | 'LASTDAYQUARTER' | 'FIRSTDAYYEAR' | 'LASTDAYYEAR';
 ```
 
 ### `formatDate` — function
@@ -758,6 +821,14 @@ formatDate(value: unknown, locale: string): string
 
 ```ts
 formatDateTime(value: unknown, locale: string, timeZone?: string): string
+```
+
+### `formatDateTimeWithTimezone` — function
+
+Edm.DateTimeOffset with Common.Timezone (FE UIFormatters getBindingWithTimezone, sap.fe.core.type.DateTimeWithTimezone): date and time (medium style) in the given zone, then the zone's name; empty values show nothing.
+
+```ts
+formatDateTimeWithTimezone(value: unknown, locale: string, zone: unknown): string
 ```
 
 ### `formatNumber` — function
@@ -779,6 +850,14 @@ formatNumber(value: unknown, locale: string, fractionDigits?: { min?: number; ma
 
 ```ts
 formatTime(value: unknown, locale: string): string
+```
+
+### `formatTimezone` — function
+
+Display name of an IANA time zone as sap.ui.model.odata.type.DateTimeWithTimezone shows it in English (CLDR time zone translations): "Europe/Berlin" → "Europe, Berlin", "America/New_York" → "Americas, New York". Other languages get the same English form (the CLDR translations are not available to Intl).
+
+```ts
+formatTimezone(zone: unknown): string
 ```
 
 ### `formatValue` — function
@@ -915,6 +994,7 @@ Parameters of the TopLevels function (OData Hierarchy vocabulary).
 | `sort` |  | `SortItem[]` |  |
 | `timeZone` |  | `string` |  |
 | `extraSelect` |  | `string[]` | Extra paths to select (e.g. requested by custom content). |
+| `requestAtLeast` |  | `string[]` | UI.PresentationVariant/RequestAtLeast of the table's presentation (a view's own PV, FE Table createRequestedProperties); default the entity's default presentation. |
 
 ### `highestSeverity` — function
 
@@ -1023,6 +1103,7 @@ keyPredicate(type: EntityTypeModel, row: Record<string, unknown>): string
 | `count` |  | `boolean` | Request the total count (ignored when the service cannot count). |
 | `extraSelect` |  | `string[]` | Extra paths to select (e.g. requested by custom content). |
 | `timeZone` |  | `string` |  |
+| `requestAtLeast` |  | `string[]` | UI.PresentationVariant/RequestAtLeast of the table's presentation (a view's own PV, FE Table createRequestedProperties); default the entity's default presentation. |
 
 ### `LiteralError` — class
 
@@ -1071,6 +1152,14 @@ Maximum number of group values in one subtotal request (URL length).
 
 ```ts
 const MAX_GROUP_VALUES: 50
+```
+
+### `MDC_DATE_OPERATORS` — const
+
+The mdc date operators (FilterOperatorUtil for Edm.Date without FE's semantic date range: no DATE, FROM, TO, DATERANGE, FROM<op>, TO<op>).
+
+```ts
+const MDC_DATE_OPERATORS: readonly RelativeDateOperator[]
 ```
 
 ### `MemoryPageStateStore` — class
@@ -1197,6 +1286,7 @@ new ModelError(message?: string)
 | `href` |  | `(target: NavigationTarget) => string \| undefined` | Link address for &lt;a href>; undefined renders a button only. |
 | `hasObjectPage` |  | `(entitySet: string, service?: string) => boolean` | Whether an object page exists for rows of `entitySet` (controls navigation indicators). |
 | `toTable` |  | `(parent: EntityPath, navigation: string, service?: string) => void` | Opens a page with the whole table of a collection navigation ("Show All (x)", OP Tables). |
+| `semanticTargets` |  | `(request: SemanticTargetRequest) => SemanticTarget[] \| undefined` | Navigation targets of a semantic object (D42: what the Fiori launchpad resolves in Fiori elements, the host gives here). Used by `Common.SemanticObject` smart links (the popover lists the targets; one target is a direct link) and by `UI.DataFieldWithIntentBasedNavigation` (the target of `action`). No targets (or no method): the value is plain text. |
 
 ### `NavigationModel` — interface
 
@@ -1329,6 +1419,8 @@ parseEntityPath(path: EntityPath): PathSegment[]
 | `groupBy` | **yes** | `string[]` | UI.PresentationVariant/GroupBy: default grouping (the table uses the first path, docs/23). |
 | `total` | **yes** | `string[]` | UI.PresentationVariant/Total: properties whose totals are shown by default (docs/23). |
 | `hasTotal` |  | `boolean` | Whether the presentation variant has `Total` at all (also an empty collection: no totals). Without it an analytical table totals all custom aggregates (FE getAggregateConditions, D39). |
+| `initialExpansionLevel` |  | `number` | UI.PresentationVariant/InitialExpansionLevel (tree tables: FE requests this level + 1). |
+| `chartSortOrder` |  | `{ path: string; descending: boolean }[]` | The sort order of a chart, when SortOrder has a DynamicProperty: the Analytics.AggregatedProperty name in its place (FE ChartHelper getSortConditions; tables ignore DynamicProperty). Absent: `sortOrder`. |
 
 ### `PresentationVariantModel` — interface
 
@@ -1366,10 +1458,8 @@ propertyFilter(path: string, conditions: Condition[], type: EdmType, opts?: Filt
 | `computed` | **yes** | `boolean` |  |
 | `immutable` | **yes** | `boolean` |  |
 | `isImageUrl` | **yes** | `boolean` |  |
-| `isUrl` | **yes** | `boolean` |  |
 | `multiLine` | **yes** | `boolean` |  |
 | `isDigitSequence` | **yes** | `boolean` |  |
-| `isUpperCase` | **yes** | `boolean` |  |
 | `mandatory` | **yes** | `boolean` | Common.FieldControl is the constant Mandatory (7). |
 | `readOnly` | **yes** | `boolean` | Common.FieldControl is the constant ReadOnly (1). |
 | `maxLength` |  | `number` |  |
@@ -1380,7 +1470,17 @@ propertyFilter(path: string, conditions: Condition[], type: EdmType, opts?: Filt
 | `textArrangement` |  | `TextArrangement` |  |
 | `unit` |  | `ValueRef` |  |
 | `valueList` |  | `ValueListModel` |  |
-| `criticality` |  | `ValueRef` |  |
+| `valueLists` |  | `ValueListModel[]` | All Common.ValueList annotations that apply, by qualifier, default ("") first (FE `putDefaultQualifierFirst`), limited to Common.ValueListRelevantQualifiers when it lists qualifiers; `valueList` is the first of them. Absent when there is at most one. |
+| `isEmailAddress` |  | `boolean` | Communication.IsEmailAddress: shown as a `mailto:` link. |
+| `isPhoneNumber` |  | `boolean` | Communication.IsPhoneNumber: shown as a `tel:` link. |
+| `masked` |  | `boolean` | Common.Masked: shown as "*" characters. |
+| `externalId` |  | `string` | Common.ExternalID: path of the property whose value is shown instead of this (technical) one. |
+| `timezone` |  | `ValueRef` | Common.Timezone of an Edm.DateTimeOffset: IANA time zone constant or path. |
+| `isTimezone` |  | `boolean` | Common.IsTimezone: the value is an IANA time zone ID. |
+| `filename` |  | `ValueRef` | Core.ContentDisposition/Filename of an Edm.Stream. |
+| `mediaType` |  | `ValueRef` | Core.MediaType of an Edm.Stream or binary. |
+| `linkTarget` |  | `string` | HTML5.LinkTarget of the property (target window of its URL links). |
+| `semanticObject` |  | `string` | Common.SemanticObject (constant): the value is a smart link to the semantic object's targets (D42). |
 | `filterDefaultValue` |  | `string \| number \| boolean` | Common.FilterDefaultValue: default "EQ" filter condition when there is no default selection variant (FE FilterHelper). |
 | `fieldControl` |  | `ValueRef` | Common.FieldControl constant (0 hidden, 1 read-only, 3 optional, 7 mandatory) or a path. |
 
@@ -1398,7 +1498,8 @@ propertyFilter(path: string, conditions: Condition[], type: EdmType, opts?: Filt
 | `search` |  | `string` |  |
 | `skip` |  | `number` |  |
 | `top` |  | `number` |  |
-| `timeZone` |  | `string` | Time zone for calendar-day filters on Edm.DateTimeOffset properties. |
+| `caseInsensitive` |  | `boolean` | String conditions are case-insensitive (Capabilities.FilterFunctions tolower). |
+| `timeZone` |  | `string` |  |
 | `aggregate` |  | `{ groupBy: string[]; measures: AggregateMeasure[] }` | Server-side aggregation ($apply, OData Data Aggregation): group by `groupBy` and aggregate the measures (ADR-021). |
 | `hierarchy` |  | `HierarchyRequest` | Recursive hierarchy (docs/26 §3.10): the visible nodes as `$apply=…/com.sap.vocabularies.Hierarchy.v1.TopLevels(…)`. |
 
@@ -1455,8 +1556,11 @@ A recursive hierarchy: `Aggregation.RecursiveHierarchy` (node and parent) with t
 | `matched` |  | `string` |  |
 | `matchedDescendantCount` |  | `string` |  |
 | `externalKey` |  | `string` |  |
+| `paired` |  | `boolean` | Hierarchy.RecursiveHierarchy with the same (non-empty) qualifier exists (FE: the default table type is TreeTable). |
 
 ### `RELATIVE_DATE_OPERATORS` — const
+
+All relative and semantic date operators: the sap.ui.mdc date operators first (FilterOperatorUtil, BaseType Date), then the semantic ones of FE (DATE, FROM, TO, DATERANGE) and the extended FROM<op> / TO<op>.
 
 ```ts
 const RELATIVE_DATE_OPERATORS: readonly RelativeDateOperator[]
@@ -1464,18 +1568,26 @@ const RELATIVE_DATE_OPERATORS: readonly RelativeDateOperator[]
 
 ### `RelativeDateOperator` — type
 
-Relative date operators (date and date-time properties), after SAPUI5's DynamicDateRange. A condition stores the operator, not dates; `toFilter` and `matches` resolve it against the current date each time they run. LASTDAYS / NEXTDAYS take a number of days and, as in SAPUI5, exclude today.
+Relative and semantic date operators (date and date-time properties), as the operators of sap.ui.mdc FilterOperatorUtil and the semantic date operators of sap.fe.macros.filterBar (DefaultSemanticDateOperators, ExtendedSemanticDateOperators) in SAPUI5 1.154. A condition stores the operator, not dates; `toFilter` and `matches` resolve it against the current date each time they run. - DATE, FROM, TO, DATERANGE take dates; LAST/NEXT…S (and …INCLUDED) a count; TODAYFROMTO two counts (days before, days after); SPECIFICMONTH a month index (0–11); SPECIFICMONTHINYEAR a month index and a year. - LASTDAYS / NEXTDAYS (and weeks, months …) exclude the current period, the …INCLUDED variants include it. - FROM<op> / TO<op> (e.g. FROMTODAY, TOLASTDAYMONTH) are from / up to the day of a fixed single-day operator.
 
 ```ts
-export type RelativeDateOperator = | 'TODAY' | 'YESTERDAY' | 'TOMORROW' | 'LASTDAYS' | 'NEXTDAYS' | 'THISWEEK' | 'LASTWEEK' | 'NEXTWEEK' | 'THISMONTH' | 'LASTMONTH' | 'NEXTMONTH' | 'THISQUARTER' | 'LASTQUARTER' | 'NEXTQUARTER' | 'THISYEAR' | 'LASTYEAR' | 'NEXTYEAR' | 'YEARTODATE';
+export type RelativeDateOperator = | 'TODAY' | 'YESTERDAY' | 'TOMORROW' | 'FIRSTDAYWEEK' | 'LASTDAYWEEK' | 'FIRSTDAYMONTH' | 'LASTDAYMONTH' | 'FIRSTDAYQUARTER' | 'LASTDAYQUARTER' | 'FIRSTDAYYEAR' | 'LASTDAYYEAR' | 'DATE' | 'FROM' | 'TO' | 'DATERANGE' | 'TODAYFROMTO' | 'SPECIFICMONTH' | 'SPECIFICMONTHINYEAR' | 'LASTDAYS' | 'LASTDAYSINCLUDED' | 'NEXTDAYS' | 'NEXTDAYSINCLUDED' | 'LASTWEEKS' | 'LAS…
 ```
 
 ### `relativeDateRange` — function
 
-The calendar days [from, to] (YYYY-MM-DD, both included) of a relative date operator on `today`, or undefined for other operators or an invalid number of days.
+The calendar days [from, to] (YYYY-MM-DD, both included) of a relative date operator on `today` (sap.ui.core.date UniversalDateUtils ranges), or undefined for other operators or incomplete values. FROM, TO, FROM<op> and TO<op> give the one day they start or end at (both entries the same); `resolveCondition` turns them into GE / LE.
 
 ```ts
-relativeDateRange(operator: Operator, value: unknown, today: string, weekStartsOn?: number): [string, string] | undefined
+relativeDateRange(operator: Operator, value: unknown, today: string, weekStartsOn?: number, value2?: unknown): [string, string] | undefined
+```
+
+### `relativeDateValueTypes` — function
+
+The value types of a relative date operator: dates, counts ("int"), a month index or a year.
+
+```ts
+relativeDateValueTypes(op: RelativeDateOperator): ("date" | "int" | "month" | "year")[]
 ```
 
 ### `RequestOptions` — interface
@@ -1486,7 +1598,7 @@ relativeDateRange(operator: Operator, value: unknown, today: string, weekStartsO
 
 ### `resolveCondition` — function
 
-Replaces a relative date condition by the fixed one it means today ("EQ" for one day, "BT" otherwise, keeping `exclude`); other conditions are returned as they are. Undefined when a relative condition cannot be resolved.
+Replaces a relative date condition by the fixed one it means today, keeping `exclude`; other conditions are returned as they are. Undefined when a relative condition cannot be resolved. As in FE: DATE → EQ, FROM / FROM<op> → GE, TO / TO<op> → LE, every other operator (a sap.ui.mdc RangeOperator, also a single day like TODAY) → BT.
 
 ```ts
 resolveCondition(c: Condition, opts?: FilterOptions): Condition | undefined
@@ -1523,7 +1635,7 @@ resolvePath(entityTypes: Record<string, EntityTypeModel>, typeName: string, path
 Keeps the allowed conditions, at most `max` (the latest ones win: a new single value replaces the old one).
 
 ```ts
-restrictConditions(expression: FilterExpression | undefined, conditions: Condition[]): Condition[]
+restrictConditions(expression: FilterExpression | undefined, conditions: Condition[], type?: EdmType): Condition[]
 ```
 
 ### `Row` — type
@@ -1546,6 +1658,37 @@ Splits property paths into a $select list and a $expand tree (single-valued navi
 
 ```ts
 selectAndExpand(model: MetaModel, typeName: string, paths: string[], nonExpandable?: string[]): { select: string[]; expand: ExpandSpec[]; }
+```
+
+### `SemanticTarget` — interface
+
+A navigation target of a semantic link.
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `text` | **yes** | `string` | Link text in the popover, e.g. "Display Partner". |
+| `href` | **yes** | `string` | Link address. |
+| `action` |  | `string` | The action, e.g. "display" (matched against DataFieldWithIntentBasedNavigation/Action). |
+| `description` |  | `string` | Optional sub-title of the link in the popover. |
+
+### `SemanticTargetRequest` — interface
+
+What a semantic link asks the host for (NavigationAdapter.semanticTargets).
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `semanticObject` | **yes** | `string` |  |
+| `row` | **yes** | `Record&lt;string, unknown>` | The row the value belongs to (the host maps its values to parameters of the target). |
+| `action` |  | `string` | The intent's action (DataFieldWithIntentBasedNavigation/Action); undefined: all actions of the semantic object. |
+| `path` |  | `string` | The property shown (Common.SemanticObject) or the DataField's value path. |
+| `service` |  | `string` |  |
+
+### `setDefaultWeekStart` — function
+
+The first day of the week used when FilterOptions.weekStartsOn is not given (0 Sunday … 6 Saturday; initially 1, ISO 8601). The React provider sets it from the locale, as SAPUI5 takes the week from the locale (en-US: Sunday).
+
+```ts
+setDefaultWeekStart(day: number): void
 ```
 
 ### `siblingPath` — function
@@ -1600,6 +1743,14 @@ Start of the calendar day `date` (YYYY-MM-DD) in `timeZone`, as an ISO string wi
 
 ```ts
 startOfDayIso(date: string, timeZone?: string): string
+```
+
+### `strictestExpression` — function
+
+The strictest of several allowed expressions (FE getSpecificAllowedExpression).
+
+```ts
+strictestExpression(expressions: readonly FilterExpression[]): FilterExpression | undefined
 ```
 
 ### `SubSectionContent` — type
@@ -1742,6 +1893,8 @@ new UnknownEntitySetError(message?: string)
 
 | Member | Required | Type | Description |
 | --- | --- | --- | --- |
+| `purpose` |  | `'dialog' \| 'suggest' \| 'description'` | What the request is for (FE ValueListHelper): `dialog` – the value help dialog's table ($select of the value list entity's UI.SelectionFields, the parameters and the keys; texts of the shown columns expanded; sorted by the value list's PresentationVariant, else by the key); `suggest` (default) – type-ahead and fixed values (sorted by the PresentationVariant, fixed values else by their first shown parameter); `description` – the text of one value (`$select` = the description, `$top=2`, no count, as the mdc field reads a token's description; `withDescription: false` when the field shows the code only). |
+| `withDescription` |  | `boolean` | With `purpose: 'description'`: whether the description is selected (default true). |
 | `search` |  | `string` |  |
 | `skip` |  | `number` |  |
 | `top` |  | `number` |  |
@@ -1758,7 +1911,9 @@ new UnknownEntitySetError(message?: string)
 | `keyProperty` | **yes** | `string` | The value list property that maps to the annotated property. |
 | `fixedValues` | **yes** | `boolean` |  |
 | `label` |  | `string` |  |
-| `descriptionProperty` |  | `string` | Description property shown as text (first DisplayOnly string, if any). |
+| `descriptionProperty` |  | `string` | Description property shown as text: the Common.Text of the key property in the value list entity (FE ValueListHelper `_enrichPath`: "only the text annotation of the key can specify the description"). |
+| `qualifier` |  | `string` | Qualifier of the Common.ValueList annotation ("" for the unqualified one). |
+| `presentationVariantQualifier` |  | `string` | Common.ValueList/PresentationVariantQualifier: the PV of the value list entity whose SortOrder sorts the list. |
 
 ### `ValueListParameter` — interface
 
@@ -1838,7 +1993,8 @@ UI.SelectionPresentationVariant with a qualifier: one view of a multi-view list 
 | `conditions` | **yes** | `InitialCondition[]` |  |
 | `presentation` | **yes** | `PresentationModel` |  |
 | `lineItem` | **yes** | `ColumnModel[]` |  |
-| `chart` |  | `ChartModel` |  |
+| `chart` |  | `ChartModel` | The first UI.Chart in the view's visualizations (sap.fe.macros.Chart with the view as metaPath). |
+| `visualization` |  | `'table' \| 'chart'` | What the view shows (FE ListReportConverter SingleTable / SingleChart): "chart" when the first LineItem or Chart of its visualizations is a chart (or, without either, only the default chart exists); default "table". |
 
 ### `withHiddenFilters` — function
 

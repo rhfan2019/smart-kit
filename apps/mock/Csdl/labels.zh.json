@@ -167,5 +167,25 @@
   "T.CostCenters": "成本中心",
   "F.CostCenter": "成本中心",
   "F.CostCenterName": "成本中心名称",
-  "F.Budget": "预算"
+  "F.Budget": "预算",
+
+  "T.SupplierContact": "供应商联系人",
+  "T.SupplierContacts": "供应商联系人",
+  "F.ContactName": "姓名",
+  "F.Contact": "联系人",
+  "F.ContactID": "联系人编号",
+  "F.JobTitle": "职位",
+  "F.Department": "部门",
+  "F.Email": "电子邮件",
+  "F.Phone": "电话",
+  "F.Mobile": "手机",
+  "F.Website": "网站",
+  "F.Portal": "门户",
+  "F.Iban": "IBAN",
+  "F.LastContactAt": "最近联系",
+  "F.TimeZone": "时区",
+  "F.Score": "评分",
+  "F.ResponseRate": "响应率",
+  "F.ResponseCriticality": "响应关键性",
+  "F.SpendAmount": "支出"
 }

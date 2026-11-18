@@ -111,7 +111,7 @@ export function buildTotalsRequest(model: MetaModel, o: TotalsRequestOptions): Q
 
   const filters: FilterState = {};
   for (const [path, conds] of Object.entries(o.filters ?? {})) {
-    const allowed = isFilterable(caps, path) ? restrictConditions(caps.filterExpressions[path], conds) : [];
+    const allowed = isFilterable(caps, path) ? restrictConditions(caps.filterExpressions[path], conds, resolvePath(model.entityTypes, typeName, path).property?.edmType) : [];
     if (allowed.length) filters[path] = allowed;
   }
   let anyOf: FilterState | undefined;

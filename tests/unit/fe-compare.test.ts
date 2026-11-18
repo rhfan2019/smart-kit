@@ -131,9 +131,9 @@ describe('diffStructure and diffText', () => {
 describe('deviation register and baseline', () => {
   const dev = (o: Partial<FeDeviation>): FeDeviation => ({ module: 'fe:s', kind: 'structure', member: 'columns', category: 'fe-behavior', stage: 4, reason: 'r', ...o });
 
-  it('reads only fe-behavior entries of fe:* modules; a missing file is empty', () => {
+  it('reads the fe: entries of every category (fe-behavior and long-term kit-extension), not API entries; a missing file is empty', () => {
     expect(feDeviations(undefined)).toEqual([]);
-    expect(feDeviations({ deviations: [dev({}), { ...dev({}), category: 'kit-extension' }, { module: 'v4/fe/macros/Table', category: 'fe-behavior' }] })).toHaveLength(1);
+    expect(feDeviations({ deviations: [dev({}), { ...dev({}), category: 'kit-extension' }, { module: 'v4/fe/macros/Table', category: 'fe-behavior' }] })).toHaveLength(2);
   });
 
   it('a difference passes only when module, kind and member are registered', () => {

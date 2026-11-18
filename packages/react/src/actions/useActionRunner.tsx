@@ -33,6 +33,13 @@ export interface ActionRunner {
   dialogs: ReactNode;
 }
 
+/** Common.IsActionCritical: a constant, or a path of the bound entity (FE ActionHelper getIsActionCriticalExpression: `equal(x, true)`). */
+export function isCritical(action: ActionModel, row: Row | undefined): boolean {
+  const c = action.critical;
+  if (!c) return false;
+  return ('path' in c ? row?.[c.path] : c.value) === true;
+}
+
 export function useActionRunner(o: { service?: string; onDone?(r: ActionResult): void }): ActionRunner {
   const service = useService(o.service);
   const t = useText();
@@ -66,8 +73,12 @@ export function useActionRunner(o: { service?: string; onDone?(r: ActionResult):
     o.onDone?.(result);
   };
 
+  const [confirm, setConfirm] = useState<{ action: ActionModel; targets: ActionTarget[] } | null>(null);
   const withParameters = (action: ActionModel, targets: ActionTarget[]) => {
     if (action.parameters.length) setParams({ action, targets, values: Object.fromEntries(action.parameters.map((p) => [p.name, ''])) });
+    // Common.IsActionCritical without a parameter dialog: confirm first (FE Operation confirmAction; a path is read
+    // from the first context).
+    else if (isCritical(action, targets[0]?.row)) setConfirm({ action, targets });
     else void execute(action, targets, {});
   };
 
@@ -81,6 +92,15 @@ export function useActionRunner(o: { service?: string; onDone?(r: ActionResult):
 
   const dialogs = (
     <>
+      <Modal opened={Boolean(confirm)} onClose={() => setConfirm(null)} title={t('actions.confirmTitle')} data-sk-action-confirm>
+        <Stack>
+          <Text>{t('actions.criticalConfirm')}</Text>
+          <Group justify="flex-end">
+            <Button onClick={() => { const c = confirm; setConfirm(null); if (c) void execute(c.action, c.targets, {}); }} data-sk-action-confirm-ok>{t('common.ok')}</Button>
+            <Button variant="default" onClick={() => setConfirm(null)}>{t('common.cancel')}</Button>
+          </Group>
+        </Stack>
+      </Modal>
       <Modal opened={Boolean(partial)} onClose={() => setPartial(null)} title={partial?.action.label} data-sk-partial-dialog>
         {partial ? (
           <Stack>

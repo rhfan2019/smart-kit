@@ -24,6 +24,7 @@ node apps/fe-reference/server.mjs              # http://localhost:4420
 | `http://localhost:4420/index.html?app=purchasing-chart` | `fe.ref.purchasingchart` (`webapp/purchasing-chart/`) | `/odata/purchasing/` |
 | `http://localhost:4420/index.html?app=purchasing-views` | `fe.ref.purchasingviews` (`webapp/purchasing-views/`) | `/odata/purchasing/` |
 | `http://localhost:4420/index.html?app=purchasing-analytical` | `fe.ref.purchasinganalytical` (`webapp/purchasing-analytical/`) | `/odata/purchasing/` |
+| `http://localhost:4420/index.html?app=purchasing-display` | `fe.ref.purchasingdisplay` (`webapp/purchasing-display/`) | `/odata/purchasing/` |
 
 Both components start through `webapp/ext/start.js`; the shared extensions (custom column, custom action) are in
 `webapp/ext/`. Variants are kept in the session storage flexibility connector (no LREP backend).
@@ -110,3 +111,30 @@ purchasing `$metadata` in the browser (`page.route`), identically for this app a
 the manifests, the demo page and the other scenarios are unchanged. The overlay reads the metadata from the test
 service directly, because `route.fetch` rejects this server's proxied response (it carries both `Content-Length`
 and `Transfer-Encoding`).
+
+## Stage 4 views, charts, KPI and table type (`tests/e2e-fe/views4.spec.ts`)
+
+The scenarios lay their annotations over the purchasing `$metadata` (as the filter overlays above) and, where FE
+needs a manifest setting, over `purchasing/manifest.json` (`page.route`), so the manifests and the other scenarios
+are unchanged:
+
+| scenario | overlay | FE (`?app=…`) | smart-kit demo |
+| --- | --- | --- | --- |
+| `views4-pv-chart-first`, `views4-chart-<type>` | default `UI.PresentationVariant`: `@UI.Chart#ByStatus` first, SortOrder NetAmount desc (and another `ChartType`) | `purchasing` | `/po` |
+| `views4-pv-not-compliant` | default PV without `Visualizations` | `purchasing` | `/po` |
+| `views4-view-no-sort`, `views4-chart-view` | SPV#Open without SortOrder, RequestAtLeast CompanyCode; SPV#InDelivery shows only `@UI.Chart#ByStatus` | `purchasing-views` | `/po?views=tabs` |
+| `views4-kpi-tag` | `UI.KPI#OpenAmount`; manifest `keyPerformanceIndicators.openAmount` | `purchasing` | `/po?kpi=1` (`keyPerformanceIndicators={{ openAmount: { qualifier: 'OpenAmount' } }}`) |
+| `views4-table-type` | `ApplySupported/Transformations` with all eight; manifest without `tableSettings.type` | `purchasing` | `/po?table=annotation` (no `tableType`) |
+
+The remaining differences are in `tools/ui5-alignment/deviations.views4.json`.
+
+### Value display (`purchasing-display` ↔ `/contacts`)
+
+`webapp/purchasing-display/manifest.json` is a list report on `/SupplierContacts` (the stage 4 block of the test
+service: e-mail and phone, `Communication.Contact`, `DataFieldWithUrl` with and without `HTML5.LinkTarget`,
+`Common.ExternalID`, `Common.Masked`, `Common.Timezone` / `IsTimezone`, data point `ValueFormat` and progress with
+criticality, amounts and quantities) with the same settings as `purchasing` (grid table, multi selection, export, page
+variants, live mode, initial load) and no extensions. It corresponds to the demo's `/contacts`
+(`apps/demo/src/pages/SupplierContactsPage.tsx`: `SmartListReport` `entitySet="SupplierContacts"` `tableType="grid"`).
+The FE comparison `tests/e2e-fe/display4.spec.ts` compares requests, structure, cell text and the cell links.
+

@@ -4,18 +4,21 @@
  * (P2-LR-19): one value, values only, one range, or search patterns. Values of a value list are shown according to
  * UI.TextArrangement (TextOnly: the text alone; TextSeparate is shown like TextFirst here).
  */
-import { ActionIcon, Button, Group, NumberInput, Popover, Select, TagsInput } from '@mantine/core';
+import { ActionIcon, Select, TagsInput } from '@mantine/core';
 import { DateInput, DatePickerInput } from '@mantine/dates';
 import {
-  arrangeText, conditionAllowed, filterExpressionRules, getProperty, isComplete, isRelativeDateOperator, OPERATOR_ARITY, RELATIVE_DATE_OPERATORS, valueListTextArrangement,
-  type Condition, type Operator, type PropertyModel, type TextArrangement,
+  arrangeText, conditionAllowed, filterExpressionRules, getProperty, isComplete, isRelativeDateOperator, valueListTextArrangement,
+  type Condition, type PropertyModel, type TextArrangement,
 } from '@rhfan2019/smart-kit-core';
 import dayjs from 'dayjs';
-import { CalendarClock, Copy } from 'lucide-react';
-import { useMemo, useState } from 'react';
-import { useService, useSmartKit, useText } from '../context/SmartKitProvider';
+import { Copy } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { useService, useSmartKit } from '../context/SmartKitProvider';
+import { useFilterText } from './filterText';
 import { getPath } from '../field/values';
 import { conditionText, parseConditionText, sameCondition } from './conditionText';
+import { RelativeDateButton } from './RelativeDateButton';
+import { useTokenDescriptions } from './useTokenDescriptions';
 import { useValueList } from './useValueList';
 import { propagateOut, useValueHelpSource } from './valueHelpSource';
 
@@ -64,11 +67,11 @@ function rangeOf(conditions: Condition[]): [string | null, string | null] | unde
 export function ConditionInput(p: ConditionInputProps) {
   const service = useService(p.service);
   const { intlLocale, timeZone } = useSmartKit();
-  const t = useText();
+  const t = useFilterText();
   const typeName = service.model.entitySets[p.entitySet]!.typeName;
   const prop = getProperty(service.model, typeName, p.path);
   const vl = prop?.valueList;
-  const rules = filterExpressionRules(service.model.entitySets[p.entitySet]!.capabilities.filterExpressions[p.path]);
+  const rules = filterExpressionRules(service.model.entitySets[p.entitySet]!.capabilities.filterExpressions[p.path], prop?.edmType);
   const [rejected, setRejected] = useState(false);
   const [typed, setTyped] = useState('');
   // A range being picked (first date chosen, second not yet): kept locally, not written to the conditions, so that the
@@ -77,14 +80,25 @@ export function ConditionInput(p: ConditionInputProps) {
 
   // In / InOut parameters filter by the other fields of the surrounding filter bar (P1-5).
   const source = useValueHelpSource();
-  const fixed = useValueList(vl, { top: 200, enabled: Boolean(vl?.fixedValues), filters: source?.filters }, p.service);
-  const suggest = useValueList(vl, { search: typed, top: 10, enabled: Boolean(vl && !vl.fixedValues && typed.trim().length > 0), filters: source?.filters }, p.service);
+  // Fixed values (Common.ValueListWithFixedValues) are read when the field is used (focus, dropdown) or a value needs
+  // its description, not when the filter bar is shown: Fiori elements requests them on demand (DV-FE-08, DV-FE-09).
+  const [used, setUsed] = useState(false);
+  // (a single-value select shows its value through the list)
+  const needsText = p.conditions.some((c) => c.operator === 'EQ' && (c.text === undefined || rules.expression === 'SingleValue'));
+  const fixed = useValueList(vl, { top: 200, enabled: Boolean(vl?.fixedValues) && (used || needsText), filters: source?.filters }, p.service);
+  const use = () => setUsed(true);
+  // type-ahead after a short pause in typing, as the mdc field's delayed suggestion request
+  const [typedNow, setTypedNow] = useState('');
+  useEffect(() => { const h = setTimeout(() => setTypedNow(typed), 300); return () => clearTimeout(h); }, [typed]);
+  const suggest = useValueList(vl, { search: typedNow, top: 10, enabled: Boolean(vl && !vl.fixedValues && typed.trim().length > 0 && typedNow === typed), filters: source?.filters }, p.service);
 
-  // UI.TextArrangement of the values; TextSeparate has no second column in a field, so it reads like TextFirst.
-  const annotated = valueListTextArrangement(service.model, prop);
-  const arrangement: TextArrangement | undefined = annotated === 'TextSeparate' ? 'TextFirst' : annotated;
+  // UI.TextArrangement of the values; TextSeparate shows the code only, as FE's filter field (FilterFieldTemplating
+  // getDisplayProperty: display mode "Value").
+  const arrangement: TextArrangement | undefined = valueListTextArrangement(service.model, prop);
   const valueLabel = (d: { key: string; text?: string }) => arrangeText(d.key, d.text, arrangement);
-  const relativeOps = isDateType(prop) ? RELATIVE_DATE_OPERATORS.filter((o) => rules.operators.includes(o)) : [];
+  // values without a description (typed, or written back by an Out parameter) read it from the value list
+  const descriptions = useTokenDescriptions(vl, p.conditions, arrangement !== 'TextSeparate', p.service);
+  const relativeOps = isDateType(prop) ? rules.operators.filter(isRelativeDateOperator).filter((o) => o !== 'DATE' && o !== 'DATERANGE') : [];
   const hasRelative = p.conditions.some((c) => isRelativeDateOperator(c.operator));
 
   const describe = (row: Record<string, unknown>) => {
@@ -119,7 +133,7 @@ export function ConditionInput(p: ConditionInputProps) {
     const data = described.map((d) => ({ value: d.key, label: valueLabel(d) }));
     return (
       <Select
-        {...common} clearable searchable data={data} value={v === undefined ? null : String(v)} data-sk-single-select
+        {...common} clearable searchable data={data} value={v === undefined ? null : String(v)} data-sk-single-select onFocus={use} onDropdownOpen={use}
         onChange={(val) => {
           const d = described.find((x) => x.key === val);
           p.onChange(val === null ? [] : [{ operator: 'EQ', values: [val], text: d?.text }]);
@@ -127,11 +141,14 @@ export function ConditionInput(p: ConditionInputProps) {
       />
     );
   }
-  if (rules.expression === 'SingleValue' && isDateType(prop)) {
+  if (rules.expression === 'SingleValue' && isDateType(prop) && !hasRelative) {
     const v = p.conditions[0]?.values[0];
+    // Edm.Date: FE's single-value semantic dates (today, first day of this month …, getSingleValueDateOperations)
     return (
       <DateInput
         {...common} clearable value={v ? String(v).slice(0, 10) : null} valueFormat={t('filterBar.dateFormat')} locale={intlLocale.slice(0, 2)}
+        leftSection={relativeOps.length && !p.disabled ? <RelativeDateButton operators={relativeOps} onPick={(c) => p.onChange([c])} /> : undefined}
+        leftSectionPointerEvents="all"
         onChange={(d) => p.onChange(d ? [{ operator: 'EQ', values: [dayjs(d).format('YYYY-MM-DD')] }] : [])}
       />
     );
@@ -178,7 +195,10 @@ export function ConditionInput(p: ConditionInputProps) {
     );
   }
 
-  const tokens = p.conditions.map((c) => conditionText(c, prop, intlLocale, timeZone, { t, textArrangement: arrangement }));
+  const tokens = p.conditions.map((c) => {
+    const text = c.text ?? (c.operator === 'EQ' && !c.exclude ? descriptions[String(c.values[0])] : undefined);
+    return conditionText(text === undefined ? c : { ...c, text }, prop, intlLocale, timeZone, { t, textArrangement: arrangement });
+  });
   const suggestionRows = (vl?.fixedValues ? fixed.data?.rows : suggest.data?.rows) ?? [];
   const suggestions = suggestionRows.map(describe);
   const suggestionLabel = valueLabel;
@@ -190,8 +210,10 @@ export function ConditionInput(p: ConditionInputProps) {
       value={tokens}
       searchValue={typed}
       onSearchChange={setTyped}
+      onFocus={use}
+      onDropdownOpen={use}
       data={rules.operators.includes('EQ') ? suggestions.map(suggestionLabel).filter((l) => !tokens.includes(l)) : []}
-      maxTags={rules.max}
+      // one condition (SingleValue, SingleRange): a new value replaces the old one (FE maxConditions 1)
       acceptValueOnBlur
       clearable
       splitChars={[]}
@@ -224,50 +246,10 @@ export function ConditionInput(p: ConditionInputProps) {
         }
         setRejected(refused);
         setTyped('');
-        p.onChange(kept);
+        p.onChange(rules.max !== undefined && kept.length > rules.max ? kept.slice(kept.length - rules.max) : kept);
         if (vl) propagateOut(vl, picked, source);
       }}
     />
-  );
-}
-
-/** Button with the relative dates of a date filter field (S6): today, this week, last X days … */
-function RelativeDateButton(p: { operators: readonly Operator[]; onPick(c: Condition): void }) {
-  const t = useText();
-  const [opened, setOpened] = useState(false);
-  const [days, setDays] = useState<Record<string, number>>({ LASTDAYS: 7, NEXTDAYS: 7 });
-  const pick = (c: Condition) => { setOpened(false); p.onPick(c); };
-  const plain = p.operators.filter((o) => OPERATOR_ARITY[o] === 0);
-  const counted = p.operators.filter((o) => OPERATOR_ARITY[o] === 1);
-  return (
-    <Popover opened={opened} onChange={setOpened} position="bottom-start" trapFocus returnFocus>
-      <Popover.Target>
-        <ActionIcon variant="subtle" aria-label={t('dateRange.button')} title={t('dateRange.button')} aria-expanded={opened} onClick={() => setOpened((o) => !o)} data-sk-relative-dates>
-          <CalendarClock className="sk-icon" />
-        </ActionIcon>
-      </Popover.Target>
-      <Popover.Dropdown className="sk-relative-dates">
-        <div className="sk-relative-dates__list" role="group" aria-label={t('dateRange.button')}>
-          {plain.map((o) => (
-            <Button key={o} variant="subtle" size="xs" justify="flex-start" onClick={() => pick({ operator: o, values: [] })} data-sk-relative-date={o}>
-              {t(`dateRange.${o}` as 'dateRange.TODAY')}
-            </Button>
-          ))}
-        </div>
-        {counted.map((o) => (
-          <Group key={o} gap="xs" wrap="nowrap" className="sk-relative-dates__days">
-            <NumberInput
-              size="xs" min={1} max={9999} allowDecimal={false} allowNegative={false} value={days[o]} aria-label={t('dateRange.dayCount')}
-              onChange={(v) => setDays({ ...days, [o]: typeof v === 'number' ? v : Number(v) || 0 })}
-              className="sk-relative-dates__count"
-            />
-            <Button variant="subtle" size="xs" justify="flex-start" disabled={!(days[o]! >= 1)} onClick={() => pick({ operator: o, values: [days[o]] })} data-sk-relative-date={o} className="sk-grow">
-              {t(`dateRange.${o}` as 'dateRange.LASTDAYS', { count: days[o] ?? 0 })}
-            </Button>
-          </Group>
-        ))}
-      </Popover.Dropdown>
-    </Popover>
   );
 }
 

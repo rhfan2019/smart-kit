@@ -4,7 +4,7 @@ import type { MetaModel, PropertyModel, TextArrangement } from './types';
 
 /**
  * The display of a code with its text: TextFirst (default) "Text (Code)", TextLast "Code (Text)", TextOnly "Text",
- * TextSeparate "Code" (the text goes in a column of its own). Without a text, the code; without a code, the text
+ * TextSeparate "Code" (the text is not shown and not requested, as in FE). Without a text, the code; without a code, the text
  * (except TextSeparate).
  */
 export function arrangeText(code: string, text: string | undefined, arrangement: TextArrangement = 'TextFirst'): string {

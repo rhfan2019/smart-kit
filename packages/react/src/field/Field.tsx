@@ -4,7 +4,7 @@
  * binding context the page provides (`row`, smart-kit has no UI5 model).
  */
 import { Avatar, Progress, Rating } from '@mantine/core';
-import { arrangeText, createMessage, formatNumber, resolvePath, type FieldModel, type MetaModel, type Row, type TextArrangement } from '@rhfan2019/smart-kit-core';
+import { arrangeText, createMessage, formatNumber, resolvePath, type FieldModel, type MetaModel, type PropertyModel, type Row, type TextArrangement } from '@rhfan2019/smart-kit-core';
 import { AlertTriangle, CheckCircle2, Info, XCircle } from 'lucide-react';
 import { useCallback, useImperativeHandle, useMemo, useRef, useState, type ReactNode, type Ref } from 'react';
 import { MicroChart } from '../chart/MicroChart';
@@ -13,9 +13,11 @@ import { useService, useSmartKit, useText } from '../context/SmartKitProvider';
 import type { MessageType } from '../controls/types';
 import { useMessages, type MessagesApi } from '../messages/MessageContext';
 import type { FieldRenderer, FieldRenderProps } from './renderers';
-import { fieldValue, resolveRef } from './values';
+import { fieldValue, getPath, resolveRef } from './values';
 import { FieldEditor } from './FieldEditor';
 import { QuickViewLink } from './QuickView';
+import { ContactLink } from './ContactLink';
+import { SemanticLink } from './SemanticLink';
 
 /** sap.fe.macros.field.FieldFormatOptions: how the value is shown or edited (a data aggregation, ADR-032 rule 2). */
 export interface FieldFormatOptions {
@@ -153,7 +155,7 @@ function rendererFor(registry: Record<string, FieldRenderer>, typeName: string, 
     field.dataPoint?.visualization === 'Rating' ? 'rating' : undefined,
     field.dataPoint?.visualization === 'Progress' ? 'progress' : undefined,
     p.property?.isImageUrl ? 'image' : undefined,
-    field.url || p.property?.isUrl ? 'link' : undefined,
+    field.url || p.property?.isEmailAddress || p.property?.isPhoneNumber ? 'link' : undefined,
     p.property?.isCurrency ? 'currency' : undefined,
     p.unit !== undefined ? 'unit' : undefined,
     p.criticality !== undefined ? 'criticality' : undefined,
@@ -186,6 +188,46 @@ function setPath(row: Row | undefined, path: string, value: unknown): Row {
   }
   cur[segs[segs.length - 1]!] = value;
   return out;
+}
+
+/** Scripts never run from a cell link. */
+const UNSAFE_URL = /^\s*(javascript|vbscript|data):/i;
+
+/**
+ * The link of a displayed value (FE DisplayStyle getLinkTemplate): a DataFieldWithUrl opens its Url in the window of
+ * HTML5.LinkTarget, without it in the same window ("_top", D41), any scheme; Communication.IsEmailAddress is a `mailto:`,
+ * Communication.IsPhoneNumber a `tel:` link.
+ */
+export function linkOf(field: FieldModel, v: { value: unknown; property?: PropertyModel }, row: Row | undefined): { href: string; target?: string; kind: 'url' | 'email' | 'phone' } | undefined {
+  if (field.url) {
+    const url = resolveRef(row, field.url);
+    if (url === null || url === undefined || url === '' || UNSAFE_URL.test(String(url))) return undefined;
+    return { href: String(url), target: field.linkTarget ?? '_top', kind: 'url' };
+  }
+  if (v.value === null || v.value === undefined || v.value === '') return undefined;
+  if (v.property?.isEmailAddress) return { href: `mailto:${String(v.value)}`, kind: 'email' };
+  if (v.property?.isPhoneNumber) return { href: `tel:${String(v.value)}`, kind: 'phone' };
+  return undefined;
+}
+
+/**
+ * Edm.Stream (FE DisplayStyle getFileTemplate): a download link named by Core.ContentDisposition/Filename (or "No file
+ * name"); without content (`@odata.mediaContentType` null) nothing is shown.
+ */
+function StreamLink({ row, path, property }: { row: Row | undefined; path: string; property: PropertyModel }) {
+  const t = useText();
+  const base = row ? getPath(row, path.includes('/') ? path.slice(0, path.lastIndexOf('/')) : '') : undefined;
+  const name = path.split('/').pop()!;
+  const owner = (path.includes('/') ? base : row) as Row | undefined;
+  const contentType = owner?.[`${name}@odata.mediaContentType`];
+  if (!owner || contentType === null || contentType === undefined) return null;
+  const href = owner[`${name}@odata.mediaReadLink`];
+  const filename = property.filename ? resolveRef(owner, property.filename) : undefined;
+  return (
+    <a className="sk-link" href={typeof href === 'string' ? href : undefined} download data-sk-link="file">
+      {filename ? String(filename) : t('field.noFilename')}
+    </a>
+  );
 }
 
 /** sap.fe.macros.Field */
@@ -238,6 +280,7 @@ export function Field(props: $FieldSettings) {
     getMessageManager: () => messages,
   }), [props.value, enabled, addMessage, removeMessage, mainPath, contextPath, messages]);
 
+  if (field.kind === 'contact') return <span className="sk-field sk-field--contact"><ContactLink typeName={typeName} field={field} row={row} service={props.service} /></span>;
   if (field.kind === 'chart' && field.chart) {
     // Micro chart in a table or form cell (docs/15 MC-10): of the row, of a single-valued navigation or over a collection (ADR-025).
     const chart = field.chart;
@@ -294,12 +337,21 @@ export function Field(props: $FieldSettings) {
     );
   }
   if (dp?.visualization === 'Progress') {
-    const target = Number(resolveRef(row, dp.targetValue) ?? 100) || 100;
+    // sap.fe.macros.internal.DataPoint createProgressIndicator; texts and percentage as DataPointTemplating
+    // buildExpressionForProgressIndicatorDisplayValue / ValueFormatter computePercentage; state from the data point's Criticality.
+    const targetRaw = resolveRef(row, dp.targetValue);
+    const target = Number(targetRaw ?? 100) || 100;
     const value = Number(v.value ?? 0);
-    const label = t('field.progress', { value: v.formatted || '0', target });
+    const staticPercent = v.property?.unit && 'value' in v.property.unit && v.property.unit.value === '%';
+    const percent = staticPercent ? value : (value / target) * 100;
+    const targetText = v.property ? formatNumber(targetRaw ?? target, intlLocale) : String(target);
+    const label = staticPercent ? `${v.formatted || '0'} %`
+      : v.unit ? t('field.progressUnit', { value: v.formatted || '0', target: targetText, unit: v.unit })
+        : t('field.progress', { value: v.formatted || '0', target: targetText });
+    const state = v.criticality !== undefined ? CRITICALITY_CLASS[v.criticality] : undefined;
     return (
-      <span className="sk-field sk-field--progress">
-        <Progress value={Math.max(0, Math.min(100, (value / target) * 100))} aria-label={label} className="sk-progress" />
+      <span className="sk-field sk-field--progress" data-sk-state={state}>
+        <Progress value={Math.max(0, Math.min(100, Number.isFinite(percent) ? percent : 0))} aria-label={label} className={`sk-progress${state ? ` sk-progress--${state}` : ''}`} />
         <span className="sk-field__progress-text">{label}</span>
       </span>
     );
@@ -309,14 +361,24 @@ export function Field(props: $FieldSettings) {
   }
   let content: ReactNode = v.display;
   if (v.property?.edmType === 'Edm.Boolean' && v.value !== null && v.value !== undefined) content = v.value === true || v.value === 'true' ? t('common.yes') : t('common.no');
-  const url = field.url ? resolveRef(row, field.url) : v.property?.isUrl ? v.value : undefined;
-  if (url && typeof url === 'string' && /^(https?:|\/|mailto:)/i.test(url)) {
+  // Common.Masked (FE DisplayStyle "Masked", ValueFormatter formatPasswordText): one "*" per character.
+  if (v.property?.masked && v.display) content = '*'.repeat(v.display.length);
+  const link = linkOf(field, v, row);
+  if (link && v.display) {
+    const icon = field.iconUrl ? resolveRef(row, field.iconUrl) : undefined;
     content = (
-      <a href={url} className="sk-link" target={url.startsWith('/') ? undefined : '_blank'} rel="noreferrer">
+      <a href={link.href} className="sk-link" target={link.target} rel={link.target === '_blank' ? 'noreferrer' : undefined} data-sk-link={link.kind}>
+        {typeof icon === 'string' && icon ? <img src={icon} alt="" className="sk-link__icon" /> : null}
         {content}
       </a>
     );
   }
+  // Smart links (D42): DataFieldWithIntentBasedNavigation, Common.SemanticObject; targets from the host's NavigationAdapter.
+  const semanticObject = field.intent?.semanticObject ?? v.property?.semanticObject;
+  if (semanticObject && !link && !field.quickView && v.display) {
+    content = <SemanticLink semanticObject={semanticObject} action={field.intent?.action} intent={Boolean(field.intent)} row={row} path={mainPath} service={props.service}>{content}</SemanticLink>;
+  }
+  if (v.property?.edmType === 'Edm.Stream') content = <StreamLink row={row} path={mainPath ?? ''} property={v.property} />;
   if (field.quickView && v.value !== null && v.value !== undefined && v.value !== '') content = <QuickViewLink typeName={typeName} field={field} row={row} service={props.service}>{content}</QuickViewLink>;
   const crit = v.criticality;
   const className = [

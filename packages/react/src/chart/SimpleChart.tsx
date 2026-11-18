@@ -1,6 +1,6 @@
 /**
- * SimpleChart: the list report chart view (ADR-021): column or bar, inline SVG; several measures (or series) are drawn
- * as grouped bars with a legend (`series`, docs/29 §4 P1-3).
+ * SimpleChart: the list report chart view (ADR-021): column, bar, line, area, pie or donut, inline SVG; several
+ * measures (or series) are drawn as grouped or stacked bars with a legend (`series`, docs/29 §4 P1-3, §5).
  * Analytical cards (docs/20) also use "line" (the column layout with a line through the points) and "donut".
  * Bars are buttons with a roving tab stop (Tab enters at the selected or first bar, arrow keys move, Enter / Space select).
  */
@@ -23,7 +23,15 @@ export interface ChartDatum {
 export interface ChartSeries { key: string; label: string }
 
 export interface SimpleChartProps {
-  kind: 'column' | 'bar' | 'line' | 'donut';
+  /**
+   * What is drawn: columns, bars, a line (area: filled below the line), a donut or pie. With `series`, columns and bars
+   * are grouped, or stacked with `stacked` (FE stacked_column / stacked_bar; "percent": 100_stacked_*).
+   */
+  kind: 'column' | 'bar' | 'line' | 'area' | 'donut' | 'pie';
+  /** Series of columns or bars are stacked ("percent": each category adds up to 100 %). */
+  stacked?: boolean | 'percent';
+  /** Value of `data-sk-chart` (default `kind`), e.g. the sap.chart type name of the UI.Chart. */
+  chartType?: string;
   /** Visible title; a visually hidden caption is used when omitted. */
   title?: string;
   measureLabel: string;
@@ -94,8 +102,12 @@ export function SimpleChart(p: SimpleChartProps) {
   const numberFormat = useMemo(() => new Intl.NumberFormat(intlLocale, { maximumFractionDigits: 2 }), [intlLocale]);
   const fmt = p.format ?? ((n: number) => numberFormat.format(n));
   const grouped = (p.kind === 'column' || p.kind === 'bar') && (p.series?.length ?? 0) > 1;
-  const seriesCount = grouped ? p.series!.length : 1;
+  const stacked = grouped && Boolean(p.stacked);
+  const percent = stacked && p.stacked === 'percent';
+  const seriesCount = grouped && !stacked ? p.series!.length : 1;
   const valuesOf = (d: ChartDatum): (number | undefined)[] => (grouped ? p.series!.map((_, i) => d.values?.[i]) : [d.value]);
+  // 100 % stacking: each value as its share of the category's positive total
+  const shareOf = (d: ChartDatum, v: number) => { const sum = valuesOf(d).reduce<number>((n, x) => n + (x !== undefined && Number.isFinite(x) && x > 0 ? x : 0), 0); return sum ? (Math.max(v, 0) / sum) * 100 : 0; };
   const data = useMemo(() => p.data.filter((d) => (grouped ? (d.values ?? []).some((v) => Number.isFinite(v)) : Number.isFinite(d.value))), [p.data, grouped]);
   const isSelected = (key: string) => key === p.selectedKey || Boolean(p.selectedKeys?.includes(key));
   const selectedIndex = data.findIndex((d) => isSelected(d.key));
@@ -110,7 +122,7 @@ export function SimpleChart(p: SimpleChartProps) {
 
   if (p.loading) {
     return (
-      <div ref={ref} className="sk-chart sk-chart--loading" data-sk-chart={p.kind} aria-busy="true">
+      <div ref={ref} className="sk-chart sk-chart--loading" data-sk-chart={p.chartType ?? p.kind} aria-busy="true">
         {header}
         <VisuallyHidden>{t('chart.loading')}</VisuallyHidden>
         <Skeleton height={height} />
@@ -119,23 +131,30 @@ export function SimpleChart(p: SimpleChartProps) {
   }
   if (!data.length) {
     return (
-      <div ref={ref} className="sk-chart sk-chart--empty" data-sk-chart={p.kind}>
+      <div ref={ref} className="sk-chart sk-chart--empty" data-sk-chart={p.chartType ?? p.kind}>
         {header}
         <div className="sk-chart__nodata" style={{ height }}>{t('chart.noData')}</div>
       </div>
     );
   }
 
-  if (p.kind === 'donut') return <DonutChart {...p} data={data} width={width} height={height} chartRef={ref} header={header} caption={caption} fmt={fmt} />;
+  if (p.kind === 'donut' || p.kind === 'pie') return <DonutChart {...p} data={data} width={width} height={height} chartRef={ref} header={header} caption={caption} fmt={fmt} />;
 
-  const all = data.flatMap((d) => valuesOf(d).filter((v): v is number => Number.isFinite(v)));
+  // stacked: the axis covers the sums of the positive and of the negative values of a category
+  const all = stacked
+    ? data.flatMap((d) => {
+        const vs = valuesOf(d).filter((v): v is number => v !== undefined && Number.isFinite(v));
+        if (percent) return [0, 100];
+        return [vs.filter((v) => v > 0).reduce((n, v) => n + v, 0), vs.filter((v) => v < 0).reduce((n, v) => n + v, 0)];
+      })
+    : data.flatMap((d) => valuesOf(d).filter((v): v is number => Number.isFinite(v)));
   const ticks = niceTicks(Math.min(...all), Math.max(...all));
   const lo = ticks[0]!;
   const hi = ticks[ticks.length - 1]!;
-  const tickLabels = ticks.map(fmt);
+  const tickLabels = ticks.map((v) => (percent ? `${fmt(v)} %` : fmt(v)));
   const valueText = (d: ChartDatum) => d.formatted ?? fmt(d.value);
-  const vertical = p.kind === 'column' || p.kind === 'line';
-  const line = p.kind === 'line';
+  const vertical = p.kind === 'column' || p.kind === 'line' || p.kind === 'area';
+  const line = p.kind === 'line' || p.kind === 'area';
 
   // Plot rectangle.
   const tickWidth = Math.max(...tickLabels.map((s) => s.length)) * CHAR + TICK_GAP;
@@ -178,7 +197,7 @@ export function SimpleChart(p: SimpleChartProps) {
   });
 
   return (
-    <div ref={ref} className={`sk-chart sk-chart--${p.kind}`} data-sk-chart={p.kind}>
+    <div ref={ref} className={`sk-chart sk-chart--${p.kind}`} data-sk-chart={p.chartType ?? p.kind}>
       {header}
       <div className="sk-chart__measure" aria-hidden>{p.measureLabel}</div>
       <svg className="sk-chart__svg" width={width} height={height} viewBox={`0 0 ${width} ${height}`} role={interactive ? 'group' : 'img'} aria-label={rootLabel}>
@@ -214,6 +233,13 @@ export function SimpleChart(p: SimpleChartProps) {
             );
           })}
         </g>
+        {p.kind === 'area' && (
+          <polygon
+            className="sk-chart__area"
+            aria-hidden
+            points={[`${left + band / 2},${top + plotH - zero}`, ...data.map((d, i) => `${left + band * i + band / 2},${top + plotH - pos(d.value)}`), `${left + band * (data.length - 1) + band / 2},${top + plotH - zero}`].join(' ')}
+          />
+        )}
         {line && (
           <polyline
             className="sk-chart__line"
@@ -225,15 +251,25 @@ export function SimpleChart(p: SimpleChartProps) {
           const a = pos(d.value);
           const thick = Math.min(band * 0.7, 64 * seriesCount);
           const offset = band * i + (band - thick) / 2;
+          // stacked: each value starts where the previous value of the same sign ended
+          let up = 0;
+          let down = 0;
           const rectOf = (v: number, k: number, n: number) => {
-            const b = pos(v);
+            let from = 0;
+            let to = v;
+            if (stacked) {
+              const x = percent ? shareOf(d, v) : v;
+              if (x >= 0) { from = up; up += x; to = up; } else { from = down; down += x; to = down; }
+            }
+            const b = pos(to);
+            const z = pos(from);
             const w = thick / n;
-            const o = offset + w * k;
+            const o = offset + w * (stacked ? 0 : k);
             return vertical
-              ? { x: left + o, y: top + plotH - Math.max(b, zero), width: w, height: Math.max(Math.abs(b - zero), 1) }
-              : { x: left + Math.min(b, zero), y: top + o, width: Math.max(Math.abs(b - zero), 1), height: w };
+              ? { x: left + o, y: top + plotH - Math.max(b, z), width: w, height: Math.max(Math.abs(b - z), 1) }
+              : { x: left + Math.min(b, z), y: top + o, width: Math.max(Math.abs(b - z), 1), height: w };
           };
-          const rect = rectOf(d.value, 0, 1);
+          const rect = grouped ? undefined : rectOf(d.value, 0, 1);
           const selected = isSelected(d.key);
           const label = t('chart.point', { dimension: p.dimensionLabel, label: d.label, value: pointText(d) });
           return (
@@ -250,7 +286,7 @@ export function SimpleChart(p: SimpleChartProps) {
               {line ? <circle cx={left + band * i + band / 2} cy={top + plotH - a} r={MARKER} />
                 : grouped ? valuesOf(d).map((v, k) => (v === undefined || !Number.isFinite(v) ? null
                   : <rect key={p.series![k]!.key} className={`sk-chart--palette-${(k % 11) + 1}`} data-sk-chart-series={p.series![k]!.key} data-sk-chart-value={v} {...rectOf(v, k, seriesCount)} />))
-                  : <rect data-sk-chart-value={d.value} {...rect} />}
+                  : <rect data-sk-chart-value={d.value} {...rect!} />}
             </g>
           );
         })}
@@ -270,7 +306,7 @@ function DonutChart(p: SimpleChartProps & { width: number; height: number; chart
   const total = p.data.reduce((n, d) => n + Math.max(0, d.value), 0);
   const size = Math.min(p.width, p.height - LEGEND_ROW * Math.min(p.data.length, 4));
   const r = Math.max(size / 2 - 2, 10);
-  const inner = r * 0.6;
+  const inner = p.kind === 'pie' ? 0 : r * 0.6;
   let angle = -Math.PI / 2;
   const valueText = (d: ChartDatum) => d.formatted ?? p.fmt(d.value);
   const arcs = p.data.map((d, i) => {
@@ -282,7 +318,7 @@ function DonutChart(p: SimpleChartProps & { width: number; height: number; chart
   });
   const label = t('chart.series', { label: p.caption, points: p.data.map((d) => t('chart.seriesItem', { name: d.label, value: valueText(d) })).join(t('chart.listSeparator')) });
   return (
-    <div ref={p.chartRef} className="sk-chart sk-chart--donut" data-sk-chart="donut">
+    <div ref={p.chartRef} className={`sk-chart sk-chart--${p.kind}`} data-sk-chart={p.chartType ?? p.kind}>
       {p.header}
       <svg className="sk-chart__svg" width={p.width} height={2 * r + 4} viewBox={`${-p.width / 2} ${-r - 2} ${p.width} ${2 * r + 4}`} role="img" aria-label={label}>
         {arcs.map((a) => (

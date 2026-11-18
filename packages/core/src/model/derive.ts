@@ -37,7 +37,7 @@ function companions(et: EntityTypeModel): Set<string> {
 }
 
 function fieldFor(p: PropertyModel, semanticKey: string[]): FieldModel {
-  return { id: `DataField::${p.name}`, kind: 'field', path: p.name, label: p.label, criticality: p.criticality, criticalityIcon: true, isSemanticKey: semanticKey.includes(p.name) };
+  return { id: `DataField::${p.name}`, kind: 'field', path: p.name, label: p.label, criticalityIcon: true, isSemanticKey: semanticKey.includes(p.name) };
 }
 
 export function deriveColumns(et: EntityTypeModel, _types: Record<string, EntityTypeModel>, semanticKey: string[] = []): ColumnModel[] {

@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Value display (stage 4, docs/29 §5): tests AL-10 / AL-12 display4 (core and react). -->
+<edmx:Edmx Version="4.0" xmlns:edmx="http://docs.oasis-open.org/odata/ns/edmx">
+  <edmx:Reference Uri="https://sap.github.io/odata-vocabularies/vocabularies/UI.xml"><edmx:Include Namespace="com.sap.vocabularies.UI.v1" Alias="UI"/></edmx:Reference>
+  <edmx:Reference Uri="https://sap.github.io/odata-vocabularies/vocabularies/Common.xml"><edmx:Include Namespace="com.sap.vocabularies.Common.v1" Alias="Common"/></edmx:Reference>
+  <edmx:Reference Uri="https://oasis-tcs.github.io/odata-vocabularies/vocabularies/Org.OData.Measures.V1.xml"><edmx:Include Namespace="Org.OData.Measures.V1" Alias="Measures"/></edmx:Reference>
+  <edmx:Reference Uri="https://oasis-tcs.github.io/odata-vocabularies/vocabularies/Org.OData.Core.V1.xml"><edmx:Include Namespace="Org.OData.Core.V1" Alias="Core"/></edmx:Reference>
+  <edmx:Reference Uri="https://sap.github.io/odata-vocabularies/vocabularies/Communication.xml"><edmx:Include Namespace="com.sap.vocabularies.Communication.v1" Alias="Communication"/></edmx:Reference>
+  <edmx:Reference Uri="https://sap.github.io/odata-vocabularies/vocabularies/HTML5.xml"><edmx:Include Namespace="com.sap.vocabularies.HTML5.v1" Alias="HTML5"/></edmx:Reference>
+  <edmx:DataServices>
+    <Schema xmlns="http://docs.oasis-open.org/odata/ns/edm" Namespace="D">
+      <EntityType Name="Contact">
+        <Key><PropertyRef Name="UUID"/></Key>
+        <Property Name="UUID" Type="Edm.Guid" Nullable="false"/>
+        <Property Name="ID" Type="Edm.String"/>
+        <Property Name="Name" Type="Edm.String"/>
+        <Property Name="Title" Type="Edm.String"/>
+        <Property Name="Email" Type="Edm.String"/>
+        <Property Name="Phone" Type="Edm.String"/>
+        <Property Name="Site" Type="Edm.String"/>
+        <Property Name="Iban" Type="Edm.String"/>
+        <Property Name="At" Type="Edm.DateTimeOffset"/>
+        <Property Name="Zone" Type="Edm.String"/>
+        <Property Name="Score" Type="Edm.Decimal" Precision="6" Scale="3"/>
+        <Property Name="Rate" Type="Edm.Decimal" Precision="4" Scale="1"/>
+        <Property Name="RateCrit" Type="Edm.Byte"/>
+        <Property Name="Done" Type="Edm.Int32"/>
+        <Property Name="Ref" Type="Edm.String"/>
+        <Property Name="Doc" Type="Edm.Stream"/>
+        <Property Name="DocName" Type="Edm.String"/>
+        <Property Name="Version" Type="Edm.Int32"/>
+        <Property Name="StatusCode" Type="Edm.String"/>
+        <NavigationProperty Name="_Status" Type="D.Status"><ReferentialConstraint Property="StatusCode" ReferencedProperty="Code"/></NavigationProperty>
+      </EntityType>
+      <EntityType Name="Status">
+        <Key><PropertyRef Name="Code"/></Key>
+        <Property Name="Code" Type="Edm.String"/>
+        <Property Name="Name" Type="Edm.String"/>
+      </EntityType>
+      <EntityContainer Name="C">
+        <EntitySet Name="Contacts" EntityType="D.Contact"><NavigationPropertyBinding Path="_Status" Target="Statuses"/></EntitySet>
+        <EntitySet Name="Statuses" EntityType="D.Status"/>
+      </EntityContainer>
+      <Annotations Target="D.C/Contacts">
+        <Annotation Term="Core.OptimisticConcurrency"><Collection><PropertyPath>Version</PropertyPath></Collection></Annotation>
+      </Annotations>
+      <Annotations Target="D.Contact">
+        <Annotation Term="UI.LineItem">
+          <Collection>
+            <Record Type="UI.DataField"><PropertyValue Property="Value" Path="UUID"/></Record>
+            <Record Type="UI.DataFieldForAnnotation"><PropertyValue Property="Label" String="Name"/><PropertyValue Property="Target" AnnotationPath="@Communication.Contact"/></Record>
+            <Record Type="UI.DataField"><PropertyValue Property="Value" Path="Email"/></Record>
+            <Record Type="UI.DataField"><PropertyValue Property="Value" Path="Phone"/></Record>
+            <Record Type="UI.DataFieldWithUrl"><PropertyValue Property="Value" Path="Site"/><PropertyValue Property="Url" Path="Site"/></Record>
+            <Record Type="UI.DataFieldWithUrl"><PropertyValue Property="Value" Path="Site"/><PropertyValue Property="Url" Path="Site"/><PropertyValue Property="ID" String="Blank"/><Annotation Term="HTML5.LinkTarget" String="_blank"/></Record>
+            <Record Type="UI.DataField"><PropertyValue Property="Value" Path="Iban"/></Record>
+            <Record Type="UI.DataField"><PropertyValue Property="Value" Path="At"/></Record>
+            <Record Type="UI.DataField"><PropertyValue Property="Value" Path="Zone"/></Record>
+            <Record Type="UI.DataFieldForAnnotation"><PropertyValue Property="Target" AnnotationPath="@UI.DataPoint#Score"/></Record>
+            <Record Type="UI.DataFieldForAnnotation"><PropertyValue Property="Target" AnnotationPath="@UI.DataPoint#Rate"/></Record>
+            <Record Type="UI.DataFieldForAnnotation"><PropertyValue Property="Target" AnnotationPath="@UI.DataPoint#Done"/></Record>
+            <Record Type="UI.DataField"><PropertyValue Property="Value" Path="Ref"/></Record>
+            <Record Type="UI.DataField"><PropertyValue Property="Value" Path="StatusCode"/></Record>
+            <Record Type="UI.DataField"><PropertyValue Property="Value" Path="Doc"/></Record>
+            <Record Type="UI.DataField"><PropertyValue Property="Value" Path="Name"/><PropertyValue Property="Criticality" EnumMember="UI.CriticalityType/VeryPositive"/></Record>
+          </Collection>
+        </Annotation>
+        <Annotation Term="UI.DataPoint" Qualifier="Score">
+          <Record><PropertyValue Property="Value" Path="Score"/><PropertyValue Property="ValueFormat"><Record Type="UI.NumberFormat"><PropertyValue Property="NumberOfFractionalDigits" Int="1"/></Record></PropertyValue></Record>
+        </Annotation>
+        <Annotation Term="UI.DataPoint" Qualifier="Rate">
+          <Record><PropertyValue Property="Value" Path="Rate"/><PropertyValue Property="TargetValue" Int="100"/><PropertyValue Property="Criticality" Path="RateCrit"/><PropertyValue Property="Visualization" EnumMember="UI.VisualizationType/Progress"/></Record>
+        </Annotation>
+        <Annotation Term="UI.DataPoint" Qualifier="Done">
+          <Record><PropertyValue Property="Value" Path="Done"/><PropertyValue Property="TargetValue" Int="8"/><PropertyValue Property="Visualization" EnumMember="UI.VisualizationType/Progress"/></Record>
+        </Annotation>
+        <Annotation Term="Communication.Contact">
+          <Record>
+            <PropertyValue Property="fn" Path="Name"/>
+            <PropertyValue Property="title" Path="Title"/>
+            <PropertyValue Property="email"><Collection><Record><PropertyValue Property="type" EnumMember="Communication.ContactInformationType/work"/><PropertyValue Property="address" Path="Email"/></Record></Collection></PropertyValue>
+          </Record>
+        </Annotation>
+      </Annotations>
+      <Annotations Target="D.Contact/UUID"><Annotation Term="Common.ExternalID" Path="ID"/></Annotations>
+      <Annotations Target="D.Contact/Email"><Annotation Term="Communication.IsEmailAddress" Bool="true"/></Annotations>
+      <Annotations Target="D.Contact/Phone"><Annotation Term="Communication.IsPhoneNumber" Bool="true"/></Annotations>
+      <Annotations Target="D.Contact/Site"><Annotation Term="Core.IsURL" Bool="true"/></Annotations>
+      <Annotations Target="D.Contact/Iban"><Annotation Term="Common.Masked" Bool="true"/></Annotations>
+      <Annotations Target="D.Contact/At"><Annotation Term="Common.Timezone" Path="Zone"/></Annotations>
+      <Annotations Target="D.Contact/Zone"><Annotation Term="Common.IsTimezone" Bool="true"/></Annotations>
+      <Annotations Target="D.Contact/Rate"><Annotation Term="Measures.Unit" String="%"/></Annotations>
+      <Annotations Target="D.Contact/Ref"><Annotation Term="Common.SemanticObject" String="Supplier"/></Annotations>
+      <Annotations Target="D.Contact/StatusCode"><Annotation Term="Common.Text" Path="_Status/Name"/></Annotations>
+      <Annotations Target="D.Contact/Doc">
+        <Annotation Term="Core.ContentDisposition"><Record><PropertyValue Property="Filename" Path="DocName"/></Record></Annotation>
+      </Annotations>
+    </Schema>
+  </edmx:DataServices>
+</edmx:Edmx>

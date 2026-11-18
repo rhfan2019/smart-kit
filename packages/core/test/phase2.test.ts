@@ -115,7 +115,8 @@ describe('phase 2 annotation terms (docs/02 §8, P2-GEN-06)', () => {
     expect(ui.views[0]).toMatchObject({ text: 'Open', conditions: [{ path: 'Status', operator: 'EQ', values: ['OPEN'], exclude: false }] });
     expect(ui.views[0]!.lineItem.map((c) => c.path)).toEqual(['ID']);
     expect(ui.views[0]!.chart?.id).toBe('ByStatus');
-    expect(ui.views[1]!.lineItem.map((c) => c.path)).toEqual(['ID', 'PartnerID', 'Status']);
+    // the inline action is a column of its own (FE Columns _isValidColumn, stage 4)
+    expect(ui.views[1]!.lineItem.map((c) => c.path ?? c.id)).toEqual(['ID', 'PartnerID', 'Status', 'DataFieldForAction::T.close']);
   });
 
   it('ANN-86 UI.QuickViewFacets: fields that refer to the object open a quick view (P2-LR-13)', () => {
@@ -125,7 +126,7 @@ describe('phase 2 annotation terms (docs/02 §8, P2-GEN-06)', () => {
   });
 
   it('ANN-87 UI.Importance on records (P2-LR-09, P2-OP-10)', () => {
-    expect(ui.lineItem.map((c) => c.importance)).toEqual(['High', undefined, 'Low']);
+    expect(ui.lineItem.map((c) => c.importance)).toEqual(['High', undefined, 'Low', undefined]);
   });
 
   it('ANN-88 Common.FieldControl Mandatory and ReadOnly constants (P2-OP-16, P2-LR-15)', () => {

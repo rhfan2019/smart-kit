@@ -47,7 +47,7 @@ describe('relative dates (S6)', () => {
   });
 
   it('resolveCondition keeps exclusion and leaves fixed conditions alone', () => {
-    expect(resolveCondition({ operator: 'TODAY', values: [] }, { today })).toEqual({ operator: 'EQ', values: [today] });
+    expect(resolveCondition({ operator: 'TODAY', values: [] }, { today })).toEqual({ operator: 'BT', values: [today, today] });
     expect(resolveCondition({ operator: 'THISMONTH', values: [], exclude: true }, { today })).toEqual({ operator: 'BT', values: ['2026-11-01', '2026-11-30'], exclude: true });
     const fixed: Condition = { operator: 'GT', values: [5] };
     expect(resolveCondition(fixed, { today })).toBe(fixed);
@@ -55,14 +55,14 @@ describe('relative dates (S6)', () => {
 
   it('toFilter resolves at query time: Edm.Date ranges and Edm.DateTimeOffset calendar days in the time zone', () => {
     const typeOf = (p: string): EdmType => (p === 'At' ? 'Edm.DateTimeOffset' : 'Edm.Date');
-    expect(toFilter({ Day: [{ operator: 'THISMONTH', values: [] }] }, typeOf, { today })).toBe('(Day ge 2026-11-01 and Day le 2026-11-30)');
-    expect(toFilter({ Day: [{ operator: 'YESTERDAY', values: [] }] }, typeOf, { today })).toBe('Day eq 2026-11-16');
+    expect(toFilter({ Day: [{ operator: 'THISMONTH', values: [] }] }, typeOf, { today })).toBe('Day ge 2026-11-01 and Day le 2026-11-30');
+    expect(toFilter({ Day: [{ operator: 'YESTERDAY', values: [] }] }, typeOf, { today })).toBe('Day ge 2026-11-16 and Day le 2026-11-16');
     expect(toFilter({ At: [{ operator: 'TODAY', values: [] }] }, typeOf, { today, timeZone: 'Asia/Shanghai' }))
-      .toBe('(At ge 2026-11-17T00:00:00+08:00 and At lt 2026-11-18T00:00:00+08:00)');
+      .toBe('At ge 2026-11-17T00:00:00+08:00 and At lt 2026-11-18T00:00:00+08:00');
     expect(toFilter({ Day: [{ operator: 'LASTDAYS', values: [2] }, { operator: 'TODAY', values: [], exclude: true }] }, typeOf, { today }))
-      .toBe('(Day ge 2026-11-15 and Day le 2026-11-16) and not (Day eq 2026-11-17)');
+      .toBe('Day ge 2026-11-15 and Day le 2026-11-16 and not (Day ge 2026-11-17 and Day le 2026-11-17)');
     // without `today`: the current date in the time zone
-    expect(toFilter({ Day: [{ operator: 'TODAY', values: [] }] }, typeOf)).toBe(`Day eq ${todayIn('UTC')}`);
+    expect(toFilter({ Day: [{ operator: 'TODAY', values: [] }] }, typeOf)).toBe(`Day ge ${todayIn('UTC')} and Day le ${todayIn('UTC')}`);
     expect(toFilter({ Day: [{ operator: 'LASTDAYS', values: ['x'] }] }, typeOf, { today })).toBeUndefined();
   });
 

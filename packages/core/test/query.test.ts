@@ -3,8 +3,8 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
   buildListRequest, buildModel, buildObjectRequest, buildValueHelpRequest, childPathOf, entityPathOf, parseEntityPath, propertyFilter,
-  readQueryString, resolveEntityPath, sourcePath, startOfDayIso, toFilter, toLiteral, toQueryString, OPERATORS, RELATIVE_DATE_OPERATORS, type Condition,
-  conditionAllowed, filterExpressionRules, restrictConditions,
+  readQueryString, resolveEntityPath, sourcePath, startOfDayIso, toFilter, toLiteral, toQueryString, OPERATORS, type Condition,
+  conditionAllowed, filterExpressionRules, restrictConditions, strictestExpression,
 } from '../src';
 
 const model = buildModel(readFileSync(join(import.meta.dirname, 'fixtures/shop.xml'), 'utf8'));
@@ -38,7 +38,7 @@ describe('condition model (AC-DATA-02)', () => {
   it('covers all 14 operators', () => {
     const expected: Record<string, string> = {
       EQ: "P eq 'a'", NE: "P ne 'a'", LT: "P lt 'a'", LE: "P le 'a'", GT: "P gt 'a'", GE: "P ge 'a'",
-      BT: "(P ge 'a' and P le 'b')", NB: "not (P ge 'a' and P le 'b')",
+      BT: "P ge 'a' and P le 'b'", NB: "not (P ge 'a' and P le 'b')",
       Contains: "contains(P,'a')", NotContains: "not contains(P,'a')", StartsWith: "startswith(P,'a')", EndsWith: "endswith(P,'a')",
       Empty: "(P eq null or P eq '')", NotEmpty: "(P ne null and P ne '')",
     };
@@ -59,8 +59,9 @@ describe('condition model (AC-DATA-02)', () => {
     expect(startOfDayIso('2026-11-14', 'Asia/Shanghai')).toBe('2026-11-14T00:00:00+08:00');
     expect(startOfDayIso('2026-03-29', 'Europe/Berlin')).toBe('2026-03-29T00:00:00+01:00');
     expect(propertyFilter('T', [c('EQ', ['2026-11-14'])], 'Edm.DateTimeOffset', { timeZone: 'Asia/Shanghai' }))
-      .toBe('(T ge 2026-11-14T00:00:00+08:00 and T lt 2026-11-15T00:00:00+08:00)');
-    expect(propertyFilter('D', [c('BT', ['2026-01-01', '2026-01-31'])], 'Edm.Date')).toBe('(D ge 2026-01-01 and D le 2026-01-31)');
+      .toBe('T ge 2026-11-14T00:00:00+08:00 and T lt 2026-11-15T00:00:00+08:00');
+    // the SAPUI5 V4 model writes BT without parentheses (ODataListBinding fetchFilter)
+    expect(propertyFilter('D', [c('BT', ['2026-01-01', '2026-01-31'])], 'Edm.Date')).toBe('D ge 2026-01-01 and D le 2026-01-31');
   });
 });
 
@@ -89,7 +90,7 @@ describe('query generation (AC-DATA-01)', () => {
       count: true,
     });
     expect(toQueryString(model, req)).toBe(
-      "$count=true&$select=ID,Code,Name,CategoryID,Status,StatusCriticality,Price,Currency,Rating,Version&$filter=Status eq 'A'&$search=pen&$orderby=Currency,Price desc&$expand=_Category($select=Name)&$skip=0&$top=100"
+      "$count=true&$select=ID,Code,Name,CategoryID,Status,StatusCriticality,Price,Currency,Rating,Version&$filter=Status eq 'A'&$search=pen&$orderby=Currency,Price desc&$expand=_Category($select=Name,ID)&$skip=0&$top=100"
         .replace(/ /g, '%20'),
     );
   });
@@ -113,38 +114,61 @@ describe('query generation (AC-DATA-01)', () => {
 
   it('Q-08 object request reads header and all form fields in one go', () => {
     const req = buildObjectRequest(model, 'Shop.Product', ui);
-    expect(readQueryString(req)).toBe('$select=ID,Version,Name,Code,ImageUrl,CategoryID,Rating,Stock,Price,Currency,ReleaseDate,Notes&$expand=_Category($select=Name)');
+    expect(readQueryString(req)).toBe('$select=ID,Version,Name,Code,ImageUrl,CategoryID,Rating,Stock,Price,Currency,ReleaseDate,Notes&$expand=_Category($select=Name,ID)');
   });
 
   it('Q-09 value help request with contains fallback when search is not supported', () => {
     const vl = model.entityTypes['Shop.Product']!.properties.CategoryID!.valueList!;
     const req = buildValueHelpRequest(model, vl, { search: 'pap' });
-    expect(toQueryString(model, req)).toBe("$select=ID,Name&$filter=(contains(ID,'pap') or contains(Name,'pap'))&$orderby=ID&$skip=0&$top=50".replace(/ /g, '%20').replace("$select", '$count=true&$select'));
+    expect(toQueryString(model, req)).toBe("$select=ID,Name&$filter=(contains(ID,'pap') or contains(Name,'pap'))&$skip=0&$top=50".replace(/ /g, '%20').replace("$select", '$count=true&$select'));
   });
 });
 
 describe('FilterExpressionRestrictions (P2-LR-19, ANN-40)', () => {
   const eq = (v: string, exclude = false): Condition => ({ operator: 'EQ', values: [v], exclude });
   it('P2-LR-19 rules per allowed expression', () => {
-    expect(filterExpressionRules('SingleValue')).toMatchObject({ operators: ['EQ'], exclude: false, max: 1 });
-    expect(filterExpressionRules('MultiValue')).toMatchObject({ operators: ['EQ'], exclude: false });
+    expect(filterExpressionRules('SingleValue', 'Edm.String')).toMatchObject({ operators: ['EQ'], exclude: false, max: 1 });
+    expect(filterExpressionRules('MultiValue', 'Edm.String')).toMatchObject({ operators: ['EQ', 'Empty', 'NotEmpty'] });
+    expect(filterExpressionRules('MultiValue', 'Edm.Int32')).toMatchObject({ operators: ['EQ'], exclude: false });
     expect(filterExpressionRules('MultiValue').max).toBeUndefined();
-    expect(filterExpressionRules('SingleRange')).toMatchObject({ exclude: false, max: 1 });
-    expect(filterExpressionRules('SingleRange').operators).toContain('BT');
-    expect(filterExpressionRules('SearchExpression').operators).toEqual(['Contains', 'StartsWith', 'EndsWith']);
-    for (const e of [undefined, 'MultiRange', 'MultiRangeOrSearchExpression'] as const) {
-      expect(filterExpressionRules(e)).toMatchObject({ operators: [...OPERATORS, ...RELATIVE_DATE_OPERATORS], exclude: true });
-    }
+    expect(filterExpressionRules('SingleRange', 'Edm.String')).toMatchObject({ exclude: true, max: 1 });
+    expect(filterExpressionRules('SingleRange', 'Edm.String').operators).toEqual(['EQ', 'BT', 'LT', 'LE', 'GT', 'GE', 'NE', 'NB']);
+    expect(filterExpressionRules('SearchExpression', 'Edm.String').operators).toEqual(['Contains', 'StartsWith', 'EndsWith', 'NotContains']);
+    expect(filterExpressionRules(undefined, 'Edm.String').operators).toEqual(expect.arrayContaining([...OPERATORS]));
+  });
+  it('AL-10 P2 FilterExpressionRestrictions: operators per expression as FE (CommonHelper getOperatorsForProperty)', () => {
+    // MultiRange: ranges and exclusions, no text patterns
+    const mr = filterExpressionRules('MultiRange', 'Edm.String');
+    expect(mr.operators).not.toContain('Contains');
+    expect(mr.excludeOperators).toEqual(expect.arrayContaining(['EQ', 'BT', 'LT', 'LE', 'GT', 'GE']));
+    // SearchExpression: Not* forms as exclusions
+    expect(filterExpressionRules('SearchExpression', 'Edm.String').excludeOperators).toEqual(['Contains', 'StartsWith', 'EndsWith']);
+    // Edm.Boolean takes one condition
+    expect(filterExpressionRules(undefined, 'Edm.Boolean')).toMatchObject({ operators: ['EQ', 'NE'], max: 1 });
+    // SingleRange on a date: FE's semantic date operators and Empty
+    const sr = filterExpressionRules('SingleRange', 'Edm.Date');
+    expect(sr.operators).toEqual(expect.arrayContaining(['DATE', 'FROM', 'TO', 'DATERANGE', 'LASTWEEKS', 'SPECIFICMONTH', 'FROMTODAY', 'Empty', 'EQ', 'BT']));
+    expect(sr.operators).not.toContain('FIRSTDAYWEEK');
+    expect(sr.exclude).toBe(false);
+  });
+  it('AL-10 P2 FilterExpressionRestrictions: single-value relative dates for SingleValue date fields', () => {
+    expect([...filterExpressionRules('SingleValue', 'Edm.Date').operators].sort()).toEqual(['YESTERDAY', 'TODAY', 'TOMORROW', 'FIRSTDAYWEEK', 'LASTDAYWEEK', 'FIRSTDAYMONTH', 'LASTDAYMONTH', 'FIRSTDAYQUARTER', 'LASTDAYQUARTER', 'FIRSTDAYYEAR', 'LASTDAYYEAR', 'DATE', 'EQ'].sort());
+    expect(filterExpressionRules('SingleValue', 'Edm.DateTimeOffset').operators).toEqual(['EQ']);
+  });
+  it('AL-10 P2 FilterExpressionRestrictions: the strictest of several records wins (FE getSpecificAllowedExpression)', () => {
+    expect(strictestExpression(['MultiRange', 'SingleValue', 'MultiValue'])).toBe('SingleValue');
+    expect(strictestExpression(['SearchExpression', 'MultiRange'])).toBe('MultiRange');
   });
   it('P2-LR-19 conditions outside the rules are dropped; single expressions keep the last one', () => {
-    expect(conditionAllowed(filterExpressionRules('MultiValue'), eq('a', true))).toBe(false);
-    expect(conditionAllowed(filterExpressionRules('SingleRange'), { operator: 'NE', values: ['a'] })).toBe(false);
-    expect(restrictConditions('SingleValue', [eq('a'), eq('b')])).toEqual([eq('b')]);
-    expect(restrictConditions('MultiValue', [eq('a'), eq('b', true), { operator: 'GT', values: ['c'] }, eq('d')])).toEqual([eq('a'), eq('d')]);
-    expect(restrictConditions('SearchExpression', [eq('a'), { operator: 'Contains', values: ['x'] }])).toEqual([{ operator: 'Contains', values: ['x'] }]);
+    expect(conditionAllowed(filterExpressionRules('MultiValue', 'Edm.String'), eq('a', true))).toBe(false);
+    expect(conditionAllowed(filterExpressionRules('SingleRange', 'Edm.String'), { operator: 'NE', values: ['a'] })).toBe(true);
+    expect(conditionAllowed(filterExpressionRules('SingleRange', 'Edm.String'), { operator: 'Contains', values: ['a'] })).toBe(false);
+    expect(restrictConditions('SingleValue', [eq('a'), eq('b')], 'Edm.String')).toEqual([eq('b')]);
+    expect(restrictConditions('MultiValue', [eq('a'), eq('b', true), { operator: 'GT', values: ['c'] }, eq('d')], 'Edm.String')).toEqual([eq('a'), eq('d')]);
+    expect(restrictConditions('SearchExpression', [eq('a'), { operator: 'Contains', values: ['x'] }], 'Edm.String')).toEqual([{ operator: 'Contains', values: ['x'] }]);
     const all = [eq('a', true), { operator: 'GT' as const, values: ['c'] }];
     expect(restrictConditions(undefined, all)).toEqual(all);
-    expect(restrictConditions('MultiRange', all)).toEqual(all);
+    expect(restrictConditions('MultiRange', all, 'Edm.String')).toEqual(all);
   });
   it('P2-LR-19 ANN-40 the list request never sends a condition the service does not allow', () => {
     const req = buildListRequest(model, ui, {

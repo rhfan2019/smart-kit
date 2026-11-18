@@ -13,14 +13,16 @@ export interface ValueListQuery {
    * value list filter by them, Constant parameters always filter (docs/29 §4 P1-5).
    */
   filters?: FilterState;
+  /** `dialog` for the value help dialog's table (FE's $select, sort and page of the dialog), default type-ahead / fixed values. */
+  purpose?: 'dialog' | 'suggest';
 }
 
 export function useValueList(valueList: ValueListModel | undefined, q: ValueListQuery = {}, serviceName?: string) {
   const service = useService(serviceName);
   const { namespace, locale } = useSmartKit();
-  const request = valueList ? buildValueHelpRequest(service.model, valueList, { search: q.search, top: q.top, skip: q.skip, filters: q.filters }) : undefined;
+  const request = valueList ? buildValueHelpRequest(service.model, valueList, { search: q.search, top: q.top, skip: q.skip, filters: q.filters, purpose: q.purpose }) : undefined;
   return useQuery<QueryResult>({
-    queryKey: ['smart-kit', namespace, service.name, locale, 'valueList', valueList?.collectionPath, q.search ?? '', q.skip ?? 0, q.top ?? 50, JSON.stringify(request?.filters ?? null)],
+    queryKey: ['smart-kit', namespace, service.name, locale, 'valueList', valueList?.collectionPath, valueList?.qualifier ?? '', q.purpose ?? 'suggest', q.search ?? '', q.skip ?? 0, q.top ?? 50, JSON.stringify(request?.filters ?? null)],
     enabled: Boolean(valueList) && q.enabled !== false,
     queryFn: ({ signal }) => service.dataProvider.query(request!, { signal }),
     staleTime: 60_000,

@@ -828,3 +828,49 @@ ADR-027 定的范围是"只实现 smart-kit 会发的请求"，用户也定过�
 **留给阶段 4**：分析表用一个 `$apply` 的 `concat` 同时取明细和合计（DV-totals-001/002）；按 `ApplySupported` 自动选分析表（FE `getTableType`）；文本导航的 `$expand`；协作草稿的选项；草稿节点子表的标记。
 
 **事故记录**：一个子代理误执行了一次 `git stash` / `git stash pop`（几秒，恢复无冲突）；其他子代理都核对过自己的改动，最后的全部检查以合并后的工作区为准。以后的简报写明不准用 stash / checkout / reset。
+
+## D41 smart-kit 多做的注解处理：按 FE 去掉（2026-11-18）
+
+**问题**：`29` 第 6 节列了 smart-kit 多做或做得不同的注解处理，阶段 4 开始前要决定保留还是去掉。
+
+**用户决定**（选了推荐项）：
+1. `Core.IsURL`（显示为链接）、`Common.IsUpperCase`（输入转大写）：**按 FE 去掉**（FE 1.154 不处理；要链接用 `UI.DataFieldWithUrl`，大写由服务处理）。
+2. 属性上的 `UI.Criticality` 不再作为字段状态色，改为读 LineItem 上的 `UI.Criticality`（行高亮）；`Criticality` 的 VeryPositive / VeryNegative 不上色；外部链接默认当前窗口（按 `HTML5.LinkTarget`）：**三项都按 FE**。
+
+另两项不需要决定：多视图里"各视图取值不同的字段从筛选栏拿掉"已在阶段 3 按 FE 改掉（D40）；`CountRestrictions`、`Top/SkipSupported`、`ExpandRestrictions` smart-kit 多读，不和 FE 冲突，保留（登记为 `kit-extension`）。
+
+## D42 脱离 SAP 运行；D37、D38 待定项按建议（2026-11-18）
+
+**用户的决定**："我不懂，但必须脱离 SAP 和 Fiori 进行工作，其他的按你的建议来。"
+
+**据此定的**：
+1. **smart-kit 必须能脱离 SAP 运行**：不依赖 SAPUI5 运行时、Fiori 启动台（FLP）、SAP 的 flexibility / 个性化 / 导航服务。对齐只指名字、API 和注解的处理与 UI5 / FE 一致；依赖 SAP 基础设施才有的功能，用 smart-kit 自己的接口实现（例如导航走 core 的 `NavigationAdapter`，由宿主提供），做不到的登记为长期偏差。`apps/fe-reference` 只是核对工具，不是运行依赖。
+2. **语义对象智能链接**（`Common.SemanticObject`、`DataFieldWithIntentBasedNavigation`，阶段 4）：FE 依赖 FLP 的导航目标；smart-kit 通过 `NavigationAdapter` 由宿主给出目标，链接和弹出框的外观、规则照 FE，取不到目标时和 FE 一样显示为普通文本。
+3. **D37 待定项**：`MessageView` / `MessagePopover` 的 `asyncURLHandler`、`urlValidated` 只用于校验 `markupDescription` 渲染出的 HTML 链接，而 smart-kit 不解析 HTML（安全上的有意设计，`26`）。登记为**长期偏差**（`different-value`，用户确认）。
+4. **D38 待定项**：`VariantManagement` 的 `supportApplyAutomatically`、`creationAllowed` 等取自内部 sap.m.VariantManagement 的属性**保留**（`kit-extension`）：smart-kit 没有 SAP 的变体服务，要由它们控制能否保存、能否自动应用。
+
+**补记：非草稿列表页的新建（2026-11-18，阶段 4）**：FE 1.154 只在草稿、粘性会话或 `creationMode` External 时在列表页放新建按钮（`StandardActions` 的 `getInsertUpdateActionsTemplating`）。smart-kit 对没有草稿的服务也提供直接保存的新建（ADR-018）；smart-kit-server 和 PostgreSQL 测试床都没有草稿。**用户决定**：保留，登记为长期偏差（`kit-extension`）；草稿服务的新建和 FE 一致。
+
+## D43 对齐阶段 4：列表页其余注解（D33 P2）（2026-11-18）
+
+**问题**：按 `31` 阶段 4，把 `29` 第 5 节列表页其余的注解处理改成和 FE 1.154 一样：表格列和动作、筛选栏和值帮助、值的显示、视图 / 图表 / 聚合 / KPI。
+
+**做法**：四个子代理并行（cols、filter4、display4、views4），每项先读 FE 源码，再在 FE 对比测试里看真 FE 的请求、结构和文字，改到一致。FE 对比从 15 个场景增加到 37 个（新增 FE 应用 `purchasing-display`，测试服务新增 `SupplierContacts`，示例页 `/contacts`、`?table=annotation`、`?kpi=1`）。
+
+**结果**（逐项见 `25` 迁移清单阶段 4 和 `02`）：
+1. **列和动作**：内联动作每个一列；DataPoint 列的标题；FieldGroup、ConnectedFields、Contact；`DataFieldWithAction` / `WithNavigationPath`；列宽 `HTML5.CssDefaults`；行高亮读 LineItem 的 `UI.Criticality`；工具栏动作的顺序、菜单、复制、`CreateHidden` / `DeleteHidden`、按行的 `Deletable`、`IsActionCritical`。
+2. **筛选栏和值帮助**：最严格的 `FilterExpressionRestrictions` 和 FE 的运算符；FE 全部语义日期运算符（相对日期一律 BT）；`HiddenFilter`；`UI.Hidden` 属性的默认条件按 FE 丢掉（`02` 原来写错）；`FilterFunctions` 的 `tolower`；带限定符的 ValueList；值帮助的描述、请求形状、每页 64 行。
+3. **值的显示**：邮件 / 电话链接、`LinkTarget`、`ExternalID`、`Masked`、`Timezone`、流属性、小数位、进度文字、快速视图规则；语义对象链接按 D42 由宿主的 `NavigationAdapter` 给目标；`$expand` 选目标实体的键，列表不选 ETag 属性；TextSeparate 的文本不请求。
+4. **视图和图表**：LineItem 的选择 SPV → PV → LineItem；Chart 排第一时只显示图表；视图 PV 的排序和 `RequestAtLeast`；FE 的 38 种图表类型（部分是近似画法）；图表需要 `ApplySupported`；按注解自动选分析表 / 树表；`UI.KPI` 标签。
+
+**偏差登记的整理**：删掉已修好的 16 条；同一原因在多个场景各登一条的合并为 `fe:*`；`fe-behavior` 28 → 13。非草稿列表页的新建按用户决定登记为长期的 `kit-extension`（D42 补记，对所有场景生效）。时区名称（FE 用 CLDR 的长名称）和语义对象链接（需要 FLP）按 D42 登记为长期的 `different-value`。
+
+**留给阶段 4 收尾**（不另问用户，按 FE 做）：分析表用一个 `$apply` 的 `concat` 同时取明细和合计；`Common.ValueListReferences` / `ValueListMapping`；`Common.ResultContext` 和 SV 的 Parameters（参数化实体集）；给测试服务补新列类型和新动作的注解，用真 FE 核对（目前只有单元测试）；`/contacts` 展开页头时列表重新挂载、请求发两次的问题。
+
+**留给阶段 5、6**：页签计数用 `/$count`、页签结构；FE 默认响应式表和 NewPage 新建方式；`keyPerformanceIndicators` 按 manifest 改名（阶段 5）。SideEffects、对象页不选 ETag 属性（阶段 6）。
+
+## D44 后续待定项按建议处理（2026-11-18）
+
+**用户的决定**："后续的问题都按你的建议进行处理，不用询问我。"
+
+**据此**：对齐工作中原来要停下来问用户的事（推翻以前有意的设计、某项 UI5 / FE 功能做不到要登记为长期偏差），改为按推荐方案直接处理，在本记录里写明决定和理由（标"按建议，D44"），并在阶段总结里告诉用户。不包括对外或难以撤销的操作：推送、发布、建 PR、升 1.0 版、改 invoice-assure、动其他项目的数据库，仍要用户明确说。

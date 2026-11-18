@@ -98,8 +98,8 @@
 | 0 | 完成 | 4ec9236 | D36 | `check:ui5`（189 个导出，基线 1146 条偏差）、`e2e:fe`（3 个场景 + 自测）、`26b`、`26c`、CI |
 | 1 | 完成 | 533580a、204d8c6 | D37 | 63 个 UI5 模块，`/controls`、`/messages`、`/cards` 删除；阶段 1 模块 0 处未登记；`not-implemented` 752 → 441 |
 | 2 | 完成 | 89ac1fc | D38 | 114 个 UI5 模块；旧子路径只剩 `/templates`，根入口只有基础设施；`not-implemented` 441 → 119 |
-| 3 | 完成 | 阶段 3 提交 | D39、D40 | 八项 P1 和 OperationAvailable 缺陷按 FE；FE 对比 15 个场景；`02` 按 FE 源码重写；`fe-behavior` 32 → 28 |
-| 4 | 未开始 | | | |
+| 3 | 完成 | 360b348 | D39、D40 | 八项 P1 和 OperationAvailable 缺陷按 FE；FE 对比 15 个场景；`02` 按 FE 源码重写；`fe-behavior` 32 → 28 |
+| 4 | 完成 | 阶段 4 提交 | D43 | 列、动作、筛选栏、值帮助、值的显示、视图、图表、KPI 按 FE；FE 对比 37 个场景；`fe-behavior` 28 → 13；收尾三项另行提交 |
 | 5 | 未开始 | | | |
 | 6 | 未开始 | | | |
 | 7 | 未开始 | | | |

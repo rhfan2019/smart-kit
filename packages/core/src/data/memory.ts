@@ -75,6 +75,8 @@ export class MemoryProvider implements DataProvider {
     const type = this.o.model.entityTypes[typeName]!;
     const props = select.length ? select : Object.keys(type.properties);
     for (const p of new Set([...type.keys, ...props])) if (p in row) out[p] = row[p];
+    // As an OData V4 service: the entity's ETag comes with it whatever is selected.
+    if (row['@odata.etag'] !== undefined) out['@odata.etag'] = row['@odata.etag'];
     for (const e of expand) {
       const nav = type.navigations[e.navigation];
       if (!nav) continue;
@@ -131,7 +133,7 @@ export class MemoryProvider implements DataProvider {
       rows = rows.filter((r) => Object.entries(f).every(([key, cs]) => {
         if (key === EDIT_STATE) return true;
         const p = hiddenFilterPath(key) ?? key;
-        return matches(val(r, p), cs, typeOf(p));
+        return matches(val(r, p), cs, typeOf(p), { caseInsensitive: req.caseInsensitive });
       }));
       if (f[EDIT_STATE]) {
         // the other version of a draft-enabled row (OData SiblingEntity): same keys apart from IsActiveEntity
@@ -143,7 +145,7 @@ export class MemoryProvider implements DataProvider {
     }
     if (req.anyOf && Object.keys(req.anyOf).length) {
       const a = req.anyOf;
-      rows = rows.filter((r) => Object.entries(a).some(([p, cs]) => matches(val(r, p), cs, typeOf(p))));
+      rows = rows.filter((r) => Object.entries(a).some(([p, cs]) => matches(val(r, p), cs, typeOf(p), { caseInsensitive: req.caseInsensitive })));
     }
     if (req.search) {
       const terms = req.search.toLowerCase().split(/\s+/).filter(Boolean);
@@ -192,6 +194,15 @@ export class MemoryProvider implements DataProvider {
             g.seen.set(alias(m), seen);
             if (v !== null && v !== undefined) seen.add(String(v));
             g.row[alias(m)] = seen.size;
+          } else if (m.with === 'max' || m.with === 'min' || m.with === 'average') {
+            // transformation aggregates of charts (Analytics.AggregatedProperty, stage 4)
+            const seen = g.seen.get(alias(m)) ?? new Set<string>();
+            g.seen.set(alias(m), seen);
+            if (v === null || v === undefined) continue;
+            const n = Number(v);
+            const prev = seen.size ? Number(g.row[alias(m)]) : undefined;
+            seen.add(String(seen.size));
+            g.row[alias(m)] = prev === undefined ? n : m.with === 'max' ? Math.max(prev, n) : m.with === 'min' ? Math.min(prev, n) : prev + (n - prev) / seen.size;
           } else g.row[alias(m)] = Number(g.row[alias(m)]) + Number(v ?? 0);
         }
       }

@@ -1,11 +1,13 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- the converter output is a deeply dynamic object graph */
 import type { ConvertedMetadata } from '@sap-ux/vocabularies-types';
+import { strictestExpression } from '../conditions/filterExpressions';
 import { convertSources, type CsdlSource } from '../csdl/load';
 import { humanize } from './labels';
 import { deriveColumns, deriveUi } from './derive';
 import {
   MODEL_VERSION,
   type ActionModel,
+  type AggregatedPropertyModel,
   type AggregationModel,
   type CapabilityModel,
   type ChartModel,
@@ -25,6 +27,7 @@ import {
   type FormGroupModel,
   type HeaderFacetModel,
   type InitialCondition,
+  type KpiModel,
   type MetaModel,
   type ModelWarning,
   type NavigationModel,
@@ -68,7 +71,8 @@ const pathOf = (v: unknown): string | undefined => {
 };
 const join = (prefix: string, path: string) => (prefix ? `${prefix}/${path}` : path);
 
-const CRITICALITY: Record<string, number> = { VeryNegative: 1, Neutral: 0, Negative: 1, Critical: 2, Positive: 3, VeryPositive: 3, Information: 5 };
+// UI.CriticalityType values; VeryNegative (-1) and VeryPositive (4) get no colour, as in Fiori elements (D41).
+const CRITICALITY: Record<string, number> = { VeryNegative: -1, Neutral: 0, Negative: 1, Critical: 2, Positive: 3, VeryPositive: 4, Information: 5 };
 
 function valueRef(v: unknown, prefix = ''): ValueRef | undefined {
   if (v === undefined || v === null) return undefined;
@@ -91,7 +95,7 @@ function criticalityRef(v: unknown, prefix = ''): ValueRef | undefined {
   const r = valueRef(v, prefix);
   if (r && 'value' in r && typeof r.value === 'string') {
     const n = CRITICALITY[r.value];
-    return n === undefined ? (/^\d+$/.test(r.value) ? { value: Number(r.value) } : undefined) : { value: n };
+    return n === undefined ? (/^-?\d+$/.test(r.value) ? { value: Number(r.value) } : undefined) : { value: n };
   }
   return r;
 }
@@ -126,12 +130,25 @@ export function fromConverted(c: ConvertedMetadata, diagnostics: string[] = []):
     const bindings: Record<string, string> = {};
     for (const [path, target] of Object.entries((es.navigationPropertyBinding ?? {}) as Any)) bindings[path] = (target as Any).name;
     const { capabilities, navigationCapabilities } = buildCapabilities(es.annotations?.Capabilities ?? {}, es.annotations?.Core ?? {});
+    // Capabilities.FilterFunctions of the entity set, else of the container: "tolower" makes string filters
+    // case-insensitive (FE Columns isFilteringCaseSensitive, ModelHelper isFilteringCaseSensitive).
+    const filterFunctions = es.annotations?.Capabilities?.FilterFunctions ?? (c as Any).entityContainer?.annotations?.Capabilities?.FilterFunctions;
+    if (Array.isArray(filterFunctions) && filterFunctions.map((f) => String(f?.valueOf?.() ?? f)).includes('tolower')) capabilities.caseInsensitive = true;
     // Aggregation.ApplySupported may annotate the entity set or its type (Aggregation vocabulary).
     const typeAggregation = raw[es.entityTypeName ?? es.entityType?.fullyQualifiedName]?.annotations?.Aggregation;
     const apply = es.annotations?.Aggregation?.ApplySupported ?? typeAggregation?.ApplySupported;
     // Aggregation.CustomAggregate is read where FE reads it: the entity set when it has ApplySupported, else the type
     // (sap.fe.core.converters.helpers.Aggregation: _determineAggregationAnnotationTarget).
-    if (apply) capabilities.aggregation = aggregationFrom(apply, es.annotations?.Aggregation?.ApplySupported ? es.annotations.Aggregation : typeAggregation);
+    if (apply) {
+      const analytics = [(c as Any).entityContainer?.annotations?.Analytics, raw[es.entityTypeName ?? es.entityType?.fullyQualifiedName]?.annotations?.Analytics].filter(Boolean);
+      capabilities.aggregation = aggregationFrom(apply, es.annotations?.Aggregation?.ApplySupported ? es.annotations.Aggregation : typeAggregation, analytics);
+    }
+    // UI.CreateHidden / UI.DeleteHidden: on the entity set, else on its type (FE StandardActions isActionAnnotatedHidden).
+    const typeUi = raw[es.entityTypeName ?? es.entityType?.fullyQualifiedName]?.annotations?.UI;
+    for (const [term, key] of [['CreateHidden', 'createHidden'], ['DeleteHidden', 'deleteHidden']] as const) {
+      const hidden = valueRef(es.annotations?.UI?.[term] ?? typeUi?.[term]);
+      if (hidden) capabilities[key] = hidden;
+    }
     entitySets[es.name] = { name: es.name, typeName: es.entityTypeName ?? es.entityType?.fullyQualifiedName, navigationBindings: bindings, capabilities, navigationCapabilities };
     // Core.OptimisticConcurrency applies to entity sets (Core vocabulary); the ETag property is kept on the type.
     const concurrency = es.annotations?.Core?.OptimisticConcurrency;
@@ -158,6 +175,17 @@ export function fromConverted(c: ConvertedMetadata, diagnostics: string[] = []):
     entitySets[es.name]!.draft = draft;
   }
   if (draftEnabled) warn('DRAFT', 'The service is draft-enabled: editing uses the draft strategy (ADR-018).', undefined, 'info');
+
+  // value list descriptions: the Common.Text of the key property in the value list entity (FE ValueListHelper _enrichPath)
+  for (const type of Object.values(entityTypes)) {
+    for (const prop of Object.values(type.properties)) {
+      for (const vl of prop.valueLists ?? (prop.valueList ? [prop.valueList] : [])) {
+        const vhType = entitySets[vl.collectionPath]?.typeName;
+        const text = vhType ? resolvePath(entityTypes, vhType, vl.keyProperty).property?.text : undefined;
+        if (text) vl.descriptionProperty = vl.keyProperty.includes('/') ? `${vl.keyProperty.slice(0, vl.keyProperty.lastIndexOf('/'))}/${text}` : text;
+      }
+    }
+  }
 
   const ui: Record<string, EntityUi> = {};
   const ctx: UiContext = { entityTypes, raw, warn };
@@ -206,6 +234,8 @@ function buildHierarchies(et: Any, navigations: Record<string, NavigationModel>)
     const parentProperty = navigations[parentNavigation]?.referentialConstraints[0]?.property;
     const model: RecursiveHierarchyModel = { qualifier, nodeProperty, parentNavigation };
     if (parentProperty) model.parentProperty = parentProperty;
+    // FE Table getTableType: a qualified pair of both annotations makes the default table a TreeTable.
+    if (qualifier && hier[`RecursiveHierarchy#${qualifier}`] !== undefined) model.paired = true;
     for (const [field, term] of [['drillState', 'DrillState'], ['distanceFromRoot', 'DistanceFromRoot'], ['limitedDescendantCount', 'LimitedDescendantCount'],
       ['matched', 'Matched'], ['matchedDescendantCount', 'MatchedDescendantCount'], ['externalKey', 'ExternalKey']] as const) {
       const v = pathOf(h[term]);
@@ -213,6 +243,32 @@ function buildHierarchies(et: Any, navigations: Record<string, NavigationModel>)
     }
     out.push(model);
   }
+  return out;
+}
+
+/**
+ * Display annotations of a property as Fiori elements reads them (sap.fe.macros.internal.field.FieldStructureHelper
+ * setUpDisplayStyle, sap.fe.core.templating.PropertyHelper): e-mail and phone links, masked values, the external ID,
+ * the time zone of a date-time, the file name of a stream. Only the annotations present are set.
+ */
+function displayAnnotations(a: Any, common: Any, core: Any): Partial<PropertyModel> {
+  const comm = a.Communication ?? {};
+  const out: Partial<PropertyModel> = {};
+  if (bool(comm.IsEmailAddress, false)) out.isEmailAddress = true;
+  if (bool(comm.IsPhoneNumber, false)) out.isPhoneNumber = true;
+  if (bool(common.Masked, false)) out.masked = true;
+  const externalId = valueRef(common.ExternalID);
+  if (externalId && 'path' in externalId) out.externalId = externalId.path;
+  if (common.Timezone !== undefined) out.timezone = valueRef(common.Timezone);
+  if (bool(common.IsTimezone, false)) out.isTimezone = true;
+  const filename = core.ContentDisposition?.Filename;
+  if (filename !== undefined) out.filename = valueRef(filename);
+  if (core.MediaType !== undefined) out.mediaType = valueRef(core.MediaType);
+  const target = str(a.HTML5?.LinkTarget);
+  if (target) out.linkTarget = target;
+  // Common.SemanticObject (constant): a smart link to the targets the host gives (NavigationAdapter.semanticTargets, D42)
+  const so = str(common.SemanticObject);
+  if (so) out.semanticObject = so;
   return out;
 }
 
@@ -244,17 +300,18 @@ function buildProperty(p: Any, keys: string[], et: Any): PropertyModel {
     textArrangement: arrangement as TextArrangement | undefined,
     unit: valueRef(unit),
     isCurrency: currency !== undefined,
-    valueList: buildValueList(p, common),
-    criticality: criticalityRef(ui.Criticality),
+    ...buildValueLists(p, common),
+    // UI.Criticality on a property is not read: the vocabulary applies it to annotations (the LineItem row highlight)
+    // and Fiori elements ignores it on properties (D41).
     hidden: bool(ui.Hidden, false) || (common.FieldControl !== undefined && enumName(common.FieldControl) === 'Hidden'),
     hiddenFilter: bool(ui.HiddenFilter, false),
     computed: bool(core.Computed, false),
     immutable: bool(core.Immutable, false),
     isImageUrl: bool(ui.IsImageURL, false) || bool(ui.IsImageUrl, false),
-    isUrl: bool(core.IsURL, false) || bool(core.IsUrl, false),
+    // Core.IsURL is not read: Fiori elements shows such values as text (D41).
+    ...displayAnnotations(a, common, core),
     multiLine: bool(ui.MultiLineText, false),
     isDigitSequence: bool(common.IsDigitSequence, false),
-    isUpperCase: bool(common.IsUpperCase, false),
     filterDefaultValue: primitive(common.FilterDefaultValue),
     fieldControl: common.FieldControl === undefined ? undefined : valueRef(common.FieldControl),
     mandatory: enumName(common.FieldControl) === 'Mandatory',
@@ -270,8 +327,28 @@ const PARAM_KIND: Record<string, ValueListModel['parameters'][number]['kind']> =
   ValueListParameterConstant: 'Constant',
 };
 
-function buildValueList(p: Any, common: Any): ValueListModel | undefined {
-  const vl = common.ValueList;
+/**
+ * Common.ValueList and its qualified variants (Common.ValueList#Q), default first, then in annotation order;
+ * Common.ValueListRelevantQualifiers (plain qualifiers; "" – which the converter reads as null – is the unqualified one) limits them.
+ */
+function buildValueLists(p: Any, common: Any): { valueList?: ValueListModel; valueLists?: ValueListModel[] } {
+  const all: ValueListModel[] = [];
+  for (const [key, value] of Object.entries((common ?? {}) as Any)) {
+    if (key.split('#')[0] !== 'ValueList') continue;
+    const qualifier = key.includes('#') ? key.slice(key.indexOf('#') + 1) : (value as Any)?.qualifier ?? '';
+    const vl = buildValueList(p, value, common);
+    if (vl) all.push({ ...vl, qualifier });
+  }
+  all.sort((a, b) => Number(Boolean(a.qualifier)) - Number(Boolean(b.qualifier)));
+  const relevant = Array.isArray(common?.ValueListRelevantQualifiers)
+    ? (common.ValueListRelevantQualifiers as unknown[]).map((q) => (q === null || q === undefined ? '' : typeof q === 'string' ? q : typeof (q as Any)?.valueOf?.() === 'string' ? String((q as Any).valueOf()) : undefined)).filter((q): q is string => q !== undefined)
+    : undefined;
+  const lists = relevant?.length ? all.filter((v) => relevant.includes(v.qualifier ?? '')) : all;
+  if (!lists.length) return {};
+  return lists.length > 1 ? { valueList: lists[0], valueLists: lists } : { valueList: lists[0] };
+}
+
+function buildValueList(p: Any, vl: Any, common: Any): ValueListModel | undefined {
   if (!vl || typeof vl !== 'object') return undefined;
   const parameters = ((vl.Parameters ?? []) as Any[]).map((param) => {
     const kind = PARAM_KIND[String(param.$Type).split('.').pop()!] ?? 'DisplayOnly';
@@ -284,15 +361,14 @@ function buildValueList(p: Any, common: Any): ValueListModel | undefined {
   });
   const key = parameters.find((x) => (x.kind === 'InOut' || x.kind === 'Out') && x.local === p.name) ?? parameters[0];
   if (!key) return undefined;
-  const description = parameters.find((x) => x.kind === 'DisplayOnly');
   return {
     collectionPath: str(vl.CollectionPath) ?? '',
     label: str(vl.Label),
     searchSupported: bool(vl.SearchSupported, true),
     parameters,
     keyProperty: key.valueListProperty,
-    descriptionProperty: description?.valueListProperty,
     fixedValues: bool(common.ValueListWithFixedValues, false),
+    presentationVariantQualifier: str(vl.PresentationVariantQualifier),
   };
 }
 
@@ -305,13 +381,14 @@ function restrictions(cap: Any): Partial<CapabilityModel> {
     out.filterable = bool(fr.Filterable, true);
     out.nonFilterable = ((fr.NonFilterableProperties ?? []) as unknown[]).map(pathOf).filter(Boolean) as string[];
     out.requiredFilters = ((fr.RequiredProperties ?? []) as unknown[]).map(pathOf).filter(Boolean) as string[];
-    const fe: Record<string, FilterExpression> = {};
+    // several records for one property: the strictest (FE FilterField getSpecificAllowedExpression)
+    const all: Record<string, FilterExpression[]> = {};
     for (const r of (fr.FilterExpressionRestrictions ?? []) as Any[]) {
       const prop = pathOf(r.Property);
       const kind = str(r.AllowedExpressions);
-      if (prop && kind && FILTER_EXPRESSIONS.has(kind)) fe[prop] = kind as FilterExpression;
+      if (prop && kind && FILTER_EXPRESSIONS.has(kind)) (all[prop] ??= []).push(kind as FilterExpression);
     }
-    out.filterExpressions = fe;
+    out.filterExpressions = Object.fromEntries(Object.entries(all).map(([p, kinds]) => [p, strictestExpression(kinds)!]));
   }
   const sr = cap.SortRestrictions;
   if (sr) {
@@ -328,10 +405,44 @@ function restrictions(cap: Any): Partial<CapabilityModel> {
   if (cap.InsertRestrictions) out.insertable = bool(cap.InsertRestrictions.Insertable, true);
   if (cap.UpdateRestrictions) out.updatable = bool(cap.UpdateRestrictions.Updatable, true);
   if (cap.DeleteRestrictions) out.deletable = bool(cap.DeleteRestrictions.Deletable, true);
+  // Paths (FE isPathInsertable / isPathDeletable): the button stays; a deletable path is read per row.
+  const insertablePath = cap.InsertRestrictions ? pathOf(cap.InsertRestrictions.Insertable) : undefined;
+  const deletablePath = cap.DeleteRestrictions ? pathOf(cap.DeleteRestrictions.Deletable) : undefined;
+  if (insertablePath) out.insertablePath = insertablePath;
+  if (deletablePath) out.deletablePath = deletablePath;
   return out;
 }
 
-function aggregationFrom(a: Any, target: Any): AggregationModel {
+/**
+ * Transformation aggregates (FE AggregationHelper getTransAggregations): the qualified Analytics.AggregatedProperty
+ * annotations of the entity container and type, else the first Analytics.AggregatedProperties; only those whose
+ * property is aggregatable (an empty AggregatableProperties list does not restrict).
+ */
+function aggregatedPropertiesFrom(analytics: Any[], aggregatable: string[]): AggregatedPropertyModel[] {
+  const one = (r: Any, qualifier?: string): AggregatedPropertyModel | undefined => {
+    const name = str(r?.Name);
+    const property = pathOf(r?.AggregatableProperty) ?? str(r?.AggregatableProperty);
+    const method = str(r?.AggregationMethod);
+    if (!name || !property || !method) return undefined;
+    const label = str(r?.annotations?.Common?.Label);
+    return { ...(qualifier ? { qualifier } : {}), name, property, method, ...(label ? { label } : {}) };
+  };
+  let out: AggregatedPropertyModel[] = [];
+  for (const a of analytics) {
+    for (const [key, value] of Object.entries(a ?? {})) {
+      if (key.split('#')[0] !== 'AggregatedProperty') continue;
+      const ap = one(value as Any, (value as Any)?.qualifier ?? key.split('#')[1]);
+      if (ap) out.push(ap);
+    }
+  }
+  if (!out.length) {
+    const list = analytics.map((a) => Object.entries(a ?? {}).find(([k]) => k.split('#')[0] === 'AggregatedProperties')?.[1]).find(Array.isArray) as Any[] | undefined;
+    out = (list ?? []).map((r) => one(r)).filter((x): x is AggregatedPropertyModel => Boolean(x));
+  }
+  return out.filter((x) => !aggregatable.length || aggregatable.includes(x.property));
+}
+
+function aggregationFrom(a: Any, target: Any, analytics: Any[] = []): AggregationModel {
   const strings = (v: unknown) => ((v ?? []) as unknown[]).map((x) => str(x) ?? pathOf(x)).filter((x): x is string => Boolean(x));
   const customAggregates: Record<string, string> = {};
   for (const [key, value] of Object.entries((target ?? {}) as Any)) {
@@ -339,13 +450,16 @@ function aggregationFrom(a: Any, target: Any): AggregationModel {
     const qualifier = (value as Any)?.qualifier ?? key.split('#')[1];
     if (qualifier) customAggregates[qualifier] = str(value) ?? String((value as Any)?.valueOf?.() ?? '');
   }
+  const aggregatable = ((a.AggregatableProperties ?? []) as Any[])
+    .map((r) => ({ path: pathOf(r?.Property) ?? '', methods: strings(r?.SupportedAggregationMethods) }))
+    .filter((r) => r.path);
+  const aggregatedProperties = aggregatedPropertiesFrom(analytics, aggregatable.map((x) => x.path));
   return {
     customAggregates,
     transformations: strings(a.Transformations),
     groupable: ((a.GroupableProperties ?? []) as unknown[]).map(pathOf).filter((x): x is string => Boolean(x)),
-    aggregatable: ((a.AggregatableProperties ?? []) as Any[])
-      .map((r) => ({ path: pathOf(r?.Property) ?? '', methods: strings(r?.SupportedAggregationMethods) }))
-      .filter((r) => r.path),
+    aggregatable,
+    ...(aggregatedProperties.length ? { aggregatedProperties } : {}),
   };
 }
 
@@ -486,9 +600,25 @@ function buildChart(rec: Any, id: string, navigation: string, ownerType: string,
   }
   const paths = (v: unknown) => ((Array.isArray(v) ? v : []) as unknown[]).map(pathOf).filter((x): x is string => Boolean(x));
   const measures = paths(rec?.Measures);
-  if (!measures.length) return undefined;
+  // DynamicMeasures point to Analytics.AggregatedProperty annotations of the chart's type: their Name is the measure.
+  const aggregatedName = (v: unknown): string | undefined => {
+    const target = (v as Any)?.$target;
+    if (target && str(target.Name)) return str(target.Name);
+    const path = str((v as Any)?.value) ?? pathOf(v);
+    const at = path?.lastIndexOf('@') ?? -1;
+    if (!path || at < 0) return undefined;
+    const [term, q] = path.slice(at + 1).split('#');
+    if (!term!.endsWith('AggregatedProperty')) return undefined;
+    return str(ctx.raw[typeName]?.annotations?.Analytics?.[q ? `AggregatedProperty#${q}` : 'AggregatedProperty']?.Name);
+  };
+  const dynamicMeasures = ((Array.isArray(rec?.DynamicMeasures) ? rec.DynamicMeasures : []) as unknown[]).map(aggregatedName).filter((x): x is string => Boolean(x));
+  if (!measures.length && !dynamicMeasures.length) return undefined;
   const dataPoints: Record<string, DataPointModel> = {};
+  const measureRoles: Record<string, string> = {};
   for (const ma of (rec.MeasureAttributes ?? []) as Any[]) {
+    const role = enumName(ma.Role);
+    const roleOf = pathOf(ma.Measure) ?? (ma.DynamicMeasure ? aggregatedName(ma.DynamicMeasure) : undefined);
+    if (roleOf && role) measureRoles[roleOf] = role;
     const measure = pathOf(ma.Measure);
     const target = str(ma.DataPoint?.value) ?? pathOf(ma.DataPoint);
     if (!measure || !target) continue;
@@ -504,10 +634,14 @@ function buildChart(rec: Any, id: string, navigation: string, ownerType: string,
     const role = enumName(da.Role);
     if (dimension && role) dimensionRoles[dimension] = role;
   }
-  const first = resolvePath(ctx.entityTypes, typeName, measures[0]!).property;
+  const firstMeasure = measures[0] ?? dynamicMeasures[0]!;
+  const first = resolvePath(ctx.entityTypes, typeName, firstMeasure).property;
+  // FE Chart getChartActions: unbound actions that are neither inline nor determining (intent navigation and action
+  // groups are not supported by smart-kit's chart toolbar).
+  const actions = buildActions(rec.Actions, `${typeName}@UI.Chart#${id}/Actions`, ctx).filter((a) => !a.bound && !a.inline && !a.determining);
   return {
     id,
-    title: str(rec.Title) ?? first?.label ?? humanize(measures[0]!),
+    title: str(rec.Title) ?? first?.label ?? humanize(firstMeasure),
     chartType: enumName(rec.ChartType) ?? 'Column',
     dimensions: paths(rec.Dimensions),
     measures,
@@ -515,14 +649,58 @@ function buildChart(rec: Any, id: string, navigation: string, ownerType: string,
     dataPoints,
     navigation,
     typeName,
+    ...(str(rec.Title) !== undefined ? { chartTitle: str(rec.Title) } : {}),
+    ...(str(rec.Description) !== undefined ? { description: str(rec.Description) } : {}),
+    ...(dynamicMeasures.length ? { dynamicMeasures } : {}),
+    ...(Object.keys(measureRoles).length ? { measureRoles } : {}),
+    ...(actions.length ? { actions } : {}),
   };
+}
+
+/** A boolean annotation of an action: a constant, or a path relative to the bound entity (binding parameter removed). */
+function actionPathRef(v: unknown, bindingName: string | undefined): ValueRef {
+  const path = pathOf(v);
+  if (path) return { path: bindingName && path.startsWith(`${bindingName}/`) ? path.slice(bindingName.length + 1) : path };
+  return { value: bool(v, true) };
+}
+
+/** The UI.DataFieldForActionGroup records of a collection: menu buttons (FE ActionType.Menu). */
+function buildActionGroups(records: unknown): { id: string; label: string; actions: string[] }[] {
+  if (!Array.isArray(records)) return [];
+  return (records as Any[])
+    .filter((rec) => String(rec.$Type ?? '').split('.').pop() === 'DataFieldForActionGroup' && !(rec.annotations?.UI?.Hidden !== undefined && bool(rec.annotations.UI.Hidden, false)))
+    .map((rec) => ({
+      id: `DataFieldForActionGroup::${str(rec.ID) ?? ''}`,
+      label: str(rec.Label) ?? '',
+      actions: ((rec.Actions ?? []) as Any[]).map((a) => str(a.ID) ?? `DataFieldForAction::${String(str(a.Action) ?? '').replace(/\(.*\)$/, '')}`),
+    }));
+}
+
+/**
+ * The column key Fiori elements generates for a DataFieldForAnnotation (StableIdHelper getStableIdPartFromDataField,
+ * prepareId): "_Partner/@UI.DataPoint#Rating" → "DataFieldForAnnotation::_Partner::DataPoint::Rating". FE shows it as
+ * the column header when the record has no label (Columns getLabel, MdcTableTemplate `column.label || column.name`).
+ */
+function feAnnotationKey(target: string): string {
+  let id = `DataFieldForAnnotation::${target}`
+    .replace(/@(?:[\w]+\.)*?(?=[A-Z]\w*(?:#|$))/g, '@') // namespaces and aliases of the term
+    .replace(/[/|@()#]/g, '::');
+  while (id.includes('::::')) id = id.replace('::::', '::');
+  return id.endsWith('::') ? id.slice(0, -2) : id;
 }
 
 /** UI.DataFieldForAction records of a collection (UI.LineItem, UI.Identification). */
 function buildActions(records: unknown, scope: string, ctx: UiContext): ActionModel[] {
   if (!Array.isArray(records)) return [];
   const out: ActionModel[] = [];
-  for (const rec of records as Any[]) {
+  // UI.DataFieldForActionGroup: its actions are listed with `menu` (FE getDataFieldAnnotationAction, ActionType.Menu).
+  const flat = (records as Any[]).flatMap((rec) => {
+    if (String(rec.$Type ?? '').split('.').pop() !== 'DataFieldForActionGroup') return [rec];
+    if (rec.annotations?.UI?.Hidden !== undefined && bool(rec.annotations.UI.Hidden, false)) return [];
+    const menu = `DataFieldForActionGroup::${str(rec.ID) ?? ''}`;
+    return ((rec.Actions ?? []) as Any[]).map((a) => ({ ...a, $menu: menu }));
+  });
+  for (const rec of flat) {
     if (String(rec.$Type ?? '').split('.').pop() !== 'DataFieldForAction') continue;
     if (rec.annotations?.UI?.Hidden !== undefined && bool(rec.annotations.UI.Hidden, false)) continue;
     const action = str(rec.Action);
@@ -534,12 +712,7 @@ function buildActions(records: unknown, scope: string, ctx: UiContext): ActionMo
     const bound = Boolean(target?.isBound);
     const bindingName: string | undefined = bound ? params[0]?.name : undefined;
     const avail = target?.annotations?.Core?.OperationAvailable;
-    let operationAvailable: ValueRef | undefined;
-    if (avail !== undefined && avail !== null) {
-      const path = pathOf(avail);
-      if (path) operationAvailable = { path: bindingName && path.startsWith(`${bindingName}/`) ? path.slice(bindingName.length + 1) : path };
-      else operationAvailable = { value: bool(avail, true) };
-    }
+    const operationAvailable = avail !== undefined && avail !== null ? actionPathRef(avail, bindingName) : undefined;
     out.push({
       id: str(rec.ID) ?? `DataFieldForAction::${qualified}`,
       label: str(rec.Label) ?? humanize(qualified.split('.').pop()!),
@@ -548,6 +721,9 @@ function buildActions(records: unknown, scope: string, ctx: UiContext): ActionMo
       bound,
       inline: bool(rec.Inline, false),
       determining: bool(rec.Determining, false),
+      ...(target?.annotations?.Common?.IsActionCritical !== undefined ? { critical: actionPathRef(target.annotations.Common.IsActionCritical, bindingName) } : {}),
+      ...(bool(rec.annotations?.UI?.IsCopyAction, false) ? { copy: true } : {}),
+      ...(rec.$menu ? { menu: rec.$menu as string } : {}),
       criticality: criticalityRef(rec.Criticality),
       operationAvailable,
       parameters: params.slice(bound ? 1 : 0).map((p) => ({
@@ -561,7 +737,7 @@ function buildActions(records: unknown, scope: string, ctx: UiContext): ActionMo
   return uniqueIds(out, ctx, scope);
 }
 
-function lookupAnnotation(typeName: string, navigation: string, term: string, qualifier: string | undefined, ctx: UiContext): { value: unknown; typeName: string } | undefined {
+function lookupAnnotation(typeName: string, navigation: string, term: string, qualifier: string | undefined, ctx: UiContext, vocabulary = 'UI'): { value: unknown; typeName: string } | undefined {
   let tn = typeName;
   if (navigation) {
     for (const seg of navigation.split('/')) {
@@ -570,7 +746,7 @@ function lookupAnnotation(typeName: string, navigation: string, term: string, qu
       tn = nav.targetType;
     }
   }
-  const ui = ctx.raw[tn]?.annotations?.UI;
+  const ui = ctx.raw[tn]?.annotations?.[vocabulary];
   if (!ui) return undefined;
   const key = qualifier ? `${term}#${qualifier}` : term;
   return ui[key] === undefined ? undefined : { value: ui[key], typeName: tn };
@@ -579,16 +755,65 @@ function lookupAnnotation(typeName: string, navigation: string, term: string, qu
 function buildField(rec: Any, typeName: string, ctx: UiContext, scope: string, semanticKey: string[]): FieldModel | undefined {
   const type = String(rec.$Type ?? '').split('.').pop();
   if (rec.annotations?.UI?.Hidden !== undefined && bool(rec.annotations.UI.Hidden, false)) return undefined;
-  if (type === 'DataFieldForAction') return undefined; // actions, see buildActions
-  if (type === 'DataFieldForIntentBasedNavigation' || type === 'DataFieldWithIntentBasedNavigation' || type === 'DataFieldWithAction') {
+  const lineItem = scope.includes('@UI.LineItem');
+  const width = str(rec.annotations?.HTML5?.CssDefaults?.width);
+  const importance = enumName(rec.annotations?.UI?.Importance) as Importance | undefined;
+  // FE Columns _isValidColumn: an inline DataFieldForAction is a column of its own (header "Inline Action", hidden);
+  // other actions are toolbar actions (buildActions). DataFieldWithActionGroup is not a column.
+  if (type === 'DataFieldForAction') {
+    if (!lineItem || !bool(rec.Inline, false)) return undefined;
+    const action = buildActions([rec], scope, ctx)[0];
+    return action ? { id: action.id, kind: 'action', label: '', action, criticalityIcon: false, isSemanticKey: false, importance, ...(width ? { width } : {}) } : undefined;
+  }
+  if (type === 'DataFieldWithActionGroup' || type === 'DataFieldForActionGroup') return undefined;
+  if (type === 'DataFieldForIntentBasedNavigation') {
     ctx.warn('UNSUPPORTED_RECORD', `${type} is not supported (depends on the SAP launchpad) and is ignored`, scope, 'info');
     return undefined;
   }
-  const importance = enumName(rec.annotations?.UI?.Importance) as Importance | undefined;
   if (type === 'DataFieldForAnnotation') {
     const target = str(rec.Target?.value) ?? pathOf(rec.Target);
     if (!target) return undefined;
     const { navigation, term, qualifier } = splitAnnotationPath(target);
+    const key = feAnnotationKey(target);
+    const prefixed = (fields: FieldModel[]) => fields.map((fd) => (navigation && fd.path ? { ...fd, path: join(navigation, fd.path) } : fd));
+    if (term === 'FieldGroup' || term === 'ConnectedFields') {
+      // FE MdcTableTemplate: the values of a field group stacked in one cell (labels only with the manifest setting
+      // showDataFieldsLabel), connected fields in one line by their Template; label: the record's, else the target's
+      // (Columns getLabel), else the column key.
+      const found = lookupAnnotation(typeName, navigation, term, qualifier, ctx);
+      if (!found) {
+        ctx.warn('UNRESOLVED_TARGET', `Cannot resolve ${target}`, scope);
+        return undefined;
+      }
+      const t = found.value as Any;
+      const entries: [string, Any][] = term === 'FieldGroup'
+        ? ((t.Data ?? []) as Any[]).map((d, i) => [String(i), d])
+        : Object.entries((t.Data ?? {}) as Any).filter(([, d]) => d && typeof d === 'object' && 'Value' in (d as Any)) as [string, Any][];
+      const built = entries.map(([k, d]) => [k, buildField(d, found.typeName, ctx, `${scope}/${term}`, semanticKey)] as const).filter((x): x is readonly [string, FieldModel] => Boolean(x[1]));
+      if (!built.length) return undefined;
+      const fields = prefixed(built.map((x) => x[1]));
+      const label = str(rec.Label) || str(t.Label) || key;
+      return {
+        id: str(rec.ID) ?? key, kind: term === 'FieldGroup' ? 'fieldGroup' : 'connectedFields', label, fields, criticalityIcon: false, isSemanticKey: false, importance,
+        ...(term === 'ConnectedFields' ? { template: { text: str(t.Template) ?? '', keys: built.map((x) => x[0]) } } : {}),
+        ...(width ? { width } : {}),
+      };
+    }
+    if (term === 'Contact') {
+      // Communication.Contact (FE macros/contact/Contact): the name as a link that opens the contact details.
+      const found = lookupAnnotation(typeName, navigation, term, qualifier, ctx, 'Communication');
+      if (!found) {
+        ctx.warn('UNRESOLVED_TARGET', `Cannot resolve ${target}`, scope);
+        return undefined;
+      }
+      const c = found.value as Any;
+      const first = (list: unknown, prop: string) => (Array.isArray(list) && list.length ? valueRef((list[0] as Any)?.[prop], navigation) : undefined);
+      const contact = {
+        fn: valueRef(c.fn, navigation), title: valueRef(c.title, navigation), org: valueRef(c.org, navigation), role: valueRef(c.role, navigation),
+        photo: valueRef(c.photo, navigation), email: first(c.email, 'address'), tel: first(c.tel, 'uri'),
+      };
+      return { id: str(rec.ID) ?? key, kind: 'contact', label: str(rec.Label) || key, contact, criticalityIcon: false, isSemanticKey: false, importance, ...(width ? { width } : {}) };
+    }
     if (term === 'Chart') {
       // Micro chart in a cell or form (docs/15 MC-10): of the row itself, of a single-valued navigation, or over a
       // collection navigation (read with $expand, ADR-025).
@@ -599,7 +824,8 @@ function buildField(rec: Any, typeName: string, ctx: UiContext, scope: string, s
         return undefined;
       }
       const id = str(rec.ID) ?? `DataFieldForAnnotation::${annotationId(target)}`;
-      return { id, kind: 'chart', label: str(rec.Label) ?? chart.title, chart, criticalityIcon: false, isSemanticKey: false, importance };
+      // FE Columns getLabel: the record's Label, else none; the header then shows the column key.
+      return { id, kind: 'chart', label: lineItem ? str(rec.Label) || key : str(rec.Label) ?? chart.title, chart, criticalityIcon: false, isSemanticKey: false, importance, ...(width ? { width } : {}) };
     }
     if (term !== 'DataPoint') {
       ctx.warn('UNSUPPORTED_RECORD', `DataFieldForAnnotation to ${term} is not supported in phase 1`, scope, 'info');
@@ -612,7 +838,11 @@ function buildField(rec: Any, typeName: string, ctx: UiContext, scope: string, s
       return undefined;
     }
     const id = str(rec.ID) ?? `DataFieldForAnnotation::${annotationId(target)}`;
-    return { id, kind: 'dataPoint', label: str(rec.Label) ?? dp.title, dataPoint: dp, criticalityIcon: true, isSemanticKey: false, importance };
+    // FE Columns getLabel: a data point column is labelled by Common.Label of the data point's value, else by the
+    // record's Label (else by the value path, the column name).
+    const valueProp = resolvePath(ctx.entityTypes, typeName, dp.value).property;
+    const label = lineItem ? (valueProp && !valueProp.labelDerived ? valueProp.label : undefined) ?? str(rec.Label) ?? dp.value : str(rec.Label) ?? dp.title;
+    return { id, kind: 'dataPoint', label, dataPoint: dp, criticalityIcon: true, isSemanticKey: false, importance, ...(width ? { width } : {}) };
   }
   const path = pathOf(rec.Value);
   if (!path) return undefined;
@@ -623,17 +853,35 @@ function buildField(rec: Any, typeName: string, ctx: UiContext, scope: string, s
   }
   if (resolved.property.hidden) return undefined;
   const rep = enumName(rec.CriticalityRepresentation);
+  // Keys as FE generates them (StableIdHelper getStableIdPartFromDataField) for the types smart-kit adds here.
+  const so = type === 'DataFieldWithIntentBasedNavigation' ? str(rec.SemanticObject) ?? pathOf(rec.SemanticObject) : undefined;
+  const intentAction = type === 'DataFieldWithIntentBasedNavigation' ? str(rec.Action) : undefined;
+  const withAction = type === 'DataFieldWithAction' ? str(rec.Action)?.replace(/\(.*\)$/, '') : undefined;
+  const fallbackId = withAction ? `DataFieldWithAction::${idFromPath(path)}::${withAction.split('.').pop()}`
+    : so !== undefined ? `DataFieldWithIntentBasedNavigation::${idFromPath(path)}::${[so, intentAction].filter(Boolean).join('::')}`
+      : type === 'DataFieldWithNavigationPath' ? `DataFieldWithNavigationPath::${idFromPath(path)}`
+        : `DataField::${idFromPath(path)}`;
+  // DataFieldWithAction: the value is a link that runs the action (FE DisplayStyle "Button"/Link with the action press).
+  const action = withAction ? buildActions([{ ...rec, $Type: 'com.sap.vocabularies.UI.v1.DataFieldForAction', ID: undefined }], scope, ctx)[0] : undefined;
+  const navigationPath = type === 'DataFieldWithNavigationPath' ? str(rec.Target?.value) ?? pathOf(rec.Target) : undefined;
   return {
-    id: str(rec.ID) ?? `DataField::${idFromPath(path)}`,
+    id: str(rec.ID) ?? fallbackId,
     kind: 'field',
     path,
     label: str(rec.Label) ?? resolved.property.label,
-    criticality: criticalityRef(rec.Criticality) ?? resolved.property.criticality,
+    criticality: criticalityRef(rec.Criticality),
     criticalityIcon: rep !== 'WithoutIcon',
     url: type === 'DataFieldWithUrl' ? valueRef(rec.Url) : undefined,
+    // HTML5.LinkTarget of the record, else of the property (FE DisplayStyle getLinkTemplate; without it: "_top")
+    ...(type === 'DataFieldWithUrl' && (str(rec.annotations?.HTML5?.LinkTarget) ?? resolved.property.linkTarget) ? { linkTarget: str(rec.annotations?.HTML5?.LinkTarget) ?? resolved.property.linkTarget } : {}),
+    ...(type === 'DataFieldWithUrl' && rec.IconUrl !== undefined ? { iconUrl: valueRef(rec.IconUrl) } : {}),
     isSemanticKey: semanticKey.includes(path),
     importance,
     quickView: quickViewFor(typeName, path, resolved.property, ctx),
+    ...(width ? { width } : {}),
+    ...(action ? { action } : {}),
+    ...(navigationPath ? { navigationPath } : {}),
+    ...(so !== undefined ? { intent: { semanticObject: so, ...(intentAction ? { action: intentAction } : {}) } } : {}),
   };
 }
 
@@ -647,14 +895,24 @@ function quickViewFor(typeName: string, path: string, prop: PropertyModel, ctx: 
   for (const seg of segments.slice(0, -1)) owner = ctx.entityTypes[owner]?.navigations[seg]?.targetType ?? owner;
   const prefix = segments.slice(0, -1).join('/');
   const has = (tn: string) => Boolean(ctx.raw[tn]?.annotations?.UI?.QuickViewFacets);
-  const candidates: string[] = [];
-  if (prop.text?.includes('/')) candidates.push(prop.text.split('/')[0]!);
+  // FE FieldTemplating isUsedInNavigationWithQuickViewFacets: (1) the property is the source of a referential constraint
+  // of a navigation whose target has UI.QuickViewFacets (the foreign key) …
   for (const nav of Object.values(ctx.entityTypes[owner]?.navigations ?? {})) {
-    if (!nav.collection && nav.referentialConstraints.some((r) => r.property === prop.name)) candidates.push(nav.name);
+    if (!nav.collection && nav.referentialConstraints.some((r) => r.property === prop.name) && has(nav.targetType)) return { navigation: join(prefix, nav.name), typeName: nav.targetType };
   }
-  for (const n of candidates) {
-    const nav = ctx.entityTypes[owner]?.navigations[n];
-    if (nav && !nav.collection && has(nav.targetType)) return { navigation: join(prefix, n), typeName: nav.targetType };
+  // … (2) or it is reached through a navigation and is the key or a semantic key of the target, which has QuickViewFacets.
+  if (prefix && has(owner)) {
+    const semanticKeys = ((ctx.raw[owner]?.annotations?.Common?.SemanticKey ?? []) as unknown[]).map((k) => pathOf(k));
+    if (prop.isKey || semanticKeys.includes(prop.name)) {
+      const segs = prefix.split('/');
+      let tn = typeName;
+      for (const seg of segs) {
+        const nav = ctx.entityTypes[tn]?.navigations[seg];
+        if (!nav || nav.collection) return undefined;
+        tn = nav.targetType;
+      }
+      return { navigation: prefix, typeName: owner };
+    }
   }
   return undefined;
 }
@@ -668,16 +926,55 @@ function buildFields(records: unknown, typeName: string, ctx: UiContext, scope: 
   );
 }
 
-function presentationFrom(pv: Any | undefined): { presentation: PresentationModel; lineItemQualifier?: string } {
+/**
+ * The LineItem and Chart visualizations of a presentation variant whose target exists, in order
+ * (FE DataVisualization: `viz.$target.term`), and whether the variant mentions a term at all
+ * (`annotationExistsInPresentationVariant`: by the path text).
+ */
+function visualizationsOf(pv: Any | undefined, ui: Any): { list: { term: 'LineItem' | 'Chart'; qualifier: string }[]; mentions(term: string): boolean } {
+  const values = ((pv?.Visualizations ?? []) as unknown[]).map((v) => str((v as Any)?.value) ?? pathOf(v) ?? '');
+  const list: { term: 'LineItem' | 'Chart'; qualifier: string }[] = [];
+  for (const v of values) {
+    // same entity type only ("@UI.LineItem#Q", "@com.sap.vocabularies.UI.v1.Chart#Q")
+    if (!v.startsWith('@')) continue;
+    const [termFull, qualifier = ''] = v.slice(1).split('#');
+    const term = termFull!.split('.').pop();
+    if ((term === 'LineItem' || term === 'Chart') && ui[qualifier ? `${term}#${qualifier}` : term] !== undefined) list.push({ term, qualifier });
+  }
+  return { list, mentions: (term) => values.some((v) => v.includes(term)) };
+}
+
+function presentationFrom(pv: Any | undefined, typeAnnotations?: Any): { presentation: PresentationModel; lineItemQualifier?: string } {
   const sortOrder = ((pv?.SortOrder ?? []) as Any[])
     .map((s) => ({ path: pathOf(s.Property) ?? '', descending: bool(s.Descending, false) }))
     .filter((s) => s.path);
+  // DynamicProperty (charts only): the Name of the Analytics.AggregatedProperty it points to (FE getSortConditions).
+  const dynamic = ((pv?.SortOrder ?? []) as Any[]).some((s) => s.DynamicProperty);
+  const chartSortOrder = dynamic
+    ? ((pv?.SortOrder ?? []) as Any[]).map((s) => {
+        if (!s.DynamicProperty) return { path: pathOf(s.Property) ?? '', descending: bool(s.Descending, false) };
+        const target = s.DynamicProperty.$target;
+        const path = str(s.DynamicProperty.value) ?? pathOf(s.DynamicProperty) ?? '';
+        const [, q] = path.split('#');
+        const name = str(target?.Name) ?? str(typeAnnotations?.Analytics?.[q ? `AggregatedProperty#${q}` : 'AggregatedProperty']?.Name) ?? '';
+        return { path: name, descending: bool(s.Descending, false) };
+      }).filter((s) => s.path)
+    : undefined;
+  const level = Number(pv?.InitialExpansionLevel?.valueOf?.() ?? pv?.InitialExpansionLevel);
   const requestAtLeast = ((pv?.RequestAtLeast ?? []) as unknown[]).map(pathOf).filter(Boolean) as string[];
   const groupBy = ((pv?.GroupBy ?? []) as unknown[]).map(pathOf).filter(Boolean) as string[];
   const total = ((pv?.Total ?? []) as unknown[]).map(pathOf).filter(Boolean) as string[];
   const viz = ((pv?.Visualizations ?? []) as unknown[]).map((v) => str((v as Any)?.value) ?? pathOf(v)).find((v) => v && v.includes('LineItem'));
   const lineItemQualifier = viz?.includes('#') ? viz.split('#')[1] : undefined;
-  return { presentation: { sortOrder, requestAtLeast, groupBy, total, ...(pv?.Total !== undefined ? { hasTotal: true } : {}) }, lineItemQualifier };
+  return {
+    presentation: {
+      sortOrder, requestAtLeast, groupBy, total,
+      ...(pv?.Total !== undefined ? { hasTotal: true } : {}),
+      ...(pv?.InitialExpansionLevel !== undefined && Number.isInteger(level) ? { initialExpansionLevel: level } : {}),
+      ...(chartSortOrder ? { chartSortOrder } : {}),
+    },
+    lineItemQualifier,
+  };
 }
 
 const RANGE_OPTIONS = new Set(['EQ', 'NE', 'BT', 'NB', 'LT', 'LE', 'GT', 'GE']);
@@ -713,9 +1010,17 @@ function buildUi(fullName: string, ctx: UiContext): EntityUi {
   const semanticKey = ((ann.Common?.SemanticKey ?? []) as unknown[]).map(pathOf).filter(Boolean) as string[];
 
   const spv = ui.SelectionPresentationVariant;
-  const pv = spv?.PresentationVariant ?? ui.PresentationVariant;
+  // The default presentation (FE ListReportConverter getCompliantVisualizationAnnotation): the unqualified SPV when its
+  // PV is compliant (its Visualizations contain a LineItem or a Chart), else the unqualified PV when compliant, else the
+  // UI.LineItem alone (no sort, no RequestAtLeast). The first LineItem or Chart is shown: a chart first is a chart-only
+  // list (SingleChart), whose table toggle (smart-kit) uses the unqualified LineItem.
+  const compliant = (x: Any | undefined) => Boolean(x) && visualizationsOf(x, ui).list.length > 0;
+  const pv = compliant(spv?.PresentationVariant) ? spv.PresentationVariant : compliant(ui.PresentationVariant) ? ui.PresentationVariant : undefined;
   const sv = spv?.SelectionVariant ?? ui.SelectionVariant;
-  const { presentation, lineItemQualifier } = presentationFrom(pv);
+  const { presentation } = presentationFrom(pv, ann);
+  const primary = pv ? visualizationsOf(pv, ui).list[0] : undefined;
+  const lineItemQualifier = primary?.term === 'LineItem' ? primary.qualifier : '';
+  const defaultChart = primary?.term === 'Chart' ? primary.qualifier : undefined;
   const lineItemRecords = ui[lineItemQualifier ? `LineItem#${lineItemQualifier}` : 'LineItem'];
   const lineItem: ColumnModel[] | undefined = lineItemRecords ? buildFields(lineItemRecords, fullName, ctx, `${fullName}@UI.LineItem`, semanticKey) : undefined;
 
@@ -758,17 +1063,26 @@ function buildUi(fullName: string, ctx: UiContext): EntityUi {
     if (!key.startsWith('SelectionPresentationVariant#')) continue;
     const v = ui[key];
     const q = key.split('#')[1]!;
-    const { presentation: vp, lineItemQualifier: lq } = presentationFrom(v?.PresentationVariant);
-    const vizs = ((v?.PresentationVariant?.Visualizations ?? []) as unknown[]).map((x) => str((x as Any)?.value) ?? pathOf(x) ?? '');
-    const chartViz = vizs.find((x) => x.includes('Chart'));
+    const vpv = v?.PresentationVariant;
+    // FE (getVisualizationsFromAnnotation with isMacroOrMultipleView, createSingleVisualizationView): a compliant PV shows
+    // its first LineItem or Chart; otherwise the default LineItem (unless the PV names one), else the default Chart.
+    // The table of a view uses the view's own PV (sort, RequestAtLeast) without falling back to the default PV.
+    const { presentation: vp } = presentationFrom(vpv, ann);
+    const viz = visualizationsOf(vpv, ui);
+    let shown: { term: 'LineItem' | 'Chart'; qualifier: string } | undefined = viz.list[0];
+    if (!shown && !viz.mentions('LineItem') && ui.LineItem !== undefined) shown = { term: 'LineItem', qualifier: '' };
+    if (!shown && !viz.mentions('Chart') && ui.Chart !== undefined) shown = { term: 'Chart', qualifier: '' };
+    const lq = shown?.term === 'LineItem' ? shown.qualifier : '';
     const records = ui[lq ? `LineItem#${lq}` : 'LineItem'];
+    const firstChart = shown?.term === 'Chart' ? shown.qualifier : viz.list.find((x) => x.term === 'Chart')?.qualifier;
     views.push({
       id: q,
       text: str(v?.Text) ?? humanize(q),
       conditions: selectionVariantFrom(v?.SelectionVariant),
-      presentation: vp.sortOrder.length ? vp : { ...vp, sortOrder: presentation.sortOrder },
+      presentation: vp,
       lineItem: records ? buildFields(records, fullName, ctx, `${fullName}@UI.LineItem`, semanticKey) : lineItem ?? [],
-      chart: chartViz ? charts[chartViz.includes('#') ? chartViz.split('#')[1]! : ''] : undefined,
+      chart: firstChart !== undefined ? charts[firstChart] : undefined,
+      visualization: shown?.term === 'Chart' && charts[shown.qualifier] ? 'chart' : 'table',
     });
   }
 
@@ -801,12 +1115,43 @@ function buildUi(fullName: string, ctx: UiContext): EntityUi {
   return {
     ...ui2,
     actions: buildActions(lineItemRecords, `${fullName}@UI.LineItem`, ctx),
+    actionGroups: buildActionGroups(lineItemRecords),
+    rowHighlight: rowHighlightOf(ui),
     objectActions: buildActions(ui.Identification, `${fullName}@UI.Identification`, ctx),
     charts,
     views,
+    ...(defaultChart !== undefined && charts[defaultChart] ? { defaultChart } : {}),
+    ...kpisOf(ui, fullName, ctx),
     quickView,
     ...cardAnnotations(fullName, ui, ann, ui2.lineItem, ctx, semanticKey),
   };
+}
+
+/** UI.Criticality annotated on each UI.LineItem collection, by qualifier (FE Table getHighlightRowBinding). */
+function rowHighlightOf(ui: Any): Record<string, ValueRef> {
+  const out: Record<string, ValueRef> = {};
+  for (const key of Object.keys(ui)) {
+    const q = qualifierOf(key, 'LineItem');
+    const ref = q === undefined ? undefined : criticalityRef((ui[key] as Any)?.annotations?.UI?.Criticality);
+    if (q !== undefined && ref) out[q] = ref;
+  }
+  return out;
+}
+
+/** UI.KPI annotations (FE createAnalyticalKPIDefinition): an inline DataPoint, SelectionVariant and Detail PV with a Chart. */
+function kpisOf(ui: Any, fullName: string, ctx: UiContext): Pick<EntityUi, 'kpis'> {
+  const kpis: Record<string, KpiModel> = {};
+  for (const key of Object.keys(ui)) {
+    if (key !== 'KPI' && !key.startsWith('KPI#')) continue;
+    const q = key.includes('#') ? key.split('#')[1]! : '';
+    const rec = ui[key] as Any;
+    const dataPoint = rec?.DataPoint ? buildDataPoint(rec.DataPoint, `KPI#${q}`, '', fullName, ctx) : undefined;
+    if (!dataPoint) continue;
+    const chart = visualizationsOf(rec.Detail?.DefaultPresentationVariant, ui).list.find((v) => v.term === 'Chart')?.qualifier;
+    const title = str(rec.DataPoint.Title);
+    kpis[q] = { id: q, ...(title !== undefined ? { title } : {}), dataPoint, conditions: selectionVariantFrom(rec.SelectionVariant), ...(chart !== undefined ? { chart } : {}) };
+  }
+  return Object.keys(kpis).length ? { kpis } : {};
 }
 
 const qualifierOf = (key: string, term: string): string | undefined =>
@@ -825,7 +1170,7 @@ function cardAnnotations(fullName: string, ui: Any, ann: Any, lineItem: ColumnMo
       if (q) lineItems[q] = buildFields(ui[key], fullName, ctx, `${fullName}@UI.LineItem#${q}`, semanticKey);
     } else if ((q = qualifierOf(key, 'PresentationVariant')) !== undefined) {
       const pv = ui[key] as Any;
-      const { presentation } = presentationFrom(pv);
+      const { presentation } = presentationFrom(pv, ann);
       const vizs = ((pv?.Visualizations ?? []) as unknown[]).map((v) => str((v as Any)?.value) ?? pathOf(v) ?? '');
       const qual = (term: string) => {
         const v = vizs.find((x) => x.includes(term));

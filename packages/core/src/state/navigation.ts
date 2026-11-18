@@ -14,4 +14,34 @@ export interface NavigationAdapter {
   hasObjectPage?(entitySet: string, service?: string): boolean;
   /** Opens a page with the whole table of a collection navigation ("Show All (x)", OP Tables). */
   toTable?(parent: EntityPath, navigation: string, service?: string): void;
+  /**
+   * Navigation targets of a semantic object (D42: what the Fiori launchpad resolves in Fiori elements, the host gives
+   * here). Used by `Common.SemanticObject` smart links (the popover lists the targets; one target is a direct link) and by
+   * `UI.DataFieldWithIntentBasedNavigation` (the target of `action`). No targets (or no method): the value is plain text.
+   */
+  semanticTargets?(request: SemanticTargetRequest): SemanticTarget[] | undefined;
+}
+
+/** What a semantic link asks the host for (NavigationAdapter.semanticTargets). */
+export interface SemanticTargetRequest {
+  semanticObject: string;
+  /** The intent's action (DataFieldWithIntentBasedNavigation/Action); undefined: all actions of the semantic object. */
+  action?: string;
+  /** The row the value belongs to (the host maps its values to parameters of the target). */
+  row: Record<string, unknown>;
+  /** The property shown (Common.SemanticObject) or the DataField's value path. */
+  path?: string;
+  service?: string;
+}
+
+/** A navigation target of a semantic link. */
+export interface SemanticTarget {
+  /** Link text in the popover, e.g. "Display Partner". */
+  text: string;
+  /** Link address. */
+  href: string;
+  /** The action, e.g. "display" (matched against DataFieldWithIntentBasedNavigation/Action). */
+  action?: string;
+  /** Optional sub-title of the link in the popover. */
+  description?: string;
 }

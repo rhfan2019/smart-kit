@@ -143,7 +143,8 @@ test('P2-OP-02 P2-OP-03 P2-OP-05 P2-OP-06 P2-OP-07 header facets: link in a form
   const progress = page.locator('[data-sk-facet-kind="progress"]');
   await expect(progress.locator('.sk-facet__title')).toBeVisible();
   await expect(progress.locator('[role="progressbar"]')).toBeVisible();
-  await expect(progress).toContainText('of 100');
+  // a static "%" unit (Measures.Unit) shows "52.2 %" as FE (DataPointTemplating buildExpressionForProgressIndicatorDisplayValue, DV-FE-06)
+  await expect(progress).toContainText(/\d+\.\d %/);
   const rating = page.locator('[data-sk-facet-kind="rating-aggregated"]');
   await expect(rating.locator('[data-sk-facet-subtitle]')).toHaveText(/^\d+ ratings$/);
   await expect(rating.locator('[data-sk-facet-footer]')).toHaveText(/^\d\.\d out of 5$/);

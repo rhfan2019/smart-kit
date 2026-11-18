@@ -284,10 +284,11 @@ export function diffSnapshots(fe: Snapshot, sk: Snapshot): Diff[] {
 export const moduleOf = (scenario: string) => `fe:${scenario}`;
 
 /** fe-behavior entries of a register file's content (`{ "deviations": [...] }`); anything else is ignored. */
+/** The `fe:` entries of the register: fe-behavior, and long-term ones (kit-extension, different-value) that the comparison also shows. */
 export function feDeviations(register: unknown): FeDeviation[] {
   const list = (register as { deviations?: unknown } | undefined)?.deviations;
   if (!Array.isArray(list)) return [];
-  return list.filter((d): d is FeDeviation => Boolean(d) && typeof d === 'object' && (d as FeDeviation).category === 'fe-behavior' && typeof (d as FeDeviation).module === 'string' && (d as FeDeviation).module.startsWith('fe:'));
+  return list.filter((d): d is FeDeviation => Boolean(d) && typeof d === 'object' && typeof (d as FeDeviation).category === 'string' && typeof (d as FeDeviation).module === 'string' && (d as FeDeviation).module.startsWith('fe:'));
 }
 
 export interface Checked {

@@ -1,6 +1,6 @@
 /** Typed conditions in filter fields ("=A", ">10", "1...5", "*pen*") and their token texts. */
 import { arrangeText, formatValue, isRelativeDateOperator, type Condition, type Operator, type PropertyModel, type TextArrangement } from '@rhfan2019/smart-kit-core';
-import type { MessageKey } from '../i18n/messages.en';
+import { formatStandard, optionText } from '../controls/dialogs/dateOptions';
 import type { TextFn } from '../i18n/text';
 
 const NUMERIC = /Int|Decimal|Double|Single|Byte/;
@@ -25,13 +25,11 @@ export function parseConditionText(input: string, prop: PropertyModel | undefine
   const norm = (v: string) => {
     const x = v.trim();
     if (prop && NUMERIC.test(prop.edmType)) return x.replace(/,/g, '');
-    return digitSequenceValue(prop?.isUpperCase ? x.toUpperCase() : x, prop);
+    return digitSequenceValue(x, prop);
   };
   // Contains, StartsWith and EndsWith take the text as typed (sap.ui.mdc FilterOperatorUtil: SelfNoParse).
-  const raw = (v: string) => {
-    const x = v.trim();
-    return prop?.isUpperCase ? x.toUpperCase() : x;
-  };
+  // (Common.IsUpperCase is not applied, as in FE 1.154: D41)
+  const raw = (v: string) => v.trim();
   let m: RegExpMatchArray | null;
   if (s === '<empty>') return { operator: 'Empty', values: [] };
   if ((m = s.match(/^!\(\s*(.+?)\s*\)$/))) {
@@ -57,11 +55,18 @@ export interface ConditionTextOptions {
   textArrangement?: TextArrangement;
 }
 
-/** Token text of a relative date condition, e.g. "This month", "Last 7 days". */
-export function relativeDateText(c: Condition, t?: TextFn): string {
+/**
+ * Token text of a relative date condition, e.g. "This month", "Last 7 days", "Last 2 weeks", "From Jan 1, 2026",
+ * "From Today" (the texts of DynamicDateRange, sap.m.StandardDynamicDateRangeKeys).
+ */
+export function relativeDateText(c: Condition, t?: TextFn, intlLocale = 'en-US'): string {
   const n = c.values[0];
-  if (!t) return n === undefined ? c.operator : `${c.operator} ${String(n)}`;
-  return t(`dateRange.${c.operator}` as MessageKey, { count: Number(n ?? 0) });
+  if (!t) return n === undefined ? c.operator : `${c.operator} ${c.values.map(String).join(' ')}`;
+  const ext = /^(FROM|TO)(.+)$/.exec(c.operator);
+  if (ext && ext[2] !== 'DAYFROMTO' && c.operator !== 'TODAY' && c.operator !== 'TOMORROW' && c.operator !== 'TODAYFROMTO') {
+    return t(ext[1] === 'FROM' ? 'ctl.ddr.fromValue' : 'ctl.ddr.toValue', { date: optionText(t, ext[2]!) });
+  }
+  return formatStandard({ operator: c.operator, values: c.values as (string | number)[] }, { t, intlLocale });
 }
 
 /** Token text of a condition, e.g. "Office (C1)", ">10", "!(=X)", "This month". */
@@ -70,7 +75,7 @@ export function conditionText(c: Condition, prop: PropertyModel | undefined, loc
   const [a, b] = c.values;
   let s: string;
   if (isRelativeDateOperator(c.operator)) {
-    s = relativeDateText(c, options.t);
+    s = relativeDateText(c, options.t, locale);
     return c.exclude ? `!(${s})` : s;
   }
   switch (c.operator) {

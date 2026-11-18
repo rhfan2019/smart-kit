@@ -167,5 +167,25 @@
   "T.CostCenters": "Cost Centers",
   "F.CostCenter": "Cost Center",
   "F.CostCenterName": "Cost Center Name",
-  "F.Budget": "Budget"
+  "F.Budget": "Budget",
+
+  "T.SupplierContact": "Supplier Contact",
+  "T.SupplierContacts": "Supplier Contacts",
+  "F.ContactName": "Name",
+  "F.Contact": "Contact",
+  "F.ContactID": "Contact ID",
+  "F.JobTitle": "Job Title",
+  "F.Department": "Department",
+  "F.Email": "E-Mail",
+  "F.Phone": "Phone",
+  "F.Mobile": "Mobile",
+  "F.Website": "Website",
+  "F.Portal": "Portal",
+  "F.Iban": "IBAN",
+  "F.LastContactAt": "Last Contact",
+  "F.TimeZone": "Time Zone",
+  "F.Score": "Score",
+  "F.ResponseRate": "Response Rate",
+  "F.ResponseCriticality": "Response Criticality",
+  "F.SpendAmount": "Spend"
 }

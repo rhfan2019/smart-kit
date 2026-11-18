@@ -22,6 +22,8 @@ export interface ListQueryOptions {
   /** When false nothing is loaded (e.g. before "Go"). */
   enabled?: boolean;
   extraSelect?: string[];
+  /** RequestAtLeast of the table's own presentation variant (a view's PV); default the entity's default presentation. */
+  requestAtLeast?: string[];
   /** Tree tables (docs/26 §3.10): one TopLevels request for the visible nodes instead of pages. */
   hierarchy?: Pick<HierarchyRequestOptions, 'qualifier' | 'levels' | 'expandLevels'>;
 }
@@ -52,9 +54,9 @@ export function useListQuery(o: ListQueryOptions): ListQueryResult {
   const growSize = o.growSize ?? 20;
 
   const pageRequest = (skip: number, top: number, count: boolean) =>
-    buildListRequest(model, ui, { source: o.source, columns, filters: o.filters, search: o.search, sort: o.sort, skip, top, count, extraSelect: o.extraSelect, timeZone });
+    buildListRequest(model, ui, { source: o.source, columns, filters: o.filters, search: o.search, sort: o.sort, skip, top, count, extraSelect: o.extraSelect, requestAtLeast: o.requestAtLeast, timeZone });
   const tree = o.hierarchy
-    ? buildHierarchyRequest(model, ui, { source: o.source, columns, filters: o.filters, search: o.search, sort: o.sort, extraSelect: o.extraSelect, timeZone, ...o.hierarchy })
+    ? buildHierarchyRequest(model, ui, { source: o.source, columns, filters: o.filters, search: o.search, sort: o.sort, extraSelect: o.extraSelect, requestAtLeast: o.requestAtLeast, timeZone, ...o.hierarchy })
     : undefined;
   const base = tree ?? pageRequest(0, pageSize, true);
   const key = ['smart-kit', namespace, service.name, locale, 'list', JSON.stringify({ ...base, skip: undefined, top: undefined })];

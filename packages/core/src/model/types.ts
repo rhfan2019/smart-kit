@@ -32,9 +32,16 @@ export interface ValueListModel {
   parameters: ValueListParameter[];
   /** The value list property that maps to the annotated property. */
   keyProperty: string;
-  /** Description property shown as text (first DisplayOnly string, if any). */
+  /**
+   * Description property shown as text: the Common.Text of the key property in the value list entity (FE
+   * ValueListHelper `_enrichPath`: "only the text annotation of the key can specify the description").
+   */
   descriptionProperty?: string;
   fixedValues: boolean;
+  /** Qualifier of the Common.ValueList annotation ("" for the unqualified one). */
+  qualifier?: string;
+  /** Common.ValueList/PresentationVariantQualifier: the PV of the value list entity whose SortOrder sorts the list. */
+  presentationVariantQualifier?: string;
 }
 
 export interface PropertyModel {
@@ -53,16 +60,39 @@ export interface PropertyModel {
   unit?: ValueRef;
   isCurrency: boolean;
   valueList?: ValueListModel;
-  criticality?: ValueRef;
+  /**
+   * All Common.ValueList annotations that apply, by qualifier, default ("") first (FE `putDefaultQualifierFirst`),
+   * limited to Common.ValueListRelevantQualifiers when it lists qualifiers; `valueList` is the first of them. Absent
+   * when there is at most one.
+   */
+  valueLists?: ValueListModel[];
   hidden: boolean;
   hiddenFilter: boolean;
   computed: boolean;
   immutable: boolean;
   isImageUrl: boolean;
-  isUrl: boolean;
+  /** Communication.IsEmailAddress: shown as a `mailto:` link. */
+  isEmailAddress?: boolean;
+  /** Communication.IsPhoneNumber: shown as a `tel:` link. */
+  isPhoneNumber?: boolean;
+  /** Common.Masked: shown as "*" characters. */
+  masked?: boolean;
+  /** Common.ExternalID: path of the property whose value is shown instead of this (technical) one. */
+  externalId?: string;
+  /** Common.Timezone of an Edm.DateTimeOffset: IANA time zone constant or path. */
+  timezone?: ValueRef;
+  /** Common.IsTimezone: the value is an IANA time zone ID. */
+  isTimezone?: boolean;
+  /** Core.ContentDisposition/Filename of an Edm.Stream. */
+  filename?: ValueRef;
+  /** Core.MediaType of an Edm.Stream or binary. */
+  mediaType?: ValueRef;
+  /** HTML5.LinkTarget of the property (target window of its URL links). */
+  linkTarget?: string;
+  /** Common.SemanticObject (constant): the value is a smart link to the semantic object's targets (D42). */
+  semanticObject?: string;
   multiLine: boolean;
   isDigitSequence: boolean;
-  isUpperCase: boolean;
   /** Common.FilterDefaultValue: default "EQ" filter condition when there is no default selection variant (FE FilterHelper). */
   filterDefaultValue?: string | number | boolean;
   /** Common.FieldControl constant (0 hidden, 1 read-only, 3 optional, 7 mandatory) or a path. */
@@ -113,6 +143,8 @@ export interface RecursiveHierarchyModel {
   matched?: string;
   matchedDescendantCount?: string;
   externalKey?: string;
+  /** Hierarchy.RecursiveHierarchy with the same (non-empty) qualifier exists (FE: the default table type is TreeTable). */
+  paired?: boolean;
 }
 
 export interface CapabilityModel {
@@ -130,6 +162,17 @@ export interface CapabilityModel {
   insertable: boolean;
   updatable: boolean;
   deletable: boolean;
+  /**
+   * InsertRestrictions/Insertable or DeleteRestrictions/Deletable given as a path (FE isPathInsertable / isPathDeletable):
+   * the list keeps the button; a deletable path is evaluated per selected row (FE deletableContexts).
+   */
+  insertablePath?: string;
+  deletablePath?: string;
+  /** Capabilities.FilterFunctions contains "tolower": string filters are case-insensitive (`tolower(p) eq tolower('x')`). */
+  caseInsensitive?: boolean;
+  /** UI.CreateHidden / UI.DeleteHidden of the entity set, else of its type (FE StandardActions isActionAnnotatedHidden). */
+  createHidden?: ValueRef;
+  deleteHidden?: ValueRef;
   /** Aggregation.ApplySupported on the entity set or its type ($apply: groups and totals, docs/23). Absent: no aggregation. */
   aggregation?: AggregationModel;
 }
@@ -148,6 +191,26 @@ export interface AggregationModel {
    * `aggregate(Name)`, leaving the method to the service (docs/29 §4 P1-2).
    */
   customAggregates: Record<string, string>;
+  /**
+   * Analytics.AggregatedProperty (qualified, preferred) or the first Analytics.AggregatedProperties of the type,
+   * restricted to aggregatable properties: the transformation aggregates of charts (FE AggregationHelper
+   * getTransAggregations), requested as `aggregate(<property> with <method> as <name>)`.
+   */
+  aggregatedProperties?: AggregatedPropertyModel[];
+}
+
+/** One Analytics.AggregatedProperty (stage 4, docs/29 §5). */
+export interface AggregatedPropertyModel {
+  /** Qualifier of the Analytics.AggregatedProperty annotation (absent for an AggregatedProperties entry). */
+  qualifier?: string;
+  /** Name: the alias of the aggregate in the response. */
+  name: string;
+  /** AggregatableProperty. */
+  property: string;
+  /** AggregationMethod (sum, min, max, average, countdistinct, …). */
+  method: string;
+  /** Common.Label of the annotation. */
+  label?: string;
 }
 
 export interface DataPointModel {
@@ -213,6 +276,12 @@ export interface ActionModel {
   inline: boolean;
   /** Footer action of the object page (UI.DataFieldForAction/Determining). */
   determining: boolean;
+  /** Common.IsActionCritical of the action: a confirmation before it runs (FE Operation confirmAction). */
+  critical?: ValueRef;
+  /** UI.IsCopyAction of the record: the standard "Copy" button after "Create" (FE Table getTableAnnotationActions). */
+  copy?: boolean;
+  /** Id of the UI.DataFieldForActionGroup the action belongs to ("DataFieldForActionGroup::<ID>"). */
+  menu?: string;
   criticality?: ValueRef;
   /** Core.OperationAvailable: a constant or a path relative to the bound entity (binding parameter removed). */
   operationAvailable?: ValueRef;
@@ -237,6 +306,16 @@ export interface ChartModel {
   navigation: string;
   /** Entity type the chart's paths are relative to. */
   typeName: string;
+  /** UI.Chart/Title as annotated (`title` falls back to the first measure's label); FE: the chart header. */
+  chartTitle?: string;
+  /** UI.Chart/Description. */
+  description?: string;
+  /** UI.Chart/DynamicMeasures: names of the Analytics.AggregatedProperty they point to (FE: measures before `Measures`). */
+  dynamicMeasures?: string[];
+  /** UI.Chart/MeasureAttributes Role by measure (or dynamic measure name): "Axis1" … "Axis4". */
+  measureRoles?: Record<string, string>;
+  /** UI.Chart/Actions: the unbound, non-inline, non-determining UI.DataFieldForAction (FE Chart getChartActions). */
+  actions?: ActionModel[];
 }
 
 /** UI.SelectionPresentationVariant with a qualifier: one view of a multi-view list report. */
@@ -246,7 +325,13 @@ export interface ViewModel {
   conditions: InitialCondition[];
   presentation: PresentationModel;
   lineItem: ColumnModel[];
+  /** The first UI.Chart in the view's visualizations (sap.fe.macros.Chart with the view as metaPath). */
   chart?: ChartModel;
+  /**
+   * What the view shows (FE ListReportConverter SingleTable / SingleChart): "chart" when the first LineItem or Chart of
+   * its visualizations is a chart (or, without either, only the default chart exists); default "table".
+   */
+  visualization?: 'table' | 'chart';
 }
 
 export interface DraftModel {
@@ -260,16 +345,39 @@ export interface DraftModel {
 
 export interface FieldModel {
   id: string;
-  kind: 'field' | 'dataPoint' | 'chart';
+  /**
+   * 'field': a DataField (also WithUrl, WithNavigationPath, WithIntentBasedNavigation, WithAction); 'dataPoint', 'chart',
+   * 'fieldGroup', 'connectedFields', 'contact': a DataFieldForAnnotation to UI.DataPoint, UI.Chart, UI.FieldGroup,
+   * UI.ConnectedFields, Communication.Contact; 'action': an inline UI.DataFieldForAction (a column of a line item).
+   */
+  kind: 'field' | 'dataPoint' | 'chart' | 'fieldGroup' | 'connectedFields' | 'contact' | 'action';
   /** Property path relative to the row, for kind 'field'. */
   path?: string;
   label: string;
+  /** HTML5.CssDefaults/width of the record (column width, FE Columns). */
+  width?: string;
+  /** The fields of a field group or of connected fields, in order. */
+  fields?: FieldModel[];
+  /** UI.ConnectedFields/Template, e.g. "{From} – {To}", and the key of each field in `fields` (same order). */
+  template?: { text: string; keys: string[] };
+  /** Communication.Contact (kind 'contact'): paths of the name and the details shown in the contact popover. */
+  contact?: ContactModel;
+  /** The inline action (kind 'action') or the action a DataFieldWithAction value runs (kind 'field'). */
+  action?: ActionModel;
+  /** UI.DataFieldWithNavigationPath/Target: the value is a link to the object reached by this navigation. */
+  navigationPath?: string;
+  /** UI.DataFieldWithIntentBasedNavigation: the intent (a link only where the launchpad resolves it). */
+  intent?: { semanticObject: string; action?: string };
   dataPoint?: DataPointModel;
   /** Micro chart in a table cell or form (DataFieldForAnnotation to UI.Chart, docs/15 MC-10). */
   chart?: ChartModel;
   criticality?: ValueRef;
   criticalityIcon: boolean;
   url?: ValueRef;
+  /** UI.DataFieldWithUrl: HTML5.LinkTarget of the record or of the property ("_blank", "_self", …); none: the same window ("_top"). */
+  linkTarget?: string;
+  /** UI.DataFieldWithUrl/IconUrl: an icon shown before the linked value. */
+  iconUrl?: ValueRef;
   isSemanticKey: boolean;
   /** UI.Importance of the record (responsive table columns, forms on small screens). */
   importance?: Importance;
@@ -278,6 +386,17 @@ export interface FieldModel {
 }
 
 export type ColumnModel = FieldModel;
+
+/** Communication.Contact: each value is a path relative to the row (prefixed by the navigation) or a constant. */
+export interface ContactModel {
+  fn?: ValueRef;
+  title?: ValueRef;
+  org?: ValueRef;
+  role?: ValueRef;
+  photo?: ValueRef;
+  email?: ValueRef;
+  tel?: ValueRef;
+}
 
 export interface HeaderInfoModel {
   typeName: string;
@@ -337,6 +456,13 @@ export interface PresentationModel {
    * table totals all custom aggregates (FE getAggregateConditions, D39).
    */
   hasTotal?: boolean;
+  /** UI.PresentationVariant/InitialExpansionLevel (tree tables: FE requests this level + 1). */
+  initialExpansionLevel?: number;
+  /**
+   * The sort order of a chart, when SortOrder has a DynamicProperty: the Analytics.AggregatedProperty name in its
+   * place (FE ChartHelper getSortConditions; tables ignore DynamicProperty). Absent: `sortOrder`.
+   */
+  chartSortOrder?: { path: string; descending: boolean }[];
 }
 
 export interface InitialCondition {
@@ -358,12 +484,26 @@ export interface EntityUi {
   derived: { lineItem: boolean; selectionFields: boolean; headerInfo: boolean; sections: boolean };
   /** UI.DataFieldForAction in UI.LineItem: table toolbar and line item actions. */
   actions: ActionModel[];
+  /**
+   * UI.DataFieldForActionGroup records of the UI.LineItem: menu buttons of the table toolbar; their actions are in
+   * `actions` with `menu` set to the group id (FE Table getDataFieldAnnotationAction, ActionType.Menu).
+   */
+  actionGroups?: { id: string; label: string; actions: string[] }[];
+  /** UI.Criticality annotated on each UI.LineItem, by qualifier ("" for the unqualified one): the row highlight (FE Table getHighlightRowBinding). */
+  rowHighlight?: Record<string, ValueRef>;
   /** UI.DataFieldForAction in UI.Identification: object page header and footer actions. */
   objectActions: ActionModel[];
   /** UI.Chart by qualifier ("" for the unqualified chart). */
   charts: Record<string, ChartModel>;
   /** Qualified UI.SelectionPresentationVariant annotations, in annotation order (multiple views). */
   views: ViewModel[];
+  /**
+   * Qualifier of the UI.Chart the default presentation shows instead of a table: the first LineItem or Chart of the
+   * visualizations of the compliant default SPV / PV is a chart (FE ListReportConverter SingleChart).
+   */
+  defaultChart?: string;
+  /** UI.KPI by qualifier (list report KPI tags, FE controls/Common/KPI); absent when the type has none. */
+  kpis?: Record<string, KpiModel>;
   /** UI.QuickViewFacets as form groups. */
   quickView?: FormGroupModel[];
   /** Every UI.LineItem by qualifier ("" for the unqualified one); cards pick one with `annotationPath` (docs/20). */
@@ -380,6 +520,18 @@ export interface EntityUi {
   identification: FieldModel[];
   /** Communication.Event of the entity type. */
   event?: EventModel;
+}
+
+/** UI.KPI (stage 4, docs/29 §5): the data point, its selection variant and the chart of Detail/DefaultPresentationVariant. */
+export interface KpiModel {
+  id: string;
+  /** UI.DataPoint/Title as annotated (FE: no title, no tag text). */
+  title?: string;
+  dataPoint: DataPointModel;
+  /** UI.KPI/SelectionVariant: filters of the KPI value. */
+  conditions: InitialCondition[];
+  /** Qualifier of the UI.Chart of Detail/DefaultPresentationVariant (FE needs one for the KPI). */
+  chart?: string;
 }
 
 /** UI.PresentationVariant with its qualifier (cards, docs/20). */

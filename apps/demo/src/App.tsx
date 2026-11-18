@@ -16,6 +16,7 @@ import { MicroChartsPage } from './pages/MicroChartsPage';
 import { NorthwindListPage } from './pages/NorthwindPages';
 import { ObjectRoute } from './pages/ObjectRoute';
 import { PurchaseOrdersPage } from './pages/PurchaseOrdersPage';
+import { SupplierContactsPage } from './pages/SupplierContactsPage';
 import { FclPage } from './pages/FclPage';
 import { TablePage } from './pages/TablePage';
 import { TreePage } from './pages/TreePage';
@@ -110,6 +111,7 @@ export function App() {
                     <Route path="/" element={<HomePage />} />
                     <Route path="/po" element={<PurchaseOrdersPage />} />
                     <Route path="/po-draft" element={<PurchaseOrdersPage service="purchasing-draft" />} />
+                    <Route path="/contacts" element={<SupplierContactsPage />} />
                     <Route path="/fcl" element={<FclPage />} />
                     <Route path="/tree" element={<TreePage />} />
                     <Route path="/:service/table" element={<TablePage />} />

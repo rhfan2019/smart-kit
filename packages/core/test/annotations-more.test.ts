@@ -22,7 +22,7 @@ describe('more annotation terms', () => {
     const ui = m.ui['T.Order']!;
     expect(m.entityTypes['T.Order']!.properties.CustomerID!.text).toBe('Customer/Name');
     const req = buildListRequest(m, ui, { source: { entitySet: 'Orders' }, columns: ui.lineItem.filter((c) => c.path === 'CustomerID') });
-    expect(req.expand).toEqual([{ navigation: 'Customer', select: ['Name'], expand: [] }]);
+    expect(req.expand).toEqual([{ navigation: 'Customer', select: ['Name', 'ID'], expand: [] }]); // with the target's key (DV-FE-01)
   });
 
   it('ANN-23 Common.FieldControl Hidden hides the field; other values are kept for the edit seam', () => {

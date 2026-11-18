@@ -5,6 +5,14 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+### Changed — behaviour (SAPUI5 alignment, stage 4, D43)
+
+- List report columns and actions follow Fiori elements 1.154 (checked by `npm run e2e:fe`, 37 scenarios): one column per inline action, disabled when unavailable; data point, field group, connected fields and contact columns; row highlight from `UI.LineItem@UI.Criticality` (D41); toolbar order, action groups, copy action, `CreateHidden` / `DeleteHidden`, per-row `Deletable`, `Common.IsActionCritical`.
+- Filter bar and value help: strictest `FilterExpressionRestrictions` and FE operators; all FE semantic date operators (relative dates are `ge … and le …`, no parentheses); `UI.HiddenFilter`; default conditions of `UI.Hidden` properties are dropped; `tolower` with `Capabilities.FilterFunctions`; qualified value lists, FE descriptions, 64 rows per page.
+- Value display: `mailto:` / `tel:` links, `HTML5.LinkTarget` (same window by default), `Common.ExternalID`, `Common.Masked`, `Common.Timezone`, streams; semantic object links get their targets from the host's `NavigationAdapter` (D42). Requests: `$expand` selects the target keys, lists no longer select the ETag property, TextSeparate texts are not requested.
+- Views and charts: SelectionPresentationVariant → PresentationVariant → LineItem; chart-only pages; FE chart types; no chart without `Aggregation.ApplySupported`; analytical / tree table chosen from the annotations when `type` is not set; `UI.KPI` tags.
+- smart-kit-core: `Core.IsURL` and `Common.IsUpperCase` are no longer handled; `PropertyModel.criticality`, `isUrl` and `isUpperCase` are removed.
+
 ### Changed — behaviour (SAPUI5 alignment, stage 3, D39, D40)
 
 - List report annotations follow Fiori elements 1.154 (checked by `npm run e2e:fe`, 15 scenarios): draft "All" and the six editing states; complete SelectionVariant per view; search field unless `Searchable=false`; `Common.FilterDefaultValue`; value help In/InOut/Constant filters and Out write-back; `Common.IsDigitSequence` padding; disabled unbound actions with `OperationAvailable` false.

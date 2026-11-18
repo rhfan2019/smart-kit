@@ -138,18 +138,19 @@ describe('Common and Measures', () => {
   });
 
   it('ANN-22 ValueList: collection, parameters, key and description; fixed values', () => {
+    // AL-10 P2: the description is the Common.Text of the value list key (Categories/ID has none), not the first DisplayOnly
+    expect(product.properties.CategoryID!.valueList!.descriptionProperty).toBeUndefined();
     expect(product.properties.CategoryID!.valueList).toMatchObject({
       collectionPath: 'Categories',
       keyProperty: 'ID',
-      descriptionProperty: 'Name',
       searchSupported: false,
       fixedValues: false,
     });
     expect(product.properties.Status!.valueList!.fixedValues).toBe(true);
   });
 
-  it('ANN-25 format hints (IsUpperCase, IsDigitSequence)', () => {
-    expect(product.properties.Code!.isUpperCase).toBe(true);
+  it('ANN-25 format hints (IsDigitSequence; Common.IsUpperCase is not read, D41)', () => {
+    expect('isUpperCase' in product.properties.Code!).toBe(false);
     expect(product.properties.Stock!.isDigitSequence).toBe(false);
   });
 

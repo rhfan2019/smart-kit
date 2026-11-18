@@ -456,10 +456,10 @@ export type PreventableEvent<T> = T & { preventDefault(): void };
 
 ### `relativeDateText` — function
 
-Token text of a relative date condition, e.g. "This month", "Last 7 days".
+Token text of a relative date condition, e.g. "This month", "Last 7 days", "Last 2 weeks", "From Jan 1, 2026", "From Today" (the texts of DynamicDateRange, sap.m.StandardDynamicDateRangeKeys).
 
 ```ts
-relativeDateText(c: Condition, t?: TextFn): string
+relativeDateText(c: Condition, t?: TextFn, intlLocale?: string): string
 ```
 
 ### `RendererRegistry` — type
@@ -557,9 +557,9 @@ viewSettingsFilterString(filterItems: ViewSettingsFilterItem[], filters: Record<
 | `className` |  | `string` | Extra CSS class on the root element. |
 | `views` |  | `{ mode: 'switch' \| 'tabs'; ids?: string[] }` | Multiple views (LR Multiple Views) from the qualified UI.SelectionPresentationVariant annotations: "switch" replaces the table title area with a segmented button (≤ 3 views) or a select (> 3); "tabs" shows a tab per view. |
 | `contents` |  | `ListContentItem[]` | Multiple content (LR Multiple Content): a text-only tab per table, all filtered by the same filter bar. |
-| `tableType` |  | `'grid' \| 'responsive' \| 'auto' \| 'AnalyticalTable' \| 'ResponsiveTable' \| 'Table' \| 'TreeTable'` | Table type: grid (desktop), responsive, or auto = responsive below 600px (LR Responsiveness, docs/12 U-17). The UI5 names (sap.ui.comp.smarttable.TableType) are accepted too: "Table" = grid, "AnalyticalTable" = grid with grouping, subtotals and totals (the only type with totals, D39), "ResponsiveTable" = responsive, "TreeTable" = grid tree table of the recursive hierarchy (docs/26 §3.10). |
+| `tableType` |  | `'grid' \| 'responsive' \| 'auto' \| 'AnalyticalTable' \| 'ResponsiveTable' \| 'Table' \| 'TreeTable'` | Table type: grid (desktop), responsive, or auto = responsive below 600px (LR Responsiveness, docs/12 U-17). The UI5 names (sap.ui.comp.smarttable.TableType) are accepted too: "Table" = grid, "AnalyticalTable" = grid with grouping, subtotals and totals (the only type with totals, D39), "ResponsiveTable" = responsive, "TreeTable" = grid tree table of the recursive hierarchy (docs/26 §3.10). Not set: chosen from the annotations as FE `getTableType` does — "AnalyticalTable" when Aggregation.ApplySupported lists all of filter, identity, orderby, skip, top, groupby, aggregate and concat, "TreeTable" when the type has a qualified Aggregation.RecursiveHierarchy / Hierarchy.RecursiveHierarchy pair, else grid. |
 | `hierarchyQualifier` |  | `string` | Tree tables: qualifier of Aggregation.RecursiveHierarchy (default: the type's first hierarchy). |
-| `chart` |  | `boolean \| string` | Offer a chart view from UI.Chart (qualifier; true = the first chart); views use the chart of their presentation variant. |
+| `chart` |  | `boolean \| string` | Offer a table/chart switch with this UI.Chart (qualifier; true = the first chart; smart-kit, LR Simple Content). Without it the list shows what its presentation shows (FE): the chart only when the first LineItem or Chart of the default presentation variant is a chart, a chart view when a view's is. |
 | `workingMode` |  | `'worklist' \| 'continuous'` | Working mode after actions (LR Working Modes; default worklist). |
 | `actionGroups` |  | `ActionGroup[]` | Menu buttons for similar table actions. |
 | `share` |  | `boolean` | Share button in the header toolbar (default true when the navigation adapter can build links). |
@@ -569,6 +569,7 @@ viewSettingsFilterString(filterItems: ViewSettingsFilterItem[], filters: Record<
 | `onBeforeExport` |  | `(e: Table$BeforeExportEvent) => boolean \| void \| Promise&lt;boolean \| void>` | Before an export is written; return false to cancel (see `Table` `onBeforeExport`). |
 | `onExported` |  | `(e: Table$ExportedEvent) => void` | After an export was written. |
 | `canSaveVariants` |  | `boolean` | Whether views may be saved (default: the service's `VariantStore.canSave`, else true). False: the view menu only selects views (no Save, Save As, Manage). |
+| `keyPerformanceIndicators` |  | `Record&lt;string, KPIConfiguration>` | KPI tags in the title (FE manifest `keyPerformanceIndicators`): name → the qualifier of a UI.KPI (and its entity set). Each tag shows the KPI's data point aggregated on the server (docs/29 §5). |
 
 ### `SmartListReportProps` — interface
 
@@ -1401,10 +1402,12 @@ _no props_
 
 | Prop | Required | Type | Description |
 | --- | --- | --- | --- |
-| `kind` | **yes** | `'column' \| 'bar' \| 'line' \| 'donut'` |  |
+| `kind` | **yes** | `'column' \| 'bar' \| 'line' \| 'area' \| 'donut' \| 'pie'` | What is drawn: columns, bars, a line (area: filled below the line), a donut or pie. With `series`, columns and bars are grouped, or stacked with `stacked` (FE stacked_column / stacked_bar; "percent": 100_stacked_*). |
 | `measureLabel` | **yes** | `string` |  |
 | `dimensionLabel` | **yes** | `string` |  |
 | `data` | **yes** | `ChartDatum[]` |  |
+| `stacked` |  | `boolean \| 'percent'` | Series of columns or bars are stacked ("percent": each category adds up to 100 %). |
+| `chartType` |  | `string` | Value of `data-sk-chart` (default `kind`), e.g. the sap.chart type name of the UI.Chart. |
 | `title` |  | `string` | Visible title; a visually hidden caption is used when omitted. |
 | `loading` |  | `boolean` | Shows a busy indicator. |
 | `format` |  | `(n: number) => string` | Formats a number for display. |
@@ -1639,6 +1642,7 @@ default(o: ListQueryOptions): ListQueryResult
 | `growSize` |  | `number` | Rows of each following page. |
 | `enabled` |  | `boolean` | When false nothing is loaded (e.g. before "Go"). |
 | `extraSelect` |  | `string[]` |  |
+| `requestAtLeast` |  | `string[]` | RequestAtLeast of the table's own presentation variant (a view's PV); default the entity's default presentation. |
 | `hierarchy` |  | `Pick&lt;HierarchyRequestOptions, 'qualifier' \| 'levels' \| 'expandLevels'>` | Tree tables (docs/26 §3.10): one TopLevels request for the visible nodes instead of pages. |
 
 ### `ListQueryResult` — interface
@@ -1780,6 +1784,7 @@ default(valueList: ValueListModel | undefined, q?: ValueListQuery, serviceName?:
 | `skip` |  | `number` |  |
 | `enabled` |  | `boolean` |  |
 | `filters` |  | `FilterState` | Conditions of the source by local property path (usually the filter bar's); the In and InOut parameters of the value list filter by them, Constant parameters always filter (docs/29 §4 P1-5). |
+| `purpose` |  | `'dialog' \| 'suggest'` | `dialog` for the value help dialog's table (FE's $select, sort and page of the dialog), default type-ahead / fixed values. |
 
 ## `@rhfan2019/smart-kit/kit/useVariants`
 
@@ -7791,6 +7796,7 @@ A column (sap.m.Column) of the `columns` aggregation.
 | `tree` |  | `{ nodeOf(row: Row): HierarchyNode \| undefined; toggle(row: Row): void }` | Tree rows (docs/26 §3.10): indentation and toggle in the first column. |
 | `inlineActions` |  | `(row: Row) => ReactNode` | Actions in a column at the end of each row. |
 | `changedKeys` |  | `Set&lt;string>` | Keys of rows marked as changed (continuous working mode). |
+| `rowHighlight` |  | `(row: Row) => string \| undefined` | Highlight of a row (sap.m.ListItemBase highlight: "error", "warning", "success", "information"; smart-kit internal). |
 | `rowMarker` |  | `(row: Row) => ReactNode` | Content after the first cell (e.g. draft markers). |
 | `onSelectionChange` |  | `(e: Table$SelectionChangeEvent) => void` |  |
 | `onItemPress` |  | `(e: Table$ItemPressEvent) => void` |  |
@@ -7852,6 +7858,7 @@ Instance methods of sap.m.Table (through `ref`). Rows stand for the list items.
 | `tree` |  | `{ nodeOf(row: Row): HierarchyNode \| undefined; toggle(row: Row): void }` | Tree rows (docs/26 §3.10): indentation and toggle in the first column. |
 | `inlineActions` |  | `(row: Row) => ReactNode` | Actions in a column at the end of each row. |
 | `changedKeys` |  | `Set&lt;string>` | Keys of rows marked as changed (continuous working mode). |
+| `rowHighlight` |  | `(row: Row) => string \| undefined` | Highlight of a row (sap.m.ListItemBase highlight: "error", "warning", "success", "information"; smart-kit internal). |
 | `rowMarker` |  | `(row: Row) => ReactNode` | Content after the first cell (e.g. draft markers). |
 | `onSelectionChange` |  | `(e: Table$SelectionChangeEvent) => void` |  |
 | `onItemPress` |  | `(e: Table$ItemPressEvent) => void` |  |
@@ -9710,7 +9717,7 @@ const IconColor: { readonly Default: "Default"; readonly Positive: "Positive"; r
 sap.ui.core.IndicationColor (Indication01–Indication20 in 1.154).
 
 ```ts
-const IndicationColor: { readonly Indication01: "Indication01"; readonly Indication02: "Indication02"; readonly Indication03: "Indication03"; readonly Indicatio…
+const IndicationColor: { readonly Indication10: "Indication10"; readonly Indication11: "Indication11"; readonly Indication01: "Indication01"; readonly Indicatio…
 ```
 
 ### `TitleLevel` — const
@@ -11028,7 +11035,7 @@ const ObjectPageSubSectionLayout: { readonly TitleOnTop: "TitleOnTop"; readonly 
 | --- | --- | --- | --- |
 | `contextPath` | **yes** | `string` | Entity set path, e.g. "/Orders" (sap.fe.macros.Chart#contextPath). |
 | `metaPath` | **yes** | `string` | Annotation path of the chart, e.g. "@com.sap.vocabularies.UI.v1.Chart#Q" (alias "@UI.Chart#Q"), or of a UI.PresentationVariant / UI.SelectionPresentationVariant that contains one. |
-| `header` |  | `string` | Header text of the chart; default the UI.Chart Title. |
+| `header` |  | `string` | Header text of the chart; default the UI.Chart Title (FE MdcChartTemplate `header`; none without a Title). |
 | `headerVisible` |  | `boolean` | Whether the header (title and the content after it) is shown; the toolbar actions stay. |
 | `selectionMode` |  | `'None' \| 'Single' \| 'Multiple'` | "None": the data points cannot be selected; "Single": one; "Multiple": selecting adds to the selection. |
 | `actions` |  | `ReactNode` | Toolbar actions at the end of the toolbar (sap.fe.macros.Chart `actions`). |
@@ -11085,7 +11092,7 @@ Chart building block (sap.fe.macros.Chart). Renders nothing when the metaPath do
 | --- | --- | --- | --- |
 | `contextPath` | **yes** | `string` | Entity set path, e.g. "/Orders" (sap.fe.macros.Chart#contextPath). |
 | `metaPath` | **yes** | `string` | Annotation path of the chart, e.g. "@com.sap.vocabularies.UI.v1.Chart#Q" (alias "@UI.Chart#Q"), or of a UI.PresentationVariant / UI.SelectionPresentationVariant that contains one. |
-| `header` |  | `string` | Header text of the chart; default the UI.Chart Title. |
+| `header` |  | `string` | Header text of the chart; default the UI.Chart Title (FE MdcChartTemplate `header`; none without a Title). |
 | `headerVisible` |  | `boolean` | Whether the header (title and the content after it) is shown; the toolbar actions stay. |
 | `selectionMode` |  | `'None' \| 'Single' \| 'Multiple'` | "None": the data points cannot be selected; "Single": one; "Multiple": selecting adds to the selection. |
 | `actions` |  | `ReactNode` | Toolbar actions at the end of the toolbar (sap.fe.macros.Chart `actions`). |
@@ -11857,6 +11864,8 @@ A toolbar action (annotation or custom); the internal form of `actions` and `ext
 | `requiresSelection` |  | `boolean` | Disabled while no row is selected (LR-18). |
 | `enabled` |  | `(selected: Row[]) => boolean` | Further enablement check on the selected rows. |
 | `group` |  | `string` | Menu button the action belongs to (similar actions grouped, LR Table Toolbar). |
+| `menu` |  | `ActionItem[]` | A menu button with these items (UI.DataFieldForActionGroup, `actionGroups`); always enabled as in FE. |
+| `hidden` |  | `boolean` | Kept for positioning only (FE templates the standard action but it is not shown). |
 
 ### `ColumnItem` — interface
 
@@ -11873,6 +11882,8 @@ A column of the table (annotation or custom); the internal form of `columns` and
 | `importance` |  | `'High' \| 'Medium' \| 'Low'` | Importance in responsive tables (pop-in on narrow screens); default the field's `UI.Importance`, else Medium. |
 | `align` |  | `'Begin' \| 'Center' \| 'End'` | Horizontal alignment of the cells; default right for numbers. |
 | `disableExport` |  | `boolean` | Not exported to the spreadsheet. |
+| `headerHidden` |  | `boolean` | The header text is hidden (FE headerVisible false: inline action columns). |
+| `adaptation` |  | `boolean` | Offered in the personalization only (FE availability "Adaptation": entity properties outside the LineItem). |
 
 ### `Context` — interface
 
@@ -12034,7 +12045,7 @@ Settings of sap.fe.macros.TreeTable: those of `Table` plus the hierarchy.
 | --- | --- | --- | --- |
 | `type` |  | `'TreeTable'` | The only value. |
 | `hierarchyQualifier` |  | `string` | Qualifier of Aggregation.RecursiveHierarchy (default: the type's first hierarchy; without one it is a plain table). |
-| `initialExpansionLevel` |  | `number` | Levels shown at first (default 1: the roots); `collapseAll` goes back to the roots (smart-kit addition). |
+| `initialExpansionLevel` |  | `number` | Levels shown at first (default: UI.PresentationVariant/InitialExpansionLevel + 1, as FE, else 1: the roots); `collapseAll` goes back to the roots (smart-kit addition). |
 | `disableLeafSelection` |  | `boolean` | Leaves (nodes without children) cannot be selected. Default false. |
 | `responsive` |  | `boolean` | Shows the tree in the responsive table (sap.m.Table) kernel, e.g. on phones (smart-kit addition; FE always uses the grid). |
 | `onToggleOpenState` |  | `(e: TreeTable$ToggleOpenStateEvent) => void` | A node was expanded or collapsed by the user (sap.ui.table.TreeTable#toggleOpenState; smart-kit addition). |
@@ -12121,7 +12132,7 @@ sap.fe.macros.TreeTable: the recursive hierarchy of the entity type (Aggregation
 | --- | --- | --- | --- |
 | `type` |  | `'TreeTable'` | The only value. |
 | `hierarchyQualifier` |  | `string` | Qualifier of Aggregation.RecursiveHierarchy (default: the type's first hierarchy; without one it is a plain table). |
-| `initialExpansionLevel` |  | `number` | Levels shown at first (default 1: the roots); `collapseAll` goes back to the roots (smart-kit addition). |
+| `initialExpansionLevel` |  | `number` | Levels shown at first (default: UI.PresentationVariant/InitialExpansionLevel + 1, as FE, else 1: the roots); `collapseAll` goes back to the roots (smart-kit addition). |
 | `disableLeafSelection` |  | `boolean` | Leaves (nodes without children) cannot be selected. Default false. |
 | `responsive` |  | `boolean` | Shows the tree in the responsive table (sap.m.Table) kernel, e.g. on phones (smart-kit addition; FE always uses the grid). |
 | `onToggleOpenState` |  | `(e: TreeTable$ToggleOpenStateEvent) => void` | A node was expanded or collapsed by the user (sap.ui.table.TreeTable#toggleOpenState; smart-kit addition). |

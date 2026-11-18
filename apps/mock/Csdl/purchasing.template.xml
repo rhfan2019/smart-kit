@@ -28,6 +28,10 @@
   <edmx:Reference Uri="https://sap.github.io/odata-vocabularies/vocabularies/Communication.xml">
     <edmx:Include Namespace="com.sap.vocabularies.Communication.v1" Alias="Communication"/>
   </edmx:Reference>
+  <!-- stage 4 value display (tests/e2e-fe/display4.spec.ts): HTML5.LinkTarget -->
+  <edmx:Reference Uri="https://sap.github.io/odata-vocabularies/vocabularies/HTML5.xml">
+    <edmx:Include Namespace="com.sap.vocabularies.HTML5.v1" Alias="HTML5"/>
+  </edmx:Reference>
   <edmx:DataServices>
     <Schema Namespace="Purchasing" xmlns="http://docs.oasis-open.org/odata/ns/edm">
 
@@ -218,6 +222,37 @@
         <Property Name="ModifiedAt" Type="Edm.DateTimeOffset" Nullable="false" Precision="3"/>
       </EntityType>
 
+      <!-- stage 4 value display (docs/29 §5, tests/e2e-fe/display4.spec.ts): supplier contacts -->
+      <EntityType Name="SupplierContact">
+        <Key><PropertyRef Name="ContactUUID"/></Key>
+        <Property Name="ContactUUID" Type="Edm.Guid" Nullable="false"/>
+        <Property Name="ContactID" Type="Edm.String" Nullable="false" MaxLength="10"/>
+        <Property Name="Supplier" Type="Edm.String" Nullable="false" MaxLength="10"/>
+        <Property Name="FullName" Type="Edm.String" Nullable="false" MaxLength="80"/>
+        <Property Name="JobTitle" Type="Edm.String" MaxLength="40"/>
+        <Property Name="Department" Type="Edm.String" MaxLength="40"/>
+        <Property Name="Email" Type="Edm.String" MaxLength="241"/>
+        <Property Name="Phone" Type="Edm.String" MaxLength="30"/>
+        <Property Name="Mobile" Type="Edm.String" MaxLength="30"/>
+        <Property Name="City" Type="Edm.String" MaxLength="40"/>
+        <Property Name="Country" Type="Edm.String" MaxLength="3"/>
+        <Property Name="Website" Type="Edm.String" MaxLength="255"/>
+        <Property Name="Portal" Type="Edm.String" MaxLength="255"/>
+        <Property Name="Iban" Type="Edm.String" MaxLength="34"/>
+        <Property Name="LastContactAt" Type="Edm.DateTimeOffset" Precision="0"/>
+        <Property Name="TimeZone" Type="Edm.String" MaxLength="40"/>
+        <Property Name="Score" Type="Edm.Decimal" Precision="6" Scale="3"/>
+        <Property Name="ResponseRate" Type="Edm.Decimal" Precision="4" Scale="1"/>
+        <Property Name="ResponseCriticality" Type="Edm.Byte"/>
+        <Property Name="SpendAmount" Type="Edm.Decimal" Precision="15" Scale="2"/>
+        <Property Name="Currency" Type="Edm.String" MaxLength="3"/>
+        <Property Name="Quantity" Type="Edm.Decimal" Precision="13" Scale="3"/>
+        <Property Name="Unit" Type="Edm.String" MaxLength="3"/>
+        <NavigationProperty Name="_Supplier" Type="Purchasing.Supplier" Nullable="false">
+          <ReferentialConstraint Property="Supplier" ReferencedProperty="Supplier"/>
+        </NavigationProperty>
+      </EntityType>
+
       <!-- =========================================================== bound actions (ADR-024) -->
       <Action Name="approve" IsBound="true">
         <Parameter Name="_it" Type="Purchasing.PurchaseOrder" Nullable="false"/>
@@ -265,6 +300,10 @@
         <EntitySet Name="OrderStatuses" EntityType="Purchasing.OrderStatus"/>
         <EntitySet Name="PurchaseOrderTypes" EntityType="Purchasing.OrderType"/>
         <EntitySet Name="Variants" EntityType="Purchasing.Variant"/>
+        <!-- stage 4 value display -->
+        <EntitySet Name="SupplierContacts" EntityType="Purchasing.SupplierContact">
+          <NavigationPropertyBinding Path="_Supplier" Target="Suppliers"/>
+        </EntitySet>
       </EntityContainer>
 
       <!-- =========================================================== entity set capabilities -->
@@ -2065,6 +2104,208 @@
         <Annotation Term="Common.Label" String="{{label:F.ModifiedAt}}"/>
         <Annotation Term="Core.Computed" Bool="true"/>
       </Annotations>
+
+      <!-- =========================================================== stage 4 value display (docs/29 §5, tests/e2e-fe/display4.spec.ts)
+           Communication.IsEmailAddress / IsPhoneNumber / Contact, HTML5.LinkTarget, Common.ExternalID / Masked / Timezone /
+           IsTimezone, DataPoint ValueFormat and Progress with Criticality, amounts and quantities. -->
+      <Annotations Target="Purchasing.Container/SupplierContacts">
+        <Annotation Term="Capabilities.SearchRestrictions">
+          <Record Type="Capabilities.SearchRestrictionsType"><PropertyValue Property="Searchable" Bool="false"/></Record>
+        </Annotation>
+      </Annotations>
+      <Annotations Target="Purchasing.SupplierContact">
+        <Annotation Term="UI.HeaderInfo">
+          <Record Type="UI.HeaderInfoType">
+            <PropertyValue Property="TypeName" String="{{label:T.SupplierContact}}"/>
+            <PropertyValue Property="TypeNamePlural" String="{{label:T.SupplierContacts}}"/>
+            <PropertyValue Property="Title"><Record Type="UI.DataField"><PropertyValue Property="Value" Path="FullName"/></Record></PropertyValue>
+          </Record>
+        </Annotation>
+        <Annotation Term="UI.SelectionFields">
+          <Collection><PropertyPath>ContactID</PropertyPath></Collection>
+        </Annotation>
+        <Annotation Term="UI.PresentationVariant">
+          <Record Type="UI.PresentationVariantType">
+            <PropertyValue Property="SortOrder">
+              <Collection>
+                <Record Type="Common.SortOrderType"><PropertyValue Property="Property" PropertyPath="ContactID"/></Record>
+              </Collection>
+            </PropertyValue>
+            <PropertyValue Property="Visualizations"><Collection><AnnotationPath>@UI.LineItem</AnnotationPath></Collection></PropertyValue>
+          </Record>
+        </Annotation>
+        <Annotation Term="UI.LineItem">
+          <Collection>
+            <Record Type="UI.DataField"><PropertyValue Property="Value" Path="ContactUUID"/></Record>
+            <Record Type="UI.DataFieldForAnnotation">
+              <PropertyValue Property="Label" String="{{label:F.ContactName}}"/>
+              <PropertyValue Property="Target" AnnotationPath="@Communication.Contact"/>
+            </Record>
+            <Record Type="UI.DataField"><PropertyValue Property="Value" Path="Supplier"/></Record>
+            <Record Type="UI.DataField"><PropertyValue Property="Value" Path="Email"/></Record>
+            <Record Type="UI.DataField"><PropertyValue Property="Value" Path="Phone"/></Record>
+            <Record Type="UI.DataFieldWithUrl">
+              <PropertyValue Property="Value" Path="Website"/>
+              <PropertyValue Property="Url" Path="Website"/>
+            </Record>
+            <Record Type="UI.DataFieldWithUrl">
+              <PropertyValue Property="Value" Path="Portal"/>
+              <PropertyValue Property="Url" Path="Portal"/>
+              <Annotation Term="HTML5.LinkTarget" String="_blank"/>
+            </Record>
+            <Record Type="UI.DataField"><PropertyValue Property="Value" Path="Iban"/></Record>
+            <Record Type="UI.DataField"><PropertyValue Property="Value" Path="LastContactAt"/></Record>
+            <Record Type="UI.DataField"><PropertyValue Property="Value" Path="TimeZone"/></Record>
+            <Record Type="UI.DataFieldForAnnotation">
+              <PropertyValue Property="Label" String="{{label:F.Score}}"/>
+              <PropertyValue Property="Target" AnnotationPath="@UI.DataPoint#Score"/>
+            </Record>
+            <Record Type="UI.DataFieldForAnnotation">
+              <PropertyValue Property="Label" String="{{label:F.ResponseRate}}"/>
+              <PropertyValue Property="Target" AnnotationPath="@UI.DataPoint#Response"/>
+            </Record>
+            <Record Type="UI.DataField"><PropertyValue Property="Value" Path="SpendAmount"/></Record>
+            <Record Type="UI.DataField"><PropertyValue Property="Value" Path="Quantity"/></Record>
+          </Collection>
+        </Annotation>
+        <Annotation Term="UI.DataPoint" Qualifier="Score">
+          <Record Type="UI.DataPointType">
+            <PropertyValue Property="Title" String="{{label:F.Score}}"/>
+            <PropertyValue Property="Value" Path="Score"/>
+            <PropertyValue Property="ValueFormat">
+              <Record Type="UI.NumberFormat"><PropertyValue Property="NumberOfFractionalDigits" Int="1"/></Record>
+            </PropertyValue>
+          </Record>
+        </Annotation>
+        <Annotation Term="UI.DataPoint" Qualifier="Response">
+          <Record Type="UI.DataPointType">
+            <PropertyValue Property="Title" String="{{label:F.ResponseRate}}"/>
+            <PropertyValue Property="Value" Path="ResponseRate"/>
+            <PropertyValue Property="TargetValue" Int="100"/>
+            <PropertyValue Property="Criticality" Path="ResponseCriticality"/>
+            <PropertyValue Property="Visualization" EnumMember="UI.VisualizationType/Progress"/>
+          </Record>
+        </Annotation>
+        <Annotation Term="Communication.Contact">
+          <Record Type="Communication.ContactType">
+            <PropertyValue Property="fn" Path="FullName"/>
+            <PropertyValue Property="title" Path="JobTitle"/>
+            <PropertyValue Property="org" Path="Department"/>
+            <PropertyValue Property="email">
+              <Collection>
+                <Record Type="Communication.EmailAddressType">
+                  <PropertyValue Property="type" EnumMember="Communication.ContactInformationType/work"/>
+                  <PropertyValue Property="address" Path="Email"/>
+                </Record>
+              </Collection>
+            </PropertyValue>
+            <PropertyValue Property="tel">
+              <Collection>
+                <Record Type="Communication.PhoneNumberType">
+                  <PropertyValue Property="type" EnumMember="Communication.PhoneType/work"/>
+                  <PropertyValue Property="uri" Path="Phone"/>
+                </Record>
+                <Record Type="Communication.PhoneNumberType">
+                  <PropertyValue Property="type" EnumMember="Communication.PhoneType/cell"/>
+                  <PropertyValue Property="uri" Path="Mobile"/>
+                </Record>
+              </Collection>
+            </PropertyValue>
+            <PropertyValue Property="adr">
+              <Collection>
+                <Record Type="Communication.AddressType">
+                  <PropertyValue Property="type" EnumMember="Communication.ContactInformationType/work"/>
+                  <PropertyValue Property="locality" Path="City"/>
+                  <PropertyValue Property="country" Path="Country"/>
+                </Record>
+              </Collection>
+            </PropertyValue>
+          </Record>
+        </Annotation>
+      </Annotations>
+      <Annotations Target="Purchasing.SupplierContact/ContactUUID">
+        <Annotation Term="Common.Label" String="{{label:F.Contact}}"/>
+        <Annotation Term="Common.ExternalID" Path="ContactID"/>
+      </Annotations>
+      <Annotations Target="Purchasing.SupplierContact/ContactID">
+        <Annotation Term="Common.Label" String="{{label:F.ContactID}}"/>
+      </Annotations>
+      <Annotations Target="Purchasing.SupplierContact/Supplier">
+        <Annotation Term="Common.Label" String="{{label:F.Supplier}}"/>
+        <Annotation Term="Common.Text" Path="_Supplier/SupplierName">
+          <Annotation Term="UI.TextArrangement" EnumMember="UI.TextArrangementType/TextFirst"/>
+        </Annotation>
+      </Annotations>
+      <Annotations Target="Purchasing.SupplierContact/FullName">
+        <Annotation Term="Common.Label" String="{{label:F.ContactName}}"/>
+      </Annotations>
+      <Annotations Target="Purchasing.SupplierContact/JobTitle">
+        <Annotation Term="Common.Label" String="{{label:F.JobTitle}}"/>
+      </Annotations>
+      <Annotations Target="Purchasing.SupplierContact/Department">
+        <Annotation Term="Common.Label" String="{{label:F.Department}}"/>
+      </Annotations>
+      <Annotations Target="Purchasing.SupplierContact/Email">
+        <Annotation Term="Common.Label" String="{{label:F.Email}}"/>
+        <Annotation Term="Communication.IsEmailAddress" Bool="true"/>
+      </Annotations>
+      <Annotations Target="Purchasing.SupplierContact/Phone">
+        <Annotation Term="Common.Label" String="{{label:F.Phone}}"/>
+        <Annotation Term="Communication.IsPhoneNumber" Bool="true"/>
+      </Annotations>
+      <Annotations Target="Purchasing.SupplierContact/Mobile">
+        <Annotation Term="Common.Label" String="{{label:F.Mobile}}"/>
+        <Annotation Term="Communication.IsPhoneNumber" Bool="true"/>
+      </Annotations>
+      <Annotations Target="Purchasing.SupplierContact/City">
+        <Annotation Term="Common.Label" String="{{label:F.City}}"/>
+      </Annotations>
+      <Annotations Target="Purchasing.SupplierContact/Country">
+        <Annotation Term="Common.Label" String="{{label:F.Country}}"/>
+      </Annotations>
+      <Annotations Target="Purchasing.SupplierContact/Website">
+        <Annotation Term="Common.Label" String="{{label:F.Website}}"/>
+      </Annotations>
+      <Annotations Target="Purchasing.SupplierContact/Portal">
+        <Annotation Term="Common.Label" String="{{label:F.Portal}}"/>
+      </Annotations>
+      <Annotations Target="Purchasing.SupplierContact/Iban">
+        <Annotation Term="Common.Label" String="{{label:F.Iban}}"/>
+        <Annotation Term="Common.Masked" Bool="true"/>
+      </Annotations>
+      <Annotations Target="Purchasing.SupplierContact/LastContactAt">
+        <Annotation Term="Common.Label" String="{{label:F.LastContactAt}}"/>
+        <Annotation Term="Common.Timezone" Path="TimeZone"/>
+      </Annotations>
+      <Annotations Target="Purchasing.SupplierContact/TimeZone">
+        <Annotation Term="Common.Label" String="{{label:F.TimeZone}}"/>
+        <Annotation Term="Common.IsTimezone" Bool="true"/>
+      </Annotations>
+      <Annotations Target="Purchasing.SupplierContact/Score">
+        <Annotation Term="Common.Label" String="{{label:F.Score}}"/>
+      </Annotations>
+      <Annotations Target="Purchasing.SupplierContact/ResponseRate">
+        <Annotation Term="Common.Label" String="{{label:F.ResponseRate}}"/>
+        <Annotation Term="Measures.Unit" String="%"/>
+      </Annotations>
+      <Annotations Target="Purchasing.SupplierContact/ResponseCriticality">
+        <Annotation Term="Common.Label" String="{{label:F.ResponseCriticality}}"/>
+      </Annotations>
+      <Annotations Target="Purchasing.SupplierContact/SpendAmount">
+        <Annotation Term="Common.Label" String="{{label:F.SpendAmount}}"/>
+        <Annotation Term="Measures.ISOCurrency" Path="Currency"/>
+      </Annotations>
+      <Annotations Target="Purchasing.SupplierContact/Currency">
+        <Annotation Term="Common.Label" String="{{label:F.Currency}}"/>
+      </Annotations>
+      <Annotations Target="Purchasing.SupplierContact/Quantity">
+        <Annotation Term="Common.Label" String="{{label:F.Quantity}}"/>
+        <Annotation Term="Measures.Unit" Path="Unit"/>
+      </Annotations>
+      <Annotations Target="Purchasing.SupplierContact/Unit">
+        <Annotation Term="Common.Label" String="{{label:F.Unit}}"/>
+      </Annotations>
+      <!-- =========================================================== end of stage 4 value display -->
     </Schema>
   </edmx:DataServices>
 </edmx:Edmx>

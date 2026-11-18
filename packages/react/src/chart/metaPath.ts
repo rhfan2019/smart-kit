@@ -3,7 +3,7 @@
  * and the annotation path ("@com.sap.vocabularies.UI.v1.Chart#Q", alias "@UI.Chart#Q", optionally after a navigation:
  * "_Items/@UI.Chart#Q").
  */
-import type { ChartModel, MetaModel } from '@rhfan2019/smart-kit-core';
+import type { ChartModel, MetaModel, PresentationModel } from '@rhfan2019/smart-kit-core';
 
 const UI_NAMESPACE = 'com.sap.vocabularies.UI.v1.';
 
@@ -48,10 +48,27 @@ export function resolveChartMetaPath(model: MetaModel, typeName: string, metaPat
   if (!ui) return undefined;
   let chart: ChartModel | undefined;
   if (term === 'Chart') chart = ui.charts[qualifier];
+  else if ((term === 'SelectionPresentationVariant' || term === 'PresentationVariant') && !qualifier && ui.defaultChart !== undefined) chart = ui.charts[ui.defaultChart];
   else if (term === 'SelectionPresentationVariant') chart = ui.views.find((v) => v.id === qualifier)?.chart;
   else if (term === 'PresentationVariant') {
     const q = ui.presentationVariants[qualifier]?.chartQualifier;
     chart = q !== undefined ? ui.charts[q] : undefined;
   }
   return chart && navigation ? { ...chart, navigation } : chart;
+}
+
+/**
+ * The presentation whose SortOrder sorts the chart: only when the metaPath is a UI.PresentationVariant or
+ * UI.SelectionPresentationVariant (FE ChartHelper getSortConditions with `_isPresentationVariantAnnotation`); an
+ * unqualified one is the list's default presentation when it shows a chart.
+ */
+export function resolveChartPresentation(model: MetaModel, typeName: string, metaPath: string): PresentationModel | undefined {
+  const { navigation, term, qualifier } = splitMetaPath(metaPath);
+  if (navigation) return undefined;
+  const ui = model.ui[typeName];
+  if (!ui) return undefined;
+  if ((term === 'SelectionPresentationVariant' || term === 'PresentationVariant') && !qualifier && ui.defaultChart !== undefined) return ui.presentation;
+  if (term === 'SelectionPresentationVariant') return ui.views.find((v) => v.id === qualifier)?.presentation;
+  if (term === 'PresentationVariant') return ui.presentationVariants[qualifier]?.presentation;
+  return undefined;
 }

@@ -324,10 +324,11 @@ export function generatePurchasing() {
   }
   const MaterialPrices = Object.fromEntries(materials.map((m) => [m.m.Material, m.priceEur]));
   const SupplierMeetings = generateMeetings(Suppliers);
+  const SupplierContacts = generateContacts(Suppliers);
 
   return {
     OrderStatuses, PurchaseOrderTypes, Suppliers, Materials: materials.map((m) => m.m), Plants,
-    PurchaseOrders, PurchaseOrderItems, PricingConditions, ItemHistory, Variants: [], MaterialPrices, SupplierMeetings,
+    PurchaseOrders, PurchaseOrderItems, PricingConditions, ItemHistory, Variants: [], MaterialPrices, SupplierMeetings, SupplierContacts,
     CostCenters: generateCostCenters(),
   };
 }
@@ -359,6 +360,61 @@ function generateMeetings(suppliers) {
         Location: f.pick(['Room A', 'Room B', 'Online', sup.City]), Category: cat, CategoryName: en,
       });
       hour = end.getUTCHours() + 1 + f.next(2);
+    }
+  }
+  return rows;
+}
+
+// ---- stage 4 value display (docs/29 §5, tests/e2e-fe/display4.spec.ts): supplier contacts with an own seed
+const CONTACT_ZONES = ['Europe/Berlin', 'America/New_York', 'Asia/Tokyo', 'Europe/London', 'Asia/Shanghai'];
+const CONTACT_TITLES = ['Sales Manager', 'Account Executive', 'Key Account Manager', 'Customer Service Lead', 'Logistics Coordinator'];
+const CONTACT_DEPARTMENTS = ['Sales', 'Customer Service', 'Logistics', 'Quality'];
+const CONTACT_CURRENCIES = ['EUR', 'USD', 'JPY', 'GBP', 'CNY'];
+
+/**
+ * Supplier contacts (value display, docs/29 §5): one or two per supplier of the first 30, with an own seed so the
+ * other data sets are unchanged. Key is a GUID with a readable ContactID (Common.ExternalID).
+ */
+function generateContacts(suppliers) {
+  const f = new Fake(20261118);
+  const rows = [];
+  let n = 0;
+  for (const sup of suppliers.slice(0, 30)) {
+    const count = 1 + f.next(2);
+    for (let k = 0; k < count; k++) {
+      n++;
+      const first = f.firstName();
+      const last = f.lastName();
+      const slug = sup.SupplierName.toLowerCase().replace(/[^a-z0-9]+/g, '').slice(0, 16);
+      const hex = (v, len) => v.toString(16).padStart(len, '0');
+      const zone = f.pick(CONTACT_ZONES);
+      const at = new Date(Date.UTC(2026, 9, 1 + f.next(44), 6 + f.next(10), f.pick([0, 15, 30, 45])));
+      const currency = f.pick(CONTACT_CURRENCIES);
+      rows.push({
+        ContactUUID: `5c0a${hex(n, 4)}-0d4e-4f00-8a00-${hex(n * 7919, 12)}`,
+        ContactID: `C${String(n).padStart(6, '0')}`,
+        Supplier: sup.Supplier,
+        FullName: `${first} ${last}`,
+        JobTitle: f.pick(CONTACT_TITLES),
+        Department: f.pick(CONTACT_DEPARTMENTS),
+        Email: `${first}.${last}@${slug}.example`.toLowerCase(),
+        Phone: f.phone(),
+        Mobile: f.phone(),
+        City: sup.City,
+        Country: sup.Country,
+        Website: `https://www.${slug}.example/`,
+        Portal: `https://portal.${slug}.example/contacts/${n}`,
+        Iban: `DE${String(10 + f.next(89))}${String(f.between(10000000, 99999999))}${String(f.between(1000000000, 9999999999))}`,
+        LastContactAt: at.toISOString().replace('.000Z', 'Z'),
+        TimeZone: zone,
+        Score: round(1 + f.double() * 4, 3),
+        ResponseRate: round(f.double() * 100, 1),
+        ResponseCriticality: f.pick([1, 2, 3, 0]),
+        SpendAmount: round(f.double() * 50000, currency === 'JPY' ? 0 : 2),
+        Currency: currency,
+        Quantity: round(f.double() * 500, 3),
+        Unit: f.pick(['PC', 'KG', 'M']),
+      });
     }
   }
   return rows;

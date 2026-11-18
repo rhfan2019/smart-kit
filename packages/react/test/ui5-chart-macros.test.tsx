@@ -16,6 +16,7 @@ const xml = `<?xml version="1.0"?>
 <edmx:Edmx Version="4.0" xmlns:edmx="http://docs.oasis-open.org/odata/ns/edmx">
   <edmx:Reference Uri="u"><edmx:Include Namespace="com.sap.vocabularies.UI.v1" Alias="UI"/></edmx:Reference>
   <edmx:Reference Uri="m"><edmx:Include Namespace="Org.OData.Measures.V1" Alias="Measures"/></edmx:Reference>
+  <edmx:Reference Uri="a"><edmx:Include Namespace="Org.OData.Aggregation.V1" Alias="Aggregation"/></edmx:Reference>
   <edmx:DataServices><Schema xmlns="http://docs.oasis-open.org/odata/ns/edm" Namespace="T">
 <EntityType Name="Order"><Key><PropertyRef Name="ID"/></Key><Property Name="ID" Type="Edm.String" Nullable="false"/><Property Name="Status" Type="Edm.String"/>
   <Property Name="Amount" Type="Edm.Decimal" Scale="0"/><Property Name="Budget" Type="Edm.Decimal" Scale="0"/><Property Name="Currency" Type="Edm.String"/>
@@ -24,6 +25,8 @@ const xml = `<?xml version="1.0"?>
 <EntityContainer Name="C"><EntitySet Name="Orders" EntityType="T.Order"><NavigationPropertyBinding Path="Items" Target="Items"/></EntitySet><EntitySet Name="Items" EntityType="T.Item"/></EntityContainer>
 <Annotations Target="T.Order/Amount"><Annotation Term="Measures.ISOCurrency" Path="Currency"/></Annotations>
 <Annotations Target="T.Order">
+  <!-- stage 4: FE renders a chart only with Aggregation.ApplySupported (Chart createChartVisualization) -->
+  <Annotation Term="Aggregation.ApplySupported"><Record><PropertyValue Property="Transformations"><Collection><String>filter</String><String>groupby</String><String>aggregate</String></Collection></PropertyValue></Record></Annotation>
   <Annotation Term="UI.DataPoint" Qualifier="Amount"><Record><PropertyValue Property="Value" Path="Amount"/><PropertyValue Property="TargetValue" Path="Budget"/></Record></Annotation>
   <Annotation Term="UI.Chart" Qualifier="ByStatus"><Record><PropertyValue Property="Title" String="Amount by status"/><PropertyValue Property="ChartType" EnumMember="UI.ChartType/Column"/>
     <PropertyValue Property="Dimensions"><Collection><PropertyPath>Status</PropertyPath></Collection></PropertyValue><PropertyValue Property="Measures"><Collection><PropertyPath>Amount</PropertyPath></Collection></PropertyValue></Record></Annotation>

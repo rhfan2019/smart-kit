@@ -155,3 +155,19 @@ smart-kit 按铁律（ADR-033）改名、改属性、改行为时不保留旧名
 | 3 | 多币种合计按币种分行 | 显示一个值加"显示详细信息"链接，点开弹出框（"总计" / "小计"）每个币种一行 | 请求：总计 `aggregate(M,Currency)`，小计的币种不进 `groupby`；服务要能在 `aggregate()` 里接受单位（相同则为该值，否则 null） |
 | 3 | 列表页图表 | 全部维度和度量；按单位分组，多币种时显示"Invalid data"（不再把不同币种相加）；不再按维度排序；导航上的文本不进分组，类别显示代码 | 行为 |
 | 3 | core 新导出 | `buildChartRequest`、`aggregateMeasure`、`isCustomAggregate`、`editStateFilter` 等；`AggregateMeasure.with` 可选；`TotalsRequestOptions.byUnit`、`TotalAmount.multiUnit`、`PresentationModel.hasTotal`；`ValueListModel.searchSupported` 缺省 true | |
+| 4 | 列表页的列 | 内联动作每个一列（列名隐藏，不可用时禁用而不是隐藏），原来的"动作"列没有了；指向 DataPoint 的列用值的 `Common.Label`；没写 Label 的微图列显示 FE 的键；FieldGroup 上下排列不带标签；`ConnectedFields`、`Contact` 弹出框、`DataFieldWithAction`（链接执行动作）、`DataFieldWithNavigationPath`；`HTML5.CssDefaults/width` 是列宽；个性化里能加全部属性（分组选项也包括这些属性） | 行为 |
+| 4 | 行高亮、单元格颜色 | 行高亮读 LineItem 上的 `UI.Criticality`；属性上的 `UI.Criticality` 不再给单元格上色（D41）；VeryPositive / VeryNegative 不上色 | 行为；`PropertyModel.criticality` 删除 |
+| 4 | 表格工具栏动作 | 按注解顺序；没写锚点的自定义动作在新建之前（原来在最后）；然后新建、复制（`UI.IsCopyAction`）、删除；`DataFieldForActionGroup` 菜单总是可用；Determining 动作不进列表工具栏；`CreateHidden` / `DeleteHidden` 常量、`DeleteRestrictions/Deletable` 路径按行；`Common.IsActionCritical` 先确认；删除确认用 FE 的文字 | 行为。非草稿列表页仍有新建（长期偏差，D42 补记） |
+| 4 | 筛选条件：`FilterExpressionRestrictions` | 同一属性多条时取最严格的一条；运算符按 FE（MultiRange 没有"包含"，数值没有"空"，SingleRange 允许"不等于"）；单值字段输入新值时替换旧值 | 行为；`filterExpressionRules`、`restrictConditions` 多一个 Edm 类型参数 |
+| 4 | 日期筛选 | FE 的全部语义日期运算符（DATE、FROM、TO、DATERANGE、各季度、FIRSTDAY / LASTDAY、天周月季年的 LAST / NEXT …）；相对日期一律生成 BT（今天 = `ge d and le d`）；`$filter` 里的 BT 不再带括号；一周起始日跟随语言（en-US 周日）；令牌文字用 DynamicDateRange 的文本 | 行为；保存的视图里的运算符照旧可用 |
+| 4 | `UI.HiddenFilter`、`UI.Hidden` 的默认条件 | HiddenFilter 的条件生效但不显示字段；**`UI.Hidden` 属性上的 SV 默认条件不再生效**（FE 不发） | 行为 |
+| 4 | `Capabilities.FilterFunctions` 含 `tolower` | 文本条件生成 `tolower(P) eq tolower('x')`，MemoryProvider 也不区分大小写 | 行为 |
+| 4 | 值帮助 | 带限定符的多个 ValueList（按 `ValueListRelevantQualifiers`）可切换；描述列取值帮助主键上的 `Common.Text`，没有文本时描述为空（不再取第一个 DisplayOnly 参数）；对话框每页 64 行，按值帮助实体的 PV 排序，搜索时不排序；类型提示不再默认按键排序，延迟 300ms；没有文本的令牌去读描述；TextSeparate 的令牌只显示代码 | 行为；`buildValueHelpRequest` 新参数 `purpose` |
+| 4 | `Common.IsUpperCase`、`Core.IsURL` | 不再处理（D41）：输入不转大写；值不显示为链接（要链接用 `UI.DataFieldWithUrl`） | `PropertyModel.isUpperCase`、`isUrl` 删除 |
+| 4 | 值的显示 | 邮件、电话是 `mailto:` / `tel:` 链接；`DataFieldWithUrl` 默认在当前窗口打开（按 `HTML5.LinkTarget`），支持 `IconUrl`；`Common.ExternalID`、`Common.Masked`（显示为星号）、`Common.Timezone`、流属性（链接）、`NumberOfFractionalDigits`；进度条文字按 FE（"52.2 %"，中文"第 x 个，共 y 个"）；快速视图按 FE 的规则（只有文本加导航不再出快速视图）；语义对象链接的目标由宿主的 `NavigationAdapter.semanticTargets` 给（D42） | 行为 |
+| 4 | 请求 | `$expand` 的导航选上目标实体的键（`_Supplier($select=SupplierName,Rating,Supplier)`）；列表不再选 ETag 属性（靠 `@odata.etag`）；TextSeparate 的文本不请求；固定值列表用到时才读 | 自己写的服务要在实体里返回 `@odata.etag` |
+| 4 | 列表页表格和视图 | 默认 PV 里 LineItem 的选择按 SPV → PV → LineItem；PV 第一个可视化是 Chart 时只显示图表；视图没写排序时不再用默认 PV 的排序，视图自己的 `RequestAtLeast` 生效；视图 PV 里有 Chart 时不再自动出现表格 / 图表切换 | 行为 |
+| 4 | 图表 | 类型按 FE 的 38 种映射，`data-sk-chart` 的值是 sap.chart 的名字（`stacked_column`、`line`、`donut`…）；标题只取 `UI.Chart/Title`；按 PV 的 SortOrder 排序；`Chart.Actions`（非绑定）；没有 `ApplySupported` 的实体不显示图表 | 行为；部分类型（双轴、组合、散点、气泡、热图、树图、瀑布、子弹）是近似画法 |
+| 4 | 不设 `type` 的表格 | 按注解自动选：`ApplySupported` 齐全 → AnalyticalTable；成对的 `RecursiveHierarchy` → TreeTable，默认展开 `InitialExpansionLevel` + 1 层 | 行为（FE 默认 ResponsiveTable 的问题在阶段 5 定） |
+| 4 | `UI.KPI` | 列表页标题旁的 KPI 标签（`v4/fe/macros/KPITag`）；模板新属性 `keyPerformanceIndicators`（阶段 5 按 manifest 改名） | 新增 |
+| 4 | core 新导出 | `strictestExpression`、`ALLOWED_EXPRESSIONS_PRIORITY`、`relativeDateValueTypes`、`COUNT_DATE_OPERATORS`、`FIXED_DAY_OPERATORS`、`MDC_DATE_OPERATORS`、`setDefaultWeekStart`、`formatDateTimeWithTimezone`、`formatTimezone`；`PropertyModel.valueLists`、`capabilities.caseInsensitive`、`QueryRequest.caseInsensitive` 等（见 `packages/core/docs/reference.md`） | 新增 |

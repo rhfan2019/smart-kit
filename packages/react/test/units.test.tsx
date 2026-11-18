@@ -31,7 +31,7 @@ describe('typed conditions', () => {
     expect(parseConditionText('*pen*', product.properties.Name)).toEqual({ operator: 'Contains', values: ['pen'] });
     expect(parseConditionText('ab*', product.properties.Name)).toEqual({ operator: 'StartsWith', values: ['ab'] });
     expect(parseConditionText('!(=X)', product.properties.Status)).toEqual({ operator: 'EQ', values: ['X'], exclude: true });
-    expect(parseConditionText('p1', product.properties.Code)).toEqual({ operator: 'EQ', values: ['P1'] }); // IsUpperCase
+    expect(parseConditionText('p1', product.properties.Code)).toEqual({ operator: 'EQ', values: ['p1'] }); // Common.IsUpperCase not applied (D41)
     expect(conditionText({ operator: 'EQ', values: ['C1'], text: 'Office' }, product.properties.CategoryID, 'en-US')).toBe('Office (C1)');
     expect(conditionText({ operator: 'BT', values: ['1000', '2000'] }, product.properties.Price, 'en-US')).toBe('1,000.00...2,000.00');
     expect(conditionText({ operator: 'EQ', values: ['X'], exclude: true }, product.properties.Status, 'en-US')).toBe('!(=X)');

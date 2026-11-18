@@ -45,6 +45,7 @@ import { InlineCreateRow } from './InlineCreateRow';
 import { groupValueOf, Table as MTable, type $ColumnSettings as MColumn, type PopinLayout, type Priority } from './ResponsiveTable';
 import { MultiUnitTotal, TotalLines, useGrandTotals, useSubtotals, useTotalFormatter } from './useTotals';
 import { TreeCell, useTree, useTreeState, type TreeMethods, type TreeTable$ToggleOpenStateEvent } from './tree';
+import { specialCell, type CellEnv } from './cells';
 
 let gridModulesRegistered = false;
 
@@ -72,6 +73,10 @@ export interface ColumnItem {
   align?: 'Begin' | 'Center' | 'End';
   /** Not exported to the spreadsheet. */
   disableExport?: boolean;
+  /** The header text is hidden (FE headerVisible false: inline action columns). */
+  headerHidden?: boolean;
+  /** Offered in the personalization only (FE availability "Adaptation": entity properties outside the LineItem). */
+  adaptation?: boolean;
 }
 
 /** A toolbar action (annotation or custom); the internal form of `actions` and `extend`. */
@@ -85,6 +90,10 @@ export interface ActionItem {
   enabled?(selected: Row[]): boolean;
   /** Menu button the action belongs to (similar actions grouped, LR Table Toolbar). */
   group?: string;
+  /** A menu button with these items (UI.DataFieldForActionGroup, `actionGroups`); always enabled as in FE. */
+  menu?: ActionItem[];
+  /** Kept for positioning only (FE templates the standard action but it is not shown). */
+  hidden?: boolean;
 }
 
 /** Menu button grouping annotation and custom actions by id (smart-kit addition). */
@@ -371,7 +380,7 @@ export interface $TreeTableSettings extends Omit<$TableSettings, 'type' | 'ref' 
   type?: 'TreeTable';
   /** Qualifier of Aggregation.RecursiveHierarchy (default: the type's first hierarchy; without one it is a plain table). */
   hierarchyQualifier?: string;
-  /** Levels shown at first (default 1: the roots); `collapseAll` goes back to the roots (smart-kit addition). */
+  /** Levels shown at first (default: UI.PresentationVariant/InitialExpansionLevel + 1, as FE, else 1: the roots); `collapseAll` goes back to the roots (smart-kit addition). */
   initialExpansionLevel?: number;
   /** Leaves (nodes without children) cannot be selected. Default false. */
   disableLeafSelection?: boolean;
@@ -522,7 +531,7 @@ function TitlePart() {
 }
 
 function ActionsPart() {
-  const { actions, ctx, p, width } = useInternal();
+  const { actions, ctx, width } = useInternal();
   const t = useText();
   // Narrow tables (e.g. the first column of a flexible column layout) move actions into "More" earlier.
   const INLINE = width < 560 ? 0 : width < 900 ? 2 : 4;
@@ -530,28 +539,29 @@ function ActionsPart() {
     const disabled = (a.requiresSelection && ctx.selected.length === 0) || (a.enabled ? !a.enabled(ctx.selected) : false);
     return { disabled, onPress: () => a.onPress(ctx) };
   };
-  // Similar actions are grouped into menu buttons (LR Table Toolbar).
-  const groups = (p.actionGroups ?? []).map((g) => ({ g, items: actions.filter((a) => a.group === g.id || g.actions.includes(a.id)) })).filter((x) => x.items.length);
-  const grouped = new Set(groups.flatMap((x) => x.items.map((a) => a.id)));
-  const single = actions.filter((a) => !grouped.has(a.id));
-  const inline = single.slice(0, INLINE);
-  const overflow = single.slice(INLINE);
+  // Menu buttons (UI.DataFieldForActionGroup, `actionGroups`) stand at their position and are always enabled; their
+  // items are enabled by the selection (FE ActionsTemplating getMenuButton: `enabled` of the menu itself).
+  const shown = actions.filter((a) => !a.hidden && (!a.menu || a.menu.length));
+  const inline = shown.slice(0, INLINE);
+  const overflow = shown.slice(INLINE).flatMap((a) => a.menu ?? [a]);
   return (
     <>
       {inline.map((a) => {
+        if (a.menu) {
+          return (
+            <Menu key={a.id} position="bottom-end">
+              <Menu.Target>
+                <Button variant="subtle" rightSection={<ChevronDown className="sk-icon" />} data-sk-action-group={a.id}>{a.label}</Button>
+              </Menu.Target>
+              <Menu.Dropdown>
+                {a.menu.map((m) => { const b = btn(m); return <Menu.Item key={m.id} disabled={b.disabled} onClick={b.onPress} data-sk-action={m.id}>{m.label}</Menu.Item>; })}
+              </Menu.Dropdown>
+            </Menu>
+          );
+        }
         const b = btn(a);
         return <Button key={a.id} variant="subtle" disabled={b.disabled} onClick={b.onPress} data-sk-action={a.id}>{a.label}</Button>;
       })}
-      {groups.map(({ g, items }) => (
-        <Menu key={g.id} position="bottom-end">
-          <Menu.Target>
-            <Button variant="subtle" rightSection={<ChevronDown className="sk-icon" />} disabled={items.every((a) => btn(a).disabled)} data-sk-action-group={g.id}>{g.label}</Button>
-          </Menu.Target>
-          <Menu.Dropdown>
-            {items.map((a) => { const b = btn(a); return <Menu.Item key={a.id} disabled={b.disabled} onClick={b.onPress} data-sk-action={a.id}>{a.label}</Menu.Item>; })}
-          </Menu.Dropdown>
-        </Menu>
-      ))}
       {overflow.length ? (
         <Menu position="bottom-end">
           <Menu.Target>
@@ -725,7 +735,6 @@ function TableCore(p: CoreSettings) {
   // Tree table (docs/26 §3.10): no grouping, no totals, no paging.
   const hierarchy = p.tree ? hierarchyOf(model, info.typeName, p.hierarchyQualifier) : undefined;
   const isTree = Boolean(hierarchy);
-  const treeState = useTreeState(p.initialExpansionLevel ?? 1);
   const messages = useMessages();
   const draftRoot = !parent && Boolean(model.entitySets[info.entitySet]?.draft?.root);
   // Draft root or node list (FE isObjectPathDraftSupported, outside an object page).
@@ -747,8 +756,29 @@ function TableCore(p: CoreSettings) {
     return keep(ui.lineItem);
   }, [Boolean(parent), meta, ui, model, info, ignored]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Cells of special column types run actions and navigate through the latest handlers (set below).
+  const cellEnvRef = useRef<CellEnv>({ typeName: info.typeName, service: p.service, run: () => undefined, navigate: () => undefined });
   const allColumns = useMemo(() => {
-    const base: ColumnItem[] = lineItem.map((f) => ({ id: f.id, label: f.label, field: f }));
+    const base: ColumnItem[] = lineItem.map((f) => {
+      const special = f.kind === 'fieldGroup' || f.kind === 'connectedFields' || f.kind === 'contact' || f.kind === 'action' || (f.kind === 'field' && Boolean(f.action || f.navigationPath));
+      return {
+        id: f.id,
+        // FE Columns: an inline action column is labelled "Inline Action" (header hidden)
+        label: f.kind === 'action' ? t('table.inlineAction') : f.label,
+        field: f,
+        ...(f.width ? { width: pxWidth(f.width) } : {}),
+        ...(f.kind === 'action' ? { headerHidden: true, disableExport: true } : {}),
+        ...(special ? { render: (row: Row) => specialCell(cellEnvRef.current, f, row) ?? null } : {}),
+      };
+    });
+    // FE getColumnsFromEntityType: the other properties of the type, not hidden, are columns for the personalization
+    // (availability "Adaptation"), shown only when added there.
+    const used = new Set(lineItem.flatMap((f) => (f.kind === 'dataPoint' ? [f.dataPoint!.value] : f.path ? [f.path] : [])));
+    for (const name of type.propertyOrder) {
+      const prop = type.properties[name]!;
+      if (used.has(name) || prop.hidden || ['IsActiveEntity', 'HasActiveEntity', 'HasDraftEntity'].includes(name) || prop.edmType === 'Edm.Stream') continue;
+      base.push({ id: name, label: prop.label, field: { id: name, kind: 'field', path: name, label: prop.label, criticalityIcon: true, isSemanticKey: ui.semanticKey.includes(name) }, adaptation: true });
+    }
     // `columns` (sap.fe.macros.table.Column) first, then `extend`.
     const custom: ExtendEntry<ColumnItem>[] = (p.columns ?? []).map((c) => ({
       id: c.key, position: c.anchor ? (c.placement === 'Before' ? 'before' : 'after') : 'end', anchor: c.anchor,
@@ -760,26 +790,32 @@ function TableCore(p: CoreSettings) {
     const colExt = (p.extend ?? []).filter((e) => e.kind !== 'action') as ExtendEntry<ColumnItem>[];
     const out = applyExtensions(applyExtensions(base, custom, 'Table columns'), colExt, 'Table extend');
     return Object.keys(labels).length ? out.map((c) => (labels[c.id] ? { ...c, label: labels[c.id]! } : c)) : out;
-  }, [lineItem, p.columns, p.extend, labels]);
+  }, [lineItem, p.columns, p.extend, labels, type, t]); // eslint-disable-line react-hooks/exhaustive-deps
   const modelActions: ActionModel[] = ui.actions;
-  const inlineActions = modelActions.filter((a) => a.inline);
   const creationName = p.creationMode?.name;
   const createMode = p.creationMode?.enabled === false ? 'none' : creationName === 'CreationDialog' ? 'dialog' : creationName === 'Inline' || creationName === 'InlineCreationRows' ? 'inline' : parent ? 'inline' : 'dialog';
-  const canCreate = createMode !== 'none' && caps.insertable && (!parent || editing) && Boolean(service.dataProvider.create);
-  const canDelete = (!parent || editing) && caps.deletable && Boolean(service.dataProvider.remove);
+  // UI.CreateHidden / UI.DeleteHidden (FE StandardActions): a constant hides the button; a path is read from the parent
+  // context, which a list does not have (the button stays).
+  const hiddenBy = (r: { value: unknown } | { path: string } | undefined) => Boolean(r && 'value' in r && r.value === true);
+  const canCreate = createMode !== 'none' && caps.insertable && !hiddenBy(caps.createHidden) && (!parent || editing) && Boolean(service.dataProvider.create);
+  const canDelete = (!parent || editing) && caps.deletable && !hiddenBy(caps.deleteHidden) && Boolean(service.dataProvider.remove);
+  /** DeleteRestrictions/Deletable as a path: only rows where it is not false are deleted (FE deletableContexts). */
+  const isDeletable = (row: Row) => !caps.deletablePath || getPath(row, caps.deletablePath) !== false;
   const [creating, setCreating] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState<Row[] | null>(null);
 
   const stateKey = p.pageKey && !p.ignorePersonalizationChanges ? `${p.pageKey}:table` : undefined;
   const firstPage = p.threshold ?? 10;
   const growSize = p.threshold ?? 20;
-  const [own, setOwn] = usePageState<{ columns: string[]; known?: string[]; sort?: SortItem[]; search: string; loaded: number; groupBy?: string | null; totals?: string[]; details?: boolean }>(stateKey, () => ({ columns: allColumns.map((c) => c.id), search: '', loaded: firstPage }));
+  const [own, setOwn] = usePageState<{ columns: string[]; known?: string[]; sort?: SortItem[]; search: string; loaded: number; groupBy?: string | null; totals?: string[]; details?: boolean }>(stateKey, () => ({ columns: allColumns.filter((c) => !c.adaptation).map((c) => c.id), search: '', loaded: firstPage }));
   const visibleIds = (p.visibleColumns ?? own.columns).filter((id) => allColumns.some((c) => c.id === id));
   // Columns added by extensions after the state was stored are shown too.
   const known = new Set([...(own.known ?? own.columns), ...(p.visibleColumns ?? [])]);
-  const visible = [...visibleIds, ...allColumns.filter((c) => !known.has(c.id) && !p.visibleColumns).map((c) => c.id)];
+  const visible = [...visibleIds, ...allColumns.filter((c) => !c.adaptation && !known.has(c.id) && !p.visibleColumns).map((c) => c.id)];
   const setVisibleIds = (ids: string[]) => { if (!p.visibleColumns) setOwn((s) => ({ ...s, columns: ids, known: allColumns.map((c) => c.id) })); p.onVisibleColumnsChange?.(ids); };
   const presentation = meta.presentation ?? ui.presentation;
+  // Tree tables: PV InitialExpansionLevel n shows n + 1 levels (FE Table getInitialExpansionLevel); default the roots.
+  const treeState = useTreeState(p.initialExpansionLevel ?? (presentation.initialExpansionLevel !== undefined ? presentation.initialExpansionLevel + 1 : 1));
   const baseSort = p.sort ?? own.sort ?? presentation.sortOrder;
   const setSort = (s: SortItem[]) => { if (!p.sort) setOwn((x) => ({ ...x, sort: s })); p.onSortChange?.(s); };
   const search = own.search;
@@ -788,7 +824,13 @@ function TableCore(p: CoreSettings) {
   const visibleColumns = visible.map((id) => allColumns.find((c) => c.id === id)!).filter(Boolean);
   const fields = visibleColumns.map((c) => c.field).filter((f): f is FieldModel => Boolean(f));
   const draftFields = draftList ? draftPaths(model, type, draftRoot, isTree) : [];
-  const extraSelect = [...visibleColumns.flatMap((c) => c.select ?? []), ...actionPaths(modelActions), ...draftFields, ...(type.etag ? [type.etag] : [])];
+  // LineItem@UI.Criticality: the row highlight (FE Table getHighlightRowBinding, TableFormatter rowHighlighting).
+  const lineItemQualifier = p.metaPath && parseAnnotationPath(p.metaPath).term === 'LineItem' ? parseAnnotationPath(p.metaPath).qualifier : '';
+  const highlightRef = ui.rowHighlight?.[lineItemQualifier];
+  const extraSelect = [...visibleColumns.flatMap((c) => c.select ?? []), ...actionPaths(modelActions), ...draftFields,
+    ...(highlightRef && 'path' in highlightRef ? [highlightRef.path] : []), ...(caps.deletablePath ? [caps.deletablePath] : [])];
+  // The ETag property (Core.OptimisticConcurrency) is not selected: the service returns `@odata.etag` with every entity,
+  // and the OData V4 model of Fiori elements does not add it to $select either (DV-FE-02).
   // D39 (FE updateTableVisualizationForType, getP13nMode): only the analytical table (type "AnalyticalTable" on an
   // entity set with Aggregation.ApplySupported) groups with subtotals and shows totals; the responsive table groups
   // without subtotals (FE groupConditions, p13n "Group"); the grid table neither groups nor totals.
@@ -835,7 +877,7 @@ function TableCore(p: CoreSettings) {
   const infinite = mode === 'grid' && !gridGrouped && !isTree;
   const sort = useMemo(() => (groupPath ? [{ path: groupPath, descending: false }, ...baseSort.filter((x) => x.path !== groupPath)] : baseSort), [groupPath, JSON.stringify(baseSort)]); // eslint-disable-line react-hooks/exhaustive-deps
   const list = useListQuery({
-    service: p.service, source, columns: fields, filters, search: effectiveSearch, sort, extraSelect,
+    service: p.service, source, columns: fields, filters, search: effectiveSearch, sort, extraSelect, requestAtLeast: meta.presentation?.requestAtLeast,
     pageSize: gridGrouped ? GRID_GROUP_BLOCK : responsive ? p.threshold ?? 20 : Math.max(firstPage, own.loaded),
     growSize: gridGrouped ? GRID_GROUP_BLOCK : responsive ? p.threshold ?? 20 : growSize,
     enabled: !infinite && executed,
@@ -1014,6 +1056,12 @@ function TableCore(p: CoreSettings) {
   const targetOf = useCallback((row: Row) => ({ row, path: pathOf(row), label: semanticKey.map((k) => String(row[k] ?? '')).join(' / ') }), [pathOf, semanticKey]);
   const afterAction = (r: ActionResult) => {
     if (!r.processed.length) return;
+    // UI.IsCopyAction: the copy is opened (FE Table getCopyAction, isNavigable).
+    const copied = r.action.copy ? r.processed[0]?.row : undefined;
+    if (copied && !parent && navigation?.hasObjectPage?.(info.entitySet, service.name)) {
+      navigation.toObject(pathOf(copied), service.name);
+      return;
+    }
     if ((p.workingMode ?? 'worklist') === 'continuous') {
       const next: Record<string, Row> = {};
       const out: Message[] = [];
@@ -1035,39 +1083,77 @@ function TableCore(p: CoreSettings) {
     }
   };
   const runner = useActionRunner({ service: p.service, onDone: afterAction });
+  const actionItem = (a: ActionModel): ActionItem => ({
+    id: a.id, label: a.label, requiresSelection: a.bound,
+    // Core.OperationAvailable: bound actions per selected row; unbound actions by the constant or expression
+    // itself (FE Table.ts _useEnabledExpression, UIFormatters getActionEnabledExpression: equal(value, true)).
+    // The copy action (UI.IsCopyAction) needs exactly one row unless OperationAvailable says more (FE getCopyAction).
+    enabled: (sel) => (a.copy && !a.operationAvailable ? sel.length === 1 : a.bound ? sel.some((r) => isActionAvailable(a, r)) : isActionAvailable(a, undefined)),
+    onPress: (c) => runner.run(a, a.bound ? c.selected.map(targetOf) : [{ row: {}, path: '', label: '' }]),
+  });
   const actions = useMemo(() => {
+    // FE Table getTableActions: the annotation actions of the LineItem (not inline, not determining; a
+    // DataFieldForActionGroup is a menu at its position), then Create, the copy action, Delete. Custom actions and
+    // menus without anchor go before Create (FE anchors them to StandardAction::Create).
     const base: ActionItem[] = [];
-    if (canCreate) base.push({ id: 'Create', label: t('actions.create'), onPress: () => setCreating(true) });
-    for (const a of modelActions.filter((x) => !x.inline)) {
-      base.push({
-        id: a.id, label: a.label, requiresSelection: a.bound,
-        // Core.OperationAvailable: bound actions per selected row; unbound actions by the constant or expression
-        // itself (FE Table.ts _useEnabledExpression, UIFormatters getActionEnabledExpression: equal(value, true)).
-        enabled: (sel) => (a.bound ? sel.some((r) => isActionAvailable(a, r)) : isActionAvailable(a, undefined)),
-        onPress: (c) => runner.run(a, a.bound ? c.selected.map(targetOf) : [{ row: {}, path: '', label: '' }]),
-      });
+    const menus = new Map<string, ActionItem>();
+    for (const a of modelActions.filter((x) => !x.inline && !x.determining && !x.copy)) {
+      if (a.menu) {
+        let m = menus.get(a.menu);
+        if (!m) {
+          m = { id: a.menu, label: ui.actionGroups?.find((g) => g.id === a.menu)?.label ?? '', onPress: () => undefined, menu: [] };
+          menus.set(a.menu, m);
+          base.push(m);
+        }
+        m.menu!.push(actionItem(a));
+      } else base.push(actionItem(a));
     }
-    if (canDelete) base.push({ id: 'Delete', label: t('actions.delete'), requiresSelection: true, onPress: (c) => setConfirmDelete(c.selected) });
-    // `actions` (sap.fe.macros.table.Action) first, then `extend`.
+    base.push({ id: 'Create', label: t('actions.create'), onPress: () => setCreating(true), hidden: !canCreate });
+    const copy = modelActions.find((x) => x.copy && !x.inline && !x.determining);
+    if (copy) base.push({ ...actionItem(copy), label: copy.label || t('actions.copy') });
+    base.push({
+      id: 'Delete', label: t('actions.delete'), requiresSelection: true, hidden: !canDelete,
+      enabled: (sel) => sel.some(isDeletable), onPress: (c) => setConfirmDelete(c.selected),
+    });
     const custom: ExtendEntry<ActionItem>[] = (p.actions ?? []).filter((a) => a.visible !== false).map((a) => ({
-      id: a.key, position: a.anchor ? (a.placement === 'Before' ? 'before' : 'after') : 'end', anchor: a.anchor,
+      id: a.key, position: a.placement === 'Before' || !a.anchor ? 'before' : 'after', anchor: a.anchor ?? 'Create',
       item: {
         id: a.key, label: a.text, requiresSelection: Boolean(a.requiresSelection || a.enableOnSelect),
         enabled: (sel) => a.enabled !== false && (a.enableOnSelect !== 'single' || sel.length === 1),
         onPress: (c) => a.onPress?.({ selectedContexts: c.selected.map((r) => contextOf(pathOf(r), r)) }),
       },
     }));
-    const withCustom = applyExtensions<ActionItem>(base, custom, 'Table actions');
-    return applyExtensions<ActionItem>(withCustom, (p.extend ?? []).filter((e) => e.kind === 'action') as ExtendEntry<ActionItem>[], 'Table extend');
+    let out = applyExtensions<ActionItem>(applyExtensions<ActionItem>(base, custom, 'Table actions'), (p.extend ?? []).filter((e) => e.kind === 'action') as ExtendEntry<ActionItem>[], 'Table extend');
+    // `actionGroups` (manifest menus): their actions leave the toolbar; the menu stands before Create.
+    for (const g of p.actionGroups ?? []) {
+      const items = out.filter((a) => !a.menu && (a.group === g.id || g.actions.includes(a.id)));
+      if (!items.length) continue;
+      out = out.filter((a) => !items.includes(a));
+      out.splice(out.findIndex((a) => a.id === 'Create'), 0, { id: g.id, label: g.label, onPress: () => undefined, menu: items });
+    }
+    return out;
     // eslint-disable-next-line react-hooks/exhaustive-deps -- runner is stable enough; rebuilt with its inputs
-  }, [p.extend, p.actions, modelActions, canCreate, canDelete, t, targetOf]);
-  const inlineCell = inlineActions.length ? (row: Row) => (
-    <Group gap={4} wrap="nowrap" data-sk-inline-actions>
-      {inlineActions.filter((a) => isActionAvailable(a, row)).map((a) => (
-        <Button key={a.id} size="compact-xs" variant="light" onClick={(e) => { e.stopPropagation(); runner.run(a, [targetOf(row)]); }} data-sk-inline-action={a.id}>{a.label}</Button>
-      ))}
-    </Group>
-  ) : undefined;
+  }, [p.extend, p.actions, p.actionGroups, modelActions, canCreate, canDelete, t, targetOf]);
+  /** Row highlight (FE TableFormatter rowHighlighting): 1 Error, 2 Warning, 3 Success, 5 Information; a new draft is Information. */
+  const rowState = (row: Row): string | undefined => {
+    const v = highlightRef ? Number('path' in highlightRef ? getPath(row, highlightRef.path) : highlightRef.value) : undefined;
+    // a path value: 1, 2, 3, 5; a constant (FE getMessageTypeFromCriticalityType) also VeryNegative (-1) → error, VeryPositive (4) → success
+    const constant = highlightRef !== undefined && !('path' in highlightRef);
+    const state = ({ 1: 'error', 2: 'warning', 3: 'success', 5: 'information', ...(constant ? { [-1]: 'error', 4: 'success' } : {}) } as Record<number, string>)[v ?? 0];
+    if (state) return state;
+    return draftRoot && row.IsActiveEntity === false && row.HasActiveEntity === false ? 'information' : undefined;
+  };
+  cellEnvRef.current = {
+    typeName: info.typeName, service: p.service,
+    run: (a, row) => runner.run(a, [targetOf(row)]),
+    navigate: (row, nav) => {
+      const target = model.entityTypes[info.typeName]?.navigations[nav];
+      const set = model.entitySets[info.entitySet]?.navigationBindings[nav];
+      const keys = target ? model.entityTypes[target.targetType]?.keys ?? [] : [];
+      const related = (row[nav] as Row | undefined) ?? Object.fromEntries((target?.referentialConstraints ?? []).map((r) => [r.referencedProperty, row[r.property]]));
+      if (set && target && keys.every((k) => related[k] !== undefined)) navigation?.toObject(`${set}${keyPredicate(model.entityTypes[target.targetType]!, related)}`, service.name);
+    },
+  };
 
   // ------------------------------------------------------------------ copy (LR-21)
   const [copied, setCopied] = useState<string | null>(null);
@@ -1096,6 +1182,22 @@ function TableCore(p: CoreSettings) {
   const createRoot = async (values: Row) => {
     const r = await createWith(strategy, source, values);
     onCreated(r.path, r.row, r.messages);
+  };
+  /**
+   * Texts of the delete confirmation (FE EditFlow deleteDocument / DeleteHelper): one row by UI.HeaderInfo Title and
+   * Description, several rows generic; rows that DeleteRestrictions/Deletable excludes are counted.
+   */
+  const deleteTexts = (rows: Row[]): string[] => {
+    const ok = rows.filter(isDeletable);
+    const out: string[] = [];
+    if (ok.length < rows.length) out.push(t('delete.someRestricted', { count: rows.length - ok.length, total: rows.length }), t('delete.remaining'));
+    else if (rows.length === 1) {
+      const text = (path: string | undefined) => { const v = path ? getPath(rows[0], path) : undefined; return v === undefined || v === null || v === '' ? undefined : String(v); };
+      const title = text(ui.headerInfo.title);
+      const description = ui.headerInfo.description !== ui.headerInfo.title ? text(ui.headerInfo.description) : undefined;
+      out.push(title && description ? t('delete.confirmObjectInfo', { title, description }) : title ? t('delete.confirmObjectTitle', { title }) : t('delete.confirmSingular'));
+    } else out.push(t('delete.confirmPlural'));
+    return out;
   };
   const deleteNow = async (rows: Row[]) => {
     setConfirmDelete(null);
@@ -1162,6 +1264,7 @@ function TableCore(p: CoreSettings) {
       return {
         colId: c.id,
         headerName: c.label,
+        ...(c.headerHidden ? { headerClass: 'sk-table__header--hidden', headerTooltip: c.label } : {}),
         width: c.width ?? autoWidth(c, prop?.edmType),
         minWidth: 80,
         // Not pinned while grouped: a column span cannot cross from the pinned into the scrolled columns.
@@ -1202,12 +1305,6 @@ function TableCore(p: CoreSettings) {
         cellRenderer: (params: { data?: Row; node?: { rowPinned?: string | null } }) => (params.data && !params.node?.rowPinned && !groupOf(params.data) ? statusMarker(params.data) : null),
       });
     }
-    if (inlineCell) {
-      defs.push({
-        colId: '$actions', headerName: t('actions.inline'), width: 160, sortable: false, resizable: false, suppressMovable: true,
-        cellRenderer: (params: { data?: Row; node?: { rowPinned?: string | null } }) => (params.data && !params.node?.rowPinned && !groupOf(params.data) ? inlineCell(params.data) : null),
-      });
-    }
     if (navigable) {
       defs.push({
         colId: '$nav', headerName: '', width: 52, pinned: 'right', sortable: false, resizable: false, suppressMovable: true,
@@ -1221,7 +1318,7 @@ function TableCore(p: CoreSettings) {
     }
     return defs;
     // eslint-disable-next-line react-hooks/exhaustive-deps -- column definitions depend on visible columns, sort indicator and navigability only
-  }, [visible.join('|'), allColumns, navigable, JSON.stringify(sort), intlLocale, timeZone, mode, Boolean(inlineCell), Boolean(cellMarker), Boolean(statusMarker), gridGrouped, totalIds.join('|'), isTree, frozen, p.enableAutoColumnWidth, p.widthIncludingColumnHeader]);
+  }, [visible.join('|'), allColumns, navigable, JSON.stringify(sort), intlLocale, timeZone, mode, Boolean(cellMarker), Boolean(statusMarker), gridGrouped, totalIds.join('|'), isTree, frozen, p.enableAutoColumnWidth, p.widthIncludingColumnHeader]);
   const overridesRef = useRef(overrides);
   overridesRef.current = overrides;
   // Tree grids: a node collapsed on the client keeps its row data; redraw the first column's toggles.
@@ -1439,7 +1536,7 @@ function TableCore(p: CoreSettings) {
       totals={measures.length ? { label: totalLabel(grand.error?.message), cells: totalCells(grand.entry, Boolean(grand.error)) } : undefined}
       noData={noDataContent}
       popinLayout={p.popinLayout}
-      inlineActions={inlineCell}
+      rowHighlight={rowState}
       changedKeys={new Set(Object.keys(overrides))}
       rowMarker={marker}
     />
@@ -1482,7 +1579,7 @@ function TableCore(p: CoreSettings) {
           : { rowData: list.rows, domLayout: 'autoHeight' as const })}
       getRowId={(r) => (r.rowPinned ? `${TOTAL_ROW}:${r.rowPinned}` : groupOf(r.data) ? `${GROUP_ROW}:${groupOf(r.data)!.key}` : keyOf(r.data as Row))}
       pinnedBottomRowData={pinnedBottom}
-      getRowClass={(r) => (r.node.rowPinned ? 'sk-table__total-row' : groupOf(r.data) ? 'sk-table__group-row' : undefined)}
+      getRowClass={(r) => (r.node.rowPinned ? 'sk-table__total-row' : groupOf(r.data) ? 'sk-table__group-row' : r.data && rowState(r.data as Row) ? `sk-table__row--${rowState(r.data as Row)}` : undefined)}
       rowSelection={selection === 'None' ? undefined : selection === 'Single'
         ? { mode: 'singleRow', checkboxes: true, enableClickSelection: false, isRowSelectable: (n) => selectable(n.data as Row | undefined), hideDisabledCheckboxes: true }
         : { mode: 'multiRow', checkboxes: true, headerCheckbox: mode === 'auto' && p.enableSelectAll !== false, enableClickSelection: false, isRowSelectable: (n) => selectable(n.data as Row | undefined), hideDisabledCheckboxes: true }}
@@ -1600,9 +1697,9 @@ function TableCore(p: CoreSettings) {
       ) : null}
       <Modal opened={Boolean(confirmDelete)} onClose={() => setConfirmDelete(null)} title={t('delete.title')} data-sk-delete-dialog>
         <Stack>
-          <Text>{confirmDelete?.length === 1 ? t('delete.confirmOne', { name: targetOf(confirmDelete[0]!).label }) : t('delete.confirmMany', { count: confirmDelete?.length ?? 0 })}</Text>
+          {confirmDelete ? deleteTexts(confirmDelete).map((x) => <Text key={x}>{x}</Text>) : null}
           <Group justify="flex-end">
-            <Button color="red" onClick={() => confirmDelete && void deleteNow(confirmDelete)} data-sk-delete-confirm>{t('actions.delete')}</Button>
+            <Button color="red" onClick={() => confirmDelete && void deleteNow(confirmDelete.filter(isDeletable))} data-sk-delete-confirm>{t('actions.delete')}</Button>
             <Button variant="default" onClick={() => setConfirmDelete(null)}>{t('common.cancel')}</Button>
           </Group>
         </Stack>

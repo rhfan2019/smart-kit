@@ -27,6 +27,11 @@
 .ag-cell .sk-field--progress .sk-progress, .sk-table .sk-field--progress .sk-progress { flex: 1 1 0; width: auto; min-width: var(--sk-space-6); }
 .ag-cell .sk-field__progress-text, .sk-table .sk-field__progress-text { flex: none; white-space: nowrap; line-height: 1; }
 .sk-progress { --progress-section-color: var(--sk-color-progress); background: var(--sk-color-progress-track); }
+/* sap.m.ProgressIndicator state from the data point's Criticality (Error, Warning, Success, Information). */
+.sk-progress--negative { --progress-section-color: var(--sk-color-negative); }
+.sk-progress--critical { --progress-section-color: var(--sk-color-critical); }
+.sk-progress--positive { --progress-section-color: var(--sk-color-positive); }
+.sk-progress--info { --progress-section-color: var(--sk-color-info); }
 .sk-field--rating { --rating-color: var(--sk-color-rating); }
 .sk-field--rating .mantine-Rating-symbolBody { color: var(--sk-color-rating); }
 .sk-status { font-weight: var(--sk-font-weight-medium); }
@@ -323,6 +328,9 @@
 .sk-chart__line { fill: none; stroke: var(--sk-chart-color); stroke-width: calc(2 * var(--sk-size-border)); }
 .sk-chart--line .sk-chart__bar circle { fill: var(--sk-chart-color); }
 .sk-chart--line .sk-chart__bar--selected circle { fill: var(--sk-chart-selected-color); }
+.sk-chart__area { fill: var(--sk-chart-color); fill-opacity: 0.25; stroke: none; }
+.sk-chart--area .sk-chart__bar circle { fill: var(--sk-chart-color); }
+.sk-chart--area .sk-chart__bar--selected circle { fill: var(--sk-chart-selected-color); }
 .sk-chart__segment { fill: var(--sk-chart-mark); stroke: var(--sk-color-surface); stroke-width: var(--sk-size-border); }
 .sk-chart__legend { list-style: none; margin: var(--sk-space-3) 0 0; padding: 0; display: grid; gap: var(--sk-space-2); font-size: var(--sk-chart-text); color: var(--sk-chart-label); }
 .sk-chart__legend li { display: flex; align-items: center; gap: var(--sk-space-3); }
@@ -731,3 +739,11 @@ tr.sk-rtable__total > * { position: sticky; top: auto; bottom: 0; z-index: 2; bo
 .sk-microchart--size-S { width: 7.5rem; height: 2.25rem; }
 .sk-microchart--size-M { width: 10.5rem; height: 3.5rem; }
 .sk-microchart--size-L { width: 15rem; height: 5.875rem; }
+
+/* Row highlight (LineItem@UI.Criticality, FE TableFormatter rowHighlighting; stage 4) and special cells. */
+.sk-table__row--error { box-shadow: inset 0.25rem 0 0 var(--sk-color-negative); }
+.sk-table__row--warning { box-shadow: inset 0.25rem 0 0 var(--sk-color-critical); }
+.sk-table__row--success { box-shadow: inset 0.25rem 0 0 var(--sk-color-positive); }
+.sk-table__row--information { box-shadow: inset 0.25rem 0 0 var(--sk-color-info); }
+.sk-cell__group { display: flex; flex-direction: column; }
+.sk-cell__connected { display: inline-flex; white-space: nowrap; }

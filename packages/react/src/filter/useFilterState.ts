@@ -1,5 +1,5 @@
 /** Headless filter state: conditions, search, visible fields, "Go", mandatory checks (LR-05–LR-09). */
-import { activeFilterPaths, isComplete, isFilterable, restrictConditions, type Condition, type FilterState, type Operator } from '@rhfan2019/smart-kit-core';
+import { activeFilterPaths, isComplete, isFilterable, resolvePath, restrictConditions, type Condition, type FilterState, type Operator } from '@rhfan2019/smart-kit-core';
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useMetaModel } from '../context/SmartKitProvider';
 import { usePageState } from '../util/usePageState';
@@ -63,11 +63,18 @@ function normalize(f: FilterState): FilterState {
 export function useFilterState(entitySet: string, o: UseFilterStateOptions = {}): FilterStateApi {
   const meta = useMetaModel(entitySet, { service: o.service });
   const { ui, capabilities, type } = meta;
+  const model = meta.service.model;
+  const propOf = useCallback((path: string) => resolvePath(model.entityTypes, type.fullName, path), [model, type]);
 
   const defaults = useMemo<Pick<FilterSnapshot, 'filters' | 'search' | 'fields'>>(() => {
     const filters: FilterState = {};
+    // UI.Hidden properties are no filter properties in FE: their default conditions are dropped; UI.HiddenFilter ones
+    // filter but get no field (FE FilterBar converter, availability Hidden).
+    const isHidden = (path: string) => propOf(path).property?.hidden === true;
+    const isHiddenFilter = (path: string) => propOf(path).property?.hiddenFilter === true;
     for (const c of ui.selectionVariant) {
       if (!type.properties[c.path] && !c.path.includes('/')) continue;
+      if (isHidden(c.path)) continue;
       (filters[c.path] ??= []).push({ operator: c.operator as Operator, values: c.values, exclude: c.exclude || undefined });
     }
     // A Common.FilterDefaultValue condition outside SelectionFields filters without adding a field to the bar
@@ -75,10 +82,10 @@ export function useFilterState(entitySet: string, o: UseFilterStateOptions = {})
     const fromDefaultValue = (p: string) =>
       !ui.selectionFields.includes(p) && type.properties[p]?.filterDefaultValue !== undefined
       && ui.selectionVariant.every((c) => c.operator === 'EQ' && !c.exclude && c.values[0] === type.properties[c.path]?.filterDefaultValue);
-    const conditionFields = Object.keys(filters).filter((p) => !fromDefaultValue(p));
+    const conditionFields = Object.keys(filters).filter((p) => !fromDefaultValue(p) && !isHiddenFilter(p));
     const fields = [...new Set([...ui.selectionFields, ...capabilities.requiredFilters, ...conditionFields])].filter((p) => isFilterable(capabilities, p));
     return { filters: o.initial?.filters ?? filters, search: o.initial?.search ?? '', fields: o.initial?.fields ?? fields };
-  }, [ui, capabilities, type, o.initial]);
+  }, [ui, capabilities, type, o.initial, propOf]);
 
   const [state, setState] = usePageState<FilterSnapshot & { showRequiredErrors: boolean }>(o.pageKey ? `${o.pageKey}:filters` : undefined, () => ({ ...defaults, applied: null, showRequiredErrors: false }));
 
@@ -121,12 +128,12 @@ export function useFilterState(entitySet: string, o: UseFilterStateOptions = {})
       setState((s) => {
         const filters = { ...s.filters };
         // Capabilities.FilterExpressionRestrictions (P2-LR-19): only allowed conditions are kept.
-        const conditions = restrictConditions(capabilities.filterExpressions[path], input);
+        const conditions = restrictConditions(capabilities.filterExpressions[path], input, propOf(path).property?.edmType);
         if (conditions.length) filters[path] = conditions;
         else delete filters[path];
         return { ...s, filters };
       }),
-    [setState, capabilities],
+    [setState, capabilities, propOf],
   );
   const setSearch = useCallback((search: string) => setState((s) => ({ ...s, search })), [setState]);
   const setFields = useCallback((fields: string[]) => setState((s) => ({ ...s, fields })), [setState]);

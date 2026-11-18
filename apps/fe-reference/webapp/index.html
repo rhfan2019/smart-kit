@@ -7,12 +7,12 @@
   <style>html, body { height: 100%; margin: 0; }</style>
   <!--
     SAPUI5 1.154.0 from the SAP CDN at runtime (no SAP files in this repository, AL-22).
-    ?app=purchasing (default), ?app=purchasing-draft, ?app=purchasing-chart, ?app=purchasing-views or ?app=purchasing-analytical selects the component; see README.md.
+    ?app=purchasing (default), ?app=purchasing-draft, ?app=purchasing-chart, ?app=purchasing-views, ?app=purchasing-analytical or ?app=purchasing-display selects the component; see README.md.
   -->
   <script>
     (function () {
       var requested = new URLSearchParams(window.location.search).get('app');
-      var app = requested === 'purchasing-draft' || requested === 'purchasing-chart' || requested === 'purchasing-views' || requested === 'purchasing-analytical' ? requested : 'purchasing';
+      var app = requested === 'purchasing-draft' || requested === 'purchasing-chart' || requested === 'purchasing-views' || requested === 'purchasing-analytical' || requested === 'purchasing-display' ? requested : 'purchasing';
       window.feReferenceApp = app;
       document.title = app === 'purchasing-draft' ? 'FE reference: Purchase Orders (Draft)' : app === 'purchasing-chart' ? 'FE reference: Purchase Orders (Chart)' : 'FE reference: Purchase Orders';
     })();
@@ -26,7 +26,7 @@
     data-sap-ui-compat-version="edge"
     data-sap-ui-frame-options="trusted"
     data-sap-ui-flexibility-services='[{"connector": "SessionStorageConnector"}]'
-    data-sap-ui-resource-roots='{"fe.ref.purchasing": "./purchasing/", "fe.ref.purchasingdraft": "./purchasing-draft/", "fe.ref.purchasingchart": "./purchasing-chart/", "fe.ref.purchasingviews": "./purchasing-views/", "fe.ref.purchasinganalytical": "./purchasing-analytical/", "fe.ref.ext": "./ext/"}'
+    data-sap-ui-resource-roots='{"fe.ref.purchasing": "./purchasing/", "fe.ref.purchasingdraft": "./purchasing-draft/", "fe.ref.purchasingchart": "./purchasing-chart/", "fe.ref.purchasingviews": "./purchasing-views/", "fe.ref.purchasinganalytical": "./purchasing-analytical/", "fe.ref.purchasingdisplay": "./purchasing-display/", "fe.ref.ext": "./ext/"}'
     data-sap-ui-on-init="module:fe/ref/ext/start">
   </script>
 </head>

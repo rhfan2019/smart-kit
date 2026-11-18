@@ -23,8 +23,12 @@ export function QuickViewLink({ typeName, field, row, service: serviceName, chil
     const nav = model.entityTypes[tn]?.navigations[segs[segs.length - 1]!];
     const set = Object.values(model.entitySets).find((es) => es.typeName === qv.typeName);
     if (!nav || !set || !base) return undefined;
+    // the key from the referential constraints, else from the expanded object (a key or semantic key read through the
+    // navigation, FE isUsedInNavigationWithQuickViewFacets)
     const key: Row = {};
-    for (const rc of nav.referentialConstraints) key[rc.referencedProperty] = base[rc.property];
+    const expanded = base[nav.name] as Row | undefined;
+    for (const rc of nav.referentialConstraints) key[rc.referencedProperty] = base[rc.property] ?? expanded?.[rc.referencedProperty];
+    for (const k of model.entityTypes[qv.typeName]?.keys ?? []) if (key[k] === undefined && expanded?.[k] !== undefined) key[k] = expanded[k];
     try {
       return { entitySet: set.name, path: `${set.name}${keyPredicate(model.entityTypes[qv.typeName]!, key)}` };
     } catch {

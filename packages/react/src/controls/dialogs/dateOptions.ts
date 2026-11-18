@@ -220,9 +220,12 @@ export interface FormatContext {
   formatter?: DynamicDateFormatter | null;
 }
 
+/** Options whose text the filter bar has as `dateRange.*` ("Today", "This week" …); the others use the `ctl.ddr.*` texts. */
+const FILTER_TEXTS = new Set(['TODAY', 'YESTERDAY', 'TOMORROW', 'THISWEEK', 'LASTWEEK', 'NEXTWEEK', 'THISMONTH', 'LASTMONTH', 'NEXTMONTH', 'THISQUARTER', 'LASTQUARTER', 'NEXTQUARTER', 'THISYEAR', 'LASTYEAR', 'NEXTYEAR', 'YEARTODATE']);
+
 /** The option text in the list ("Today", "Date Range", "Last X"). */
 export function optionText(t: TextFn, key: string): string {
-  if ((RELATIVE_DATE_OPERATORS as readonly string[]).includes(key) && kindOf(key) === 'none') return t(`dateRange.${key}` as MessageKey);
+  if (FILTER_TEXTS.has(key)) return t(`dateRange.${key}` as MessageKey);
   return t(`ctl.ddr.${key}` as MessageKey);
 }
 

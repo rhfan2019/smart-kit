@@ -58,6 +58,36 @@ export function formatDateTime(value: unknown, locale: string, timeZone?: string
   return new Intl.DateTimeFormat(locale, { dateStyle: 'medium', timeStyle: 'short', ...(timeZone ? { timeZone } : {}) }).format(d);
 }
 
+/**
+ * Display name of an IANA time zone as sap.ui.model.odata.type.DateTimeWithTimezone shows it in English (CLDR time zone
+ * translations): "Europe/Berlin" → "Europe, Berlin", "America/New_York" → "Americas, New York". Other languages get the
+ * same English form (the CLDR translations are not available to Intl).
+ */
+export function formatTimezone(zone: unknown): string {
+  if (zone === null || zone === undefined || zone === '') return '';
+  const parts = String(zone).split('/').map((p) => p.replace(/_/g, ' '));
+  if (parts[0] === 'America' && parts.length > 1) parts[0] = 'Americas';
+  return parts.join(', ');
+}
+
+/**
+ * Edm.DateTimeOffset with Common.Timezone (FE UIFormatters getBindingWithTimezone, sap.fe.core.type.DateTimeWithTimezone):
+ * date and time (medium style) in the given zone, then the zone's name; empty values show nothing.
+ */
+export function formatDateTimeWithTimezone(value: unknown, locale: string, zone: unknown): string {
+  if (value === null || value === undefined || value === '') return '';
+  const d = new Date(String(value));
+  if (Number.isNaN(d.getTime())) return String(value);
+  const tz = typeof zone === 'string' && zone ? zone : undefined;
+  let text: string;
+  try {
+    text = new Intl.DateTimeFormat(locale, { dateStyle: 'medium', timeStyle: 'medium', ...(tz ? { timeZone: tz } : {}) }).format(d);
+  } catch {
+    text = new Intl.DateTimeFormat(locale, { dateStyle: 'medium', timeStyle: 'medium' }).format(d);
+  }
+  return tz ? `${text} ${formatTimezone(tz)}` : text;
+}
+
 export function formatTime(value: unknown, locale: string): string {
   if (typeof value !== 'string' || !/^\d{2}:\d{2}/.test(value)) return value == null ? '' : String(value);
   const [h, mi, s] = value.split(':').map((x) => Number.parseFloat(x)) as [number, number, number?];

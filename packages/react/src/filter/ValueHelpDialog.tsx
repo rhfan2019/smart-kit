@@ -1,13 +1,15 @@
 /** Value help dialog: "Search and Select" from the value list and "Define Conditions" (include / exclude) (LR-11). */
 import { ActionIcon, Button, Checkbox, Group, Modal, Pill, ScrollArea, SegmentedControl, Select, Stack, Table, Tabs, Text, TextInput } from '@mantine/core';
 import {
-  filterExpressionRules, getProperty, isComplete, OPERATOR_ARITY, OPERATORS, RELATIVE_DATE_OPERATORS, restrictConditions, valueListTextArrangement,
-  type Condition, type Operator, type PropertyModel,
+  filterExpressionRules, getProperty, isComplete, isRelativeDateOperator, OPERATOR_ARITY, OPERATORS, relativeDateValueTypes, resolvePath, restrictConditions, valueListTextArrangement,
+  type Condition, type FilterExpressionRules, type Operator, type PropertyModel,
 } from '@rhfan2019/smart-kit-core';
 import { Plus, Search, Trash2 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
-import { useService, useSmartKit, useText } from '../context/SmartKitProvider';
+import { useService, useSmartKit } from '../context/SmartKitProvider';
+import { useFilterText } from './filterText';
 import { getPath } from '../field/values';
+import { optionText } from '../controls/dialogs/dateOptions';
 import { conditionText, digitSequenceValue, sameCondition } from './conditionText';
 import { useValueList } from './useValueList';
 import { propagateOut, useValueHelpSource } from './valueHelpSource';
@@ -31,24 +33,36 @@ export interface ValueHelpDialogProps {
   onCancel(): void;
 }
 
-const STRING_OPS: Operator[] = ['EQ', 'NE', 'Contains', 'NotContains', 'StartsWith', 'EndsWith', 'BT', 'NB', 'LT', 'LE', 'GT', 'GE', 'Empty', 'NotEmpty'];
-const OTHER_OPS: Operator[] = OPERATORS.filter((o) => !['Contains', 'NotContains', 'StartsWith', 'EndsWith'].includes(o));
-/** Date and date-time properties also get the relative dates (today, this month, last X days …). */
-const DATE_OPS: Operator[] = [...OTHER_OPS, ...RELATIVE_DATE_OPERATORS];
+/** The order of the value operators in the operator list (string fields: equal to, then the text patterns). */
+const VALUE_ORDER: Operator[] = ['EQ', 'NE', 'Contains', 'NotContains', 'StartsWith', 'EndsWith', 'BT', 'NB', 'LT', 'LE', 'GT', 'GE', 'Empty', 'NotEmpty'];
 const isDate = (p: PropertyModel | undefined) => p?.edmType === 'Edm.Date' || p?.edmType === 'Edm.DateTimeOffset';
 
-const PAGE = 50;
+/** Rows per page of the dialog's table: FE's value help dialog requests 64. */
+const PAGE = 64;
+
+/** Label of an operator in the "Define Conditions" list. */
+function operatorLabel(t: ReturnType<typeof useFilterText>, o: Operator): string {
+  if ((OPERATORS as readonly string[]).includes(o) || ['TODAY', 'YESTERDAY', 'TOMORROW', 'LASTDAYS', 'NEXTDAYS', 'THISWEEK', 'LASTWEEK', 'NEXTWEEK', 'THISMONTH', 'LASTMONTH', 'NEXTMONTH', 'THISQUARTER', 'LASTQUARTER', 'NEXTQUARTER', 'THISYEAR', 'LASTYEAR', 'NEXTYEAR', 'YEARTODATE'].includes(o)) return t(`op.${o}` as 'op.EQ');
+  const unit = /^(LAST|NEXT)(DAYS|WEEKS|MONTHS|QUARTERS|YEARS)(INCLUDED)?$/.exec(o);
+  if (unit) return `${t(`ctl.ddr.${unit[1]}${unit[3] ?? ''}` as 'ctl.ddr.LAST')} (${t(`ctl.ddr.unit.${unit[2]}` as 'ctl.ddr.unit.DAYS')})`;
+  const ext = /^(FROM|TO)([A-Z]+)$/.exec(o);
+  if (ext && !['TODAY', 'TOMORROW', 'TODAYFROMTO'].includes(o)) return t(ext[1] === 'FROM' ? 'ctl.ddr.fromValue' : 'ctl.ddr.toValue', { date: optionText(t, ext[2]!) });
+  return optionText(t, o);
+}
 
 export function ValueHelpDialog(p: ValueHelpDialogProps) {
-  const t = useText();
+  const t = useFilterText();
   const service = useService(p.service);
   const { intlLocale, timeZone } = useSmartKit();
   const typeName = service.model.entitySets[p.entitySet]!.typeName;
   const prop = getProperty(service.model, typeName, p.path);
-  const vl = prop?.valueList;
+  // qualified Common.ValueList#Q (limited by Common.ValueListRelevantQualifiers): the dialog switches between them
+  const lists = prop?.valueLists ?? (prop?.valueList ? [prop.valueList] : []);
+  const [which, setWhich] = useState(0);
+  const vl = lists[which] ?? lists[0];
   // Capabilities.FilterExpressionRestrictions (P2-LR-19): allowed operators, exclusions and number of conditions.
   const expression = service.model.entitySets[p.entitySet]!.capabilities.filterExpressions[p.path];
-  const rules = filterExpressionRules(expression);
+  const rules = filterExpressionRules(expression, prop?.edmType);
   const canSelect = Boolean(vl) && rules.operators.includes('EQ');
   const [selected, setSelected] = useState<Condition[]>(p.conditions);
   const [draft, setDraft] = useState('');
@@ -63,6 +77,7 @@ export function ValueHelpDialog(p: ValueHelpDialogProps) {
       setSearch('');
       setTop(PAGE);
       setPicked({});
+      setWhich(0);
       setTab(canSelect ? 'select' : 'conditions');
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- reset only when (re)opened
@@ -71,10 +86,11 @@ export function ValueHelpDialog(p: ValueHelpDialogProps) {
   // In / InOut / Constant parameters filter the list; Out / InOut write the chosen rows back (P1-5).
   const source = useValueHelpSource();
   const [picked, setPicked] = useState<Record<string, Record<string, unknown>>>({});
-  const list = useValueList(vl, { search, top, enabled: p.opened && Boolean(vl), filters: source?.filters }, p.service);
+  const list = useValueList(vl, { search, top, enabled: p.opened && Boolean(vl), filters: source?.filters, purpose: 'dialog' }, p.service);
   const vlType = vl ? service.model.entitySets[vl.collectionPath]?.typeName : undefined;
   const columns = useMemo(
-    () => (vl ? vl.parameters.filter((x) => x.kind !== 'Constant').map((x) => ({ path: x.valueListProperty, label: (vlType && getProperty(service.model, vlType, x.valueListProperty)?.label) || x.valueListProperty })) : []),
+    // the parameters except Constant ones and properties hidden in the value list entity (FE getColumnVisibility)
+    () => (vl ? vl.parameters.filter((x) => x.kind !== 'Constant' && !(vlType && resolvePath(service.model.entityTypes, vlType, x.valueListProperty).property?.hidden)).map((x) => ({ path: x.valueListProperty, label: (vlType && getProperty(service.model, vlType, x.valueListProperty)?.label) || x.valueListProperty })) : []),
     [vl, vlType, service.model],
   );
   const keyOf = (row: Record<string, unknown>) => String(getPath(row, vl!.keyProperty) ?? '');
@@ -91,7 +107,8 @@ export function ValueHelpDialog(p: ValueHelpDialogProps) {
 
   const conditionRows = selected.map((c, i) => ({ c, i })).filter(({ c }) => !(c.operator === 'EQ' && !c.exclude && c.text !== undefined));
   const updateCondition = (i: number, next: Condition) => setSelected(selected.map((c, j) => (j === i ? next : c)));
-  const ops = (prop?.edmType === 'Edm.String' ? STRING_OPS : isDate(prop) ? DATE_OPS : OTHER_OPS).filter((o) => rules.operators.includes(o));
+  // the operators FE offers for the field (type and FilterExpressionRestrictions); DATE / DATERANGE are EQ / BT here
+  const ops = [...VALUE_ORDER.filter((o) => rules.operators.includes(o) || rules.excludeOperators.includes(o)), ...rules.operators.filter((o) => isRelativeDateOperator(o) && o !== 'DATE' && o !== 'DATERANGE')];
   const arrangement = valueListTextArrangement(service.model, prop);
   const count = list.data?.count;
 
@@ -104,6 +121,14 @@ export function ValueHelpDialog(p: ValueHelpDialogProps) {
         </Tabs.List>
         {canSelect ? (
           <Tabs.Panel value="select" className="sk-vh__panel">
+            {lists.length > 1 ? (
+              // several value lists (Common.ValueList#Q): FE's collective search, one at a time, titled by ValueList/Label
+              <Select
+                size="xs" allowDeselect={false} aria-label={p.title} value={String(which)} className="sk-vh__lists" data-sk-vh-lists
+                data={lists.map((x, i) => ({ value: String(i), label: x.label ?? x.qualifier ?? x.collectionPath }))}
+                onChange={(v) => { setWhich(Number(v ?? 0)); setTop(PAGE); }}
+              />
+            ) : null}
             <form onSubmit={(e) => { e.preventDefault(); setSearch(draft); setTop(PAGE); }}>
               <Group gap="xs" className="sk-vh__search">
                 <TextInput value={draft} onChange={(e) => setDraft(e.currentTarget.value)} placeholder={t('filterBar.search')} aria-label={t('filterBar.search')} leftSection={<Search className="sk-icon" />} className="sk-grow" data-autofocus />
@@ -116,7 +141,7 @@ export function ValueHelpDialog(p: ValueHelpDialogProps) {
                 <Table.Thead>
                   <Table.Tr>
                     <Table.Th className="sk-vh__check" />
-                    {columns.map((c) => <Table.Th key={c.path}>{c.label}</Table.Th>)}
+                    {columns.map((c, i) => <Table.Th key={`${c.path}-${i}`}>{c.label}</Table.Th>)}
                   </Table.Tr>
                 </Table.Thead>
                 <Table.Tbody>
@@ -125,7 +150,7 @@ export function ValueHelpDialog(p: ValueHelpDialogProps) {
                     return (
                       <Table.Tr key={key} onClick={() => toggle(row)} className="sk-clickable" aria-selected={isSelected(key)}>
                         <Table.Td><Checkbox checked={isSelected(key)} onChange={() => toggle(row)} onClick={(e) => e.stopPropagation()} aria-label={key} /></Table.Td>
-                        {columns.map((c) => <Table.Td key={c.path}>{String(getPath(row, c.path) ?? '')}</Table.Td>)}
+                        {columns.map((c, i) => <Table.Td key={`${c.path}-${i}`}>{String(getPath(row, c.path) ?? '')}</Table.Td>)}
                       </Table.Tr>
                     );
                   })}
@@ -140,7 +165,7 @@ export function ValueHelpDialog(p: ValueHelpDialogProps) {
         <Tabs.Panel value="conditions" className="sk-vh__panel">
           <Stack gap="xs">
             {conditionRows.map(({ c, i }) => (
-              <ConditionRow key={i} condition={c} prop={prop} ops={ops} exclude={rules.exclude} onChange={(n) => updateCondition(i, n)} onRemove={() => setSelected(selected.filter((_, j) => j !== i))} />
+              <ConditionRow key={i} condition={c} prop={prop} ops={ops} rules={rules} onChange={(n) => updateCondition(i, n)} onRemove={() => setSelected(selected.filter((_, j) => j !== i))} />
             ))}
             <Button variant="subtle" leftSection={<Plus className="sk-icon" />} disabled={rules.max !== undefined && selected.length >= rules.max} onClick={() => setSelected([...selected, { operator: ops[0] ?? 'EQ', values: [''] }])} className="sk-self-start" data-sk-vh-add-condition>
               {t('vh.addCondition')}
@@ -153,7 +178,7 @@ export function ValueHelpDialog(p: ValueHelpDialogProps) {
         <Group gap="xs" className="sk-vh__pills">
           {selected.length === 0 ? <Text size="sm" c="dimmed">{t('vh.noneSelected')}</Text> : null}
           {selected.map((c, i) => {
-            const label = conditionText(c, prop, intlLocale, timeZone, { t, textArrangement: arrangement === 'TextSeparate' ? 'TextFirst' : arrangement });
+            const label = conditionText(c, prop, intlLocale, timeZone, { t, textArrangement: arrangement });
             return <Pill key={i} withRemoveButton removeButtonProps={{ 'aria-label': t('common.remove', { name: label }) }} onRemove={() => setSelected(selected.filter((_, j) => j !== i))}>{label}</Pill>;
           })}
         </Group>
@@ -185,33 +210,43 @@ function dedupe(cs: Condition[]): Condition[] {
   return cs.filter((c, i) => cs.findIndex((x) => sameCondition(x, c)) === i);
 }
 
-function ConditionRow(p: { condition: Condition; prop: PropertyModel | undefined; ops: Operator[]; exclude: boolean; onChange(c: Condition): void; onRemove(): void }) {
-  const t = useText();
+function ConditionRow(p: { condition: Condition; prop: PropertyModel | undefined; ops: Operator[]; rules: FilterExpressionRules; onChange(c: Condition): void; onRemove(): void }) {
+  const t = useFilterText();
   const c = p.condition;
   const arity = OPERATOR_ARITY[c.operator];
-  const counted = c.operator === 'LASTDAYS' || c.operator === 'NEXTDAYS';
-  const inputType = counted ? 'number' : isDate(p.prop) ? 'date' : 'text';
-  const valueInput = (i: number, label: string) => (
-    <TextInput
-      type={inputType}
-      min={counted ? 1 : undefined}
-      aria-label={label}
-      placeholder={label}
-      value={String(c.values[i] ?? '')}
-      onChange={(e) => {
-        const values = [...c.values];
-        values[i] = e.currentTarget.value;
-        p.onChange({ ...c, values, text: undefined });
-      }}
-      className="sk-grow"
-    />
-  );
+  // the value types of a relative date operator (counts, dates, a month); value operators take values of the property
+  const kinds = isRelativeDateOperator(c.operator) ? relativeDateValueTypes(c.operator) : [];
+  const kindsKey = (op: Operator) => (isRelativeDateOperator(op) ? relativeDateValueTypes(op).join(',') : 'value');
+  const valueInput = (i: number, label: string) => {
+    const kind = kinds[i];
+    const numeric = kind === 'int' || kind === 'month' || kind === 'year';
+    return (
+      <TextInput
+        type={numeric ? 'number' : kind === 'date' || isDate(p.prop) ? 'date' : 'text'}
+        min={kind === 'int' ? (c.operator === 'TODAYFROMTO' ? 0 : 1) : kind === 'month' ? 0 : undefined}
+        max={kind === 'month' ? 11 : undefined}
+        aria-label={label}
+        placeholder={label}
+        value={String(c.values[i] ?? '')}
+        onChange={(e) => {
+          const values = [...c.values];
+          values[i] = e.currentTarget.value;
+          p.onChange({ ...c, values, text: undefined });
+        }}
+        className="sk-grow"
+      />
+    );
+  };
+  const label0 = kinds[0] === 'int' ? (c.operator === 'TODAYFROMTO' ? t('ctl.ddr.daysBefore') : t('ctl.ddr.value')) : kinds[0] === 'month' ? t('ctl.ddr.SPECIFICMONTH') : arity === 2 ? t('vh.from') : t('vh.value');
+  const label1 = c.operator === 'TODAYFROMTO' ? t('ctl.ddr.daysAfter') : kinds[1] === 'year' ? t('ctl.ddr.year') : t('vh.to');
+  const canExclude = p.rules.excludeOperators.includes(c.operator);
   return (
     <Group gap="xs" wrap="nowrap" className="sk-vh__condition">
-      {p.exclude ? (
+      {p.rules.exclude ? (
         <SegmentedControl
           size="xs"
           value={c.exclude ? 'E' : 'I'}
+          disabled={!canExclude && !c.exclude}
           onChange={(v) => p.onChange({ ...c, exclude: v === 'E' || undefined })}
           data={[{ value: 'I', label: t('vh.include') }, { value: 'E', label: t('vh.exclude') }]}
         />
@@ -220,18 +255,18 @@ function ConditionRow(p: { condition: Condition; prop: PropertyModel | undefined
         aria-label={t('p13n.sortBy')}
         value={c.operator}
         allowDeselect={false}
-        data={p.ops.map((o) => ({ value: o, label: t(`op.${o}`) }))}
+        data={p.ops.map((o) => ({ value: o, label: operatorLabel(t, o) }))}
         onChange={(v) => {
           if (!v) return;
           const op = v as Operator;
-          // A number of days and a date do not carry over into each other.
-          const keep = (op === 'LASTDAYS' || op === 'NEXTDAYS') === counted;
+          // values carry over only between operators that take the same kind of values
+          const keep = kindsKey(op) === kindsKey(c.operator);
           p.onChange({ ...c, operator: op, values: keep ? c.values.slice(0, OPERATOR_ARITY[op]) : [] });
         }}
         className="sk-vh__operator"
       />
-      {arity >= 1 ? valueInput(0, arity === 2 ? t('vh.from') : counted ? t('dateRange.dayCount') : t('vh.value')) : <span className="sk-grow" />}
-      {arity === 2 ? valueInput(1, t('vh.to')) : null}
+      {arity >= 1 ? valueInput(0, label0) : <span className="sk-grow" />}
+      {arity === 2 ? valueInput(1, label1) : null}
       <ActionIcon onClick={p.onRemove} aria-label={t('vh.removeCondition')} title={t('vh.removeCondition')}>
         <Trash2 className="sk-icon" />
       </ActionIcon>

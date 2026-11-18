@@ -7,10 +7,12 @@
  * a popover whose "Show Details" drills down (docs/12 U-4).
  */
 import { Button, Popover, Text } from '@mantine/core';
-import { buildChartRequest, formatNumber, resolvePath, type FilterState, type PropertyModel, type Row } from '@rhfan2019/smart-kit-core';
+import { buildChartRequest, capabilitiesFor, formatNumber, resolvePath, type FilterState, type PropertyModel, type Row } from '@rhfan2019/smart-kit-core';
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useImperativeHandle, useState, type ReactNode, type Ref } from 'react';
-import { resolveChartMetaPath, resolveContextPath } from '../chart/metaPath';
+import { useActionRunner } from '../actions/useActionRunner';
+import { drawnChart, feChartType } from '../chart/chartType';
+import { resolveChartMetaPath, resolveChartPresentation, resolveContextPath } from '../chart/metaPath';
 import { SimpleChart, type ChartDatum, type ChartSeries } from '../chart/SimpleChart';
 import { useService, useSmartKit, useText } from '../context/SmartKitProvider';
 import { getPath } from '../field/values';
@@ -59,7 +61,7 @@ export interface $ChartSettings {
    * UI.PresentationVariant / UI.SelectionPresentationVariant that contains one.
    */
   metaPath: string;
-  /** Header text of the chart; default the UI.Chart Title. */
+  /** Header text of the chart; default the UI.Chart Title (FE MdcChartTemplate `header`; none without a Title). */
   header?: string;
   /**
    * Whether the header (title and the content after it) is shown; the toolbar actions stay.
@@ -97,13 +99,28 @@ export function Chart(p: $ChartSettings) {
   const model = service.model;
   const ctx = resolveContextPath(model, p.contextPath);
   const chart = ctx ? resolveChartMetaPath(model, ctx.typeName, p.metaPath) : undefined;
+  // The chart's sort: the SortOrder of the presentation variant the metaPath names (FE getSortConditions).
+  const presentation = ctx && !ctx.navigation ? resolveChartPresentation(model, ctx.typeName, p.metaPath) : undefined;
+  const sort = presentation ? presentation.chartSortOrder ?? presentation.sortOrder : undefined;
+  // FE Chart createChartVisualization: a chart needs Aggregation.ApplySupported ("ApplySupported is not added to the annotations").
+  const caps = ctx ? capabilitiesFor(model, ctx.entitySet) : undefined;
+  const supported = Boolean(caps?.aggregation);
+  const runner = useActionRunner({ service: p.service });
   const selectionMode = p.selectionMode ?? 'Multiple';
   const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
   const [popover, setPopover] = useState<{ d: ChartDatum; anchor: Element } | null>(null);
   const typeName = ctx?.typeName ?? '';
   const dimensions = chart?.dimensions ?? [];
-  const measures = chart?.measures ?? [];
   const propOf = (path: string): PropertyModel | undefined => resolvePath(model.entityTypes, typeName, path).property;
+  // Measures (FE MdcChartTemplate getChartMeasures): the dynamic measures (Analytics.AggregatedProperty, by its Name)
+  // first, then Measures; `key` is the measure's field in the aggregated rows, `path` the aggregated property.
+  const aggregated = (name: string) => caps?.aggregation?.aggregatedProperties?.find((x) => x.name === name);
+  const measureDefs = [
+    ...(chart?.dynamicMeasures ?? []).flatMap((name) => { const a = aggregated(name); return a ? [{ id: name, key: name, path: a.property, label: a.label ?? propOf(a.property)?.label ?? name }] : []; }),
+    ...(chart?.measures ?? []).map((m) => ({ id: m, key: m.replace(/\//g, '_'), path: m, label: propOf(m)?.label ?? m })),
+  ];
+  const measures = measureDefs.map((m) => m.id);
+  const defOf = (id: string) => measureDefs.find((m) => m.id === id)!;
   // Category dimensions make the categories; dimensions with the role "Series" split each measure into series (sap.chart roles).
   const seriesDims = dimensions.filter((d) => chart?.dimensionRoles?.[d] === 'Series');
   const categoryDims = dimensions.filter((d) => !seriesDims.includes(d));
@@ -112,7 +129,7 @@ export function Chart(p: $ChartSettings) {
   const [chartFilters, setChartFilters] = useState<FilterState>({});
   const executed = p.query !== null;
   const filters = { ...p.query?.filters, ...chartFilters };
-  const req = chart && ctx ? buildChartRequest(model, chart, { source: { entitySet: ctx.entitySet }, filters, search: p.query?.search, timeZone }) : undefined;
+  const req = chart && ctx && supported ? buildChartRequest(model, chart, { source: { entitySet: ctx.entitySet }, filters, search: p.query?.search, timeZone, sort }) : undefined;
   const reqKey = JSON.stringify(req);
   // A new query starts a new selection (data points of the old result may be gone).
   useEffect(() => { setSelectedKeys([]); setPopover(null); }, [reqKey, p.revision]);
@@ -128,12 +145,12 @@ export function Chart(p: $ChartSettings) {
     return v === undefined || v === null || v === '' ? String(getPath(r, d) ?? '') : String(v);
   };
   const keyOf = (r: Row) => categoryDims.map((d) => String(getPath(r, d) ?? '')).join('\u0000');
-  const unitPathOf = (m: string) => { const u = propOf(m)?.unit; return u && 'path' in u ? u.path : undefined; };
-  const measureKey = (m: string) => m.replace(/\//g, '_');
+  const unitPathOf = (m: string) => { const u = propOf(defOf(m).path)?.unit; return u && 'path' in u ? u.path : undefined; };
+  const measureKey = (m: string) => defOf(m).key;
   // FE (sap.chart): a measure whose rows have different units is not drawn ("Some measures have different units.")
   const mixedUnits = measures.some((m) => { const u = unitPathOf(m); return Boolean(u) && new Set(rows.map((r) => String(getPath(r, u!) ?? ''))).size > 1; });
   const formatted = (m: string, r: Row) => {
-    const prop = propOf(m);
+    const prop = propOf(defOf(m).path);
     const scale = typeof prop?.scale === 'number' ? prop.scale : 2;
     const unit = unitPathOf(m);
     return `${formatNumber(String(Number(r[measureKey(m)] ?? 0)), intlLocale, { min: scale, max: scale })}${unit && getPath(r, unit) ? ` ${String(getPath(r, unit))}` : ''}`;
@@ -143,7 +160,7 @@ export function Chart(p: $ChartSettings) {
   const seriesValues: { key: string; label: string }[] = [];
   if (seriesDims.length) for (const r of rows) { const k = seriesKeyOf(r); if (!seriesValues.some((x) => x.key === k)) seriesValues.push({ key: k, label: seriesDims.map((d) => textOf(r, d)).join(' / ') }); }
   const series: (ChartSeries & { measure: string; seriesKey?: string })[] = measures.flatMap((m) => {
-    const label = propOf(m)?.label ?? m;
+    const label = defOf(m).label;
     return seriesDims.length
       ? seriesValues.map((v) => ({ key: `${m}\u0001${v.key}`, label: measures.length > 1 ? `${label} / ${v.label}` : v.label, measure: m, seriesKey: v.key }))
       : [{ key: m, label, measure: m }];
@@ -169,7 +186,7 @@ export function Chart(p: $ChartSettings) {
     getSelectionVariant: async () => toSelectionVariant(chartFilters, ''),
     async setSelectionVariant(selectionVariant, prefillDescriptions) { setChartFilters(fromSelectionVariant(selectionVariant, prefillDescriptions)); },
   }));
-  if (!chart || !ctx) return null;
+  if (!chart || !ctx || !supported) return null;
   const selectionData = (key: string): ChartSelectionData => {
     const r = rows.find((x) => keyOf(x) === key);
     const out: Record<string, unknown> = {};
@@ -193,10 +210,13 @@ export function Chart(p: $ChartSettings) {
     }
     setPopover({ d, anchor });
   };
-  const header = p.header ?? chart.title;
+  const header = p.header ?? chart.chartTitle ?? '';
+  const type = feChartType(chart.chartType);
+  const drawn = drawnChart(type);
+  const chartActions = chart.actions ?? [];
   return (
-    <section className="sk-table sk-chartview" aria-label={header} data-sk-chart-view={chart.id}
-      data-sk-chart-dimensions={dimensions.map((d) => propOf(d)?.label ?? d).join('\u0001')} data-sk-chart-measures={measures.map((m) => propOf(m)?.label ?? m).join('\u0001')}>
+    <section className="sk-table sk-chartview" aria-label={header || chart.title} data-sk-chart-view={chart.id} data-sk-chart-type={type}
+      data-sk-chart-dimensions={dimensions.map((d) => propOf(d)?.label ?? d).join('\u0001')} data-sk-chart-measures={measures.map((m) => defOf(m).label).join('\u0001')}>
       <div className="sk-table__toolbar" role="toolbar">
         {p.headerVisible === false ? null : (
           <>
@@ -205,17 +225,24 @@ export function Chart(p: $ChartSettings) {
           </>
         )}
         <span className="sk-grow" />
+        {chartActions.map((a) => (
+          <Button key={a.id} size="xs" variant="subtle" data-sk-action={a.id} disabled={runner.busy}
+            onClick={() => runner.run(a, [{ row: {}, path: '', label: '' }])}>{a.label}</Button>
+        ))}
         {p.actions}
       </div>
+      {runner.dialogs}
       <div className="sk-chartview__body">
         {!executed ? <Text c="dimmed" ta="center" p="lg">{t('table.noData.start')}</Text> : !q.isLoading && mixedUnits ? (
-          <div className="sk-chart sk-chart__message" data-sk-chart={chart.chartType === 'Bar' ? 'bar' : 'column'} data-sk-chart-invalid role="status" style={{ height: 320 }}>
+          <div className="sk-chart sk-chart__message" data-sk-chart={type} data-sk-chart-invalid role="status" style={{ height: 320 }}>
             <span className="sk-chart__message-title">{t('chart.invalidData')}</span>
             <span>{t('chart.differentUnits')}</span>
           </div>
         ) : (
           <SimpleChart
-            kind={chart.chartType === 'Bar' ? 'bar' : 'column'}
+            kind={drawn.kind}
+            stacked={drawn.stacked}
+            chartType={type}
             title={chart.title}
             measureLabel={series.length > 1 ? series.map((x) => x.label).join(', ') : (series[0]?.label ?? '')}
             dimensionLabel={categoryDims.map((d) => propOf(d)?.label ?? d).join(' / ')}

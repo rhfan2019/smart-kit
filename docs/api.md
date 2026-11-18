@@ -62,8 +62,10 @@
 - `filterString`
 - `formatDate`
 - `formatDateTime`
+- `formatDateTimeWithTimezone`
 - `formatNumber`
 - `formatTime`
+- `formatTimezone`
 - `formatValue`
 - `getEntitySet`
 - `getEntityType`
@@ -106,6 +108,13 @@
 - `propertyFilter`
 - `readQueryString`
 - `RELATIVE_DATE_OPERATORS`
+- `ALLOWED_EXPRESSIONS_PRIORITY`
+- `COUNT_DATE_OPERATORS`
+- `FIXED_DAY_OPERATORS`
+- `MDC_DATE_OPERATORS`
+- `relativeDateValueTypes`
+- `setDefaultWeekStart`
+- `strictestExpression`
 - `relativeDateRange`
 - `resolveCondition`
 - `resolveEntityPath`
@@ -203,6 +212,8 @@
 - `ResolvedPath`
 - `Row`
 - `SectionModel`
+- `SemanticTarget`
+- `SemanticTargetRequest`
 - `SortItem`
 - `SourceInfo`
 - `SubSectionContent`

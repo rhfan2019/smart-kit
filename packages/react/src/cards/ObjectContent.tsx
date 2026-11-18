@@ -119,7 +119,7 @@ export function ObjectContent(p: $ObjectContentSettings) {
 function ObjectItem({ ctx, field, row }: { ctx: ValueContext; field: FieldModel; row: Row }) {
   const t = useText();
   const v = fieldValue(ctx, field, row);
-  const url = field.url ? resolveRef(row, field.url) : v.property?.isUrl ? v.value : undefined;
+  const url = field.url ? resolveRef(row, field.url) : undefined;
   return (
     <div className="sk-card__object-item">
       <div className="sk-card__object-label">{t('card.label', { label: field.label })}</div>

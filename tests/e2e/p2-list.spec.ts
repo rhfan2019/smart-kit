@@ -47,13 +47,19 @@ test('P2-LRA-02 table actions: Create always enabled, selection actions disabled
   const t = table(page, 'PurchaseOrders');
   await expect(t.locator('[data-sk-action="Create"]')).toBeEnabled();
   await expect(t.locator('[data-sk-action="Delete"]')).toBeDisabled();
-  await expect(t.locator('[data-sk-action-group="decide"]')).toBeDisabled();
+  // the menu button is enabled without a selection, its items are not (FE ActionsTemplating getMenuButton, stage 4)
+  await expect(t.locator('[data-sk-action-group="decide"]')).toBeEnabled();
+  await t.locator('[data-sk-action-group="decide"]').click();
+  await expect(page.getByRole('menuitem', { name: 'Approve' })).toBeDisabled();
+  await page.keyboard.press('Escape');
   // a closed order: approve/reject (OperationAvailable false) stay disabled
   await filterStatus(page, 'CLOSED');
   await expect(t.locator('.ag-row[row-index="0"] [col-id="DataField::Status"]')).toHaveText(/Closed/);
   await t.locator('.ag-row[row-index="0"] input[type="checkbox"]').first().check();
   await expect(t.locator('[data-sk-action="Delete"]')).toBeEnabled();
-  await expect(t.locator('[data-sk-action-group="decide"]')).toBeDisabled();
+  await t.locator('[data-sk-action-group="decide"]').click();
+  await expect(page.getByRole('menuitem', { name: 'Approve' })).toBeDisabled();
+  await page.keyboard.press('Escape');
   // a new order: the menu button opens Approve and Reject
   await filterStatus(page, 'NEW');
   await expect(t.locator('.ag-row[row-index="0"] [col-id="DataField::Status"]')).toHaveText(/New/);
@@ -67,15 +73,16 @@ test('P2-LRA-02 table actions: Create always enabled, selection actions disabled
   await expect(page.locator('[data-sk-message-button]')).toBeVisible();
 });
 
-test('P2-LRA-03 line item actions are in the row and hidden (not disabled) when not available', async ({ page }) => {
+test('P2-LRA-03 line item actions are in the row and disabled when not available (FE, stage 4)', async ({ page }) => {
   await open(page, '/po?table=responsive');
   await expect(rows(page).first()).toBeVisible();
   const open1 = rows(page).filter({ hasNot: page.locator('[data-sk-cell] >> text=Closed') }).first();
-  await expect(open1.locator('[data-sk-inline-action="DataFieldForAction::Purchasing.close"]')).toBeVisible();
+  await expect(open1.locator('[data-sk-inline-action="DataFieldForAction::Purchasing.close"]')).toBeEnabled();
   await filterStatus(page, 'CLOSED');
   await expect(rows(page).first()).toBeVisible();
-  // closed orders only: no Close button at all
-  await expect(table(page, 'PurchaseOrders').locator('[data-sk-inline-action]')).toHaveCount(0);
+  // closed orders only: every Close button is disabled
+  await expect(table(page, 'PurchaseOrders').locator('[data-sk-inline-action]:not([disabled])')).toHaveCount(0);
+  await expect(table(page, 'PurchaseOrders').locator('[data-sk-inline-action]').first()).toBeDisabled();
 });
 
 test('P2-LRC-11 footer toolbar shows the message button when messages exist; it opens the message popover', async ({ page }) => {
@@ -167,7 +174,7 @@ test('P2-LR-16 working modes: worklist removes items that no longer match; conti
   // worklist (default): a closed order vanishes from the "Status != Closed" list
   await open(page, '/po?table=responsive');
   await expect(rows(page).first()).toBeVisible();
-  const first = rows(page).filter({ has: page.locator('[data-sk-inline-action]') }).first();
+  const first = rows(page).filter({ has: page.locator('[data-sk-inline-action]:not([disabled])') }).first();
   const key = await first.getAttribute('data-sk-row');
   await first.locator('[data-sk-inline-action="DataFieldForAction::Purchasing.close"]').click();
   await expect(rows(page).and(page.locator(`[data-sk-row="${key}"]`))).toHaveCount(0);
@@ -175,7 +182,7 @@ test('P2-LR-16 working modes: worklist removes items that no longer match; conti
   await resetServer(page);
   await open(page, '/po?table=responsive&working=continuous');
   await expect(rows(page).first()).toBeVisible();
-  const row = rows(page).filter({ has: page.locator('[data-sk-inline-action]') }).first();
+  const row = rows(page).filter({ has: page.locator('[data-sk-inline-action]:not([disabled])') }).first();
   const k2 = await row.getAttribute('data-sk-row');
   await row.locator('[data-sk-inline-action="DataFieldForAction::Purchasing.close"]').click();
   const kept = page.locator(`tr[data-sk-row="${k2}"]`);

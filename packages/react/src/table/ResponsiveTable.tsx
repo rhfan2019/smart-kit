@@ -199,6 +199,8 @@ export interface $TableSettings {
   inlineActions?(row: Row): ReactNode;
   /** Keys of rows marked as changed (continuous working mode). */
   changedKeys?: Set<string>;
+  /** Highlight of a row (sap.m.ListItemBase highlight: "error", "warning", "success", "information"; smart-kit internal). */
+  rowHighlight?(row: Row): string | undefined;
   /** Content after the first cell (e.g. draft markers). */
   rowMarker?(row: Row): ReactNode;
   onSelectionChange?(e: Table$SelectionChangeEvent): void;
@@ -510,7 +512,8 @@ export function Table(p: $TableSettings) {
                 aria-level={node ? node.level + 1 : undefined}
                 aria-expanded={node && node.drillState !== 'leaf' ? node.drillState === 'expanded' : undefined}
                 data-changed={p.changedKeys?.has(k) || undefined}
-                className={['sk-rtable__row', clickable ? 'sk-rtable__row--nav' : ''].join(' ')}
+                data-sk-highlight={p.rowHighlight?.(row)}
+                className={['sk-rtable__row', clickable ? 'sk-rtable__row--nav' : '', p.rowHighlight?.(row) ? `sk-table__row--${p.rowHighlight(row)}` : ''].join(' ')}
                 onClick={(e) => {
                   if (!clickable) return;
                   if ((e.target as HTMLElement).closest('button, a, input, label, [role="button"], [data-sk-no-nav]')) return;

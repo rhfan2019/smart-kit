@@ -143,7 +143,7 @@ test('GT-04 GT-06 responsive table grouped by status: group headers with the gro
   await openSettings(page);
   await page.locator('[data-sk-p13n-group-tab]').click();
   await page.locator('[data-sk-p13n-group]').click();
-  await expect(page.getByRole('option')).toHaveText(['No grouping', 'Supplier', 'Status', 'Order Type']);
+  await expect(page.getByRole('option')).toHaveText(['No grouping', 'Supplier', 'Status', 'Order Type', 'Company Code']);
   await page.keyboard.press('Escape');
   await page.keyboard.press('Escape');
   await groupBy(page, 'Status');

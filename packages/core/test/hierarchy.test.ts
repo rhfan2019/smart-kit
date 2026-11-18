@@ -22,8 +22,8 @@ const tree = (rows: Row[]) => rows.map((r) => `${'.'.repeat(Number(r.DistanceFro
 describe('recursive hierarchy model (UE-80)', () => {
   it('UE-80 Aggregation.RecursiveHierarchy and Hierarchy.RecursiveHierarchy with the same qualifier', () => {
     expect(model.entityTypes['Org.Unit']!.hierarchies).toEqual([
-      { qualifier: 'Org', nodeProperty: 'ID', parentNavigation: '_Parent', parentProperty: 'ParentID', drillState: 'DrillState', distanceFromRoot: 'DistanceFromRoot', limitedDescendantCount: 'LimitedDescendantCount', matched: 'Matched' },
-      { qualifier: 'Line', nodeProperty: 'ID', parentNavigation: '_Line', parentProperty: 'LineID', drillState: 'DrillState', distanceFromRoot: 'DistanceFromRoot' },
+      { qualifier: 'Org', nodeProperty: 'ID', parentNavigation: '_Parent', parentProperty: 'ParentID', drillState: 'DrillState', distanceFromRoot: 'DistanceFromRoot', limitedDescendantCount: 'LimitedDescendantCount', matched: 'Matched', paired: true },
+      { qualifier: 'Line', nodeProperty: 'ID', parentNavigation: '_Line', parentProperty: 'LineID', drillState: 'DrillState', distanceFromRoot: 'DistanceFromRoot', paired: true },
     ]);
     expect(hierarchyOf(model, 'Org.Unit')?.qualifier).toBe('Org');
     expect(hierarchyOf(model, 'Org.Unit', 'Line')?.parentNavigation).toBe('_Line');

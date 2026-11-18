@@ -40,6 +40,8 @@ export interface QueryRequest {
   top?: number;
   count: boolean;
   /** Time zone for calendar-day filters on Edm.DateTimeOffset properties. */
+  /** String conditions are case-insensitive (Capabilities.FilterFunctions tolower). */
+  caseInsensitive?: boolean;
   timeZone?: string;
   /** Server-side aggregation ($apply, OData Data Aggregation): group by `groupBy` and aggregate the measures (ADR-021). */
   aggregate?: { groupBy: string[]; measures: AggregateMeasure[] };
@@ -110,8 +112,14 @@ const prefixed = (prefix: string, p: string) => {
 };
 
 /** All paths a field needs: the value plus text, unit, criticality, URL. */
-export function fieldPaths(model: MetaModel, typeName: string, field: FieldModel): string[] {
-  if (field.kind === 'dataPoint' && field.dataPoint) return dataPointPaths(model, typeName, field.dataPoint);
+export function fieldPaths(model: MetaModel, typeName: string, field: FieldModel, o: { cell?: boolean } = {}): string[] {
+  if (field.kind === 'dataPoint' && field.dataPoint) return dataPointPaths(model, typeName, field.dataPoint, o);
+  // Field groups and connected fields read their fields; a contact its name and details; an inline action column
+  // only the paths of its action (actionPaths).
+  if (field.kind === 'fieldGroup' || field.kind === 'connectedFields') return [...new Set((field.fields ?? []).flatMap((f) => fieldPaths(model, typeName, f, o)))];
+  // a contact: only its name, as the OData V4 model of FE (the popover reads the details when it opens, ContactLink)
+  if (field.kind === 'contact') return field.contact?.fn && 'path' in field.contact.fn ? [field.contact.fn.path] : [];
+  if (field.kind === 'action') return [];
   if (field.kind === 'chart') {
     const chart = field.chart;
     if (!chart) return [];
@@ -125,26 +133,36 @@ export function fieldPaths(model: MetaModel, typeName: string, field: FieldModel
   out.push(field.path);
   const prop = resolvePath(model.entityTypes, typeName, field.path).property;
   if (prop) out.push(...companionPaths(prop, field.path));
+  // what the display shows besides the value (Common.ExternalID, Common.Timezone, the file name of a stream)
+  if (prop?.externalId) out.push(prefixed(field.path, prop.externalId));
+  for (const ref of [prop?.timezone, prop?.filename]) if (ref && 'path' in ref) out.push(prefixed(field.path, ref.path));
   if (field.criticality && 'path' in field.criticality) out.push(field.criticality.path);
   if (field.url && 'path' in field.url) out.push(field.url.path);
+  if (field.iconUrl && 'path' in field.iconUrl) out.push(field.iconUrl.path);
   return out;
 }
 
-/** Text, unit and criticality paths of a property reached through `path`. */
+/**
+ * Text and unit paths of a property reached through `path` (a property's UI.Criticality is not read, D41). With
+ * TextSeparate the field shows the value only (FE displayMode "Value"), so its text is not requested, as in FE.
+ */
 export function companionPaths(prop: PropertyModel, path: string): string[] {
   const out: string[] = [];
-  if (prop.text) out.push(prefixed(path, prop.text));
+  if (prop.text && prop.textArrangement !== 'TextSeparate') out.push(prefixed(path, prop.text));
   if (prop.unit && 'path' in prop.unit) out.push(prefixed(path, prop.unit.path));
-  if (prop.criticality && 'path' in prop.criticality) out.push(prefixed(path, prop.criticality.path));
   return out;
 }
 
-export function dataPointPaths(model: MetaModel, typeName: string, dp: DataPointModel): string[] {
+/**
+ * Paths a data point reads. In a table cell (`o.cell`) the rating's SampleSize is not shown (sap.fe.macros.internal.DataPoint
+ * binds it only in the header data point), so it is not requested, as in Fiori elements.
+ */
+export function dataPointPaths(model: MetaModel, typeName: string, dp: DataPointModel, o: { cell?: boolean } = {}): string[] {
   const out = [dp.value];
   const prop = resolvePath(model.entityTypes, typeName, dp.value).property;
   if (prop) out.push(...companionPaths(prop, dp.value));
   const cc = dp.criticalityCalculation;
-  const refs = [dp.targetValue, dp.criticality, dp.minimumValue, dp.maximumValue, dp.sampleSize, dp.forecastValue,
+  const refs = [dp.targetValue, dp.criticality, dp.minimumValue, dp.maximumValue, o.cell ? undefined : dp.sampleSize, dp.forecastValue,
     cc?.deviationRangeLowValue, cc?.toleranceRangeLowValue, cc?.acceptanceRangeLowValue, cc?.acceptanceRangeHighValue, cc?.toleranceRangeHighValue, cc?.deviationRangeHighValue];
   for (const ref of refs) if (ref && 'path' in ref && !out.includes(ref.path)) out.push(ref.path);
   return out;
@@ -172,6 +190,17 @@ export function selectAndExpand(model: MetaModel, typeName: string, paths: strin
     }
     if (ok && spec) add(spec.select, segments[segments.length - 1]!);
   }
+  // The OData V4 model of Fiori elements (autoExpandSelect) always selects the key properties of an expanded entity
+  // (sap.ui.model.odata.v4.lib._Helper selectKeyProperties): `_Status($select=Code,Name)` for the text `_Status/Name`.
+  const withKeys = (specs: ExpandSpec[], tn: string) => {
+    for (const e of specs) {
+      const target = model.entityTypes[tn]?.navigations[e.navigation]?.targetType;
+      if (!target) continue;
+      for (const k of model.entityTypes[target]?.keys ?? []) add(e.select, k);
+      withKeys(e.expand, target);
+    }
+  };
+  withKeys(expand, typeName);
   return { select, expand };
 }
 
@@ -196,6 +225,11 @@ export interface ListRequestOptions {
   /** Extra paths to select (e.g. requested by custom content). */
   extraSelect?: string[];
   timeZone?: string;
+  /**
+   * UI.PresentationVariant/RequestAtLeast of the table's presentation (a view's own PV, FE Table
+   * createRequestedProperties); default the entity's default presentation.
+   */
+  requestAtLeast?: string[];
 }
 
 /** Builds the request for a list or sub-table. Applies capability restrictions (Q-01–Q-07). */
@@ -205,8 +239,8 @@ export function buildListRequest(model: MetaModel, ui: EntityUi, o: ListRequestO
   const type = model.entityTypes[info.typeName]!;
   const paths = dedupe([
     ...type.keys,
-    ...o.columns.flatMap((c) => fieldPaths(model, info.typeName, c)),
-    ...ui.presentation.requestAtLeast,
+    ...o.columns.flatMap((c) => fieldPaths(model, info.typeName, c, { cell: true })),
+    ...(o.requestAtLeast ?? ui.presentation.requestAtLeast),
     ...(o.extraSelect ?? []),
   ]);
   const { select, expand } = selectAndExpand(model, info.typeName, paths, caps.nonExpandable);
@@ -215,7 +249,7 @@ export function buildListRequest(model: MetaModel, ui: EntityUi, o: ListRequestO
   const filters: FilterState = {};
   for (const [path, conds] of Object.entries(o.filters ?? {})) {
     // Conditions the service does not allow for the property are never sent (capability degradation, LR-35, P2-LR-19).
-    const allowed = path === EDIT_STATE || hiddenFilterPath(path) ? conds : isFilterable(caps, path) ? restrictConditions(caps.filterExpressions[path], conds) : [];
+    const allowed = path === EDIT_STATE || hiddenFilterPath(path) ? conds : isFilterable(caps, path) ? restrictConditions(caps.filterExpressions[path], conds, resolvePath(model.entityTypes, info.typeName, path).property?.edmType) : [];
     if (allowed.length) filters[path] = allowed;
   }
 
@@ -242,6 +276,7 @@ export function buildListRequest(model: MetaModel, ui: EntityUi, o: ListRequestO
     top: caps.topSupported ? o.top : undefined,
     count: Boolean(o.count) && caps.countable,
     timeZone: o.timeZone,
+    caseInsensitive: caps.caseInsensitive || undefined,
   };
 }
 
@@ -410,7 +445,7 @@ export function buildAggregateRequest(model: MetaModel, chart: { dimensions: str
   }
   const filters: FilterState = {};
   for (const [path, conds] of Object.entries(o.filters ?? {})) {
-    const allowed = path === EDIT_STATE || hiddenFilterPath(path) ? conds : isFilterable(caps, path) ? restrictConditions(caps.filterExpressions[path], conds) : [];
+    const allowed = path === EDIT_STATE || hiddenFilterPath(path) ? conds : isFilterable(caps, path) ? restrictConditions(caps.filterExpressions[path], conds, resolvePath(model.entityTypes, info.typeName, path).property?.edmType) : [];
     if (allowed.length) filters[path] = allowed;
   }
   return {
@@ -423,6 +458,7 @@ export function buildAggregateRequest(model: MetaModel, chart: { dimensions: str
     top: o.top,
     count: false,
     timeZone: o.timeZone,
+    caseInsensitive: caps.caseInsensitive || undefined,
     aggregate: { groupBy, measures: chart.measures.map((m) => aggregateMeasure(model, o.source, m)) },
   };
 }
@@ -443,7 +479,7 @@ export interface ChartRequestOptions {
  * measures (so amounts in different currencies are never added up); the measures are requested by
  * `aggregateMeasure`. No `$top`; `$orderby` only from `sort`.
  */
-export function buildChartRequest(model: MetaModel, chart: Pick<ChartModel, 'dimensions' | 'measures'>, o: ChartRequestOptions): QueryRequest {
+export function buildChartRequest(model: MetaModel, chart: Pick<ChartModel, 'dimensions' | 'measures' | 'dynamicMeasures'>, o: ChartRequestOptions): QueryRequest {
   const info = sourceInfo(model, o.source);
   const caps = info.parentSet ? capabilitiesFor(model, info.parentSet, info.navigation) : capabilitiesFor(model, info.entitySet);
   const groupable = caps.aggregation?.groupable ?? [];
@@ -453,13 +489,18 @@ export function buildChartRequest(model: MetaModel, chart: Pick<ChartModel, 'dim
     const text = resolvePath(model.entityTypes, info.typeName, d).property?.text;
     if (text && !text.includes('/') && !d.includes('/') && (!groupable.length || groupable.includes(text))) groups.add(text);
   }
-  for (const m of chart.measures) {
+  // Dynamic measures (Analytics.AggregatedProperty, FE MdcChartTemplate getDynamicMeasures) come first:
+  // `aggregate(<property> with <method> as <name>)`.
+  const transAgg = (name: string) => caps.aggregation?.aggregatedProperties?.find((x) => x.name === name);
+  const dynamic = (chart.dynamicMeasures ?? []).map(transAgg).filter((x): x is NonNullable<typeof x> => Boolean(x));
+  const measurePaths = [...dynamic.map((x) => x.property), ...chart.measures];
+  for (const m of measurePaths) {
     const prop = resolvePath(model.entityTypes, info.typeName, m).property;
     if (prop?.unit && 'path' in prop.unit) groups.add(prefixed(m, prop.unit.path));
   }
   const filters: FilterState = {};
   for (const [path, conds] of Object.entries(o.filters ?? {})) {
-    const allowed = path === EDIT_STATE || hiddenFilterPath(path) ? conds : isFilterable(caps, path) ? restrictConditions(caps.filterExpressions[path], conds) : [];
+    const allowed = path === EDIT_STATE || hiddenFilterPath(path) ? conds : isFilterable(caps, path) ? restrictConditions(caps.filterExpressions[path], conds, resolvePath(model.entityTypes, info.typeName, path).property?.edmType) : [];
     if (allowed.length) filters[path] = allowed;
   }
   return {
@@ -471,12 +512,30 @@ export function buildChartRequest(model: MetaModel, chart: Pick<ChartModel, 'dim
     orderBy: (o.sort ?? []).filter((s) => isSortable(caps, s.path)),
     count: caps.countable,
     timeZone: o.timeZone,
+    caseInsensitive: caps.caseInsensitive || undefined,
     // the V4 model sorts the groups of $$aggregation (sap.ui.model.odata.v4.lib._AggregationHelper)
-    aggregate: { groupBy: [...groups].sort(), measures: chart.measures.map((m) => aggregateMeasure(model, o.source, m)) },
+    aggregate: {
+      groupBy: [...groups].sort(),
+      measures: [
+        ...dynamic.map((x): AggregateMeasure => ({ path: x.property, with: x.method as AggregateMeasure['with'], as: x.name })),
+        ...chart.measures.map((m) => aggregateMeasure(model, o.source, m)),
+      ],
+    },
   };
 }
 
 export interface ValueHelpRequestOptions {
+  /**
+   * What the request is for (FE ValueListHelper): `dialog` – the value help dialog's table ($select of the value list
+   * entity's UI.SelectionFields, the parameters and the keys; texts of the shown columns expanded; sorted by the
+   * value list's PresentationVariant, else by the key); `suggest` (default) – type-ahead and fixed values (sorted by
+   * the PresentationVariant, fixed values else by their first shown parameter); `description` – the text of one
+   * value (`$select` = the description, `$top=2`, no count, as the mdc field reads a token's description;
+   * `withDescription: false` when the field shows the code only).
+   */
+  purpose?: 'dialog' | 'suggest' | 'description';
+  /** With `purpose: 'description'`: whether the description is selected (default true). */
+  withDescription?: boolean;
   search?: string;
   skip?: number;
   top?: number;
@@ -538,7 +597,41 @@ export function buildValueHelpRequest(model: MetaModel, vl: ValueListModel, o: V
   const merged = { ...inFilters, ...keyFilter };
   const filters: FilterState | undefined = Object.keys(merged).length ? merged : undefined;
   const typeName = set?.typeName ?? '';
-  const sel = set ? selectAndExpand(model, typeName, params) : { select: params, expand: [] };
+  const vhType = model.entityTypes[typeName];
+  const vhUi = model.ui[typeName];
+  if (o.purpose === 'description') {
+    const desc = vl.descriptionProperty;
+    const sel = o.withDescription === false || !desc ? { select: [], expand: [] } : selectAndExpand(model, typeName, [desc]);
+    return { source: { entitySet: vl.collectionPath }, select: sel.select, expand: sel.expand, filters, orderBy: [], skip: undefined, top: 2, count: false };
+  }
+  // PresentationVariant of the value list entity (PresentationVariantQualifier, else the unqualified one)
+  const pvSort = vhUi?.presentationVariants?.[vl.presentationVariantQualifier ?? '']?.presentation.sortOrder ?? [];
+  let orderBy: SortItem[] = pvSort.map((x) => ({ path: x.path, descending: x.descending }));
+  const hidden = (path: string) => (vhType ? resolvePath(model.entityTypes, typeName, path).property?.hidden === true : false);
+  let paths: string[];
+  if (o.purpose === 'dialog') {
+    // FE _getColumnDefinitionFromSelectionFields + _mergeColumnDefinitionsFromProperties + vhKeys; $select leaves out
+    // navigation paths (_build$SelectString); the texts of the shown columns (the parameters) are expanded.
+    const selectionFields = vhUi && !vhUi.derived.selectionFields ? vhUi.selectionFields : [];
+    const columns = dedupe([...selectionFields, ...vl.parameters.map((p) => p.valueListProperty), ...(vhType?.keys ?? [])]).filter((p) => !p.includes('/'));
+    const texts = params.filter((p) => !hidden(p)).flatMap((p) => {
+      const prop = resolvePath(model.entityTypes, typeName, p).property;
+      return prop?.text ? [prefixed(p, prop.text)] : [];
+    }).filter((p) => p.includes('/'));
+    paths = [...columns, ...texts];
+    // without a PresentationVariant: by the key, but not while searching (FE: the search result keeps its order)
+    if (!orderBy.length && !search && !anyOf) orderBy = [{ path: vl.keyProperty, descending: false }];
+  } else {
+    paths = params;
+    if (!orderBy.length && vl.fixedValues) {
+      // FE _getDefaultSortPropertyName: the first InOut / Out / DisplayOnly parameter that is not hidden (its text for TextOnly)
+      const first = vl.parameters.find((p) => (p.kind === 'InOut' || p.kind === 'Out' || p.kind === 'DisplayOnly') && !p.valueListProperty.includes('/') && !hidden(p.valueListProperty));
+      const prop = first ? resolvePath(model.entityTypes, typeName, first.valueListProperty).property : undefined;
+      const path = first && prop?.text && prop.textArrangement === 'TextOnly' ? prop.text : first?.valueListProperty;
+      if (path) orderBy = [{ path, descending: false }];
+    }
+  }
+  const sel = set ? selectAndExpand(model, typeName, paths) : { select: paths, expand: [] };
   return {
     source: { entitySet: vl.collectionPath },
     select: sel.select,
@@ -546,7 +639,7 @@ export function buildValueHelpRequest(model: MetaModel, vl: ValueListModel, o: V
     filters,
     anyOf,
     search,
-    orderBy: [{ path: vl.keyProperty, descending: false }],
+    orderBy,
     skip: o.skip ?? 0,
     top: o.top ?? 50,
     count: caps?.countable ?? true,
@@ -579,14 +672,14 @@ export function typeLookup(model: MetaModel, typeName: string) {
 }
 
 /** Builds the $filter string of a request (filters and anyOf). */
-export function filterString(model: MetaModel, typeName: string, req: Pick<QueryRequest, 'filters' | 'anyOf' | 'timeZone'>): string | undefined {
+export function filterString(model: MetaModel, typeName: string, req: Pick<QueryRequest, 'filters' | 'anyOf' | 'timeZone' | 'caseInsensitive'>): string | undefined {
   const typeOf = typeLookup(model, typeName);
   const parts: string[] = [];
-  const all = req.filters ? toFilter(req.filters, typeOf, { timeZone: req.timeZone }) : undefined;
+  const all = req.filters ? toFilter(req.filters, typeOf, { timeZone: req.timeZone, caseInsensitive: req.caseInsensitive }) : undefined;
   if (all) parts.push(all);
   if (req.anyOf) {
     const ors = Object.entries(req.anyOf)
-      .map(([p, cs]) => toFilter({ [p]: cs }, typeOf, { timeZone: req.timeZone }))
+      .map(([p, cs]) => toFilter({ [p]: cs }, typeOf, { timeZone: req.timeZone, caseInsensitive: req.caseInsensitive }))
       .filter((x): x is string => Boolean(x));
     if (ors.length) parts.push(ors.length === 1 ? ors[0]! : `(${ors.join(' or ')})`);
   }
@@ -595,7 +688,7 @@ export function filterString(model: MetaModel, typeName: string, req: Pick<Query
   // Each property of a hidden selection variant is a filter of its own, in parentheses as the SAPUI5 V4 model writes
   // FE's per-SelectOption filters ("(Status eq 'A' or Status eq 'B') and (CompanyCode eq '1000')").
   for (const [path, conds] of Object.entries(hiddenFiltersOf(req.filters))) {
-    const f = toFilter({ [path]: conds }, typeOf, { timeZone: req.timeZone });
+    const f = toFilter({ [path]: conds }, typeOf, { timeZone: req.timeZone, caseInsensitive: req.caseInsensitive });
     if (f) parts.push(wrapped(f) ? f : `(${f})`);
   }
   if (req.filters?.[EDIT_STATE]) parts.push(editStateFilter(editStateOf(req.filters), parts.length > 0));

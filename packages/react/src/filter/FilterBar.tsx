@@ -3,7 +3,7 @@
  * (LR-05–LR-11, docs/26b).
  */
 import { Button, Group, TextInput } from '@mantine/core';
-import { activeFilterPaths, filterExpressionRules, isComplete, type Condition, type FilterState, type Operator } from '@rhfan2019/smart-kit-core';
+import { activeFilterPaths, filterExpressionRules, getProperty, isComplete, type Condition, type FilterState, type Operator } from '@rhfan2019/smart-kit-core';
 import { Search } from 'lucide-react';
 import { createContext, useContext, useEffect, useImperativeHandle, useMemo, useRef, useState, type ReactNode, type Ref } from 'react';
 import { useMetaModel, useText } from '../context/SmartKitProvider';
@@ -290,7 +290,7 @@ function FilterBarWithState(p: $FilterBarSettings & { state: FilterStateApi }) {
   // ignorePersonalizationChanges: field selection kept in this instance; reset when the state's fields change
   const [localFields, setLocalFields] = useState<string[] | null>(null);
   useEffect(() => setLocalFields(null), [s.fields]);
-  const { capabilities } = useMetaModel(s.entitySet, { service: s.service });
+  const { capabilities, service: barService, set: barSet } = useMetaModel(s.entitySet, { service: s.service });
   const live = p.liveMode ?? s.liveMode;
 
   if (import.meta.env?.DEV && p.metaPath && !SELECTION_FIELDS.test(p.metaPath)) console.warn(`[smart-kit] FilterBar: metaPath "${p.metaPath}" is not a UI.SelectionFields path`);
@@ -416,10 +416,10 @@ function FilterBarWithState(p: $FilterBarSettings & { state: FilterStateApi }) {
     () => ({
       filters: s.filters,
       fields: fieldIds.split('|'),
-      single: (path) => filterExpressionRules(capabilities.filterExpressions[path]).max === 1,
+      single: (path) => filterExpressionRules(capabilities.filterExpressions[path], getProperty(barService.model, barSet.typeName, path)?.edmType).max === 1,
       setConditions: s.setConditions,
     }),
-    [s.filters, s.setConditions, fieldIds, capabilities.filterExpressions],
+    [s.filters, s.setConditions, fieldIds, capabilities.filterExpressions, barService.model, barSet.typeName],
   );
   const locked = [...new Set([...capabilities.requiredFilters, ...Object.keys(s.filters).filter((k) => (s.filters[k] ?? []).length)])];
   const adaptFields = [...shownFields, ...custom.filter((f) => customShown.has(f.key)).map((f) => f.key)];

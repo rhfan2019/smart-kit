@@ -1,8 +1,8 @@
 /* global sap */
-// Starts the component chosen in index.html (?app=purchasing | purchasing-draft | purchasing-chart | purchasing-views | purchasing-analytical).
+// Starts the component chosen in index.html (?app=purchasing | purchasing-draft | purchasing-chart | purchasing-views | purchasing-analytical | purchasing-display).
 sap.ui.define(['sap/ui/core/ComponentContainer'], function (ComponentContainer) {
   'use strict';
-  var name = { 'purchasing-draft': 'fe.ref.purchasingdraft', 'purchasing-chart': 'fe.ref.purchasingchart', 'purchasing-views': 'fe.ref.purchasingviews', 'purchasing-analytical': 'fe.ref.purchasinganalytical' }[window.feReferenceApp] || 'fe.ref.purchasing';
+  var name = { 'purchasing-draft': 'fe.ref.purchasingdraft', 'purchasing-chart': 'fe.ref.purchasingchart', 'purchasing-views': 'fe.ref.purchasingviews', 'purchasing-analytical': 'fe.ref.purchasinganalytical', 'purchasing-display': 'fe.ref.purchasingdisplay' }[window.feReferenceApp] || 'fe.ref.purchasing';
   new ComponentContainer({
     id: 'container',
     name: name,

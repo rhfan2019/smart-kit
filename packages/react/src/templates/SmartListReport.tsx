@@ -6,7 +6,8 @@
  */
 import { Group, SegmentedControl, Select, Tabs, Text, Tooltip } from '@mantine/core';
 import {
-  DRAFT_EDIT_STATES, EDIT_STATE, editStateOf, isFilterable, withHiddenFilters, type FilterState, type Operator, type Row, type SortItem, type VariantContent, type ViewModel,
+  buildTotalsRequest, calculateCriticality, capabilitiesFor, DRAFT_EDIT_STATES, EDIT_STATE, editStateOf, isCustomAggregate, isFilterable, resolvePath, withHiddenFilters,
+  type DataPointModel, type EntityUi, type FilterState, type MetaModel, type ValueRef, type Operator, type Row, type SortItem, type VariantContent, type ViewModel,
 } from '@rhfan2019/smart-kit-core';
 import { useQueries } from '@tanstack/react-query';
 import { BarChart3, Table2 } from 'lucide-react';
@@ -28,6 +29,7 @@ import DynamicPage from '../f/DynamicPage';
 import DynamicPageTitle from '../f/DynamicPageTitle';
 import DynamicPageHeader from '../f/DynamicPageHeader';
 import Chart from '../v4/fe/macros/Chart';
+import KPITag from '../v4/fe/macros/KPITag';
 import MessageProvider from '../kit/MessageProvider';
 import useMessages from '../kit/useMessages';
 
@@ -84,11 +86,18 @@ export interface SmartListReportProps {
    * Table type: grid (desktop), responsive, or auto = responsive below 600px (LR Responsiveness, docs/12 U-17). The UI5
    * names (sap.ui.comp.smarttable.TableType) are accepted too: "Table" = grid, "AnalyticalTable" = grid with
    * grouping, subtotals and totals (the only type with totals, D39), "ResponsiveTable" = responsive, "TreeTable" = grid tree table of the recursive hierarchy (docs/26 §3.10).
+   * Not set: chosen from the annotations as FE `getTableType` does — "AnalyticalTable" when Aggregation.ApplySupported
+   * lists all of filter, identity, orderby, skip, top, groupby, aggregate and concat, "TreeTable" when the type has a
+   * qualified Aggregation.RecursiveHierarchy / Hierarchy.RecursiveHierarchy pair, else grid.
    */
   tableType?: 'grid' | 'responsive' | 'auto' | 'AnalyticalTable' | 'ResponsiveTable' | 'Table' | 'TreeTable';
   /** Tree tables: qualifier of Aggregation.RecursiveHierarchy (default: the type's first hierarchy). */
   hierarchyQualifier?: string;
-  /** Offer a chart view from UI.Chart (qualifier; true = the first chart); views use the chart of their presentation variant. */
+  /**
+   * Offer a table/chart switch with this UI.Chart (qualifier; true = the first chart; smart-kit, LR Simple Content).
+   * Without it the list shows what its presentation shows (FE): the chart only when the first LineItem or Chart of the
+   * default presentation variant is a chart, a chart view when a view's is.
+   */
   chart?: boolean | string;
   /** Working mode after actions (LR Working Modes; default worklist). */
   workingMode?: 'worklist' | 'continuous';
@@ -114,6 +123,11 @@ export interface SmartListReportProps {
    * selects views (no Save, Save As, Manage).
    */
   canSaveVariants?: boolean;
+  /**
+   * KPI tags in the title (FE manifest `keyPerformanceIndicators`): name → the qualifier of a UI.KPI (and its entity
+   * set). Each tag shows the KPI's data point aggregated on the server (docs/29 §5).
+   */
+  keyPerformanceIndicators?: Record<string, KPIConfiguration>;
 }
 
 /**
@@ -142,6 +156,26 @@ export function tableFilters(filters: FilterState, applies: (path: string) => bo
  */
 export function viewExcludedPaths(views: ViewModel[], selectionFields: string[]): Set<string> {
   return new Set(views.flatMap((v) => v.conditions.map((c) => c.path)).filter((path) => !selectionFields.includes(path)));
+}
+
+/** The transformations FE requires for the automatic AnalyticalTable (sap.fe.core.converters.controls.Common.Table getTableType). */
+const ANALYTICAL_TRANSFORMATIONS = ['filter', 'identity', 'orderby', 'skip', 'top', 'groupby', 'aggregate', 'concat'];
+
+/** Qualifier of the first qualified Aggregation / Hierarchy RecursiveHierarchy pair of the set's type (FE getHierarchyQualifier). */
+function pairedHierarchy(model: MetaModel, entitySet: string): string | undefined {
+  const typeName = model.entitySets[entitySet]?.typeName;
+  return (typeName ? model.entityTypes[typeName]?.hierarchies ?? [] : []).find((h) => h.paired)?.qualifier;
+}
+
+/**
+ * Table type without `tableType` (FE Table getTableType): AnalyticalTable when Aggregation.ApplySupported allows all
+ * eight transformations, TreeTable with a recursive hierarchy pair, else the smart-kit default, the grid table.
+ */
+export function autoTableType(model: MetaModel, entitySet: string): 'grid' | 'AnalyticalTable' | 'TreeTable' {
+  const aggregation = model.entitySets[entitySet]?.capabilities.aggregation;
+  if (aggregation && ANALYTICAL_TRANSFORMATIONS.every((x) => aggregation.transformations.includes(x))) return 'AnalyticalTable';
+  if (pairedHierarchy(model, entitySet) !== undefined) return 'TreeTable';
+  return 'grid';
 }
 
 export function SmartListReport(props: SmartListReportProps) {
@@ -220,7 +254,7 @@ function ListReportInner(props: SmartListReportProps) {
     ro.observe(list);
     return () => ro.disconnect();
   });
-  const tableType = p.tableType ?? 'grid';
+  const tableType = p.tableType ?? autoTableType(model, p.entitySet);
   const responsive = tableType === 'responsive' || tableType === 'ResponsiveTable' || (tableType === 'auto' && width < 600);
 
   // LR-14: initial focus.
@@ -317,11 +351,19 @@ function ListReportInner(props: SmartListReportProps) {
     })),
   });
 
-  // Chart (LR Simple Content: switch between table and chart).
-  const chartModel = activeView?.chart ?? (p.chart ? (typeof p.chart === 'string' ? ui.charts[p.chart] : Object.values(ui.charts)[0]) : undefined);
-  const showChart = Boolean(view.chart && chartModel);
+  // Chart. FE (ListReportConverter SingleChart): a view whose first visualization is a chart, or a default presentation
+  // whose first one is, shows only the chart. smart-kit's `chart` prop adds a table/chart switch (LR Simple Content).
+  const propChart = p.chart ? (typeof p.chart === 'string' ? ui.charts[p.chart] : Object.values(ui.charts)[0]) : undefined;
+  const chartOnly = activeView ? activeView.visualization === 'chart' && Boolean(activeView.chart) : ui.defaultChart !== undefined && !propChart;
+  const chartModel = activeView?.visualization === 'chart' ? activeView.chart : !activeView && ui.defaultChart !== undefined ? ui.charts[ui.defaultChart] : propChart;
+  const showChart = Boolean(chartModel && (chartOnly || (view.chart ?? (!activeView && ui.defaultChart !== undefined))));
   const chartQualifier = chartModel ? Object.keys(ui.charts).find((k) => ui.charts[k] === chartModel) : undefined;
-  const chartToggle = chartModel ? (
+  // The chart's metaPath: the default presentation when it shows the chart (its SortOrder sorts the chart, as FE), else
+  // the UI.Chart — also in a chart view, which FE does not sort by the view's SortOrder (checked: views4-chart-view).
+  const chartMetaPath = !activeView && ui.defaultChart !== undefined && chartModel === ui.charts[ui.defaultChart]
+      ? '@com.sap.vocabularies.UI.v1.PresentationVariant'
+      : `@com.sap.vocabularies.UI.v1.Chart${chartQualifier ? `#${chartQualifier}` : ''}`;
+  const chartToggle = chartModel && !chartOnly ? (
     <SegmentedControl
       size="xs" value={showChart ? 'chart' : 'table'} aria-label={t('views.switch')} data-sk-chart-toggle
       onChange={(v) => setView((s) => ({ ...s, chart: v === 'chart' }))}
@@ -350,8 +392,9 @@ function ListReportInner(props: SmartListReportProps) {
 
   const table = (entitySet: string, key: string, v: ViewModel | undefined, extend: TableExtendEntry[] | undefined, title: string, withSwitch: boolean) => {
     const q = queryFor(entitySet, v);
-    if (showChart && chartModel && entitySet === p.entitySet) {
-      return <Chart revision={refreshRevision} contextPath={`/${entitySet}`} metaPath={`@com.sap.vocabularies.UI.v1.Chart${chartQualifier ? `#${chartQualifier}` : ''}`} service={p.service} query={q.query} header={title} headerContent={withSwitch ? contentSwitch : undefined} actions={chartToggle} onDrilldown={(e) => drilldown(e.dimension, e.value)} />;
+    // The chart of the active view or of the page.
+    if (showChart && chartModel && entitySet === p.entitySet && (!v || v.id === activeView?.id)) {
+      return <Chart revision={refreshRevision} contextPath={`/${entitySet}`} metaPath={chartMetaPath} service={p.service} query={q.query} headerContent={withSwitch ? contentSwitch : undefined} actions={chartToggle} onDrilldown={(e) => drilldown(e.dimension, e.value)} />;
     }
     return (
       <>
@@ -384,9 +427,10 @@ function ListReportInner(props: SmartListReportProps) {
             onBeforeExport: p.onBeforeExport,
             onExported: p.onExported,
           };
-          return tableType === 'TreeTable'
-            ? <TreeTable key={`${key}:${responsive ? 'r' : 'g'}`} ref={tableRef} {...common} responsive={responsive} hierarchyQualifier={p.hierarchyQualifier} />
-            : <Table key={`${key}:${responsive ? 'r' : 'g'}`} ref={tableRef} {...common} type={responsive ? 'ResponsiveTable' : tableType === 'AnalyticalTable' ? 'AnalyticalTable' : undefined} />;
+          const type = entitySet === p.entitySet ? tableType : p.tableType ?? autoTableType(model, entitySet);
+          return type === 'TreeTable'
+            ? <TreeTable key={`${key}:${responsive ? 'r' : 'g'}`} ref={tableRef} {...common} responsive={responsive} hierarchyQualifier={p.hierarchyQualifier ?? (p.tableType ? undefined : pairedHierarchy(model, entitySet))} />
+            : <Table key={`${key}:${responsive ? 'r' : 'g'}`} ref={tableRef} {...common} type={responsive ? 'ResponsiveTable' : type === 'AnalyticalTable' ? 'AnalyticalTable' : undefined} />;
         })()}
       </>
     );
@@ -429,7 +473,13 @@ function ListReportInner(props: SmartListReportProps) {
         onPinnedStateChange={(e) => setView((s) => ({ ...s, headerPinned: e.pinned }))}
         title={(
           <DynamicPageTitle
-            heading={<VariantManagement variants={variants} content={content} onSelect={apply} standardName={p.title} supportApplyAutomatically={!p.liveMode} creationAllowed={p.canSaveVariants} />}
+            heading={p.keyPerformanceIndicators && Object.keys(p.keyPerformanceIndicators).length ? (
+              // FE ListReport.view.xml: the variant management and the KPI tags in one horizontal layout
+              <Group gap="xs" wrap="nowrap" data-sk-kpi-tags>
+                <VariantManagement variants={variants} content={content} onSelect={apply} standardName={p.title} supportApplyAutomatically={!p.liveMode} creationAllowed={p.canSaveVariants} />
+                <KpiTags entitySet={p.entitySet} service={p.service} keyPerformanceIndicators={p.keyPerformanceIndicators} />
+              </Group>
+            ) : <VariantManagement variants={variants} content={content} onSelect={apply} standardName={p.title} supportApplyAutomatically={!p.liveMode} creationAllowed={p.canSaveVariants} />}
             snappedTitleOnMobile={p.title ?? ui.headerInfo.typeNamePlural}
             actions={p.headerActions || share ? <Group gap="xs" wrap="nowrap">{p.headerActions}{share}</Group> : undefined}
             snappedContent={<FilterSummary entitySet={p.entitySet} service={p.service} filters={Object.fromEntries(Object.entries(filter.filters).filter(([k]) => k !== EDIT_STATE))} search={filter.search} />}
@@ -444,5 +494,102 @@ function ListReportInner(props: SmartListReportProps) {
         content={<>{p.beforeTable}{body}</>}
       />
     </div>
+  );
+}
+
+// ---------------------------------------------------------------------------------------------- KPI tags
+
+/**
+ * KPI tags of the list report title (FE manifest `keyPerformanceIndicators`, sap.fe.core.converters.controls.Common.KPI,
+ * sap.fe.core.controllerextensions.KPIManagement, sap.fe.macros.kpiTag.AnalyticalKPITag; docs/29 §5): one tag per
+ * configured UI.KPI, its value aggregated on the server (`aggregate(<value>,<unit>)` with the KPI's selection variant and,
+ * on draft entity sets, `IsActiveEntity eq true`), shown as a KPITag (sap.fe.macros.KPITag).
+ */
+
+/** One entry of `keyPerformanceIndicators` (FE AnalyticalKPIConfiguration). */
+export interface KPIConfiguration {
+  /** Qualifier of the UI.KPI annotation. */
+  qualifier: string;
+  /** Entity set of the KPI; default the page's. */
+  entitySet?: string;
+}
+
+const constant = (r: ValueRef | undefined): number | undefined => {
+  if (!r || !('value' in r)) return undefined;
+  const n = Number(r.value);
+  return Number.isFinite(n) ? n : undefined;
+};
+
+/** FE KPIFormatter labelFormat: the first letters of the title's words (one word: its first three letters), upper case. */
+export function kpiLabel(title: string | undefined): string {
+  if (!title) return '';
+  const w = title.split(' ');
+  if (w.length === 1) return w[0]!.substring(0, 3).toUpperCase();
+  if (w.length === 2) return (w[0]!.substring(0, 1) + w[1]!.substring(0, 1)).toUpperCase();
+  return (w[0]!.substring(0, 1) + w[1]!.substring(0, 1) + w[2]!.substring(0, 1)).toUpperCase();
+}
+
+/** sap.ui.core.MessageType of a criticality (FE getMessageTypeFromCriticalityType / MessageTypeFromCriticality). */
+const MESSAGE_TYPE: Record<number, string> = { 0: 'None', 1: 'Error', 2: 'Warning', 3: 'Success', 5: 'Information' };
+
+function statusOf(dp: DataPointModel, value: number, row: Record<string, unknown>): string {
+  if (dp.criticality) {
+    const c = 'value' in dp.criticality ? Number(dp.criticality.value) : Number(row[dp.criticality.path]);
+    return MESSAGE_TYPE[c] ?? 'None';
+  }
+  if (dp.criticalityCalculation) return MESSAGE_TYPE[calculateCriticality(dp.criticalityCalculation, value, constant) ?? 0] ?? 'None';
+  return 'None';
+}
+
+/** The KPI tags of `keyPerformanceIndicators` (FE: a KPI without ApplySupported, chart or aggregatable value is skipped). */
+function KpiTags(p: { entitySet: string; service?: string; keyPerformanceIndicators: Record<string, KPIConfiguration> }) {
+  const service = useService(p.service);
+  const { namespace, locale, intlLocale, timeZone } = useSmartKit();
+  const t = useText();
+  const model = service.model;
+  const defs = Object.entries(p.keyPerformanceIndicators).flatMap(([name, c]) => {
+    const entitySet = c.entitySet ?? p.entitySet;
+    const set = model.entitySets[entitySet];
+    const kpi: NonNullable<EntityUi['kpis']>[string] | undefined = set ? model.ui[set.typeName]?.kpis?.[c.qualifier] : undefined;
+    const source = { entitySet };
+    // FE createAnalyticalKPIDefinition: ApplySupported, a chart in the Detail PV, and a custom aggregate as value
+    if (!set || !kpi || !capabilitiesFor(model, entitySet).aggregation || kpi.chart === undefined || !isCustomAggregate(model, source, kpi.dataPoint.value)) return [];
+    const filters: FilterState = {};
+    for (const x of kpi.conditions) (filters[x.path] ??= []).push({ operator: x.operator as Operator, values: x.values, exclude: x.exclude || undefined });
+    if (set.draft) filters.IsActiveEntity = [{ operator: 'EQ', values: [true] }];
+    const crit = kpi.dataPoint.criticality && 'path' in kpi.dataPoint.criticality ? [kpi.dataPoint.criticality.path] : [];
+    const req = buildTotalsRequest(model, { source, measures: [kpi.dataPoint.value, ...crit], filters: Object.keys(filters).length ? filters : undefined });
+    const prop = resolvePath(model.entityTypes, set.typeName, kpi.dataPoint.value).property;
+    return [{ name, kpi, req, prop }];
+  });
+  const results = useQueries({
+    queries: defs.map((d) => ({
+      queryKey: ['smart-kit', namespace, service.name, locale, 'kpi-tag', JSON.stringify(d.req)],
+      queryFn: ({ signal }: { signal: AbortSignal }) => service.dataProvider.query({ ...d.req, top: 1, skip: 0 }, { signal }),
+    })),
+  });
+  void timeZone;
+  return (
+    <>
+      {defs.map((d, i) => {
+        const row = results[i]?.data?.rows[0];
+        if (!row) return null;
+        const dp = d.kpi.dataPoint;
+        const unitRef = d.prop?.unit;
+        const unit = unitRef ? ('path' in unitRef ? row[unitRef.path] : unitRef.value) : undefined;
+        const value = Number(row[dp.value.replace(/\//g, '_')]);
+        // several units: "*" without unit (FE loadKPITagData)
+        const multi = Boolean(unitRef) && (unit === null || unit === undefined || unit === '');
+        const number = multi ? '*' : new Intl.NumberFormat(intlLocale, { notation: 'compact', minimumFractionDigits: 0, maximumFractionDigits: dp.fractionDigits ?? 1 }).format(value);
+        const status = multi ? 'None' : statusOf(dp, value, row);
+        const amount = unitRef ? (multi ? t('kpi.multiUnit') : `${number} ${String(unit)}`) : number;
+        return (
+          <span key={d.name} data-sk-kpi-tag={d.name}>
+            <KPITag text={kpiLabel(d.kpi.title)} number={number} unit={multi ? undefined : unit === undefined ? undefined : String(unit)} status={status}
+              tooltip={d.kpi.title ? t(`kpi.tooltip.${status === 'Error' || status === 'Warning' || status === 'Success' ? status : 'None'}`, { title: d.kpi.title, amount }) : undefined} />
+          </span>
+        );
+      })}
+    </>
   );
 }
