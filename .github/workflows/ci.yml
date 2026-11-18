@@ -94,7 +94,7 @@ jobs:
       - name: Install Playwright browser
         run: npx playwright install --with-deps chromium
       - name: End-to-end tests (axe, screenshots, performance)
-        run: npx playwright test --shard=${{ matrix.shard }}/3
+        run: npm run e2e -- --shard=${{ matrix.shard }}/3
       - uses: actions/upload-artifact@v4
         if: ${{ !cancelled() }}
         with:
@@ -150,7 +150,7 @@ jobs:
       - name: Install Playwright browser
         run: npx playwright install --with-deps chromium
       - name: End-to-end tests against PostgreSQL (smart-kit-server)
-        run: npx playwright test -c playwright.pg.config.ts --shard=${{ matrix.shard }}/2
+        run: npm run e2e:pg -- --shard=${{ matrix.shard }}/2
       - uses: actions/upload-artifact@v4
         if: failure()
         with:
