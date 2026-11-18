@@ -14,15 +14,21 @@ export interface $BusyDialogSettings extends BusyCustomIconProps {
   text?: string;
   /** Dialog title. */
   title?: string;
-  /** Alignment of the title (default Auto: start, as in the Horizon theme). */
+  /** Alignment of the title (Auto: start, as in the Horizon theme). @defaultValue 'Auto' */
   titleAlignment?: TitleAlignmentValue;
   /** Text of the Cancel button (default "Cancel"). */
   cancelButtonText?: string;
-  /** Shows a Cancel button (default false); it, and Esc, close the dialog with `cancelPressed: true`. */
+  /** Shows a Cancel button; it, and Esc, close the dialog with `cancelPressed: true`. @defaultValue false */
   showCancelButton?: boolean;
   /** Fired when the dialog closes. */
-  onClose?(e: { cancelPressed: boolean }): void;
+  onClose?(e: BusyDialog$CloseEvent): void;
   ref?: Ref<BusyDialog>;
+}
+
+/** Event object of BusyDialog's close. */
+export interface BusyDialog$CloseEvent {
+  /** The dialog was closed by the Cancel button, Esc or `close(true)`. */
+  cancelPressed: boolean;
 }
 
 /** Instance methods of BusyDialog. */

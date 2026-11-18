@@ -11,30 +11,30 @@ import { TEXTS } from './texts';
 export type ObjectNumberDisplayMode = 'Default' | 'Currency' | 'Unit';
 export const ObjectNumberDisplayMode = { Default: 'Default', Currency: 'Currency', Unit: 'Unit' } as const;
 
-export interface $ObjectNumberSettings extends HTMLAttributes<HTMLSpanElement> {
+export interface $ObjectNumberSettings extends Omit<HTMLAttributes<HTMLSpanElement>, 'children'> {
   /** The number. In Default mode it is shown as given; Currency and Unit modes format it with the locale. */
   number?: string | number;
-  /** Bold number (default true). */
+  /** Bold number. @defaultValue true */
   emphasized?: boolean;
-  /** Colour (default None). */
+  /** Colour. @defaultValue 'None' */
   state?: ValueState;
   /** Unit after the number; the ISO currency code in Currency mode. */
   unit?: string;
-  /** sap.ui.core.TextAlign (default Begin). */
+  /** sap.ui.core.TextAlign. @defaultValue 'Begin' */
   textAlign?: TextAlignValue;
-  /** The number is clickable (default false); fires onPress. */
+  /** The number is clickable; fires onPress. @defaultValue false */
   active?: boolean;
-  /** Overlay enlarges the clickable area of an active number (default Inline). */
+  /** Overlay enlarges the clickable area of an active number. @defaultValue 'Inline' */
   reactiveAreaMode?: ReactiveAreaMode;
-  /** Filled background in the state colour (default false). */
+  /** Filled background in the state colour. @defaultValue false */
   inverted?: boolean;
-  /** Default shows the number as given; Currency formats it like Currency with `unit` as the currency; Unit formats it as a decimal. */
+  /** Default shows the number as given; Currency formats it like Currency with `unit` as the currency; Unit formats it as a decimal. @defaultValue 'Default' */
   displayMode?: ObjectNumberDisplayMode;
   /** Fraction digits in Currency and Unit modes (Currency: padded like Currency; default the currency's digits). */
   maxPrecision?: number;
-  /** Currency mode: shows the currency symbol instead of the code (default true). */
+  /** Currency mode: shows the currency symbol instead of the code. @defaultValue true */
   useSymbol?: boolean;
-  /** Shows "–" when number is empty (default Off). */
+  /** Shows "–" when number is empty. @defaultValue 'Off' */
   emptyIndicatorMode?: EmptyIndicatorMode;
   /** Fired when an active number is pressed. */
   onPress?(e: Record<string, never>): void;

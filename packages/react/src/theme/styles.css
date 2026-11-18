@@ -463,13 +463,16 @@ tr.sk-rtable__total > * { position: sticky; top: auto; bottom: 0; z-index: 2; bo
 /* CD-01: header and content in a container with background, border and shadow; sizes of the SAPUI5 integration card. */
 .sk-card { display: flex; flex-direction: column; box-sizing: border-box; min-inline-size: 0; overflow: hidden; background: var(--sk-color-surface); color: var(--sk-color-text); font-family: var(--sk-font-sans); font-size: var(--sk-card-font); line-height: var(--sk-card-line); border: var(--sk-size-border) solid transparent; border-radius: var(--sk-card-radius); box-shadow: var(--sk-card-shadow); }
 .sk-card *, .sk-card *::before, .sk-card *::after { box-sizing: border-box; }
+.sk-card--interactive { cursor: pointer; outline: none; }
+.sk-card--interactive:hover { box-shadow: var(--sk-card-shadow), inset 0 0 0 var(--sk-size-border) var(--sk-color-border-strong); }
+.sk-card--interactive:focus-visible { outline: calc(2 * var(--sk-size-border)) solid var(--sk-color-focus); outline-offset: calc(-2 * var(--sk-size-border)); }
 .sk-card__content { display: flex; flex-direction: column; min-block-size: 0; flex: 1 1 auto; }
 .sk-card__footer { display: flex; justify-content: flex-end; align-items: center; gap: var(--sk-card-gap); padding: var(--sk-card-footer-y) var(--sk-card-padding); }
 .sk-card__sr-only { position: absolute; inline-size: var(--sk-size-border); block-size: var(--sk-size-border); overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .sk-card__icon { inline-size: var(--sk-size-icon); block-size: var(--sk-size-icon); flex: none; fill: none; stroke: currentColor; stroke-width: 1.4; stroke-linecap: round; stroke-linejoin: round; }
 
 /* CD-02–CD-05: header — avatar, title (3 lines), subtitle (2 lines), counter top right; the whole header navigates */
-.sk-card__header { display: flex; align-items: center; padding: var(--sk-card-padding); border-radius: var(--sk-card-radius) var(--sk-card-radius) 0 0; outline: none; }
+.sk-card__header { display: flex; flex-direction: column; align-items: stretch; padding: var(--sk-card-padding); border-radius: var(--sk-card-radius) var(--sk-card-radius) 0 0; outline: none; }
 .sk-card--header-bottom .sk-card__header { border-radius: 0 0 var(--sk-card-radius) var(--sk-card-radius); }
 .sk-card__header--pressable { cursor: pointer; }
 .sk-card__header--pressable:hover { background: var(--sk-color-hover); }
@@ -484,6 +487,34 @@ tr.sk-rtable__total > * { position: sticky; top: auto; bottom: 0; z-index: 2; bo
 .sk-card__avatar--square { border-radius: var(--sk-card-avatar-radius); }
 .sk-card__avatar--icon { background: transparent; color: var(--sk-color-text-muted); }
 .sk-card__avatar img { inline-size: 100%; block-size: 100%; object-fit: cover; }
+/* sap.m.AvatarColor (iconBackgroundColor): Transparent (UI5 default), Placeholder, TileIcon, Accent1–10 (a wash of the chart colours) */
+.sk-card__avatar--transparent, .sk-card__avatar--tileicon { background: transparent; }
+.sk-card__avatar--placeholder { background: var(--sk-avatar-palette); }
+.sk-card__avatar--icon.sk-card__avatar--tileicon { color: var(--sk-color-link); }
+.sk-card__avatar--accent1 { --sk-card-avatar-accent: var(--sk-color-chart-1); }
+.sk-card__avatar--accent2 { --sk-card-avatar-accent: var(--sk-color-chart-2); }
+.sk-card__avatar--accent3 { --sk-card-avatar-accent: var(--sk-color-chart-3); }
+.sk-card__avatar--accent4 { --sk-card-avatar-accent: var(--sk-color-chart-4); }
+.sk-card__avatar--accent5 { --sk-card-avatar-accent: var(--sk-color-chart-5); }
+.sk-card__avatar--accent6 { --sk-card-avatar-accent: var(--sk-color-chart-6); }
+.sk-card__avatar--accent7 { --sk-card-avatar-accent: var(--sk-color-chart-7); }
+.sk-card__avatar--accent8 { --sk-card-avatar-accent: var(--sk-color-chart-8); }
+.sk-card__avatar--accent9 { --sk-card-avatar-accent: var(--sk-color-chart-9); }
+.sk-card__avatar--accent10 { --sk-card-avatar-accent: var(--sk-color-chart-10); }
+.sk-card__avatar[class*='sk-card__avatar--accent'] { background: color-mix(in srgb, var(--sk-card-avatar-accent) 18%, var(--sk-color-surface)); color: var(--sk-card-avatar-accent); }
+/* sap.m.AvatarSize (iconSize): S is the card size; the others scale like sap.m.Avatar (2, 3, 4, 5, 7 rem) */
+.sk-card__avatar--size-xs { inline-size: calc(var(--sk-card-avatar) * 2 / 3); block-size: calc(var(--sk-card-avatar) * 2 / 3); font-size: calc(var(--sk-card-avatar-text) * 2 / 3); }
+.sk-card__avatar--size-m { inline-size: calc(var(--sk-card-avatar) * 4 / 3); block-size: calc(var(--sk-card-avatar) * 4 / 3); font-size: calc(var(--sk-card-avatar-text) * 4 / 3); }
+.sk-card__avatar--size-l { inline-size: calc(var(--sk-card-avatar) * 5 / 3); block-size: calc(var(--sk-card-avatar) * 5 / 3); font-size: calc(var(--sk-card-avatar-text) * 5 / 3); }
+.sk-card__avatar--size-xl { inline-size: calc(var(--sk-card-avatar) * 7 / 3); block-size: calc(var(--sk-card-avatar) * 7 / 3); font-size: calc(var(--sk-card-avatar-text) * 7 / 3); }
+.sk-card__avatar--contain img { object-fit: contain; }
+.sk-card__avatar--state .sk-icon { inline-size: 50%; block-size: 50%; }
+/* toolbar, data timestamp, info sections, hyphenation (sap.f.cards.BaseHeader) */
+.sk-card__header-row--center { align-items: center; }
+.sk-card__toolbar { flex: none; align-self: flex-start; margin-inline-start: var(--sk-card-gap); }
+.sk-card__timestamp { margin-block-start: var(--sk-card-gap); font-size: var(--sk-card-font-small); line-height: var(--sk-card-line-small); color: var(--sk-color-text-muted); text-align: end; }
+.sk-card__info-section { display: flex; flex-direction: column; gap: var(--sk-card-gap); margin-block-start: var(--sk-card-gap); }
+.sk-card__header--hyphenated .sk-card__title, .sk-card__header--hyphenated .sk-card__subtitle, .sk-card__header--hyphenated .sk-card__details { hyphens: auto; overflow-wrap: normal; }
 
 /* numeric header (CD-04): "<subtitle> | <unit>", the KPI with scale and trend, up to two side indicators, details */
 .sk-card__header--numeric { flex-direction: column; align-items: stretch; }
@@ -497,9 +528,12 @@ tr.sk-rtable__total > * { position: sticky; top: auto; bottom: 0; z-index: 2; bo
 .sk-card__scale { font-weight: var(--sk-font-weight-bold); }
 .sk-card__trend { inline-size: var(--sk-space-4); block-size: var(--sk-space-4); fill: none; stroke: currentColor; stroke-width: 1.4; stroke-linejoin: round; }
 .sk-card__side { display: flex; flex-direction: column; align-items: flex-end; margin-inline-start: var(--sk-card-padding); margin-block-start: var(--sk-space-2); font-size: var(--sk-card-font-small); line-height: var(--sk-card-line-small); gap: var(--sk-space-2); }
-.sk-card__main + .sk-card__side { margin-inline-start: var(--sk-space-8); }
+.sk-card__sides { display: flex; }
+.sk-card__main + .sk-card__sides > .sk-card__side:first-child { margin-inline-start: var(--sk-space-8); }
+.sk-card__indicators--end .sk-card__sides { margin-inline-start: auto; }
+.sk-card__microchart { flex: 1 1 auto; min-inline-size: 0; margin-inline-start: var(--sk-card-padding); }
 .sk-card__side-title { color: var(--sk-color-text-muted); }
-.sk-card__details { margin-block-start: var(--sk-card-gap); font-size: var(--sk-card-font-small); line-height: var(--sk-card-line-small); color: var(--sk-color-text-muted); }
+.sk-card__details { display: -webkit-box; -webkit-box-orient: vertical; overflow: hidden; margin-block-start: var(--sk-card-gap); font-size: var(--sk-card-font-small); line-height: var(--sk-card-line-small); color: var(--sk-color-text-muted); }
 
 /* value states (sap.m.ValueColor / ValueState) */
 .sk-card .sk-card--state-good { color: var(--sk-color-positive); }

@@ -1782,20 +1782,24 @@ const default: { readonly Default: "Default"; readonly ISO_8601: "ISO_8601"; rea
 
 ## `@rhfan2019/smart-kit/f/Card`
 
-`$CardSettings` (interface) · `default` (component)
+`$CardSettings` (interface) · `default` (component) · `HeaderPosition` (type) · `SemanticRole` (type)
 
 ### `$CardSettings` — interface
 
 | Member | Required | Type | Description |
 | --- | --- | --- | --- |
 | `header` |  | `ReactNode` | Header (`Header` or `NumericHeader`). |
-| `headerPosition` |  | `'Top' \| 'Bottom'` | Position of the header (sap.f.cards.HeaderPosition); default "Top". |
-| `children` |  | `ReactNode` | Content (`ListContent`, `TableContent`, …, or any React content: the Component card). |
+| `headerPosition` |  | `HeaderPosition` | Position of the header. |
+| `content` |  | `ReactNode` | Content (`ListContent`, `TableContent`, …, or any React content: the Component card); the same as `children`. |
+| `children` |  | `ReactNode` | The content as JSX children (used when `content` is not given). |
 | `footer` |  | `ReactNode` | Footer, e.g. buttons (the integration card's actions strip). |
-| `width` |  | `string` | CSS width; default: the width of the container (CD-08). |
-| `height` |  | `string` | CSS height; default: the height of the content. |
+| `width` |  | `string` | CSS width (the width of the container). |
+| `height` |  | `string` | CSS height (the height of the content). |
+| `semanticRole` |  | `SemanticRole` | Accessibility role: a region, or an item of a list (then `onPress` makes the whole card interactive). |
+| `headingLevel` |  | `TitleLevel` | Heading level of the header title (aria-level). |
+| `onPress` |  | `() => void` | Press of the whole card; only with `semanticRole` "ListItem" (sap.f.CardBase#press). |
 | `className` |  | `string` | Extra CSS class on the root element. |
-| `style` |  | `CSSProperties` | Inline style, e.g. `{ width: 400 }` (cards fill their container otherwise). |
+| `style` |  | `CSSProperties` | Inline style, e.g. `{ width: 400 }`; the `width` / `height` props win over the style's. |
 | `aria-roledescription` |  | `string` | Accessible description of the card type, e.g. "List card". |
 
 ### `default` — component
@@ -1805,18 +1809,38 @@ const default: { readonly Default: "Default"; readonly ISO_8601: "ISO_8601"; rea
 | Prop | Required | Type | Description |
 | --- | --- | --- | --- |
 | `header` |  | `ReactNode` | Header (`Header` or `NumericHeader`). |
-| `headerPosition` |  | `'Top' \| 'Bottom'` | Position of the header (sap.f.cards.HeaderPosition); default "Top". |
-| `children` |  | `ReactNode` | Content (`ListContent`, `TableContent`, …, or any React content: the Component card). |
+| `headerPosition` |  | `HeaderPosition` | Position of the header. |
+| `content` |  | `ReactNode` | Content (`ListContent`, `TableContent`, …, or any React content: the Component card); the same as `children`. |
+| `children` |  | `ReactNode` | The content as JSX children (used when `content` is not given). |
 | `footer` |  | `ReactNode` | Footer, e.g. buttons (the integration card's actions strip). |
-| `width` |  | `string` | CSS width; default: the width of the container (CD-08). |
-| `height` |  | `string` | CSS height; default: the height of the content. |
+| `width` |  | `string` | CSS width (the width of the container). |
+| `height` |  | `string` | CSS height (the height of the content). |
+| `semanticRole` |  | `SemanticRole` | Accessibility role: a region, or an item of a list (then `onPress` makes the whole card interactive). |
+| `headingLevel` |  | `TitleLevel` | Heading level of the header title (aria-level). |
+| `onPress` |  | `() => void` | Press of the whole card; only with `semanticRole` "ListItem" (sap.f.CardBase#press). |
 | `className` |  | `string` | Extra CSS class on the root element. |
-| `style` |  | `CSSProperties` | Inline style, e.g. `{ width: 400 }` (cards fill their container otherwise). |
+| `style` |  | `CSSProperties` | Inline style, e.g. `{ width: 400 }`; the `width` / `height` props win over the style's. |
 | `aria-roledescription` |  | `string` | Accessible description of the card type, e.g. "List card". |
+
+### `HeaderPosition` — type
+
+sap.f.cards.HeaderPosition
+
+```ts
+export type HeaderPosition = 'Top' | 'Bottom';
+```
+
+### `SemanticRole` — type
+
+sap.f.cards.SemanticRole
+
+```ts
+export type SemanticRole = 'Region' | 'ListItem';
+```
 
 ## `@rhfan2019/smart-kit/f/cards/Header`
 
-`$HeaderSettings` (interface) · `default` (component)
+`$HeaderSettings` (interface) · `AvatarColor` (type) · `AvatarImageFitType` (type) · `AvatarShape` (type) · `AvatarSize` (type) · `default` (component)
 
 ### `$HeaderSettings` — interface
 
@@ -1824,15 +1848,54 @@ const default: { readonly Default: "Default"; readonly ISO_8601: "ISO_8601"; rea
 | --- | --- | --- | --- |
 | `title` |  | `string` | Title; default: from the content's annotations (UI.HeaderInfo). |
 | `subtitle` |  | `string` | Subtitle text. |
+| `iconState` |  | `ValueState` | A status-coloured message icon in the icon area instead of the avatar (do not combine with iconSrc / iconInitials). |
 | `statusText` |  | `string` | Counter text, e.g. "5 of 40"; default: from the content (CD-03). |
-| `iconSrc` |  | `string` | Image URL of the avatar. |
-| `iconInitials` |  | `string` | Initials shown in the avatar. |
-| `iconDisplayShape` |  | `'Circle' \| 'Square'` | Avatar shape (sap.m.AvatarShape); default "Circle". |
-| `iconAlt` |  | `string` |  |
-| `icon` |  | `ReactNode` | An icon element (for example from lucide-react) instead of an image or initials. |
-| `titleMaxLines` |  | `number` | Lines before the title is truncated (default 3, CD-02). |
-| `subtitleMaxLines` |  | `number` | Lines before the subtitle is truncated (default 2, CD-02). |
+| `titleMaxLines` |  | `number` | Lines before the title is truncated (CD-02). |
+| `subtitleMaxLines` |  | `number` | Lines before the subtitle is truncated (CD-02). |
+| `dataTimestamp` |  | `string` | Time of the oldest data in the card (ISO 8601), shown as a relative time such as "5 minutes ago". |
+| `wrappingType` |  | `WrappingType` | Wrapping of the title, subtitle and details texts. |
+| `infoSection` |  | `ReactNode[]` | Info sections shown at the bottom of the header (`infoSection` aggregation). |
+| `toolbar` |  | `ReactNode` | Additional content in the header's toolbar area, e.g. a menu button (`toolbar` aggregation); pressing it does not press the header. |
 | `onPress` |  | `() => void` | Press of the header (event `press`). |
+| `iconSrc` |  | `string \| ReactElement` | Image URL of the avatar, or an icon element (for example from lucide-react; UI5 takes an icon URI, ADR-032 rule 5). |
+| `iconInitials` |  | `string` | Initials shown in the avatar. |
+| `iconDisplayShape` |  | `AvatarShape` | Avatar shape. |
+| `iconAlt` |  | `string` | Alternative text of the avatar (its accessible name). |
+| `iconBackgroundColor` |  | `AvatarColor` | Background colour of the avatar. |
+| `iconSize` |  | `AvatarSize` | Size of the avatar ('Custom' is shown as 'S'). |
+| `iconFitType` |  | `AvatarImageFitType` | How an image fills the avatar. |
+
+### `AvatarColor` — type
+
+sap.m.AvatarColor
+
+```ts
+export type AvatarColor = | 'Accent1' | 'Accent2' | 'Accent3' | 'Accent4' | 'Accent5' | 'Accent6' | 'Accent7' | 'Accent8' | 'Accent9' | 'Accent10' | 'Placeholder' | 'Random' | 'TileIcon' | 'Transparent';
+```
+
+### `AvatarImageFitType` — type
+
+sap.m.AvatarImageFitType
+
+```ts
+export type AvatarImageFitType = 'Cover' | 'Contain';
+```
+
+### `AvatarShape` — type
+
+sap.m.AvatarShape
+
+```ts
+export type AvatarShape = 'Circle' | 'Square';
+```
+
+### `AvatarSize` — type
+
+sap.m.AvatarSize
+
+```ts
+export type AvatarSize = 'XS' | 'S' | 'M' | 'L' | 'XL' | 'Custom';
+```
 
 ### `default` — component
 
@@ -1842,44 +1905,66 @@ const default: { readonly Default: "Default"; readonly ISO_8601: "ISO_8601"; rea
 | --- | --- | --- | --- |
 | `title` |  | `string` | Title; default: from the content's annotations (UI.HeaderInfo). |
 | `subtitle` |  | `string` | Subtitle text. |
+| `iconState` |  | `ValueState` | A status-coloured message icon in the icon area instead of the avatar (do not combine with iconSrc / iconInitials). |
 | `statusText` |  | `string` | Counter text, e.g. "5 of 40"; default: from the content (CD-03). |
-| `iconSrc` |  | `string` | Image URL of the avatar. |
-| `iconInitials` |  | `string` | Initials shown in the avatar. |
-| `iconDisplayShape` |  | `'Circle' \| 'Square'` | Avatar shape (sap.m.AvatarShape); default "Circle". |
-| `iconAlt` |  | `string` |  |
-| `icon` |  | `ReactNode` | An icon element (for example from lucide-react) instead of an image or initials. |
-| `titleMaxLines` |  | `number` | Lines before the title is truncated (default 3, CD-02). |
-| `subtitleMaxLines` |  | `number` | Lines before the subtitle is truncated (default 2, CD-02). |
+| `titleMaxLines` |  | `number` | Lines before the title is truncated (CD-02). |
+| `subtitleMaxLines` |  | `number` | Lines before the subtitle is truncated (CD-02). |
+| `dataTimestamp` |  | `string` | Time of the oldest data in the card (ISO 8601), shown as a relative time such as "5 minutes ago". |
+| `wrappingType` |  | `WrappingType` | Wrapping of the title, subtitle and details texts. |
+| `infoSection` |  | `ReactNode[]` | Info sections shown at the bottom of the header (`infoSection` aggregation). |
+| `toolbar` |  | `ReactNode` | Additional content in the header's toolbar area, e.g. a menu button (`toolbar` aggregation); pressing it does not press the header. |
 | `onPress` |  | `() => void` | Press of the header (event `press`). |
+| `iconSrc` |  | `string \| ReactElement` | Image URL of the avatar, or an icon element (for example from lucide-react; UI5 takes an icon URI, ADR-032 rule 5). |
+| `iconInitials` |  | `string` | Initials shown in the avatar. |
+| `iconDisplayShape` |  | `AvatarShape` | Avatar shape. |
+| `iconAlt` |  | `string` | Alternative text of the avatar (its accessible name). |
+| `iconBackgroundColor` |  | `AvatarColor` | Background colour of the avatar. |
+| `iconSize` |  | `AvatarSize` | Size of the avatar ('Custom' is shown as 'S'). |
+| `iconFitType` |  | `AvatarImageFitType` | How an image fills the avatar. |
 
 ## `@rhfan2019/smart-kit/f/cards/NumericHeader`
 
-`$NumericHeaderSettings` (interface) · `default` (component) · `DeviationIndicator` (type) · `ValueColor` (type)
+`$NumericHeaderSettings` (interface) · `default` (component) · `DeviationIndicator` (type) · `NumericHeaderSideIndicatorsAlignment` (type) · `ValueColor` (type)
 
 ### `$NumericHeaderSettings` — interface
 
 | Member | Required | Type | Description |
 | --- | --- | --- | --- |
+| `title` |  | `string` | Title; default: from the content's annotations (UI.HeaderInfo). |
+| `subtitle` |  | `string` | Subtitle text. |
 | `unitOfMeasurement` |  | `string` | Unit of the number, shown in the subtitle row: "&lt;subtitle> \| &lt;unit>" (CD-04). |
 | `number` |  | `string` | The main indicator (KPI) value, already formatted. |
 | `scale` |  | `string` | Scaling factor shown next to the number, e.g. "K". |
-| `trend` |  | `DeviationIndicator` | Trend arrow: "Up" \| "Down" \| "None". |
-| `state` |  | `ValueColor` | Value state colour: "Good" \| "Error" \| "Critical" \| "Neutral" \| "None". |
-| `numberSize` |  | `'S' \| 'L'` | Size of the number (default "L"). |
+| `trend` |  | `DeviationIndicator` | Trend arrow. |
+| `state` |  | `ValueColor` | Semantic colour of the number. |
+| `numberSize` |  | `'S' \| 'L'` | Size of the number: "S" or "L". |
+| `numberVisible` |  | `boolean` | Shows the main indicator (number, scale, trend). |
 | `details` |  | `string` | Text below the number, e.g. the period of the KPI. |
-| `detailsState` |  | `ValueColor` |  |
+| `detailsMaxLines` |  | `number` | Lines before the details text is truncated. |
+| `detailsState` |  | `ValueColor` | Semantic colour of the details text (UI5: restricted to SAP Work Zone, sap.ui.core.ValueState). |
 | `sideIndicators` |  | `$NumericSideIndicatorSettings[]` | Up to two side indicators (CD-04). |
+| `sideIndicatorsAlignment` |  | `NumericHeaderSideIndicatorsAlignment` | Alignment of the side indicators: after the number ('Begin') or at the end of the header ('End'). |
+| `microChart` |  | `ReactNode` | A micro chart shown next to the indicators (`microChart` aggregation). |
 | `entitySet` |  | `string` | Annotation-driven KPI (OVP KPI header, docs/20): the entity set and the UI.DataPoint whose value is summed on the server. Number, scale, unit, state, trend and the target / deviation side indicators come from the data point unless given as props. |
 | `service` |  | `string` | Name of the service in `SmartKitProvider` `services`; default: the provider's `defaultService`. |
 | `dataPointAnnotationPath` |  | `string` | e.g. "com.sap.vocabularies.UI.v1.DataPoint#Spend" or "@UI.DataPoint#Spend". |
 | `selectionAnnotationPath` |  | `string` | UI.SelectionVariant that filters the KPI. |
 | `filters` |  | `FilterState` | Additional filters (e.g. from a filter bar). |
-| `title` |  | `string` | Title; default: from the content's annotations (UI.HeaderInfo). |
-| `subtitle` |  | `string` | Subtitle text. |
 | `statusText` |  | `string` | Counter text, e.g. "5 of 40"; default: from the content (CD-03). |
-| `titleMaxLines` |  | `number` | Lines before the title is truncated (default 3, CD-02). |
-| `subtitleMaxLines` |  | `number` | Lines before the subtitle is truncated (default 2, CD-02). |
+| `titleMaxLines` |  | `number` | Lines before the title is truncated (CD-02). |
+| `subtitleMaxLines` |  | `number` | Lines before the subtitle is truncated (CD-02). |
+| `dataTimestamp` |  | `string` | Time of the oldest data in the card (ISO 8601), shown as a relative time such as "5 minutes ago". |
+| `wrappingType` |  | `WrappingType` | Wrapping of the title, subtitle and details texts. |
+| `infoSection` |  | `ReactNode[]` | Info sections shown at the bottom of the header (`infoSection` aggregation). |
+| `toolbar` |  | `ReactNode` | Additional content in the header's toolbar area, e.g. a menu button (`toolbar` aggregation); pressing it does not press the header. |
 | `onPress` |  | `() => void` | Press of the header (event `press`). |
+| `iconSrc` |  | `string \| ReactElement` | Image URL of the avatar, or an icon element (for example from lucide-react; UI5 takes an icon URI, ADR-032 rule 5). |
+| `iconInitials` |  | `string` | Initials shown in the avatar. |
+| `iconDisplayShape` |  | `AvatarShape` | Avatar shape. |
+| `iconAlt` |  | `string` | Alternative text of the avatar (its accessible name). |
+| `iconBackgroundColor` |  | `AvatarColor` | Background colour of the avatar. |
+| `iconSize` |  | `AvatarSize` | Size of the avatar ('Custom' is shown as 'S'). |
+| `iconFitType` |  | `AvatarImageFitType` | How an image fills the avatar. |
 
 ### `default` — component
 
@@ -1887,34 +1972,61 @@ const default: { readonly Default: "Default"; readonly ISO_8601: "ISO_8601"; rea
 
 | Prop | Required | Type | Description |
 | --- | --- | --- | --- |
+| `title` |  | `string` | Title; default: from the content's annotations (UI.HeaderInfo). |
+| `subtitle` |  | `string` | Subtitle text. |
 | `unitOfMeasurement` |  | `string` | Unit of the number, shown in the subtitle row: "&lt;subtitle> \| &lt;unit>" (CD-04). |
 | `number` |  | `string` | The main indicator (KPI) value, already formatted. |
 | `scale` |  | `string` | Scaling factor shown next to the number, e.g. "K". |
-| `trend` |  | `DeviationIndicator` | Trend arrow: "Up" \| "Down" \| "None". |
-| `state` |  | `ValueColor` | Value state colour: "Good" \| "Error" \| "Critical" \| "Neutral" \| "None". |
-| `numberSize` |  | `'S' \| 'L'` | Size of the number (default "L"). |
+| `trend` |  | `DeviationIndicator` | Trend arrow. |
+| `state` |  | `ValueColor` | Semantic colour of the number. |
+| `numberSize` |  | `'S' \| 'L'` | Size of the number: "S" or "L". |
+| `numberVisible` |  | `boolean` | Shows the main indicator (number, scale, trend). |
 | `details` |  | `string` | Text below the number, e.g. the period of the KPI. |
-| `detailsState` |  | `ValueColor` |  |
+| `detailsMaxLines` |  | `number` | Lines before the details text is truncated. |
+| `detailsState` |  | `ValueColor` | Semantic colour of the details text (UI5: restricted to SAP Work Zone, sap.ui.core.ValueState). |
 | `sideIndicators` |  | `$NumericSideIndicatorSettings[]` | Up to two side indicators (CD-04). |
+| `sideIndicatorsAlignment` |  | `NumericHeaderSideIndicatorsAlignment` | Alignment of the side indicators: after the number ('Begin') or at the end of the header ('End'). |
+| `microChart` |  | `ReactNode` | A micro chart shown next to the indicators (`microChart` aggregation). |
 | `entitySet` |  | `string` | Annotation-driven KPI (OVP KPI header, docs/20): the entity set and the UI.DataPoint whose value is summed on the server. Number, scale, unit, state, trend and the target / deviation side indicators come from the data point unless given as props. |
 | `service` |  | `string` | Name of the service in `SmartKitProvider` `services`; default: the provider's `defaultService`. |
 | `dataPointAnnotationPath` |  | `string` | e.g. "com.sap.vocabularies.UI.v1.DataPoint#Spend" or "@UI.DataPoint#Spend". |
 | `selectionAnnotationPath` |  | `string` | UI.SelectionVariant that filters the KPI. |
 | `filters` |  | `FilterState` | Additional filters (e.g. from a filter bar). |
-| `title` |  | `string` | Title; default: from the content's annotations (UI.HeaderInfo). |
-| `subtitle` |  | `string` | Subtitle text. |
 | `statusText` |  | `string` | Counter text, e.g. "5 of 40"; default: from the content (CD-03). |
-| `titleMaxLines` |  | `number` | Lines before the title is truncated (default 3, CD-02). |
-| `subtitleMaxLines` |  | `number` | Lines before the subtitle is truncated (default 2, CD-02). |
+| `titleMaxLines` |  | `number` | Lines before the title is truncated (CD-02). |
+| `subtitleMaxLines` |  | `number` | Lines before the subtitle is truncated (CD-02). |
+| `dataTimestamp` |  | `string` | Time of the oldest data in the card (ISO 8601), shown as a relative time such as "5 minutes ago". |
+| `wrappingType` |  | `WrappingType` | Wrapping of the title, subtitle and details texts. |
+| `infoSection` |  | `ReactNode[]` | Info sections shown at the bottom of the header (`infoSection` aggregation). |
+| `toolbar` |  | `ReactNode` | Additional content in the header's toolbar area, e.g. a menu button (`toolbar` aggregation); pressing it does not press the header. |
 | `onPress` |  | `() => void` | Press of the header (event `press`). |
+| `iconSrc` |  | `string \| ReactElement` | Image URL of the avatar, or an icon element (for example from lucide-react; UI5 takes an icon URI, ADR-032 rule 5). |
+| `iconInitials` |  | `string` | Initials shown in the avatar. |
+| `iconDisplayShape` |  | `AvatarShape` | Avatar shape. |
+| `iconAlt` |  | `string` | Alternative text of the avatar (its accessible name). |
+| `iconBackgroundColor` |  | `AvatarColor` | Background colour of the avatar. |
+| `iconSize` |  | `AvatarSize` | Size of the avatar ('Custom' is shown as 'S'). |
+| `iconFitType` |  | `AvatarImageFitType` | How an image fills the avatar. |
 
 ### `DeviationIndicator` — type
+
+sap.m.DeviationIndicator
 
 ```ts
 export type DeviationIndicator = 'Up' | 'Down' | 'None';
 ```
 
+### `NumericHeaderSideIndicatorsAlignment` — type
+
+sap.f.cards.NumericHeaderSideIndicatorsAlignment
+
+```ts
+export type NumericHeaderSideIndicatorsAlignment = 'Begin' | 'End';
+```
+
 ### `ValueColor` — type
+
+sap.m.ValueColor
 
 ```ts
 export type ValueColor = 'Good' | 'Critical' | 'Error' | 'Neutral' | 'None';
@@ -1931,7 +2043,7 @@ export type ValueColor = 'Good' | 'Critical' | 'Error' | 'Neutral' | 'None';
 | `title` | **yes** | `string` | Title text. |
 | `number` |  | `string` | The number to show. |
 | `unit` |  | `string` | Unit or currency code shown with the value. |
-| `state` |  | `ValueColor` | Colour of the number (sap.m.ValueColor). |
+| `state` |  | `ValueColor` | Colour of the number. |
 
 ### `default` — component
 
@@ -1944,7 +2056,7 @@ Side indicator of a numeric header (e.g. target, deviation).
 | `title` | **yes** | `string` | Title text. |
 | `number` |  | `string` | The number to show. |
 | `unit` |  | `string` | Unit or currency code shown with the value. |
-| `state` |  | `ValueColor` | Colour of the number (sap.m.ValueColor). |
+| `state` |  | `ValueColor` | Colour of the number. |
 
 ## `@rhfan2019/smart-kit/kit/MessageHost`
 
@@ -2032,7 +2144,7 @@ const default: { readonly XS: "XS"; readonly S: "S"; readonly M: "M"; readonly L
 
 ## `@rhfan2019/smart-kit/m/BusyDialog`
 
-`$BusyDialogSettings` (interface) · `default` (component)
+`$BusyDialogSettings` (interface) · `BusyDialog$CloseEvent` (interface) · `default` (component)
 
 ### `$BusyDialogSettings` — interface
 
@@ -2040,15 +2152,23 @@ const default: { readonly XS: "XS"; readonly S: "S"; readonly M: "M"; readonly L
 | --- | --- | --- | --- |
 | `text` |  | `string` | Text below the busy indicator. |
 | `title` |  | `string` | Dialog title. |
-| `titleAlignment` |  | `TitleAlignmentValue` | Alignment of the title (default Auto: start, as in the Horizon theme). |
+| `titleAlignment` |  | `TitleAlignmentValue` | Alignment of the title (Auto: start, as in the Horizon theme). |
 | `cancelButtonText` |  | `string` | Text of the Cancel button (default "Cancel"). |
-| `showCancelButton` |  | `boolean` | Shows a Cancel button (default false); it, and Esc, close the dialog with `cancelPressed: true`. |
-| `onClose` |  | `(e: { cancelPressed: boolean }) => void` | Fired when the dialog closes. |
+| `showCancelButton` |  | `boolean` | Shows a Cancel button; it, and Esc, close the dialog with `cancelPressed: true`. |
+| `onClose` |  | `(e: BusyDialog$CloseEvent) => void` | Fired when the dialog closes. |
 | `ref` |  | `Ref&lt;BusyDialog>` |  |
 | `customIcon` |  | `ReactNode` | Icon rotated instead of the dots (a React node). |
-| `customIconRotationSpeed` |  | `number` | Milliseconds per rotation of the custom icon (default 1000). |
-| `customIconWidth` |  | `string` | Width of the custom icon (CSS length; default 44px). |
-| `customIconHeight` |  | `string` | Height of the custom icon (CSS length; default 44px). |
+| `customIconRotationSpeed` |  | `number` | Milliseconds per rotation of the custom icon. |
+| `customIconWidth` |  | `string` | Width of the custom icon (CSS length). |
+| `customIconHeight` |  | `string` | Height of the custom icon (CSS length). |
+
+### `BusyDialog$CloseEvent` — interface
+
+Event object of BusyDialog's close.
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `cancelPressed` | **yes** | `boolean` | The dialog was closed by the Cancel button, Esc or `close(true)`. |
 
 ### `default` — component
 
@@ -2060,15 +2180,15 @@ Instance methods of BusyDialog.
 | --- | --- | --- | --- |
 | `text` |  | `string` | Text below the busy indicator. |
 | `title` |  | `string` | Dialog title. |
-| `titleAlignment` |  | `TitleAlignmentValue` | Alignment of the title (default Auto: start, as in the Horizon theme). |
+| `titleAlignment` |  | `TitleAlignmentValue` | Alignment of the title (Auto: start, as in the Horizon theme). |
 | `cancelButtonText` |  | `string` | Text of the Cancel button (default "Cancel"). |
-| `showCancelButton` |  | `boolean` | Shows a Cancel button (default false); it, and Esc, close the dialog with `cancelPressed: true`. |
-| `onClose` |  | `(e: { cancelPressed: boolean }) => void` | Fired when the dialog closes. |
+| `showCancelButton` |  | `boolean` | Shows a Cancel button; it, and Esc, close the dialog with `cancelPressed: true`. |
+| `onClose` |  | `(e: BusyDialog$CloseEvent) => void` | Fired when the dialog closes. |
 | `ref` |  | `Ref&lt;BusyDialog>` |  |
 | `customIcon` |  | `ReactNode` | Icon rotated instead of the dots (a React node). |
-| `customIconRotationSpeed` |  | `number` | Milliseconds per rotation of the custom icon (default 1000). |
-| `customIconWidth` |  | `string` | Width of the custom icon (CSS length; default 44px). |
-| `customIconHeight` |  | `string` | Height of the custom icon (CSS length; default 44px). |
+| `customIconRotationSpeed` |  | `number` | Milliseconds per rotation of the custom icon. |
+| `customIconWidth` |  | `string` | Width of the custom icon (CSS length). |
+| `customIconHeight` |  | `string` | Height of the custom icon (CSS length). |
 
 ## `@rhfan2019/smart-kit/m/BusyIndicator`
 
@@ -2079,11 +2199,11 @@ Instance methods of BusyDialog.
 | Member | Required | Type | Description |
 | --- | --- | --- | --- |
 | `text` |  | `string` | Text below the indicator. |
-| `size` |  | `string` | Size of the dots (CSS length; default 1rem). |
+| `size` |  | `string` | Size of the dots (CSS length). |
 | `customIcon` |  | `ReactNode` | Icon rotated instead of the dots (a React node). |
-| `customIconRotationSpeed` |  | `number` | Milliseconds per rotation of the custom icon (default 1000). |
-| `customIconWidth` |  | `string` | Width of the custom icon (CSS length; default 44px). |
-| `customIconHeight` |  | `string` | Height of the custom icon (CSS length; default 44px). |
+| `customIconRotationSpeed` |  | `number` | Milliseconds per rotation of the custom icon. |
+| `customIconWidth` |  | `string` | Width of the custom icon (CSS length). |
+| `customIconHeight` |  | `string` | Height of the custom icon (CSS length). |
 | `defaultChecked` |  | `boolean \| undefined` |  |
 | `defaultValue` |  | `string \| number \| readonly string[] \| undefined` |  |
 | `suppressContentEditableWarning` |  | `boolean \| undefined` |  |
@@ -2192,7 +2312,6 @@ Instance methods of BusyDialog.
 | `aria-valuemin` |  | `number \| undefined` | Defines the minimum allowed value for a range widget. |
 | `aria-valuenow` |  | `number \| undefined` | Defines the current value for a range widget. |
 | `aria-valuetext` |  | `string \| undefined` | Defines the human readable text alternative of aria-valuenow for a range widget. |
-| `children` |  | `ReactNode \| undefined` |  |
 | `dangerouslySetInnerHTML` |  | `{ // Should be InnerHTML['innerHTML']. // But unfortunately we're mixing renderer-specific type declarations. __html: string \| TrustedHTM…` |  |
 | `onCopy` |  | `ClipboardEventHandler&lt;T> \| undefined` |  |
 | `onCopyCapture` |  | `ClipboardEventHandler&lt;T> \| undefined` |  |
@@ -2376,11 +2495,11 @@ Props of `BusyCustomIcon` (see above).
 | Prop | Required | Type | Description |
 | --- | --- | --- | --- |
 | `text` |  | `string` | Text below the indicator. |
-| `size` |  | `string` | Size of the dots (CSS length; default 1rem). |
+| `size` |  | `string` | Size of the dots (CSS length). |
 | `customIcon` |  | `ReactNode` | Icon rotated instead of the dots (a React node). |
-| `customIconRotationSpeed` |  | `number` | Milliseconds per rotation of the custom icon (default 1000). |
-| `customIconWidth` |  | `string` | Width of the custom icon (CSS length; default 44px). |
-| `customIconHeight` |  | `string` | Height of the custom icon (CSS length; default 44px). |
+| `customIconRotationSpeed` |  | `number` | Milliseconds per rotation of the custom icon. |
+| `customIconWidth` |  | `string` | Width of the custom icon (CSS length). |
+| `customIconHeight` |  | `string` | Height of the custom icon (CSS length). |
 | `defaultChecked` |  | `boolean \| undefined` |  |
 | `defaultValue` |  | `string \| number \| readonly string[] \| undefined` |  |
 | `suppressContentEditableWarning` |  | `boolean \| undefined` |  |
@@ -2489,7 +2608,6 @@ Props of `BusyCustomIcon` (see above).
 | `aria-valuemin` |  | `number \| undefined` | Defines the minimum allowed value for a range widget. |
 | `aria-valuenow` |  | `number \| undefined` | Defines the current value for a range widget. |
 | `aria-valuetext` |  | `string \| undefined` | Defines the human readable text alternative of aria-valuenow for a range widget. |
-| `children` |  | `ReactNode \| undefined` |  |
 | `dangerouslySetInnerHTML` |  | `{ // Should be InnerHTML['innerHTML']. // But unfortunately we're mixing renderer-specific type declarations. __html: string \| TrustedHTM…` |  |
 | `onCopy` |  | `ClipboardEventHandler&lt;T> \| undefined` |  |
 | `onCopyCapture` |  | `ClipboardEventHandler&lt;T> \| undefined` |  |
@@ -2662,7 +2780,7 @@ Props of `BusyCustomIcon` (see above).
 
 ## `@rhfan2019/smart-kit/m/DynamicDateRange`
 
-`$DynamicDateRangeSettings` (interface) · `default` (component) · `DynamicDateFormatter` (interface) · `DynamicDateOption` (interface) · `DynamicDateRangeValue` (interface)
+`$DynamicDateRangeSettings` (interface) · `default` (component) · `DynamicDateFormatter` (interface) · `DynamicDateOption` (interface) · `DynamicDateRange$ChangeEvent` (interface) · `DynamicDateRangeValue` (interface)
 
 ### `$DynamicDateRangeSettings` — interface
 
@@ -2670,21 +2788,21 @@ Props of `BusyCustomIcon` (see above).
 | --- | --- | --- | --- |
 | `value` |  | `DynamicDateRangeValue` | The value (controlled); undefined: empty. |
 | `width` |  | `string` | CSS width of the field. |
-| `enabled` |  | `boolean` | (true) |
-| `valueState` |  | `ValueState` | ('None') |
+| `enabled` |  | `boolean` |  |
+| `valueState` |  | `ValueState` |  |
 | `name` |  | `string` | Name of the input (forms). |
 | `placeholder` |  | `string` |  |
-| `editable` |  | `boolean` | (true) |
+| `editable` |  | `boolean` |  |
 | `valueStateText` |  | `string` |  |
-| `required` |  | `boolean` | (false) |
-| `enableGroupHeaders` |  | `boolean` | (true) Shows the group headers (single dates, date ranges, weeks …) in the option list. |
+| `required` |  | `boolean` |  |
+| `enableGroupHeaders` |  | `boolean` | Shows the group headers (single dates, date ranges, weeks …) in the option list. |
 | `formatter` |  | `DynamicDateFormatter` | Formats and parses the dates in the field (UI5: a DateFormat instance). |
-| `standardOptions` |  | `readonly StandardDynamicDateRangeKeys[]` | (all 68 keys) The standard options offered; the list keeps the UI5 grouping and this order inside each group. |
-| `hideInput` |  | `boolean` | (false) Renders no field; the popover is opened with `open(domRef)` / `openBy(domRef)`. |
+| `standardOptions` |  | `readonly StandardDynamicDateRangeKeys[]` | The standard options offered; the list keeps the UI5 grouping and this order inside each group. Default: all 68 keys (`DEFAULT_STANDARD_OPTIONS`). |
+| `hideInput` |  | `boolean` | Renders no field; the popover is opened with `open(domRef)` / `openBy(domRef)`. |
 | `calendarWeekNumbering` |  | `CalendarWeekNumbering` | Week numbering for week options (default: the locale). |
-| `showClearIcon` |  | `boolean` | (false) |
+| `showClearIcon` |  | `boolean` |  |
 | `customOptions` |  | `DynamicDateOption[]` | Own options (sap.m.DynamicDateOption). |
-| `onChange` |  | `(e: { value: DynamicDateRangeValue \| undefined; valid: boolean }) => void` | Fired when the user picks, types or clears a value; `valid` is false when typed text could not be read. |
+| `onChange` |  | `(e: DynamicDateRange$ChangeEvent) => void` | Fired when the user picks, types or clears a value; `valid` is false when typed text could not be read. |
 | `label` |  | `ReactNode` | Extension: field label (Mantine input label). |
 | `id` |  | `string` |  |
 | `aria-label` |  | `string` |  |
@@ -2700,21 +2818,21 @@ The DynamicDateRange control; `DynamicDateRange.toDates(value, calendarWeekNumbe
 | --- | --- | --- | --- |
 | `value` |  | `DynamicDateRangeValue` | The value (controlled); undefined: empty. |
 | `width` |  | `string` | CSS width of the field. |
-| `enabled` |  | `boolean` | (true) |
-| `valueState` |  | `ValueState` | ('None') |
+| `enabled` |  | `boolean` |  |
+| `valueState` |  | `ValueState` |  |
 | `name` |  | `string` | Name of the input (forms). |
 | `placeholder` |  | `string` |  |
-| `editable` |  | `boolean` | (true) |
+| `editable` |  | `boolean` |  |
 | `valueStateText` |  | `string` |  |
-| `required` |  | `boolean` | (false) |
-| `enableGroupHeaders` |  | `boolean` | (true) Shows the group headers (single dates, date ranges, weeks …) in the option list. |
+| `required` |  | `boolean` |  |
+| `enableGroupHeaders` |  | `boolean` | Shows the group headers (single dates, date ranges, weeks …) in the option list. |
 | `formatter` |  | `DynamicDateFormatter` | Formats and parses the dates in the field (UI5: a DateFormat instance). |
-| `standardOptions` |  | `readonly StandardDynamicDateRangeKeys[]` | (all 68 keys) The standard options offered; the list keeps the UI5 grouping and this order inside each group. |
-| `hideInput` |  | `boolean` | (false) Renders no field; the popover is opened with `open(domRef)` / `openBy(domRef)`. |
+| `standardOptions` |  | `readonly StandardDynamicDateRangeKeys[]` | The standard options offered; the list keeps the UI5 grouping and this order inside each group. Default: all 68 keys (`DEFAULT_STANDARD_OPTIONS`). |
+| `hideInput` |  | `boolean` | Renders no field; the popover is opened with `open(domRef)` / `openBy(domRef)`. |
 | `calendarWeekNumbering` |  | `CalendarWeekNumbering` | Week numbering for week options (default: the locale). |
-| `showClearIcon` |  | `boolean` | (false) |
+| `showClearIcon` |  | `boolean` |  |
 | `customOptions` |  | `DynamicDateOption[]` | Own options (sap.m.DynamicDateOption). |
-| `onChange` |  | `(e: { value: DynamicDateRangeValue \| undefined; valid: boolean }) => void` | Fired when the user picks, types or clears a value; `valid` is false when typed text could not be read. |
+| `onChange` |  | `(e: DynamicDateRange$ChangeEvent) => void` | Fired when the user picks, types or clears a value; `valid` is false when typed text could not be read. |
 | `label` |  | `ReactNode` | Extension: field label (Mantine input label). |
 | `id` |  | `string` |  |
 | `aria-label` |  | `string` |  |
@@ -2746,6 +2864,15 @@ A custom option (sap.m.DynamicDateOption); methods are optional except where the
 | `validateValueHelpUI` |  | `(value: DynamicDateRangeValue \| undefined) => boolean` | Whether the detail page is complete (default: a value was given to `update`). |
 | `enhanceFormattedValue` |  | `() => boolean` | Whether the field also shows the resolved dates, e.g. "Today (Nov 17, 2026)". |
 
+### `DynamicDateRange$ChangeEvent` — interface
+
+Parameters of the `change` event.
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `value` | **yes** | `DynamicDateRangeValue \| undefined` | The current value; undefined when the field was cleared or the text could not be read. |
+| `valid` | **yes** | `boolean` | Whether the new value is valid. |
+
 ### `DynamicDateRangeValue` — interface
 
 The value of a DynamicDateRange, as in UI5: `{ operator: 'LASTDAYS', values: [7] }`, `{ operator: 'DATE', values: [Date] }`, `{ operator: 'DATERANGE', values: [Date, Date] }`, `{ operator: 'SPECIFICMONTH', values: [monthIndex] }`, `{ operator: 'SPECIFICMONTHINYEAR', values: [monthIndex, year] }`, `{ operator: 'TODAYFROMTO', values: [daysBefore, daysAfter] }`. Custom options use their own key and values.
@@ -2764,13 +2891,13 @@ The value of a DynamicDateRange, as in UI5: `{ operator: 'LASTDAYS', values: [7]
 | Member | Required | Type | Description |
 | --- | --- | --- | --- |
 | `text` |  | `string` | The text. |
-| `wrappingType` |  | `'Normal' \| 'Hyphenated'` | sap.m.WrappingType: Normal or Hyphenated (default Normal). |
-| `textAlign` |  | `TextAlignValue` | sap.ui.core.TextAlign (default Begin). |
-| `renderWhitespace` |  | `boolean` | Keeps line breaks and spaces (default false). |
-| `overflowMode` |  | `ExpandableTextOverflowMode` | InPlace expands the text, Popover shows the full text in a popover (default InPlace). |
-| `maxCharacters` |  | `number` | Characters shown before "More" (default 100). |
+| `wrappingType` |  | `'Normal' \| 'Hyphenated'` | sap.m.WrappingType: Normal or Hyphenated. |
+| `textAlign` |  | `TextAlignValue` | sap.ui.core.TextAlign. |
+| `renderWhitespace` |  | `boolean` | Keeps line breaks and spaces. |
+| `overflowMode` |  | `ExpandableTextOverflowMode` | InPlace expands the text, Popover shows the full text in a popover. |
+| `maxCharacters` |  | `number` | Characters shown before "More". |
 | `expanded` |  | `boolean` | InPlace mode: the full text is shown (default false). The control also toggles it itself; a changed prop wins. |
-| `emptyIndicatorMode` |  | `EmptyIndicatorMode` | Shows "–" when text is empty (default Off). |
+| `emptyIndicatorMode` |  | `EmptyIndicatorMode` | Shows "–" when text is empty. |
 | `defaultChecked` |  | `boolean \| undefined` |  |
 | `defaultValue` |  | `string \| number \| readonly string[] \| undefined` |  |
 | `suppressContentEditableWarning` |  | `boolean \| undefined` |  |
@@ -2879,7 +3006,6 @@ The value of a DynamicDateRange, as in UI5: `{ operator: 'LASTDAYS', values: [7]
 | `aria-valuemin` |  | `number \| undefined` | Defines the minimum allowed value for a range widget. |
 | `aria-valuenow` |  | `number \| undefined` | Defines the current value for a range widget. |
 | `aria-valuetext` |  | `string \| undefined` | Defines the human readable text alternative of aria-valuenow for a range widget. |
-| `children` |  | `ReactNode \| undefined` |  |
 | `dangerouslySetInnerHTML` |  | `{ // Should be InnerHTML['innerHTML']. // But unfortunately we're mixing renderer-specific type declarations. __html: string \| TrustedHTM…` |  |
 | `onCopy` |  | `ClipboardEventHandler&lt;T> \| undefined` |  |
 | `onCopyCapture` |  | `ClipboardEventHandler&lt;T> \| undefined` |  |
@@ -3057,13 +3183,13 @@ The value of a DynamicDateRange, as in UI5: `{ operator: 'LASTDAYS', values: [7]
 | Prop | Required | Type | Description |
 | --- | --- | --- | --- |
 | `text` |  | `string` | The text. |
-| `wrappingType` |  | `'Normal' \| 'Hyphenated'` | sap.m.WrappingType: Normal or Hyphenated (default Normal). |
-| `textAlign` |  | `TextAlignValue` | sap.ui.core.TextAlign (default Begin). |
-| `renderWhitespace` |  | `boolean` | Keeps line breaks and spaces (default false). |
-| `overflowMode` |  | `ExpandableTextOverflowMode` | InPlace expands the text, Popover shows the full text in a popover (default InPlace). |
-| `maxCharacters` |  | `number` | Characters shown before "More" (default 100). |
+| `wrappingType` |  | `'Normal' \| 'Hyphenated'` | sap.m.WrappingType: Normal or Hyphenated. |
+| `textAlign` |  | `TextAlignValue` | sap.ui.core.TextAlign. |
+| `renderWhitespace` |  | `boolean` | Keeps line breaks and spaces. |
+| `overflowMode` |  | `ExpandableTextOverflowMode` | InPlace expands the text, Popover shows the full text in a popover. |
+| `maxCharacters` |  | `number` | Characters shown before "More". |
 | `expanded` |  | `boolean` | InPlace mode: the full text is shown (default false). The control also toggles it itself; a changed prop wins. |
-| `emptyIndicatorMode` |  | `EmptyIndicatorMode` | Shows "–" when text is empty (default Off). |
+| `emptyIndicatorMode` |  | `EmptyIndicatorMode` | Shows "–" when text is empty. |
 | `defaultChecked` |  | `boolean \| undefined` |  |
 | `defaultValue` |  | `string \| number \| readonly string[] \| undefined` |  |
 | `suppressContentEditableWarning` |  | `boolean \| undefined` |  |
@@ -3172,7 +3298,6 @@ The value of a DynamicDateRange, as in UI5: `{ operator: 'LASTDAYS', values: [7]
 | `aria-valuemin` |  | `number \| undefined` | Defines the minimum allowed value for a range widget. |
 | `aria-valuenow` |  | `number \| undefined` | Defines the current value for a range widget. |
 | `aria-valuetext` |  | `string \| undefined` | Defines the human readable text alternative of aria-valuenow for a range widget. |
-| `children` |  | `ReactNode \| undefined` |  |
 | `dangerouslySetInnerHTML` |  | `{ // Should be InnerHTML['innerHTML']. // But unfortunately we're mixing renderer-specific type declarations. __html: string \| TrustedHTM…` |  |
 | `onCopy` |  | `ClipboardEventHandler&lt;T> \| undefined` |  |
 | `onCopyCapture` |  | `ClipboardEventHandler&lt;T> \| undefined` |  |
@@ -3345,28 +3470,28 @@ The value of a DynamicDateRange, as in UI5: `{ operator: 'LASTDAYS', values: [7]
 
 ## `@rhfan2019/smart-kit/m/FeedInput`
 
-`$FeedInputSettings` (interface) · `default` (component)
+`$FeedInputSettings` (interface) · `default` (component) · `FeedInput$PostEvent` (interface)
 
 ### `$FeedInputSettings` — interface
 
 | Member | Required | Type | Description |
 | --- | --- | --- | --- |
 | `value` |  | `string` |  |
-| `enabled` |  | `boolean` | Default true. |
-| `rows` |  | `number` | Visible rows (default 2). |
-| `showExceededText` |  | `boolean` | Lets the text exceed `maxLength` and shows how far it is over (default false). |
-| `maxLength` |  | `number` | Maximum characters (default 0 = no limit). |
-| `growing` |  | `boolean` | Grows with the text (default false). |
-| `growingMaxLines` |  | `number` | Maximum rows when growing (default 0 = no limit). |
-| `placeholder` |  | `string` | Default "Post something here". |
+| `enabled` |  | `boolean` |  |
+| `rows` |  | `number` | Visible rows. |
+| `showExceededText` |  | `boolean` | Lets the text exceed `maxLength` and shows how far it is over. |
+| `maxLength` |  | `number` | Maximum characters (0 = no limit). |
+| `growing` |  | `boolean` | Grows with the text. |
+| `growingMaxLines` |  | `number` | Maximum rows when growing (0 = no limit). |
+| `placeholder` |  | `string` | The UI5 default text, localized. |
 | `icon` |  | `ReactNode` | Image URL or React node of the avatar. |
-| `iconDisplayShape` |  | `AvatarShape` | Default 'Circle'. |
+| `iconDisplayShape` |  | `AvatarShape` |  |
 | `iconInitials` |  | `string` |  |
-| `iconSize` |  | `AvatarSize` | Default 'M'. |
-| `showIcon` |  | `boolean` | Default true. |
-| `buttonTooltip` |  | `string` | Tooltip and accessible name of the post button (default "Submit"). |
+| `iconSize` |  | `AvatarSize` |  |
+| `showIcon` |  | `boolean` |  |
+| `buttonTooltip` |  | `string` | Tooltip and accessible name of the post button (the UI5 default text, localized). |
 | `actions` |  | `ReactNode` | Further controls next to the post button. |
-| `onPost` |  | `(e: { value: string }) => void` |  |
+| `onPost` |  | `(e: FeedInput$PostEvent) => void` |  |
 | `aria-label` |  | `string` |  |
 
 ### `default` — component
@@ -3376,26 +3501,34 @@ The value of a DynamicDateRange, as in UI5: `{ operator: 'LASTDAYS', values: [7]
 | Prop | Required | Type | Description |
 | --- | --- | --- | --- |
 | `value` |  | `string` |  |
-| `enabled` |  | `boolean` | Default true. |
-| `rows` |  | `number` | Visible rows (default 2). |
-| `showExceededText` |  | `boolean` | Lets the text exceed `maxLength` and shows how far it is over (default false). |
-| `maxLength` |  | `number` | Maximum characters (default 0 = no limit). |
-| `growing` |  | `boolean` | Grows with the text (default false). |
-| `growingMaxLines` |  | `number` | Maximum rows when growing (default 0 = no limit). |
-| `placeholder` |  | `string` | Default "Post something here". |
+| `enabled` |  | `boolean` |  |
+| `rows` |  | `number` | Visible rows. |
+| `showExceededText` |  | `boolean` | Lets the text exceed `maxLength` and shows how far it is over. |
+| `maxLength` |  | `number` | Maximum characters (0 = no limit). |
+| `growing` |  | `boolean` | Grows with the text. |
+| `growingMaxLines` |  | `number` | Maximum rows when growing (0 = no limit). |
+| `placeholder` |  | `string` | The UI5 default text, localized. |
 | `icon` |  | `ReactNode` | Image URL or React node of the avatar. |
-| `iconDisplayShape` |  | `AvatarShape` | Default 'Circle'. |
+| `iconDisplayShape` |  | `AvatarShape` |  |
 | `iconInitials` |  | `string` |  |
-| `iconSize` |  | `AvatarSize` | Default 'M'. |
-| `showIcon` |  | `boolean` | Default true. |
-| `buttonTooltip` |  | `string` | Tooltip and accessible name of the post button (default "Submit"). |
+| `iconSize` |  | `AvatarSize` |  |
+| `showIcon` |  | `boolean` |  |
+| `buttonTooltip` |  | `string` | Tooltip and accessible name of the post button (the UI5 default text, localized). |
 | `actions` |  | `ReactNode` | Further controls next to the post button. |
-| `onPost` |  | `(e: { value: string }) => void` |  |
+| `onPost` |  | `(e: FeedInput$PostEvent) => void` |  |
 | `aria-label` |  | `string` |  |
+
+### `FeedInput$PostEvent` — interface
+
+Event object of `onPost`.
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `value` | **yes** | `string` |  |
 
 ## `@rhfan2019/smart-kit/m/FeedListItem`
 
-`$FeedListItemSettings` (interface) · `default` (component) · `FeedListItemAction` (interface) · `FeedListItemPressEvent` (interface)
+`$FeedListItemSettings` (interface) · `default` (component) · `FeedListItem$IconPressEvent` (interface) · `FeedListItem$SenderPressEvent` (interface) · `FeedListItemAction` (interface)
 
 ### `$FeedListItemSettings` — interface
 
@@ -3410,25 +3543,25 @@ The value of a DynamicDateRange, as in UI5: `{ operator: 'LASTDAYS', values: [7]
 | `lessLabel` |  | `string` | Text of the "Less" link. |
 | `icon` |  | `ReactNode` | Image URL or React node of the avatar. |
 | `activeIcon` |  | `ReactNode` | Avatar while the pointer is on it (with `iconActive`). |
-| `iconDisplayShape` |  | `AvatarShape` | Default 'Circle'. |
+| `iconDisplayShape` |  | `AvatarShape` |  |
 | `iconInitials` |  | `string` |  |
-| `iconSize` |  | `AvatarSize` | Default 'S'. |
-| `showIcon` |  | `boolean` | Default true. |
-| `senderActive` |  | `boolean` | Sender as a link (default true; needs `onSenderPress`). |
-| `iconActive` |  | `boolean` | Avatar as a button (default true; needs `onIconPress`). |
-| `convertLinksToAnchorTags` |  | `LinkConversion` | Turns URLs in the text into links (default 'None'). |
-| `convertedLinksDefaultTarget` |  | `string` | Target of the converted links (default '_blank'). |
-| `type` |  | `ListType` | ListItemBase: default 'Inactive'. |
-| `visible` |  | `boolean` | Default true. |
+| `iconSize` |  | `AvatarSize` |  |
+| `showIcon` |  | `boolean` |  |
+| `senderActive` |  | `boolean` | Sender as a link (needs `onSenderPress`). |
+| `iconActive` |  | `boolean` | Avatar as a button (needs `onIconPress`). |
+| `convertLinksToAnchorTags` |  | `LinkConversion` | Turns URLs in the text into links. |
+| `convertedLinksDefaultTarget` |  | `string` | Target of the converted links. |
+| `type` |  | `ListType` | ListItemBase. |
+| `visible` |  | `boolean` |  |
 | `unread` |  | `boolean` |  |
 | `selected` |  | `boolean` |  |
 | `counter` |  | `number` |  |
-| `highlight` |  | `ValueState \| IndicationColor` | ValueState or IndicationColor: a coloured bar at the start (default 'None'). |
+| `highlight` |  | `ValueState \| IndicationColor` | ValueState or IndicationColor: a coloured bar at the start. |
 | `highlightText` |  | `string` | Accessible text of the highlight. |
 | `navigated` |  | `boolean` | Marks the item as the one last navigated to. |
 | `actions` |  | `FeedListItemAction[]` |  |
-| `onSenderPress` |  | `(e: FeedListItemPressEvent) => void` |  |
-| `onIconPress` |  | `(e: FeedListItemPressEvent) => void` |  |
+| `onSenderPress` |  | `(e: FeedListItem$SenderPressEvent) => void` |  |
+| `onIconPress` |  | `(e: FeedListItem$IconPressEvent) => void` |  |
 | `onPress` |  | `() => void` | With type Active, Navigation or DetailAndActive. |
 | `onDetailPress` |  | `() => void` | With type Detail or DetailAndActive. |
 
@@ -3449,27 +3582,43 @@ One feed entry; renders an `<li>`, so place it in a `<ul>` (like sap.m.List).
 | `lessLabel` |  | `string` | Text of the "Less" link. |
 | `icon` |  | `ReactNode` | Image URL or React node of the avatar. |
 | `activeIcon` |  | `ReactNode` | Avatar while the pointer is on it (with `iconActive`). |
-| `iconDisplayShape` |  | `AvatarShape` | Default 'Circle'. |
+| `iconDisplayShape` |  | `AvatarShape` |  |
 | `iconInitials` |  | `string` |  |
-| `iconSize` |  | `AvatarSize` | Default 'S'. |
-| `showIcon` |  | `boolean` | Default true. |
-| `senderActive` |  | `boolean` | Sender as a link (default true; needs `onSenderPress`). |
-| `iconActive` |  | `boolean` | Avatar as a button (default true; needs `onIconPress`). |
-| `convertLinksToAnchorTags` |  | `LinkConversion` | Turns URLs in the text into links (default 'None'). |
-| `convertedLinksDefaultTarget` |  | `string` | Target of the converted links (default '_blank'). |
-| `type` |  | `ListType` | ListItemBase: default 'Inactive'. |
-| `visible` |  | `boolean` | Default true. |
+| `iconSize` |  | `AvatarSize` |  |
+| `showIcon` |  | `boolean` |  |
+| `senderActive` |  | `boolean` | Sender as a link (needs `onSenderPress`). |
+| `iconActive` |  | `boolean` | Avatar as a button (needs `onIconPress`). |
+| `convertLinksToAnchorTags` |  | `LinkConversion` | Turns URLs in the text into links. |
+| `convertedLinksDefaultTarget` |  | `string` | Target of the converted links. |
+| `type` |  | `ListType` | ListItemBase. |
+| `visible` |  | `boolean` |  |
 | `unread` |  | `boolean` |  |
 | `selected` |  | `boolean` |  |
 | `counter` |  | `number` |  |
-| `highlight` |  | `ValueState \| IndicationColor` | ValueState or IndicationColor: a coloured bar at the start (default 'None'). |
+| `highlight` |  | `ValueState \| IndicationColor` | ValueState or IndicationColor: a coloured bar at the start. |
 | `highlightText` |  | `string` | Accessible text of the highlight. |
 | `navigated` |  | `boolean` | Marks the item as the one last navigated to. |
 | `actions` |  | `FeedListItemAction[]` |  |
-| `onSenderPress` |  | `(e: FeedListItemPressEvent) => void` |  |
-| `onIconPress` |  | `(e: FeedListItemPressEvent) => void` |  |
+| `onSenderPress` |  | `(e: FeedListItem$SenderPressEvent) => void` |  |
+| `onIconPress` |  | `(e: FeedListItem$IconPressEvent) => void` |  |
 | `onPress` |  | `() => void` | With type Active, Navigation or DetailAndActive. |
 | `onDetailPress` |  | `() => void` | With type Detail or DetailAndActive. |
+
+### `FeedListItem$IconPressEvent` — interface
+
+Event object of `onIconPress` (the deprecated `domRef` id is left out).
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `getDomRef` | **yes** | `() => HTMLElement \| null` |  |
+
+### `FeedListItem$SenderPressEvent` — interface
+
+Event object of `onSenderPress` (the deprecated `domRef` id is left out).
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `getDomRef` | **yes** | `() => HTMLElement \| null` |  |
 
 ### `FeedListItemAction` — interface
 
@@ -3484,41 +3633,33 @@ sap.m.FeedListItemAction (data array `actions` of FeedListItem).
 | `visible` |  | `boolean` | Default true. |
 | `onPress` |  | `() => void` |  |
 
-### `FeedListItemPressEvent` — interface
-
-Event of `onSenderPress` / `onIconPress`: the id and element pressed.
-
-| Member | Required | Type | Description |
-| --- | --- | --- | --- |
-| `domRef` | **yes** | `string` |  |
-| `getDomRef` | **yes** | `() => HTMLElement` |  |
-
 ## `@rhfan2019/smart-kit/m/IconTabBar`
 
-`$IconTabBarSettings` (interface) · `default` (component) · `IconTabFilterItem` (interface) · `IconTabItem` (type)
+`$IconTabBarSettings` (interface) · `default` (component) · `IconTabBar$ExpandEvent` (interface) · `IconTabBar$SelectEvent` (interface) · `IconTabFilterItem` (interface) · `IconTabItem` (type)
 
 ### `$IconTabBarSettings` — interface
 
 | Member | Required | Type | Description |
 | --- | --- | --- | --- |
-| `children` |  | `ReactNode` | IconTabFilter and IconTabSeparator elements (UI5 `items`). |
+| `items` |  | `ReactNode` | IconTabFilter and IconTabSeparator elements (UI5 `items`). |
+| `children` |  | `ReactNode` | More IconTabFilter and IconTabSeparator elements, after `items` (the JSX form of `items`). |
 | `content` |  | `ReactNode` | Content shown for filters that have none of their own (UI5 `content`). |
-| `expandable` |  | `boolean` | (true) Pressing the selected tab collapses and expands the content. |
-| `expanded` |  | `boolean` | (true) |
+| `expandable` |  | `boolean` | Pressing the selected tab collapses and expands the content. |
+| `expanded` |  | `boolean` |  |
 | `selectedKey` |  | `string` | Key of the selected filter; without it the first filter. The bar keeps the user's choice until this prop changes. |
-| `upperCase` |  | `boolean` | (false) |
-| `stretchContentHeight` |  | `boolean` | (false) The bar fills the parent's height and the content scrolls. |
-| `applyContentPadding` |  | `boolean` | (true) |
-| `backgroundDesign` |  | `BackgroundDesign` | ('Solid') Background of the content. |
-| `headerMode` |  | `IconTabHeaderMode` | ('Standard') Inline: text and count on one line. |
-| `headerBackgroundDesign` |  | `BackgroundDesign` | ('Solid') |
-| `enableTabReordering` |  | `boolean` | (false) Tabs can be moved by drag and drop and with Ctrl + arrow keys. |
-| `maxNestingLevel` |  | `number` | (0) Kept for UI5 compatibility: drag and drop reorders on the top level only. |
-| `tabDensityMode` |  | `IconTabDensityMode` | ('Cozy') |
+| `upperCase` |  | `boolean` |  |
+| `stretchContentHeight` |  | `boolean` | The bar fills the parent's height and the content scrolls. |
+| `applyContentPadding` |  | `boolean` |  |
+| `backgroundDesign` |  | `BackgroundDesign` | Background of the content. |
+| `headerMode` |  | `IconTabHeaderMode` | Inline: text and count on one line. |
+| `headerBackgroundDesign` |  | `BackgroundDesign` |  |
+| `enableTabReordering` |  | `boolean` | Tabs can be moved by drag and drop and with Ctrl + arrow keys. |
+| `maxNestingLevel` |  | `number` | Kept for UI5 compatibility: drag and drop reorders on the top level only. |
+| `tabDensityMode` |  | `IconTabDensityMode` |  |
 | `ariaTexts` |  | `{ headerLabel?: string; headerDescription?: string }` | Accessible texts of the header (UI5 `ariaTexts`). |
-| `tabsOverflowMode` |  | `TabsOverflowMode` | ('End') Where the overflow buttons go when the tabs do not fit. |
-| `onSelect` |  | `(e: { item: IconTabFilterItem; key: string; previousKey: string \| undefined; selectedItem: IconTabFilterItem; selectedKey: string }) => void` |  |
-| `onExpand` |  | `(e: { expand: boolean; collapse: boolean }) => void` |  |
+| `tabsOverflowMode` |  | `TabsOverflowMode` | Where the overflow buttons go when the tabs do not fit. |
+| `onSelect` |  | `(e: IconTabBar$SelectEvent) => void` |  |
+| `onExpand` |  | `(e: IconTabBar$ExpandEvent) => void` |  |
 
 ### `default` — component
 
@@ -3526,24 +3667,44 @@ Event of `onSenderPress` / `onIconPress`: the id and element pressed.
 
 | Prop | Required | Type | Description |
 | --- | --- | --- | --- |
-| `children` |  | `ReactNode` | IconTabFilter and IconTabSeparator elements (UI5 `items`). |
+| `items` |  | `ReactNode` | IconTabFilter and IconTabSeparator elements (UI5 `items`). |
+| `children` |  | `ReactNode` | More IconTabFilter and IconTabSeparator elements, after `items` (the JSX form of `items`). |
 | `content` |  | `ReactNode` | Content shown for filters that have none of their own (UI5 `content`). |
-| `expandable` |  | `boolean` | (true) Pressing the selected tab collapses and expands the content. |
-| `expanded` |  | `boolean` | (true) |
+| `expandable` |  | `boolean` | Pressing the selected tab collapses and expands the content. |
+| `expanded` |  | `boolean` |  |
 | `selectedKey` |  | `string` | Key of the selected filter; without it the first filter. The bar keeps the user's choice until this prop changes. |
-| `upperCase` |  | `boolean` | (false) |
-| `stretchContentHeight` |  | `boolean` | (false) The bar fills the parent's height and the content scrolls. |
-| `applyContentPadding` |  | `boolean` | (true) |
-| `backgroundDesign` |  | `BackgroundDesign` | ('Solid') Background of the content. |
-| `headerMode` |  | `IconTabHeaderMode` | ('Standard') Inline: text and count on one line. |
-| `headerBackgroundDesign` |  | `BackgroundDesign` | ('Solid') |
-| `enableTabReordering` |  | `boolean` | (false) Tabs can be moved by drag and drop and with Ctrl + arrow keys. |
-| `maxNestingLevel` |  | `number` | (0) Kept for UI5 compatibility: drag and drop reorders on the top level only. |
-| `tabDensityMode` |  | `IconTabDensityMode` | ('Cozy') |
+| `upperCase` |  | `boolean` |  |
+| `stretchContentHeight` |  | `boolean` | The bar fills the parent's height and the content scrolls. |
+| `applyContentPadding` |  | `boolean` |  |
+| `backgroundDesign` |  | `BackgroundDesign` | Background of the content. |
+| `headerMode` |  | `IconTabHeaderMode` | Inline: text and count on one line. |
+| `headerBackgroundDesign` |  | `BackgroundDesign` |  |
+| `enableTabReordering` |  | `boolean` | Tabs can be moved by drag and drop and with Ctrl + arrow keys. |
+| `maxNestingLevel` |  | `number` | Kept for UI5 compatibility: drag and drop reorders on the top level only. |
+| `tabDensityMode` |  | `IconTabDensityMode` |  |
 | `ariaTexts` |  | `{ headerLabel?: string; headerDescription?: string }` | Accessible texts of the header (UI5 `ariaTexts`). |
-| `tabsOverflowMode` |  | `TabsOverflowMode` | ('End') Where the overflow buttons go when the tabs do not fit. |
-| `onSelect` |  | `(e: { item: IconTabFilterItem; key: string; previousKey: string \| undefined; selectedItem: IconTabFilterItem; selectedKey: string }) => void` |  |
-| `onExpand` |  | `(e: { expand: boolean; collapse: boolean }) => void` |  |
+| `tabsOverflowMode` |  | `TabsOverflowMode` | Where the overflow buttons go when the tabs do not fit. |
+| `onSelect` |  | `(e: IconTabBar$SelectEvent) => void` |  |
+| `onExpand` |  | `(e: IconTabBar$ExpandEvent) => void` |  |
+
+### `IconTabBar$ExpandEvent` — interface
+
+Parameters of the `expand` event.
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `expand` | **yes** | `boolean` | Whether the content was expanded. |
+| `collapse` | **yes** | `boolean` | Whether the content was collapsed. |
+
+### `IconTabBar$SelectEvent` — interface
+
+Parameters of the `select` event.
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `item` | **yes** | `IconTabFilterItem` | The selected filter. |
+| `key` | **yes** | `string` | Its key. |
+| `previousKey` | **yes** | `string \| undefined` | The key of the filter selected before. |
 
 ### `IconTabFilterItem` — interface
 
@@ -3555,15 +3716,15 @@ A filter as passed to `onSelect`: its props, its key and the keys of its child f
 | `items` | **yes** | `IconTabItem[]` | Child filters (UI5 `items`). |
 | `content` | **yes** | `ReactNode[]` | The content, without the child filters. |
 | `rootKey` | **yes** | `string` | Key of the top-level filter it belongs to (its own key on the top level). |
-| `enabled` |  | `boolean` | (true) |
-| `icon` |  | `ReactNode` |  |
+| `enabled` |  | `boolean` |  |
 | `text` |  | `string` |  |
-| `count` |  | `string` | ('') |
-| `showAll` |  | `boolean` | (false) The "all" tab: the count large, the text under it, no icon. |
-| `iconColor` |  | `IconColor` | ('Default') |
-| `visible` |  | `boolean` | (true) |
-| `design` |  | `IconTabFilterDesign` | ('Vertical') |
-| `interactionMode` |  | `IconTabFilterInteractionMode` | ('Auto') Auto: a filter with child filters and no content opens its menu; Select: it is selected; SelectLeavesOnly: only leaves are selected. |
+| `count` |  | `string` |  |
+| `showAll` |  | `boolean` | The "all" tab: the count large, the text under it, no icon. |
+| `icon` |  | `ReactNode` |  |
+| `iconColor` |  | `IconColor` |  |
+| `visible` |  | `boolean` |  |
+| `design` |  | `IconTabFilterDesign` |  |
+| `interactionMode` |  | `IconTabFilterInteractionMode` | Auto: a filter with child filters and no content opens its menu; Select: it is selected; SelectLeavesOnly: only leaves are selected. |
 
 ### `IconTabItem` — type
 
@@ -3580,15 +3741,16 @@ export type IconTabItem = ({ kind: 'filter' } & IconTabFilterItem) | ({ kind: 's
 | Member | Required | Type | Description |
 | --- | --- | --- | --- |
 | `text` |  | `string` |  |
-| `enabled` |  | `boolean` | (true) |
-| `count` |  | `string` | ('') |
-| `showAll` |  | `boolean` | (false) The "all" tab: the count large, the text under it, no icon. |
+| `enabled` |  | `boolean` |  |
+| `count` |  | `string` |  |
+| `showAll` |  | `boolean` | The "all" tab: the count large, the text under it, no icon. |
 | `icon` |  | `ReactNode` |  |
-| `iconColor` |  | `IconColor` | ('Default') |
-| `visible` |  | `boolean` | (true) |
-| `design` |  | `IconTabFilterDesign` | ('Vertical') |
-| `interactionMode` |  | `IconTabFilterInteractionMode` | ('Auto') Auto: a filter with child filters and no content opens its menu; Select: it is selected; SelectLeavesOnly: only leaves are selected. |
-| `children` |  | `ReactNode` | The content (shown when the filter is selected) and child IconTabFilter / IconTabSeparator elements (UI5 `items`). |
+| `iconColor` |  | `IconColor` |  |
+| `visible` |  | `boolean` |  |
+| `design` |  | `IconTabFilterDesign` |  |
+| `interactionMode` |  | `IconTabFilterInteractionMode` | Auto: a filter with child filters and no content opens its menu; Select: it is selected; SelectLeavesOnly: only leaves are selected. |
+| `items` |  | `ReactNode` | Child IconTabFilter / IconTabSeparator elements (UI5 `items`); they may also be given among the children. |
+| `children` |  | `ReactNode` | The content shown when the filter is selected (UI5 `content`, the default aggregation). |
 
 ### `default` — component
 
@@ -3599,15 +3761,16 @@ A tab of an IconTabBar; rendered by the IconTabBar (alone it renders nothing).
 | Prop | Required | Type | Description |
 | --- | --- | --- | --- |
 | `text` |  | `string` |  |
-| `enabled` |  | `boolean` | (true) |
-| `count` |  | `string` | ('') |
-| `showAll` |  | `boolean` | (false) The "all" tab: the count large, the text under it, no icon. |
+| `enabled` |  | `boolean` |  |
+| `count` |  | `string` |  |
+| `showAll` |  | `boolean` | The "all" tab: the count large, the text under it, no icon. |
 | `icon` |  | `ReactNode` |  |
-| `iconColor` |  | `IconColor` | ('Default') |
-| `visible` |  | `boolean` | (true) |
-| `design` |  | `IconTabFilterDesign` | ('Vertical') |
-| `interactionMode` |  | `IconTabFilterInteractionMode` | ('Auto') Auto: a filter with child filters and no content opens its menu; Select: it is selected; SelectLeavesOnly: only leaves are selected. |
-| `children` |  | `ReactNode` | The content (shown when the filter is selected) and child IconTabFilter / IconTabSeparator elements (UI5 `items`). |
+| `iconColor` |  | `IconColor` |  |
+| `visible` |  | `boolean` |  |
+| `design` |  | `IconTabFilterDesign` |  |
+| `interactionMode` |  | `IconTabFilterInteractionMode` | Auto: a filter with child filters and no content opens its menu; Select: it is selected; SelectLeavesOnly: only leaves are selected. |
+| `items` |  | `ReactNode` | Child IconTabFilter / IconTabSeparator elements (UI5 `items`); they may also be given among the children. |
+| `children` |  | `ReactNode` | The content shown when the filter is selected (UI5 `content`, the default aggregation). |
 
 ## `@rhfan2019/smart-kit/m/IconTabSeparator`
 
@@ -3618,7 +3781,7 @@ A tab of an IconTabBar; rendered by the IconTabBar (alone it renders nothing).
 | Member | Required | Type | Description |
 | --- | --- | --- | --- |
 | `icon` |  | `ReactNode` |  |
-| `visible` |  | `boolean` | (true) |
+| `visible` |  | `boolean` |  |
 
 ### `default` — component
 
@@ -3629,7 +3792,7 @@ A separator between tabs of an IconTabBar.
 | Prop | Required | Type | Description |
 | --- | --- | --- | --- |
 | `icon` |  | `ReactNode` |  |
-| `visible` |  | `boolean` | (true) |
+| `visible` |  | `boolean` |  |
 
 ## `@rhfan2019/smart-kit/m/IllustratedMessage`
 
@@ -3640,15 +3803,18 @@ A separator between tabs of an IconTabBar.
 | Member | Required | Type | Description |
 | --- | --- | --- | --- |
 | `description` |  | `string` | Description; defaults to the type's text when enableDefaultTitleAndDescription is on. |
-| `enableDefaultTitleAndDescription` |  | `boolean` | Uses the default title and description of the type for the missing ones (default true). |
-| `enableFormattedText` |  | `boolean` | Accepted for compatibility: the description stays plain text, HTML is not parsed (default false). |
-| `enableVerticalResponsiveness` |  | `boolean` | Auto size also follows the container height (default false); the container then needs a height. |
-| `illustrationSize` |  | `IllustratedMessageSize` | Size (default Auto: chosen by the container width — below 160px Base without illustration, then ExtraSmall, Small, Medium, and from 680px Large). |
-| `illustrationType` |  | `IllustratedMessageType` | Illustration (default NoSearchResults). |
+| `enableDefaultTitleAndDescription` |  | `boolean` | Uses the default title and description of the type for the missing ones. |
+| `enableFormattedText` |  | `boolean` | Accepted for compatibility: the description stays plain text, HTML is not parsed. |
+| `enableVerticalResponsiveness` |  | `boolean` | Auto size also follows the container height; the container then needs a height. |
+| `illustrationSize` |  | `IllustratedMessageSize` | Size (Auto: chosen by the container width — below 160px Base without illustration, then ExtraSmall, Small, Medium, and from 680px Large). |
+| `illustrationType` |  | `IllustratedMessageType` | Illustration; `src` takes precedence. |
+| `src` |  | `string` | Illustration as a URI, taking precedence over `illustrationType`: `sap-illustration://&lt;type>` (or `sap-illustration://sapIllus/&lt;type>`) for a type of the default set. Other sets are not available; the control then falls back to `illustrationType`. |
 | `title` |  | `string` | Title; defaults to the type's text when enableDefaultTitleAndDescription is on. |
-| `ariaTitleLevel` |  | `'Auto' \| 'H1' \| 'H2' \| 'H3' \| 'H4' \| 'H5' \| 'H6'` | sap.ui.core.TitleLevel of the title (default Auto, rendered as a level-2 heading). |
-| `decorative` |  | `boolean` | The illustration is decorative: hidden from screen readers (default false: an image labelled with the title). |
+| `ariaTitleLevel` |  | `'Auto' \| 'H1' \| 'H2' \| 'H3' \| 'H4' \| 'H5' \| 'H6'` | sap.ui.core.TitleLevel of the title (Auto renders a level-2 heading). |
+| `decorative` |  | `boolean` | The illustration is decorative: hidden from screen readers (false: an image labelled with the title). |
 | `additionalContent` |  | `ReactNode` | Actions below the description, usually buttons. |
+| `illustrationAriaLabelledBy` |  | `string \| string[]` | IDs of the elements that label the illustration (aria-labelledby on the illustration; ignored when decorative). |
+| `illustrationAriaDescribedBy` |  | `string \| string[]` | IDs of the elements that describe the illustration (aria-describedby on the illustration; ignored when decorative). |
 | `children` |  | `ReactNode \| undefined` |  |
 | `defaultChecked` |  | `boolean \| undefined` |  |
 | `defaultValue` |  | `string \| number \| readonly string[] \| undefined` |  |
@@ -3934,15 +4100,18 @@ A separator between tabs of an IconTabBar.
 | Prop | Required | Type | Description |
 | --- | --- | --- | --- |
 | `description` |  | `string` | Description; defaults to the type's text when enableDefaultTitleAndDescription is on. |
-| `enableDefaultTitleAndDescription` |  | `boolean` | Uses the default title and description of the type for the missing ones (default true). |
-| `enableFormattedText` |  | `boolean` | Accepted for compatibility: the description stays plain text, HTML is not parsed (default false). |
-| `enableVerticalResponsiveness` |  | `boolean` | Auto size also follows the container height (default false); the container then needs a height. |
-| `illustrationSize` |  | `IllustratedMessageSize` | Size (default Auto: chosen by the container width — below 160px Base without illustration, then ExtraSmall, Small, Medium, and from 680px Large). |
-| `illustrationType` |  | `IllustratedMessageType` | Illustration (default NoSearchResults). |
+| `enableDefaultTitleAndDescription` |  | `boolean` | Uses the default title and description of the type for the missing ones. |
+| `enableFormattedText` |  | `boolean` | Accepted for compatibility: the description stays plain text, HTML is not parsed. |
+| `enableVerticalResponsiveness` |  | `boolean` | Auto size also follows the container height; the container then needs a height. |
+| `illustrationSize` |  | `IllustratedMessageSize` | Size (Auto: chosen by the container width — below 160px Base without illustration, then ExtraSmall, Small, Medium, and from 680px Large). |
+| `illustrationType` |  | `IllustratedMessageType` | Illustration; `src` takes precedence. |
+| `src` |  | `string` | Illustration as a URI, taking precedence over `illustrationType`: `sap-illustration://&lt;type>` (or `sap-illustration://sapIllus/&lt;type>`) for a type of the default set. Other sets are not available; the control then falls back to `illustrationType`. |
 | `title` |  | `string` | Title; defaults to the type's text when enableDefaultTitleAndDescription is on. |
-| `ariaTitleLevel` |  | `'Auto' \| 'H1' \| 'H2' \| 'H3' \| 'H4' \| 'H5' \| 'H6'` | sap.ui.core.TitleLevel of the title (default Auto, rendered as a level-2 heading). |
-| `decorative` |  | `boolean` | The illustration is decorative: hidden from screen readers (default false: an image labelled with the title). |
+| `ariaTitleLevel` |  | `'Auto' \| 'H1' \| 'H2' \| 'H3' \| 'H4' \| 'H5' \| 'H6'` | sap.ui.core.TitleLevel of the title (Auto renders a level-2 heading). |
+| `decorative` |  | `boolean` | The illustration is decorative: hidden from screen readers (false: an image labelled with the title). |
 | `additionalContent` |  | `ReactNode` | Actions below the description, usually buttons. |
+| `illustrationAriaLabelledBy` |  | `string \| string[]` | IDs of the elements that label the illustration (aria-labelledby on the illustration; ignored when decorative). |
+| `illustrationAriaDescribedBy` |  | `string \| string[]` | IDs of the elements that describe the illustration (aria-describedby on the illustration; ignored when decorative). |
 | `children` |  | `ReactNode \| undefined` |  |
 | `defaultChecked` |  | `boolean \| undefined` |  |
 | `defaultValue` |  | `string \| number \| readonly string[] \| undefined` |  |
@@ -4303,16 +4472,18 @@ Options of `MessageBox.show` and the shortcuts (sap.m.MessageBox mOptions, 1.154
 
 | Member | Required | Type | Description |
 | --- | --- | --- | --- |
-| `type` |  | `MessageType` | UI5 default 'Error'. |
+| `type` |  | `MessageType` | Type of the message. |
 | `title` |  | `string` |  |
 | `subtitle` |  | `string` |  |
 | `description` |  | `string` |  |
 | `counter` |  | `number` | A number shown at the end of the item (how often the message occurs). |
 | `groupName` |  | `string` | The group of the item when the view has `groupItems`. |
-| `activeTitle` |  | `boolean` | The title is a link (fires onActiveTitlePress). UI5 default false. |
+| `activeTitle` |  | `boolean` | The title is a link (fires onActiveTitlePress). |
 | `markupDescription` |  | `boolean` | UI5 renders the description as HTML; smart-kit renders it as plain text. |
 | `longtextUrl` |  | `string` | A URL with a long text, loaded when the details page opens (shown as plain text; fires onLongtextLoaded). |
 | `link` |  | `ReactNode` | A link shown on the details page (`link` aggregation). |
+| `text` |  | `string` | Text of the item (inherited from sap.ui.core.Item); like UI5, the view shows `title`, not `text`. |
+| `enabled` |  | `boolean` | Inherited from sap.ui.core.Item; like UI5, the view does not use it. |
 
 ### `default` — component
 
@@ -4322,41 +4493,44 @@ sap.m.MessageItem: declares one message of a MessageView / MessagePopover (rende
 
 | Prop | Required | Type | Description |
 | --- | --- | --- | --- |
-| `type` |  | `MessageType` | UI5 default 'Error'. |
+| `type` |  | `MessageType` | Type of the message. |
 | `title` |  | `string` |  |
 | `subtitle` |  | `string` |  |
 | `description` |  | `string` |  |
 | `counter` |  | `number` | A number shown at the end of the item (how often the message occurs). |
 | `groupName` |  | `string` | The group of the item when the view has `groupItems`. |
-| `activeTitle` |  | `boolean` | The title is a link (fires onActiveTitlePress). UI5 default false. |
+| `activeTitle` |  | `boolean` | The title is a link (fires onActiveTitlePress). |
 | `markupDescription` |  | `boolean` | UI5 renders the description as HTML; smart-kit renders it as plain text. |
 | `longtextUrl` |  | `string` | A URL with a long text, loaded when the details page opens (shown as plain text; fires onLongtextLoaded). |
 | `link` |  | `ReactNode` | A link shown on the details page (`link` aggregation). |
+| `text` |  | `string` | Text of the item (inherited from sap.ui.core.Item); like UI5, the view shows `title`, not `text`. |
+| `enabled` |  | `boolean` | Inherited from sap.ui.core.Item; like UI5, the view does not use it. |
 
 ## `@rhfan2019/smart-kit/m/MessagePopover`
 
-`$MessagePopoverSettings` (interface) · `default` (component)
+`$MessagePopoverSettings` (interface) · `default` (component) · `MessagePopover$ActiveTitlePressEvent` (type) · `MessagePopover$AfterCloseEvent` (interface) · `MessagePopover$AfterOpenEvent` (interface) · `MessagePopover$BeforeCloseEvent` (interface) · `MessagePopover$BeforeOpenEvent` (interface) · `MessagePopover$ItemSelectEvent` (type) · `MessagePopover$ListSelectEvent` (type)
 
 ### `$MessagePopoverSettings` — interface
 
 | Member | Required | Type | Description |
 | --- | --- | --- | --- |
-| `placement` |  | `VerticalPlacementType` | UI5 default 'Vertical' (below, or above when there is no room). |
-| `initiallyExpanded` |  | `boolean` | Opens with the message list shown (UI5 default true); false opens with only the header and filter. |
-| `onBeforeOpen` |  | `(e: { openBy: Element }) => void` |  |
-| `onAfterOpen` |  | `(e: { openBy: Element }) => void` |  |
-| `onBeforeClose` |  | `(e: { openBy: Element }) => void` |  |
-| `onAfterClose` |  | `(e: { openBy: Element }) => void` |  |
+| `placement` |  | `VerticalPlacementType` | Position of the popover: below, or above when there is no room ('Vertical'), always 'Top' or 'Bottom'. |
+| `initiallyExpanded` |  | `boolean` | Opens with the message list shown; false opens with only the header and filter. |
+| `groupItems` |  | `boolean` | Groups the items by `groupName`. |
+| `onItemSelect` |  | `(e: MessagePopover$ItemSelectEvent) => void` |  |
+| `onListSelect` |  | `(e: MessagePopover$ListSelectEvent) => void` |  |
+| `onActiveTitlePress` |  | `(e: MessagePopover$ActiveTitlePressEvent) => void` |  |
+| `onBeforeOpen` |  | `(e: MessagePopover$BeforeOpenEvent) => void` |  |
+| `onAfterOpen` |  | `(e: MessagePopover$AfterOpenEvent) => void` |  |
+| `onBeforeClose` |  | `(e: MessagePopover$BeforeCloseEvent) => void` |  |
+| `onAfterClose` |  | `(e: MessagePopover$AfterCloseEvent) => void` |  |
 | `aria-label` |  | `string` | Accessible name of the popover (default "Messages"). |
 | `ref` |  | `Ref&lt;MessagePopover>` |  |
 | `children` |  | `ReactNode` | `MessageItem` elements. |
 | `items` |  | `Message[]` | Extension: core messages (ADR-023), shown like MessageItems: text as title, target as subtitle and active title. |
-| `groupItems` |  | `boolean` | Groups the items by `groupName`. UI5 default false. |
+| `asyncDescriptionHandler` |  | `(config: MessageViewAsyncDescriptionConfig) => void` | Loads the description of an item with a `longtextUrl` when its details open (the details page is busy meanwhile). Default: `defaultAsyncDescriptionHandler` (GET `longtextUrl`, as UI5's default handler). |
 | `headerButton` |  | `ReactNode` | A button at the end of the list header (MessagePopover `headerButton`). |
-| `onItemSelect` |  | `(e: { item: MessageViewItem; messageTypeFilter: MessageType \| 'All' }) => void` |  |
-| `onActiveTitlePress` |  | `(e: { item: MessageViewItem }) => void` |  |
-| `onListSelect` |  | `(e: { messageTypeFilter: MessageType \| 'All' }) => void` |  |
-| `onLongtextLoaded` |  | `() => void` | Fired after the long text of an item (`longtextUrl`) has been loaded. |
+| `onLongtextLoaded` |  | `() => void` | Fired after the description of an item with a `longtextUrl` has been loaded (`asyncDescriptionHandler`). |
 
 ### `default` — component
 
@@ -4366,22 +4540,79 @@ sap.m.MessagePopover
 
 | Prop | Required | Type | Description |
 | --- | --- | --- | --- |
-| `placement` |  | `VerticalPlacementType` | UI5 default 'Vertical' (below, or above when there is no room). |
-| `initiallyExpanded` |  | `boolean` | Opens with the message list shown (UI5 default true); false opens with only the header and filter. |
-| `onBeforeOpen` |  | `(e: { openBy: Element }) => void` |  |
-| `onAfterOpen` |  | `(e: { openBy: Element }) => void` |  |
-| `onBeforeClose` |  | `(e: { openBy: Element }) => void` |  |
-| `onAfterClose` |  | `(e: { openBy: Element }) => void` |  |
+| `placement` |  | `VerticalPlacementType` | Position of the popover: below, or above when there is no room ('Vertical'), always 'Top' or 'Bottom'. |
+| `initiallyExpanded` |  | `boolean` | Opens with the message list shown; false opens with only the header and filter. |
+| `groupItems` |  | `boolean` | Groups the items by `groupName`. |
+| `onItemSelect` |  | `(e: MessagePopover$ItemSelectEvent) => void` |  |
+| `onListSelect` |  | `(e: MessagePopover$ListSelectEvent) => void` |  |
+| `onActiveTitlePress` |  | `(e: MessagePopover$ActiveTitlePressEvent) => void` |  |
+| `onBeforeOpen` |  | `(e: MessagePopover$BeforeOpenEvent) => void` |  |
+| `onAfterOpen` |  | `(e: MessagePopover$AfterOpenEvent) => void` |  |
+| `onBeforeClose` |  | `(e: MessagePopover$BeforeCloseEvent) => void` |  |
+| `onAfterClose` |  | `(e: MessagePopover$AfterCloseEvent) => void` |  |
 | `aria-label` |  | `string` | Accessible name of the popover (default "Messages"). |
 | `ref` |  | `Ref&lt;MessagePopover>` |  |
 | `children` |  | `ReactNode` | `MessageItem` elements. |
 | `items` |  | `Message[]` | Extension: core messages (ADR-023), shown like MessageItems: text as title, target as subtitle and active title. |
-| `groupItems` |  | `boolean` | Groups the items by `groupName`. UI5 default false. |
+| `asyncDescriptionHandler` |  | `(config: MessageViewAsyncDescriptionConfig) => void` | Loads the description of an item with a `longtextUrl` when its details open (the details page is busy meanwhile). Default: `defaultAsyncDescriptionHandler` (GET `longtextUrl`, as UI5's default handler). |
 | `headerButton` |  | `ReactNode` | A button at the end of the list header (MessagePopover `headerButton`). |
-| `onItemSelect` |  | `(e: { item: MessageViewItem; messageTypeFilter: MessageType \| 'All' }) => void` |  |
-| `onActiveTitlePress` |  | `(e: { item: MessageViewItem }) => void` |  |
-| `onListSelect` |  | `(e: { messageTypeFilter: MessageType \| 'All' }) => void` |  |
-| `onLongtextLoaded` |  | `() => void` | Fired after the long text of an item (`longtextUrl`) has been loaded. |
+| `onLongtextLoaded` |  | `() => void` | Fired after the description of an item with a `longtextUrl` has been loaded (`asyncDescriptionHandler`). |
+
+### `MessagePopover$ActiveTitlePressEvent` — type
+
+Event object of `onActiveTitlePress` (sap.m.MessagePopover#activeTitlePress).
+
+```ts
+export type MessagePopover$ActiveTitlePressEvent = MessageView$ActiveTitlePressEvent;
+```
+
+### `MessagePopover$AfterCloseEvent` — interface
+
+Event object of `onAfterClose` (sap.m.MessagePopover#afterClose).
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `openBy` | **yes** | `Element` |  |
+
+### `MessagePopover$AfterOpenEvent` — interface
+
+Event object of `onAfterOpen` (sap.m.MessagePopover#afterOpen).
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `openBy` | **yes** | `Element` |  |
+
+### `MessagePopover$BeforeCloseEvent` — interface
+
+Event object of `onBeforeClose` (sap.m.MessagePopover#beforeClose).
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `openBy` | **yes** | `Element` |  |
+
+### `MessagePopover$BeforeOpenEvent` — interface
+
+Event object of `onBeforeOpen` (sap.m.MessagePopover#beforeOpen): the control the popover opens at.
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `openBy` | **yes** | `Element` |  |
+
+### `MessagePopover$ItemSelectEvent` — type
+
+Event object of `onItemSelect` (sap.m.MessagePopover#itemSelect).
+
+```ts
+export type MessagePopover$ItemSelectEvent = MessageView$ItemSelectEvent;
+```
+
+### `MessagePopover$ListSelectEvent` — type
+
+Event object of `onListSelect` (sap.m.MessagePopover#listSelect).
+
+```ts
+export type MessagePopover$ListSelectEvent = MessageView$ListSelectEvent;
+```
 
 ## `@rhfan2019/smart-kit/m/MessageStrip`
 
@@ -4392,12 +4623,12 @@ sap.m.MessagePopover
 | Member | Required | Type | Description |
 | --- | --- | --- | --- |
 | `text` |  | `string` |  |
-| `type` |  | `MessageType` | UI5 default 'Information'. |
-| `showIcon` |  | `boolean` | UI5 default false. |
+| `type` |  | `MessageType` | Type of the message ('None' is shown as Information). |
+| `showIcon` |  | `boolean` | Shows the icon of the type (or `customIcon`). |
 | `colorSet` |  | `'Default' \| 'ColorSet1' \| 'ColorSet2'` | sap.m.MessageStripColorSet (1.143): 'Default' uses the colours of `type`; ColorSet1 / ColorSet2 use `colorScheme`. |
-| `colorScheme` |  | `number` | 1–10, only with ColorSet1 / ColorSet2 (UI5 default 1). |
+| `colorScheme` |  | `number` | 1–10, only with ColorSet1 / ColorSet2. |
 | `customIcon` |  | `ReactNode` | Replaces the icon of the type (only with showIcon). UI5 takes an icon URI; smart-kit takes an element (ADR-032). |
-| `showCloseButton` |  | `boolean` | UI5 default false. |
+| `showCloseButton` |  | `boolean` | Shows a close button. |
 | `link` |  | `ReactNode` | A link after the text (`link` aggregation). |
 | `controls` |  | `ReactNode[]` | Links referenced from a formatted text (`controls` aggregation); shown after the text. |
 | `enableFormattedText` |  | `boolean` | UI5 parses `text` as limited HTML; smart-kit never parses HTML, so the text stays plain. Use `children` instead. |
@@ -4412,12 +4643,12 @@ sap.m.MessagePopover
 | Prop | Required | Type | Description |
 | --- | --- | --- | --- |
 | `text` |  | `string` |  |
-| `type` |  | `MessageType` | UI5 default 'Information'. |
-| `showIcon` |  | `boolean` | UI5 default false. |
+| `type` |  | `MessageType` | Type of the message ('None' is shown as Information). |
+| `showIcon` |  | `boolean` | Shows the icon of the type (or `customIcon`). |
 | `colorSet` |  | `'Default' \| 'ColorSet1' \| 'ColorSet2'` | sap.m.MessageStripColorSet (1.143): 'Default' uses the colours of `type`; ColorSet1 / ColorSet2 use `colorScheme`. |
-| `colorScheme` |  | `number` | 1–10, only with ColorSet1 / ColorSet2 (UI5 default 1). |
+| `colorScheme` |  | `number` | 1–10, only with ColorSet1 / ColorSet2. |
 | `customIcon` |  | `ReactNode` | Replaces the icon of the type (only with showIcon). UI5 takes an icon URI; smart-kit takes an element (ADR-032). |
-| `showCloseButton` |  | `boolean` | UI5 default false. |
+| `showCloseButton` |  | `boolean` | Shows a close button. |
 | `link` |  | `ReactNode` | A link after the text (`link` aggregation). |
 | `controls` |  | `ReactNode[]` | Links referenced from a formatted text (`controls` aggregation); shown after the text. |
 | `enableFormattedText` |  | `boolean` | UI5 parses `text` as limited HTML; smart-kit never parses HTML, so the text stays plain. Use `children` instead. |
@@ -4456,7 +4687,7 @@ sap.m.MessageToast `show` options (1.154).
 
 ## `@rhfan2019/smart-kit/m/MessageView`
 
-`$MessageViewSettings` (interface) · `default` (component) · `MessageViewItem` (type)
+`$MessageViewSettings` (interface) · `default` (component) · `MessageTypeFilter` (type) · `MessageView$ActiveTitlePressEvent` (interface) · `MessageView$ItemSelectEvent` (interface) · `MessageView$ListSelectEvent` (interface) · `MessageViewAsyncDescriptionConfig` (interface) · `MessageViewItem` (type)
 
 ### `$MessageViewSettings` — interface
 
@@ -4464,13 +4695,14 @@ sap.m.MessageToast `show` options (1.154).
 | --- | --- | --- | --- |
 | `children` |  | `ReactNode` | `MessageItem` elements. |
 | `items` |  | `Message[]` | Extension: core messages (ADR-023), shown like MessageItems: text as title, target as subtitle and active title. |
-| `groupItems` |  | `boolean` | Groups the items by `groupName`. UI5 default false. |
-| `showDetailsPageHeader` |  | `boolean` | Shows the header with the back button on the details page. UI5 default true. |
+| `groupItems` |  | `boolean` | Groups the items by `groupName`. |
+| `showDetailsPageHeader` |  | `boolean` | Shows the header with the back button on the details page. |
+| `asyncDescriptionHandler` |  | `(config: MessageViewAsyncDescriptionConfig) => void` | Loads the description of an item with a `longtextUrl` when its details open (the details page is busy meanwhile). Default: `defaultAsyncDescriptionHandler` (GET `longtextUrl`, as UI5's default handler). |
 | `headerButton` |  | `ReactNode` | A button at the end of the list header (MessagePopover `headerButton`). |
-| `onItemSelect` |  | `(e: { item: MessageViewItem; messageTypeFilter: MessageType \| 'All' }) => void` |  |
-| `onActiveTitlePress` |  | `(e: { item: MessageViewItem }) => void` |  |
-| `onListSelect` |  | `(e: { messageTypeFilter: MessageType \| 'All' }) => void` |  |
-| `onLongtextLoaded` |  | `() => void` | Fired after the long text of an item (`longtextUrl`) has been loaded. |
+| `onItemSelect` |  | `(e: MessageView$ItemSelectEvent) => void` |  |
+| `onActiveTitlePress` |  | `(e: MessageView$ActiveTitlePressEvent) => void` |  |
+| `onListSelect` |  | `(e: MessageView$ListSelectEvent) => void` |  |
+| `onLongtextLoaded` |  | `() => void` | Fired after the description of an item with a `longtextUrl` has been loaded (`asyncDescriptionHandler`). |
 | `ref` |  | `Ref&lt;MessageView>` |  |
 
 ### `default` — component
@@ -4483,14 +4715,57 @@ sap.m.MessageView
 | --- | --- | --- | --- |
 | `children` |  | `ReactNode` | `MessageItem` elements. |
 | `items` |  | `Message[]` | Extension: core messages (ADR-023), shown like MessageItems: text as title, target as subtitle and active title. |
-| `groupItems` |  | `boolean` | Groups the items by `groupName`. UI5 default false. |
-| `showDetailsPageHeader` |  | `boolean` | Shows the header with the back button on the details page. UI5 default true. |
+| `groupItems` |  | `boolean` | Groups the items by `groupName`. |
+| `showDetailsPageHeader` |  | `boolean` | Shows the header with the back button on the details page. |
+| `asyncDescriptionHandler` |  | `(config: MessageViewAsyncDescriptionConfig) => void` | Loads the description of an item with a `longtextUrl` when its details open (the details page is busy meanwhile). Default: `defaultAsyncDescriptionHandler` (GET `longtextUrl`, as UI5's default handler). |
 | `headerButton` |  | `ReactNode` | A button at the end of the list header (MessagePopover `headerButton`). |
-| `onItemSelect` |  | `(e: { item: MessageViewItem; messageTypeFilter: MessageType \| 'All' }) => void` |  |
-| `onActiveTitlePress` |  | `(e: { item: MessageViewItem }) => void` |  |
-| `onListSelect` |  | `(e: { messageTypeFilter: MessageType \| 'All' }) => void` |  |
-| `onLongtextLoaded` |  | `() => void` | Fired after the long text of an item (`longtextUrl`) has been loaded. |
+| `onItemSelect` |  | `(e: MessageView$ItemSelectEvent) => void` |  |
+| `onActiveTitlePress` |  | `(e: MessageView$ActiveTitlePressEvent) => void` |  |
+| `onListSelect` |  | `(e: MessageView$ListSelectEvent) => void` |  |
+| `onLongtextLoaded` |  | `() => void` | Fired after the description of an item with a `longtextUrl` has been loaded (`asyncDescriptionHandler`). |
 | `ref` |  | `Ref&lt;MessageView>` |  |
+
+### `MessageTypeFilter` — type
+
+The type filter of the list: a message type, or 'All'.
+
+```ts
+export type MessageTypeFilter = MessageType | 'All';
+```
+
+### `MessageView$ActiveTitlePressEvent` — interface
+
+Event object of `onActiveTitlePress` (sap.m.MessageView#activeTitlePress).
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `item` | **yes** | `MessageViewItem` |  |
+
+### `MessageView$ItemSelectEvent` — interface
+
+Event object of `onItemSelect` (sap.m.MessageView#itemSelect): the item whose details are shown.
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `item` | **yes** | `MessageViewItem` |  |
+| `messageTypeFilter` | **yes** | `MessageTypeFilter` |  |
+
+### `MessageView$ListSelectEvent` — interface
+
+Event object of `onListSelect` (sap.m.MessageView#listSelect): the list shown, filtered by type or not.
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `messageTypeFilter` | **yes** | `MessageTypeFilter` |  |
+
+### `MessageViewAsyncDescriptionConfig` — interface
+
+Argument of `asyncDescriptionHandler` (sap.m.MessageView~asyncDescriptionHandler). The handler loads the description of `item` (a copy of the item), sets `item.description` (UI5: `item.setDescription`) and calls `promise.resolve()`; `promise.reject()` shows the details without it.
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `item` | **yes** | `MessageViewItem` |  |
+| `promise` | **yes** | `{ resolve(value?: unknown): void; reject(reason?: unknown): void }` |  |
 
 ### `MessageViewItem` — type
 
@@ -4502,7 +4777,7 @@ export type MessageViewItem = $MessageItemSettings & { key?: string; message?: M
 
 ## `@rhfan2019/smart-kit/m/ObjectIdentifier`
 
-`$ObjectIdentifierSettings` (interface) · `default` (component)
+`$ObjectIdentifierSettings` (interface) · `default` (component) · `ObjectIdentifier$TitlePressEvent` (interface)
 
 ### `$ObjectIdentifierSettings` — interface
 
@@ -4510,11 +4785,11 @@ export type MessageViewItem = $MessageItemSettings & { key?: string; message?: M
 | --- | --- | --- | --- |
 | `title` |  | `string` | Object title (bold). |
 | `text` |  | `string` | Secondary text below the title. |
-| `titleActive` |  | `boolean` | The title is a link that fires onTitlePress (default false). |
-| `reactiveAreaMode` |  | `ReactiveAreaMode` | Overlay enlarges the clickable area of an active title (default Inline). |
-| `emptyIndicatorMode` |  | `EmptyIndicatorMode` | Shows "–" when title and text are empty (default Off). |
-| `onTitlePress` |  | `(e: { domRef: HTMLElement }) => void` | Fired when an active title is pressed; `domRef` is the title element. |
-| `children` |  | `ReactNode \| undefined` |  |
+| `visible` |  | `boolean` | Renders the control; false renders nothing. |
+| `titleActive` |  | `boolean` | The title is a link that fires onTitlePress. |
+| `reactiveAreaMode` |  | `ReactiveAreaMode` | Overlay enlarges the clickable area of an active title. |
+| `emptyIndicatorMode` |  | `EmptyIndicatorMode` | Shows "–" when title and text are empty. |
+| `onTitlePress` |  | `(e: ObjectIdentifier$TitlePressEvent) => void` | Fired when an active title is pressed; `domRef` is the title element. |
 | `defaultChecked` |  | `boolean \| undefined` |  |
 | `defaultValue` |  | `string \| number \| readonly string[] \| undefined` |  |
 | `suppressContentEditableWarning` |  | `boolean \| undefined` |  |
@@ -4800,11 +5075,11 @@ export type MessageViewItem = $MessageItemSettings & { key?: string; message?: M
 | --- | --- | --- | --- |
 | `title` |  | `string` | Object title (bold). |
 | `text` |  | `string` | Secondary text below the title. |
-| `titleActive` |  | `boolean` | The title is a link that fires onTitlePress (default false). |
-| `reactiveAreaMode` |  | `ReactiveAreaMode` | Overlay enlarges the clickable area of an active title (default Inline). |
-| `emptyIndicatorMode` |  | `EmptyIndicatorMode` | Shows "–" when title and text are empty (default Off). |
-| `onTitlePress` |  | `(e: { domRef: HTMLElement }) => void` | Fired when an active title is pressed; `domRef` is the title element. |
-| `children` |  | `ReactNode \| undefined` |  |
+| `visible` |  | `boolean` | Renders the control; false renders nothing. |
+| `titleActive` |  | `boolean` | The title is a link that fires onTitlePress. |
+| `reactiveAreaMode` |  | `ReactiveAreaMode` | Overlay enlarges the clickable area of an active title. |
+| `emptyIndicatorMode` |  | `EmptyIndicatorMode` | Shows "–" when title and text are empty. |
+| `onTitlePress` |  | `(e: ObjectIdentifier$TitlePressEvent) => void` | Fired when an active title is pressed; `domRef` is the title element. |
 | `defaultChecked` |  | `boolean \| undefined` |  |
 | `defaultValue` |  | `string \| number \| readonly string[] \| undefined` |  |
 | `suppressContentEditableWarning` |  | `boolean \| undefined` |  |
@@ -5082,21 +5357,27 @@ export type MessageViewItem = $MessageItemSettings & { key?: string; message?: M
 | `onTransitionStart` |  | `TransitionEventHandler&lt;T> \| undefined` |  |
 | `onTransitionStartCapture` |  | `TransitionEventHandler&lt;T> \| undefined` |  |
 
+### `ObjectIdentifier$TitlePressEvent` — interface
+
+Event object of ObjectIdentifier's titlePress.
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `domRef` | **yes** | `HTMLElement` | The title element. |
+
 ## `@rhfan2019/smart-kit/m/ObjectMarker`
 
-`$ObjectMarkerSettings` (interface) · `default` (component)
+`$ObjectMarkerSettings` (interface) · `default` (component) · `ObjectMarker$PressEvent` (interface)
 
 ### `$ObjectMarkerSettings` — interface
 
 | Member | Required | Type | Description |
 | --- | --- | --- | --- |
 | `type` |  | `ObjectMarkerType` | The marker (no default: without a type nothing is rendered). |
-| `reactiveAreaMode` |  | `ReactiveAreaMode` | Overlay enlarges the clickable area (default Inline). |
+| `reactiveAreaMode` |  | `ReactiveAreaMode` | Overlay enlarges the clickable area. |
 | `visibility` |  | `ObjectMarkerVisibility` | Icon, text or both. Without it, as in SAPUI5: Flagged and Favorite icon only; Draft text only; Locked, Unsaved, LockedBy and UnsavedBy icon only on small screens (below 600px) and icon and text on larger ones. |
 | `additionalInfo` |  | `string` | The user name of LockedBy / UnsavedBy ("Locked by {name}"). |
-| `onPress` |  | `(e: { type: ObjectMarkerType }) => void` | Makes the marker clickable. |
-| `children` |  | `ReactNode \| undefined` |  |
-| `title` |  | `string \| undefined` |  |
+| `onPress` |  | `(e: ObjectMarker$PressEvent) => void` | Makes the marker clickable. |
 | `defaultChecked` |  | `boolean \| undefined` |  |
 | `defaultValue` |  | `string \| number \| readonly string[] \| undefined` |  |
 | `suppressContentEditableWarning` |  | `boolean \| undefined` |  |
@@ -5118,6 +5399,7 @@ export type MessageViewItem = $MessageItemSettings & { key?: string; message?: M
 | `spellCheck` |  | `Booleanish \| undefined` |  |
 | `style` |  | `CSSProperties \| undefined` |  |
 | `tabIndex` |  | `number \| undefined` |  |
+| `title` |  | `string \| undefined` |  |
 | `translate` |  | `"yes" \| "no" \| undefined` |  |
 | `radioGroup` |  | `string \| undefined` |  |
 | `role` |  | `AriaRole \| undefined` |  |
@@ -5381,12 +5663,10 @@ export type MessageViewItem = $MessageItemSettings & { key?: string; message?: M
 | Prop | Required | Type | Description |
 | --- | --- | --- | --- |
 | `type` |  | `ObjectMarkerType` | The marker (no default: without a type nothing is rendered). |
-| `reactiveAreaMode` |  | `ReactiveAreaMode` | Overlay enlarges the clickable area (default Inline). |
+| `reactiveAreaMode` |  | `ReactiveAreaMode` | Overlay enlarges the clickable area. |
 | `visibility` |  | `ObjectMarkerVisibility` | Icon, text or both. Without it, as in SAPUI5: Flagged and Favorite icon only; Draft text only; Locked, Unsaved, LockedBy and UnsavedBy icon only on small screens (below 600px) and icon and text on larger ones. |
 | `additionalInfo` |  | `string` | The user name of LockedBy / UnsavedBy ("Locked by {name}"). |
-| `onPress` |  | `(e: { type: ObjectMarkerType }) => void` | Makes the marker clickable. |
-| `children` |  | `ReactNode \| undefined` |  |
-| `title` |  | `string \| undefined` |  |
+| `onPress` |  | `(e: ObjectMarker$PressEvent) => void` | Makes the marker clickable. |
 | `defaultChecked` |  | `boolean \| undefined` |  |
 | `defaultValue` |  | `string \| number \| readonly string[] \| undefined` |  |
 | `suppressContentEditableWarning` |  | `boolean \| undefined` |  |
@@ -5408,6 +5688,7 @@ export type MessageViewItem = $MessageItemSettings & { key?: string; message?: M
 | `spellCheck` |  | `Booleanish \| undefined` |  |
 | `style` |  | `CSSProperties \| undefined` |  |
 | `tabIndex` |  | `number \| undefined` |  |
+| `title` |  | `string \| undefined` |  |
 | `translate` |  | `"yes" \| "no" \| undefined` |  |
 | `radioGroup` |  | `string \| undefined` |  |
 | `role` |  | `AriaRole \| undefined` |  |
@@ -5664,6 +5945,14 @@ export type MessageViewItem = $MessageItemSettings & { key?: string; message?: M
 | `onTransitionStart` |  | `TransitionEventHandler&lt;T> \| undefined` |  |
 | `onTransitionStartCapture` |  | `TransitionEventHandler&lt;T> \| undefined` |  |
 
+### `ObjectMarker$PressEvent` — interface
+
+Event object of ObjectMarker's press.
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `type` | **yes** | `ObjectMarkerType` | The marker type. |
+
 ## `@rhfan2019/smart-kit/m/ObjectNumber`
 
 `$ObjectNumberSettings` (interface) · `default` (component)
@@ -5673,17 +5962,17 @@ export type MessageViewItem = $MessageItemSettings & { key?: string; message?: M
 | Member | Required | Type | Description |
 | --- | --- | --- | --- |
 | `number` |  | `string \| number` | The number. In Default mode it is shown as given; Currency and Unit modes format it with the locale. |
-| `emphasized` |  | `boolean` | Bold number (default true). |
-| `state` |  | `ValueState` | Colour (default None). |
+| `emphasized` |  | `boolean` | Bold number. |
+| `state` |  | `ValueState` | Colour. |
 | `unit` |  | `string` | Unit after the number; the ISO currency code in Currency mode. |
-| `textAlign` |  | `TextAlignValue` | sap.ui.core.TextAlign (default Begin). |
-| `active` |  | `boolean` | The number is clickable (default false); fires onPress. |
-| `reactiveAreaMode` |  | `ReactiveAreaMode` | Overlay enlarges the clickable area of an active number (default Inline). |
-| `inverted` |  | `boolean` | Filled background in the state colour (default false). |
+| `textAlign` |  | `TextAlignValue` | sap.ui.core.TextAlign. |
+| `active` |  | `boolean` | The number is clickable; fires onPress. |
+| `reactiveAreaMode` |  | `ReactiveAreaMode` | Overlay enlarges the clickable area of an active number. |
+| `inverted` |  | `boolean` | Filled background in the state colour. |
 | `displayMode` |  | `ObjectNumberDisplayMode` | Default shows the number as given; Currency formats it like Currency with `unit` as the currency; Unit formats it as a decimal. |
 | `maxPrecision` |  | `number` | Fraction digits in Currency and Unit modes (Currency: padded like Currency; default the currency's digits). |
-| `useSymbol` |  | `boolean` | Currency mode: shows the currency symbol instead of the code (default true). |
-| `emptyIndicatorMode` |  | `EmptyIndicatorMode` | Shows "–" when number is empty (default Off). |
+| `useSymbol` |  | `boolean` | Currency mode: shows the currency symbol instead of the code. |
+| `emptyIndicatorMode` |  | `EmptyIndicatorMode` | Shows "–" when number is empty. |
 | `onPress` |  | `(e: Record&lt;string, never>) => void` | Fired when an active number is pressed. |
 | `defaultChecked` |  | `boolean \| undefined` |  |
 | `defaultValue` |  | `string \| number \| readonly string[] \| undefined` |  |
@@ -5793,7 +6082,6 @@ export type MessageViewItem = $MessageItemSettings & { key?: string; message?: M
 | `aria-valuemin` |  | `number \| undefined` | Defines the minimum allowed value for a range widget. |
 | `aria-valuenow` |  | `number \| undefined` | Defines the current value for a range widget. |
 | `aria-valuetext` |  | `string \| undefined` | Defines the human readable text alternative of aria-valuenow for a range widget. |
-| `children` |  | `ReactNode \| undefined` |  |
 | `dangerouslySetInnerHTML` |  | `{ // Should be InnerHTML['innerHTML']. // But unfortunately we're mixing renderer-specific type declarations. __html: string \| TrustedHTM…` |  |
 | `onCopy` |  | `ClipboardEventHandler&lt;T> \| undefined` |  |
 | `onCopyCapture` |  | `ClipboardEventHandler&lt;T> \| undefined` |  |
@@ -5971,17 +6259,17 @@ export type MessageViewItem = $MessageItemSettings & { key?: string; message?: M
 | Prop | Required | Type | Description |
 | --- | --- | --- | --- |
 | `number` |  | `string \| number` | The number. In Default mode it is shown as given; Currency and Unit modes format it with the locale. |
-| `emphasized` |  | `boolean` | Bold number (default true). |
-| `state` |  | `ValueState` | Colour (default None). |
+| `emphasized` |  | `boolean` | Bold number. |
+| `state` |  | `ValueState` | Colour. |
 | `unit` |  | `string` | Unit after the number; the ISO currency code in Currency mode. |
-| `textAlign` |  | `TextAlignValue` | sap.ui.core.TextAlign (default Begin). |
-| `active` |  | `boolean` | The number is clickable (default false); fires onPress. |
-| `reactiveAreaMode` |  | `ReactiveAreaMode` | Overlay enlarges the clickable area of an active number (default Inline). |
-| `inverted` |  | `boolean` | Filled background in the state colour (default false). |
+| `textAlign` |  | `TextAlignValue` | sap.ui.core.TextAlign. |
+| `active` |  | `boolean` | The number is clickable; fires onPress. |
+| `reactiveAreaMode` |  | `ReactiveAreaMode` | Overlay enlarges the clickable area of an active number. |
+| `inverted` |  | `boolean` | Filled background in the state colour. |
 | `displayMode` |  | `ObjectNumberDisplayMode` | Default shows the number as given; Currency formats it like Currency with `unit` as the currency; Unit formats it as a decimal. |
 | `maxPrecision` |  | `number` | Fraction digits in Currency and Unit modes (Currency: padded like Currency; default the currency's digits). |
-| `useSymbol` |  | `boolean` | Currency mode: shows the currency symbol instead of the code (default true). |
-| `emptyIndicatorMode` |  | `EmptyIndicatorMode` | Shows "–" when number is empty (default Off). |
+| `useSymbol` |  | `boolean` | Currency mode: shows the currency symbol instead of the code. |
+| `emptyIndicatorMode` |  | `EmptyIndicatorMode` | Shows "–" when number is empty. |
 | `onPress` |  | `(e: Record&lt;string, never>) => void` | Fired when an active number is pressed. |
 | `defaultChecked` |  | `boolean \| undefined` |  |
 | `defaultValue` |  | `string \| number \| readonly string[] \| undefined` |  |
@@ -6091,7 +6379,6 @@ export type MessageViewItem = $MessageItemSettings & { key?: string; message?: M
 | `aria-valuemin` |  | `number \| undefined` | Defines the minimum allowed value for a range widget. |
 | `aria-valuenow` |  | `number \| undefined` | Defines the current value for a range widget. |
 | `aria-valuetext` |  | `string \| undefined` | Defines the human readable text alternative of aria-valuenow for a range widget. |
-| `children` |  | `ReactNode \| undefined` |  |
 | `dangerouslySetInnerHTML` |  | `{ // Should be InnerHTML['innerHTML']. // But unfortunately we're mixing renderer-specific type declarations. __html: string \| TrustedHTM…` |  |
 | `onCopy` |  | `ClipboardEventHandler&lt;T> \| undefined` |  |
 | `onCopyCapture` |  | `ClipboardEventHandler&lt;T> \| undefined` |  |
@@ -6272,15 +6559,14 @@ export type MessageViewItem = $MessageItemSettings & { key?: string; message?: M
 | --- | --- | --- | --- |
 | `title` |  | `string` | Label shown before the text as "title:". |
 | `text` |  | `string` | Status text. |
-| `active` |  | `boolean` | Text and icon are clickable (default false); fires onPress. |
-| `reactiveAreaMode` |  | `ReactiveAreaMode` | Overlay enlarges the clickable area of an active status (default Inline). |
-| `state` |  | `ValueState \| IndicationColor` | Colour: a ValueState or an IndicationColor (default None). |
-| `inverted` |  | `boolean` | Filled background in the state colour (default false). |
+| `active` |  | `boolean` | Text and icon are clickable; fires onPress. |
+| `reactiveAreaMode` |  | `ReactiveAreaMode` | Overlay enlarges the clickable area of an active status. |
+| `state` |  | `ValueState \| IndicationColor` | Colour: a ValueState or an IndicationColor. |
+| `inverted` |  | `boolean` | Filled background in the state colour. |
 | `icon` |  | `ReactNode` | Icon before the text (a React node, e.g. a lucide icon). |
-| `emptyIndicatorMode` |  | `EmptyIndicatorMode` | Shows "–" when text is empty (default Off). |
+| `emptyIndicatorMode` |  | `EmptyIndicatorMode` | Shows "–" when text is empty. |
 | `stateAnnouncementText` |  | `string` | Text read by screen readers for the state, instead of the default ("Error", "Warning", …). |
 | `onPress` |  | `(e: Record&lt;string, never>) => void` | Fired when an active status is pressed. |
-| `children` |  | `ReactNode \| undefined` |  |
 | `defaultChecked` |  | `boolean \| undefined` |  |
 | `defaultValue` |  | `string \| number \| readonly string[] \| undefined` |  |
 | `suppressContentEditableWarning` |  | `boolean \| undefined` |  |
@@ -6566,15 +6852,14 @@ export type MessageViewItem = $MessageItemSettings & { key?: string; message?: M
 | --- | --- | --- | --- |
 | `title` |  | `string` | Label shown before the text as "title:". |
 | `text` |  | `string` | Status text. |
-| `active` |  | `boolean` | Text and icon are clickable (default false); fires onPress. |
-| `reactiveAreaMode` |  | `ReactiveAreaMode` | Overlay enlarges the clickable area of an active status (default Inline). |
-| `state` |  | `ValueState \| IndicationColor` | Colour: a ValueState or an IndicationColor (default None). |
-| `inverted` |  | `boolean` | Filled background in the state colour (default false). |
+| `active` |  | `boolean` | Text and icon are clickable; fires onPress. |
+| `reactiveAreaMode` |  | `ReactiveAreaMode` | Overlay enlarges the clickable area of an active status. |
+| `state` |  | `ValueState \| IndicationColor` | Colour: a ValueState or an IndicationColor. |
+| `inverted` |  | `boolean` | Filled background in the state colour. |
 | `icon` |  | `ReactNode` | Icon before the text (a React node, e.g. a lucide icon). |
-| `emptyIndicatorMode` |  | `EmptyIndicatorMode` | Shows "–" when text is empty (default Off). |
+| `emptyIndicatorMode` |  | `EmptyIndicatorMode` | Shows "–" when text is empty. |
 | `stateAnnouncementText` |  | `string` | Text read by screen readers for the state, instead of the default ("Error", "Warning", …). |
 | `onPress` |  | `(e: Record&lt;string, never>) => void` | Fired when an active status is pressed. |
-| `children` |  | `ReactNode \| undefined` |  |
 | `defaultChecked` |  | `boolean \| undefined` |  |
 | `defaultValue` |  | `string \| number \| readonly string[] \| undefined` |  |
 | `suppressContentEditableWarning` |  | `boolean \| undefined` |  |
@@ -6854,24 +7139,23 @@ export type MessageViewItem = $MessageItemSettings & { key?: string; message?: M
 
 ## `@rhfan2019/smart-kit/m/OverflowToolbar`
 
-`$OverflowToolbarSettings` (interface) · `default` (component) · `OverflowToolbarLayoutData` (interface)
+`$OverflowToolbarSettings` (interface) · `default` (component) · `OverflowToolbar$PressEvent` (interface) · `OverflowToolbarLayoutData` (interface)
 
 ### `$OverflowToolbarSettings` — interface
 
 | Member | Required | Type | Description |
 | --- | --- | --- | --- |
 | `width` |  | `string` | Width (CSS length; default 100%). |
-| `active` |  | `boolean` | The whole toolbar is clickable and fires onPress (default false). |
-| `enabled` |  | `boolean` | Enabled (default true); a disabled toolbar disables its content. |
+| `active` |  | `boolean` | The whole toolbar is clickable and fires onPress. |
+| `enabled` |  | `boolean` | Enabled; a disabled toolbar disables its content. |
 | `height` |  | `string` | Height (CSS length; default: the control height). |
-| `design` |  | `ToolbarDesign` | Background design (default Auto: transparent). |
-| `style` |  | `ToolbarStyle` | Clear removes the border (default Standard). |
+| `design` |  | `ToolbarDesign` | Background design (Auto: transparent). |
+| `style` |  | `ToolbarStyle` | Clear removes the border. |
 | `ariaHasPopup` |  | `AriaHasPopup` | aria-haspopup of an active toolbar. |
-| `asyncMode` |  | `boolean` | Accepted for compatibility; the layout is always computed synchronously (default false). |
-| `onPress` |  | `(e: { srcControl: HTMLElement }) => void` | Fired when an active toolbar is pressed outside its interactive content; `srcControl` is the clicked element. |
+| `asyncMode` |  | `boolean` | Accepted for compatibility; the layout is always computed synchronously. |
+| `onPress` |  | `(e: OverflowToolbar$PressEvent) => void` | Fired when an active toolbar is pressed outside its interactive content; `srcControl` is the clicked element. |
 | `children` |  | `ReactNode` | Toolbar content: buttons, texts, ToolbarSpacer; `layoutData` on a child sets its overflow priority. |
 | `ref` |  | `Ref&lt;OverflowToolbar>` |  |
-| `title` |  | `string \| undefined` |  |
 | `defaultChecked` |  | `boolean \| undefined` |  |
 | `defaultValue` |  | `string \| number \| readonly string[] \| undefined` |  |
 | `suppressContentEditableWarning` |  | `boolean \| undefined` |  |
@@ -6892,6 +7176,7 @@ export type MessageViewItem = $MessageItemSettings & { key?: string; message?: M
 | `slot` |  | `string \| undefined` |  |
 | `spellCheck` |  | `Booleanish \| undefined` |  |
 | `tabIndex` |  | `number \| undefined` |  |
+| `title` |  | `string \| undefined` |  |
 | `translate` |  | `"yes" \| "no" \| undefined` |  |
 | `radioGroup` |  | `string \| undefined` |  |
 | `role` |  | `AriaRole \| undefined` |  |
@@ -7157,17 +7442,16 @@ Instance methods of OverflowToolbar.
 | Prop | Required | Type | Description |
 | --- | --- | --- | --- |
 | `width` |  | `string` | Width (CSS length; default 100%). |
-| `active` |  | `boolean` | The whole toolbar is clickable and fires onPress (default false). |
-| `enabled` |  | `boolean` | Enabled (default true); a disabled toolbar disables its content. |
+| `active` |  | `boolean` | The whole toolbar is clickable and fires onPress. |
+| `enabled` |  | `boolean` | Enabled; a disabled toolbar disables its content. |
 | `height` |  | `string` | Height (CSS length; default: the control height). |
-| `design` |  | `ToolbarDesign` | Background design (default Auto: transparent). |
-| `style` |  | `ToolbarStyle` | Clear removes the border (default Standard). |
+| `design` |  | `ToolbarDesign` | Background design (Auto: transparent). |
+| `style` |  | `ToolbarStyle` | Clear removes the border. |
 | `ariaHasPopup` |  | `AriaHasPopup` | aria-haspopup of an active toolbar. |
-| `asyncMode` |  | `boolean` | Accepted for compatibility; the layout is always computed synchronously (default false). |
-| `onPress` |  | `(e: { srcControl: HTMLElement }) => void` | Fired when an active toolbar is pressed outside its interactive content; `srcControl` is the clicked element. |
+| `asyncMode` |  | `boolean` | Accepted for compatibility; the layout is always computed synchronously. |
+| `onPress` |  | `(e: OverflowToolbar$PressEvent) => void` | Fired when an active toolbar is pressed outside its interactive content; `srcControl` is the clicked element. |
 | `children` |  | `ReactNode` | Toolbar content: buttons, texts, ToolbarSpacer; `layoutData` on a child sets its overflow priority. |
 | `ref` |  | `Ref&lt;OverflowToolbar>` |  |
-| `title` |  | `string \| undefined` |  |
 | `defaultChecked` |  | `boolean \| undefined` |  |
 | `defaultValue` |  | `string \| number \| readonly string[] \| undefined` |  |
 | `suppressContentEditableWarning` |  | `boolean \| undefined` |  |
@@ -7188,6 +7472,7 @@ Instance methods of OverflowToolbar.
 | `slot` |  | `string \| undefined` |  |
 | `spellCheck` |  | `Booleanish \| undefined` |  |
 | `tabIndex` |  | `number \| undefined` |  |
+| `title` |  | `string \| undefined` |  |
 | `translate` |  | `"yes" \| "no" \| undefined` |  |
 | `radioGroup` |  | `string \| undefined` |  |
 | `role` |  | `AriaRole \| undefined` |  |
@@ -7444,6 +7729,14 @@ Instance methods of OverflowToolbar.
 | `onTransitionStart` |  | `TransitionEventHandler&lt;T> \| undefined` |  |
 | `onTransitionStartCapture` |  | `TransitionEventHandler&lt;T> \| undefined` |  |
 
+### `OverflowToolbar$PressEvent` — interface
+
+Event object of OverflowToolbar's press.
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `srcControl` | **yes** | `HTMLElement` | The clicked element. |
+
 ### `OverflowToolbarLayoutData` — interface
 
 sap.m.OverflowToolbarLayoutData: set it on a toolbar child as the `layoutData` prop.
@@ -7464,12 +7757,18 @@ sap.m.OverflowToolbarLayoutData: set it on a toolbar child as the `layoutData` p
 | --- | --- | --- | --- |
 | `text` | **yes** | `string` | Text: the tooltip and accessible name in the toolbar, shown next to the icon in the overflow. |
 | `icon` |  | `ReactNode` | Icon (a React node). |
-| `type` |  | `ButtonType` | Visual type (default Transparent in the toolbar). |
-| `enabled` |  | `boolean` | Enabled (default true). |
+| `type` |  | `ButtonType` | Visual type; Default and Transparent look transparent in the toolbar, as in the SAPUI5 toolbar context. |
+| `enabled` |  | `boolean` | Enabled. |
 | `width` |  | `string` | Width (CSS length). |
+| `iconFirst` |  | `boolean` | In the overflow: the icon before the text; false puts it after. |
+| `activeIcon` |  | `ReactNode` | Icon shown while the button is pressed (held down). |
+| `ariaHasPopup` |  | `AriaHasPopup` | aria-haspopup. |
+| `accessibleRole` |  | `ButtonAccessibleRole` | Link makes screen readers announce a link. |
+| `badgeStyle` |  | `BadgeStyle` | Style of the badge. |
+| `badge` |  | `string \| number` | Extension: badge value shown on the button (SAPUI5 sets it through BadgeCustomData). |
 | `layoutData` |  | `OverflowToolbarLayoutData` | Layout data in the OverflowToolbar. |
 | `onPress` |  | `(e: Record&lt;string, never>) => void` | Fired when the button is pressed. |
-| `title` |  | `string` |  |
+| `title` |  | `string` | Tooltip (the SAPUI5 tooltip of sap.ui.core.Element); defaults to `text` in the toolbar. |
 | `data-testid` |  | `string` |  |
 
 ### `default` — component
@@ -7482,17 +7781,23 @@ sap.m.OverflowToolbarButton: icon only in the toolbar, icon and text in the over
 | --- | --- | --- | --- |
 | `text` | **yes** | `string` | Text: the tooltip and accessible name in the toolbar, shown next to the icon in the overflow. |
 | `icon` |  | `ReactNode` | Icon (a React node). |
-| `type` |  | `ButtonType` | Visual type (default Transparent in the toolbar). |
-| `enabled` |  | `boolean` | Enabled (default true). |
+| `type` |  | `ButtonType` | Visual type; Default and Transparent look transparent in the toolbar, as in the SAPUI5 toolbar context. |
+| `enabled` |  | `boolean` | Enabled. |
 | `width` |  | `string` | Width (CSS length). |
+| `iconFirst` |  | `boolean` | In the overflow: the icon before the text; false puts it after. |
+| `activeIcon` |  | `ReactNode` | Icon shown while the button is pressed (held down). |
+| `ariaHasPopup` |  | `AriaHasPopup` | aria-haspopup. |
+| `accessibleRole` |  | `ButtonAccessibleRole` | Link makes screen readers announce a link. |
+| `badgeStyle` |  | `BadgeStyle` | Style of the badge. |
+| `badge` |  | `string \| number` | Extension: badge value shown on the button (SAPUI5 sets it through BadgeCustomData). |
 | `layoutData` |  | `OverflowToolbarLayoutData` | Layout data in the OverflowToolbar. |
 | `onPress` |  | `(e: Record&lt;string, never>) => void` | Fired when the button is pressed. |
-| `title` |  | `string` |  |
+| `title` |  | `string` | Tooltip (the SAPUI5 tooltip of sap.ui.core.Element); defaults to `text` in the toolbar. |
 | `data-testid` |  | `string` |  |
 
 ## `@rhfan2019/smart-kit/m/SelectDialog`
 
-`$SelectDialogSettings` (interface) · `default` (component) · `ListItemBase` (interface) · `ListUpdateEvent` (interface) · `PopinDisplay` (type) · `Priority` (type) · `SortOrder` (type) · `StandardListItem` (interface) · `TextAlign` (type) · `VerticalAlign` (type)
+`$SelectDialogSettings` (interface) · `default` (component) · `ListItemBase` (interface) · `ListUpdateEvent` (interface) · `PopinDisplay` (type) · `Priority` (type) · `SelectDialog$ConfirmEvent` (type) · `SelectDialog$LiveChangeEvent` (type) · `SelectDialog$SearchEvent` (type) · `SelectDialog$SelectionChangeEvent` (type) · `SelectDialog$UpdateFinishedEvent` (type) · `SelectDialog$UpdateStartedEvent` (type) · `SortOrder` (type) · `StandardListItem` (interface) · `TextAlign` (type) · `VerticalAlign` (type)
 
 ### `$SelectDialogSettings` — interface
 
@@ -7502,24 +7807,24 @@ sap.m.OverflowToolbarButton: icon only in the toolbar, icon and text in the over
 | `ref` |  | `Ref&lt;SelectDialog>` |  |
 | `title` |  | `string` |  |
 | `noDataText` |  | `string` |  |
-| `multiSelect` |  | `boolean` | (false) |
-| `growing` |  | `boolean` | (true) Shows `growingThreshold` items and a "More" trigger. |
+| `multiSelect` |  | `boolean` |  |
+| `growing` |  | `boolean` | Shows `growingThreshold` items and a "More" trigger. |
 | `growingThreshold` |  | `number` | (null → 20, the list default) |
 | `contentWidth` |  | `string` |  |
-| `rememberSelections` |  | `boolean` | (false) Keeps the confirmed selection for the next opening; otherwise the items' `selected` is the start. |
+| `rememberSelections` |  | `boolean` | Keeps the confirmed selection for the next opening; otherwise the items' `selected` is the start. |
 | `contentHeight` |  | `string` |  |
-| `showClearButton` |  | `boolean` | (false) |
-| `confirmButtonText` |  | `string` | ('OK') |
-| `draggable` |  | `boolean` | (false) |
-| `resizable` |  | `boolean` | (false) |
-| `titleAlignment` |  | `TitleAlignment` | ('Auto') |
+| `showClearButton` |  | `boolean` |  |
+| `confirmButtonText` |  | `string` | Text of the confirm button (multi-select); default: the translated "OK", as in UI5. |
+| `draggable` |  | `boolean` |  |
+| `resizable` |  | `boolean` |  |
+| `titleAlignment` |  | `TitleAlignment` |  |
 | `searchPlaceholder` |  | `string` |  |
-| `initialFocus` |  | `SelectDialogInitialFocus` | ('List') |
-| `onSearch` |  | `(e: { value: string; clearButtonPressed: boolean }) => void` | Fired on Enter in the search field and when it is cleared. Extension: without `onSearch` and `onLiveChange` the dialog filters the items itself (title and description, or the text of the cells). |
-| `onLiveChange` |  | `(e: { value: string }) => void` |  |
-| `onConfirm` |  | `(e: { selectedItem: I \| undefined; selectedItems: I[] }) => void` |  |
+| `initialFocus` |  | `SelectDialogInitialFocus` |  |
+| `onSearch` |  | `(e: SelectDialogBase$SearchEvent) => void` | Fired on Enter in the search field and when it is cleared. Extension: without `onSearch` and `onLiveChange` the dialog filters the items itself (title and description, or the text of the cells). |
+| `onLiveChange` |  | `(e: SelectDialogBase$LiveChangeEvent) => void` |  |
+| `onConfirm` |  | `(e: SelectDialogBase$ConfirmEvent&lt;I>) => void` |  |
 | `onCancel` |  | `() => void` |  |
-| `onSelectionChange` |  | `(e: { listItem: I; listItems: I[]; selected: boolean; selectAll: boolean }) => void` |  |
+| `onSelectionChange` |  | `(e: SelectDialogBase$SelectionChangeEvent&lt;I>) => void` |  |
 | `onUpdateStarted` |  | `(e: ListUpdateEvent) => void` |  |
 | `onUpdateFinished` |  | `(e: ListUpdateEvent) => void` |  |
 
@@ -7535,24 +7840,24 @@ SelectDialog (sap.m.SelectDialog) with StandardListItem data.
 | `ref` |  | `Ref&lt;SelectDialog>` |  |
 | `title` |  | `string` |  |
 | `noDataText` |  | `string` |  |
-| `multiSelect` |  | `boolean` | (false) |
-| `growing` |  | `boolean` | (true) Shows `growingThreshold` items and a "More" trigger. |
+| `multiSelect` |  | `boolean` |  |
+| `growing` |  | `boolean` | Shows `growingThreshold` items and a "More" trigger. |
 | `growingThreshold` |  | `number` | (null → 20, the list default) |
 | `contentWidth` |  | `string` |  |
-| `rememberSelections` |  | `boolean` | (false) Keeps the confirmed selection for the next opening; otherwise the items' `selected` is the start. |
+| `rememberSelections` |  | `boolean` | Keeps the confirmed selection for the next opening; otherwise the items' `selected` is the start. |
 | `contentHeight` |  | `string` |  |
-| `showClearButton` |  | `boolean` | (false) |
-| `confirmButtonText` |  | `string` | ('OK') |
-| `draggable` |  | `boolean` | (false) |
-| `resizable` |  | `boolean` | (false) |
-| `titleAlignment` |  | `TitleAlignment` | ('Auto') |
+| `showClearButton` |  | `boolean` |  |
+| `confirmButtonText` |  | `string` | Text of the confirm button (multi-select); default: the translated "OK", as in UI5. |
+| `draggable` |  | `boolean` |  |
+| `resizable` |  | `boolean` |  |
+| `titleAlignment` |  | `TitleAlignment` |  |
 | `searchPlaceholder` |  | `string` |  |
-| `initialFocus` |  | `SelectDialogInitialFocus` | ('List') |
-| `onSearch` |  | `(e: { value: string; clearButtonPressed: boolean }) => void` | Fired on Enter in the search field and when it is cleared. Extension: without `onSearch` and `onLiveChange` the dialog filters the items itself (title and description, or the text of the cells). |
-| `onLiveChange` |  | `(e: { value: string }) => void` |  |
-| `onConfirm` |  | `(e: { selectedItem: I \| undefined; selectedItems: I[] }) => void` |  |
+| `initialFocus` |  | `SelectDialogInitialFocus` |  |
+| `onSearch` |  | `(e: SelectDialogBase$SearchEvent) => void` | Fired on Enter in the search field and when it is cleared. Extension: without `onSearch` and `onLiveChange` the dialog filters the items itself (title and description, or the text of the cells). |
+| `onLiveChange` |  | `(e: SelectDialogBase$LiveChangeEvent) => void` |  |
+| `onConfirm` |  | `(e: SelectDialogBase$ConfirmEvent&lt;I>) => void` |  |
 | `onCancel` |  | `() => void` |  |
-| `onSelectionChange` |  | `(e: { listItem: I; listItems: I[]; selected: boolean; selectAll: boolean }) => void` |  |
+| `onSelectionChange` |  | `(e: SelectDialogBase$SelectionChangeEvent&lt;I>) => void` |  |
 | `onUpdateStarted` |  | `(e: ListUpdateEvent) => void` |  |
 | `onUpdateFinished` |  | `(e: ListUpdateEvent) => void` |  |
 
@@ -7596,6 +7901,42 @@ sap.ui.core.Priority
 
 ```ts
 export type Priority = 'High' | 'Low' | 'Medium' | 'None';
+```
+
+### `SelectDialog$ConfirmEvent` — type
+
+```ts
+export type SelectDialog$ConfirmEvent = SelectDialogBase$ConfirmEvent<StandardListItem>;
+```
+
+### `SelectDialog$LiveChangeEvent` — type
+
+```ts
+export type SelectDialog$LiveChangeEvent = SelectDialogBase$LiveChangeEvent;
+```
+
+### `SelectDialog$SearchEvent` — type
+
+```ts
+export type SelectDialog$SearchEvent = SelectDialogBase$SearchEvent;
+```
+
+### `SelectDialog$SelectionChangeEvent` — type
+
+```ts
+export type SelectDialog$SelectionChangeEvent = SelectDialogBase$SelectionChangeEvent<StandardListItem>;
+```
+
+### `SelectDialog$UpdateFinishedEvent` — type
+
+```ts
+export type SelectDialog$UpdateFinishedEvent = ListUpdateEvent;
+```
+
+### `SelectDialog$UpdateStartedEvent` — type
+
+```ts
+export type SelectDialog$UpdateStartedEvent = ListUpdateEvent;
 ```
 
 ### `SortOrder` — type
@@ -7652,7 +7993,7 @@ export type VerticalAlign = 'Bottom' | 'Inherit' | 'Middle' | 'Top';
 
 ## `@rhfan2019/smart-kit/m/TableSelectDialog`
 
-`$TableSelectDialogSettings` (interface) · `Column` (interface) · `ColumnListItem` (interface) · `default` (component) · `ListUpdateEvent` (interface)
+`$TableSelectDialogSettings` (interface) · `Column` (interface) · `ColumnListItem` (interface) · `default` (component) · `ListUpdateEvent` (interface) · `TableSelectDialog$ConfirmEvent` (type) · `TableSelectDialog$LiveChangeEvent` (type) · `TableSelectDialog$SearchEvent` (type) · `TableSelectDialog$SelectionChangeEvent` (type) · `TableSelectDialog$UpdateFinishedEvent` (type) · `TableSelectDialog$UpdateStartedEvent` (type)
 
 ### `$TableSelectDialogSettings` — interface
 
@@ -7663,24 +8004,24 @@ export type VerticalAlign = 'Bottom' | 'Inherit' | 'Middle' | 'Top';
 | `ref` |  | `Ref&lt;TableSelectDialog>` |  |
 | `title` |  | `string` |  |
 | `noDataText` |  | `string` |  |
-| `multiSelect` |  | `boolean` | (false) |
-| `growing` |  | `boolean` | (true) Shows `growingThreshold` items and a "More" trigger. |
+| `multiSelect` |  | `boolean` |  |
+| `growing` |  | `boolean` | Shows `growingThreshold` items and a "More" trigger. |
 | `growingThreshold` |  | `number` | (null → 20, the list default) |
 | `contentWidth` |  | `string` |  |
-| `rememberSelections` |  | `boolean` | (false) Keeps the confirmed selection for the next opening; otherwise the items' `selected` is the start. |
+| `rememberSelections` |  | `boolean` | Keeps the confirmed selection for the next opening; otherwise the items' `selected` is the start. |
 | `contentHeight` |  | `string` |  |
-| `showClearButton` |  | `boolean` | (false) |
-| `confirmButtonText` |  | `string` | ('OK') |
-| `draggable` |  | `boolean` | (false) |
-| `resizable` |  | `boolean` | (false) |
-| `titleAlignment` |  | `TitleAlignment` | ('Auto') |
+| `showClearButton` |  | `boolean` |  |
+| `confirmButtonText` |  | `string` | Text of the confirm button (multi-select); default: the translated "OK", as in UI5. |
+| `draggable` |  | `boolean` |  |
+| `resizable` |  | `boolean` |  |
+| `titleAlignment` |  | `TitleAlignment` |  |
 | `searchPlaceholder` |  | `string` |  |
-| `initialFocus` |  | `SelectDialogInitialFocus` | ('List') |
-| `onSearch` |  | `(e: { value: string; clearButtonPressed: boolean }) => void` | Fired on Enter in the search field and when it is cleared. Extension: without `onSearch` and `onLiveChange` the dialog filters the items itself (title and description, or the text of the cells). |
-| `onLiveChange` |  | `(e: { value: string }) => void` |  |
-| `onConfirm` |  | `(e: { selectedItem: I \| undefined; selectedItems: I[] }) => void` |  |
+| `initialFocus` |  | `SelectDialogInitialFocus` |  |
+| `onSearch` |  | `(e: SelectDialogBase$SearchEvent) => void` | Fired on Enter in the search field and when it is cleared. Extension: without `onSearch` and `onLiveChange` the dialog filters the items itself (title and description, or the text of the cells). |
+| `onLiveChange` |  | `(e: SelectDialogBase$LiveChangeEvent) => void` |  |
+| `onConfirm` |  | `(e: SelectDialogBase$ConfirmEvent&lt;I>) => void` |  |
 | `onCancel` |  | `() => void` |  |
-| `onSelectionChange` |  | `(e: { listItem: I; listItems: I[]; selected: boolean; selectAll: boolean }) => void` |  |
+| `onSelectionChange` |  | `(e: SelectDialogBase$SelectionChangeEvent&lt;I>) => void` |  |
 | `onUpdateStarted` |  | `(e: ListUpdateEvent) => void` |  |
 | `onUpdateFinished` |  | `(e: ListUpdateEvent) => void` |  |
 
@@ -7735,24 +8076,24 @@ TableSelectDialog (sap.m.TableSelectDialog) with columns and ColumnListItem rows
 | `ref` |  | `Ref&lt;TableSelectDialog>` |  |
 | `title` |  | `string` |  |
 | `noDataText` |  | `string` |  |
-| `multiSelect` |  | `boolean` | (false) |
-| `growing` |  | `boolean` | (true) Shows `growingThreshold` items and a "More" trigger. |
+| `multiSelect` |  | `boolean` |  |
+| `growing` |  | `boolean` | Shows `growingThreshold` items and a "More" trigger. |
 | `growingThreshold` |  | `number` | (null → 20, the list default) |
 | `contentWidth` |  | `string` |  |
-| `rememberSelections` |  | `boolean` | (false) Keeps the confirmed selection for the next opening; otherwise the items' `selected` is the start. |
+| `rememberSelections` |  | `boolean` | Keeps the confirmed selection for the next opening; otherwise the items' `selected` is the start. |
 | `contentHeight` |  | `string` |  |
-| `showClearButton` |  | `boolean` | (false) |
-| `confirmButtonText` |  | `string` | ('OK') |
-| `draggable` |  | `boolean` | (false) |
-| `resizable` |  | `boolean` | (false) |
-| `titleAlignment` |  | `TitleAlignment` | ('Auto') |
+| `showClearButton` |  | `boolean` |  |
+| `confirmButtonText` |  | `string` | Text of the confirm button (multi-select); default: the translated "OK", as in UI5. |
+| `draggable` |  | `boolean` |  |
+| `resizable` |  | `boolean` |  |
+| `titleAlignment` |  | `TitleAlignment` |  |
 | `searchPlaceholder` |  | `string` |  |
-| `initialFocus` |  | `SelectDialogInitialFocus` | ('List') |
-| `onSearch` |  | `(e: { value: string; clearButtonPressed: boolean }) => void` | Fired on Enter in the search field and when it is cleared. Extension: without `onSearch` and `onLiveChange` the dialog filters the items itself (title and description, or the text of the cells). |
-| `onLiveChange` |  | `(e: { value: string }) => void` |  |
-| `onConfirm` |  | `(e: { selectedItem: I \| undefined; selectedItems: I[] }) => void` |  |
+| `initialFocus` |  | `SelectDialogInitialFocus` |  |
+| `onSearch` |  | `(e: SelectDialogBase$SearchEvent) => void` | Fired on Enter in the search field and when it is cleared. Extension: without `onSearch` and `onLiveChange` the dialog filters the items itself (title and description, or the text of the cells). |
+| `onLiveChange` |  | `(e: SelectDialogBase$LiveChangeEvent) => void` |  |
+| `onConfirm` |  | `(e: SelectDialogBase$ConfirmEvent&lt;I>) => void` |  |
 | `onCancel` |  | `() => void` |  |
-| `onSelectionChange` |  | `(e: { listItem: I; listItems: I[]; selected: boolean; selectAll: boolean }) => void` |  |
+| `onSelectionChange` |  | `(e: SelectDialogBase$SelectionChangeEvent&lt;I>) => void` |  |
 | `onUpdateStarted` |  | `(e: ListUpdateEvent) => void` |  |
 | `onUpdateFinished` |  | `(e: ListUpdateEvent) => void` |  |
 
@@ -7766,29 +8107,65 @@ Parameters of `updateStarted` / `updateFinished` (sap.m.SelectDialogBase).
 | `actual` | **yes** | `number` |  |
 | `total` | **yes** | `number` |  |
 
+### `TableSelectDialog$ConfirmEvent` — type
+
+```ts
+export type TableSelectDialog$ConfirmEvent = SelectDialogBase$ConfirmEvent<ColumnListItem>;
+```
+
+### `TableSelectDialog$LiveChangeEvent` — type
+
+```ts
+export type TableSelectDialog$LiveChangeEvent = SelectDialogBase$LiveChangeEvent;
+```
+
+### `TableSelectDialog$SearchEvent` — type
+
+```ts
+export type TableSelectDialog$SearchEvent = SelectDialogBase$SearchEvent;
+```
+
+### `TableSelectDialog$SelectionChangeEvent` — type
+
+```ts
+export type TableSelectDialog$SelectionChangeEvent = SelectDialogBase$SelectionChangeEvent<ColumnListItem>;
+```
+
+### `TableSelectDialog$UpdateFinishedEvent` — type
+
+```ts
+export type TableSelectDialog$UpdateFinishedEvent = ListUpdateEvent;
+```
+
+### `TableSelectDialog$UpdateStartedEvent` — type
+
+```ts
+export type TableSelectDialog$UpdateStartedEvent = ListUpdateEvent;
+```
+
 ## `@rhfan2019/smart-kit/m/ToggleButton`
 
-`$ToggleButtonSettings` (interface) · `AriaHasPopup` (type) · `default` (component)
+`$ToggleButtonSettings` (interface) · `AriaHasPopup` (type) · `default` (component) · `ToggleButton$PressEvent` (interface)
 
 ### `$ToggleButtonSettings` — interface
 
 | Member | Required | Type | Description |
 | --- | --- | --- | --- |
-| `pressed` |  | `boolean` | Pressed state (default false). The button also toggles itself, as in SAPUI5; a changed prop wins. |
+| `pressed` |  | `boolean` | Pressed state. The button also toggles itself, as in SAPUI5; a changed prop wins. |
 | `text` |  | `string` | Button text; without it the button shows only the icon (then set `aria-label` or `title`). |
-| `type` |  | `ButtonType` | Visual type (default Default). |
+| `type` |  | `ButtonType` | Visual type. |
 | `width` |  | `string` | Width (CSS length). |
-| `enabled` |  | `boolean` | Enabled (default true). |
+| `enabled` |  | `boolean` | Enabled. |
 | `icon` |  | `ReactNode` | Icon (a React node). |
-| `iconFirst` |  | `boolean` | Icon before the text (default true); false puts it after. |
+| `iconFirst` |  | `boolean` | Icon before the text; false puts it after. |
 | `activeIcon` |  | `ReactNode` | Icon shown while the button is pressed. |
-| `ariaHasPopup` |  | `AriaHasPopup` | aria-haspopup (default None). |
-| `accessibleRole` |  | `ButtonAccessibleRole` | Link makes screen readers announce a link (default Default). |
-| `badgeStyle` |  | `BadgeStyle` | Style of the badge (default Default). |
+| `ariaHasPopup` |  | `AriaHasPopup` | aria-haspopup. |
+| `accessibleRole` |  | `ButtonAccessibleRole` | Link makes screen readers announce a link. |
+| `badgeStyle` |  | `BadgeStyle` | Style of the badge. |
 | `badge` |  | `string \| number` | Extension: badge value shown on the button (SAPUI5 sets it through BadgeCustomData). |
 | `layoutData` |  | `OverflowToolbarLayoutData` | Layout data when the button is in an OverflowToolbar. |
-| `onPress` |  | `(e: { pressed: boolean }) => void` | Fired after a press with the new state. |
-| `title` |  | `string` |  |
+| `onPress` |  | `(e: ToggleButton$PressEvent) => void` | Fired after a press with the new state. |
+| `title` |  | `string` | Tooltip (the SAPUI5 tooltip of sap.ui.core.Element). |
 | `aria-label` |  | `string` |  |
 | `className` |  | `string` |  |
 | `data-testid` |  | `string` |  |
@@ -7807,24 +8184,32 @@ export type AriaHasPopup = 'None' | 'Menu' | 'ListBox' | 'Tree' | 'Grid' | 'Dial
 
 | Prop | Required | Type | Description |
 | --- | --- | --- | --- |
-| `pressed` |  | `boolean` | Pressed state (default false). The button also toggles itself, as in SAPUI5; a changed prop wins. |
+| `pressed` |  | `boolean` | Pressed state. The button also toggles itself, as in SAPUI5; a changed prop wins. |
 | `text` |  | `string` | Button text; without it the button shows only the icon (then set `aria-label` or `title`). |
-| `type` |  | `ButtonType` | Visual type (default Default). |
+| `type` |  | `ButtonType` | Visual type. |
 | `width` |  | `string` | Width (CSS length). |
-| `enabled` |  | `boolean` | Enabled (default true). |
+| `enabled` |  | `boolean` | Enabled. |
 | `icon` |  | `ReactNode` | Icon (a React node). |
-| `iconFirst` |  | `boolean` | Icon before the text (default true); false puts it after. |
+| `iconFirst` |  | `boolean` | Icon before the text; false puts it after. |
 | `activeIcon` |  | `ReactNode` | Icon shown while the button is pressed. |
-| `ariaHasPopup` |  | `AriaHasPopup` | aria-haspopup (default None). |
-| `accessibleRole` |  | `ButtonAccessibleRole` | Link makes screen readers announce a link (default Default). |
-| `badgeStyle` |  | `BadgeStyle` | Style of the badge (default Default). |
+| `ariaHasPopup` |  | `AriaHasPopup` | aria-haspopup. |
+| `accessibleRole` |  | `ButtonAccessibleRole` | Link makes screen readers announce a link. |
+| `badgeStyle` |  | `BadgeStyle` | Style of the badge. |
 | `badge` |  | `string \| number` | Extension: badge value shown on the button (SAPUI5 sets it through BadgeCustomData). |
 | `layoutData` |  | `OverflowToolbarLayoutData` | Layout data when the button is in an OverflowToolbar. |
-| `onPress` |  | `(e: { pressed: boolean }) => void` | Fired after a press with the new state. |
-| `title` |  | `string` |  |
+| `onPress` |  | `(e: ToggleButton$PressEvent) => void` | Fired after a press with the new state. |
+| `title` |  | `string` | Tooltip (the SAPUI5 tooltip of sap.ui.core.Element). |
 | `aria-label` |  | `string` |  |
 | `className` |  | `string` |  |
 | `data-testid` |  | `string` |  |
+
+### `ToggleButton$PressEvent` — interface
+
+Event object of ToggleButton's press.
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `pressed` | **yes** | `boolean` | The new pressed state. |
 
 ## `@rhfan2019/smart-kit/m/ToolbarSpacer`
 
@@ -7848,32 +8233,32 @@ Pushes the following toolbar content to the end, or adds a fixed gap with `width
 
 ## `@rhfan2019/smart-kit/m/ViewSettingsDialog`
 
-`$ViewSettingsDialogSettings` (interface) · `default` (component) · `ViewSettingsCustomTab` (interface) · `ViewSettingsDialogConfirmEvent` (interface) · `ViewSettingsDialogPage` (type) · `ViewSettingsFilterItem` (interface) · `ViewSettingsItem` (interface)
+`$ViewSettingsDialogSettings` (interface) · `default` (component) · `ViewSettingsCustomTab` (interface) · `ViewSettingsDialog$BeforeCloseEvent` (interface) · `ViewSettingsDialog$ConfirmEvent` (interface) · `ViewSettingsDialog$FilterDetailPageOpenedEvent` (interface) · `ViewSettingsDialogPage` (type) · `ViewSettingsFilterItem` (interface) · `ViewSettingsItem` (interface)
 
 ### `$ViewSettingsDialogSettings` — interface
 
 | Member | Required | Type | Description |
 | --- | --- | --- | --- |
-| `title` |  | `string` | ('View Settings') |
+| `title` |  | `string` | Title of the dialog; default: the translated "View Settings", as in UI5. |
 | `sortItems` |  | `ViewSettingsItem[]` |  |
 | `groupItems` |  | `ViewSettingsItem[]` |  |
 | `filterItems` |  | `ViewSettingsFilterItem[]` |  |
 | `presetFilterItems` |  | `ViewSettingsItem[]` | Predefined filters; picking one clears the other filters (and the other way round). |
 | `customTabs` |  | `ViewSettingsCustomTab[]` |  |
-| `sortDescending` |  | `boolean` | (false) |
-| `groupDescending` |  | `boolean` | (false) |
-| `filterSearchOperator` |  | `StringFilterOperator` | ('StartsWith') |
-| `titleAlignment` |  | `TitleAlignment` | ('Auto') |
+| `sortDescending` |  | `boolean` |  |
+| `groupDescending` |  | `boolean` |  |
+| `filterSearchOperator` |  | `StringFilterOperator` |  |
+| `titleAlignment` |  | `TitleAlignment` |  |
 | `selectedPresetFilterItem` |  | `string` | Key of the selected preset filter (otherwise the preset with `selected`). |
 | `selectedSortItem` |  | `string` | Key of the selected sort item (otherwise the item with `selected`). |
 | `selectedGroupItem` |  | `string` | Key of the selected group item (otherwise the item with `selected`). |
-| `selectedFilterKeys` |  | `Record&lt;string, string[]>` | Extension: the selected values per filter, `{ [filterKey]: valueKeys }` (otherwise the values with `selected`). |
-| `onConfirm` |  | `(e: ViewSettingsDialogConfirmEvent) => void` |  |
+| `selectedFilterCompoundKeys` |  | `Record&lt;string, Record&lt;string, boolean>>` | The selected values per filter, `{ filterKey: { valueKey: true } }` (otherwise the values with `selected`); the React form of UI5's `setSelectedFilterCompoundKeys`. |
+| `onConfirm` |  | `(e: ViewSettingsDialog$ConfirmEvent) => void` |  |
 | `onCancel` |  | `() => void` |  |
 | `onReset` |  | `() => void` | Fired when the reset button is pressed. |
 | `onResetFilters` |  | `() => void` | Fired when the filters are reset (reset button or `clearFilters`). |
-| `onFilterDetailPageOpened` |  | `(e: { parentFilterItem: ViewSettingsFilterItem }) => void` |  |
-| `onBeforeClose` |  | `(e: PreventableEvent&lt;object>) => void` | Fired before the dialog closes (OK, Cancel, Escape); `preventDefault()` keeps it open. |
+| `onFilterDetailPageOpened` |  | `(e: ViewSettingsDialog$FilterDetailPageOpenedEvent) => void` |  |
+| `onBeforeClose` |  | `(e: ViewSettingsDialog$BeforeCloseEvent) => void` | Fired before the dialog closes (OK, Cancel, Escape); `preventDefault()` keeps it open. |
 | `ref` |  | `Ref&lt;ViewSettingsDialog>` |  |
 
 ### `default` — component
@@ -7882,26 +8267,26 @@ Pushes the following toolbar content to the end, or adds a fixed gap with `width
 
 | Prop | Required | Type | Description |
 | --- | --- | --- | --- |
-| `title` |  | `string` | ('View Settings') |
+| `title` |  | `string` | Title of the dialog; default: the translated "View Settings", as in UI5. |
 | `sortItems` |  | `ViewSettingsItem[]` |  |
 | `groupItems` |  | `ViewSettingsItem[]` |  |
 | `filterItems` |  | `ViewSettingsFilterItem[]` |  |
 | `presetFilterItems` |  | `ViewSettingsItem[]` | Predefined filters; picking one clears the other filters (and the other way round). |
 | `customTabs` |  | `ViewSettingsCustomTab[]` |  |
-| `sortDescending` |  | `boolean` | (false) |
-| `groupDescending` |  | `boolean` | (false) |
-| `filterSearchOperator` |  | `StringFilterOperator` | ('StartsWith') |
-| `titleAlignment` |  | `TitleAlignment` | ('Auto') |
+| `sortDescending` |  | `boolean` |  |
+| `groupDescending` |  | `boolean` |  |
+| `filterSearchOperator` |  | `StringFilterOperator` |  |
+| `titleAlignment` |  | `TitleAlignment` |  |
 | `selectedPresetFilterItem` |  | `string` | Key of the selected preset filter (otherwise the preset with `selected`). |
 | `selectedSortItem` |  | `string` | Key of the selected sort item (otherwise the item with `selected`). |
 | `selectedGroupItem` |  | `string` | Key of the selected group item (otherwise the item with `selected`). |
-| `selectedFilterKeys` |  | `Record&lt;string, string[]>` | Extension: the selected values per filter, `{ [filterKey]: valueKeys }` (otherwise the values with `selected`). |
-| `onConfirm` |  | `(e: ViewSettingsDialogConfirmEvent) => void` |  |
+| `selectedFilterCompoundKeys` |  | `Record&lt;string, Record&lt;string, boolean>>` | The selected values per filter, `{ filterKey: { valueKey: true } }` (otherwise the values with `selected`); the React form of UI5's `setSelectedFilterCompoundKeys`. |
+| `onConfirm` |  | `(e: ViewSettingsDialog$ConfirmEvent) => void` |  |
 | `onCancel` |  | `() => void` |  |
 | `onReset` |  | `() => void` | Fired when the reset button is pressed. |
 | `onResetFilters` |  | `() => void` | Fired when the filters are reset (reset button or `clearFilters`). |
-| `onFilterDetailPageOpened` |  | `(e: { parentFilterItem: ViewSettingsFilterItem }) => void` |  |
-| `onBeforeClose` |  | `(e: PreventableEvent&lt;object>) => void` | Fired before the dialog closes (OK, Cancel, Escape); `preventDefault()` keeps it open. |
+| `onFilterDetailPageOpened` |  | `(e: ViewSettingsDialog$FilterDetailPageOpenedEvent) => void` |  |
+| `onBeforeClose` |  | `(e: ViewSettingsDialog$BeforeCloseEvent) => void` | Fired before the dialog closes (OK, Cancel, Escape); `preventDefault()` keeps it open. |
 | `ref` |  | `Ref&lt;ViewSettingsDialog>` |  |
 
 ### `ViewSettingsCustomTab` — interface
@@ -7915,7 +8300,17 @@ sap.m.ViewSettingsCustomTab: an own page with its own button in the header.
 | `content` | **yes** | `ReactNode` |  |
 | `icon` |  | `ReactNode` |  |
 
-### `ViewSettingsDialogConfirmEvent` — interface
+### `ViewSettingsDialog$BeforeCloseEvent` — interface
+
+The `beforeClose` event: it has no parameters and can be prevented.
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `preventDefault` | **yes** | `() => void` | Keeps the dialog open. |
+
+### `ViewSettingsDialog$ConfirmEvent` — interface
+
+Parameters of the `confirm` event (the deprecated `filterKeys` is not provided; use `filterCompoundKeys`).
 
 | Member | Required | Type | Description |
 | --- | --- | --- | --- |
@@ -7925,9 +8320,16 @@ sap.m.ViewSettingsCustomTab: an own page with its own button in the header.
 | `groupDescending` | **yes** | `boolean` |  |
 | `presetFilterItem` | **yes** | `ViewSettingsItem \| undefined` |  |
 | `filterItems` | **yes** | `ViewSettingsItem[]` | The selected values of all filters. |
-| `filterKeys` | **yes** | `Record&lt;string, boolean>` | `{ valueKey: true }` of the selected values (UI5 `filterKeys`). |
 | `filterCompoundKeys` | **yes** | `Record&lt;string, Record&lt;string, boolean>>` | `{ filterKey: { valueKey: true } }` (UI5 `filterCompoundKeys`). |
 | `filterString` | **yes** | `string` | "Filtered by: Status (New, Approved)", or "Filtered by: &lt;preset>"; empty without filters. |
+
+### `ViewSettingsDialog$FilterDetailPageOpenedEvent` — interface
+
+Parameters of the `filterDetailPageOpened` event.
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `parentFilterItem` | **yes** | `ViewSettingsFilterItem` | The filter whose detail page was opened. |
 
 ### `ViewSettingsDialogPage` — type
 
@@ -7965,25 +8367,25 @@ sap.m.ViewSettingsItem
 
 ## `@rhfan2019/smart-kit/m/Wizard`
 
-`$WizardSettings` (interface) · `default` (component) · `WizardStepInfo` (interface) · `WizardTitleLevel` (type)
+`$WizardSettings` (interface) · `default` (component) · `Wizard$NavigationChangeEvent` (interface) · `Wizard$StepActivateEvent` (interface) · `WizardStepInfo` (interface) · `WizardTitleLevel` (type)
 
 ### `$WizardSettings` — interface
 
 | Member | Required | Type | Description |
 | --- | --- | --- | --- |
 | `children` |  | `ReactNode` |  |
-| `renderMode` |  | `WizardRenderMode` | ('Scroll') |
-| `showNextButton` |  | `boolean` | (true) |
-| `finishButtonText` |  | `string` | ('Review') Text of the next button on the last step. |
-| `enableBranching` |  | `boolean` | (false) |
+| `renderMode` |  | `WizardRenderMode` |  |
+| `showNextButton` |  | `boolean` |  |
+| `finishButtonText` |  | `string` | Text of the next button on the last step; the default "Review" is shown translated, as in UI5. |
+| `enableBranching` |  | `boolean` |  |
 | `currentStep` |  | `string` | The id of the step to show; steps up to it are reached when they are validated. |
-| `width` |  | `string` | ('auto') CSS width. |
-| `height` |  | `string` | ('100%') CSS height (the steps scroll inside). |
-| `backgroundDesign` |  | `PageBackgroundDesign` | ('Standard') |
-| `stepTitleLevel` |  | `WizardTitleLevel` | ('H3') Heading level of the step titles. |
-| `onStepActivate` |  | `(e: { index: number }) => void` | Fired when a step becomes the progress step; `index` is one-based. |
+| `width` |  | `string` | CSS width. |
+| `height` |  | `string` | CSS height (the steps scroll inside). |
+| `backgroundDesign` |  | `PageBackgroundDesign` |  |
+| `stepTitleLevel` |  | `WizardTitleLevel` | Heading level of the step titles. |
+| `onStepActivate` |  | `(e: Wizard$StepActivateEvent) => void` | Fired when a step becomes the progress step. |
 | `onComplete` |  | `() => void` | Fired when the next button of the last step is pressed. |
-| `onNavigationChange` |  | `(e: { step: WizardStepInfo }) => void` | Fired when the user goes to another reached step in the progress navigator. |
+| `onNavigationChange` |  | `(e: Wizard$NavigationChangeEvent) => void` | Fired when the user goes to another reached step in the progress navigator. |
 | `ref` |  | `Ref&lt;Wizard>` |  |
 | `aria-label` |  | `string` |  |
 
@@ -7994,20 +8396,36 @@ sap.m.ViewSettingsItem
 | Prop | Required | Type | Description |
 | --- | --- | --- | --- |
 | `children` |  | `ReactNode` |  |
-| `renderMode` |  | `WizardRenderMode` | ('Scroll') |
-| `showNextButton` |  | `boolean` | (true) |
-| `finishButtonText` |  | `string` | ('Review') Text of the next button on the last step. |
-| `enableBranching` |  | `boolean` | (false) |
+| `renderMode` |  | `WizardRenderMode` |  |
+| `showNextButton` |  | `boolean` |  |
+| `finishButtonText` |  | `string` | Text of the next button on the last step; the default "Review" is shown translated, as in UI5. |
+| `enableBranching` |  | `boolean` |  |
 | `currentStep` |  | `string` | The id of the step to show; steps up to it are reached when they are validated. |
-| `width` |  | `string` | ('auto') CSS width. |
-| `height` |  | `string` | ('100%') CSS height (the steps scroll inside). |
-| `backgroundDesign` |  | `PageBackgroundDesign` | ('Standard') |
-| `stepTitleLevel` |  | `WizardTitleLevel` | ('H3') Heading level of the step titles. |
-| `onStepActivate` |  | `(e: { index: number }) => void` | Fired when a step becomes the progress step; `index` is one-based. |
+| `width` |  | `string` | CSS width. |
+| `height` |  | `string` | CSS height (the steps scroll inside). |
+| `backgroundDesign` |  | `PageBackgroundDesign` |  |
+| `stepTitleLevel` |  | `WizardTitleLevel` | Heading level of the step titles. |
+| `onStepActivate` |  | `(e: Wizard$StepActivateEvent) => void` | Fired when a step becomes the progress step. |
 | `onComplete` |  | `() => void` | Fired when the next button of the last step is pressed. |
-| `onNavigationChange` |  | `(e: { step: WizardStepInfo }) => void` | Fired when the user goes to another reached step in the progress navigator. |
+| `onNavigationChange` |  | `(e: Wizard$NavigationChangeEvent) => void` | Fired when the user goes to another reached step in the progress navigator. |
 | `ref` |  | `Ref&lt;Wizard>` |  |
 | `aria-label` |  | `string` |  |
+
+### `Wizard$NavigationChangeEvent` — interface
+
+Parameters of the `navigationChange` event.
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `step` | **yes** | `WizardStepInfo` | The step navigated to. |
+
+### `Wizard$StepActivateEvent` — interface
+
+Parameters of the `stepActivate` event.
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `index` | **yes** | `number` | One-based position of the activated step in the progress. |
 
 ### `WizardStepInfo` — interface
 
@@ -8038,8 +8456,8 @@ export type WizardTitleLevel = 'Auto' | 'H1' | 'H2' | 'H3' | 'H4' | 'H5' | 'H6';
 | `id` |  | `string` | Step id (used by `nextStep`, `subsequentSteps`, `goToStep`); default: the React key, then the position. |
 | `title` |  | `string` |  |
 | `icon` |  | `ReactNode` |  |
-| `validated` |  | `boolean` | (true) Whether the user may go on to the next step. |
-| `optional` |  | `boolean` | (false) Adds "(Optional)" to the title. |
+| `validated` |  | `boolean` | Whether the user may go on to the next step. |
+| `optional` |  | `boolean` | Adds "(Optional)" to the title. |
 | `nextStep` |  | `string` | With `enableBranching`: the id of the next step (one of `subsequentSteps`). |
 | `subsequentSteps` |  | `string[]` | With `enableBranching`: the ids of the steps that can follow. |
 | `onActivate` |  | `() => void` | Fired when the step becomes the progress step. |
@@ -8057,8 +8475,8 @@ A step of a Wizard; rendered by the Wizard (alone it renders nothing).
 | `id` |  | `string` | Step id (used by `nextStep`, `subsequentSteps`, `goToStep`); default: the React key, then the position. |
 | `title` |  | `string` |  |
 | `icon` |  | `ReactNode` |  |
-| `validated` |  | `boolean` | (true) Whether the user may go on to the next step. |
-| `optional` |  | `boolean` | (false) Adds "(Optional)" to the title. |
+| `validated` |  | `boolean` | Whether the user may go on to the next step. |
+| `optional` |  | `boolean` | Adds "(Optional)" to the title. |
 | `nextStep` |  | `string` | With `enableBranching`: the id of the next step (one of `subsequentSteps`). |
 | `subsequentSteps` |  | `string[]` | With `enableBranching`: the ids of the steps that can follow. |
 | `onActivate` |  | `() => void` | Fired when the step becomes the progress step. |
@@ -8311,7 +8729,7 @@ const WrappingType: { readonly Normal: "Normal"; readonly Hyphenated: "Hyphenate
 
 ## `@rhfan2019/smart-kit/m/plugins/UploadSetwithTable`
 
-`$UploadSetwithTableSettings` (interface) · `default` (component) · `FilenameValidationConfig` (interface) · `FilePreviewDialog` (interface) · `UploadCompletedEvent` (interface) · `UploadHeaderField` (interface) · `UploadItem` (interface) · `UploadItemInstance` (type) · `UploadSetwithTableColumn` (interface) · `UploadSetwithTableItemInfo` (interface)
+`$UploadSetwithTableSettings` (interface) · `default` (component) · `FilenameValidationConfig` (interface) · `FilePreviewDialog` (interface) · `UploadHeaderField` (interface) · `UploadItem` (interface) · `UploadItemInstance` (type) · `UploadSetwithTable$BeforeInitiatingItemUploadEvent` (interface) · `UploadSetwithTable$BeforeUploadStartsEvent` (interface) · `UploadSetwithTable$FileNameLengthExceededEvent` (interface) · `UploadSetwithTable$FileSizeExceededEvent` (interface) · `UploadSetwithTable$FileTypeMismatchEvent` (interface) · `UploadSetwithTable$ItemRenameCanceledEvent` (interface) · `UploadSetwithTable$ItemRenamedEvent` (interface) · `UploadSetwithTable$MediaTypeMismatchEvent` (interface) · `UploadSetwithTable$OnActivatedEvent` (interface) · `UploadSetwithTable$OnDeactivatedEvent` (interface) · `UploadSetwithTable$UploadCompletedEvent` (interface) · `UploadSetwithTableColumn` (interface) · `UploadSetwithTableItemInfo` (interface) · `UploadSetwithTableRemoveEvent` (interface)
 
 ### `$UploadSetwithTableSettings` — interface
 
@@ -8322,31 +8740,33 @@ const WrappingType: { readonly Normal: "Normal"; readonly Hyphenated: "Hyphenate
 | `maxFileNameLength` |  | `number` |  |
 | `maxFileSize` |  | `number` | Maximum file size in MB. |
 | `mediaTypes` |  | `string[]` | Allowed media types ("image/png", also "image/*"). |
-| `uploadUrl` |  | `string` |  |
-| `httpRequestMethod` |  | `UploaderHttpRequestMethod` | Default 'Post'. |
-| `multiple` |  | `boolean` | Several files at once (default false). |
-| `uploadButtonInvisible` |  | `boolean` | Hides the upload button (default false); drag and drop still works. |
-| `uploadEnabled` |  | `boolean` | Default true. |
+| `uploadUrl` |  | `string` | URL of the implicit uploader (without `uploader`). |
+| `httpRequestMethod` |  | `UploaderHttpRequestMethod` | Method of the implicit uploader (without `uploader`). |
+| `multiple` |  | `boolean` | Several files at once. |
+| `uploadButtonInvisible` |  | `boolean` | Hides the upload button; drag and drop still works. |
+| `uploadEnabled` |  | `boolean` |  |
 | `itemValidationHandler` |  | `(info: UploadSetwithTableItemInfo) => Promise&lt;UploadItem>` | Called for each new item before its upload; resolve (with the item to upload) to go on, reject to skip it. |
-| `directory` |  | `boolean` | Selects folders instead of files (default false). |
+| `directory` |  | `boolean` | Selects folders instead of files. |
 | `fileNameValidationConfig` |  | `FilenameValidationConfig` |  |
-| `uploader` |  | `UploaderTableItem` |  |
+| `uploader` |  | `ReactElement&lt;$UploaderTableItemSettings>` | The uploader: an `&lt;UploaderTableItem … />` element (default: an implicit one with `uploadUrl` and `httpRequestMethod`). |
 | `headerFields` |  | `UploadHeaderField[]` |  |
 | `noDataIllustration` |  | `ReactNode` | Empty state; default an IllustratedMessage "UploadToCloud". |
 | `actions` |  | `ReactNode` | Toolbar content; an `&lt;ActionsPlaceholder placeholderFor="UploadButtonPlaceholder" />` places the upload button (default: at the end). |
 | `previewDialog` |  | `FilePreviewDialog` |  |
 | `title` |  | `string` | Extension: title of the toolbar and the table. |
 | `columns` |  | `UploadSetwithTableColumn[]` | Extension: columns after the file name, size and status. |
-| `onRemove` |  | `(e: ItemEvent) => void` | Extension: shows a remove button per row. |
-| `onItemRenamed` |  | `(e: ItemEvent) => void` |  |
-| `onItemRenameCanceled` |  | `(e: ItemEvent) => void` |  |
-| `onBeforeUploadStarts` |  | `(e: PreventableEvent&lt;ItemEvent>) => void` |  |
-| `onUploadCompleted` |  | `(e: UploadCompletedEvent) => void` |  |
-| `onFileTypeMismatch` |  | `(e: ItemEvent) => void` |  |
-| `onFileNameLengthExceeded` |  | `(e: ItemEvent) => void` |  |
-| `onFileSizeExceeded` |  | `(e: ItemEvent) => void` |  |
-| `onMediaTypeMismatch` |  | `(e: ItemEvent) => void` |  |
-| `onBeforeInitiatingItemUpload` |  | `(e: ItemEvent) => void` |  |
+| `onRemove` |  | `(e: UploadSetwithTableRemoveEvent) => void` | Extension: shows a remove button per row. |
+| `onItemRenamed` |  | `(e: UploadSetwithTable$ItemRenamedEvent) => void` |  |
+| `onItemRenameCanceled` |  | `(e: UploadSetwithTable$ItemRenameCanceledEvent) => void` |  |
+| `onBeforeUploadStarts` |  | `(e: UploadSetwithTable$BeforeUploadStartsEvent) => void` |  |
+| `onUploadCompleted` |  | `(e: UploadSetwithTable$UploadCompletedEvent) => void` |  |
+| `onFileTypeMismatch` |  | `(e: UploadSetwithTable$FileTypeMismatchEvent) => void` |  |
+| `onFileNameLengthExceeded` |  | `(e: UploadSetwithTable$FileNameLengthExceededEvent) => void` |  |
+| `onFileSizeExceeded` |  | `(e: UploadSetwithTable$FileSizeExceededEvent) => void` |  |
+| `onMediaTypeMismatch` |  | `(e: UploadSetwithTable$MediaTypeMismatchEvent) => void` |  |
+| `onBeforeInitiatingItemUpload` |  | `(e: UploadSetwithTable$BeforeInitiatingItemUploadEvent) => void` |  |
+| `onOnActivated` |  | `(e: UploadSetwithTable$OnActivatedEvent) => void` | UI5 event `onActivated`: fired when the control is mounted. |
+| `onOnDeactivated` |  | `(e: UploadSetwithTable$OnDeactivatedEvent) => void` | UI5 event `onDeactivated`: fired when the control is unmounted. |
 | `ref` |  | `Ref&lt;UploadSetwithTable>` |  |
 
 ### `default` — component
@@ -8362,31 +8782,33 @@ Instance methods of UploadSetwithTable (via `ref`).
 | `maxFileNameLength` |  | `number` |  |
 | `maxFileSize` |  | `number` | Maximum file size in MB. |
 | `mediaTypes` |  | `string[]` | Allowed media types ("image/png", also "image/*"). |
-| `uploadUrl` |  | `string` |  |
-| `httpRequestMethod` |  | `UploaderHttpRequestMethod` | Default 'Post'. |
-| `multiple` |  | `boolean` | Several files at once (default false). |
-| `uploadButtonInvisible` |  | `boolean` | Hides the upload button (default false); drag and drop still works. |
-| `uploadEnabled` |  | `boolean` | Default true. |
+| `uploadUrl` |  | `string` | URL of the implicit uploader (without `uploader`). |
+| `httpRequestMethod` |  | `UploaderHttpRequestMethod` | Method of the implicit uploader (without `uploader`). |
+| `multiple` |  | `boolean` | Several files at once. |
+| `uploadButtonInvisible` |  | `boolean` | Hides the upload button; drag and drop still works. |
+| `uploadEnabled` |  | `boolean` |  |
 | `itemValidationHandler` |  | `(info: UploadSetwithTableItemInfo) => Promise&lt;UploadItem>` | Called for each new item before its upload; resolve (with the item to upload) to go on, reject to skip it. |
-| `directory` |  | `boolean` | Selects folders instead of files (default false). |
+| `directory` |  | `boolean` | Selects folders instead of files. |
 | `fileNameValidationConfig` |  | `FilenameValidationConfig` |  |
-| `uploader` |  | `UploaderTableItem` |  |
+| `uploader` |  | `ReactElement&lt;$UploaderTableItemSettings>` | The uploader: an `&lt;UploaderTableItem … />` element (default: an implicit one with `uploadUrl` and `httpRequestMethod`). |
 | `headerFields` |  | `UploadHeaderField[]` |  |
 | `noDataIllustration` |  | `ReactNode` | Empty state; default an IllustratedMessage "UploadToCloud". |
 | `actions` |  | `ReactNode` | Toolbar content; an `&lt;ActionsPlaceholder placeholderFor="UploadButtonPlaceholder" />` places the upload button (default: at the end). |
 | `previewDialog` |  | `FilePreviewDialog` |  |
 | `title` |  | `string` | Extension: title of the toolbar and the table. |
 | `columns` |  | `UploadSetwithTableColumn[]` | Extension: columns after the file name, size and status. |
-| `onRemove` |  | `(e: ItemEvent) => void` | Extension: shows a remove button per row. |
-| `onItemRenamed` |  | `(e: ItemEvent) => void` |  |
-| `onItemRenameCanceled` |  | `(e: ItemEvent) => void` |  |
-| `onBeforeUploadStarts` |  | `(e: PreventableEvent&lt;ItemEvent>) => void` |  |
-| `onUploadCompleted` |  | `(e: UploadCompletedEvent) => void` |  |
-| `onFileTypeMismatch` |  | `(e: ItemEvent) => void` |  |
-| `onFileNameLengthExceeded` |  | `(e: ItemEvent) => void` |  |
-| `onFileSizeExceeded` |  | `(e: ItemEvent) => void` |  |
-| `onMediaTypeMismatch` |  | `(e: ItemEvent) => void` |  |
-| `onBeforeInitiatingItemUpload` |  | `(e: ItemEvent) => void` |  |
+| `onRemove` |  | `(e: UploadSetwithTableRemoveEvent) => void` | Extension: shows a remove button per row. |
+| `onItemRenamed` |  | `(e: UploadSetwithTable$ItemRenamedEvent) => void` |  |
+| `onItemRenameCanceled` |  | `(e: UploadSetwithTable$ItemRenameCanceledEvent) => void` |  |
+| `onBeforeUploadStarts` |  | `(e: UploadSetwithTable$BeforeUploadStartsEvent) => void` |  |
+| `onUploadCompleted` |  | `(e: UploadSetwithTable$UploadCompletedEvent) => void` |  |
+| `onFileTypeMismatch` |  | `(e: UploadSetwithTable$FileTypeMismatchEvent) => void` |  |
+| `onFileNameLengthExceeded` |  | `(e: UploadSetwithTable$FileNameLengthExceededEvent) => void` |  |
+| `onFileSizeExceeded` |  | `(e: UploadSetwithTable$FileSizeExceededEvent) => void` |  |
+| `onMediaTypeMismatch` |  | `(e: UploadSetwithTable$MediaTypeMismatchEvent) => void` |  |
+| `onBeforeInitiatingItemUpload` |  | `(e: UploadSetwithTable$BeforeInitiatingItemUploadEvent) => void` |  |
+| `onOnActivated` |  | `(e: UploadSetwithTable$OnActivatedEvent) => void` | UI5 event `onActivated`: fired when the control is mounted. |
+| `onOnDeactivated` |  | `(e: UploadSetwithTable$OnDeactivatedEvent) => void` | UI5 event `onDeactivated`: fired when the control is unmounted. |
 | `ref` |  | `Ref&lt;UploadSetwithTable>` |  |
 
 ### `FilenameValidationConfig` — interface
@@ -8408,18 +8830,6 @@ sap.m.upload.FilePreviewDialog settings (association `previewDialog`).
 | `maxFileSizeforPreview` |  | `number` | Larger files (MB) are not previewed. |
 | `customPageContentHandler` |  | `(item: UploadItemInstance) => ReactNode` | Own content for an item; return undefined for the standard preview. |
 | `additionalFooterButtons` |  | `ReactNode` |  |
-
-### `UploadCompletedEvent` — interface
-
-| Member | Required | Type | Description |
-| --- | --- | --- | --- |
-| `item` | **yes** | `UploadItemInstance` |  |
-| `response` | **yes** | `string` |  |
-| `readyState` | **yes** | `number` |  |
-| `status` | **yes** | `number` |  |
-| `responseXML` | **yes** | `Document \| null` |  |
-| `responseText` | **yes** | `string` |  |
-| `headers` | **yes** | `Record&lt;string, string>` |  |
 
 ### `UploadHeaderField` — interface
 
@@ -8460,6 +8870,87 @@ An UploadItem in event objects and ref methods, with the UploadItem methods.
 export type UploadItemInstance = UploadItem & { id: string; /** Downloads the file (`askForLocation`: a save dialog where the browser has one). */ download(askForLocation?: boolean): void; /** The item fails `fileTypes`, `mediaTypes`, `maxFileNameLength` or `maxFileSize`. */ isRestricted(): boolean; /** Aborts a running upload. */ terminateUpload(): void; };
 ```
 
+### `UploadSetwithTable$BeforeInitiatingItemUploadEvent` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `item` | **yes** | `UploadItemInstance` |  |
+
+### `UploadSetwithTable$BeforeUploadStartsEvent` — interface
+
+Preventable: `preventDefault()` keeps the item from being uploaded.
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `item` | **yes** | `UploadItemInstance` |  |
+| `preventDefault` | **yes** | `() => void` |  |
+
+### `UploadSetwithTable$FileNameLengthExceededEvent` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `item` | **yes** | `UploadItemInstance` |  |
+
+### `UploadSetwithTable$FileSizeExceededEvent` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `item` | **yes** | `UploadItemInstance` |  |
+
+### `UploadSetwithTable$FileTypeMismatchEvent` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `item` | **yes** | `UploadItemInstance` |  |
+
+### `UploadSetwithTable$ItemRenameCanceledEvent` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `item` | **yes** | `UploadItemInstance` |  |
+
+### `UploadSetwithTable$ItemRenamedEvent` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `item` | **yes** | `UploadItemInstance` |  |
+
+### `UploadSetwithTable$MediaTypeMismatchEvent` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `item` | **yes** | `UploadItemInstance` |  |
+
+### `UploadSetwithTable$OnActivatedEvent` — interface
+
+UI5 event `onActivated`: the control is ready.
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `oPlugin` | **yes** | `UploadSetwithTable` |  |
+
+### `UploadSetwithTable$OnDeactivatedEvent` — interface
+
+UI5 event `onDeactivated`: the control is removed; `control` is its root element.
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `control` | **yes** | `HTMLElement \| null` |  |
+
+### `UploadSetwithTable$UploadCompletedEvent` — interface
+
+Event object of `onUploadCompleted`.
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `item` | **yes** | `UploadItemInstance` |  |
+| `response` | **yes** | `string` |  |
+| `readyState` | **yes** | `number` |  |
+| `status` | **yes** | `number` |  |
+| `responseXML` | **yes** | `string \| null` | Text content of the XML response (as in UI5), or null. |
+| `responseText` | **yes** | `string` |  |
+| `headers` | **yes** | `Record&lt;string, string>` | The response headers, names in lower case. |
+
 ### `UploadSetwithTableColumn` — interface
 
 Extension: an additional column of the file table.
@@ -8481,9 +8972,23 @@ sap.m.plugins.UploadSetwithTable.ItemInfo: argument of `itemValidationHandler`.
 | `iTotalItemsForUpload` | **yes** | `number` |  |
 | `oSource` | **yes** | `UploadSetwithTable \| null` |  |
 
+### `UploadSetwithTableRemoveEvent` — interface
+
+Extension: event object of `onRemove`.
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `item` | **yes** | `UploadItemInstance` |  |
+
 ## `@rhfan2019/smart-kit/m/upload/ActionsPlaceholder`
 
-`default` (component)
+`$ActionsPlaceholderSettings` (interface) · `default` (component)
+
+### `$ActionsPlaceholderSettings` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `placeholderFor` |  | `UploadSetwithTableActionPlaceHolder` | Which button the placeholder stands for. |
 
 ### `default` — component
 
@@ -8493,7 +8998,7 @@ sap.m.upload.ActionsPlaceholder: where the upload button goes inside `actions`.
 
 | Prop | Required | Type | Description |
 | --- | --- | --- | --- |
-| `placeholderFor` |  | `UploadSetwithTableActionPlaceHolder` |  |
+| `placeholderFor` |  | `UploadSetwithTableActionPlaceHolder` | Which button the placeholder stands for. |
 
 ## `@rhfan2019/smart-kit/m/upload/UploaderHttpRequestMethod`
 
@@ -8509,15 +9014,81 @@ const default: { readonly Post: "Post"; readonly Put: "Put"; }
 
 ## `@rhfan2019/smart-kit/m/upload/UploaderTableItem`
 
-`default` (const)
+`$UploaderTableItemSettings` (interface) · `default` (component) · `UploaderResponseXHR` (interface) · `UploaderTableItem$UploadCompletedEvent` (interface) · `UploaderTableItem$UploadProgressedEvent` (interface) · `UploaderTableItem$UploadStartedEvent` (interface) · `UploaderTableItem$UploadTerminatedEvent` (interface)
 
-### `default` — const
+### `$UploaderTableItemSettings` — interface
 
-sap.m.upload.UploaderTableItem: how the control uploads and downloads. Static methods of sap.m.upload.UploaderTableItem.
+sap.m.upload.UploaderTableItem: how UploadSetwithTable uploads and downloads (`uploader={<UploaderTableItem … />}`).
 
-```ts
-const default: { uploadFile: (file: Blob, url: string, headerFields?: UploadHeaderField[]) => Promise<XMLHttpRequest>; }
-```
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `uploadUrl` |  | `string` | URL the files are sent to (an item's `uploadUrl` comes first). |
+| `downloadUrl` |  | `string` | URL of downloads instead of the item's `url`. |
+| `httpRequestMethod` |  | `UploaderHttpRequestMethod` |  |
+| `useMultipart` |  | `boolean` | Sends the file as multipart/form-data (field named after the file, plus `_charset_`) instead of the raw body. |
+| `onUploadStarted` |  | `(e: UploaderTableItem$UploadStartedEvent) => void` |  |
+| `onUploadProgressed` |  | `(e: UploaderTableItem$UploadProgressedEvent) => void` |  |
+| `onUploadCompleted` |  | `(e: UploaderTableItem$UploadCompletedEvent) => void` |  |
+| `onUploadTerminated` |  | `(e: UploaderTableItem$UploadTerminatedEvent) => void` |  |
+| `ref` |  | `Ref&lt;UploaderTableItem>` |  |
+
+### `default` — component
+
+Instance methods of UploaderTableItem (via `ref`). sap.m.upload.UploaderTableItem, with the static `uploadFile`.
+
+`import { default } from '@rhfan2019/smart-kit/m/upload/UploaderTableItem';`
+
+| Prop | Required | Type | Description |
+| --- | --- | --- | --- |
+| `uploadUrl` |  | `string` | URL the files are sent to (an item's `uploadUrl` comes first). |
+| `downloadUrl` |  | `string` | URL of downloads instead of the item's `url`. |
+| `httpRequestMethod` |  | `UploaderHttpRequestMethod` |  |
+| `useMultipart` |  | `boolean` | Sends the file as multipart/form-data (field named after the file, plus `_charset_`) instead of the raw body. |
+| `onUploadStarted` |  | `(e: UploaderTableItem$UploadStartedEvent) => void` |  |
+| `onUploadProgressed` |  | `(e: UploaderTableItem$UploadProgressedEvent) => void` |  |
+| `onUploadCompleted` |  | `(e: UploaderTableItem$UploadCompletedEvent) => void` |  |
+| `onUploadTerminated` |  | `(e: UploaderTableItem$UploadTerminatedEvent) => void` |  |
+| `ref` |  | `Ref&lt;UploaderTableItem>` |  |
+
+### `UploaderResponseXHR` — interface
+
+The request of a finished upload (`responseXHR` of `uploadCompleted`, as in UI5).
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `response` | **yes** | `unknown` |  |
+| `responseXML` | **yes** | `Document \| null` |  |
+| `responseText` | **yes** | `string` |  |
+| `readyState` | **yes** | `number` |  |
+| `status` | **yes** | `number` | HTTP status; 0 for a network error. |
+| `headers` | **yes** | `string` | The raw response headers (getAllResponseHeaders()). |
+
+### `UploaderTableItem$UploadCompletedEvent` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `item` | **yes** | `UploadItemInstance` |  |
+| `responseXHR` | **yes** | `UploaderResponseXHR` |  |
+
+### `UploaderTableItem$UploadProgressedEvent` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `item` | **yes** | `UploadItemInstance` |  |
+| `loaded` | **yes** | `number` |  |
+| `total` | **yes** | `number` |  |
+
+### `UploaderTableItem$UploadStartedEvent` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `item` | **yes** | `UploadItemInstance` |  |
+
+### `UploaderTableItem$UploadTerminatedEvent` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `item` | **yes** | `UploadItemInstance` |  |
 
 ## `@rhfan2019/smart-kit/suite/ui/commons/MicroProcessFlow`
 
@@ -8528,7 +9099,7 @@ const default: { uploadFile: (file: Blob, url: string, headerFields?: UploadHead
 | Member | Required | Type | Description |
 | --- | --- | --- | --- |
 | `children` |  | `ReactNode` |  |
-| `renderType` |  | `MicroProcessFlowRenderType` | Default 'Wrap'. |
+| `renderType` |  | `MicroProcessFlowRenderType` |  |
 | `width` |  | `string` | CSS width. |
 | `ariaLabel` |  | `string` | Accessible name of the list. |
 
@@ -8539,7 +9110,7 @@ const default: { uploadFile: (file: Blob, url: string, headerFields?: UploadHead
 | Prop | Required | Type | Description |
 | --- | --- | --- | --- |
 | `children` |  | `ReactNode` |  |
-| `renderType` |  | `MicroProcessFlowRenderType` | Default 'Wrap'. |
+| `renderType` |  | `MicroProcessFlowRenderType` |  |
 | `width` |  | `string` | CSS width. |
 | `ariaLabel` |  | `string` | Accessible name of the list. |
 
@@ -8553,7 +9124,7 @@ export type MicroProcessFlowPressedItem = Omit<$MicroProcessFlowItemSettings, 'o
 
 ## `@rhfan2019/smart-kit/suite/ui/commons/MicroProcessFlowItem`
 
-`$MicroProcessFlowItemSettings` (interface) · `default` (component)
+`$MicroProcessFlowItemSettings` (interface) · `default` (component) · `MicroProcessFlowItem$PressEvent` (interface)
 
 ### `$MicroProcessFlowItemSettings` — interface
 
@@ -8561,13 +9132,13 @@ export type MicroProcessFlowPressedItem = Omit<$MicroProcessFlowItemSettings, 'o
 | --- | --- | --- | --- |
 | `icon` |  | `ReactNode` | Replaces the state icon. |
 | `title` |  | `string` | Accessible name and tooltip of the step. |
-| `state` |  | `ValueState` | Default 'None' (a plain dot). |
-| `showIntermediary` |  | `boolean` | Shows `intermediary` (or a small dot) on the separator after the item (default false). |
+| `state` |  | `ValueState \| 'Standard'` | 'Standard' (as in UI5) and 'None' are neutral: a plain dot. |
+| `showIntermediary` |  | `boolean` | Shows `intermediary` (or a small dot) on the separator after the item. |
 | `stepWidth` |  | `string` | CSS width of the step including its separator. |
-| `showSeparator` |  | `boolean` | Line to the next item (default true). |
+| `showSeparator` |  | `boolean` | Line to the next item. |
 | `customControl` |  | `ReactNode` | Replaces the whole step (icon). |
 | `intermediary` |  | `ReactNode` | Content on the separator when `showIntermediary`. |
-| `onPress` |  | `(e: PreventableEvent&lt;{ item: MicroProcessFlowPressedItem }>) => void` | Preventable, as in UI5. |
+| `onPress` |  | `(e: MicroProcessFlowItem$PressEvent) => void` | Preventable, as in UI5. |
 
 ### `default` — component
 
@@ -8579,17 +9150,26 @@ A step of MicroProcessFlow; rendered by its parent.
 | --- | --- | --- | --- |
 | `icon` |  | `ReactNode` | Replaces the state icon. |
 | `title` |  | `string` | Accessible name and tooltip of the step. |
-| `state` |  | `ValueState` | Default 'None' (a plain dot). |
-| `showIntermediary` |  | `boolean` | Shows `intermediary` (or a small dot) on the separator after the item (default false). |
+| `state` |  | `ValueState \| 'Standard'` | 'Standard' (as in UI5) and 'None' are neutral: a plain dot. |
+| `showIntermediary` |  | `boolean` | Shows `intermediary` (or a small dot) on the separator after the item. |
 | `stepWidth` |  | `string` | CSS width of the step including its separator. |
-| `showSeparator` |  | `boolean` | Line to the next item (default true). |
+| `showSeparator` |  | `boolean` | Line to the next item. |
 | `customControl` |  | `ReactNode` | Replaces the whole step (icon). |
 | `intermediary` |  | `ReactNode` | Content on the separator when `showIntermediary`. |
-| `onPress` |  | `(e: PreventableEvent&lt;{ item: MicroProcessFlowPressedItem }>) => void` | Preventable, as in UI5. |
+| `onPress` |  | `(e: MicroProcessFlowItem$PressEvent) => void` | Preventable, as in UI5. |
+
+### `MicroProcessFlowItem$PressEvent` — interface
+
+Event object of the item's `onPress` (preventable, as in UI5).
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `item` | **yes** | `MicroProcessFlowPressedItem` |  |
+| `preventDefault` | **yes** | `() => void` |  |
 
 ## `@rhfan2019/smart-kit/suite/ui/commons/ProcessFlow`
 
-`$ProcessFlowSettings` (interface) · `default` (component) · `ProcessFlowChild` (interface) · `ProcessFlowConnectionLabel` (interface) · `ProcessFlowLabelPressInfo` (interface) · `ProcessFlowLaneHeader` (interface) · `ProcessFlowLaneState` (interface) · `ProcessFlowNode` (interface)
+`$ProcessFlowSettings` (interface) · `AriaProperties` (interface) · `default` (component) · `ProcessFlow$HeaderPressEvent` (interface) · `ProcessFlow$LabelPressEvent` (interface) · `ProcessFlow$NodePressEvent` (interface) · `ProcessFlow$OnErrorEvent` (interface) · `ProcessFlowChild` (interface) · `ProcessFlowConnectionLabel` (interface) · `ProcessFlowLabelConnection` (interface) · `ProcessFlowLaneHeader` (interface) · `ProcessFlowLaneState` (interface) · `ProcessFlowNode` (interface)
 
 ### `$ProcessFlowSettings` — interface
 
@@ -8597,16 +9177,29 @@ A step of MicroProcessFlow; rendered by its parent.
 | --- | --- | --- | --- |
 | `lanes` |  | `ProcessFlowLaneHeader[]` |  |
 | `nodes` |  | `ProcessFlowNode[]` |  |
-| `foldedCorners` |  | `boolean` | Nodes with a folded top-right corner (default false). |
-| `scrollable` |  | `boolean` | Scrolls inside its own box (default true); false lets the content overflow. |
-| `wheelZoomable` |  | `boolean` | Ctrl + mouse wheel zooms (default true). |
-| `showLabels` |  | `boolean` | Shows the connection labels (default false). |
-| `onNodePress` |  | `(node: ProcessFlowNode) => void` |  |
-| `onLabelPress` |  | `(label: ProcessFlowConnectionLabel, info: ProcessFlowLabelPressInfo) => void` |  |
-| `onHeaderPress` |  | `(lane: ProcessFlowLaneHeader) => void` |  |
-| `onError` |  | `(e: { text: string }) => void` | Inconsistent data: a node in an unknown lane, or a child or parent id that does not exist. |
+| `foldedCorners` |  | `boolean` | Nodes with a folded top-right corner. |
+| `scrollable` |  | `boolean` | Scrolls inside its own box; false lets the content overflow. |
+| `wheelZoomable` |  | `boolean` | Ctrl + mouse wheel zooms. |
+| `showLabels` |  | `boolean` | Shows the connection labels. |
+| `ariaProperties` |  | `AriaProperties` | ARIA attributes of the root (label, labelledBy, describedBy, role, hasPopup). |
+| `onNodePress` |  | `(e: ProcessFlow$NodePressEvent) => void` |  |
+| `onLabelPress` |  | `(e: ProcessFlow$LabelPressEvent) => void` |  |
+| `onHeaderPress` |  | `(e: ProcessFlow$HeaderPressEvent) => void` |  |
+| `onOnError` |  | `(e: ProcessFlow$OnErrorEvent) => void` | UI5 event `onError`: inconsistent data (a node in an unknown lane, or a child or parent id that does not exist). |
 | `ref` |  | `Ref&lt;ProcessFlow>` |  |
 | `aria-label` |  | `string` |  |
+
+### `AriaProperties` — interface
+
+sap.suite.ui.commons.AriaProperties (aggregation `ariaProperties`): ARIA attributes of the control's root.
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `label` |  | `string` |  |
+| `labelledBy` |  | `string` | Ids of the labelling elements (space separated). |
+| `describedBy` |  | `string` | Ids of the describing elements (space separated). |
+| `role` |  | `string` | Default 'group'. |
+| `hasPopup` |  | `string` |  |
 
 ### `default` — component
 
@@ -8618,16 +9211,49 @@ Instance methods of ProcessFlow (via `ref`).
 | --- | --- | --- | --- |
 | `lanes` |  | `ProcessFlowLaneHeader[]` |  |
 | `nodes` |  | `ProcessFlowNode[]` |  |
-| `foldedCorners` |  | `boolean` | Nodes with a folded top-right corner (default false). |
-| `scrollable` |  | `boolean` | Scrolls inside its own box (default true); false lets the content overflow. |
-| `wheelZoomable` |  | `boolean` | Ctrl + mouse wheel zooms (default true). |
-| `showLabels` |  | `boolean` | Shows the connection labels (default false). |
-| `onNodePress` |  | `(node: ProcessFlowNode) => void` |  |
-| `onLabelPress` |  | `(label: ProcessFlowConnectionLabel, info: ProcessFlowLabelPressInfo) => void` |  |
-| `onHeaderPress` |  | `(lane: ProcessFlowLaneHeader) => void` |  |
-| `onError` |  | `(e: { text: string }) => void` | Inconsistent data: a node in an unknown lane, or a child or parent id that does not exist. |
+| `foldedCorners` |  | `boolean` | Nodes with a folded top-right corner. |
+| `scrollable` |  | `boolean` | Scrolls inside its own box; false lets the content overflow. |
+| `wheelZoomable` |  | `boolean` | Ctrl + mouse wheel zooms. |
+| `showLabels` |  | `boolean` | Shows the connection labels. |
+| `ariaProperties` |  | `AriaProperties` | ARIA attributes of the root (label, labelledBy, describedBy, role, hasPopup). |
+| `onNodePress` |  | `(e: ProcessFlow$NodePressEvent) => void` |  |
+| `onLabelPress` |  | `(e: ProcessFlow$LabelPressEvent) => void` |  |
+| `onHeaderPress` |  | `(e: ProcessFlow$HeaderPressEvent) => void` |  |
+| `onOnError` |  | `(e: ProcessFlow$OnErrorEvent) => void` | UI5 event `onError`: inconsistent data (a node in an unknown lane, or a child or parent id that does not exist). |
 | `ref` |  | `Ref&lt;ProcessFlow>` |  |
 | `aria-label` |  | `string` |  |
+
+### `ProcessFlow$HeaderPressEvent` — interface
+
+Event object of `onHeaderPress`: `oEvent` is the pressed lane header (as in UI5).
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `oEvent` | **yes** | `ProcessFlowLaneHeader` |  |
+
+### `ProcessFlow$LabelPressEvent` — interface
+
+Event object of `onLabelPress`: `oEvent` holds the label and its connections (as in UI5).
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `oEvent` | **yes** | `{ selectedLabel: ProcessFlowConnectionLabel; connections: ProcessFlowLabelConnection[] }` |  |
+
+### `ProcessFlow$NodePressEvent` — interface
+
+Event object of `onNodePress`: `oEvent` is the pressed node (as in UI5).
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `oEvent` | **yes** | `ProcessFlowNode` |  |
+
+### `ProcessFlow$OnErrorEvent` — interface
+
+Event object of `onOnError` (UI5 event `onError`): `oEvent.text` describes the problem.
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `oEvent` | **yes** | `{ text: string }` |  |
 
 ### `ProcessFlowChild` — interface
 
@@ -8646,18 +9272,19 @@ sap.suite.ui.commons.ProcessFlowConnectionLabel: a label on a connector (shown w
 | --- | --- | --- | --- |
 | `text` |  | `string` |  |
 | `icon` |  | `ReactNode` |  |
-| `priority` |  | `number` | Where several labels meet, the one with the highest priority is shown (default 0). |
-| `state` |  | `ProcessFlowConnectionLabelState` | Default 'Neutral'. |
-| `enabled` |  | `boolean` | Default true. |
+| `priority` |  | `number` | Where several labels meet, the one with the highest priority is shown. |
+| `state` |  | `ProcessFlowConnectionLabelState` |  |
+| `enabled` |  | `boolean` |  |
 
-### `ProcessFlowLabelPressInfo` — interface
+### `ProcessFlowLabelConnection` — interface
 
-Second argument of `onLabelPress`: the connection the label belongs to.
+One connection of a pressed label.
 
 | Member | Required | Type | Description |
 | --- | --- | --- | --- |
 | `sourceNode` | **yes** | `ProcessFlowNode` |  |
 | `targetNode` | **yes** | `ProcessFlowNode` |  |
+| `label` | **yes** | `ProcessFlowConnectionLabel` |  |
 
 ### `ProcessFlowLaneHeader` — interface
 
@@ -8709,46 +9336,46 @@ sap.suite.ui.commons.ProcessFlowNode
 
 ## `@rhfan2019/smart-kit/suite/ui/commons/Timeline`
 
-`$TimelineSettings` (interface) · `default` (component) · `TimelineCustomAction` (interface) · `TimelineFilterListItem` (interface) · `TimelineFilterReasons` (interface) · `TimelineFilterSelectionChangeEvent` (interface) · `TimelineItemFilteringEvent` (interface) · `TimelineSelectedItem` (type) · `TimelineTimeKeys` (interface)
+`$TimelineSettings` (interface) · `default` (component) · `Timeline$FilterSelectionChangeEvent` (interface) · `Timeline$ItemFilteringEvent` (interface) · `Timeline$SelectEvent` (interface) · `TimelineCustomAction` (interface) · `TimelineFilterListItem` (interface) · `TimelineFilterReasons` (interface) · `TimelineSelectedItem` (type) · `TimelineTimeKeys` (interface)
 
 ### `$TimelineSettings` — interface
 
 | Member | Required | Type | Description |
 | --- | --- | --- | --- |
 | `children` |  | `ReactNode` |  |
-| `alignment` |  | `TimelineAlignment` | Default 'Right'. |
-| `axisOrientation` |  | `TimelineAxisOrientation` | Default 'Vertical'. |
-| `enableDoubleSided` |  | `boolean` | Vertical axis with items alternating on both sides (default false). |
-| `showIcons` |  | `boolean` | Default true; false shows dots instead of the item icons. |
-| `width` |  | `string` | CSS width (default '100%'). |
+| `alignment` |  | `TimelineAlignment` |  |
+| `axisOrientation` |  | `TimelineAxisOrientation` |  |
+| `enableDoubleSided` |  | `boolean` | Vertical axis with items alternating on both sides. |
+| `showIcons` |  | `boolean` | false shows dots instead of the item icons. |
+| `width` |  | `string` | CSS width. |
 | `height` |  | `string` | CSS height; with `enableScroll` the list scrolls inside it. |
 | `textHeight` |  | `string` | CSS maximum height of item texts (they scroll beyond it). |
 | `noDataText` |  | `string` |  |
 | `enableBusyIndicator` |  | `boolean` | Accepted for UI5 code; no effect (no data binding, ADR-032 rule 7). |
-| `enableModelFilter` |  | `boolean` |  |
+| `enableModelFilter` |  | `boolean` | Accepted for UI5 code; no effect (no data binding: the filters always work on the client). |
 | `groupBy` |  | `string` |  |
 | `dateTimePath` |  | `string` |  |
-| `lazyLoading` |  | `boolean` |  |
-| `enableScroll` |  | `boolean` | Default true. |
-| `enableSocial` |  | `boolean` | Reply link and reply count on the items (default false). |
-| `forceGrowing` |  | `boolean` | Growing even without paging data (default false; items always grow on the client here). |
-| `growingThreshold` |  | `number` | Items shown before "More" (default 5; 0 shows all). |
-| `sort` |  | `boolean` | Sorts by date (default true). |
-| `sortOldestFirst` |  | `boolean` | Default false (newest first). |
-| `groupByType` |  | `TimelineGroupType` | Default 'None'. |
-| `showHeaderBar` |  | `boolean` | Default true. |
-| `showSearch` |  | `boolean` | Default true. |
-| `showSort` |  | `boolean` | Default true. |
-| `showItemFilter` |  | `boolean` | Filter by the items' `filterValue` (default true). |
-| `showTimeFilter` |  | `boolean` | Filter by a date range (default true). |
+| `lazyLoading` |  | `boolean` | Accepted for UI5 code; no effect (no data binding). |
+| `enableScroll` |  | `boolean` |  |
+| `enableSocial` |  | `boolean` | Reply link and reply count on the items. |
+| `forceGrowing` |  | `boolean` | Growing even without paging data (items always grow on the client here). |
+| `growingThreshold` |  | `number` | Items shown before "More" (0 shows all). |
+| `sort` |  | `boolean` | Sorts by date. |
+| `sortOldestFirst` |  | `boolean` | false: newest first. |
+| `groupByType` |  | `TimelineGroupType` |  |
+| `showHeaderBar` |  | `boolean` |  |
+| `showSearch` |  | `boolean` |  |
+| `showSort` |  | `boolean` |  |
+| `showItemFilter` |  | `boolean` | Filter by the items' `filterValue`. |
+| `showTimeFilter` |  | `boolean` | Filter by a date range. |
 | `filterTitle` |  | `string` | Title of the filter popover. |
 | `customFilter` |  | `ReactNode` | Replaces the content of the filter popover. |
 | `filterList` |  | `TimelineFilterListItem[]` | Options of the item filter; default the distinct `filterValue`s. |
-| `onSelect` |  | `(e: { selectedItem: TimelineSelectedItem; userAction: boolean }) => void` |  |
+| `onSelect` |  | `(e: Timeline$SelectEvent) => void` |  |
 | `onGrow` |  | `() => void` |  |
 | `onFilterOpen` |  | `() => void` |  |
-| `onFilterSelectionChange` |  | `(e: TimelineFilterSelectionChangeEvent) => void` |  |
-| `onItemFiltering` |  | `(e: PreventableEvent&lt;TimelineItemFilteringEvent>) => void` | Fired for each item a filter would hide; `preventDefault()` keeps it. |
+| `onFilterSelectionChange` |  | `(e: Timeline$FilterSelectionChangeEvent) => void` |  |
+| `onItemFiltering` |  | `(e: Timeline$ItemFilteringEvent) => void` | Fired for each item a filter would hide; `preventDefault()` keeps it. |
 | `onCustomMessageClosed` |  | `() => void` |  |
 | `ref` |  | `Ref&lt;Timeline>` |  |
 | `aria-label` |  | `string` |  |
@@ -8762,42 +9389,75 @@ Instance methods of Timeline (via `ref`).
 | Prop | Required | Type | Description |
 | --- | --- | --- | --- |
 | `children` |  | `ReactNode` |  |
-| `alignment` |  | `TimelineAlignment` | Default 'Right'. |
-| `axisOrientation` |  | `TimelineAxisOrientation` | Default 'Vertical'. |
-| `enableDoubleSided` |  | `boolean` | Vertical axis with items alternating on both sides (default false). |
-| `showIcons` |  | `boolean` | Default true; false shows dots instead of the item icons. |
-| `width` |  | `string` | CSS width (default '100%'). |
+| `alignment` |  | `TimelineAlignment` |  |
+| `axisOrientation` |  | `TimelineAxisOrientation` |  |
+| `enableDoubleSided` |  | `boolean` | Vertical axis with items alternating on both sides. |
+| `showIcons` |  | `boolean` | false shows dots instead of the item icons. |
+| `width` |  | `string` | CSS width. |
 | `height` |  | `string` | CSS height; with `enableScroll` the list scrolls inside it. |
 | `textHeight` |  | `string` | CSS maximum height of item texts (they scroll beyond it). |
 | `noDataText` |  | `string` |  |
 | `enableBusyIndicator` |  | `boolean` | Accepted for UI5 code; no effect (no data binding, ADR-032 rule 7). |
-| `enableModelFilter` |  | `boolean` |  |
+| `enableModelFilter` |  | `boolean` | Accepted for UI5 code; no effect (no data binding: the filters always work on the client). |
 | `groupBy` |  | `string` |  |
 | `dateTimePath` |  | `string` |  |
-| `lazyLoading` |  | `boolean` |  |
-| `enableScroll` |  | `boolean` | Default true. |
-| `enableSocial` |  | `boolean` | Reply link and reply count on the items (default false). |
-| `forceGrowing` |  | `boolean` | Growing even without paging data (default false; items always grow on the client here). |
-| `growingThreshold` |  | `number` | Items shown before "More" (default 5; 0 shows all). |
-| `sort` |  | `boolean` | Sorts by date (default true). |
-| `sortOldestFirst` |  | `boolean` | Default false (newest first). |
-| `groupByType` |  | `TimelineGroupType` | Default 'None'. |
-| `showHeaderBar` |  | `boolean` | Default true. |
-| `showSearch` |  | `boolean` | Default true. |
-| `showSort` |  | `boolean` | Default true. |
-| `showItemFilter` |  | `boolean` | Filter by the items' `filterValue` (default true). |
-| `showTimeFilter` |  | `boolean` | Filter by a date range (default true). |
+| `lazyLoading` |  | `boolean` | Accepted for UI5 code; no effect (no data binding). |
+| `enableScroll` |  | `boolean` |  |
+| `enableSocial` |  | `boolean` | Reply link and reply count on the items. |
+| `forceGrowing` |  | `boolean` | Growing even without paging data (items always grow on the client here). |
+| `growingThreshold` |  | `number` | Items shown before "More" (0 shows all). |
+| `sort` |  | `boolean` | Sorts by date. |
+| `sortOldestFirst` |  | `boolean` | false: newest first. |
+| `groupByType` |  | `TimelineGroupType` |  |
+| `showHeaderBar` |  | `boolean` |  |
+| `showSearch` |  | `boolean` |  |
+| `showSort` |  | `boolean` |  |
+| `showItemFilter` |  | `boolean` | Filter by the items' `filterValue`. |
+| `showTimeFilter` |  | `boolean` | Filter by a date range. |
 | `filterTitle` |  | `string` | Title of the filter popover. |
 | `customFilter` |  | `ReactNode` | Replaces the content of the filter popover. |
 | `filterList` |  | `TimelineFilterListItem[]` | Options of the item filter; default the distinct `filterValue`s. |
-| `onSelect` |  | `(e: { selectedItem: TimelineSelectedItem; userAction: boolean }) => void` |  |
+| `onSelect` |  | `(e: Timeline$SelectEvent) => void` |  |
 | `onGrow` |  | `() => void` |  |
 | `onFilterOpen` |  | `() => void` |  |
-| `onFilterSelectionChange` |  | `(e: TimelineFilterSelectionChangeEvent) => void` |  |
-| `onItemFiltering` |  | `(e: PreventableEvent&lt;TimelineItemFilteringEvent>) => void` | Fired for each item a filter would hide; `preventDefault()` keeps it. |
+| `onFilterSelectionChange` |  | `(e: Timeline$FilterSelectionChangeEvent) => void` |  |
+| `onItemFiltering` |  | `(e: Timeline$ItemFilteringEvent) => void` | Fired for each item a filter would hide; `preventDefault()` keeps it. |
 | `onCustomMessageClosed` |  | `() => void` |  |
 | `ref` |  | `Ref&lt;Timeline>` |  |
 | `aria-label` |  | `string` |  |
+
+### `Timeline$FilterSelectionChangeEvent` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `type` |  | `TimelineFilterType` |  |
+| `searchTerm` |  | `string` |  |
+| `selectedItem` |  | `string` | Key of the first selected filter item. |
+| `selectedItems` |  | `TimelineFilterListItem[]` |  |
+| `timeKeys` |  | `TimelineTimeKeys` |  |
+| `clear` |  | `boolean` |  |
+
+### `Timeline$ItemFilteringEvent` — interface
+
+Event object of `onItemFiltering`; `preventDefault()` keeps the item (as in UI5).
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `item` | **yes** | `TimelineSelectedItem` |  |
+| `reasons` | **yes** | `TimelineFilterReasons` |  |
+| `dataKeys` | **yes** | `string[]` |  |
+| `timeKeys` | **yes** | `TimelineTimeKeys` |  |
+| `searchTerm` | **yes** | `string` |  |
+| `preventDefault` | **yes** | `() => void` |  |
+
+### `Timeline$SelectEvent` — interface
+
+Event object of `onSelect`.
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `selectedItem` | **yes** | `TimelineSelectedItem` |  |
+| `userAction` | **yes** | `boolean` |  |
 
 ### `TimelineCustomAction` — interface
 
@@ -8827,27 +9487,6 @@ Why an item is filtered out (event `itemFiltering`).
 | `data` |  | `boolean` |  |
 | `time` |  | `boolean` |  |
 
-### `TimelineFilterSelectionChangeEvent` — interface
-
-| Member | Required | Type | Description |
-| --- | --- | --- | --- |
-| `type` |  | `TimelineFilterType` |  |
-| `searchTerm` |  | `string` |  |
-| `selectedItem` |  | `string` | Key of the first selected filter item. |
-| `selectedItems` |  | `TimelineFilterListItem[]` |  |
-| `timeKeys` |  | `TimelineTimeKeys` |  |
-| `clear` |  | `boolean` |  |
-
-### `TimelineItemFilteringEvent` — interface
-
-| Member | Required | Type | Description |
-| --- | --- | --- | --- |
-| `item` | **yes** | `TimelineSelectedItem` |  |
-| `reasons` | **yes** | `TimelineFilterReasons` |  |
-| `dataKeys` | **yes** | `string[]` |  |
-| `timeKeys` | **yes** | `TimelineTimeKeys` |  |
-| `searchTerm` | **yes** | `string` |  |
-
 ### `TimelineSelectedItem` — type
 
 A Timeline item in event objects: its props and React key.
@@ -8865,7 +9504,7 @@ export type TimelineSelectedItem = $TimelineItemSettings & { key?: string };
 
 ## `@rhfan2019/smart-kit/suite/ui/commons/TimelineItem`
 
-`$TimelineItemSettings` (interface) · `default` (component)
+`$TimelineItemSettings` (interface) · `default` (component) · `TimelineItem$CustomActionClickedEvent` (interface) · `TimelineItem$ReplyPostEvent` (interface) · `TimelineItem$UserNameClickedEvent` (interface)
 
 ### `$TimelineItemSettings` — interface
 
@@ -8879,23 +9518,24 @@ export type TimelineSelectedItem = $TimelineItemSettings & { key?: string };
 | `maxCharacters` |  | `number` | Characters of `text` before "More". |
 | `replyCount` |  | `number` | Number of replies (with `enableSocial`). |
 | `userName` |  | `string` |  |
-| `userNameClickable` |  | `boolean` | Default false. |
+| `userNameClickable` |  | `boolean` |  |
 | `userPicture` |  | `string` | Image URL of the user, shown next to the name. |
 | `icon` |  | `ReactNode` | Icon on the axis (React node). |
-| `iconDisplayShape` |  | `AvatarShape` | Default 'Circle'. |
+| `iconDisplayShape` |  | `AvatarShape` |  |
 | `iconInitials` |  | `string` | Initials on the axis when there is no icon. |
-| `iconSize` |  | `AvatarSize` | Default 'XS'. |
+| `iconSize` |  | `AvatarSize` |  |
 | `iconTooltip` |  | `string` |  |
-| `useIconTooltip` |  | `boolean` | Uses the title as tooltip of the icon when `iconTooltip` is not set (default true). |
+| `useIconTooltip` |  | `boolean` | Uses the title as tooltip of the icon when `iconTooltip` is not set. |
 | `customAction` |  | `TimelineCustomAction[]` | Links in the item footer. |
 | `customReply` |  | `ReactNode` | Replaces the reply box (with `enableSocial`). |
+| `replyList` |  | `ReactNode` | The replies (a list), shown above the reply box when the replies or the reply link is pressed (with `enableSocial`). |
 | `children` |  | `ReactNode` | Embedded content (UI5 default aggregation `embeddedControl`). |
-| `onUserNameClicked` |  | `(e: { uiElement: HTMLElement }) => void` |  |
+| `onUserNameClicked` |  | `(e: TimelineItem$UserNameClickedEvent) => void` |  |
 | `onSelect` |  | `() => void` |  |
 | `onPress` |  | `() => void` |  |
-| `onReplyPost` |  | `(e: { value: string }) => void` |  |
+| `onReplyPost` |  | `(e: TimelineItem$ReplyPostEvent) => void` |  |
 | `onReplyListOpen` |  | `() => void` |  |
-| `onCustomActionClicked` |  | `(e: { value: string; key: string; linkObj: HTMLElement }) => void` |  |
+| `onCustomActionClicked` |  | `(e: TimelineItem$CustomActionClickedEvent) => void` |  |
 
 ### `default` — component
 
@@ -8913,23 +9553,50 @@ An entry of Timeline; rendered by its parent.
 | `maxCharacters` |  | `number` | Characters of `text` before "More". |
 | `replyCount` |  | `number` | Number of replies (with `enableSocial`). |
 | `userName` |  | `string` |  |
-| `userNameClickable` |  | `boolean` | Default false. |
+| `userNameClickable` |  | `boolean` |  |
 | `userPicture` |  | `string` | Image URL of the user, shown next to the name. |
 | `icon` |  | `ReactNode` | Icon on the axis (React node). |
-| `iconDisplayShape` |  | `AvatarShape` | Default 'Circle'. |
+| `iconDisplayShape` |  | `AvatarShape` |  |
 | `iconInitials` |  | `string` | Initials on the axis when there is no icon. |
-| `iconSize` |  | `AvatarSize` | Default 'XS'. |
+| `iconSize` |  | `AvatarSize` |  |
 | `iconTooltip` |  | `string` |  |
-| `useIconTooltip` |  | `boolean` | Uses the title as tooltip of the icon when `iconTooltip` is not set (default true). |
+| `useIconTooltip` |  | `boolean` | Uses the title as tooltip of the icon when `iconTooltip` is not set. |
 | `customAction` |  | `TimelineCustomAction[]` | Links in the item footer. |
 | `customReply` |  | `ReactNode` | Replaces the reply box (with `enableSocial`). |
+| `replyList` |  | `ReactNode` | The replies (a list), shown above the reply box when the replies or the reply link is pressed (with `enableSocial`). |
 | `children` |  | `ReactNode` | Embedded content (UI5 default aggregation `embeddedControl`). |
-| `onUserNameClicked` |  | `(e: { uiElement: HTMLElement }) => void` |  |
+| `onUserNameClicked` |  | `(e: TimelineItem$UserNameClickedEvent) => void` |  |
 | `onSelect` |  | `() => void` |  |
 | `onPress` |  | `() => void` |  |
-| `onReplyPost` |  | `(e: { value: string }) => void` |  |
+| `onReplyPost` |  | `(e: TimelineItem$ReplyPostEvent) => void` |  |
 | `onReplyListOpen` |  | `() => void` |  |
-| `onCustomActionClicked` |  | `(e: { value: string; key: string; linkObj: HTMLElement }) => void` |  |
+| `onCustomActionClicked` |  | `(e: TimelineItem$CustomActionClickedEvent) => void` |  |
+
+### `TimelineItem$CustomActionClickedEvent` — interface
+
+Event object of the item's `onCustomActionClicked`: the action and its link element.
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `value` | **yes** | `string` |  |
+| `key` | **yes** | `string` |  |
+| `linkObj` | **yes** | `HTMLElement` |  |
+
+### `TimelineItem$ReplyPostEvent` — interface
+
+Event object of the item's `onReplyPost`.
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `value` | **yes** | `string` |  |
+
+### `TimelineItem$UserNameClickedEvent` — interface
+
+Event object of the item's `onUserNameClicked`: the user name element.
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `uiElement` | **yes** | `HTMLElement` |  |
 
 ## `@rhfan2019/smart-kit/suite/ui/commons/library`
 
@@ -9107,7 +9774,7 @@ Props of `CardData` (see above).
 
 ## `@rhfan2019/smart-kit/ui/integration/cards/CalendarContent`
 
-`$CalendarContentSettings` (interface) · `CalendarLegendItem` (interface) · `CalendarSpecialDate` (interface) · `CardAnnotationSettings` (interface) · `CardDataProps` (interface) · `default` (component) · `EventItemPaths` (interface)
+`$CalendarContentSettings` (interface) · `CalendarLegendItem` (interface) · `CalendarSpecialDate` (interface) · `CalendarWeekNumbering` (type) · `CardAnnotationSettings` (interface) · `CardDataProps` (interface) · `default` (component) · `EventItemPaths` (interface)
 
 ### `$CalendarContentSettings` — interface
 
@@ -9127,7 +9794,8 @@ Props of `CardData` (see above).
 | `onAppointmentPress` |  | `(row: Row) => void` |  |
 | `onMorePress` |  | `(date: string) => void` | Press of "More"; default: the list page of the entity set. |
 | `onSelect` |  | `(date: string) => void` | Called when the user selects a day. |
-| `firstDayOfWeek` |  | `number` | First day of the week, 0 = Sunday … 6 = Saturday; default from the locale. |
+| `calendarWeekNumbering` |  | `CalendarWeekNumbering` | First day of the week and week numbering (manifest `calendarWeekNumbering`, sap.ui.core.date.CalendarWeekNumbering): "Default" (from the locale), "ISO_8601" (Monday, ISO weeks), "MiddleEastern" (Saturday), "WesternTraditional" (Sunday). |
+| `use12HourFormat` |  | `boolean` | Times of the appointments in the 12-hour format (manifest `use12HourFormat`); default the 24-hour format. |
 | `now` |  | `Date` | Reference time for "today" (default now). |
 
 ### `CalendarLegendItem` — interface
@@ -9145,6 +9813,14 @@ Props of `CardData` (see above).
 | `startDate` | **yes** | `string` | Day, "YYYY-MM-DD". |
 | `type` | **yes** | `string` | Legend type (matches `CalendarLegendItem.type`). |
 | `endDate` |  | `string` | Last day of a range, "YYYY-MM-DD". |
+
+### `CalendarWeekNumbering` — type
+
+sap.ui.core.date.CalendarWeekNumbering
+
+```ts
+export type CalendarWeekNumbering = 'Default' | 'ISO_8601' | 'MiddleEastern' | 'WesternTraditional';
+```
 
 ### `CardAnnotationSettings` — interface
 
@@ -9178,7 +9854,8 @@ Props of `CardData` (see above).
 | `onAppointmentPress` |  | `(row: Row) => void` |  |
 | `onMorePress` |  | `(date: string) => void` | Press of "More"; default: the list page of the entity set. |
 | `onSelect` |  | `(date: string) => void` | Called when the user selects a day. |
-| `firstDayOfWeek` |  | `number` | First day of the week, 0 = Sunday … 6 = Saturday; default from the locale. |
+| `calendarWeekNumbering` |  | `CalendarWeekNumbering` | First day of the week and week numbering (manifest `calendarWeekNumbering`, sap.ui.core.date.CalendarWeekNumbering): "Default" (from the locale), "ISO_8601" (Monday, ISO weeks), "MiddleEastern" (Saturday), "WesternTraditional" (Sunday). |
+| `use12HourFormat` |  | `boolean` | Times of the appointments in the 12-hour format (manifest `use12HourFormat`); default the 24-hour format. |
 | `now` |  | `Date` | Reference time for "today" (default now). |
 
 ### `EventItemPaths` — interface
@@ -9329,14 +10006,14 @@ Props of `CardData` (see above).
 
 ## `@rhfan2019/smart-kit/ui/integration/cards/TimelineContent`
 
-`$TimelineContentSettings` (interface) · `CardAnnotationSettings` (interface) · `CardDataProps` (interface) · `default` (component) · `EventItemPaths` (interface)
+`$TimelineContentSettings` (interface) · `CardAnnotationSettings` (interface) · `CardDataProps` (interface) · `default` (component) · `TimelineItemPaths` (interface)
 
 ### `$TimelineContentSettings` — interface
 
 | Member | Required | Type | Description |
 | --- | --- | --- | --- |
 | `entitySet` | **yes** | `string` | Entity set name as in `$metadata`, e.g. "Orders". |
-| `item` |  | `Pick&lt;EventItemPaths, 'startDate' \| 'title' \| 'text'>` | Property paths of the items; default Communication.Event. |
+| `item` |  | `TimelineItemPaths` | Property paths of the items (manifest `item`); default Communication.Event. |
 | `icon` |  | `ReactNode` | Icon of every item; default a calendar icon. |
 | `sortOldestFirst` |  | `boolean` | Oldest item first instead of newest first. |
 | `now` |  | `Date` | Reference time for "Today" (default now). |
@@ -9368,7 +10045,7 @@ Props of `CardData` (see above).
 | Prop | Required | Type | Description |
 | --- | --- | --- | --- |
 | `entitySet` | **yes** | `string` | Entity set name as in `$metadata`, e.g. "Orders". |
-| `item` |  | `Pick&lt;EventItemPaths, 'startDate' \| 'title' \| 'text'>` | Property paths of the items; default Communication.Event. |
+| `item` |  | `TimelineItemPaths` | Property paths of the items (manifest `item`); default Communication.Event. |
 | `icon` |  | `ReactNode` | Icon of every item; default a calendar icon. |
 | `sortOldestFirst` |  | `boolean` | Oldest item first instead of newest first. |
 | `now` |  | `Date` | Reference time for "Today" (default now). |
@@ -9381,17 +10058,15 @@ Props of `CardData` (see above).
 | `presentationAnnotationPath` |  | `string` | UI.PresentationVariant: sort order, MaxItems and the line item to use. |
 | `selectionAnnotationPath` |  | `string` | UI.SelectionVariant: the filter of the card. |
 
-### `EventItemPaths` — interface
+### `TimelineItemPaths` — interface
 
-Property paths of an event (the manifest item template of the integration card, with property paths).
+Property paths of the timeline items, named as the manifest's `content.item` (sap.card Timeline).
 
 | Member | Required | Type | Description |
 | --- | --- | --- | --- |
-| `startDate` |  | `string` | Start (calendar `startDate`, timeline `dateTime`); default Communication.Event/dtstart. |
-| `endDate` |  | `string` | End; default Communication.Event/dtend. |
 | `title` |  | `string` | Title; default Communication.Event/summary. |
-| `text` |  | `string` | Second line; default Communication.Event/description. |
-| `type` |  | `string` | Category (legend and colour); default Communication.Event/categories. |
+| `description` |  | `string` | Second line; default Communication.Event/description (else location). |
+| `dateTime` |  | `string` | Time of the item; default Communication.Event/dtstart. |
 
 ## `@rhfan2019/smart-kit/ui/unified/Currency`
 
@@ -9401,12 +10076,12 @@ Property paths of an event (the manifest item template of the integration card, 
 
 | Member | Required | Type | Description |
 | --- | --- | --- | --- |
-| `value` |  | `number \| null` | The amount (default 0). `null` counts as empty (see emptyIndicatorMode). |
+| `value` |  | `number \| null` | The amount. `null` counts as empty (see emptyIndicatorMode). |
 | `stringValue` |  | `string` | The exact amount as a decimal string (Edm.Decimal); used instead of `value`, avoiding float rounding. |
 | `currency` |  | `string` | ISO 4217 currency code. |
 | `maxPrecision` |  | `number` | Fraction digits the amount is padded to, so amounts in different currencies align (default: the currency's digits). |
-| `useSymbol` |  | `boolean` | Shows the currency symbol (€, $) instead of the code where one exists (default true). |
-| `emptyIndicatorMode` |  | `EmptyIndicatorMode` | Shows "–" when there is no amount (default Off). |
+| `useSymbol` |  | `boolean` | Shows the currency symbol (€, $) instead of the code where one exists. |
+| `emptyIndicatorMode` |  | `EmptyIndicatorMode` | Shows "–" when there is no amount. |
 | `defaultChecked` |  | `boolean \| undefined` |  |
 | `defaultValue` |  | `string \| number \| readonly string[] \| undefined` |  |
 | `suppressContentEditableWarning` |  | `boolean \| undefined` |  |
@@ -9515,7 +10190,6 @@ Property paths of an event (the manifest item template of the integration card, 
 | `aria-valuemin` |  | `number \| undefined` | Defines the minimum allowed value for a range widget. |
 | `aria-valuenow` |  | `number \| undefined` | Defines the current value for a range widget. |
 | `aria-valuetext` |  | `string \| undefined` | Defines the human readable text alternative of aria-valuenow for a range widget. |
-| `children` |  | `ReactNode \| undefined` |  |
 | `dangerouslySetInnerHTML` |  | `{ // Should be InnerHTML['innerHTML']. // But unfortunately we're mixing renderer-specific type declarations. __html: string \| TrustedHTM…` |  |
 | `onCopy` |  | `ClipboardEventHandler&lt;T> \| undefined` |  |
 | `onCopyCapture` |  | `ClipboardEventHandler&lt;T> \| undefined` |  |
@@ -9692,12 +10366,12 @@ Property paths of an event (the manifest item template of the integration card, 
 
 | Prop | Required | Type | Description |
 | --- | --- | --- | --- |
-| `value` |  | `number \| null` | The amount (default 0). `null` counts as empty (see emptyIndicatorMode). |
+| `value` |  | `number \| null` | The amount. `null` counts as empty (see emptyIndicatorMode). |
 | `stringValue` |  | `string` | The exact amount as a decimal string (Edm.Decimal); used instead of `value`, avoiding float rounding. |
 | `currency` |  | `string` | ISO 4217 currency code. |
 | `maxPrecision` |  | `number` | Fraction digits the amount is padded to, so amounts in different currencies align (default: the currency's digits). |
-| `useSymbol` |  | `boolean` | Shows the currency symbol (€, $) instead of the code where one exists (default true). |
-| `emptyIndicatorMode` |  | `EmptyIndicatorMode` | Shows "–" when there is no amount (default Off). |
+| `useSymbol` |  | `boolean` | Shows the currency symbol (€, $) instead of the code where one exists. |
+| `emptyIndicatorMode` |  | `EmptyIndicatorMode` | Shows "–" when there is no amount. |
 | `defaultChecked` |  | `boolean \| undefined` |  |
 | `defaultValue` |  | `string \| number \| readonly string[] \| undefined` |  |
 | `suppressContentEditableWarning` |  | `boolean \| undefined` |  |
@@ -9806,7 +10480,6 @@ Property paths of an event (the manifest item template of the integration card, 
 | `aria-valuemin` |  | `number \| undefined` | Defines the minimum allowed value for a range widget. |
 | `aria-valuenow` |  | `number \| undefined` | Defines the current value for a range widget. |
 | `aria-valuetext` |  | `string \| undefined` | Defines the human readable text alternative of aria-valuenow for a range widget. |
-| `children` |  | `ReactNode \| undefined` |  |
 | `dangerouslySetInnerHTML` |  | `{ // Should be InnerHTML['innerHTML']. // But unfortunately we're mixing renderer-specific type declarations. __html: string \| TrustedHTM…` |  |
 | `onCopy` |  | `ClipboardEventHandler&lt;T> \| undefined` |  |
 | `onCopyCapture` |  | `ClipboardEventHandler&lt;T> \| undefined` |  |

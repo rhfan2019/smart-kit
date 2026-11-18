@@ -22,7 +22,7 @@ const ENTRY_BUDGETS = {
   'core:.': 60,
   '.': 154, // everything, all subpaths together; 80 → 95 with the cards (ADR-028, /cards ≈ 18 KB); 95 → 154 with the controls (docs/26, /controls ≈ 57 KB) and the tree table
   // context, i18n, table, templates +1 to +2: the texts and the code of relative dates and the FCL separator (S6, S23)
-  context: 12, i18n: 8, theme: 2, util: 4, // util 1 → 4 with the helpers from /controls (stage 1, ADR-033)
+  context: 12, i18n: 8, theme: 2, util: 8, // util 1 → 8 with the helpers from /controls (stage 1, ADR-033: messageTypeOf, toDates, viewSettingsFilterString …)
   field: 15, filter: 11, variants: 4, table: 40, chart: 12,
   object: 30, page: 7, actions: 3, edit: 19, templates: 84,
 };
@@ -33,7 +33,7 @@ const ENTRY_BUDGETS = {
  */
 // most controls share about 8 KB (provider texts and helpers); budgets are the first measurement plus about 15 %
 const MODULE_DEFAULT = 14;
-const MODULE_BUDGETS = { 'm/DynamicDateRange': 19, 'm/plugins/UploadSetwithTable': 22 };
+const MODULE_BUDGETS = { 'm/DynamicDateRange': 19, 'm/IllustratedMessage': 16, 'm/plugins/UploadSetwithTable': 25 };
 
 /** Budgets for what an application ships when it imports only this (React and React DOM excluded). */
 const SCENARIOS = [
@@ -43,10 +43,10 @@ const SCENARIOS = [
   { name: 'List report page', code: "import { SmartListReport } from '@rhfan2019/smart-kit/templates'; console.log(SmartListReport);", budget: 560 },
   { name: 'Object page', code: "import { SmartObjectPage } from '@rhfan2019/smart-kit/templates'; console.log(SmartObjectPage);", budget: 560 },
   // Cards (docs/20, ADR-028): a card with its content, no AG Grid.
-  { name: 'Card + Header only (Component card)', code: "import Card from '@rhfan2019/smart-kit/f/Card'; import Header from '@rhfan2019/smart-kit/f/cards/Header'; console.log(Card, Header);", budget: 2 },
-  { name: 'List card (Card + Header + ListContent)', code: "import Card from '@rhfan2019/smart-kit/f/Card'; import Header from '@rhfan2019/smart-kit/f/cards/Header'; import ListContent from '@rhfan2019/smart-kit/ui/integration/cards/ListContent'; console.log(Card, Header, ListContent);", budget: 45 },
-  { name: 'Calendar card (Card + Header + CalendarContent)', code: "import Card from '@rhfan2019/smart-kit/f/Card'; import Header from '@rhfan2019/smart-kit/f/cards/Header'; import CalendarContent from '@rhfan2019/smart-kit/ui/integration/cards/CalendarContent'; console.log(Card, Header, CalendarContent);", budget: 46 },
-  { name: 'Analytical card (NumericHeader + AnalyticalContent)', code: "import Card from '@rhfan2019/smart-kit/f/Card'; import NumericHeader from '@rhfan2019/smart-kit/f/cards/NumericHeader'; import AnalyticalContent from '@rhfan2019/smart-kit/ui/integration/cards/AnalyticalContent'; console.log(Card, NumericHeader, AnalyticalContent);", budget: 52 },
+  { name: 'Card + Header only (Component card)', code: "import Card from '@rhfan2019/smart-kit/f/Card'; import Header from '@rhfan2019/smart-kit/f/cards/Header'; console.log(Card, Header);", budget: 5 }, // 2 → 5: the sap.f.cards.Header API of 1.154 (avatar settings, dataTimestamp, infoSection, toolbar; stage 1)
+  { name: 'List card (Card + Header + ListContent)', code: "import Card from '@rhfan2019/smart-kit/f/Card'; import Header from '@rhfan2019/smart-kit/f/cards/Header'; import ListContent from '@rhfan2019/smart-kit/ui/integration/cards/ListContent'; console.log(Card, Header, ListContent);", budget: 48 }, // 45 → 48: the 1.154 header API (stage 1)
+  { name: 'Calendar card (Card + Header + CalendarContent)', code: "import Card from '@rhfan2019/smart-kit/f/Card'; import Header from '@rhfan2019/smart-kit/f/cards/Header'; import CalendarContent from '@rhfan2019/smart-kit/ui/integration/cards/CalendarContent'; console.log(Card, Header, CalendarContent);", budget: 49 },
+  { name: 'Analytical card (NumericHeader + AnalyticalContent)', code: "import Card from '@rhfan2019/smart-kit/f/Card'; import NumericHeader from '@rhfan2019/smart-kit/f/cards/NumericHeader'; import AnalyticalContent from '@rhfan2019/smart-kit/ui/integration/cards/AnalyticalContent'; console.log(Card, NumericHeader, AnalyticalContent);", budget: 55 },
   // UI5 modules (ADR-033): one control costs only itself
   { name: 'MessageStrip only (m/MessageStrip)', code: "import MessageStrip from '@rhfan2019/smart-kit/m/MessageStrip'; console.log(MessageStrip);", budget: 40 },
   { name: 'ValueState only (ui/core/library)', code: "import { ValueState } from '@rhfan2019/smart-kit/ui/core/library'; console.log(ValueState);", budget: 1 },

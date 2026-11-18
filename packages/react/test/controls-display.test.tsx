@@ -21,6 +21,11 @@ import OverflowToolbarButton from '@rhfan2019/smart-kit/m/OverflowToolbarButton'
 import ToggleButton from '@rhfan2019/smart-kit/m/ToggleButton';
 import ToolbarSpacer from '@rhfan2019/smart-kit/m/ToolbarSpacer';
 import { overflowIndices } from '../src/controls/display/OverflowToolbar';
+import type { BusyDialog$CloseEvent } from '@rhfan2019/smart-kit/m/BusyDialog';
+import type { ObjectIdentifier$TitlePressEvent } from '@rhfan2019/smart-kit/m/ObjectIdentifier';
+import type { ObjectMarker$PressEvent } from '@rhfan2019/smart-kit/m/ObjectMarker';
+import type { OverflowToolbar$PressEvent } from '@rhfan2019/smart-kit/m/OverflowToolbar';
+import type { ToggleButton$PressEvent } from '@rhfan2019/smart-kit/m/ToggleButton';
 import { displayEn as en } from '../src/i18n/controls/display.en';
 import { displayZh as zh } from '../src/i18n/controls/display.zh';
 
@@ -332,5 +337,121 @@ describe('OverflowToolbar, OverflowToolbarLayoutData, ToolbarSpacer', () => {
     expect(disabled).toHaveAttribute('inert');
     expect(disabled).toHaveAttribute('aria-disabled', 'true');
     expect((container.querySelector('[data-sk-toolbar-spacer]') as HTMLElement).style.width).toBe('2rem');
+  });
+});
+
+describe('UI5 1.154 alignment (defaults, new members, event types)', () => {
+  it('AL-05 display controls: defaults when the props are omitted (state None, emphasized true, Currency value 0, BusyIndicator 1rem / 44px)', () => {
+    const { container } = view(
+      <>
+        <ObjectStatus text="Plain" />
+        <ObjectNumber number="12" />
+        <Currency currency="EUR" />
+        <BusyIndicator customIcon={<Star />} />
+        <ExpandableText text={'x'.repeat(120)} />
+      </>,
+    );
+    expect(container.querySelector('[data-sk-object-status]')).toHaveAttribute('data-sk-object-status', 'None');
+    expect(container.querySelector('[data-sk-object-number]')).toHaveClass('sk-object-number--emphasized');
+    expect(container.querySelector('.sk-currency__value')!.textContent).toBe('0.00');
+    const busy = container.querySelector('[data-sk-busy-indicator]') as HTMLElement;
+    expect(busy.style.getPropertyValue('--sk-busy-size')).toBe('1rem');
+    expect(busy.style.getPropertyValue('--sk-busy-icon-width')).toBe('44px');
+    expect(busy.style.getPropertyValue('--sk-busy-icon-height')).toBe('44px');
+    expect(busy.style.getPropertyValue('--sk-busy-speed')).toBe('1000ms');
+    expect(container.querySelector('.sk-expandable-text__text')!.textContent).toBe(`${'x'.repeat(100)}…`);
+  });
+
+  it('AL-05 ObjectIdentifier: visible defaults to true, visible false renders nothing', () => {
+    const { container, rerender } = view(<ObjectIdentifier title="Order 1" />);
+    expect(container.querySelector('[data-sk-object-identifier]')).not.toBeNull();
+    rerender(<MantineProvider theme={smartKitMantineTheme} env="test"><ObjectIdentifier title="Order 1" visible={false} /></MantineProvider>);
+    expect(container.querySelector('[data-sk-object-identifier]')).toBeNull();
+  });
+
+  it('AL-05 IllustratedMessage: src sap-illustration://<type> takes precedence over illustrationType; other sets fall back', () => {
+    const { container } = view(
+      <>
+        <IllustratedMessage src="sap-illustration://NoMail" illustrationType="NoData" />
+        <IllustratedMessage src="sap-illustration://sapIllus/NoTasks" />
+        <IllustratedMessage src="sap-illustration://tnt/Teams" illustrationType="NoData" />
+      </>,
+      'en',
+    );
+    const shown = [...container.querySelectorAll('[data-sk-illustrated-message]')].map((n) => n.getAttribute('data-sk-illustrated-message'));
+    expect(shown).toEqual(['NoMail', 'NoTasks', 'NoData']);
+    expect(screen.getByText(en['ctl.illustratedMessage.NoMail.title'])).toBeInTheDocument();
+  });
+
+  it('AL-05 IllustratedMessage: illustrationAriaLabelledBy / illustrationAriaDescribedBy label the illustration unless decorative', () => {
+    const { container } = view(
+      <>
+        <IllustratedMessage illustrationAriaLabelledBy={['a', 'b']} illustrationAriaDescribedBy="c" />
+        <IllustratedMessage decorative illustrationAriaLabelledBy="a" />
+      </>,
+      'en',
+    );
+    const [labelled, decorative] = [...container.querySelectorAll('svg[data-sk-illustration]')];
+    expect(labelled).toHaveAttribute('aria-labelledby', 'a b');
+    expect(labelled).toHaveAttribute('aria-describedby', 'c');
+    expect(labelled).not.toHaveAttribute('aria-label');
+    expect(decorative).toHaveAttribute('aria-hidden', 'true');
+  });
+
+  it('AL-05 OverflowToolbarButton: type defaults to Default (transparent in the toolbar), iconFirst, activeIcon, ariaHasPopup, accessibleRole, badgeStyle', () => {
+    view(
+      <OverflowToolbar>
+        <OverflowToolbarButton text="Plain" icon={<Star />} />
+        <OverflowToolbarButton
+          text="Menu" icon={<Star data-testid="icon" />} activeIcon={<Star data-testid="active" />} ariaHasPopup="Menu" accessibleRole="Link"
+          badge={3} badgeStyle="Attention"
+        />
+        <OverflowToolbarButton text="After" iconFirst={false} />
+      </OverflowToolbar>,
+    );
+    const plain = screen.getByRole('button', { name: 'Plain' });
+    expect(plain).toHaveAttribute('data-variant', 'subtle');
+    const menu = screen.getByRole('link', { name: 'Menu' });
+    expect(menu).toHaveAttribute('aria-haspopup', 'menu');
+    expect(menu.querySelector('[data-sk-badge]')).toHaveClass('sk-button-badge--attention');
+    expect(screen.getByTestId('icon')).toBeInTheDocument();
+    fireEvent.pointerDown(menu);
+    expect(screen.getByTestId('active')).toBeInTheDocument();
+    fireEvent.pointerUp(menu);
+    expect(screen.getByTestId('icon')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'After' })).toBeInTheDocument();
+  });
+
+  it('AL-06 event objects carry exactly the UI5 parameters (press { type } / { pressed } / { srcControl }, titlePress { domRef }, close { cancelPressed })', () => {
+    const marker = vi.fn<(e: ObjectMarker$PressEvent) => void>();
+    const toggle = vi.fn<(e: ToggleButton$PressEvent) => void>();
+    const title = vi.fn<(e: ObjectIdentifier$TitlePressEvent) => void>();
+    const bar = vi.fn<(e: OverflowToolbar$PressEvent) => void>();
+    view(
+      <>
+        <ObjectMarker type="Flagged" onPress={marker} />
+        <ToggleButton text="T" onPress={toggle} />
+        <ObjectIdentifier title="Order" titleActive onTitlePress={title} />
+        <OverflowToolbar active onPress={bar}><span>Bar</span></OverflowToolbar>
+      </>,
+      'en',
+    );
+    fireEvent.click(screen.getByRole('button', { name: en['ctl.objectMarker.Flagged'] }));
+    fireEvent.click(screen.getByRole('button', { name: 'T' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Order' }));
+    fireEvent.click(screen.getByText('Bar'));
+    expect(Object.keys(marker.mock.calls[0]![0])).toEqual(['type']);
+    expect(Object.keys(toggle.mock.calls[0]![0])).toEqual(['pressed']);
+    expect(Object.keys(title.mock.calls[0]![0])).toEqual(['domRef']);
+    expect(Object.keys(bar.mock.calls[0]![0])).toEqual(['srcControl']);
+    const close: BusyDialog$CloseEvent = { cancelPressed: true };
+    expect(Object.keys(close)).toEqual(['cancelPressed']);
+  });
+
+  it('AL-07 OverflowToolbar ref: getDomRef() returns the toolbar element (replaces element)', () => {
+    const ref = createRef<OverflowToolbar>();
+    view(<OverflowToolbar ref={ref} aria-label="Bar"><span>x</span></OverflowToolbar>);
+    expect(ref.current!.getDomRef()).toBe(screen.getByRole('toolbar', { name: 'Bar' }));
+    expect('element' in ref.current!).toBe(false);
   });
 });

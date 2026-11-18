@@ -13,23 +13,23 @@ export interface MessageStrip {
 
 export interface $MessageStripSettings {
   text?: string;
-  /** UI5 default 'Information'. */
+  /** Type of the message ('None' is shown as Information). @defaultValue 'Information' */
   type?: MessageType;
-  /** UI5 default false. */
+  /** Shows the icon of the type (or `customIcon`). @defaultValue false */
   showIcon?: boolean;
-  /** sap.m.MessageStripColorSet (1.143): 'Default' uses the colours of `type`; ColorSet1 / ColorSet2 use `colorScheme`. */
+  /** sap.m.MessageStripColorSet (1.143): 'Default' uses the colours of `type`; ColorSet1 / ColorSet2 use `colorScheme`. @defaultValue 'Default' */
   colorSet?: 'Default' | 'ColorSet1' | 'ColorSet2';
-  /** 1–10, only with ColorSet1 / ColorSet2 (UI5 default 1). */
+  /** 1–10, only with ColorSet1 / ColorSet2. @defaultValue 1 */
   colorScheme?: number;
   /** Replaces the icon of the type (only with showIcon). UI5 takes an icon URI; smart-kit takes an element (ADR-032). */
   customIcon?: ReactNode;
-  /** UI5 default false. */
+  /** Shows a close button. @defaultValue false */
   showCloseButton?: boolean;
   /** A link after the text (`link` aggregation). */
   link?: ReactNode;
   /** Links referenced from a formatted text (`controls` aggregation); shown after the text. */
   controls?: ReactNode[];
-  /** UI5 parses `text` as limited HTML; smart-kit never parses HTML, so the text stays plain. Use `children` instead. */
+  /** UI5 parses `text` as limited HTML; smart-kit never parses HTML, so the text stays plain. Use `children` instead. @defaultValue false */
   enableFormattedText?: boolean;
   /** Extension: rich content instead of `text`. */
   children?: ReactNode;

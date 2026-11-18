@@ -297,7 +297,6 @@ describe('ViewSettingsDialog', () => {
     fireEvent.click(within(dialog).getByRole('button', { name: 'OK' }));
     expect(onConfirm).toHaveBeenCalledWith(expect.objectContaining({
       filterString: 'Filtered by: Status (New, Approved)',
-      filterKeys: { NEW: true, APPR: true },
       filterCompoundKeys: { status: { NEW: true, APPR: true } },
     }));
   });
@@ -311,7 +310,7 @@ describe('ViewSettingsDialog', () => {
     const onBeforeClose = vi.fn((e: { preventDefault(): void }) => { if (block) e.preventDefault(); });
     r(
       <ViewSettingsDialog
-        ref={ref} {...vsdProps} presetFilterItems={[{ key: 'mine', text: 'My Orders' }]} selectedFilterKeys={{ status: ['REJ'] }}
+        ref={ref} {...vsdProps} presetFilterItems={[{ key: 'mine', text: 'My Orders' }]} selectedFilterCompoundKeys={{ status: { REJ: true } }}
         customTabs={[{ key: 'columns', title: 'Columns', content: <p>Column settings</p> }]}
         onConfirm={onConfirm} onReset={onReset} onResetFilters={onResetFilters} onBeforeClose={onBeforeClose}
       />,
@@ -443,7 +442,7 @@ describe('IconTabBar', () => {
     expect(tabs[1]).toHaveClass('sk-itb__tab--critical');
     expect(tabs[3]).toBeDisabled();
     fireEvent.click(tabs[1]!);
-    expect(onSelect).toHaveBeenCalledWith(expect.objectContaining({ key: 'open', previousKey: 'all', selectedKey: 'open' }));
+    expect(onSelect).toHaveBeenCalledWith({ item: expect.objectContaining({ key: 'open', text: 'Open' }), key: 'open', previousKey: 'all' });
     expect(screen.getByRole('tabpanel')).toHaveTextContent('Open orders');
     expect(screen.getByRole('tabpanel')).toHaveAttribute('aria-labelledby', tabs[1]!.id);
     tabs[1]!.focus();
@@ -511,5 +510,160 @@ describe('IconTabBar', () => {
     render(<MantineProvider env="test"><SmartKitProvider services={{}} locale="zh"><SupplierWizard wizard={{ ref }} /></SmartKitProvider></MantineProvider>);
     expect(screen.getByRole('navigation', { name: '向导进度' })).toHaveTextContent('第 1 步，共 3 步');
     expect(screen.getByRole('button', { name: '第 2 步' })).toBeInTheDocument();
+  });
+});
+
+describe('UI5 alignment (AL-05 defaults, AL-06 events)', () => {
+  it('AL-05 DynamicDateRange: enabled, editable, enableGroupHeaders default to true; required, hideInput, showClearIcon to false; valueState None', async () => {
+    r(<DynamicDateRange aria-label="d" value={{ operator: 'TODAY', values: [] }} />);
+    const input = screen.getByRole('textbox', { name: 'd' });
+    expect(input).toBeEnabled();
+    expect(input).not.toHaveAttribute('readonly');
+    expect(input).not.toBeRequired();
+    expect(input).toHaveAttribute('data-sk-value-state', 'None');
+    expect(document.querySelector('[data-sk-ddr-clear]')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Open date range options' }));
+    const list = await screen.findByRole('listbox');
+    expect(list.querySelectorAll('.sk-ddr__group').length).toBeGreaterThan(0);
+    expect(list.querySelectorAll('[data-sk-ddr-option]')).toHaveLength(68 - 28 + 4); // standardOptions: all 68 keys
+  });
+
+  it('AL-06 DynamicDateRange: change carries exactly value and valid', () => {
+    const onChange = vi.fn();
+    r(<DynamicDateRange aria-label="d" onChange={onChange} />);
+    const input = screen.getByRole('textbox', { name: 'd' });
+    fireEvent.change(input, { target: { value: 'nonsense' } });
+    fireEvent.blur(input);
+    expect(onChange).toHaveBeenCalledWith({ value: undefined, valid: false });
+    expect(Object.keys(onChange.mock.calls[0]![0])).toEqual(['value', 'valid']);
+  });
+
+  it('AL-05 IconTabBar / IconTabFilter / IconTabSeparator: UI5 defaults', () => {
+    r(<Tabs />);
+    const bar = document.querySelector('.sk-itb')!;
+    // backgroundDesign / headerBackgroundDesign Solid, tabDensityMode Cozy, headerMode Standard, upperCase / stretchContentHeight false
+    expect(bar).toHaveClass('sk-itb--cozy', 'sk-itb--bg-solid', 'sk-itb--header-bg-solid');
+    expect(bar).not.toHaveClass('sk-itb--upper', 'sk-itb--stretch', 'sk-itb--inline');
+    // applyContentPadding true, expanded true
+    expect(screen.getByRole('tabpanel')).toHaveClass('sk-itb__content--padded');
+    expect(screen.getByRole('tabpanel')).toBeVisible();
+    // expandable true: the selected tab says it can collapse
+    expect(screen.getAllByRole('tab')[0]).toHaveAttribute('aria-expanded', 'true');
+    // IconTabFilter: visible, enabled true; design Vertical; iconColor Default; IconTabSeparator visible
+    const open = screen.getByRole('tab', { name: /Open/ });
+    expect(open.querySelector('.sk-itb__vertical')).not.toBeNull();
+    expect(screen.getAllByRole('separator')).toHaveLength(1);
+    document.body.innerHTML = '';
+    r(<IconTabBar><IconTabFilter key="a" text="A" icon={<span>i</span>} /></IconTabBar>);
+    expect(screen.getByRole('tab', { name: /A/ })).toHaveClass('sk-itb__tab--default');
+    expect(screen.getByRole('tab', { name: /A/ })).toBeEnabled();
+  });
+
+  it('AL-06 IconTabBar: items aggregation (on the bar and on a filter); select carries item, key, previousKey only', async () => {
+    const onSelect = vi.fn();
+    r(
+      <IconTabBar
+        onSelect={onSelect}
+        items={[
+          <IconTabFilter key="a" text="A">Content A</IconTabFilter>,
+          <IconTabFilter key="b" text="B" items={[<IconTabFilter key="b1" text="B1">Content B1</IconTabFilter>]} />,
+        ]}
+      />,
+    );
+    expect(screen.getAllByRole('tab').map((t) => t.textContent)).toEqual(['A', 'B']);
+    fireEvent.click(screen.getByRole('tab', { name: /B/ }));
+    fireEvent.click(await screen.findByRole('menuitem', { name: /B1/ }));
+    expect(onSelect).toHaveBeenCalledTimes(1);
+    expect(Object.keys(onSelect.mock.calls[0]![0]).sort()).toEqual(['item', 'key', 'previousKey']);
+    expect(onSelect).toHaveBeenCalledWith(expect.objectContaining({ key: 'b1', previousKey: 'a' }));
+    expect(screen.getByRole('tabpanel')).toHaveTextContent('Content B1');
+  });
+
+  it('AL-05 SelectDialog: multiSelect, rememberSelections, showClearButton false; growing true; initialFocus List', async () => {
+    const ref = createRef<SelectDialog>();
+    r(<SelectDialog ref={ref} title="S" items={suppliers} />);
+    act(() => ref.current!.open());
+    const list = await screen.findByRole('listbox', { name: 'S' });
+    expect(list).not.toHaveAttribute('aria-multiselectable');
+    expect(within(list).queryAllByRole('checkbox')).toHaveLength(0);
+    expect(screen.queryByRole('button', { name: 'Clear' })).toBeNull();
+    expect(within(list).getAllByRole('option')).toHaveLength(20); // growing with the list's threshold
+    await waitFor(() => expect(within(list).getAllByRole('option')[0]).toHaveFocus());
+  });
+
+  it('AL-05 TableSelectDialog: multiSelect false and growing true by default', async () => {
+    const ref = createRef<TableSelectDialog>();
+    const items = Array.from({ length: 25 }, (_, i) => ({ key: `P${i}`, cells: [`Product ${i}`] }));
+    r(<TableSelectDialog ref={ref} title="T" columns={[{ header: 'Product' }]} items={items} />);
+    act(() => ref.current!.open());
+    const table = await screen.findByRole('table', { name: 'T' });
+    expect(within(table).queryAllByRole('checkbox')).toHaveLength(0);
+    expect(within(table).getAllByRole('row')).toHaveLength(1 + 20);
+  });
+
+  it('AL-06 SelectDialog / TableSelectDialog: confirm carries selectedItem and selectedItems (no selectedContexts)', async () => {
+    const ref = createRef<TableSelectDialog>();
+    const onConfirm = vi.fn();
+    const items = [{ key: 'P1', cells: ['Laptop'] }];
+    r(<TableSelectDialog ref={ref} columns={[{ header: 'Product' }]} items={items} onConfirm={onConfirm} />);
+    act(() => ref.current!.open());
+    fireEvent.click(within(await screen.findByRole('table')).getAllByRole('row')[1]!);
+    expect(Object.keys(onConfirm.mock.calls[0]![0]).sort()).toEqual(['selectedItem', 'selectedItems']);
+  });
+
+  it('AL-05 ViewSettingsDialog: sortDescending and groupDescending false; filterSearchOperator StartsWith', async () => {
+    const ref = createRef<ViewSettingsDialog>();
+    r(<ViewSettingsDialog ref={ref} {...vsdProps} />);
+    act(() => ref.current!.open('sort'));
+    const dialog = await screen.findByRole('dialog');
+    expect(within(dialog).getByRole('radio', { name: 'Ascending' })).toBeChecked();
+    fireEvent.click(within(dialog).getByRole('radio', { name: 'Group' }));
+    expect(within(dialog).getByRole('radio', { name: 'Ascending' })).toBeChecked();
+    fireEvent.click(within(dialog).getByRole('radio', { name: 'Filter' }));
+    fireEvent.click(within(dialog).getByRole('button', { name: /Status/ }));
+    fireEvent.change(within(dialog).getByRole('searchbox'), { target: { value: 'pro' } });
+    expect(within(dialog).queryByRole('checkbox', { name: 'Approved' })).toBeNull(); // "pro" is inside, not at the start
+    fireEvent.change(within(dialog).getByRole('searchbox'), { target: { value: 'app' } });
+    expect(within(dialog).getByRole('checkbox', { name: 'Approved' })).toBeInTheDocument();
+  });
+
+  it('AL-06 ViewSettingsDialog: selectedFilterCompoundKeys preselects; confirm has no filterKeys; beforeClose has only preventDefault', async () => {
+    const ref = createRef<ViewSettingsDialog>();
+    const onConfirm = vi.fn();
+    const onBeforeClose = vi.fn();
+    r(<ViewSettingsDialog ref={ref} {...vsdProps} selectedFilterCompoundKeys={{ status: { NEW: true, REJ: false }, supplier: { S2: true } }} onConfirm={onConfirm} onBeforeClose={onBeforeClose} />);
+    act(() => ref.current!.open('filter'));
+    const dialog = await screen.findByRole('dialog');
+    fireEvent.click(within(dialog).getByRole('button', { name: 'OK' }));
+    expect(Object.keys(onBeforeClose.mock.calls[0]![0])).toContain('preventDefault');
+    const e = onConfirm.mock.calls[0]![0];
+    expect(e).not.toHaveProperty('filterKeys');
+    expect(e.filterCompoundKeys).toEqual({ status: { NEW: true }, supplier: { S2: true } });
+    expect(e.filterString).toBe('Filtered by: Status (New), Supplier (Bolt Ltd)');
+  });
+
+  it('AL-05 Wizard / WizardStep: UI5 defaults', () => {
+    r(<SupplierWizard />);
+    const root = screen.getByRole('group', { name: 'Create supplier' });
+    expect(root).toHaveClass('sk-wizard--scroll', 'sk-wizard--bg-standard'); // renderMode Scroll, backgroundDesign Standard
+    expect(root.style.width).toBe('auto');
+    expect(root.style.height).toBe('100%');
+    expect(screen.getByRole('heading', { level: 3, name: '1. General' })).toBeInTheDocument(); // stepTitleLevel H3, optional false
+    // showNextButton true, validated true: the next button is there
+    fireEvent.click(screen.getByRole('button', { name: 'Step 2' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Step 3' }));
+    expect(screen.getByRole('button', { name: 'Review' })).toBeInTheDocument(); // finishButtonText Review
+    // enableBranching false: the steps follow in order
+    expect(within(screen.getByRole('navigation')).getAllByRole('listitem')).toHaveLength(3);
+  });
+
+  it('AL-06 Wizard: stepActivate carries index, navigationChange carries step', () => {
+    const onStepActivate = vi.fn();
+    const onNavigationChange = vi.fn();
+    r(<SupplierWizard wizard={{ onStepActivate, onNavigationChange }} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Step 2' }));
+    expect(onStepActivate).toHaveBeenCalledWith({ index: 2 });
+    fireEvent.click(within(screen.getByRole('navigation')).getByRole('button', { name: /General/ }));
+    expect(onNavigationChange).toHaveBeenCalledWith({ step: { id: 'general', title: 'General', index: 1 } });
   });
 });

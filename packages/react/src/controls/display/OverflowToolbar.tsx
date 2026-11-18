@@ -10,7 +10,7 @@ import {
   type HTMLAttributes, type KeyboardEvent, type MouseEvent, type ReactElement, type ReactNode, type Ref,
 } from 'react';
 import { useControlText } from '../context';
-import type { AriaHasPopup, ButtonType } from './ToggleButton';
+import type { AriaHasPopup, BadgeStyle, ButtonAccessibleRole, ButtonType } from './ToggleButton';
 import { cx } from './shared';
 import { TEXTS } from './texts';
 
@@ -54,60 +54,93 @@ export interface $OverflowToolbarButtonSettings {
   text: string;
   /** Icon (a React node). */
   icon?: ReactNode;
-  /** Visual type (default Transparent in the toolbar). */
+  /** Visual type; Default and Transparent look transparent in the toolbar, as in the SAPUI5 toolbar context. @defaultValue 'Default' */
   type?: ButtonType;
-  /** Enabled (default true). */
+  /** Enabled. @defaultValue true */
   enabled?: boolean;
   /** Width (CSS length). */
   width?: string;
+  /** In the overflow: the icon before the text; false puts it after. @defaultValue true */
+  iconFirst?: boolean;
+  /** Icon shown while the button is pressed (held down). */
+  activeIcon?: ReactNode;
+  /** aria-haspopup. @defaultValue 'None' */
+  ariaHasPopup?: AriaHasPopup;
+  /** Link makes screen readers announce a link. @defaultValue 'Default' */
+  accessibleRole?: ButtonAccessibleRole;
+  /** Style of the badge. @defaultValue 'Default' */
+  badgeStyle?: BadgeStyle;
+  /** Extension: badge value shown on the button (SAPUI5 sets it through BadgeCustomData). */
+  badge?: string | number;
   /** Layout data in the OverflowToolbar. */
   layoutData?: OverflowToolbarLayoutData;
   /** Fired when the button is pressed. */
   onPress?(e: Record<string, never>): void;
+  /** Tooltip (the SAPUI5 tooltip of sap.ui.core.Element); defaults to `text` in the toolbar. */
   title?: string;
   'data-testid'?: string;
 }
 
 /** sap.m.OverflowToolbarButton: icon only in the toolbar, icon and text in the overflow. */
-export function OverflowToolbarButton({ text, icon, type = 'Transparent', enabled = true, width, layoutData: _layoutData, onPress, title, ...rest }: $OverflowToolbarButtonSettings) {
+export function OverflowToolbarButton({
+  text, icon, type = 'Default', enabled = true, width, iconFirst = true, activeIcon, ariaHasPopup = 'None', accessibleRole = 'Default', badgeStyle = 'Default',
+  badge, layoutData: _layoutData, onPress, title, ...rest
+}: $OverflowToolbarButtonSettings) {
   const inOverflow = useContext(InOverflow);
-  const variant = type === 'Emphasized' ? 'filled' : type === 'Default' ? 'default' : 'subtle';
-  const common = { ...rest, variant, disabled: !enabled, onClick: () => onPress?.({}), style: width ? { width } : undefined, 'data-sk-overflow-toolbar-button': inOverflow ? 'overflow' : 'toolbar' };
-  return inOverflow || !icon ? (
-    <Button {...common} leftSection={icon} title={title}>{text}</Button>
-  ) : <ActionIcon {...common} aria-label={text} title={title ?? text}>{icon}</ActionIcon>;
+  const [held, setHeld] = useState(false);
+  const variant = type === 'Emphasized' ? 'filled' : type === 'Default' || type === 'Transparent' ? 'subtle' : 'default';
+  const shownIcon = held && activeIcon ? activeIcon : icon;
+  const release = () => setHeld(false);
+  const common = {
+    ...rest, variant, disabled: !enabled, onClick: () => onPress?.({}), style: width ? { width } : undefined,
+    onPointerDown: activeIcon ? () => setHeld(true) : undefined, onPointerUp: activeIcon ? release : undefined, onPointerLeave: activeIcon ? release : undefined,
+    'aria-haspopup': ariaHasPopup === 'None' ? undefined : (ariaHasPopup.toLowerCase() as 'menu'),
+    role: accessibleRole === 'Link' ? 'link' : undefined,
+    className: cx(badge !== undefined && 'sk-has-badge'),
+    'data-sk-overflow-toolbar-button': inOverflow ? 'overflow' : 'toolbar',
+  };
+  const badgeEl = badge !== undefined ? <span className={cx('sk-button-badge', badgeStyle === 'Attention' && 'sk-button-badge--attention')} data-sk-badge>{badge}</span> : null;
+  return inOverflow || !shownIcon ? (
+    <Button {...common} leftSection={iconFirst ? shownIcon : undefined} rightSection={iconFirst ? undefined : shownIcon} title={title}>{text}{badgeEl}</Button>
+  ) : <ActionIcon {...common} aria-label={text} title={title ?? text}>{shownIcon}{badgeEl}</ActionIcon>;
 }
 
 export interface $OverflowToolbarSettings extends Omit<HTMLAttributes<HTMLDivElement>, 'style'> {
   /** Width (CSS length; default 100%). */
   width?: string;
-  /** The whole toolbar is clickable and fires onPress (default false). */
+  /** The whole toolbar is clickable and fires onPress. @defaultValue false */
   active?: boolean;
-  /** Enabled (default true); a disabled toolbar disables its content. */
+  /** Enabled; a disabled toolbar disables its content. @defaultValue true */
   enabled?: boolean;
   /** Height (CSS length; default: the control height). */
   height?: string;
-  /** Background design (default Auto: transparent). */
+  /** Background design (Auto: transparent). @defaultValue 'Auto' */
   design?: ToolbarDesign;
-  /** Clear removes the border (default Standard). */
+  /** Clear removes the border. @defaultValue 'Standard' */
   style?: ToolbarStyle;
   /** aria-haspopup of an active toolbar. */
   ariaHasPopup?: AriaHasPopup;
-  /** Accepted for compatibility; the layout is always computed synchronously (default false). */
+  /** Accepted for compatibility; the layout is always computed synchronously. @defaultValue false */
   asyncMode?: boolean;
   /** Fired when an active toolbar is pressed outside its interactive content; `srcControl` is the clicked element. */
-  onPress?(e: { srcControl: HTMLElement }): void;
+  onPress?(e: OverflowToolbar$PressEvent): void;
   /** Toolbar content: buttons, texts, ToolbarSpacer; `layoutData` on a child sets its overflow priority. */
   children?: ReactNode;
   ref?: Ref<OverflowToolbar>;
+}
+
+/** Event object of OverflowToolbar's press. */
+export interface OverflowToolbar$PressEvent {
+  /** The clicked element. */
+  srcControl: HTMLElement;
 }
 
 /** Instance methods of OverflowToolbar. */
 export interface OverflowToolbar {
   /** Closes the overflow popover. */
   closeOverflow(): void;
-  /** The toolbar element. */
-  readonly element: HTMLDivElement | null;
+  /** The toolbar element (sap.ui.core.Element#getDomRef). */
+  getDomRef(): HTMLDivElement | null;
 }
 
 const RANK: Record<OverflowToolbarPriority, number> = { Disappear: 0, Low: 0, High: 1, NeverOverflow: 2, AlwaysOverflow: 3 };
@@ -166,7 +199,7 @@ export function OverflowToolbar({
   const widths = useRef<number[]>([]);
   const [hidden, setHidden] = useState<Set<number>>(new Set());
   const [open, setOpen] = useState(false);
-  useImperativeHandle(ref, () => ({ closeOverflow: () => setOpen(false), get element() { return boxRef.current; } }));
+  useImperativeHandle(ref, () => ({ closeOverflow: () => setOpen(false), getDomRef: () => boxRef.current }));
   const items: Item[] = (Children.toArray(children).filter(isValidElement) as ReactElement[]).map((el) => {
     const spacer = el.type === ToolbarSpacer;
     const data = spacer ? { priority: 'NeverOverflow' as const } : ((el.props as { layoutData?: OverflowToolbarLayoutData }).layoutData ?? {});

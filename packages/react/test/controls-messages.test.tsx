@@ -9,11 +9,13 @@ import MessageBox from '@rhfan2019/smart-kit/m/MessageBox';
 import MessageButton from '@rhfan2019/smart-kit/v4/fe/macros/MessageButton';
 import MessageHost from '@rhfan2019/smart-kit/kit/MessageHost';
 import MessageItem from '@rhfan2019/smart-kit/m/MessageItem';
-import MessagePopover from '@rhfan2019/smart-kit/m/MessagePopover';
+import MessagePopover, { type MessagePopover$BeforeOpenEvent, type MessagePopover$ItemSelectEvent } from '@rhfan2019/smart-kit/m/MessagePopover';
 import MessageProvider from '@rhfan2019/smart-kit/kit/MessageProvider';
 import MessageStrip from '@rhfan2019/smart-kit/m/MessageStrip';
 import MessageToast from '@rhfan2019/smart-kit/m/MessageToast';
-import MessageView from '@rhfan2019/smart-kit/m/MessageView';
+import MessageView, {
+  type MessageView$ActiveTitlePressEvent, type MessageView$ItemSelectEvent, type MessageView$ListSelectEvent, type MessageViewAsyncDescriptionConfig,
+} from '@rhfan2019/smart-kit/m/MessageView';
 import useMessages from '@rhfan2019/smart-kit/kit/useMessages';
 import { messageStore } from '../src/messages/messageStore';
 
@@ -227,6 +229,98 @@ describe('MessageView / MessageItem (sap.m.MessageView)', () => {
     expect(fetch).toHaveBeenCalledWith('/texts/1');
     expect(onLongtextLoaded).toHaveBeenCalled();
     fetch.mockRestore();
+  });
+});
+
+describe('Message controls: UI5 1.154 defaults, async description, event types (AL-05, AL-06)', () => {
+  it('AL-05 MessageStrip: type defaults to Information, showIcon / showCloseButton to false, colorSet to Default', () => {
+    view(<MessageStrip text="Plain" />);
+    const strip = screen.getByRole('note', { name: 'Information' });
+    expect(strip).toHaveClass('sk-message-strip--info');
+    expect(strip.className).not.toMatch(/--set/);
+    expect(strip.querySelector('.sk-message-strip__icon')).toBeNull();
+    expect(within(strip).queryByRole('button')).toBeNull();
+  });
+
+  it('AL-05 MessageItem: type defaults to Error, activeTitle to false; MessageView: groupItems false, showDetailsPageHeader true', () => {
+    const onActiveTitlePress = vi.fn();
+    const { rerender } = view(
+      <MessageView onActiveTitlePress={onActiveTitlePress}>
+        <MessageItem key="a" title="No type" description="D" groupName="G" />
+        <MessageItem key="b" type="Warning" title="W" />
+      </MessageView>,
+    );
+    expect(document.querySelector('[data-sk-message="Error"]')).toHaveTextContent('No type');
+    expect(screen.getByText('No type').closest('button')).toBeNull();
+    expect(document.querySelector('.sk-message-view__group')).toBeNull();
+    fireEvent.click(screen.getByText('No type'));
+    expect(screen.getByRole('button', { name: 'Back' })).toBeInTheDocument();
+    rerender(wrap(
+      <MessageView showDetailsPageHeader={false}>
+        <MessageItem key="a" title="No type" description="D" />
+        <MessageItem key="b" type="Warning" title="W" />
+      </MessageView>,
+    ));
+    fireEvent.click(screen.getByText('No type'));
+    expect(screen.getByText('D')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Back' })).toBeNull();
+  });
+
+  it('AL-05 MessagePopover: placement defaults to Vertical, initiallyExpanded to true, groupItems to false', async () => {
+    function P() {
+      const ref = useRef<MessagePopover>(null);
+      return (
+        <>
+          <button type="button" onClick={(e) => ref.current!.openBy(e.currentTarget)}>Open</button>
+          <MessagePopover ref={ref}><MessageItem key="a" type="Error" title="E1" groupName="G" /><MessageItem key="b" type="Warning" title="W1" /></MessagePopover>
+        </>
+      );
+    }
+    view(<P />);
+    fireEvent.click(screen.getByRole('button', { name: 'Open' }));
+    const dialog = await screen.findByRole('dialog');
+    expect(within(dialog).getByText('E1')).toBeInTheDocument();
+    expect(dialog.querySelector('.sk-message-view__group')).toBeNull();
+  });
+
+  it('AL-06 asyncDescriptionHandler gets { item, promise }: the description set on item is shown after resolve; reject keeps the own description', async () => {
+    const onLongtextLoaded = vi.fn();
+    const handler = vi.fn((c: MessageViewAsyncDescriptionConfig) => {
+      if (c.item.title === 'Good') { c.item.description = 'Loaded text'; c.promise.resolve(); } else c.promise.reject('no');
+    });
+    const { rerender } = view(
+      <MessageView asyncDescriptionHandler={handler} onLongtextLoaded={onLongtextLoaded}><MessageItem type="Error" title="Good" longtextUrl="/t/1" /></MessageView>,
+    );
+    expect(await screen.findByText('Loaded text')).toBeInTheDocument();
+    expect(handler).toHaveBeenCalledWith(expect.objectContaining({ item: expect.objectContaining({ title: 'Good', longtextUrl: '/t/1' }), promise: expect.objectContaining({ resolve: expect.any(Function), reject: expect.any(Function) }) }));
+    expect(onLongtextLoaded).toHaveBeenCalledTimes(1);
+    rerender(wrap(
+      <MessageView asyncDescriptionHandler={handler} onLongtextLoaded={onLongtextLoaded}><MessageItem type="Error" title="Bad" description="Own text" longtextUrl="/t/2" /></MessageView>,
+    ));
+    await waitFor(() => expect(onLongtextLoaded).toHaveBeenCalledTimes(2));
+    expect(screen.getByText('Own text')).toBeInTheDocument();
+  });
+
+  it('AL-06 itemSelect / listSelect / activeTitlePress objects are MessageView$…Event and MessagePopover$…Event', () => {
+    const select: Array<MessageView$ItemSelectEvent | MessageView$ListSelectEvent | MessageView$ActiveTitlePressEvent> = [];
+    view(
+      <MessageView onItemSelect={(e) => select.push(e)} onListSelect={(e) => select.push(e)} onActiveTitlePress={(e) => select.push(e)}>
+        <MessageItem key="a" type="Error" title="A" description="d" activeTitle />
+        <MessageItem key="b" type="Warning" title="B" />
+      </MessageView>,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Warning' }));
+    fireEvent.click(screen.getByRole('button', { name: 'All' }));
+    fireEvent.click(document.querySelector('.sk-message-view__title--active')!);
+    fireEvent.click(document.querySelector('.sk-message-view__row--nav')!);
+    expect(select).toEqual([
+      { messageTypeFilter: 'Warning' }, { messageTypeFilter: 'All' }, { item: expect.objectContaining({ key: 'a' }) },
+      { item: expect.objectContaining({ key: 'a' }), messageTypeFilter: 'All' },
+    ]);
+    const popoverEvent: MessagePopover$ItemSelectEvent = select[3] as MessageView$ItemSelectEvent;
+    const open: MessagePopover$BeforeOpenEvent = { openBy: document.body };
+    expect(Object.keys(popoverEvent)).toEqual(['item', 'messageTypeFilter']);
+    expect(Object.keys(open)).toEqual(['openBy']);
   });
 });
 

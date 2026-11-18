@@ -9,8 +9,8 @@ import { useControlLocale } from '../context';
 import type { EmptyIndicatorMode } from '../types';
 import { cx, EmptyIndicator } from './shared';
 
-export interface $CurrencySettings extends HTMLAttributes<HTMLSpanElement> {
-  /** The amount (default 0). `null` counts as empty (see emptyIndicatorMode). */
+export interface $CurrencySettings extends Omit<HTMLAttributes<HTMLSpanElement>, 'children'> {
+  /** The amount. `null` counts as empty (see emptyIndicatorMode). @defaultValue 0 */
   value?: number | null;
   /** The exact amount as a decimal string (Edm.Decimal); used instead of `value`, avoiding float rounding. */
   stringValue?: string;
@@ -18,9 +18,9 @@ export interface $CurrencySettings extends HTMLAttributes<HTMLSpanElement> {
   currency?: string;
   /** Fraction digits the amount is padded to, so amounts in different currencies align (default: the currency's digits). */
   maxPrecision?: number;
-  /** Shows the currency symbol (€, $) instead of the code where one exists (default true). */
+  /** Shows the currency symbol (€, $) instead of the code where one exists. @defaultValue true */
   useSymbol?: boolean;
-  /** Shows "–" when there is no amount (default Off). */
+  /** Shows "–" when there is no amount. @defaultValue 'Off' */
   emptyIndicatorMode?: EmptyIndicatorMode;
 }
 

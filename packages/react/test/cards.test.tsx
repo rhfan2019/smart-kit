@@ -16,7 +16,7 @@ import NumericHeader from '@rhfan2019/smart-kit/f/cards/NumericHeader';
 import ObjectContent from '@rhfan2019/smart-kit/ui/integration/cards/ObjectContent';
 import TableContent from '@rhfan2019/smart-kit/ui/integration/cards/TableContent';
 import TimelineContent from '@rhfan2019/smart-kit/ui/integration/cards/TimelineContent';
-import { firstDayOf, monthGrid, weekNumber } from '../src/cards/CalendarContent';
+import { firstDayOf, monthGrid, weekNumber, weekRules } from '../src/cards/CalendarContent';
 import { compactParts, counterText, durationText, relativeDateTime, withUnit } from '../src/cards/format';
 import { createText } from '../src/i18n/text';
 
@@ -95,6 +95,16 @@ describe('docs/20 format helpers', () => {
     expect(weekNumber('2026-11-16', 1)).toBe(47); // ISO 8601
     expect(weekNumber('2025-12-29', 1)).toBe(1);
   });
+  it('AL-05 calendar weeks: calendarWeekNumbering ISO_8601 / WesternTraditional / MiddleEastern (first day, minimal days)', () => {
+    expect(weekRules('ISO_8601', 'en-US')).toEqual({ firstDay: 1, minDays: 4 });
+    expect(weekRules('WesternTraditional', 'zh-CN')).toEqual({ firstDay: 0, minDays: 1 });
+    expect(weekRules('MiddleEastern', 'en-US')).toEqual({ firstDay: 6, minDays: 1 });
+    expect(weekRules('Default', 'en-US')).toEqual({ firstDay: 0, minDays: 1 });
+    expect(weekRules(undefined, 'zh-CN')).toEqual({ firstDay: 1, minDays: 4 });
+    expect(weekNumber('2025-12-27', 6, 1)).toBe(1); // the Saturday week that holds 1 January 2026
+    expect(weekNumber('2025-12-28', 0, 1)).toBe(1);
+    expect(weekNumber('2026-12-28', 1, 4)).toBe(53);
+  });
 });
 
 describe('docs/20 Card and headers', () => {
@@ -138,6 +148,84 @@ describe('docs/20 Card and headers', () => {
     expect(screen.getByText('Target')).toBeInTheDocument();
     expect(screen.getByText('600M')).toBeInTheDocument();
     expect(screen.getByText('Deviation')).toBeInTheDocument();
+  });
+});
+
+describe('Card and headers: UI5 1.154 settings (AL-05, AL-06)', () => {
+  const again = (c: ReactNode) => (
+    <MantineProvider theme={smartKitMantineTheme}><SmartKitProvider services={{}} locale="en" namespace="al05">{c}</SmartKitProvider></MantineProvider>
+  );
+  it('AL-05 Card: width 100%, height auto, headerPosition Top, semanticRole Region, headingLevel H3; content = children', () => {
+    const { container, rerender } = setup(<Card header={<Header title="T" />} content={<p>by content</p>} />);
+    const card = screen.getByRole('region', { name: 'T' });
+    expect(card).toHaveStyle({ width: '100%', height: 'auto' });
+    expect(card.firstElementChild).toHaveClass('sk-card__header');
+    expect(screen.getByRole('heading', { name: 'T', level: 3 })).toBeInTheDocument();
+    expect(screen.getByText('by content')).toBeInTheDocument();
+    rerender(again(<Card header={<Header title="T" />} headingLevel="H2" headerPosition="Bottom" width="20rem"><p>c</p></Card>));
+    expect(screen.getByRole('heading', { level: 2 })).toHaveTextContent('T');
+    expect(container.querySelector('.sk-card')!.lastElementChild).toHaveClass('sk-card__header');
+    expect((container.querySelector('.sk-card') as HTMLElement).style.width).toBe('20rem');
+  });
+  it('AL-06 Card press: with semanticRole ListItem the whole card fires onPress (click, Enter); inner buttons and Region cards do not', () => {
+    const onPress = vi.fn();
+    const inner = vi.fn();
+    const { rerender } = setup(<Card semanticRole="ListItem" onPress={onPress} header={<Header title="T" />}><button type="button" onClick={inner}>Inner</button></Card>);
+    const card = screen.getByRole('listitem');
+    fireEvent.click(card);
+    fireEvent.keyDown(card, { key: 'Enter' });
+    fireEvent.click(screen.getByRole('button', { name: 'Inner' }));
+    expect(onPress).toHaveBeenCalledTimes(2);
+    expect(inner).toHaveBeenCalledTimes(1);
+    rerender(again(<Card onPress={onPress} header={<Header title="R" />} />));
+    fireEvent.click(screen.getByRole('region'));
+    expect(onPress).toHaveBeenCalledTimes(2);
+  });
+  it('AL-05 Header: iconDisplayShape Circle, iconBackgroundColor Transparent, iconSize S, iconFitType Cover; iconSrc takes a URL or an element; iconState', () => {
+    const { container, rerender } = setup(<Card header={<Header title="T" iconInitials="AB" />} />);
+    const avatar = within(container).getByText('AB');
+    expect(avatar).toHaveClass('sk-card__avatar--circle', 'sk-card__avatar--transparent');
+    expect(avatar.className).not.toMatch(/--size-|--contain/);
+    rerender(again(
+      <>
+        <Card header={<Header title="T" iconSrc="/logo.png" iconDisplayShape="Square" iconBackgroundColor="Accent3" iconSize="L" iconFitType="Contain" iconAlt="Logo" />} />
+        <Card header={<Header title="U" iconSrc={<svg data-testid="ico" />} />} />
+        <Card header={<Header title="V" iconState="Warning" />} />
+      </>,
+    ));
+    const img = screen.getByRole('img', { name: 'Logo' });
+    expect(img).toHaveClass('sk-card__avatar--square', 'sk-card__avatar--accent3', 'sk-card__avatar--size-l', 'sk-card__avatar--contain', 'sk-card__avatar--image');
+    expect(screen.getByTestId('ico').parentElement).toHaveClass('sk-card__avatar--icon');
+    expect(container.querySelector('[data-sk-icon-state="Warning"]')).toBeInTheDocument();
+  });
+  it('AL-05 Header: titleMaxLines 3, subtitleMaxLines 2, wrappingType Normal; dataTimestamp, toolbar and infoSection', () => {
+    const onPress = vi.fn();
+    const onMenu = vi.fn();
+    const { container } = setup(
+      <Card header={<Header title="T" subtitle="S" onPress={onPress} dataTimestamp={new Date(Date.now() - 5 * 60000).toISOString()} toolbar={<button type="button" onClick={onMenu}>Menu</button>} infoSection={[<span key="1">Info 1</span>]} />} />,
+    );
+    expect(container.querySelector('.sk-card__title')).toHaveStyle({ WebkitLineClamp: '3' });
+    expect(container.querySelector('.sk-card__subtitle')).toHaveStyle({ WebkitLineClamp: '2' });
+    expect(container.querySelector('.sk-card__header')).not.toHaveClass('sk-card__header--hyphenated');
+    expect(container.querySelector('[data-sk-card-timestamp]')).toHaveTextContent('5 minutes ago');
+    expect(screen.getByText('Info 1')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
+    expect(onMenu).toHaveBeenCalledTimes(1);
+    expect(onPress).not.toHaveBeenCalled();
+  });
+  it('AL-05 NumericHeader: state Neutral, trend None, numberSize L, numberVisible true, detailsMaxLines 1, sideIndicatorsAlignment Begin; NumericSideIndicator state None', () => {
+    const { container, rerender } = setup(<Card header={<NumericHeader title="N" number="42" details="D" sideIndicators={[{ title: 'Target', number: '50' }]} />} />);
+    expect(container.querySelector('.sk-card__main')).toHaveClass('sk-card--state-neutral');
+    expect(container.querySelector('.sk-card__main')).not.toHaveClass('sk-card__main--small');
+    expect(container.querySelector('.sk-card__trend')).toBeNull();
+    expect(container.querySelector('.sk-card__details')).toHaveStyle({ WebkitLineClamp: '1' });
+    expect(container.querySelector('.sk-card__indicators')).not.toHaveClass('sk-card__indicators--end');
+    expect(container.querySelector('.sk-card__side-number')!.className).toBe('sk-card__side-number');
+    rerender(again(<Card header={<NumericHeader title="N" number="42" numberVisible={false} iconInitials="KP" sideIndicatorsAlignment="End" sideIndicators={[{ title: 'Target', number: '50' }]} microChart={<span>chart</span>} />} />));
+    expect(container.querySelector('.sk-card__main')).toBeNull();
+    expect(container.querySelector('.sk-card__indicators')).toHaveClass('sk-card__indicators--end');
+    expect(screen.getByText('chart')).toBeInTheDocument();
+    expect(screen.getByText('KP')).toHaveClass('sk-card__avatar');
   });
 });
 
@@ -269,6 +357,18 @@ describe('docs/20 object, analytical, timeline and calendar contents', () => {
     expect(within(items[0]!).getByText('Today at 1:30 PM')).toBeInTheDocument();
     expect(within(items[0]!).getByText('Acme Corp')).toBeInTheDocument();
     expect(screen.getByText('3 of 5')).toBeInTheDocument();
+  });
+  it('AL-05 timeline item paths are named as the manifest item (title, description, dateTime); calendar use12HourFormat', async () => {
+    const { container } = setup(
+      <>
+        <Card header={<Header title="Meetings" />}><TimelineContent entitySet="SupplierMeetings" maxItems={5} now={NOW} item={{ title: 'Location', description: 'Subject', dateTime: 'EndAt' }} /></Card>
+        <Card header={<Header title="Cal" />}><CalendarContent entitySet="SupplierMeetings" date="2026-11-18" now={NOW} use12HourFormat /></Card>
+      </>,
+    );
+    await waitFor(() => expect(container.querySelector('.sk-card__timeline-title')).toHaveTextContent('Room A'));
+    expect(container.querySelector('.sk-card__timeline-text')).toHaveTextContent('Volume discount');
+    expect(container.querySelector('.sk-card__timeline-date')).toHaveTextContent('11/18/26 at 11:00 AM');
+    await waitFor(() => expect(container.querySelector('.sk-card__appointment-time')).toHaveTextContent(/^10:00\sAM/));
   });
   it('CD-35 / CD-36 calendar: the selected day lists its appointments (on today only those not ended), with counter and "More"', async () => {
     const { container } = setup(

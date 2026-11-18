@@ -10,22 +10,22 @@ import { TEXTS } from './texts';
 export type ExpandableTextOverflowMode = 'InPlace' | 'Popover';
 export const ExpandableTextOverflowMode = { InPlace: 'InPlace', Popover: 'Popover' } as const;
 
-export interface $ExpandableTextSettings extends HTMLAttributes<HTMLDivElement> {
+export interface $ExpandableTextSettings extends Omit<HTMLAttributes<HTMLDivElement>, 'children'> {
   /** The text. */
   text?: string;
-  /** sap.m.WrappingType: Normal or Hyphenated (default Normal). */
+  /** sap.m.WrappingType: Normal or Hyphenated. @defaultValue 'Normal' */
   wrappingType?: 'Normal' | 'Hyphenated';
-  /** sap.ui.core.TextAlign (default Begin). */
+  /** sap.ui.core.TextAlign. @defaultValue 'Begin' */
   textAlign?: TextAlignValue;
-  /** Keeps line breaks and spaces (default false). */
+  /** Keeps line breaks and spaces. @defaultValue false */
   renderWhitespace?: boolean;
-  /** InPlace expands the text, Popover shows the full text in a popover (default InPlace). */
+  /** InPlace expands the text, Popover shows the full text in a popover. @defaultValue 'InPlace' */
   overflowMode?: ExpandableTextOverflowMode;
-  /** Characters shown before "More" (default 100). */
+  /** Characters shown before "More". @defaultValue 100 */
   maxCharacters?: number;
   /** InPlace mode: the full text is shown (default false). The control also toggles it itself; a changed prop wins. */
   expanded?: boolean;
-  /** Shows "–" when text is empty (default Off). */
+  /** Shows "–" when text is empty. @defaultValue 'Off' */
   emptyIndicatorMode?: EmptyIndicatorMode;
 }
 

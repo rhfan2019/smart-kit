@@ -5,14 +5,14 @@
 import { ActionIcon, Badge, UnstyledButton } from '@mantine/core';
 import type { Message } from '@rhfan2019/smart-kit-core';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { Fragment, useEffect, useImperativeHandle, useMemo, useState, type ReactNode, type Ref } from 'react';
+import { Fragment, useEffect, useImperativeHandle, useMemo, useRef, useState, type ReactNode, type Ref } from 'react';
 import { useControlText } from '../controls/context';
 import { elementsOf, MESSAGE_TYPE_ORDER, messageTypeOf, type MessageType } from '../controls/types';
 import { MessageTypeIcon } from './MessageTypeIcon';
 import { TEXTS } from './texts';
 
 export interface $MessageItemSettings {
-  /** UI5 default 'Error'. */
+  /** Type of the message. @defaultValue 'Error' */
   type?: MessageType;
   title?: string;
   subtitle?: string;
@@ -21,14 +21,18 @@ export interface $MessageItemSettings {
   counter?: number;
   /** The group of the item when the view has `groupItems`. */
   groupName?: string;
-  /** The title is a link (fires onActiveTitlePress). UI5 default false. */
+  /** The title is a link (fires onActiveTitlePress). @defaultValue false */
   activeTitle?: boolean;
-  /** UI5 renders the description as HTML; smart-kit renders it as plain text. */
+  /** UI5 renders the description as HTML; smart-kit renders it as plain text. @defaultValue false */
   markupDescription?: boolean;
   /** A URL with a long text, loaded when the details page opens (shown as plain text; fires onLongtextLoaded). */
   longtextUrl?: string;
   /** A link shown on the details page (`link` aggregation). */
   link?: ReactNode;
+  /** Text of the item (inherited from sap.ui.core.Item); like UI5, the view shows `title`, not `text`. */
+  text?: string;
+  /** Inherited from sap.ui.core.Item; like UI5, the view does not use it. @defaultValue true */
+  enabled?: boolean;
 }
 
 /** An item as passed to event handlers: its properties, its React key, and (extension) the core message it came from. */
@@ -44,21 +48,56 @@ export interface MessageView {
   navigateBack(): void;
 }
 
+/** The type filter of the list: a message type, or 'All'. */
+export type MessageTypeFilter = MessageType | 'All';
+
+/** Event object of `onItemSelect` (sap.m.MessageView#itemSelect): the item whose details are shown. */
+export interface MessageView$ItemSelectEvent { item: MessageViewItem; messageTypeFilter: MessageTypeFilter }
+/** Event object of `onListSelect` (sap.m.MessageView#listSelect): the list shown, filtered by type or not. */
+export interface MessageView$ListSelectEvent { messageTypeFilter: MessageTypeFilter }
+/** Event object of `onActiveTitlePress` (sap.m.MessageView#activeTitlePress). */
+export interface MessageView$ActiveTitlePressEvent { item: MessageViewItem }
+
+/**
+ * Argument of `asyncDescriptionHandler` (sap.m.MessageView~asyncDescriptionHandler). The handler loads the description
+ * of `item` (a copy of the item), sets `item.description` (UI5: `item.setDescription`) and calls `promise.resolve()`;
+ * `promise.reject()` shows the details without it.
+ */
+export interface MessageViewAsyncDescriptionConfig {
+  item: MessageViewItem;
+  promise: { resolve(value?: unknown): void; reject(reason?: unknown): void };
+}
+
+/** The default description handler (as in UI5): loads `longtextUrl` with GET and uses the response text as the description. */
+export function defaultAsyncDescriptionHandler(config: MessageViewAsyncDescriptionConfig): void {
+  const url = config.item.longtextUrl;
+  if (!url) return;
+  fetch(url)
+    .then((r) => (r.ok ? r.text() : Promise.reject(new Error(`A request has failed for long text data. URL: ${url}`))))
+    .then((text) => { config.item.description = text; config.promise.resolve(); })
+    .catch((e: unknown) => config.promise.reject(e));
+}
+
 export interface $MessageViewSettings {
   /** `MessageItem` elements. */
   children?: ReactNode;
   /** Extension: core messages (ADR-023), shown like MessageItems: text as title, target as subtitle and active title. */
   items?: Message[];
-  /** Groups the items by `groupName`. UI5 default false. */
+  /** Groups the items by `groupName`. @defaultValue false */
   groupItems?: boolean;
-  /** Shows the header with the back button on the details page. UI5 default true. */
+  /** Shows the header with the back button on the details page. @defaultValue true */
   showDetailsPageHeader?: boolean;
+  /**
+   * Loads the description of an item with a `longtextUrl` when its details open (the details page is busy meanwhile).
+   * Default: `defaultAsyncDescriptionHandler` (GET `longtextUrl`, as UI5's default handler).
+   */
+  asyncDescriptionHandler?: (config: MessageViewAsyncDescriptionConfig) => void;
   /** A button at the end of the list header (MessagePopover `headerButton`). */
   headerButton?: ReactNode;
-  onItemSelect?: (e: { item: MessageViewItem; messageTypeFilter: MessageType | 'All' }) => void;
-  onActiveTitlePress?: (e: { item: MessageViewItem }) => void;
-  onListSelect?: (e: { messageTypeFilter: MessageType | 'All' }) => void;
-  /** Fired after the long text of an item (`longtextUrl`) has been loaded. */
+  onItemSelect?: (e: MessageView$ItemSelectEvent) => void;
+  onActiveTitlePress?: (e: MessageView$ActiveTitlePressEvent) => void;
+  onListSelect?: (e: MessageView$ListSelectEvent) => void;
+  /** Fired after the description of an item with a `longtextUrl` has been loaded (`asyncDescriptionHandler`). */
   onLongtextLoaded?: () => void;
   ref?: Ref<MessageView>;
 }
@@ -79,7 +118,7 @@ const dataOf = (i: MessageViewItem) => ({ 'data-sk-message': i.message?.type ?? 
 export function MessageViewBody(p: $MessageViewSettings & { list: MessageViewItem[]; onBack?: () => void; collapsed?: boolean }) {
   const t = useControlText(TEXTS);
   const { list } = p;
-  const [filter, setFilter] = useState<MessageType | 'All'>('All');
+  const [filter, setFilter] = useState<MessageTypeFilter>('All');
   const [selected, setSelected] = useState<MessageViewItem | null>(null);
   const counts = useMemo(() => MESSAGE_TYPE_ORDER.map((type) => [type, list.filter((i) => i.type === type).length] as const).filter(([, n]) => n > 0), [list]);
   const shown = filter === 'All' ? list : list.filter((i) => i.type === filter);
@@ -87,16 +126,33 @@ export function MessageViewBody(p: $MessageViewSettings & { list: MessageViewIte
   const single = list.length === 1 ? list[0]! : null;
   const details = selected && list.includes(selected) ? selected : single;
   useImperativeHandle(p.ref, () => ({ navigateBack: () => setSelected(null) }));
-  const [longtext, setLongtext] = useState<{ url: string; text?: string } | null>(null);
+  // the description loaded by asyncDescriptionHandler, per item
+  const [loaded, setLoaded] = useState<{ key: string; description?: string; busy: boolean } | null>(null);
   const { onLongtextLoaded } = p;
-  const url = details?.longtextUrl;
+  const handler = p.asyncDescriptionHandler ?? defaultAsyncDescriptionHandler;
+  const handlerRef = useRef(handler);
+  handlerRef.current = handler;
+  const detailsRef = useRef(details);
+  detailsRef.current = details;
+  // items are re-created on every render of the children: load once per item key and URL
+  const loadKey = details?.longtextUrl ? `${details.key ?? list.indexOf(details)}\u0000${details.longtextUrl}` : null;
   useEffect(() => {
-    if (!url) return undefined;
+    const current = detailsRef.current;
+    if (!loadKey || !current) return undefined;
     let live = true;
-    setLongtext({ url });
-    fetch(url).then((r) => (r.ok ? r.text() : '')).catch(() => '').then((text) => { if (live) { setLongtext({ url, text }); onLongtextLoaded?.(); } });
+    const item: MessageViewItem = { ...current };
+    setLoaded({ key: loadKey, busy: true });
+    const done = (ok: boolean) => {
+      if (!live) return;
+      live = false;
+      setLoaded({ key: loadKey, busy: false, description: ok ? item.description : undefined });
+      onLongtextLoaded?.();
+    };
+    handlerRef.current({ item, promise: { resolve: () => done(true), reject: () => done(false) } });
     return () => { live = false; };
-  }, [url, onLongtextLoaded]);
+  }, [loadKey, onLongtextLoaded]);
+  const loading = loaded && loaded.key === loadKey ? loaded : null;
+  const description = loading?.description ?? details?.description;
   useEffect(() => { if (filter !== 'All' && !list.some((i) => i.type === filter)) setFilter('All'); }, [list, filter]);
 
   const title = (i: MessageViewItem) => (i.activeTitle && p.onActiveTitlePress
@@ -105,7 +161,7 @@ export function MessageViewBody(p: $MessageViewSettings & { list: MessageViewIte
 
   if (details) {
     return (
-      <div className="sk-message-view__details" data-sk-message-view-details>
+      <div className="sk-message-view__details" data-sk-message-view-details aria-busy={loading?.busy || undefined}>
         {p.showDetailsPageHeader !== false && !single ? (
           <div className="sk-message-view__header">
             <ActionIcon variant="subtle" aria-label={t('ctl.msg.back')} onClick={() => { setSelected(null); p.onBack?.(); }} data-sk-message-view-back><ChevronLeft className="sk-icon" aria-hidden /></ActionIcon>
@@ -118,8 +174,7 @@ export function MessageViewBody(p: $MessageViewSettings & { list: MessageViewIte
           <div className="sk-message-view__details-text">
             {title(details)}
             {details.subtitle ? <div className="sk-message-view__subtitle">{details.subtitle}</div> : null}
-            {details.description ? <div className="sk-message-view__description">{details.description}</div> : null}
-            {details.longtextUrl && longtext?.url === details.longtextUrl && longtext.text ? <div className="sk-message-view__description" data-sk-message-longtext>{longtext.text}</div> : null}
+            {description ? <div className="sk-message-view__description" data-sk-message-longtext={loading?.description !== undefined || undefined}>{description}</div> : null}
             {details.link ? <div className="sk-message-view__link">{details.link}</div> : null}
           </div>
         </div>
@@ -130,7 +185,7 @@ export function MessageViewBody(p: $MessageViewSettings & { list: MessageViewIte
   const groups = p.groupItems
     ? [...new Set(shown.map((i) => i.groupName ?? ''))].sort((a, b) => (a === '' ? -1 : b === '' ? 1 : 0)).map((g) => [g, shown.filter((i) => (i.groupName ?? '') === g)] as const)
     : [['', shown] as const];
-  const choose = (f: MessageType | 'All') => { setFilter(f); p.onListSelect?.({ messageTypeFilter: f }); };
+  const choose = (f: MessageTypeFilter) => { setFilter(f); p.onListSelect?.({ messageTypeFilter: f }); };
   return (
     <div className="sk-message-view__list-page">
       {counts.length > 1 || p.headerButton ? (

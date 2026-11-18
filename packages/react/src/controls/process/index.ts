@@ -12,11 +12,16 @@ export {
   type ProcessFlowNode,
   type ProcessFlowChild,
   type ProcessFlowConnectionLabel,
-  type ProcessFlowLabelPressInfo,
+  type ProcessFlowLabelConnection,
+  type AriaProperties,
+  type ProcessFlow$NodePressEvent,
+  type ProcessFlow$LabelPressEvent,
+  type ProcessFlow$HeaderPressEvent,
+  type ProcessFlow$OnErrorEvent,
 } from './ProcessFlow';
 export {
   MicroProcessFlow, MicroProcessFlowItem, MicroProcessFlowRenderType,
-  type $MicroProcessFlowSettings, type $MicroProcessFlowItemSettings, type MicroProcessFlowPressedItem,
+  type $MicroProcessFlowSettings, type $MicroProcessFlowItemSettings, type MicroProcessFlowPressedItem, type MicroProcessFlowItem$PressEvent,
 } from './MicroProcessFlow';
 export {
   Timeline,
@@ -32,12 +37,16 @@ export {
   type TimelineCustomAction,
   type TimelineFilterReasons,
   type TimelineTimeKeys,
-  type TimelineFilterSelectionChangeEvent,
-  type TimelineItemFilteringEvent,
+  type Timeline$FilterSelectionChangeEvent,
+  type Timeline$ItemFilteringEvent,
+  type Timeline$SelectEvent,
+  type TimelineItem$UserNameClickedEvent,
+  type TimelineItem$ReplyPostEvent,
+  type TimelineItem$CustomActionClickedEvent,
 } from './Timeline';
 export {
   FeedInput, FeedListItem, LinkConversion,
-  type $FeedInputSettings, type $FeedListItemSettings, type FeedListItemAction, type FeedListItemPressEvent,
+  type $FeedInputSettings, type $FeedListItemSettings, type FeedListItemAction, type FeedInput$PostEvent, type FeedListItem$SenderPressEvent, type FeedListItem$IconPressEvent,
 } from './Feed';
 export {
   UploadSetwithTable,
@@ -55,5 +64,7 @@ export {
   type UploadSetwithTableItemInfo,
   type FilePreviewDialog,
   type UploadSetwithTableColumn,
-  type UploadCompletedEvent,
+  type UploadSetwithTable$UploadCompletedEvent,
+  type $UploaderTableItemSettings,
+  type $ActionsPlaceholderSettings,
 } from './UploadSetwithTable';

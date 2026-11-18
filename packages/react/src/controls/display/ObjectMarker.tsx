@@ -16,10 +16,10 @@ export const ObjectMarkerType = {
 export type ObjectMarkerVisibility = 'IconOnly' | 'TextOnly' | 'IconAndText';
 export const ObjectMarkerVisibility = { IconOnly: 'IconOnly', TextOnly: 'TextOnly', IconAndText: 'IconAndText' } as const;
 
-export interface $ObjectMarkerSettings extends Omit<HTMLAttributes<HTMLElement>, 'type'> {
+export interface $ObjectMarkerSettings extends Omit<HTMLAttributes<HTMLElement>, 'type' | 'children'> {
   /** The marker (no default: without a type nothing is rendered). */
   type?: ObjectMarkerType;
-  /** Overlay enlarges the clickable area (default Inline). */
+  /** Overlay enlarges the clickable area. @defaultValue 'Inline' */
   reactiveAreaMode?: ReactiveAreaMode;
   /**
    * Icon, text or both. Without it, as in SAPUI5: Flagged and Favorite icon only; Draft text only; Locked, Unsaved, LockedBy and
@@ -29,7 +29,13 @@ export interface $ObjectMarkerSettings extends Omit<HTMLAttributes<HTMLElement>,
   /** The user name of LockedBy / UnsavedBy ("Locked by {name}"). */
   additionalInfo?: string;
   /** Makes the marker clickable. */
-  onPress?(e: { type: ObjectMarkerType }): void;
+  onPress?(e: ObjectMarker$PressEvent): void;
+}
+
+/** Event object of ObjectMarker's press. */
+export interface ObjectMarker$PressEvent {
+  /** The marker type. */
+  type: ObjectMarkerType;
 }
 
 const ICONS: Record<ObjectMarkerType, LucideIcon> = { Flagged: Flag, Favorite: Star, Draft: UserPen, Locked: Lock, Unsaved: UserPen, LockedBy: Lock, UnsavedBy: UserPen };

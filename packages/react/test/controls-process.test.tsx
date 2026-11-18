@@ -71,7 +71,7 @@ describe('ProcessFlow', () => {
     expect(node(container, 'inv1')).toHaveClass('sk-process-flow__node--planned');
   });
 
-  it('UE-42 nodePress gets the node, headerPress the lane (lane `onPress` too); nodes are buttons reachable by keyboard', () => {
+  it('UE-42 AL-06 nodePress gets { oEvent: node }, headerPress { oEvent: lane } (lane `onPress` too); nodes are buttons reachable by keyboard', () => {
     const onNodePress = vi.fn();
     const onHeaderPress = vi.fn();
     const lanePress = vi.fn();
@@ -79,10 +79,10 @@ describe('ProcessFlow', () => {
     const po1 = node(container, 'po1');
     expect(po1).toHaveAttribute('role', 'button');
     fireEvent.keyDown(po1, { key: 'Enter' });
-    expect(onNodePress).toHaveBeenCalledWith(nodes[1]);
+    expect(onNodePress).toHaveBeenCalledWith({ oEvent: nodes[1] });
     fireEvent.click(screen.getByRole('button', { name: /Purchase Order/ }));
     expect(lanePress).toHaveBeenCalled();
-    expect(onHeaderPress).toHaveBeenCalledWith(expect.objectContaining({ laneId: 'po' }));
+    expect(onHeaderPress).toHaveBeenCalledWith({ oEvent: expect.objectContaining({ laneId: 'po' }) });
   });
 
   it('UE-43 no zoomLevel property: zoomIn / zoomOut / getZoomLevel / setZoomLevel; level Four shows titleAbbreviation; zoomLevel*Content replaces the content', () => {
@@ -103,12 +103,12 @@ describe('ProcessFlow', () => {
     expect(level).toBe('Four');
   });
 
-  it('UE-44 setSelectedPath highlights the path and dims the rest; getFocusedNode; onError for an unknown lane or node', () => {
+  it('UE-44 AL-06 setSelectedPath highlights the path and dims the rest; getFocusedNode; onOnError ({ oEvent: { text } }) for an unknown lane or node', () => {
     expect(pathBetween(layoutProcessFlow(lanes, nodes).edges, 'pr1', 'inv1')).toEqual(['pr1', 'po1', 'gr1', 'inv1']);
     const ref = createRef<ProcessFlow>();
-    const onError = vi.fn();
-    const { container } = view(<ProcessFlow ref={ref} lanes={lanes} nodes={[...nodes, { nodeId: 'x', laneId: 'nope', children: ['ghost'] }]} onNodePress={() => {}} onError={onError} />);
-    expect(onError).toHaveBeenCalledWith({ text: expect.stringContaining('unknown lane nope') });
+    const onOnError = vi.fn();
+    const { container } = view(<ProcessFlow ref={ref} lanes={lanes} nodes={[...nodes, { nodeId: 'x', laneId: 'nope', children: ['ghost'] }]} onNodePress={() => {}} onOnError={onOnError} />);
+    expect(onOnError).toHaveBeenCalledWith({ oEvent: { text: expect.stringContaining('unknown lane nope') } });
     act(() => { ref.current!.setSelectedPath('pr1', 'gr1'); });
     expect(node(container, 'po1')).toHaveClass('sk-process-flow__node--highlighted');
     expect(node(container, 'po2')).toHaveClass('sk-process-flow__node--dimmed');
@@ -119,7 +119,7 @@ describe('ProcessFlow', () => {
     expect(ref.current!.getFocusedNode()).toBe('po2');
   });
 
-  it('UE-45 showLabels shows connection labels (highest priority wins); labelPress gets the label and its nodes; foldedCorners', () => {
+  it('UE-45 AL-06 showLabels shows connection labels (highest priority wins); labelPress gets { oEvent: { selectedLabel, connections } }; foldedCorners', () => {
     const onLabelPress = vi.fn();
     const { container, rerender } = view(<ProcessFlow lanes={lanes} nodes={nodes} onLabelPress={onLabelPress} foldedCorners />);
     expect(screen.queryByRole('button', { name: '2 items' })).toBeNull();
@@ -128,7 +128,8 @@ describe('ProcessFlow', () => {
     const label = screen.getByRole('button', { name: '2 items' });
     expect(label).toHaveClass('sk-process-flow__label--critical');
     fireEvent.click(label);
-    expect(onLabelPress).toHaveBeenCalledWith(expect.objectContaining({ text: '2 items' }), { sourceNode: nodes[0], targetNode: nodes[2] });
+    const selectedLabel = expect.objectContaining({ text: '2 items' });
+    expect(onLabelPress).toHaveBeenCalledWith({ oEvent: { selectedLabel, connections: [{ sourceNode: nodes[0], targetNode: nodes[2], label: selectedLabel }] } });
   });
 
   it('UE-46 the lane header shows its icon in a donut whose arcs follow `state`; the donut has an accessible summary', () => {
@@ -322,7 +323,7 @@ describe('FeedInput and FeedListItem', () => {
     expect(screen.getByRole('button', { name: 'Attach' })).toBeInTheDocument();
   });
 
-  it('UE-57 FeedListItem shows sender, text, info and timestamp; "More" / "Less" after maxCharacters; senderPress / iconPress get domRef', () => {
+  it('UE-57 AL-06 FeedListItem shows sender, text, info and timestamp; "More" / "Less" after maxCharacters; senderPress / iconPress get getDomRef (no deprecated domRef)', () => {
     const onSenderPress = vi.fn();
     const onIconPress = vi.fn();
     view(
@@ -343,7 +344,8 @@ describe('FeedInput and FeedListItem', () => {
     expect(onSenderPress.mock.calls[0][0].getDomRef()).toBe(sender);
     expect(screen.queryByRole('button', { name: 'Ben' })).toBeNull();
     fireEvent.click(avatar);
-    expect(onIconPress).toHaveBeenCalledWith(expect.objectContaining({ domRef: expect.any(String) }));
+    expect(onIconPress.mock.calls[0][0].getDomRef()).toBe(avatar);
+    expect(Object.keys(onIconPress.mock.calls[0][0])).toEqual(['getDomRef']);
   });
 
   it('UE-58 actions menu (visible, enabled), ListItemBase type / press / detailPress / unread / counter / highlight, link conversion', async () => {
@@ -476,7 +478,7 @@ describe('UploadSetwithTable', () => {
     expect(screen.getByRole('row', { name: /Invoice-5105600\.pdf/ })).toHaveAttribute('data-upload-state', 'Complete');
   });
 
-  it('UE-92 beforeUploadStarts can prevent the upload; the uploader sets URL, method (Put) and multipart and gets its own events', async () => {
+  it('UE-92 AL-06 beforeUploadStarts can prevent the upload; an <UploaderTableItem> sets URL, method (Put) and multipart and gets its own events', async () => {
     const prevent = vi.fn((e) => e.preventDefault());
     const { container, unmount } = view(<UploadSetwithTable uploadUrl="/upload" onBeforeUploadStarts={prevent} />);
     choose(container, file('a.pdf'));
@@ -485,16 +487,18 @@ describe('UploadSetwithTable', () => {
     expect(screen.getByRole('row', { name: /a\.pdf/ })).toHaveAttribute('data-upload-state', 'Ready');
     unmount();
     const events: string[] = [];
-    const uploader: UploaderTableItem = {
-      uploadUrl: '/attachments', httpRequestMethod: 'Put', useMultipart: true,
-      onUploadStarted: () => events.push('started'), onUploadProgressed: (e) => events.push(`progress ${e.loaded}/${e.total}`), onUploadCompleted: (e) => events.push(`completed ${e.responseXHR.status}`),
-    };
+    const uploader = (
+      <UploaderTableItem uploadUrl="/attachments" httpRequestMethod="Put" useMultipart
+        onUploadStarted={() => events.push('started')} onUploadProgressed={(e) => events.push(`progress ${e.loaded}/${e.total}`)} onUploadCompleted={(e) => events.push(`completed ${e.responseXHR.status}`)} />
+    );
     const v = view(<UploadSetwithTable uploadUrl="/ignored" uploader={uploader} />);
     choose(v.container, file('b.pdf'));
     await waitFor(() => expect(MockXHR.all).toHaveLength(1));
     const xhr = MockXHR.all[0]!;
     expect([xhr.method, xhr.url]).toEqual(['PUT', '/attachments']);
-    expect((xhr.body as FormData).get('file')).toBeInstanceOf(File);
+    // as UI5: the form field is named after the file, plus _charset_
+    expect((xhr.body as FormData).get('b.pdf')).toBeInstanceOf(File);
+    expect((xhr.body as FormData).get('_charset_')).toBe('UTF-8');
     xhr.progress(5, 10);
     act(() => xhr.respond(500));
     await waitFor(() => expect(screen.getByRole('row', { name: /b\.pdf/ })).toHaveAttribute('data-upload-state', 'Error'));
@@ -580,7 +584,7 @@ describe('UploadSetwithTable', () => {
     const onUploadTerminated = vi.fn();
     const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
     const ref = createRef<UploadSetwithTable>();
-    const { container } = view(<UploadSetwithTable ref={ref} uploadUrl="/u" items={existing} fileTypes={['pdf', 'png']} uploader={{ onUploadTerminated }} />);
+    const { container } = view(<UploadSetwithTable ref={ref} uploadUrl="/u" items={existing} fileTypes={['pdf', 'png']} uploader={<UploaderTableItem uploadUrl="/u" onUploadTerminated={onUploadTerminated} />} />);
     choose(container, file('big-scan.pdf'));
     await waitFor(() => expect(MockXHR.all).toHaveLength(1));
     fireEvent.click(screen.getByRole('button', { name: 'Cancel upload' }));
@@ -627,5 +631,194 @@ describe('UploadSetwithTable', () => {
     view(<UploadSetwithTable items={existing} />, 'zh');
     expect(screen.getAllByRole('columnheader', { name: '文件名' }).length).toBe(1);
     expect(screen.getAllByText('已上传')).toHaveLength(2);
+  });
+});
+
+describe('UI5 1.154 defaults, events and methods (AL-05, AL-06, AL-07)', () => {
+  beforeEach(() => { MockXHR.all = []; vi.stubGlobal('XMLHttpRequest', MockXHR); });
+  afterEach(() => vi.unstubAllGlobals());
+
+  it('AL-05 FeedInput: enabled true, rows 2, maxLength 0, showIcon true, iconSize M, placeholder "Post something here", buttonTooltip "Submit"', () => {
+    const { container } = view(<FeedInput />);
+    const box = screen.getByRole('textbox', { name: 'Post something here' });
+    expect(box).toBeEnabled();
+    expect(box).toHaveAttribute('rows', '2');
+    expect(box).not.toHaveAttribute('maxLength');
+    expect(screen.getByRole('button', { name: 'Submit' })).toHaveAttribute('title', 'Submit');
+    expect(container.querySelector('.sk-feed__avatar')).not.toBeNull();
+  });
+
+  it('AL-05 FeedListItem: type Inactive, visible true, unread / selected / navigated false, highlight None, senderActive / iconActive true, showIcon true, convertLinksToAnchorTags None', () => {
+    const { container } = view(<ul><FeedListItem sender="Anna" text="see https://example.com" onSenderPress={() => {}} onIconPress={() => {}} /></ul>);
+    const li = container.querySelector('li')!;
+    expect(li).not.toHaveAttribute('tabindex');
+    expect(li).not.toHaveClass('sk-feed-item--unread', 'sk-feed-item--selected', 'sk-feed-item--navigated');
+    expect(li).not.toHaveAttribute('data-highlight');
+    expect(screen.getAllByRole('button', { name: 'Anna' })).toHaveLength(2);
+    expect(screen.queryByRole('link')).toBeNull();
+  });
+
+  it('AL-05 MicroProcessFlow: renderType Wrap; MicroProcessFlowItem: state Standard (neutral dot), showSeparator true, showIntermediary false', () => {
+    const { container } = view(<MicroProcessFlow><MicroProcessFlowItem key="a" title="A" /><MicroProcessFlowItem key="b" title="B" /></MicroProcessFlow>);
+    expect(screen.getByRole('list')).not.toHaveClass('sk-micro-flow--nowrap');
+    const a = screen.getByRole('img', { name: 'A' });
+    expect(a.closest('li')).toHaveAttribute('data-state', 'Standard');
+    expect(a).toHaveClass('sk-status--neutral');
+    expect(a.querySelector('.sk-micro-flow__dot')).not.toBeNull();
+    expect(container.querySelectorAll('.sk-micro-flow__separator')).toHaveLength(1);
+    expect(container.querySelector('.sk-micro-flow__intermediary')).toBeNull();
+  });
+
+  it('AL-05 ProcessFlow: foldedCorners / showLabels false, scrollable / wheelZoomable true; ariaProperties sets label, role, labelledBy, describedBy, hasPopup', () => {
+    const ref = createRef<ProcessFlow>();
+    const { container, rerender } = view(<ProcessFlow ref={ref} lanes={lanes} nodes={nodes} />);
+    const root = container.querySelector('.sk-process-flow') as HTMLElement;
+    expect(root).not.toHaveClass('sk-process-flow--static');
+    expect(node(container, 'pr1')).not.toHaveClass('sk-process-flow__node--folded');
+    expect(container.querySelector('.sk-process-flow__label')).toBeNull();
+    const before = ref.current!.getZoomLevel();
+    fireEvent.wheel(root, { ctrlKey: true, deltaY: -1 });
+    expect(ref.current!.getZoomLevel()).not.toBe(before);
+    expect(root).toHaveAttribute('role', 'group');
+    rerender(<MantineProvider env="test"><ProcessFlow lanes={lanes} nodes={nodes} ariaProperties={{ label: 'Document flow', role: 'region', describedBy: 'hint', hasPopup: 'dialog' }} /></MantineProvider>);
+    expect(screen.getByRole('region', { name: 'Document flow' })).toHaveAttribute('aria-describedby', 'hint');
+    expect(root).toHaveAttribute('aria-haspopup', 'dialog');
+    rerender(<MantineProvider env="test"><ProcessFlow lanes={lanes} nodes={nodes} ariaProperties={{ labelledBy: 'title' }} /></MantineProvider>);
+    expect(root).toHaveAttribute('aria-labelledby', 'title');
+    expect(root).not.toHaveAttribute('aria-label');
+  });
+
+  it('AL-05 Timeline: width 100%, alignment Right, axisOrientation Vertical, growingThreshold 5, header bar with search, sort and filter; TimelineItem: useIconTooltip true, userNameClickable false', () => {
+    const { container } = view(<Timeline>{items()}</Timeline>);
+    const root = container.querySelector('.sk-timeline') as HTMLElement;
+    expect(root.style.inlineSize).toBe('100%');
+    expect(root).toHaveClass('sk-timeline--vertical', 'sk-timeline--align-right');
+    expect(root).not.toHaveClass('sk-timeline--double');
+    expect(titles()).toHaveLength(5);
+    expect(titles()[0]).toBe('Order closed');
+    expect(screen.getByRole('searchbox', { name: 'Search' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Sort by date' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Filter' })).toBeInTheDocument();
+    expect(container.querySelector('.sk-timeline__icon')).toHaveAttribute('title', 'Order closed');
+    expect(screen.queryByRole('button', { name: 'Ben' })).toBeNull();
+    expect(container.querySelector('.sk-timeline__footer')).toBeNull();
+  });
+
+  it('AL-05 TimelineItem replyList: the replies show above the reply box when the replies link or the reply link is pressed', () => {
+    const onReplyListOpen = vi.fn();
+    view(
+      <Timeline enableSocial showHeaderBar={false}>
+        <TimelineItem key="a" title="Order sent" replyCount={1} onReplyListOpen={onReplyListOpen} replyList={<ul><li>Thanks, received</li></ul>} />
+      </Timeline>,
+    );
+    expect(screen.queryByText('Thanks, received')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: '1 reply' }));
+    expect(onReplyListOpen).toHaveBeenCalledTimes(1);
+    expect(screen.getByText('Thanks, received')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: '1 reply' }));
+    expect(screen.queryByText('Thanks, received')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Reply' }));
+    expect(onReplyListOpen).toHaveBeenCalledTimes(2);
+    expect(screen.getByText('Thanks, received')).toBeInTheDocument();
+  });
+
+  it('AL-05 UploadSetwithTable: httpRequestMethod Post, multiple / directory / uploadButtonInvisible false, uploadEnabled true; UploaderTableItem: httpRequestMethod Post, useMultipart false', async () => {
+    const { container, unmount } = view(<UploadSetwithTable uploadUrl="/u" />);
+    const input = container.querySelector('input[type="file"]')!;
+    expect(input).not.toHaveAttribute('multiple');
+    expect(input).not.toHaveAttribute('webkitdirectory');
+    expect(screen.getByRole('button', { name: 'Upload' })).toBeEnabled();
+    choose(container, file('a.pdf'));
+    await waitFor(() => expect(MockXHR.all).toHaveLength(1));
+    expect(MockXHR.all[0]!.method).toBe('POST');
+    unmount();
+    const v = view(<UploadSetwithTable uploader={<UploaderTableItem uploadUrl="/x" />} />);
+    choose(v.container, file('b.pdf'));
+    await waitFor(() => expect(MockXHR.all).toHaveLength(2));
+    expect([MockXHR.all[1]!.method, MockXHR.all[1]!.url]).toEqual(['POST', '/x']);
+    expect(MockXHR.all[1]!.body).toBeInstanceOf(File);
+  });
+
+  it('AL-06 Timeline: select / itemFiltering / filterSelectionChange objects carry the UI5 parameter names; TimelineItem replyPost / customActionClicked / userNameClicked too', () => {
+    const onSelect = vi.fn();
+    const onItemFiltering = vi.fn();
+    view(<Timeline growingThreshold={0} onSelect={onSelect} onItemFiltering={onItemFiltering}>{items()}</Timeline>);
+    fireEvent.change(screen.getByRole('searchbox', { name: 'Search' }), { target: { value: 'closed' } });
+    expect(Object.keys(onItemFiltering.mock.calls[0][0]).sort()).toEqual(['dataKeys', 'defaultPrevented', 'item', 'preventDefault', 'reasons', 'searchTerm', 'timeKeys']);
+    fireEvent.click(screen.getByRole('button', { name: /Order closed/ }));
+    expect(Object.keys(onSelect.mock.calls[0][0]).sort()).toEqual(['selectedItem', 'userAction']);
+  });
+
+  it('AL-06 UploadSetwithTable: onOnActivated({ oPlugin }) on mount, onOnDeactivated({ control }) on unmount; uploadCompleted gives responseXML as text', async () => {
+    const onOnActivated = vi.fn();
+    const onOnDeactivated = vi.fn();
+    const onUploadCompleted = vi.fn();
+    const { container, unmount } = view(<UploadSetwithTable uploadUrl="/u" onOnActivated={onOnActivated} onOnDeactivated={onOnDeactivated} onUploadCompleted={onUploadCompleted} />);
+    expect(onOnActivated).toHaveBeenCalledTimes(1);
+    expect(onOnActivated.mock.calls[0][0].oPlugin).toHaveProperty('fileSelectionHandler');
+    choose(container, file('a.xml', 'application/xml'));
+    await waitFor(() => expect(MockXHR.all).toHaveLength(1));
+    const xhr = MockXHR.all[0]! as unknown as { responseXML: Document | null };
+    xhr.responseXML = new DOMParser().parseFromString('<id>42</id>', 'application/xml');
+    act(() => MockXHR.all[0]!.respond(201));
+    await waitFor(() => expect(onUploadCompleted).toHaveBeenCalled());
+    expect(onUploadCompleted.mock.calls[0][0].responseXML).toBe('42');
+    const root = container.querySelector('.sk-upload-table');
+    unmount();
+    expect(onOnDeactivated).toHaveBeenCalledWith({ control: root });
+  });
+
+  it('AL-06 UploaderTableItem: uploadStarted / uploadProgressed / uploadCompleted ({ item, responseXHR }) / uploadTerminated', async () => {
+    const ev = { onUploadStarted: vi.fn(), onUploadProgressed: vi.fn(), onUploadCompleted: vi.fn(), onUploadTerminated: vi.fn() };
+    const { container } = view(<UploadSetwithTable multiple uploader={<UploaderTableItem uploadUrl="/u" {...ev} />} />);
+    choose(container, file('a.pdf'), file('b.pdf'));
+    await waitFor(() => expect(MockXHR.all).toHaveLength(2));
+    expect(ev.onUploadStarted.mock.calls.map((c) => c[0].item.fileName)).toEqual(['a.pdf', 'b.pdf']);
+    MockXHR.all[0]!.progress(3, 10);
+    expect(ev.onUploadProgressed).toHaveBeenCalledWith(expect.objectContaining({ loaded: 3, total: 10, item: expect.objectContaining({ fileName: 'a.pdf' }) }));
+    act(() => MockXHR.all[0]!.respond(200, 'ok'));
+    expect(ev.onUploadCompleted.mock.calls[0][0].responseXHR).toMatchObject({ status: 200, readyState: 4, responseText: 'ok', headers: expect.stringContaining('X-Doc') });
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel upload' }));
+    await waitFor(() => expect(ev.onUploadTerminated).toHaveBeenCalledWith({ item: expect.objectContaining({ fileName: 'b.pdf' }) }));
+  });
+
+  it('AL-07 UploaderTableItem ref: uploadItem, terminateItem, download; UploadSetwithTable.registerUploaderEvents follows a standalone uploader', async () => {
+    const ref = createRef<UploaderTableItem>();
+    const table = createRef<UploadSetwithTable>();
+    const completed = vi.fn();
+    const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
+    view(<><UploaderTableItem ref={ref} uploadUrl="/own" downloadUrl="/dl" onUploadCompleted={completed} /><UploadSetwithTable ref={table} onUploadCompleted={completed} /></>);
+    const item = { id: 'x', fileName: 'x.pdf', file: file('x.pdf'), download: () => {}, isRestricted: () => false, terminateUpload: () => {} };
+    act(() => ref.current!.uploadItem(item, [{ name: 'slug', value: 'x' }]));
+    expect([MockXHR.all[0]!.url, MockXHR.all[0]!.headers.slug]).toEqual(['/own', 'x']);
+    act(() => MockXHR.all[0]!.respond(200));
+    expect(completed).toHaveBeenCalledTimes(1);
+    act(() => table.current!.registerUploaderEvents(ref.current!));
+    act(() => ref.current!.uploadItem({ ...item, id: 'y' }));
+    act(() => MockXHR.all[1]!.respond(200));
+    // the table follows the uploader; it fires uploadCompleted only for its own rows
+    expect(completed).toHaveBeenCalledTimes(2);
+    const terminated = vi.fn();
+    view(<UploaderTableItem ref={ref} uploadUrl="/own" onUploadTerminated={terminated} />);
+    act(() => ref.current!.uploadItem({ ...item, id: 'z' }));
+    act(() => ref.current!.terminateItem({ ...item, id: 'z' }));
+    expect(terminated).toHaveBeenCalledWith({ item: expect.objectContaining({ id: 'z' }) });
+    expect(ref.current!.download({ fileName: 'n.pdf' })).toBe(false);
+    expect(ref.current!.download({ fileName: 'x.pdf', url: '/files/x.pdf' })).toBe(true);
+    expect(click).toHaveBeenCalled();
+    click.mockRestore();
+  });
+
+  it('AL-07 UploadSetwithTable statics: findOn, getFileSizeWithUnits, getIconForFileType', () => {
+    expect(UploadSetwithTable.getFileSizeWithUnits(254_000)).toBe('248.05 KB');
+    expect(UploadSetwithTable.getFileSizeWithUnits(2_400_000)).toBe('2.29 MB');
+    expect(UploadSetwithTable.getFileSizeWithUnits(2 * 1024 ** 3)).toBe('2.00 GB');
+    const { container: icons } = render(<>{UploadSetwithTable.getIconForFileType('image/png', 'a.png')}{UploadSetwithTable.getIconForFileType('', 'b.xlsx')}</>);
+    expect(icons.querySelectorAll('svg')).toHaveLength(2);
+    const { container } = view(<div data-testid="host"><UploadSetwithTable /></div>);
+    const plugin = UploadSetwithTable.findOn(screen.getByTestId('host'));
+    expect(plugin).toHaveProperty('fileSelectionHandler');
+    expect(UploadSetwithTable.findOn(container.querySelector('.sk-upload-table__toolbar'))).toBe(plugin);
+    expect(UploadSetwithTable.findOn(document.createElement('div'))).toBeUndefined();
   });
 });

@@ -160,6 +160,7 @@
 .sk-timeline__more-text { margin-inline-start: var(--sk-space-2); }
 .sk-timeline__embedded { margin-block-start: var(--sk-space-2); }
 .sk-timeline__footer { display: flex; flex-wrap: wrap; gap: var(--sk-space-4); margin-block-start: var(--sk-space-2); font-size: var(--sk-font-size-2); }
+.sk-timeline__reply-list { margin-block-start: var(--sk-space-2); }
 .sk-timeline__reply { display: flex; flex-direction: column; align-items: flex-end; gap: var(--sk-space-2); margin-block-start: var(--sk-space-2); }
 .sk-timeline__reply > :first-child { align-self: stretch; }
 .sk-timeline__more { align-self: center; }

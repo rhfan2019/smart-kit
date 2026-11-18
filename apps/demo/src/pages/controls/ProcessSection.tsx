@@ -102,8 +102,8 @@ export function ProcessSection() {
           <Text size="xs" c="dimmed">{zoom && `Zoom level ${zoom}`} {event}</Text>
         </Group>
         <ProcessFlow ref={flow} lanes={lanes} nodes={nodes} showLabels
-          onNodePress={(n) => setEvent(`nodePress: ${n.title}`)} onHeaderPress={(l) => setEvent(`headerPress: ${l.text}`)}
-          onLabelPress={(l) => setEvent(`labelPress: ${l.text}`)} />
+          onNodePress={(e) => setEvent(`nodePress: ${e.oEvent.title}`)} onHeaderPress={(e) => setEvent(`headerPress: ${e.oEvent.text}`)}
+          onLabelPress={(e) => setEvent(`labelPress: ${e.oEvent.selectedLabel.text}`)} />
       </Box>
 
       <SimpleGrid cols={{ base: 1, md: 2 }} spacing="lg">

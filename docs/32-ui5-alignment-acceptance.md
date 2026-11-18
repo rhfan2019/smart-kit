@@ -61,3 +61,12 @@
 | AL-20 | 0 | U | `tests/unit/check-ui5-api.test.ts`（故意改错属性名、默认值、事件参数） |
 | AL-21 | 0 | F | `tests/e2e-fe/*.spec.ts`（三个场景；故意让 smart-kit 少一列） |
 | AL-22 | 0 | U | `tests/unit/packaging.test.ts`（git 不跟踪 SAP 文件；包的 `files` 不含缓存） |
+| AL-03 | 1 | S | `check:ui5` 的 `enum-value` / `extra-enum-value` / `enum-type`：`ui/core/library`、`m/library`、`suite/ui/commons/library` 和有自己模块的枚举 |
+| AL-04 | 1 | S | `check:ui5`：阶段 1 的模块（`m/`、`f/`、`ui/`、`suite/`、`base/`）没有未登记的 `property` / `aggregation` / `association` |
+| AL-05 | 1 | S、U | `check:ui5` 的 `default-value`；`packages/react/test/controls-*.test.tsx`、`cards.test.tsx` 里 `AL-05` 开头的测试 |
+| AL-06 | 1 | S、U | `check:ui5` 的 `event` / `event-param` / `event-preventDefault`；`AL-06` 开头的测试 |
+| AL-07 | 1 | S、U | `check:ui5` 的 `method` / `static-method`；`AL-07` 开头的测试 |
+| AL-08 | 1 | S、D | 偏差表 `not-implemented` 752 → 441、`fe-behavior` 32 → 32；每条都有理由和计划阶段（核对：Claude，2026-11-17） |
+| AL-09 | 1 | S | `check:ui5` 的 `settings-type` / `instance-type` / `event-type` |
+| AL-30 | 1 | U、Z | `packages/react/test/api.test.ts`（`/controls`、`/messages`、`/cards` 不存在）；`verify:pack` |
+

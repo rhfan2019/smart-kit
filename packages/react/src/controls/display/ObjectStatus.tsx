@@ -6,22 +6,22 @@ import type { EmptyIndicatorMode, IndicationColor, ValueState } from '../types';
 import { cx, EmptyIndicator, isEmpty, stateModifier, type ReactiveAreaMode } from './shared';
 import { TEXTS } from './texts';
 
-export interface $ObjectStatusSettings extends Omit<HTMLAttributes<HTMLElement>, 'title'> {
+export interface $ObjectStatusSettings extends Omit<HTMLAttributes<HTMLElement>, 'title' | 'children'> {
   /** Label shown before the text as "title:". */
   title?: string;
   /** Status text. */
   text?: string;
-  /** Text and icon are clickable (default false); fires onPress. */
+  /** Text and icon are clickable; fires onPress. @defaultValue false */
   active?: boolean;
-  /** Overlay enlarges the clickable area of an active status (default Inline). */
+  /** Overlay enlarges the clickable area of an active status. @defaultValue 'Inline' */
   reactiveAreaMode?: ReactiveAreaMode;
-  /** Colour: a ValueState or an IndicationColor (default None). */
+  /** Colour: a ValueState or an IndicationColor. @defaultValue 'None' */
   state?: ValueState | IndicationColor;
-  /** Filled background in the state colour (default false). */
+  /** Filled background in the state colour. @defaultValue false */
   inverted?: boolean;
   /** Icon before the text (a React node, e.g. a lucide icon). */
   icon?: ReactNode;
-  /** Shows "–" when text is empty (default Off). */
+  /** Shows "–" when text is empty. @defaultValue 'Off' */
   emptyIndicatorMode?: EmptyIndicatorMode;
   /** Text read by screen readers for the state, instead of the default ("Error", "Warning", …). */
   stateAnnouncementText?: string;

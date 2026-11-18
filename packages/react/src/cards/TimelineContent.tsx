@@ -12,9 +12,19 @@ import { relativeDateTime } from './format';
 import { itemKeyDown } from './ListContent';
 import { useCardList, type CardDataProps } from './useCardList';
 
+/** Property paths of the timeline items, named as the manifest's `content.item` (sap.card Timeline). */
+export interface TimelineItemPaths {
+  /** Title; default Communication.Event/summary. */
+  title?: string;
+  /** Second line; default Communication.Event/description (else location). */
+  description?: string;
+  /** Time of the item; default Communication.Event/dtstart. */
+  dateTime?: string;
+}
+
 export interface $TimelineContentSettings extends CardDataProps {
-  /** Property paths of the items; default Communication.Event. */
-  item?: Pick<EventItemPaths, 'startDate' | 'title' | 'text'>;
+  /** Property paths of the items (manifest `item`); default Communication.Event. */
+  item?: TimelineItemPaths;
   /** Icon of every item; default a calendar icon. */
   icon?: ReactNode;
   /** Oldest item first instead of newest first. */
@@ -34,7 +44,7 @@ export function CalendarIcon() {
 
 export function TimelineContent(p: $TimelineContentSettings) {
   const meta = useMetaModel(p.entitySet, { service: p.service });
-  const paths = eventPaths(meta.ui, p.item);
+  const paths = eventPaths(meta.ui, p.item && { startDate: p.item.dateTime, title: p.item.title, text: p.item.description });
   return <TimelineList {...p} paths={paths} />;
 }
 

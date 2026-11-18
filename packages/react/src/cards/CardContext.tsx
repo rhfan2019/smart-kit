@@ -3,6 +3,7 @@
  * counter "5 of 40", CD-03) and where the header navigates by default (the parent app, CD-05).
  */
 import type { NavigationAdapter } from '@rhfan2019/smart-kit-core';
+import type { TitleLevel } from '../controls/types';
 import { createContext, useContext, useEffect } from 'react';
 
 export interface CardCounter {
@@ -28,6 +29,8 @@ export interface CardContextValue {
   setHeaderDefaults(d: CardHeaderDefaults | undefined): void;
   /** Id of the header title (aria-labelledby of the card). */
   titleId: string;
+  /** Heading level of the header title (the card's `headingLevel`). */
+  headingLevel?: TitleLevel;
 }
 
 export const CardContext = createContext<CardContextValue | null>(null);

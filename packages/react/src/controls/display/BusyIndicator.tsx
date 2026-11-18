@@ -8,22 +8,22 @@ import { TEXTS } from './texts';
 export interface BusyCustomIconProps {
   /** Icon rotated instead of the dots (a React node). */
   customIcon?: ReactNode;
-  /** Milliseconds per rotation of the custom icon (default 1000). */
+  /** Milliseconds per rotation of the custom icon. @defaultValue 1000 */
   customIconRotationSpeed?: number;
-  /** Width of the custom icon (CSS length; default 44px). */
+  /** Width of the custom icon (CSS length). @defaultValue '44px' */
   customIconWidth?: string;
-  /** Height of the custom icon (CSS length; default 44px). */
+  /** Height of the custom icon (CSS length). @defaultValue '44px' */
   customIconHeight?: string;
 }
 
-export interface $BusyIndicatorSettings extends BusyCustomIconProps, HTMLAttributes<HTMLDivElement> {
+export interface $BusyIndicatorSettings extends BusyCustomIconProps, Omit<HTMLAttributes<HTMLDivElement>, 'children'> {
   /** Text below the indicator. */
   text?: string;
-  /** Size of the dots (CSS length; default 1rem). */
+  /** Size of the dots (CSS length). @defaultValue '1rem' */
   size?: string;
 }
 
-export function BusyIndicator({ text, size, customIcon, customIconRotationSpeed = 1000, customIconWidth, customIconHeight, className, style, ...rest }: $BusyIndicatorSettings) {
+export function BusyIndicator({ text, size = '1rem', customIcon, customIconRotationSpeed = 1000, customIconWidth = '44px', customIconHeight = '44px', className, style, ...rest }: $BusyIndicatorSettings) { // ui5-default
   const t = useControlText(TEXTS);
   const css = {
     ...(size ? { '--sk-busy-size': size } : {}),

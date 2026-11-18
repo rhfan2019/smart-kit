@@ -1,6 +1,6 @@
 /**
  * IconTabBar, IconTabFilter and IconTabSeparator (sap.m, docs/26 3.9): tabs with icons and counts, given as JSX
- * children (the UI5 `key` is the React key). Tabs that do not fit go into an overflow menu ("More"); a filter with
+ * elements in `items` or as children (the UI5 `key` is the React key). Tabs that do not fit go into an overflow menu ("More"); a filter with
  * child filters opens them in a menu; re-pressing the selected tab collapses the content when `expandable`.
  */
 import { Menu } from '@mantine/core';
@@ -38,28 +38,36 @@ export const BackgroundDesign = { Solid: 'Solid', Translucent: 'Translucent', Tr
 
 export interface $IconTabFilterSettings {
   text?: string;
-  /** (true) */
+  /** @defaultValue true */
   enabled?: boolean;
-  /** ('') */
   count?: string;
-  /** (false) The "all" tab: the count large, the text under it, no icon. */
+  /**
+   * The "all" tab: the count large, the text under it, no icon.
+   * @defaultValue false
+   */
   showAll?: boolean;
   icon?: ReactNode;
-  /** ('Default') */
+  /** @defaultValue 'Default' */
   iconColor?: IconColor;
-  /** (true) */
+  /** @defaultValue true */
   visible?: boolean;
-  /** ('Vertical') */
+  /** @defaultValue 'Vertical' */
   design?: IconTabFilterDesign;
-  /** ('Auto') Auto: a filter with child filters and no content opens its menu; Select: it is selected; SelectLeavesOnly: only leaves are selected. */
+  /**
+   * Auto: a filter with child filters and no content opens its menu; Select: it is selected; SelectLeavesOnly: only
+   * leaves are selected.
+   * @defaultValue 'Auto'
+   */
   interactionMode?: IconTabFilterInteractionMode;
-  /** The content (shown when the filter is selected) and child IconTabFilter / IconTabSeparator elements (UI5 `items`). */
+  /** Child IconTabFilter / IconTabSeparator elements (UI5 `items`); they may also be given among the children. */
+  items?: ReactNode;
+  /** The content shown when the filter is selected (UI5 `content`, the default aggregation). */
   children?: ReactNode;
 }
 
 export interface $IconTabSeparatorSettings {
   icon?: ReactNode;
-  /** (true) */
+  /** @defaultValue true */
   visible?: boolean;
 }
 
@@ -69,7 +77,7 @@ export function IconTabFilter(_p: $IconTabFilterSettings): null { return null; }
 export function IconTabSeparator(_p: $IconTabSeparatorSettings): null { return null; }
 
 /** A filter as passed to `onSelect`: its props, its key and the keys of its child filters. */
-export interface IconTabFilterItem extends Omit<$IconTabFilterSettings, 'children'> {
+export interface IconTabFilterItem extends Omit<$IconTabFilterSettings, 'children' | 'items'> {
   key: string;
   /** Child filters (UI5 `items`). */
   items: IconTabItem[];
@@ -82,39 +90,80 @@ export type IconTabItem = ({ kind: 'filter' } & IconTabFilterItem) | ({ kind: 's
 
 export interface $IconTabBarSettings {
   /** IconTabFilter and IconTabSeparator elements (UI5 `items`). */
+  items?: ReactNode;
+  /** More IconTabFilter and IconTabSeparator elements, after `items` (the JSX form of `items`). */
   children?: ReactNode;
   /** Content shown for filters that have none of their own (UI5 `content`). */
   content?: ReactNode;
-  /** (true) Pressing the selected tab collapses and expands the content. */
+  /**
+   * Pressing the selected tab collapses and expands the content.
+   * @defaultValue true
+   */
   expandable?: boolean;
-  /** (true) */
+  /** @defaultValue true */
   expanded?: boolean;
   /** Key of the selected filter; without it the first filter. The bar keeps the user's choice until this prop changes. */
   selectedKey?: string;
-  /** (false) */
+  /** @defaultValue false */
   upperCase?: boolean;
-  /** (false) The bar fills the parent's height and the content scrolls. */
+  /**
+   * The bar fills the parent's height and the content scrolls.
+   * @defaultValue false
+   */
   stretchContentHeight?: boolean;
-  /** (true) */
+  /** @defaultValue true */
   applyContentPadding?: boolean;
-  /** ('Solid') Background of the content. */
+  /**
+   * Background of the content.
+   * @defaultValue 'Solid'
+   */
   backgroundDesign?: BackgroundDesign;
-  /** ('Standard') Inline: text and count on one line. */
+  /**
+   * Inline: text and count on one line.
+   * @defaultValue 'Standard'
+   */
   headerMode?: IconTabHeaderMode;
-  /** ('Solid') */
+  /** @defaultValue 'Solid' */
   headerBackgroundDesign?: BackgroundDesign;
-  /** (false) Tabs can be moved by drag and drop and with Ctrl + arrow keys. */
+  /**
+   * Tabs can be moved by drag and drop and with Ctrl + arrow keys.
+   * @defaultValue false
+   */
   enableTabReordering?: boolean;
-  /** (0) Kept for UI5 compatibility: drag and drop reorders on the top level only. */
+  /**
+   * Kept for UI5 compatibility: drag and drop reorders on the top level only.
+   * @defaultValue 0
+   */
   maxNestingLevel?: number;
-  /** ('Cozy') */
+  /** @defaultValue 'Cozy' */
   tabDensityMode?: IconTabDensityMode;
   /** Accessible texts of the header (UI5 `ariaTexts`). */
   ariaTexts?: { headerLabel?: string; headerDescription?: string };
-  /** ('End') Where the overflow buttons go when the tabs do not fit. */
+  /**
+   * Where the overflow buttons go when the tabs do not fit.
+   * @defaultValue 'End'
+   */
   tabsOverflowMode?: TabsOverflowMode;
-  onSelect?(e: { item: IconTabFilterItem; key: string; previousKey: string | undefined; selectedItem: IconTabFilterItem; selectedKey: string }): void;
-  onExpand?(e: { expand: boolean; collapse: boolean }): void;
+  onSelect?(e: IconTabBar$SelectEvent): void;
+  onExpand?(e: IconTabBar$ExpandEvent): void;
+}
+
+/** Parameters of the `select` event. */
+export interface IconTabBar$SelectEvent {
+  /** The selected filter. */
+  item: IconTabFilterItem;
+  /** Its key. */
+  key: string;
+  /** The key of the filter selected before. */
+  previousKey: string | undefined;
+}
+
+/** Parameters of the `expand` event. */
+export interface IconTabBar$ExpandEvent {
+  /** Whether the content was expanded. */
+  expand: boolean;
+  /** Whether the content was collapsed. */
+  collapse: boolean;
 }
 
 /** Reads the filter tree from JSX (fragments are flattened; keys are the React keys). */
@@ -128,10 +177,10 @@ function itemsOf(children: ReactNode, rootKey?: string, path = ''): IconTabItem[
     n += 1;
     if (c.type === IconTabSeparator) out.push({ kind: 'separator', key, ...(c.props as $IconTabSeparatorSettings) });
     if (c.type === IconTabFilter) {
-      const { children: inner, ...props } = c.props as $IconTabFilterSettings;
+      const { children: inner, items: sub, ...props } = c.props as $IconTabFilterSettings;
       const content: ReactNode[] = [];
       Children.forEach(inner, (x) => { if (!(isValidElement(x) && (x.type === IconTabFilter || x.type === IconTabSeparator))) content.push(x); });
-      out.push({ kind: 'filter', ...props, key, rootKey: rootKey ?? key, content, items: itemsOf(inner, rootKey ?? key, `${key}.`) });
+      out.push({ kind: 'filter', ...props, key, rootKey: rootKey ?? key, content, items: itemsOf([sub, inner], rootKey ?? key, `${key}.`) });
     }
   });
   walk(children);
@@ -155,7 +204,7 @@ const TONE: Record<IconColor, string> = {
 export function IconTabBar(p: $IconTabBarSettings) {
   const t = useControlText(TEXTS);
   const uid = useId();
-  const all = itemsOf(p.children);
+  const all = itemsOf([p.items, p.children]);
   const filters = filtersIn(all);
   const first = filters.find((f) => f.enabled !== false && selectable(f));
   const [selected, setSelected] = useState<string | undefined>(p.selectedKey);
@@ -231,7 +280,7 @@ export function IconTabBar(p: $IconTabBarSettings) {
     }
     setSelected(f.key);
     if (!expanded) { setExpanded(true); p.onExpand?.({ expand: true, collapse: false }); }
-    p.onSelect?.({ item: f, key: f.key, previousKey, selectedItem: f, selectedKey: f.key });
+    p.onSelect?.({ item: f, key: f.key, previousKey });
   };
 
   // Keyboard: arrows move the focus, Ctrl + arrows move the tab (reordering), Home / End.

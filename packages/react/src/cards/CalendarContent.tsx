@@ -60,10 +60,29 @@ export interface $CalendarContentSettings {
   onMorePress?(date: string): void;
   /** Called when the user selects a day. */
   onSelect?(date: string): void;
-  /** First day of the week, 0 = Sunday … 6 = Saturday; default from the locale. */
-  firstDayOfWeek?: number;
+  /**
+   * First day of the week and week numbering (manifest `calendarWeekNumbering`, sap.ui.core.date.CalendarWeekNumbering):
+   * "Default" (from the locale), "ISO_8601" (Monday, ISO weeks), "MiddleEastern" (Saturday), "WesternTraditional" (Sunday).
+   */
+  calendarWeekNumbering?: CalendarWeekNumbering;
+  /** Times of the appointments in the 12-hour format (manifest `use12HourFormat`); default the 24-hour format. */
+  use12HourFormat?: boolean;
   /** Reference time for "today" (default now). */
   now?: Date;
+}
+
+/** sap.ui.core.date.CalendarWeekNumbering */
+export type CalendarWeekNumbering = 'Default' | 'ISO_8601' | 'MiddleEastern' | 'WesternTraditional';
+/** First day (0 = Sunday) and minimal days of the first week of a numbering (sap.ui.core.date.CalendarWeekNumbering). */
+const NUMBERING: Record<Exclude<CalendarWeekNumbering, 'Default'>, { firstDay: number; minDays: number }> = {
+  ISO_8601: { firstDay: 1, minDays: 4 }, MiddleEastern: { firstDay: 6, minDays: 1 }, WesternTraditional: { firstDay: 0, minDays: 1 },
+};
+
+/** First day of the week and minimal days of week 1 of a numbering; "Default" takes the first day from the locale. */
+export function weekRules(numbering: CalendarWeekNumbering | undefined, locale: string): { firstDay: number; minDays: number } {
+  if (numbering && numbering !== 'Default') return NUMBERING[numbering];
+  const firstDay = firstDayOf(locale);
+  return { firstDay, minDays: firstDay === 0 ? 1 : 4 };
 }
 
 // ---------------------------------------------------------------- dates as "YYYY-MM-DD" (no time zone arithmetic)
@@ -92,17 +111,15 @@ export function firstDayOf(locale: string): number {
   return locale === 'en-US' ? 0 : 1;
 }
 
-/** Week number of a row: US numbering for Sunday-first weeks, ISO 8601 otherwise (as SAPUI5 per locale). */
-export function weekNumber(rowStart: string, firstDay: number): number {
-  if (firstDay === 0) {
-    const { y } = parts(addDays(rowStart, 6));
-    const jan1 = `${y}-01-01`;
-    const diff = (Date.parse(`${addDays(rowStart, 6)}T00:00:00Z`) - Date.parse(`${jan1}T00:00:00Z`)) / 86400000;
-    return Math.floor((diff + weekday(jan1)) / 7) + 1;
-  }
-  const thursday = addDays(rowStart, (4 - weekday(rowStart) + 7) % 7);
-  const { y } = parts(thursday);
-  return Math.floor((Date.parse(`${thursday}T00:00:00Z`) - Date.parse(`${y}-01-01T00:00:00Z`)) / 86400000 / 7) + 1;
+/**
+ * Week number of a row that starts on `firstDay`: week 1 is the first week with at least `minDays` days of the year
+ * (default: US numbering for Sunday-first weeks, ISO 8601 otherwise, as SAPUI5 per locale).
+ */
+export function weekNumber(rowStart: string, firstDay: number, minDays = firstDay === 0 ? 1 : 4): number {
+  const { y } = parts(addDays(rowStart, 7 - minDays));
+  const anchor = `${y}-01-${pad(minDays)}`;
+  const week1 = addDays(anchor, -((weekday(anchor) - firstDay + 7) % 7));
+  return Math.round((Date.parse(`${rowStart}T00:00:00Z`) - Date.parse(`${week1}T00:00:00Z`)) / 86400000 / 7) + 1;
 }
 
 /** The 6 × 7 days of a month view starting on `firstDay`. */
@@ -124,7 +141,7 @@ export function CalendarContent(p: $CalendarContentSettings) {
   const [selected, setSelected] = useState(p.date ?? today);
   const [view, setView] = useState(() => ({ y: parts(p.date ?? today).y, m: parts(p.date ?? today).m }));
   const [level, setLevel] = useState<Level>('day');
-  const firstDay = p.firstDayOfWeek ?? firstDayOf(intlLocale);
+  const { firstDay, minDays } = weekRules(p.calendarWeekNumbering, intlLocale);
 
   const paths = eventPaths(meta.ui, p.item);
   const columns = useMemo(() => eventColumns(paths), [paths.startDate, paths.endDate, paths.title, paths.text, paths.type]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -198,6 +215,7 @@ export function CalendarContent(p: $CalendarContentSettings) {
           selected={selected}
           today={today}
           firstDay={firstDay}
+          minDays={minDays}
           select={select}
           specialDates={p.specialDates ?? []}
           specialTypes={specialTypes}
@@ -222,7 +240,7 @@ export function CalendarContent(p: $CalendarContentSettings) {
         ) : (
           <ul className="sk-card__appointments">
             {visible.map((e, i) => (
-              <Appointment key={i} e={e} index={e.type ? types.get(e.type)?.index : undefined} onPress={p.onAppointmentPress} />
+              <Appointment key={i} e={e} index={e.type ? types.get(e.type)?.index : undefined} onPress={p.onAppointmentPress} hour12={p.use12HourFormat === true} />
             ))}
           </ul>
         )}
@@ -237,10 +255,10 @@ export function CalendarContent(p: $CalendarContentSettings) {
   );
 }
 
-function Appointment({ e, index, onPress }: { e: CardEvent; index?: number; onPress?(row: Row): void }) {
+function Appointment({ e, index, onPress, hour12 }: { e: CardEvent; index?: number; onPress?(row: Row): void; hour12: boolean }) {
   const { intlLocale, timeZone } = useSmartKit();
   const t = useText();
-  const time = new Intl.DateTimeFormat(intlLocale, { timeZone, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(e.start);
+  const time = new Intl.DateTimeFormat(intlLocale, { timeZone, hour: '2-digit', minute: '2-digit', hourCycle: hour12 ? 'h12' : 'h23' }).format(e.start);
   const minutes = e.end ? Math.round((e.end.getTime() - e.start.getTime()) / 60000) : undefined;
   const press = onPress ? () => onPress(e.row) : undefined;
   return (
@@ -271,6 +289,7 @@ interface PickerProps {
   selected: string;
   today: string;
   firstDay: number;
+  minDays: number;
   select(d: string): void;
   specialDates: CalendarSpecialDate[];
   specialTypes: Map<string, number>;
@@ -346,7 +365,7 @@ function CalendarPicker(p: PickerProps) {
               const row = p.grid.slice(r * 7, r * 7 + 7);
               return (
                 <tr key={r}>
-                  <th scope="row" className="sk-card__calendar-week">{weekNumber(row[0]!, p.firstDay)}</th>
+                  <th scope="row" className="sk-card__calendar-week">{weekNumber(row[0]!, p.firstDay, p.minDays)}</th>
                   {row.map((d) => {
                     const { m: dm } = parts(d);
                     const wd = weekday(d);

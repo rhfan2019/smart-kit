@@ -7,141 +7,141 @@
 | Category | Count |
 | --- | --- |
 | fe-behavior | 32 |
-| kit-extension | 349 |
-| not-implemented | 752 |
-| react-idiom | 13 |
-| **total** | **1146** |
+| kit-extension | 249 |
+| no-binding | 7 |
+| not-implemented | 441 |
+| react-idiom | 29 |
+| **total** | **758** |
 
 ## not-implemented + fe-behavior by planned stage
 
 | Stage | Count |
 | --- | --- |
-| 1 | 436 |
-| 2 | 298 |
+| 2 | 382 |
 | 3 | 8 |
 | 4 | 13 |
 | 5 | 15 |
-| 6 | 14 |
+| 6 | 55 |
 
 ## Per export
 
 | Module | UI5 | Same | Deviations | Unregistered |
 | --- | --- | --- | --- | --- |
-| base/i18n/date/CalendarWeekNumbering | module:sap/base/i18n/date/CalendarWeekNumbering | 4 | 1 | 0 |
-| f/Card | sap.f.Card | 4 | 12 | 0 |
-| f/DynamicPage | sap.f.DynamicPage | 3 | 37 | 0 |
-| f/FlexibleColumnLayout | sap.f.FlexibleColumnLayout | 1 | 42 | 0 |
-| f/cards/Header | sap.f.cards.Header | 10 | 13 | 0 |
-| f/cards/NumericHeader | sap.f.cards.NumericHeader | 14 | 27 | 0 |
-| f/cards/NumericSideIndicator | sap.f.cards.NumericSideIndicator | 4 | 2 | 0 |
-| m/AvatarShape | sap.m.AvatarShape | 2 | 1 | 0 |
-| m/AvatarSize | sap.m.AvatarSize | 6 | 1 | 0 |
-| m/BusyDialog | sap.m.BusyDialog | 12 | 8 | 0 |
-| m/BusyIndicator | sap.m.BusyIndicator | 6 | 10 | 0 |
-| m/DynamicDateRange | sap.m.DynamicDateRange | 19 | 15 | 0 |
-| m/ExpandableText | sap.m.ExpandableText | 7 | 11 | 0 |
-| m/FeedInput | sap.m.FeedInput | 16 | 13 | 0 |
-| m/FeedListItem | sap.m.FeedListItem | 30 | 18 | 0 |
-| m/GenericTag | sap.m.GenericTag | 4 | 5 | 0 |
-| m/IconTabBar | sap.m.IconTabBar | 17 | 16 | 0 |
-| m/IconTabFilter | sap.m.IconTabFilter | 9 | 11 | 0 |
-| m/IconTabSeparator | sap.m.IconTabSeparator | 2 | 3 | 0 |
-| m/IllustratedMessageSize | sap.m.IllustratedMessageSize | 6 | 1 | 0 |
-| m/IllustratedMessageType | sap.m.IllustratedMessageType | 33 | 1 | 0 |
-| m/IllustratedMessage | sap.m.IllustratedMessage | 10 | 12 | 0 |
-| m/MessageBox | sap.m.MessageBox | 7 | 1 | 0 |
-| m/MessageItem | sap.m.MessageItem | 10 | 8 | 0 |
-| m/MessagePopover | sap.m.MessagePopover | 18 | 8 | 0 |
-| m/MessageStrip | sap.m.MessageStrip | 12 | 7 | 0 |
-| m/MessageToast | sap.m.MessageToast | 1 | 1 | 0 |
-| m/MessageView | sap.m.MessageView | 9 | 6 | 0 |
-| m/ObjectIdentifier | sap.m.ObjectIdentifier | 6 | 9 | 0 |
-| m/ObjectMarker | sap.m.ObjectMarker | 5 | 6 | 0 |
-| m/ObjectNumber | sap.m.ObjectNumber | 13 | 15 | 0 |
-| m/ObjectStatus | sap.m.ObjectStatus | 10 | 12 | 0 |
-| m/OverflowToolbarButton | sap.m.OverflowToolbarButton | 6 | 15 | 0 |
-| m/OverflowToolbar | sap.m.OverflowToolbar | 10 | 11 | 0 |
-| m/SelectDialog | sap.m.SelectDialog | 25 | 13 | 0 |
-| m/TableSelectDialog | sap.m.TableSelectDialog | 25 | 13 | 0 |
-| m/Table | sap.m.Table | 3 | 88 | 0 |
-| m/ToggleButton | sap.m.ToggleButton | 12 | 18 | 0 |
-| m/ToolbarSpacer | sap.m.ToolbarSpacer | 1 | 1 | 0 |
-| m/ViewSettingsDialog | sap.m.ViewSettingsDialog | 21 | 9 | 0 |
-| m/WizardStep | sap.m.WizardStep | 8 | 3 | 0 |
-| m/Wizard | sap.m.Wizard | 18 | 13 | 0 |
-| m/library#BackgroundDesign | sap.m.BackgroundDesign | 3 | 1 | 0 |
-| m/library#BadgeStyle | sap.m.BadgeStyle | 2 | 1 | 0 |
-| m/library#ButtonAccessibleRole | sap.m.ButtonAccessibleRole | 2 | 1 | 0 |
-| m/library#ButtonType | sap.m.ButtonType | 14 | 1 | 0 |
-| m/library#EmptyIndicatorMode | sap.m.EmptyIndicatorMode | 3 | 1 | 0 |
-| m/library#ExpandableTextOverflowMode | sap.m.ExpandableTextOverflowMode | 2 | 1 | 0 |
-| m/library#IconTabDensityMode | sap.m.IconTabDensityMode | 3 | 1 | 0 |
-| m/library#IconTabFilterDesign | sap.m.IconTabFilterDesign | 2 | 1 | 0 |
-| m/library#IconTabFilterInteractionMode | sap.m.IconTabFilterInteractionMode | 3 | 1 | 0 |
-| m/library#IconTabHeaderMode | sap.m.IconTabHeaderMode | 2 | 1 | 0 |
-| m/library#LinkConversion | sap.m.LinkConversion | 3 | 1 | 0 |
-| m/library#ListType | sap.m.ListType | 5 | 1 | 0 |
-| m/library#ObjectMarkerType | sap.m.ObjectMarkerType | 7 | 1 | 0 |
-| m/library#ObjectMarkerVisibility | sap.m.ObjectMarkerVisibility | 3 | 1 | 0 |
-| m/library#ObjectNumberDisplayMode | sap.m.ObjectNumberDisplayMode | 3 | 1 | 0 |
-| m/library#OverflowToolbarPriority | sap.m.OverflowToolbarPriority | 5 | 1 | 0 |
-| m/library#PageBackgroundDesign | sap.m.PageBackgroundDesign | 4 | 1 | 0 |
-| m/library#ReactiveAreaMode | sap.m.ReactiveAreaMode | 2 | 1 | 0 |
-| m/library#SelectDialogInitialFocus | sap.m.SelectDialogInitialFocus | 2 | 1 | 0 |
-| m/library#StandardDynamicDateRangeKeys | sap.m.StandardDynamicDateRangeKeys | 68 | 1 | 0 |
-| m/library#StringFilterOperator | sap.m.StringFilterOperator | 4 | 1 | 0 |
-| m/library#TabsOverflowMode | sap.m.TabsOverflowMode | 2 | 1 | 0 |
-| m/library#TitleAlignment | sap.m.TitleAlignment | 4 | 1 | 0 |
-| m/library#ToolbarDesign | sap.m.ToolbarDesign | 4 | 1 | 0 |
-| m/library#ToolbarStyle | sap.m.ToolbarStyle | 2 | 1 | 0 |
-| m/library#UploadSetwithTableActionPlaceHolder | sap.m.UploadSetwithTableActionPlaceHolder | 2 | 1 | 0 |
-| m/library#UploadState | sap.m.UploadState | 4 | 1 | 0 |
-| m/library#VerticalPlacementType | sap.m.VerticalPlacementType | 3 | 1 | 0 |
-| m/library#WizardRenderMode | sap.m.WizardRenderMode | 2 | 1 | 0 |
-| m/library#WrappingType | sap.m.WrappingType | 2 | 1 | 0 |
+| base/i18n/date/CalendarWeekNumbering | module:sap/base/i18n/date/CalendarWeekNumbering | 4 | 0 | 0 |
+| f/Card | sap.f.Card | 8 | 5 | 0 |
+| f/DynamicPage | sap.f.DynamicPage | 3 | 38 | 0 |
+| f/FlexibleColumnLayout | sap.f.FlexibleColumnLayout | 1 | 46 | 0 |
+| f/cards/Header | sap.f.cards.Header | 18 | 0 | 0 |
+| f/cards/NumericHeader | sap.f.cards.NumericHeader | 29 | 6 | 0 |
+| f/cards/NumericSideIndicator | sap.f.cards.NumericSideIndicator | 4 | 0 | 0 |
+| m/AvatarShape | sap.m.AvatarShape | 2 | 0 | 0 |
+| m/AvatarSize | sap.m.AvatarSize | 6 | 0 | 0 |
+| m/BusyDialog | sap.m.BusyDialog | 12 | 2 | 0 |
+| m/BusyIndicator | sap.m.BusyIndicator | 6 | 4 | 0 |
+| m/DynamicDateRange | sap.m.DynamicDateRange | 19 | 12 | 0 |
+| m/ExpandableText | sap.m.ExpandableText | 7 | 4 | 0 |
+| m/FeedInput | sap.m.FeedInput | 16 | 1 | 0 |
+| m/FeedListItem | sap.m.FeedListItem | 30 | 2 | 0 |
+| m/GenericTag | sap.m.GenericTag | 4 | 6 | 0 |
+| m/IconTabBar | sap.m.IconTabBar | 18 | 0 | 0 |
+| m/IconTabFilter | sap.m.IconTabFilter | 10 | 3 | 0 |
+| m/IconTabSeparator | sap.m.IconTabSeparator | 2 | 1 | 0 |
+| m/IllustratedMessageSize | sap.m.IllustratedMessageSize | 6 | 0 | 0 |
+| m/IllustratedMessageType | sap.m.IllustratedMessageType | 33 | 0 | 0 |
+| m/IllustratedMessage | sap.m.IllustratedMessage | 13 | 1 | 0 |
+| m/MessageBox | sap.m.MessageBox | 7 | 0 | 0 |
+| m/MessageItem | sap.m.MessageItem | 12 | 2 | 0 |
+| m/MessagePopover | sap.m.MessagePopover | 19 | 3 | 0 |
+| m/MessageStrip | sap.m.MessageStrip | 12 | 0 | 0 |
+| m/MessageToast | sap.m.MessageToast | 1 | 0 | 0 |
+| m/MessageView | sap.m.MessageView | 10 | 2 | 0 |
+| m/ObjectIdentifier | sap.m.ObjectIdentifier | 7 | 3 | 0 |
+| m/ObjectMarker | sap.m.ObjectMarker | 5 | 3 | 0 |
+| m/ObjectNumber | sap.m.ObjectNumber | 13 | 4 | 0 |
+| m/ObjectStatus | sap.m.ObjectStatus | 10 | 5 | 0 |
+| m/OverflowToolbarButton | sap.m.OverflowToolbarButton | 11 | 10 | 0 |
+| m/OverflowToolbar | sap.m.OverflowToolbar | 10 | 5 | 0 |
+| m/SelectDialog | sap.m.SelectDialog | 25 | 3 | 0 |
+| m/TableSelectDialog | sap.m.TableSelectDialog | 25 | 3 | 0 |
+| m/Table | sap.m.Table | 3 | 95 | 0 |
+| m/ToggleButton | sap.m.ToggleButton | 12 | 12 | 0 |
+| m/ToolbarSpacer | sap.m.ToolbarSpacer | 1 | 0 | 0 |
+| m/ViewSettingsDialog | sap.m.ViewSettingsDialog | 21 | 6 | 0 |
+| m/WizardStep | sap.m.WizardStep | 8 | 0 | 0 |
+| m/Wizard | sap.m.Wizard | 20 | 2 | 0 |
+| m/library#BackgroundDesign | sap.m.BackgroundDesign | 3 | 0 | 0 |
+| m/library#BadgeStyle | sap.m.BadgeStyle | 2 | 0 | 0 |
+| m/library#ButtonAccessibleRole | sap.m.ButtonAccessibleRole | 2 | 0 | 0 |
+| m/library#ButtonType | sap.m.ButtonType | 14 | 0 | 0 |
+| m/library#EmptyIndicatorMode | sap.m.EmptyIndicatorMode | 3 | 0 | 0 |
+| m/library#ExpandableTextOverflowMode | sap.m.ExpandableTextOverflowMode | 2 | 0 | 0 |
+| m/library#IconTabDensityMode | sap.m.IconTabDensityMode | 3 | 0 | 0 |
+| m/library#IconTabFilterDesign | sap.m.IconTabFilterDesign | 2 | 0 | 0 |
+| m/library#IconTabFilterInteractionMode | sap.m.IconTabFilterInteractionMode | 3 | 0 | 0 |
+| m/library#IconTabHeaderMode | sap.m.IconTabHeaderMode | 2 | 0 | 0 |
+| m/library#LinkConversion | sap.m.LinkConversion | 3 | 0 | 0 |
+| m/library#ListType | sap.m.ListType | 5 | 0 | 0 |
+| m/library#ObjectMarkerType | sap.m.ObjectMarkerType | 7 | 0 | 0 |
+| m/library#ObjectMarkerVisibility | sap.m.ObjectMarkerVisibility | 3 | 0 | 0 |
+| m/library#ObjectNumberDisplayMode | sap.m.ObjectNumberDisplayMode | 3 | 0 | 0 |
+| m/library#OverflowToolbarPriority | sap.m.OverflowToolbarPriority | 5 | 0 | 0 |
+| m/library#PageBackgroundDesign | sap.m.PageBackgroundDesign | 4 | 0 | 0 |
+| m/library#ReactiveAreaMode | sap.m.ReactiveAreaMode | 2 | 0 | 0 |
+| m/library#SelectDialogInitialFocus | sap.m.SelectDialogInitialFocus | 2 | 0 | 0 |
+| m/library#StandardDynamicDateRangeKeys | sap.m.StandardDynamicDateRangeKeys | 68 | 0 | 0 |
+| m/library#StringFilterOperator | sap.m.StringFilterOperator | 4 | 0 | 0 |
+| m/library#TabsOverflowMode | sap.m.TabsOverflowMode | 2 | 0 | 0 |
+| m/library#TitleAlignment | sap.m.TitleAlignment | 4 | 0 | 0 |
+| m/library#ToolbarDesign | sap.m.ToolbarDesign | 4 | 0 | 0 |
+| m/library#ToolbarStyle | sap.m.ToolbarStyle | 2 | 0 | 0 |
+| m/library#UploadSetwithTableActionPlaceHolder | sap.m.UploadSetwithTableActionPlaceHolder | 2 | 0 | 0 |
+| m/library#UploadState | sap.m.UploadState | 4 | 0 | 0 |
+| m/library#VerticalPlacementType | sap.m.VerticalPlacementType | 3 | 0 | 0 |
+| m/library#WizardRenderMode | sap.m.WizardRenderMode | 2 | 0 | 0 |
+| m/library#WrappingType | sap.m.WrappingType | 2 | 0 | 0 |
 | m/p13n/Popup | sap.m.p13n.Popup | 0 | 22 | 0 |
-| m/plugins/UploadSetwithTable | sap.m.plugins.UploadSetwithTable | 32 | 22 | 0 |
-| m/upload/ActionsPlaceholder | sap.m.upload.ActionsPlaceholder | 1 | 1 | 0 |
-| m/upload/UploaderHttpRequestMethod | sap.m.upload.UploaderHttpRequestMethod | 2 | 1 | 0 |
-| m/upload/UploaderTableItem | sap.m.upload.UploaderTableItem | 1 | 13 | 0 |
+| m/plugins/UploadSetwithTable | sap.m.plugins.UploadSetwithTable | 38 | 9 | 0 |
+| m/upload/ActionsPlaceholder | sap.m.upload.ActionsPlaceholder | 1 | 0 | 0 |
+| m/upload/UploaderHttpRequestMethod | sap.m.upload.UploaderHttpRequestMethod | 2 | 0 | 0 |
+| m/upload/UploaderTableItem | sap.m.upload.UploaderTableItem | 12 | 0 | 0 |
 | object#DraftMarker | delete | 0 | 1 | 0 |
 | page#OverflowActions | delete | 0 | 1 | 0 |
-| suite/ui/commons/MicroProcessFlowItem | sap.suite.ui.commons.MicroProcessFlowItem | 9 | 7 | 0 |
-| suite/ui/commons/MicroProcessFlow | sap.suite.ui.commons.MicroProcessFlow | 3 | 3 | 0 |
-| suite/ui/commons/ProcessFlow | sap.suite.ui.commons.ProcessFlow | 15 | 46 | 0 |
-| suite/ui/commons/TimelineItem | sap.suite.ui.commons.TimelineItem | 24 | 7 | 0 |
-| suite/ui/commons/Timeline | sap.suite.ui.commons.Timeline | 37 | 29 | 0 |
-| suite/ui/commons/library#MicroProcessFlowRenderType | sap.suite.ui.commons.MicroProcessFlowRenderType | 4 | 1 | 0 |
-| suite/ui/commons/library#ProcessFlowConnectionLabelState | sap.suite.ui.commons.ProcessFlowConnectionLabelState | 4 | 1 | 0 |
-| suite/ui/commons/library#ProcessFlowNodeState | sap.suite.ui.commons.ProcessFlowNodeState | 6 | 1 | 0 |
-| suite/ui/commons/library#ProcessFlowNodeType | sap.suite.ui.commons.ProcessFlowNodeType | 2 | 1 | 0 |
-| suite/ui/commons/library#ProcessFlowZoomLevel | sap.suite.ui.commons.ProcessFlowZoomLevel | 4 | 1 | 0 |
-| suite/ui/commons/library#TimelineAlignment | sap.suite.ui.commons.TimelineAlignment | 4 | 1 | 0 |
-| suite/ui/commons/library#TimelineAxisOrientation | sap.suite.ui.commons.TimelineAxisOrientation | 2 | 1 | 0 |
-| suite/ui/commons/library#TimelineFilterType | sap.suite.ui.commons.TimelineFilterType | 3 | 1 | 0 |
-| suite/ui/commons/library#TimelineGroupType | sap.suite.ui.commons.TimelineGroupType | 6 | 1 | 0 |
-| ui/core/library#IconColor | sap.ui.core.IconColor | 9 | 1 | 0 |
-| ui/core/library#IndicationColor | sap.ui.core.IndicationColor | 20 | 1 | 0 |
-| ui/core/library#TitleLevel | sap.ui.core.TitleLevel | 7 | 1 | 0 |
-| ui/core/library#ValueState | sap.ui.core.ValueState | 5 | 1 | 0 |
-| ui/core/message/MessageType | module:sap/ui/core/message/MessageType | 5 | 1 | 0 |
-| ui/integration/cards/AnalyticalContent | manifest:sap.card/Analytical | 0 | 2 | 0 |
-| ui/integration/cards/CalendarContent | manifest:sap.card/Calendar | 0 | 2 | 0 |
-| ui/integration/cards/ListContent | manifest:sap.card/List | 0 | 2 | 0 |
-| ui/integration/cards/ObjectContent | manifest:sap.card/Object | 0 | 2 | 0 |
-| ui/integration/cards/TableContent | manifest:sap.card/Table | 0 | 2 | 0 |
-| ui/integration/cards/TimelineContent | manifest:sap.card/Timeline | 0 | 2 | 0 |
-| ui/unified/Currency | sap.ui.unified.Currency | 6 | 6 | 0 |
-| uxap/AnchorBar | sap.uxap.AnchorBar | 1 | 20 | 0 |
-| uxap/ObjectPageLayout | sap.uxap.ObjectPageLayout | 3 | 60 | 0 |
-| v4/fe/macros/Chart | sap.fe.macros.Chart | 0 | 25 | 0 |
-| v4/fe/macros/Field | sap.fe.macros.Field | 3 | 22 | 0 |
-| v4/fe/macros/FilterBar | sap.fe.macros.FilterBar | 0 | 21 | 0 |
+| suite/ui/commons/MicroProcessFlowItem | sap.suite.ui.commons.MicroProcessFlowItem | 9 | 1 | 0 |
+| suite/ui/commons/MicroProcessFlow | sap.suite.ui.commons.MicroProcessFlow | 3 | 1 | 0 |
+| suite/ui/commons/ProcessFlow | sap.suite.ui.commons.ProcessFlow | 21 | 4 | 0 |
+| suite/ui/commons/TimelineItem | sap.suite.ui.commons.TimelineItem | 25 | 1 | 0 |
+| suite/ui/commons/Timeline | sap.suite.ui.commons.Timeline | 38 | 12 | 0 |
+| suite/ui/commons/library#MicroProcessFlowRenderType | sap.suite.ui.commons.MicroProcessFlowRenderType | 4 | 0 | 0 |
+| suite/ui/commons/library#ProcessFlowConnectionLabelState | sap.suite.ui.commons.ProcessFlowConnectionLabelState | 4 | 0 | 0 |
+| suite/ui/commons/library#ProcessFlowNodeState | sap.suite.ui.commons.ProcessFlowNodeState | 6 | 0 | 0 |
+| suite/ui/commons/library#ProcessFlowNodeType | sap.suite.ui.commons.ProcessFlowNodeType | 2 | 0 | 0 |
+| suite/ui/commons/library#ProcessFlowZoomLevel | sap.suite.ui.commons.ProcessFlowZoomLevel | 4 | 0 | 0 |
+| suite/ui/commons/library#TimelineAlignment | sap.suite.ui.commons.TimelineAlignment | 4 | 0 | 0 |
+| suite/ui/commons/library#TimelineAxisOrientation | sap.suite.ui.commons.TimelineAxisOrientation | 2 | 0 | 0 |
+| suite/ui/commons/library#TimelineFilterType | sap.suite.ui.commons.TimelineFilterType | 3 | 0 | 0 |
+| suite/ui/commons/library#TimelineGroupType | sap.suite.ui.commons.TimelineGroupType | 6 | 0 | 0 |
+| ui/core/library#IconColor | sap.ui.core.IconColor | 9 | 0 | 0 |
+| ui/core/library#IndicationColor | sap.ui.core.IndicationColor | 20 | 0 | 0 |
+| ui/core/library#TitleLevel | sap.ui.core.TitleLevel | 7 | 0 | 0 |
+| ui/core/library#ValueState | sap.ui.core.ValueState | 5 | 0 | 0 |
+| ui/core/message/MessageType | module:sap/ui/core/message/MessageType | 5 | 0 | 0 |
+| ui/integration/cards/AnalyticalContent | manifest:sap.card/Analytical | 0 | 0 | 0 |
+| ui/integration/cards/CalendarContent | manifest:sap.card/Calendar | 0 | 0 | 0 |
+| ui/integration/cards/ListContent | manifest:sap.card/List | 0 | 0 | 0 |
+| ui/integration/cards/ObjectContent | manifest:sap.card/Object | 0 | 0 | 0 |
+| ui/integration/cards/TableContent | manifest:sap.card/Table | 0 | 0 | 0 |
+| ui/integration/cards/TimelineContent | manifest:sap.card/Timeline | 0 | 0 | 0 |
+| ui/unified/Currency | sap.ui.unified.Currency | 6 | 3 | 0 |
+| uxap/AnchorBar | sap.uxap.AnchorBar | 1 | 21 | 0 |
+| uxap/ObjectPageLayout | sap.uxap.ObjectPageLayout | 3 | 62 | 0 |
+| v4/fe/macros/Chart | sap.fe.macros.Chart | 0 | 32 | 0 |
+| v4/fe/macros/Field | sap.fe.macros.Field | 3 | 30 | 0 |
+| v4/fe/macros/FilterBar | sap.fe.macros.FilterBar | 0 | 37 | 0 |
 | v4/fe/macros/Form | sap.fe.macros.Form | 0 | 19 | 0 |
-| v4/fe/macros/MessageButton | sap.fe.macros.MessageButton | 0 | 3 | 0 |
+| v4/fe/macros/MessageButton | sap.fe.macros.MessageButton | 0 | 2 | 0 |
 | v4/fe/macros/MicroChart | sap.fe.macros.MicroChart | 2 | 34 | 0 |
 | v4/fe/macros/Share | sap.fe.macros.Share | 0 | 5 | 0 |
-| v4/fe/macros/Table | sap.fe.macros.Table | 2 | 155 | 0 |
+| v4/fe/macros/Table | sap.fe.macros.Table | 2 | 131 | 0 |
 | v4/fe/macros/VariantManagement | sap.fe.macros.VariantManagement | 0 | 12 | 0 |
 | v4/fe/templates/ListReport | manifest:sap.fe.templates.ListReport | 0 | 2 | 0 |
 | v4/fe/templates/ObjectPage | manifest:sap.fe.templates.ObjectPage | 0 | 2 | 0 |
@@ -163,9 +163,9 @@
 | kit/FieldEditor | none | 0 | 1 | 0 |
 | kit/FilterSummary | none | 0 | 1 | 0 |
 | kit/HeaderFacet | none | 0 | 1 | 0 |
-| kit/MessageHost | none | 0 | 1 | 0 |
-| kit/MessageIcon | none | 0 | 1 | 0 |
-| kit/MessageProvider | none | 0 | 1 | 0 |
+| kit/MessageHost | none | 0 | 0 | 0 |
+| kit/MessageIcon | none | 0 | 0 | 0 |
+| kit/MessageProvider | none | 0 | 0 | 0 |
 | kit/QuickViewLink | none | 0 | 1 | 0 |
 | kit/SimpleChart | none | 0 | 1 | 0 |
 | kit/ValueHelpDialog | none | 0 | 1 | 0 |
@@ -176,7 +176,7 @@
 | kit/useFilterBarContext | none | 0 | 1 | 0 |
 | kit/useFilterState | none | 0 | 1 | 0 |
 | kit/useListQuery | none | 0 | 1 | 0 |
-| kit/useMessages | none | 0 | 1 | 0 |
+| kit/useMessages | none | 0 | 0 | 0 |
 | kit/useObjectTitle | none | 0 | 1 | 0 |
 | kit/useObject | none | 0 | 1 | 0 |
 | kit/useSectionScrollSpy | none | 0 | 1 | 0 |
@@ -188,16 +188,16 @@
 | theme#smartKitGridTheme | none | 0 | 1 | 0 |
 | theme#smartKitMantineTheme | none | 0 | 0 | 0 |
 | theme#useThemeTokens | none | 0 | 0 | 0 |
-| util#DEFAULT_STANDARD_OPTIONS | none | 0 | 1 | 0 |
+| util#DEFAULT_STANDARD_OPTIONS | none | 0 | 0 | 0 |
 | util#MICRO_COMPARISON_MAX | none | 0 | 1 | 0 |
-| util#RESTRICTED_FILE_NAME_CHARACTERS | none | 0 | 1 | 0 |
+| util#RESTRICTED_FILE_NAME_CHARACTERS | none | 0 | 0 | 0 |
 | util#actionPaths | none | 0 | 1 | 0 |
 | util#applyExtensions | none | 0 | 0 | 0 |
 | util#conditionText | none | 0 | 1 | 0 |
 | util#createFields | none | 0 | 1 | 0 |
 | util#createWith | none | 0 | 1 | 0 |
 | util#draftState | none | 0 | 1 | 0 |
-| util#dynamicDateValueTypes | none | 0 | 1 | 0 |
+| util#dynamicDateValueTypes | none | 0 | 0 | 0 |
 | util#fclArrows | none | 0 | 1 | 0 |
 | util#fieldErrors | none | 0 | 1 | 0 |
 | util#fieldValue | none | 0 | 1 | 0 |
@@ -207,12 +207,12 @@
 | util#isActionAvailable | none | 0 | 1 | 0 |
 | util#isEditable | none | 0 | 1 | 0 |
 | util#linkify | none | 0 | 1 | 0 |
-| util#messageTypeOf | none | 0 | 1 | 0 |
+| util#messageTypeOf | none | 0 | 0 | 0 |
 | util#niceTicks | none | 0 | 1 | 0 |
 | util#parseConditionText | none | 0 | 1 | 0 |
 | util#relativeDateText | none | 0 | 1 | 0 |
 | util#resolveRef | none | 0 | 1 | 0 |
-| util#toDates | none | 0 | 1 | 0 |
+| util#toDates | none | 0 | 0 | 0 |
 | util#usePageState | none | 0 | 0 | 0 |
 | util#validate | none | 0 | 1 | 0 |
-| util#viewSettingsFilterString | none | 0 | 1 | 0 |
+| util#viewSettingsFilterString | none | 0 | 0 | 0 |

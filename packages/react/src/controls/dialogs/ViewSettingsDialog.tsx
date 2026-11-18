@@ -7,7 +7,7 @@ import { ArrowDownUp, ChevronLeft, ChevronRight, Filter, Layers, Search } from '
 import { useImperativeHandle, useState, type ReactNode, type Ref } from 'react';
 import type { TextFn } from '../../i18n/text';
 import { useControlText } from '../context';
-import { preventable, type PreventableEvent } from '../types';
+import { preventable } from '../types';
 import { DialogFrame, type TitleAlignment } from './DialogFrame';
 import { TEXTS } from './texts';
 
@@ -45,7 +45,8 @@ export interface ViewSettingsFilterItem extends ViewSettingsItem {
 /** The pages of the dialog (UI5 page ids; custom tabs use their key). */
 export type ViewSettingsDialogPage = 'sort' | 'group' | 'filter' | (string & {});
 
-export interface ViewSettingsDialogConfirmEvent {
+/** Parameters of the `confirm` event (the deprecated `filterKeys` is not provided; use `filterCompoundKeys`). */
+export interface ViewSettingsDialog$ConfirmEvent {
   sortItem: ViewSettingsItem | undefined;
   sortDescending: boolean;
   groupItem: ViewSettingsItem | undefined;
@@ -53,8 +54,6 @@ export interface ViewSettingsDialogConfirmEvent {
   presetFilterItem: ViewSettingsItem | undefined;
   /** The selected values of all filters. */
   filterItems: ViewSettingsItem[];
-  /** `{ valueKey: true }` of the selected values (UI5 `filterKeys`). */
-  filterKeys: Record<string, boolean>;
   /** `{ filterKey: { valueKey: true } }` (UI5 `filterCompoundKeys`). */
   filterCompoundKeys: Record<string, Record<string, boolean>>;
   /** "Filtered by: Status (New, Approved)", or "Filtered by: <preset>"; empty without filters. */
@@ -62,7 +61,7 @@ export interface ViewSettingsDialogConfirmEvent {
 }
 
 export interface $ViewSettingsDialogSettings {
-  /** ('View Settings') */
+  /** Title of the dialog; default: the translated "View Settings", as in UI5. */
   title?: string;
   sortItems?: ViewSettingsItem[];
   groupItems?: ViewSettingsItem[];
@@ -70,13 +69,13 @@ export interface $ViewSettingsDialogSettings {
   /** Predefined filters; picking one clears the other filters (and the other way round). */
   presetFilterItems?: ViewSettingsItem[];
   customTabs?: ViewSettingsCustomTab[];
-  /** (false) */
+  /** @defaultValue false */
   sortDescending?: boolean;
-  /** (false) */
+  /** @defaultValue false */
   groupDescending?: boolean;
-  /** ('StartsWith') */
+  /** @defaultValue 'StartsWith' */
   filterSearchOperator?: StringFilterOperator;
-  /** ('Auto') */
+  /** @defaultValue 'Auto' */
   titleAlignment?: TitleAlignment;
   /** Key of the selected preset filter (otherwise the preset with `selected`). */
   selectedPresetFilterItem?: string;
@@ -84,18 +83,33 @@ export interface $ViewSettingsDialogSettings {
   selectedSortItem?: string;
   /** Key of the selected group item (otherwise the item with `selected`). */
   selectedGroupItem?: string;
-  /** Extension: the selected values per filter, `{ [filterKey]: valueKeys }` (otherwise the values with `selected`). */
-  selectedFilterKeys?: Record<string, string[]>;
-  onConfirm?(e: ViewSettingsDialogConfirmEvent): void;
+  /**
+   * The selected values per filter, `{ filterKey: { valueKey: true } }` (otherwise the values with `selected`); the
+   * React form of UI5's `setSelectedFilterCompoundKeys`.
+   */
+  selectedFilterCompoundKeys?: Record<string, Record<string, boolean>>;
+  onConfirm?(e: ViewSettingsDialog$ConfirmEvent): void;
   onCancel?(): void;
   /** Fired when the reset button is pressed. */
   onReset?(): void;
   /** Fired when the filters are reset (reset button or `clearFilters`). */
   onResetFilters?(): void;
-  onFilterDetailPageOpened?(e: { parentFilterItem: ViewSettingsFilterItem }): void;
+  onFilterDetailPageOpened?(e: ViewSettingsDialog$FilterDetailPageOpenedEvent): void;
   /** Fired before the dialog closes (OK, Cancel, Escape); `preventDefault()` keeps it open. */
-  onBeforeClose?(e: PreventableEvent<object>): void;
+  onBeforeClose?(e: ViewSettingsDialog$BeforeCloseEvent): void;
   ref?: Ref<ViewSettingsDialog>;
+}
+
+/** Parameters of the `filterDetailPageOpened` event. */
+export interface ViewSettingsDialog$FilterDetailPageOpenedEvent {
+  /** The filter whose detail page was opened. */
+  parentFilterItem: ViewSettingsFilterItem;
+}
+
+/** The `beforeClose` event: it has no parameters and can be prevented. */
+export interface ViewSettingsDialog$BeforeCloseEvent {
+  /** Keeps the dialog open. */
+  preventDefault(): void;
 }
 
 export interface ViewSettingsDialog {
@@ -142,7 +156,10 @@ function initial(p: $ViewSettingsDialogSettings): Settings {
     sortDescending: p.sortDescending ?? false,
     group: p.selectedGroupItem ?? p.groupItems?.find((i) => i.selected)?.key,
     groupDescending: p.groupDescending ?? false,
-    filters: Object.fromEntries((p.filterItems ?? []).map((f) => [f.key, p.selectedFilterKeys?.[f.key] ?? f.items.filter((i) => i.selected).map((i) => i.key)])),
+    filters: Object.fromEntries((p.filterItems ?? []).map((f) => {
+      const given = p.selectedFilterCompoundKeys?.[f.key];
+      return [f.key, given ? f.items.filter((i) => given[i.key]).map((i) => i.key) : f.items.filter((i) => i.selected).map((i) => i.key)];
+    })),
     preset: p.selectedPresetFilterItem ?? p.presetFilterItems?.find((i) => i.selected)?.key,
   };
 }
@@ -201,13 +218,12 @@ export function ViewSettingsDialog(p: $ViewSettingsDialogSettings) {
       groupDescending: draft.groupDescending,
       presetFilterItem: preset,
       filterItems: selectedValues,
-      filterKeys: Object.fromEntries(selectedValues.map((i) => [i.key, true])),
       filterCompoundKeys: Object.fromEntries(filterItems.filter((f) => draft.filters[f.key]?.length).map((f) => [f.key, Object.fromEntries(draft.filters[f.key]!.map((k) => [k, true]))])),
       filterString: preset ? t('ctl.vsd.filteredBy', { filters: preset.text }) : viewSettingsFilterString(filterItems, draft.filters, t),
     });
   });
   const reset = () => {
-    const start = initial({ ...p, selectedFilterKeys: undefined });
+    const start = initial({ ...p, selectedFilterCompoundKeys: undefined });
     setDraft({ ...start, filters: emptyFilters(p), preset: undefined });
     p.onReset?.();
     p.onResetFilters?.();
@@ -218,7 +234,7 @@ export function ViewSettingsDialog(p: $ViewSettingsDialogSettings) {
   const pageLabel = (id: ViewSettingsDialogPage) => tabOf(id)?.title ?? t(`ctl.vsd.${id as 'sort' | 'group' | 'filter'}`);
   const icon = { sort: <ArrowDownUp className="sk-icon" aria-hidden />, group: <Layers className="sk-icon" aria-hidden />, filter: <Filter className="sk-icon" aria-hidden /> } as Record<string, ReactNode>;
   const detailItem = p.filterItems?.find((f) => f.key === detail);
-  const changed = JSON.stringify(draft) !== JSON.stringify({ ...initial({ ...p, selectedFilterKeys: undefined }), filters: emptyFilters(p), preset: undefined });
+  const changed = JSON.stringify(draft) !== JSON.stringify({ ...initial({ ...p, selectedFilterCompoundKeys: undefined }), filters: emptyFilters(p), preset: undefined });
   const wrap = (i: ViewSettingsItem) => (i.wrapping ? 'sk-vsd__item sk-vsd__item--wrapping' : 'sk-vsd__item');
 
   const header = (pages.length > 1 || custom.length > 0) && !detailItem ? (

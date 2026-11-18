@@ -756,3 +756,22 @@ ADR-027 定的范围是"只实现 smart-kit 会发的请求"，用户也定过�
 **结论**：阶段 0 完成，AL-01、AL-02、AL-20、AL-21、AL-22 通过。没有改 API，所以 invoice-assure 的迁移清单本阶段没有条目。
 
 **补记：exports 的写法**：`30` 第 3 节写的是通配（`./m/*`）或明确列出。阶段 1 采用**由脚本生成的明确列表**（`scripts/gen-exports.mjs`，按 `src/{m,f,ui,suite,base,kit,v4}/` 下的模块文件生成）：路径和通配一样，但参考文档生成、`verify:pack`、体积预算这些工具能看到每个模块，内部文件也不会被暴露。
+
+## D37 对齐阶段 1：模块路径和 D31 控件归位（2026-11-17）
+
+**问题**：按 `31` 阶段 1，把 D31 的控件、消息控件、卡片和枚举移到"只换前缀"的 UI5 模块路径，类型按 UI5 的 TypeScript 起名，旧子路径删掉，并让这些控件通过 `check:ui5`。
+
+**做法**：
+- **模块文件是"门面"**：`src/m/MessageStrip.ts` 只有 `export { MessageStrip as default } from '../messages/MessageStrip'` 和类型的再导出，实现留在原来的文件里。这样库内部的相对导入不用大面积改，公开模块又正好在 UI5 路径上，一个类一个模块。共有 63 个模块（`m/` 46、`f/` 4、`ui/` 9、`suite/` 6、`base/` 1、`kit/` 4、`v4/fe/macros/MessageButton`）。
+- **exports 由脚本生成**（`scripts/gen-exports.mjs`，D36 补记）：`src/{m,f,ui,suite,base,kit,v4}/` 下每个文件一个导出；Vite 的入口、体积预算、`verify:pack`、参考文档都从 `package.json` 读，`docs/api.md` 的"UI5 模块"表也由它生成。
+- **类型**：`XxxProps` → `$XxxSettings`；`XxxRef` → 和组件同名的接口（默认导入同时带值和类型，`useRef<MessageStrip>(null)`，和 UI5 的 TypeScript 一样）；事件对象 `<类名>$<事件>Event`。改名直接改，旧名不留（D35）。
+- **枚举**：`ui/core/library`、`m/library`、`suite/ui/commons/library` 具名导出；有自己模块的（`ui/core/message/MessageType`、`m/IllustratedMessageType`、`m/AvatarShape`…）默认导出。`library` 模块只有常量，不带 `'use client'`。
+- **根入口**：不再导出已归位的控件。**决定**：根入口只保留还没归位的子路径，阶段 2 全部归位以后删除根入口（`.`），那时只有基础子路径和 UI5 模块。写进 `30` 第 3 节。
+- **子路径删除**：`/controls`、`/messages`、`/cards`；辅助函数并入 `/util`。
+- **控件 API**（四个子代理按文件分组并行：展示、流程、对话框、消息和卡片；每组只改自己的文件，偏差写进各自的登记文件，我最后合并）：补了约 150 个 `@defaultValue`（行为和 UI5 默认值一致），补了缺的属性、事件、事件参数、ref 方法和静态方法，React 风格的旧名改成 UI5 的名字。每项都有 `AL-05` / `AL-06` / `AL-07` 开头的单元测试（51 个）。不兼容的改动逐条写进 `25` 的迁移清单（37 行）。
+- **核对脚本改进**（子代理发现的）：get / set 方法只在 api.json 标明它是某个属性、聚合、关联或事件的访问器时才忽略（原来按前缀一律忽略，漏掉了 `Wizard.getProgress`、`ProcessFlow.setZoomLevel` 这类真方法）；子类重新声明的基础类方法（`getDomRef`、`setTooltip`、`addStyleClass`、`setModel`…）不比；交叉类型的事件对象（`PreventableEvent<T>`）能读出字段；`check-tokens` 允许带 `// ui5-default` 注释的 UI5 默认长度。放宽过滤后，阶段 1 的控件新暴露出 33 个 ref 方法（如 `ViewSettingsDialog.getSelectedFilterItems`、`Timeline.setCurrentFilter`），登记为 `not-implemented`，计划阶段 6 补。
+- **卡片内容**按集成卡片 manifest（1.154 的 `sap-card.json`）逐项对照，写在 `20` 第 11 节，六个内容都标了 `settingsVerified`。
+
+**结果**：阶段 1 的模块 `check:ui5` 0 处未登记；全部偏差 758 条（`not-implemented` 441，基线 752；`kit-extension` 249；`react-idiom` 29；`no-binding` 7；`fe-behavior` 32）。阶段 1 模块剩下的偏差：`react-idiom`（`key`、`children`、基础类成员）、`kit-extension`（徽标、注解驱动的 KPI 设置等，理由逐条写明）、`no-binding`（`selectedContexts`、`itemsBinding` 等依赖 UI5 模型的参数）、`not-implemented`（上面 33 个 ref 方法，以及 BTP 云端文件选择、`asyncURLHandler` 等，阶段 6）。
+
+**用户决定**：待定——`MessageView` / `MessagePopover` 的 `asyncURLHandler`、`urlValidated` 只用来校验 `markupDescription` 渲染出的 HTML 链接，而 `26` 定了不解析 HTML；现在登记为 `not-implemented`（阶段 6）。如果维持"不解析 HTML"，它们应改为长期偏差（`different-value`），需要用户确认。

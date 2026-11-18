@@ -185,11 +185,11 @@ const MOTIFS: Record<string, ReactNode> = {
 export const ILLUSTRATION_TYPES = Object.keys(MOTIFS);
 
 /** The SVG of an illustration type (falls back to NoSearchResults). */
-export function Illustration({ type, className, label }: { type: string; className?: string; label?: string }) {
+export function Illustration({ type, className, label, labelledBy, describedBy }: { type: string; className?: string; label?: string; labelledBy?: string; describedBy?: string }) {
   return (
     <svg
       viewBox="0 0 160 120" className={className} focusable="false" data-sk-illustration={type}
-      {...(label ? { role: 'img', 'aria-label': label } : { 'aria-hidden': true })}
+      {...(label || labelledBy ? { role: 'img', 'aria-label': labelledBy ? undefined : label, 'aria-labelledby': labelledBy, 'aria-describedby': describedBy } : { 'aria-hidden': true })}
     >
       <circle cx="80" cy="58" r="46" fill="var(--sk-illustration-backdrop)" />
       <ellipse cx="80" cy="104" rx="50" ry="5" fill="var(--sk-illustration-ground)" />

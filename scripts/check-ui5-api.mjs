@@ -6,6 +6,7 @@
 //   npm run check:ui5 -- --baseline   register every current difference in tools/ui5-alignment/deviations.json
 //   npm run check:ui5 -- --prune      remove deviations no difference matches any more
 //   npm run check:ui5 -- --only m/,f/  limit to modules with these prefixes (deviations.<name>.json files count too)
+//   npm run check:ui5 -- --ignore-baseline  ignore the stage-0 placeholder deviations (reason "基线…")
 //   npm run check:ui5 -- --format     rewrite mapping.json and deviations.json one entry per line
 //   npm run check:ui5 -- --json FILE  write all findings as JSON (used by the plan / report tooling)
 //
@@ -99,6 +100,10 @@ function resolveEntry(ctx, entry) {
 
 export async function runCheck({ log = console.log } = {}) {
   const mapping = readJson(MAPPING, { entries: [] });
+  // extra mappings (tools/ui5-alignment/mapping.<name>.json): new modules of parallel work, folded in when merged
+  for (const f of fs.readdirSync(path.dirname(MAPPING)).filter((n) => /^mapping\..+\.json$/.test(n))) {
+    mapping.entries.push(...readJson(path.join(path.dirname(MAPPING), f), { entries: [] }).entries);
+  }
   const register = readJson(DEVIATIONS, { deviations: [] });
   // extra registers (tools/ui5-alignment/deviations.<name>.json): proposals of parallel work, folded in when merged
   const extra = fs.readdirSync(path.dirname(DEVIATIONS)).filter((f) => /^deviations\..+\.json$/.test(f))
@@ -136,8 +141,10 @@ export async function runCheck({ log = console.log } = {}) {
   const only = onlyPrefixes();
   const inScope = (m) => !only || only.some((p) => m === p || m.startsWith(p));
   const scoped = findings.filter((x) => inScope(x.module));
-  const result = matchDeviations(scoped, [...register.deviations, ...extra].filter((d) => d.module === '*' || inScope(d.module)));
-  return { mapping, register, findings: scoped, perEntry: perEntry.filter((p) => inScope(p.entry.module)), ...result };
+  // --ignore-baseline: treat the stage-0 placeholder entries (reason "基线…") as absent, to see what is still open
+  const usable = (d) => !(flag('--ignore-baseline') && String(d.reason ?? '').startsWith('基线'));
+  const result = matchDeviations(scoped, [...register.deviations, ...extra].filter((d) => (d.module === '*' || inScope(d.module)) && usable(d)));
+  return { mapping, register, extra, findings: scoped, perEntry: perEntry.filter((p) => inScope(p.entry.module)), ...result };
 }
 
 function countSame(ui5, kit) {
@@ -217,7 +224,7 @@ async function main() {
   if (flag('--json')) fs.writeFileSync(args[args.indexOf('--json') + 1], JSON.stringify(r.findings, null, 2));
   if (flag('--report')) writeReport(r);
   const cats = {};
-  for (const d of r.register.deviations) cats[d.category] = (cats[d.category] ?? 0) + 1;
+  for (const d of [...r.register.deviations, ...r.extra]) cats[d.category] = (cats[d.category] ?? 0) + 1;
   console.log(`check:ui5 (SAPUI5 ${UI5_VERSION}): ${r.mapping.entries.length} mapped exports, ${r.findings.length} differences, ${r.registered.length} registered, ${r.unregistered.length} unregistered, ${r.stale.length} stale deviations`);
   console.log(`deviations by category: ${Object.entries(cats).map(([k, v]) => `${k} ${v}`).join(', ') || 'none'}`);
   for (const x of r.unregistered.slice(0, 200)) console.log(`  UNREGISTERED ${x.module} [${x.ui5}] ${x.kind} ${x.member}${x.detail ? ` — ${x.detail}` : ''}`);

@@ -5,6 +5,12 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+### Changed — breaking (SAPUI5 alignment, stage 1, D37)
+
+- smart-kit: the general controls, message controls, cards and enums are imported by their SAPUI5 module path with the prefix replaced, one class per module, default export: `m/MessageBox`, `m/MessageStrip`, `m/ObjectStatus`, `f/Card`, `f/cards/Header`, `ui/integration/cards/ListContent`, `suite/ui/commons/ProcessFlow`, `m/plugins/UploadSetwithTable`, `ui/unified/Currency`, …; enums from `ui/core/library`, `m/library`, `suite/ui/commons/library` (or their own module: `ui/core/message/MessageType`, `m/IllustratedMessageType`); infrastructure without a UI5 counterpart in `kit/` (`kit/MessageProvider`, `kit/useMessages`, `kit/MessageHost`, `kit/MessageIcon`); `MessageButton` in `v4/fe/macros/MessageButton`. The subpaths `/controls`, `/messages` and `/cards` are removed; the root entry no longer exports these names. The full table is in docs/api.md.
+- smart-kit: types use the UI5 TypeScript names: `XxxProps` → `$XxxSettings`, `XxxRef` → the class itself (`useRef<MessageStrip>(null)`), event objects `<Class>$<Event>Event`.
+- smart-kit: properties, defaults (`@defaultValue`), events, event parameters and methods of these controls follow SAPUI5 1.154; renamed members and behaviour changes are listed in docs/25 (migration list, stage 1), e.g. `Header icon` → `iconSrc`, `ViewSettingsDialog selectedFilterKeys` → `selectedFilterCompoundKeys`, ProcessFlow events with `oEvent`, `UploadSetwithTable uploader` as an `UploaderTableItem` element.
+
 ### Added (SAPUI5 alignment tooling, docs/30–32, ADR-033, stage 0)
 
 - Repository: `npm run check:ui5` compares every public export with the SAPUI5 1.154.0 `api.json` (mapping `tools/ui5-alignment/mapping.json`, deviation register `tools/ui5-alignment/deviations.json`, report `reports/ui5-alignment.md`); `npm run e2e:fe` compares the demo list reports with a real Fiori elements 1.154 app (`apps/fe-reference`, SAPUI5 loaded from ui5.sap.com at runtime). No package changes.

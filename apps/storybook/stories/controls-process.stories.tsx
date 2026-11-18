@@ -58,7 +58,7 @@ function ProcessFlowDemo() {
         <button type="button" onClick={() => ref.current?.setSelectedPath('pr1', 'iv1')}>Path PR → invoice</button>
         <button type="button" onClick={() => ref.current?.setSelectedPath(null, null)}>Clear</button>
       </div>
-      <ProcessFlow ref={ref} lanes={lanes} nodes={nodes} showLabels foldedCorners onNodePress={(n) => console.info('nodePress', n.nodeId)} onHeaderPress={(l) => console.info('headerPress', l.laneId)} />
+      <ProcessFlow ref={ref} lanes={lanes} nodes={nodes} showLabels foldedCorners onNodePress={(e) => console.info('nodePress', e.oEvent.nodeId)} onHeaderPress={(e) => console.info('headerPress', e.oEvent.laneId)} />
     </>
   );
 }
@@ -112,7 +112,7 @@ export const Feed: Story = {
       <ul style={{ margin: 0, padding: 0 }}>
         <FeedListItem sender="Marc Weber" iconInitials="MW" info="Comment" timestamp="2026-11-15T16:20:00Z" maxCharacters={60}
           text="Can we accept the partial delivery? Sales needs 10 laptops by Monday, the remaining 2 can follow in December."
-          onSenderPress={(e) => console.info('senderPress', e.domRef)} actions={[{ key: 'reply', text: 'Reply' }, { key: 'delete', text: 'Delete', enabled: false }]} />
+          onSenderPress={(e) => console.info('senderPress', e.getDomRef())} actions={[{ key: 'reply', text: 'Reply' }, { key: 'delete', text: 'Delete', enabled: false }]} />
         <FeedListItem sender="Acme Corp" iconInitials="AC" timestamp="Yesterday" unread highlight="Warning" type="Navigation"
           text="Tracking for the shipment: https://example.com/track/88120" convertLinksToAnchorTags="All" onPress={() => console.info('press')} />
       </ul>
@@ -130,7 +130,7 @@ function UploadDemo() {
   const [items, setItems] = useState(attachments);
   return (
     <UploadSetwithTable ref={ref} title="Invoice attachments" items={items} multiple maxFileSize={10} fileTypes={['pdf', 'png', 'jpg', 'xlsx']}
-      uploader={{ uploadUrl: 'https://httpbin.org/post', httpRequestMethod: UploaderHttpRequestMethod.Post, useMultipart: true }}
+      uploader={<UploaderTableItem uploadUrl="https://httpbin.org/post" httpRequestMethod={UploaderHttpRequestMethod.Post} useMultipart />}
       onUploadCompleted={(e) => console.info('uploadCompleted', e.status, e.item.fileName)}
       onItemRenamed={(e) => setItems((all) => all.map((i) => (i.id === e.item.id ? { ...i, fileName: e.item.fileName } : i)))}
       onRemove={(e) => setItems((all) => all.filter((i) => i.id !== e.item.id))}

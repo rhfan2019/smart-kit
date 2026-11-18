@@ -9,7 +9,7 @@ import { useImperativeHandle, useState, type ReactNode, type Ref } from 'react';
 import { relativeDateTime } from '../../cards/format';
 import type { TextFn } from '../../i18n/text';
 import { useControlLocale, useControlText } from '../context';
-import { elementsOf, preventable, toneOf, type PreventableEvent, type ValueState } from '../types';
+import { elementsOf, preventable, toneOf, type ValueState } from '../types';
 import { avatarProps, cx, pressKeys, toDate, type AvatarShape, type AvatarSize, type DateLike } from './shared';
 import { TEXTS } from './texts';
 
@@ -55,34 +55,43 @@ export interface $TimelineItemSettings {
   /** Number of replies (with `enableSocial`). */
   replyCount?: number;
   userName?: string;
-  /** Default false. */
+  /** @defaultValue false */
   userNameClickable?: boolean;
   /** Image URL of the user, shown next to the name. */
   userPicture?: string;
   /** Icon on the axis (React node). */
   icon?: ReactNode;
-  /** Default 'Circle'. */
+  /** @defaultValue 'Circle' */
   iconDisplayShape?: AvatarShape;
   /** Initials on the axis when there is no icon. */
   iconInitials?: string;
-  /** Default 'XS'. */
+  /** @defaultValue 'XS' */
   iconSize?: AvatarSize;
   iconTooltip?: string;
-  /** Uses the title as tooltip of the icon when `iconTooltip` is not set (default true). */
+  /** Uses the title as tooltip of the icon when `iconTooltip` is not set. @defaultValue true */
   useIconTooltip?: boolean;
   /** Links in the item footer. */
   customAction?: TimelineCustomAction[];
   /** Replaces the reply box (with `enableSocial`). */
   customReply?: ReactNode;
+  /** The replies (a list), shown above the reply box when the replies or the reply link is pressed (with `enableSocial`). */
+  replyList?: ReactNode;
   /** Embedded content (UI5 default aggregation `embeddedControl`). */
   children?: ReactNode;
-  onUserNameClicked?: (e: { uiElement: HTMLElement }) => void;
+  onUserNameClicked?: (e: TimelineItem$UserNameClickedEvent) => void;
   onSelect?: () => void;
   onPress?: () => void;
-  onReplyPost?: (e: { value: string }) => void;
+  onReplyPost?: (e: TimelineItem$ReplyPostEvent) => void;
   onReplyListOpen?: () => void;
-  onCustomActionClicked?: (e: { value: string; key: string; linkObj: HTMLElement }) => void;
+  onCustomActionClicked?: (e: TimelineItem$CustomActionClickedEvent) => void;
 }
+
+/** Event object of the item's `onUserNameClicked`: the user name element. */
+export interface TimelineItem$UserNameClickedEvent { uiElement: HTMLElement }
+/** Event object of the item's `onReplyPost`. */
+export interface TimelineItem$ReplyPostEvent { value: string }
+/** Event object of the item's `onCustomActionClicked`: the action and its link element. */
+export interface TimelineItem$CustomActionClickedEvent { value: string; key: string; linkObj: HTMLElement }
 
 /** An entry of Timeline; rendered by its parent. */
 export function TimelineItem(_: $TimelineItemSettings): null {
@@ -96,7 +105,7 @@ export type TimelineSelectedItem = $TimelineItemSettings & { key?: string };
 export interface TimelineFilterReasons { search?: boolean; data?: boolean; time?: boolean }
 export interface TimelineTimeKeys { from?: Date; to?: Date }
 
-export interface TimelineFilterSelectionChangeEvent {
+export interface Timeline$FilterSelectionChangeEvent {
   type?: TimelineFilterType;
   searchTerm?: string;
   /** Key of the first selected filter item. */
@@ -106,60 +115,67 @@ export interface TimelineFilterSelectionChangeEvent {
   clear?: boolean;
 }
 
-export interface TimelineItemFilteringEvent {
+/** Event object of `onItemFiltering`; `preventDefault()` keeps the item (as in UI5). */
+export interface Timeline$ItemFilteringEvent {
   item: TimelineSelectedItem;
   reasons: TimelineFilterReasons;
   dataKeys: string[];
   timeKeys: TimelineTimeKeys;
   searchTerm: string;
+  preventDefault(): void;
 }
+
+/** Event object of `onSelect`. */
+export interface Timeline$SelectEvent { selectedItem: TimelineSelectedItem; userAction: boolean }
 
 export interface $TimelineSettings {
   children?: ReactNode;
-  /** Default 'Right'. */
+  /** @defaultValue 'Right' */
   alignment?: TimelineAlignment;
-  /** Default 'Vertical'. */
+  /** @defaultValue 'Vertical' */
   axisOrientation?: TimelineAxisOrientation;
-  /** Vertical axis with items alternating on both sides (default false). */
+  /** Vertical axis with items alternating on both sides. @defaultValue false */
   enableDoubleSided?: boolean;
-  /** Default true; false shows dots instead of the item icons. */
+  /** false shows dots instead of the item icons. @defaultValue true */
   showIcons?: boolean;
-  /** CSS width (default '100%'). */
+  /** CSS width. @defaultValue '100%' */
   width?: string;
   /** CSS height; with `enableScroll` the list scrolls inside it. */
   height?: string;
   /** CSS maximum height of item texts (they scroll beyond it). */
   textHeight?: string;
   noDataText?: string;
-  /** Accepted for UI5 code; no effect (no data binding, ADR-032 rule 7). */
+  /** Accepted for UI5 code; no effect (no data binding, ADR-032 rule 7). @defaultValue true */
   enableBusyIndicator?: boolean;
+  /** Accepted for UI5 code; no effect (no data binding: the filters always work on the client). @defaultValue true */
   enableModelFilter?: boolean;
   groupBy?: string;
   dateTimePath?: string;
+  /** Accepted for UI5 code; no effect (no data binding). @defaultValue false */
   lazyLoading?: boolean;
-  /** Default true. */
+  /** @defaultValue true */
   enableScroll?: boolean;
-  /** Reply link and reply count on the items (default false). */
+  /** Reply link and reply count on the items. @defaultValue false */
   enableSocial?: boolean;
-  /** Growing even without paging data (default false; items always grow on the client here). */
+  /** Growing even without paging data (items always grow on the client here). @defaultValue false */
   forceGrowing?: boolean;
-  /** Items shown before "More" (default 5; 0 shows all). */
+  /** Items shown before "More" (0 shows all). @defaultValue 5 */
   growingThreshold?: number;
-  /** Sorts by date (default true). */
+  /** Sorts by date. @defaultValue true */
   sort?: boolean;
-  /** Default false (newest first). */
+  /** false: newest first. @defaultValue false */
   sortOldestFirst?: boolean;
-  /** Default 'None'. */
+  /** @defaultValue 'None' */
   groupByType?: TimelineGroupType;
-  /** Default true. */
+  /** @defaultValue true */
   showHeaderBar?: boolean;
-  /** Default true. */
+  /** @defaultValue true */
   showSearch?: boolean;
-  /** Default true. */
+  /** @defaultValue true */
   showSort?: boolean;
-  /** Filter by the items' `filterValue` (default true). */
+  /** Filter by the items' `filterValue`. @defaultValue true */
   showItemFilter?: boolean;
-  /** Filter by a date range (default true). */
+  /** Filter by a date range. @defaultValue true */
   showTimeFilter?: boolean;
   /** Title of the filter popover. */
   filterTitle?: string;
@@ -167,12 +183,12 @@ export interface $TimelineSettings {
   customFilter?: ReactNode;
   /** Options of the item filter; default the distinct `filterValue`s. */
   filterList?: TimelineFilterListItem[];
-  onSelect?: (e: { selectedItem: TimelineSelectedItem; userAction: boolean }) => void;
+  onSelect?: (e: Timeline$SelectEvent) => void;
   onGrow?: () => void;
   onFilterOpen?: () => void;
-  onFilterSelectionChange?: (e: TimelineFilterSelectionChangeEvent) => void;
+  onFilterSelectionChange?: (e: Timeline$FilterSelectionChangeEvent) => void;
   /** Fired for each item a filter would hide; `preventDefault()` keeps it. */
-  onItemFiltering?: (e: PreventableEvent<TimelineItemFilteringEvent>) => void;
+  onItemFiltering?: (e: Timeline$ItemFilteringEvent) => void;
   onCustomMessageClosed?: () => void;
   ref?: Ref<Timeline>;
   'aria-label'?: string;
@@ -264,7 +280,7 @@ export function Timeline(p: $TimelineSettings) {
     ?? [...new Set(all.map((e) => e.item.filterValue).filter((v): v is string => !!v))].map((key) => ({ key, text: key }));
 
   /** New filter criteria: fires itemFiltering for each item that would be hidden (preventDefault keeps it). */
-  const apply = (next: Criteria, change: TimelineFilterSelectionChangeEvent) => {
+  const apply = (next: Criteria, change: Timeline$FilterSelectionChangeEvent) => {
     const keep = new Set<string>();
     for (const e of all) {
       const reasons = failing(e, next);
@@ -430,6 +446,7 @@ function TimelineEntry(p: {
   const { intlLocale, timeZone } = useControlLocale();
   const [expanded, setExpanded] = useState(false);
   const [replying, setReplying] = useState(false);
+  const [listOpen, setListOpen] = useState(false);
   const [reply, setReply] = useState('');
   const { item, date } = p.e;
   const press = () => p.onSelect(item);
@@ -478,15 +495,26 @@ function TimelineEntry(p: {
         {item.children !== undefined && <div className="sk-timeline__embedded">{item.children}</div>}
         {(p.social || !!item.customAction?.length) && (
           <div className="sk-timeline__footer">
-            {p.social && <button type="button" className="sk-timeline__link" aria-expanded={replying} onClick={stop(() => setReplying((x) => !x))}>{t('ctl.timeline.reply')}</button>}
+            {p.social && (
+              <button type="button" className="sk-timeline__link" aria-expanded={replying} onClick={stop(() => {
+                if (!replying) item.onReplyListOpen?.();
+                setReplying((x) => !x);
+              })}>{t('ctl.timeline.reply')}</button>
+            )}
             {p.social && !!item.replyCount && (
-              <button type="button" className="sk-timeline__link" onClick={stop(() => item.onReplyListOpen?.())}>{t('ctl.timeline.replies', { count: item.replyCount })}</button>
+              <button type="button" className="sk-timeline__link" aria-expanded={item.replyList !== undefined ? listOpen : undefined} onClick={stop(() => {
+                if (!listOpen) item.onReplyListOpen?.();
+                setListOpen((x) => !x);
+              })}>{t('ctl.timeline.replies', { count: item.replyCount })}</button>
             )}
             {item.customAction?.map((a) => (
               <button key={a.key} type="button" className="sk-timeline__link"
                 onClick={(ev) => { ev.stopPropagation(); item.onCustomActionClicked?.({ value: a.value, key: a.key, linkObj: ev.currentTarget }); }}>{a.value}</button>
             ))}
           </div>
+        )}
+        {p.social && (replying || listOpen) && item.replyList !== undefined && item.customReply === undefined && (
+          <div className="sk-timeline__reply-list" onClick={(ev) => ev.stopPropagation()} onKeyDown={(ev) => ev.stopPropagation()}>{item.replyList}</div>
         )}
         {p.social && replying && (
           <div className="sk-timeline__reply" onClick={(ev) => ev.stopPropagation()} onKeyDown={(ev) => ev.stopPropagation()}>

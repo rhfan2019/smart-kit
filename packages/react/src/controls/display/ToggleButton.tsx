@@ -23,38 +23,45 @@ export const BadgeStyle = { Default: 'Default', Attention: 'Attention' } as cons
 export type AriaHasPopup = 'None' | 'Menu' | 'ListBox' | 'Tree' | 'Grid' | 'Dialog';
 
 export interface $ToggleButtonSettings {
-  /** Pressed state (default false). The button also toggles itself, as in SAPUI5; a changed prop wins. */
+  /** Pressed state. The button also toggles itself, as in SAPUI5; a changed prop wins. @defaultValue false */
   pressed?: boolean;
   /** Button text; without it the button shows only the icon (then set `aria-label` or `title`). */
   text?: string;
-  /** Visual type (default Default). */
+  /** Visual type. @defaultValue 'Default' */
   type?: ButtonType;
   /** Width (CSS length). */
   width?: string;
-  /** Enabled (default true). */
+  /** Enabled. @defaultValue true */
   enabled?: boolean;
   /** Icon (a React node). */
   icon?: ReactNode;
-  /** Icon before the text (default true); false puts it after. */
+  /** Icon before the text; false puts it after. @defaultValue true */
   iconFirst?: boolean;
   /** Icon shown while the button is pressed. */
   activeIcon?: ReactNode;
-  /** aria-haspopup (default None). */
+  /** aria-haspopup. @defaultValue 'None' */
   ariaHasPopup?: AriaHasPopup;
-  /** Link makes screen readers announce a link (default Default). */
+  /** Link makes screen readers announce a link. @defaultValue 'Default' */
   accessibleRole?: ButtonAccessibleRole;
-  /** Style of the badge (default Default). */
+  /** Style of the badge. @defaultValue 'Default' */
   badgeStyle?: BadgeStyle;
   /** Extension: badge value shown on the button (SAPUI5 sets it through BadgeCustomData). */
   badge?: string | number;
   /** Layout data when the button is in an OverflowToolbar. */
   layoutData?: OverflowToolbarLayoutData;
   /** Fired after a press with the new state. */
-  onPress?(e: { pressed: boolean }): void;
+  onPress?(e: ToggleButton$PressEvent): void;
+  /** Tooltip (the SAPUI5 tooltip of sap.ui.core.Element). */
   title?: string;
   'aria-label'?: string;
   className?: string;
   'data-testid'?: string;
+}
+
+/** Event object of ToggleButton's press. */
+export interface ToggleButton$PressEvent {
+  /** The new pressed state. */
+  pressed: boolean;
 }
 
 const TONE: Partial<Record<ButtonType, string>> = { Accept: 'positive', Success: 'positive', Reject: 'negative', Negative: 'negative', Critical: 'critical', Attention: 'critical', Neutral: 'neutral' };

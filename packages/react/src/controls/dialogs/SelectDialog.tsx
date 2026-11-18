@@ -112,41 +112,87 @@ export interface ListUpdateEvent { reason: 'Refresh' | 'Filter' | 'Growing'; act
 interface CommonProps<I> {
   title?: string;
   noDataText?: string;
-  /** (false) */
+  /** @defaultValue false */
   multiSelect?: boolean;
-  /** (true) Shows `growingThreshold` items and a "More" trigger. */
+  /**
+   * Shows `growingThreshold` items and a "More" trigger.
+   * @defaultValue true
+   */
   growing?: boolean;
   /** (null → 20, the list default) */
   growingThreshold?: number;
   contentWidth?: string;
-  /** (false) Keeps the confirmed selection for the next opening; otherwise the items' `selected` is the start. */
+  /**
+   * Keeps the confirmed selection for the next opening; otherwise the items' `selected` is the start.
+   * @defaultValue false
+   */
   rememberSelections?: boolean;
   contentHeight?: string;
-  /** (false) */
+  /** @defaultValue false */
   showClearButton?: boolean;
-  /** ('OK') */
+  /** Text of the confirm button (multi-select); default: the translated "OK", as in UI5. */
   confirmButtonText?: string;
-  /** (false) */
+  /** @defaultValue false */
   draggable?: boolean;
-  /** (false) */
+  /** @defaultValue false */
   resizable?: boolean;
-  /** ('Auto') */
+  /** @defaultValue 'Auto' */
   titleAlignment?: TitleAlignment;
   searchPlaceholder?: string;
-  /** ('List') */
+  /** @defaultValue 'List' */
   initialFocus?: SelectDialogInitialFocus;
   /**
    * Fired on Enter in the search field and when it is cleared. Extension: without `onSearch` and `onLiveChange` the
    * dialog filters the items itself (title and description, or the text of the cells).
    */
-  onSearch?(e: { value: string; clearButtonPressed: boolean }): void;
-  onLiveChange?(e: { value: string }): void;
-  onConfirm?(e: { selectedItem: I | undefined; selectedItems: I[] }): void;
+  onSearch?(e: SelectDialogBase$SearchEvent): void;
+  onLiveChange?(e: SelectDialogBase$LiveChangeEvent): void;
+  onConfirm?(e: SelectDialogBase$ConfirmEvent<I>): void;
   onCancel?(): void;
-  onSelectionChange?(e: { listItem: I; listItems: I[]; selected: boolean; selectAll: boolean }): void;
+  onSelectionChange?(e: SelectDialogBase$SelectionChangeEvent<I>): void;
   onUpdateStarted?(e: ListUpdateEvent): void;
   onUpdateFinished?(e: ListUpdateEvent): void;
 }
+
+/** Parameters of `confirm` (sap.m.SelectDialogBase, shared by both dialogs; `selectedContexts` needs data binding and is not provided). */
+export interface SelectDialogBase$ConfirmEvent<I> {
+  /** The selected item (the first one in multi-select mode). */
+  selectedItem: I | undefined;
+  /** All selected items. */
+  selectedItems: I[];
+}
+/** Parameters of `search` (`itemsBinding` needs data binding and is not provided). */
+export interface SelectDialogBase$SearchEvent {
+  /** The search text. */
+  value: string;
+  /** Whether the search field was cleared. */
+  clearButtonPressed: boolean;
+}
+/** Parameters of `liveChange` (`itemsBinding` needs data binding and is not provided). */
+export interface SelectDialogBase$LiveChangeEvent {
+  /** The search text. */
+  value: string;
+}
+/** Parameters of `selectionChange`. */
+export interface SelectDialogBase$SelectionChangeEvent<I> {
+  listItem: I;
+  listItems: I[];
+  selected: boolean;
+  selectAll: boolean;
+}
+
+export type SelectDialog$ConfirmEvent = SelectDialogBase$ConfirmEvent<StandardListItem>;
+export type SelectDialog$SearchEvent = SelectDialogBase$SearchEvent;
+export type SelectDialog$LiveChangeEvent = SelectDialogBase$LiveChangeEvent;
+export type SelectDialog$SelectionChangeEvent = SelectDialogBase$SelectionChangeEvent<StandardListItem>;
+export type SelectDialog$UpdateStartedEvent = ListUpdateEvent;
+export type SelectDialog$UpdateFinishedEvent = ListUpdateEvent;
+export type TableSelectDialog$ConfirmEvent = SelectDialogBase$ConfirmEvent<ColumnListItem>;
+export type TableSelectDialog$SearchEvent = SelectDialogBase$SearchEvent;
+export type TableSelectDialog$LiveChangeEvent = SelectDialogBase$LiveChangeEvent;
+export type TableSelectDialog$SelectionChangeEvent = SelectDialogBase$SelectionChangeEvent<ColumnListItem>;
+export type TableSelectDialog$UpdateStartedEvent = ListUpdateEvent;
+export type TableSelectDialog$UpdateFinishedEvent = ListUpdateEvent;
 
 export interface $SelectDialogSettings extends CommonProps<StandardListItem> {
   items: StandardListItem[];

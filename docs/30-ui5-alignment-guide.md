@@ -43,8 +43,8 @@ V2 的 sap.ui.comp（SmartTable 等）**不作为**对齐对象（ADR-033 取代
   - 实例类型就是类名：`const ref = useRef<MessagePopover>(null)`（组件函数和同名接口合并，接口里是实例方法）。
 - **"OData 相关"只指 `sap.fe.*`**：sap.m、sap.f、sap.uxap、sap.ui.*、sap.suite.* 和 OData 版本无关，不加 `v4`。将来做 V2（`sap.ui.comp` 等）时放 `@rhfan2019/smart-kit/v2/<路径>`。
 - **UI5 没有对应的**：`@rhfan2019/smart-kit/kit/<名字>`（每个一个模块）；基础设施保留 `/context`、`/theme`、`/i18n`、`/util`。
-- **根入口** `@rhfan2019/smart-kit` 不再导出组件（UI5 里 `sap/m/Table`、`sap/fe/macros/Table`、`sap/ui/table/Table` 同名，不能摊平）；只导出基础设施，或者干脆删除（阶段 1 定）。
-- `package.json` 的 `exports` 用通配：`"./v4/*"`、`"./m/*"`、`"./f/*"`……（或统一 `"./*"`），源码目录按同样的路径放：`packages/react/src/v4/fe/macros/Table.tsx`、`packages/react/src/m/MessageBox.tsx`。打包按模块拆分（ADR-026 的"用多少付多少"更自然）。
+- **根入口** `@rhfan2019/smart-kit` 不再导出组件（UI5 里 `sap/m/Table`、`sap/fe/macros/Table`、`sap/ui/table/Table` 同名，不能摊平）。**阶段 1 定（D37）**：归位的模块立即从根入口去掉；阶段 2 全部归位以后删除根入口，只留基础子路径和 UI5 模块。
+- `package.json` 的 `exports`：阶段 1 起由 `scripts/gen-exports.mjs` 按模块文件生成明确的列表（D36 补记，路径和通配相同）。原设想是通配：`"./v4/*"`、`"./m/*"`、`"./f/*"`……（或统一 `"./*"`），源码目录按同样的路径放：`packages/react/src/v4/fe/macros/Table.tsx`、`packages/react/src/m/MessageBox.tsx`。打包按模块拆分（ADR-026 的"用多少付多少"更自然）。
 - 路径里没有商标词（`sap` 已被替换），`check-trademark` 不受影响。
 
 ## 4. 现有导出的目标

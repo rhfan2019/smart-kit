@@ -38,36 +38,39 @@ function FeedAvatar(p: AvatarInput) {
   );
 }
 
+/** Event object of `onPost`. */
+export interface FeedInput$PostEvent { value: string }
+
 export interface $FeedInputSettings {
   value?: string;
-  /** Default true. */
+  /** @defaultValue true */
   enabled?: boolean;
-  /** Visible rows (default 2). */
+  /** Visible rows. @defaultValue 2 */
   rows?: number;
-  /** Lets the text exceed `maxLength` and shows how far it is over (default false). */
+  /** Lets the text exceed `maxLength` and shows how far it is over. @defaultValue false */
   showExceededText?: boolean;
-  /** Maximum characters (default 0 = no limit). */
+  /** Maximum characters (0 = no limit). @defaultValue 0 */
   maxLength?: number;
-  /** Grows with the text (default false). */
+  /** Grows with the text. @defaultValue false */
   growing?: boolean;
-  /** Maximum rows when growing (default 0 = no limit). */
+  /** Maximum rows when growing (0 = no limit). @defaultValue 0 */
   growingMaxLines?: number;
-  /** Default "Post something here". */
+  /** The UI5 default text, localized. @defaultValue 'Post something here' */
   placeholder?: string;
   /** Image URL or React node of the avatar. */
   icon?: ReactNode;
-  /** Default 'Circle'. */
+  /** @defaultValue 'Circle' */
   iconDisplayShape?: AvatarShape;
   iconInitials?: string;
-  /** Default 'M'. */
+  /** @defaultValue 'M' */
   iconSize?: AvatarSize;
-  /** Default true. */
+  /** @defaultValue true */
   showIcon?: boolean;
-  /** Tooltip and accessible name of the post button (default "Submit"). */
+  /** Tooltip and accessible name of the post button (the UI5 default text, localized). @defaultValue 'Submit' */
   buttonTooltip?: string;
   /** Further controls next to the post button. */
   actions?: ReactNode;
-  onPost?: (e: { value: string }) => void;
+  onPost?: (e: FeedInput$PostEvent) => void;
   'aria-label'?: string;
 }
 
@@ -134,8 +137,10 @@ export interface FeedListItemAction {
   onPress?: () => void;
 }
 
-/** Event of `onSenderPress` / `onIconPress`: the id and element pressed. */
-export interface FeedListItemPressEvent { domRef: string; getDomRef: () => HTMLElement }
+/** Event object of `onSenderPress` (the deprecated `domRef` id is left out). */
+export interface FeedListItem$SenderPressEvent { getDomRef: () => HTMLElement | null }
+/** Event object of `onIconPress` (the deprecated `domRef` id is left out). */
+export interface FeedListItem$IconPressEvent { getDomRef: () => HTMLElement | null }
 
 export interface $FeedListItemSettings {
   sender?: string;
@@ -153,37 +158,39 @@ export interface $FeedListItemSettings {
   icon?: ReactNode;
   /** Avatar while the pointer is on it (with `iconActive`). */
   activeIcon?: ReactNode;
-  /** Default 'Circle'. */
+  /** @defaultValue 'Circle' */
   iconDisplayShape?: AvatarShape;
   iconInitials?: string;
-  /** Default 'S'. */
+  /** @defaultValue 'S' */
   iconSize?: AvatarSize;
-  /** Default true. */
+  /** @defaultValue true */
   showIcon?: boolean;
-  /** Sender as a link (default true; needs `onSenderPress`). */
+  /** Sender as a link (needs `onSenderPress`). @defaultValue true */
   senderActive?: boolean;
-  /** Avatar as a button (default true; needs `onIconPress`). */
+  /** Avatar as a button (needs `onIconPress`). @defaultValue true */
   iconActive?: boolean;
-  /** Turns URLs in the text into links (default 'None'). */
+  /** Turns URLs in the text into links. @defaultValue 'None' */
   convertLinksToAnchorTags?: LinkConversion;
-  /** Target of the converted links (default '_blank'). */
+  /** Target of the converted links. @defaultValue '_blank' */
   convertedLinksDefaultTarget?: string;
-  /** ListItemBase: default 'Inactive'. */
+  /** ListItemBase. @defaultValue 'Inactive' */
   type?: ListType;
-  /** Default true. */
+  /** @defaultValue true */
   visible?: boolean;
+  /** @defaultValue false */
   unread?: boolean;
+  /** @defaultValue false */
   selected?: boolean;
   counter?: number;
-  /** ValueState or IndicationColor: a coloured bar at the start (default 'None'). */
+  /** ValueState or IndicationColor: a coloured bar at the start. @defaultValue 'None' */
   highlight?: ValueState | IndicationColor;
   /** Accessible text of the highlight. */
   highlightText?: string;
-  /** Marks the item as the one last navigated to. */
+  /** Marks the item as the one last navigated to. @defaultValue false */
   navigated?: boolean;
   actions?: FeedListItemAction[];
-  onSenderPress?: (e: FeedListItemPressEvent) => void;
-  onIconPress?: (e: FeedListItemPressEvent) => void;
+  onSenderPress?: (e: FeedListItem$SenderPressEvent) => void;
+  onIconPress?: (e: FeedListItem$IconPressEvent) => void;
   /** With type Active, Navigation or DetailAndActive. */
   onPress?: () => void;
   /** With type Detail or DetailAndActive. */
@@ -228,7 +235,7 @@ export function FeedListItem(p: $FeedListItemSettings) {
   const shown = long && !expanded ? `${text.slice(0, max).trimEnd()}…` : text;
   const date = p.timestamp instanceof Date || (typeof p.timestamp === 'string' && ISO.test(p.timestamp)) ? toDate(p.timestamp) : undefined;
   const stamp = date ? dateTimeText(date, intlLocale, timeZone) : typeof p.timestamp === 'string' ? p.timestamp : undefined;
-  const event = (el: HTMLElement): FeedListItemPressEvent => ({ domRef: el.id, getDomRef: () => el });
+  const event = (el: HTMLElement) => ({ getDomRef: () => el });
   const senderPress = p.senderActive !== false && p.onSenderPress ? (e: MouseEvent<HTMLElement>) => { e.stopPropagation(); p.onSenderPress?.(event(e.currentTarget)); } : undefined;
   const iconPress = p.iconActive !== false && p.onIconPress ? (e: MouseEvent<HTMLElement>) => { e.stopPropagation(); p.onIconPress?.(event(e.currentTarget)); } : undefined;
   const type = p.type ?? 'Inactive';

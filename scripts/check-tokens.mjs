@@ -20,7 +20,8 @@ for (const f of files(SRC)) {
     if (COLOR.test(code)) problems.push(`${rel}:${i + 1} color literal: ${line.trim()}`);
     if (f.endsWith('.css') && !/@(container|media)/.test(code) && CSS_PX.test(code)) problems.push(`${rel}:${i + 1} size literal: ${line.trim()}`);
     if (f.endsWith('.css') && NAMED.test(code)) problems.push(`${rel}:${i + 1} named color: ${line.trim()}`);
-    if (!f.endsWith('.css') && TS_PX.test(code)) problems.push(`${rel}:${i + 1} size literal: ${line.trim()}`);
+    // `// ui5-default`: a CSS length that is the SAPUI5 default value of a property (ADR-033), not styling
+    if (!f.endsWith('.css') && TS_PX.test(code) && !line.includes('// ui5-default')) problems.push(`${rel}:${i + 1} size literal: ${line.trim()}`);
   });
 }
 if (problems.length) {

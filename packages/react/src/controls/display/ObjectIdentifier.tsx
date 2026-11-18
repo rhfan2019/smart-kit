@@ -3,22 +3,31 @@ import type { HTMLAttributes } from 'react';
 import type { EmptyIndicatorMode } from '../types';
 import { cx, EmptyIndicator, isEmpty, type ReactiveAreaMode } from './shared';
 
-export interface $ObjectIdentifierSettings extends Omit<HTMLAttributes<HTMLDivElement>, 'title'> {
+export interface $ObjectIdentifierSettings extends Omit<HTMLAttributes<HTMLDivElement>, 'title' | 'children'> {
   /** Object title (bold). */
   title?: string;
   /** Secondary text below the title. */
   text?: string;
-  /** The title is a link that fires onTitlePress (default false). */
+  /** Renders the control; false renders nothing. @defaultValue true */
+  visible?: boolean;
+  /** The title is a link that fires onTitlePress. @defaultValue false */
   titleActive?: boolean;
-  /** Overlay enlarges the clickable area of an active title (default Inline). */
+  /** Overlay enlarges the clickable area of an active title. @defaultValue 'Inline' */
   reactiveAreaMode?: ReactiveAreaMode;
-  /** Shows "–" when title and text are empty (default Off). */
+  /** Shows "–" when title and text are empty. @defaultValue 'Off' */
   emptyIndicatorMode?: EmptyIndicatorMode;
   /** Fired when an active title is pressed; `domRef` is the title element. */
-  onTitlePress?(e: { domRef: HTMLElement }): void;
+  onTitlePress?(e: ObjectIdentifier$TitlePressEvent): void;
 }
 
-export function ObjectIdentifier({ title, text, titleActive = false, reactiveAreaMode = 'Inline', emptyIndicatorMode = 'Off', onTitlePress, className, ...rest }: $ObjectIdentifierSettings) {
+/** Event object of ObjectIdentifier's titlePress. */
+export interface ObjectIdentifier$TitlePressEvent {
+  /** The title element. */
+  domRef: HTMLElement;
+}
+
+export function ObjectIdentifier({ title, text, visible = true, titleActive = false, reactiveAreaMode = 'Inline', emptyIndicatorMode = 'Off', onTitlePress, className, ...rest }: $ObjectIdentifierSettings) {
+  if (!visible) return null;
   const empty = isEmpty(title) && isEmpty(text);
   return (
     <div {...rest} className={cx('sk-object-identifier', className)} data-sk-object-identifier>

@@ -70,7 +70,7 @@ export function CardsPage() {
       <p className="demo-mc__intro">{tx.intro}</p>
       <BerlinTime>
         <div className="demo-cards__grid">
-          <Card header={<Header title={tx.list} subtitle={tx.listSub} icon={<Icon d={ORDER_ICON} />} />}>
+          <Card header={<Header title={tx.list} subtitle={tx.listSub} iconSrc={<Icon d={ORDER_ICON} />} />}>
             <ListContent entitySet="PurchaseOrders" highlight showStateIcon maxItems={4} presentationAnnotationPath="com.sap.vocabularies.UI.v1.PresentationVariant#CardLarge" selectionAnnotationPath="com.sap.vocabularies.UI.v1.SelectionVariant#CardInDelivery" />
           </Card>
           <Card header={<NumericHeader title={tx.spend} subtitle={tx.spendSub} details={tx.details} entitySet="PurchaseOrders" dataPointAnnotationPath="@UI.DataPoint#CardSpend" selectionAnnotationPath="@UI.SelectionVariant#CardEur" />}>
@@ -83,7 +83,7 @@ export function CardsPage() {
             <ObjectContent entitySet="Suppliers" keys={{ Supplier: '0000100001' }} />
           </Card>
           <div className="demo-cards__wide">
-            <Card header={<Header title={tx.delivery} subtitle={tx.deliverySub} icon={<Icon d={TRUCK_ICON} />} />}>
+            <Card header={<Header title={tx.delivery} subtitle={tx.deliverySub} iconSrc={<Icon d={TRUCK_ICON} />} />}>
               <TableContent entitySet="PurchaseOrders" maxColumns={4} presentationAnnotationPath="@UI.PresentationVariant#CardTable" selectionAnnotationPath="@UI.SelectionVariant#CardInDelivery" filters={{ Supplier: [{ operator: 'EQ', values: ['0000100092'] }] }} />
             </Card>
           </div>

@@ -25,9 +25,15 @@ export interface $WizardStepSettings {
   id?: string;
   title?: string;
   icon?: ReactNode;
-  /** (true) Whether the user may go on to the next step. */
+  /**
+   * Whether the user may go on to the next step.
+   * @defaultValue true
+   */
   validated?: boolean;
-  /** (false) Adds "(Optional)" to the title. */
+  /**
+   * Adds "(Optional)" to the title.
+   * @defaultValue false
+   */
   optional?: boolean;
   /** With `enableBranching`: the id of the next step (one of `subsequentSteps`). */
   nextStep?: string;
@@ -55,32 +61,56 @@ export interface WizardStepInfo {
 
 export interface $WizardSettings {
   children?: ReactNode;
-  /** ('Scroll') */
+  /** @defaultValue 'Scroll' */
   renderMode?: WizardRenderMode;
-  /** (true) */
+  /** @defaultValue true */
   showNextButton?: boolean;
-  /** ('Review') Text of the next button on the last step. */
+  /**
+   * Text of the next button on the last step; the default "Review" is shown translated, as in UI5.
+   * @defaultValue 'Review'
+   */
   finishButtonText?: string;
-  /** (false) */
+  /** @defaultValue false */
   enableBranching?: boolean;
   /** The id of the step to show; steps up to it are reached when they are validated. */
   currentStep?: string;
-  /** ('auto') CSS width. */
+  /**
+   * CSS width.
+   * @defaultValue 'auto'
+   */
   width?: string;
-  /** ('100%') CSS height (the steps scroll inside). */
+  /**
+   * CSS height (the steps scroll inside).
+   * @defaultValue '100%'
+   */
   height?: string;
-  /** ('Standard') */
+  /** @defaultValue 'Standard' */
   backgroundDesign?: PageBackgroundDesign;
-  /** ('H3') Heading level of the step titles. */
+  /**
+   * Heading level of the step titles.
+   * @defaultValue 'H3'
+   */
   stepTitleLevel?: WizardTitleLevel;
-  /** Fired when a step becomes the progress step; `index` is one-based. */
-  onStepActivate?(e: { index: number }): void;
+  /** Fired when a step becomes the progress step. */
+  onStepActivate?(e: Wizard$StepActivateEvent): void;
   /** Fired when the next button of the last step is pressed. */
   onComplete?(): void;
   /** Fired when the user goes to another reached step in the progress navigator. */
-  onNavigationChange?(e: { step: WizardStepInfo }): void;
+  onNavigationChange?(e: Wizard$NavigationChangeEvent): void;
   ref?: Ref<Wizard>;
   'aria-label'?: string;
+}
+
+/** Parameters of the `stepActivate` event. */
+export interface Wizard$StepActivateEvent {
+  /** One-based position of the activated step in the progress. */
+  index: number;
+}
+
+/** Parameters of the `navigationChange` event. */
+export interface Wizard$NavigationChangeEvent {
+  /** The step navigated to. */
+  step: WizardStepInfo;
 }
 
 export interface Wizard {

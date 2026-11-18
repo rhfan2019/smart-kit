@@ -75,3 +75,40 @@ smart-kit 按铁律（ADR-033）改名、改属性、改行为时不保留旧名
 | 阶段 | 旧写法 | 新写法 | 说明 |
 | --- | --- | --- | --- |
 | 0 | — | — | 只加核对工具（`check:ui5`、`e2e:fe`），API 没有变化 |
+| 1 | `import { ObjectStatus, … } from '@rhfan2019/smart-kit/controls'`（或根入口） | `import ObjectStatus from '@rhfan2019/smart-kit/m/ObjectStatus'`：每个类一个模块、默认导出；对照表见 `docs/api.md` 的"UI5 模块" | 子路径 `/controls`、`/messages`、`/cards` 删除，根入口不再导出这些控件 |
+| 1 | `import { MessageBox, MessageToast, MessageStrip, MessageView, MessageItem, MessagePopover } from '@rhfan2019/smart-kit/messages'` | `m/MessageBox`、`m/MessageToast`、`m/MessageStrip`、`m/MessageView`、`m/MessageItem`、`m/MessagePopover`（默认导出） | |
+| 1 | `MessageProvider`、`useMessages`、`MessageIcon`、`MessageHost`（`/messages`） | `kit/MessageProvider`、`kit/useMessages`、`kit/MessageIcon`、`kit/MessageHost`（默认导出） | UI5 没有对应 |
+| 1 | `MessageButton`（`/messages`） | `v4/fe/macros/MessageButton`（默认导出） | API 在阶段 2 对齐 |
+| 1 | `Card`、`Header`、`NumericHeader`、`NumericSideIndicator`（`/cards`） | `f/Card`、`f/cards/Header`、`f/cards/NumericHeader`、`f/cards/NumericSideIndicator` | |
+| 1 | `ListContent`、`TableContent`、`ObjectContent`、`AnalyticalContent`、`TimelineContent`、`CalendarContent`（`/cards`） | `ui/integration/cards/ListContent` 等 | |
+| 1 | `ProcessFlow`、`MicroProcessFlow`、`MicroProcessFlowItem`、`Timeline`、`TimelineItem` | `suite/ui/commons/ProcessFlow` 等 | |
+| 1 | `UploadSetwithTable`、`ActionsPlaceholder`、`UploaderTableItem`、`UploaderHttpRequestMethod` | `m/plugins/UploadSetwithTable`、`m/upload/ActionsPlaceholder`、`m/upload/UploaderTableItem`、`m/upload/UploaderHttpRequestMethod` | |
+| 1 | `Currency` | `ui/unified/Currency` | |
+| 1 | 枚举 `ValueState`、`IndicationColor`、`TitleLevel`、`IconColor` | `import { ValueState } from '@rhfan2019/smart-kit/ui/core/library'` | |
+| 1 | 枚举 `MessageType` | `import MessageType from '@rhfan2019/smart-kit/ui/core/message/MessageType'` | 有自己的模块，默认导出 |
+| 1 | sap.m 的枚举（`ButtonType`、`ListType`、`EmptyIndicatorMode`、`TitleAlignment`、`WrappingType`、`VerticalPlacementType`、`BackgroundDesign`…） | `import { ButtonType } from '@rhfan2019/smart-kit/m/library'` | |
+| 1 | `IllustratedMessageType`、`IllustratedMessageSize`、`AvatarShape`、`AvatarSize` | `m/IllustratedMessageType` 等（默认导出） | |
+| 1 | ProcessFlow、Timeline 的枚举 | `import { ProcessFlowNodeState } from '@rhfan2019/smart-kit/suite/ui/commons/library'` | |
+| 1 | `CalendarWeekNumbering` | `base/i18n/date/CalendarWeekNumbering`（默认导出） | |
+| 1 | `messageTypeOf`、`toDates`、`dynamicDateValueTypes`、`DEFAULT_STANDARD_OPTIONS`、`viewSettingsFilterString`、`RESTRICTED_FILE_NAME_CHARACTERS`、类型 `PreventableEvent`、`DateLike` | `@rhfan2019/smart-kit/util` | |
+| 1 | 类型 `XxxProps`（如 `MessageStripProps`） | `$XxxSettings`（如 `$MessageStripSettings`），从该控件的模块导出 | |
+| 1 | 类型 `XxxRef`（如 `MessageStripRef`） | 类名本身：`useRef<MessageStrip>(null)` | |
+| 1 | 事件对象类型（如 `TimelineFilterSelectionChangeEvent`、`TimelineItemFilteringEvent`、`UploadCompletedEvent`、`ViewSettingsDialogConfirmEvent`、`FeedListItemPressEvent`） | `Timeline$FilterSelectionChangeEvent`、`Timeline$ItemFilteringEvent`、`UploadSetwithTable$UploadCompletedEvent`、`ViewSettingsDialog$ConfirmEvent`、`FeedListItem$SenderPressEvent` / `FeedListItem$IconPressEvent`；`ProcessFlowLabelPressInfo` 删除 | `<类名>$<事件>Event` |
+| 1 | `OverflowToolbar` 的 ref 成员 `element` | `getDomRef()` | |
+| 1 | `OverflowToolbarButton` 不写 `type` | 默认 `'Default'`（原来 `'Transparent'`），工具栏里看起来一样 | 行为 |
+| 1 | `ObjectStatus`、`ObjectIdentifier`、`ObjectNumber`、`ObjectMarker`、`BusyIndicator`、`ExpandableText`、`Currency` 的 `children` | 删除（UI5 没有内容聚合，原来也被忽略） | 类型 |
+| 1 | `ViewSettingsDialog selectedFilterKeys={{ status: ['REJ'] }}` | `selectedFilterCompoundKeys={{ status: { REJ: true } }}`；`onConfirm` 里的 `filterKeys` 改用 `filterCompoundKeys` | |
+| 1 | `IconTabBar onSelect` 的 `selectedItem`、`selectedKey` | `item`、`key`（UI5 里前两个已废弃） | |
+| 1 | `ProcessFlow onNodePress(node)`、`onHeaderPress(lane)`、`onLabelPress(label, info)`、`onError` | `onNodePress(e)` 取 `e.oEvent`；`onHeaderPress(e)` 取 `e.oEvent`；`onLabelPress(e)` 取 `e.oEvent.selectedLabel`、`e.oEvent.connections`；`onOnError(e)` 取 `e.oEvent.text`（事件名和参数名照 api.json） | |
+| 1 | `FeedListItem` 的 `onSenderPress` / `onIconPress` 里的 `domRef` | `getDomRef()` | |
+| 1 | `UploadSetwithTable uploader={{ … }}` | `uploader={<UploaderTableItem … />}`；给了 uploader 时不再回退用 `uploadUrl`；上传器事件的 `responseXHR` 是普通对象；`uploadCompleted` 的 `responseXML` 是文本；`uploadItemViaUrl` 的条目带一个空 `File` | 行为 |
+| 1 | multipart 上传的表单字段名 `file` | 字段名是文件名，另带 `_charset_=UTF-8`（照 UI5） | **服务端按 `file` 取文件的要改** |
+| 1 | `MicroProcessFlowItem` 不写 `state` | 默认 `'Standard'`（原来 `'None'`，显示不变） | |
+| 1 | 卡片 `Header icon` | `iconSrc`（图片地址或元素） | |
+| 1 | 卡片头像的底色 | 默认 `iconBackgroundColor="Transparent"`（UI5 默认）；要原来的样子写 `iconBackgroundColor="Placeholder"` | 外观 |
+| 1 | `NumericHeader` 不写 `state` | 按 `Neutral` 显示数字颜色 | 外观 |
+| 1 | `Card` 的宽高 | 根元素默认写出 `width:100%; height:auto`；用 CSS 类设宽度的要改用 `width` 属性或 `style` | 外观 |
+| 1 | 卡片页头的 DOM | 标题是 heading（`aria-level` 3）；头像、标题和计数放进 `.sk-card__header-row`，数值页头的附加指标放进 `.sk-card__sides` | 宿主 CSS 依赖旧结构的要改 |
+| 1 | `TimelineContent item={{ startDate, title, text }}` | `item={{ dateTime, title, description }}`（manifest 的名字） | |
+| 1 | `CalendarContent firstDayOfWeek` | `calendarWeekNumbering`（`'Default'`、`'ISO_8601'`、`'MiddleEastern'`、`'WesternTraditional'`） | |
+| 1 | `MessageView` 远程长文本（`longtextUrl`） | 替换说明（照 UI5），原来是追加；新属性 `asyncDescriptionHandler` | 行为 |

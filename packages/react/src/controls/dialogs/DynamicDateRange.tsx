@@ -22,39 +22,57 @@ export {
 } from './dateOptions';
 import { TEXTS } from './texts';
 
+/** Parameters of the `change` event. */
+export interface DynamicDateRange$ChangeEvent {
+  /** The current value; undefined when the field was cleared or the text could not be read. */
+  value: DynamicDateRangeValue | undefined;
+  /** Whether the new value is valid. */
+  valid: boolean;
+}
+
 export interface $DynamicDateRangeSettings {
   /** The value (controlled); undefined: empty. */
   value?: DynamicDateRangeValue;
   /** CSS width of the field. */
   width?: string;
-  /** (true) */
+  /** @defaultValue true */
   enabled?: boolean;
-  /** ('None') */
+  /** @defaultValue 'None' */
   valueState?: ValueState;
   /** Name of the input (forms). */
   name?: string;
   placeholder?: string;
-  /** (true) */
+  /** @defaultValue true */
   editable?: boolean;
   valueStateText?: string;
-  /** (false) */
+  /** @defaultValue false */
   required?: boolean;
-  /** (true) Shows the group headers (single dates, date ranges, weeks …) in the option list. */
+  /**
+   * Shows the group headers (single dates, date ranges, weeks …) in the option list.
+   * @defaultValue true
+   */
   enableGroupHeaders?: boolean;
   /** Formats and parses the dates in the field (UI5: a DateFormat instance). */
   formatter?: DynamicDateFormatter;
-  /** (all 68 keys) The standard options offered; the list keeps the UI5 grouping and this order inside each group. */
+  /**
+   * The standard options offered; the list keeps the UI5 grouping and this order inside each group. Default: all 68
+   * keys (`DEFAULT_STANDARD_OPTIONS`).
+   * @defaultValue DATE,TODAY,YESTERDAY,TOMORROW,FIRSTDAYWEEK,LASTDAYWEEK,FIRSTDAYMONTH,LASTDAYMONTH,FIRSTDAYQUARTER,LASTDAYQUARTER,FIRSTDAYYEAR,LASTDAYYEAR,DATERANGE,DATETIMERANGE,FROM,TO,FROMDATETIME,TODATETIME,YEARTODATE,DATETOYEAR,LASTMINUTES,LASTHOURS,LASTDAYS,LASTWEEKS,LASTMONTHS,LASTQUARTERS,LASTYEARS,LASTMINUTESINCLUDED,LASTHOURSINCLUDED,LASTDAYSINCLUDED,LASTWEEKSINCLUDED,LASTMONTHSINCLUDED,LASTQUARTERSINCLUDED,LASTYEARSINCLUDED,NEXTMINUTES,NEXTHOURS,NEXTDAYS,NEXTWEEKS,NEXTMONTHS,NEXTQUARTERS,NEXTYEARS,NEXTMINUTESINCLUDED,NEXTHOURSINCLUDED,NEXTDAYSINCLUDED,NEXTWEEKSINCLUDED,NEXTMONTHSINCLUDED,NEXTQUARTERSINCLUDED,NEXTYEARSINCLUDED,TODAYFROMTO,THISWEEK,LASTWEEK,NEXTWEEK,SPECIFICMONTH,SPECIFICMONTHINYEAR,THISMONTH,LASTMONTH,NEXTMONTH,THISQUARTER,LASTQUARTER,NEXTQUARTER,QUARTER1,QUARTER2,QUARTER3,QUARTER4,THISYEAR,LASTYEAR,NEXTYEAR,DATETIME
+   */
   standardOptions?: readonly StandardDynamicDateRangeKeys[];
-  /** (false) Renders no field; the popover is opened with `open(domRef)` / `openBy(domRef)`. */
+  /**
+   * Renders no field; the popover is opened with `open(domRef)` / `openBy(domRef)`.
+   * @defaultValue false
+   */
   hideInput?: boolean;
   /** Week numbering for week options (default: the locale). */
   calendarWeekNumbering?: CalendarWeekNumbering;
-  /** (false) */
+  /** @defaultValue false */
   showClearIcon?: boolean;
   /** Own options (sap.m.DynamicDateOption). */
   customOptions?: DynamicDateOption[];
   /** Fired when the user picks, types or clears a value; `valid` is false when typed text could not be read. */
-  onChange?(e: { value: DynamicDateRangeValue | undefined; valid: boolean }): void;
+  onChange?(e: DynamicDateRange$ChangeEvent): void;
   /** Extension: field label (Mantine input label). */
   label?: ReactNode;
   id?: string;

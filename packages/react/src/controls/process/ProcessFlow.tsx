@@ -3,7 +3,7 @@
  * parent/child relations, SVG connectors with arrowheads. Lanes and nodes are data arrays (ADR-032 rule 4). There is no
  * `zoomLevel` property (as in UI5): the level follows the width until a ref method sets it.
  */
-import { useCallback, useEffect, useImperativeHandle, useMemo, useReducer, useRef, useState, type CSSProperties, type ReactNode, type Ref } from 'react';
+import { useCallback, useEffect, useImperativeHandle, useMemo, useReducer, useRef, useState, type AriaAttributes, type CSSProperties, type ReactNode, type Ref } from 'react';
 import type { MessageKey } from '../../i18n/messages.en';
 import { useControlText } from '../context';
 import { cx, pressKeys } from './shared';
@@ -53,11 +53,11 @@ export interface ProcessFlowLaneHeader {
 export interface ProcessFlowConnectionLabel {
   text?: string;
   icon?: ReactNode;
-  /** Where several labels meet, the one with the highest priority is shown (default 0). */
+  /** Where several labels meet, the one with the highest priority is shown. @defaultValue 0 */
   priority?: number;
-  /** Default 'Neutral'. */
+  /** @defaultValue 'Neutral' */
   state?: ProcessFlowConnectionLabelState;
-  /** Default true. */
+  /** @defaultValue true */
   enabled?: boolean;
 }
 
@@ -96,28 +96,47 @@ export interface ProcessFlowNode {
   zoomLevelFourContent?: ReactNode;
 }
 
-/** Second argument of `onLabelPress`: the connection the label belongs to. */
-export interface ProcessFlowLabelPressInfo {
-  sourceNode: ProcessFlowNode;
-  targetNode: ProcessFlowNode;
+/** sap.suite.ui.commons.AriaProperties (aggregation `ariaProperties`): ARIA attributes of the control's root. */
+export interface AriaProperties {
+  label?: string;
+  /** Ids of the labelling elements (space separated). */
+  labelledBy?: string;
+  /** Ids of the describing elements (space separated). */
+  describedBy?: string;
+  /** Default 'group'. */
+  role?: string;
+  hasPopup?: string;
 }
+
+/** Event object of `onNodePress`: `oEvent` is the pressed node (as in UI5). */
+export interface ProcessFlow$NodePressEvent { oEvent: ProcessFlowNode }
+/** One connection of a pressed label. */
+export interface ProcessFlowLabelConnection { sourceNode: ProcessFlowNode; targetNode: ProcessFlowNode; label: ProcessFlowConnectionLabel }
+/** Event object of `onLabelPress`: `oEvent` holds the label and its connections (as in UI5). */
+export interface ProcessFlow$LabelPressEvent { oEvent: { selectedLabel: ProcessFlowConnectionLabel; connections: ProcessFlowLabelConnection[] } }
+/** Event object of `onHeaderPress`: `oEvent` is the pressed lane header (as in UI5). */
+export interface ProcessFlow$HeaderPressEvent { oEvent: ProcessFlowLaneHeader }
+/** Event object of `onOnError` (UI5 event `onError`): `oEvent.text` describes the problem. */
+export interface ProcessFlow$OnErrorEvent { oEvent: { text: string } }
 
 export interface $ProcessFlowSettings {
   lanes?: ProcessFlowLaneHeader[];
   nodes?: ProcessFlowNode[];
-  /** Nodes with a folded top-right corner (default false). */
+  /** Nodes with a folded top-right corner. @defaultValue false */
   foldedCorners?: boolean;
-  /** Scrolls inside its own box (default true); false lets the content overflow. */
+  /** Scrolls inside its own box; false lets the content overflow. @defaultValue true */
   scrollable?: boolean;
-  /** Ctrl + mouse wheel zooms (default true). */
+  /** Ctrl + mouse wheel zooms. @defaultValue true */
   wheelZoomable?: boolean;
-  /** Shows the connection labels (default false). */
+  /** Shows the connection labels. @defaultValue false */
   showLabels?: boolean;
-  onNodePress?: (node: ProcessFlowNode) => void;
-  onLabelPress?: (label: ProcessFlowConnectionLabel, info: ProcessFlowLabelPressInfo) => void;
-  onHeaderPress?: (lane: ProcessFlowLaneHeader) => void;
-  /** Inconsistent data: a node in an unknown lane, or a child or parent id that does not exist. */
-  onError?: (e: { text: string }) => void;
+  /** ARIA attributes of the root (label, labelledBy, describedBy, role, hasPopup). */
+  ariaProperties?: AriaProperties;
+  onNodePress?: (e: ProcessFlow$NodePressEvent) => void;
+  onLabelPress?: (e: ProcessFlow$LabelPressEvent) => void;
+  onHeaderPress?: (e: ProcessFlow$HeaderPressEvent) => void;
+  /** UI5 event `onError`: inconsistent data (a node in an unknown lane, or a child or parent id that does not exist). */
+  onOnError?: (e: ProcessFlow$OnErrorEvent) => void;
   ref?: Ref<ProcessFlow>;
   'aria-label'?: string;
 }
@@ -301,9 +320,9 @@ export function ProcessFlow(p: $ProcessFlowSettings) {
 
   const { lanes, placed, rows, edges, errors } = useMemo(() => layoutProcessFlow(p.lanes ?? [], p.nodes ?? [], optimized), [p.lanes, p.nodes, optimized]);
   const errorText = errors.join('\n');
-  const onError = p.onError;
+  const onError = p.onOnError;
   useEffect(() => {
-    if (errorText) onError?.({ text: errorText });
+    if (errorText) onError?.({ oEvent: { text: errorText } });
   }, [errorText, onError]);
 
   // initial level by width, until a ref method or the wheel sets one
@@ -373,13 +392,17 @@ export function ProcessFlow(p: $ProcessFlowSettings) {
   const cols = Math.max(1, lanes.length);
   const stateText = (s: ProcessFlowNodeState) => t(`ctl.processFlow.state${s}` as MessageKey);
   const style = { '--sk-process-flow-cols': cols, '--sk-process-flow-rows': rows } as CSSProperties;
+  const aria = p.ariaProperties;
 
   return (
     <div
       ref={root}
       className={cx('sk-process-flow', `sk-process-flow--zoom-${zoom.toLowerCase()}`, p.scrollable === false && 'sk-process-flow--static')}
-      role="group"
-      aria-label={p['aria-label'] ?? t('ctl.processFlow.label')}
+      role={aria?.role || 'group'}
+      aria-label={aria?.label || p['aria-label'] || (aria?.labelledBy ? undefined : t('ctl.processFlow.label'))}
+      aria-labelledby={aria?.labelledBy || undefined}
+      aria-describedby={aria?.describedBy || undefined}
+      aria-haspopup={(aria?.hasPopup || undefined) as AriaAttributes['aria-haspopup']}
       data-zoom-level={zoom}
     >
       <div className="sk-process-flow__canvas" style={style}>
@@ -396,7 +419,7 @@ export function ProcessFlow(p: $ProcessFlowSettings) {
               </>
             );
             const cls = cx('sk-process-flow__lane', lane.zoomLevel && `sk-process-flow__lane--zoom-${lane.zoomLevel.toLowerCase()}`);
-            const press = lane.onPress || p.onHeaderPress ? () => { lane.onPress?.(); p.onHeaderPress?.(lane); } : undefined;
+            const press = lane.onPress || p.onHeaderPress ? () => { lane.onPress?.(); p.onHeaderPress?.({ oEvent: lane }); } : undefined;
             return press
               ? <button key={lane.laneId} type="button" className={`${cls} sk-process-flow__lane--active`} data-lane-id={lane.laneId} onClick={press}>{content}</button>
               : <div key={lane.laneId} className={cls} data-lane-id={lane.laneId}>{content}</div>;
@@ -423,7 +446,7 @@ export function ProcessFlow(p: $ProcessFlowSettings) {
                 className={cx('sk-process-flow__label', `sk-process-flow__label--${TONE[label.state ?? 'Neutral']}`, l.dimmed && 'sk-process-flow__label--dimmed')}
                 style={{ insetInlineStart: pct(l.lx, cols), insetBlockStart: pct(l.ly, rows) }}
                 disabled={label.enabled === false}
-                onClick={() => p.onLabelPress?.(label, { sourceNode: source, targetNode: target })}>
+                onClick={() => p.onLabelPress?.({ oEvent: { selectedLabel: label, connections: [{ sourceNode: source, targetNode: target, label }] } })}>
                 {label.icon && <span className="sk-process-flow__label-icon" aria-hidden="true">{label.icon}</span>}
                 {label.text}
               </button>
@@ -449,7 +472,7 @@ function ProcessFlowNodeBox(p: {
   const state = node.state ?? 'Neutral';
   const custom = { One: node.zoomLevelOneContent, Two: node.zoomLevelTwoContent, Three: node.zoomLevelThreeContent, Four: node.zoomLevelFourContent }[p.zoom];
   const title = p.zoom === 'Four' ? (node.titleAbbreviation ?? node.title) : node.title;
-  const press = p.onPress ? () => p.onPress?.(node) : undefined;
+  const press = p.onPress ? () => p.onPress?.({ oEvent: node }) : undefined;
   return (
     <div
       className={cx(

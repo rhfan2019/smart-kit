@@ -1,18 +1,19 @@
 /**
- * UploadSetwithTable + UploadItem (sap.m.plugins.UploadSetwithTable, sap.m.upload), docs/26 §3.7. In UI5 a plugin on
- * sap.m.Table whose rows come from a binding; here one control that renders its own file table from `items` (data
- * array instead of the row binding and `rowConfiguration`). Uploads use XMLHttpRequest (progress), files can be dropped
- * on the control, and every API outside the table is the UI5 one. The plugin lifecycle events onActivated /
- * onDeactivated and the cloud file picker are not offered.
+ * UploadSetwithTable + UploadItem + UploaderTableItem (sap.m.plugins.UploadSetwithTable, sap.m.upload), docs/26 §3.7. In
+ * UI5 a plugin on sap.m.Table whose rows come from a binding; here one control that renders its own file table from
+ * `items` (data array instead of the row binding and `rowConfiguration`). Uploads go through the active uploader (the
+ * `uploader` element or an implicit UploaderTableItem) with XMLHttpRequest (progress), files can be dropped on the
+ * control, and every API outside the table is the UI5 one. The cloud file picker is not offered.
  */
 import { ActionIcon, Button, Modal, Progress, TextInput } from '@mantine/core';
 import { ChevronLeft, ChevronRight, Download, File as FileGeneric, FileImage, FileSpreadsheet, FileText, Folder, Pencil, Trash2, Upload, X } from 'lucide-react';
 import {
-  createContext, useContext, useEffect, useImperativeHandle, useRef, useState, type DragEvent, type InputHTMLAttributes, type ReactNode, type Ref,
+  cloneElement, createContext, isValidElement, useCallback, useContext, useEffect, useImperativeHandle, useRef, useState,
+  type DragEvent, type InputHTMLAttributes, type ReactElement, type ReactNode, type Ref,
 } from 'react';
 import { IllustratedMessage } from '../display';
 import { useControlLocale, useControlText } from '../context';
-import { preventable, type PreventableEvent } from '../types';
+import { preventable } from '../types';
 import { cx } from './shared';
 import { TEXTS } from './texts';
 
@@ -69,45 +70,186 @@ export type UploadItemInstance = UploadItem & {
   terminateUpload(): void;
 };
 
-/** sap.m.upload.UploaderTableItem: how the control uploads and downloads. */
-export interface UploaderTableItem {
-  uploadUrl?: string;
-  downloadUrl?: string;
-  /** Default 'Post'. */
-  httpRequestMethod?: UploaderHttpRequestMethod;
-  /** Sends the file as multipart/form-data (field "file") instead of the raw body (default false). */
-  useMultipart?: boolean;
-  onUploadStarted?: (e: { item: UploadItemInstance }) => void;
-  onUploadProgressed?: (e: { item: UploadItemInstance; loaded: number; total: number }) => void;
-  onUploadCompleted?: (e: { item: UploadItemInstance; responseXHR: XMLHttpRequest }) => void;
-  onUploadTerminated?: (e: { item: UploadItemInstance }) => void;
+/** The request of a finished upload (`responseXHR` of `uploadCompleted`, as in UI5). */
+export interface UploaderResponseXHR {
+  response: unknown;
+  responseXML: Document | null;
+  responseText: string;
+  readyState: number;
+  /** HTTP status; 0 for a network error. */
+  status: number;
+  /** The raw response headers (getAllResponseHeaders()). */
+  headers: string;
 }
 
-/** Sends one file with XMLHttpRequest; resolves with the finished request (any status), rejects on a network error. */
-function send(o: { file?: Blob | null; url: string; method?: UploaderHttpRequestMethod; headerFields?: UploadHeaderField[]; multipart?: boolean; onProgress?: (loaded: number, total: number) => void; onStart?: (xhr: XMLHttpRequest) => void }) {
+export interface UploaderTableItem$UploadStartedEvent { item: UploadItemInstance }
+export interface UploaderTableItem$UploadProgressedEvent { item: UploadItemInstance; loaded: number; total: number }
+export interface UploaderTableItem$UploadCompletedEvent { item: UploadItemInstance; responseXHR: UploaderResponseXHR }
+export interface UploaderTableItem$UploadTerminatedEvent { item: UploadItemInstance }
+
+/** sap.m.upload.UploaderTableItem: how UploadSetwithTable uploads and downloads (`uploader={<UploaderTableItem … />}`). */
+export interface $UploaderTableItemSettings {
+  /** URL the files are sent to (an item's `uploadUrl` comes first). */
+  uploadUrl?: string;
+  /** URL of downloads instead of the item's `url`. */
+  downloadUrl?: string;
+  /** @defaultValue 'Post' */
+  httpRequestMethod?: UploaderHttpRequestMethod;
+  /** Sends the file as multipart/form-data (field named after the file, plus `_charset_`) instead of the raw body. @defaultValue false */
+  useMultipart?: boolean;
+  onUploadStarted?: (e: UploaderTableItem$UploadStartedEvent) => void;
+  onUploadProgressed?: (e: UploaderTableItem$UploadProgressedEvent) => void;
+  onUploadCompleted?: (e: UploaderTableItem$UploadCompletedEvent) => void;
+  onUploadTerminated?: (e: UploaderTableItem$UploadTerminatedEvent) => void;
+  ref?: Ref<UploaderTableItem>;
+}
+
+/** Instance methods of UploaderTableItem (via `ref`). */
+export interface UploaderTableItem {
+  /** Uploads the item's file (with XMLHttpRequest) and fires uploadStarted, uploadProgressed and uploadCompleted. */
+  uploadItem(item: UploadItemInstance, headerFields?: UploadHeaderField[]): void;
+  /** Aborts the running upload of the item; fires uploadTerminated. */
+  terminateItem(item: UploadItemInstance): void;
+  /** Downloads the item from `downloadUrl` or its `url` (`askForLocation`: a save dialog where the browser has one); false without a URL. */
+  download(item: UploadItem, headerFields?: UploadHeaderField[], askForLocation?: boolean): boolean;
+}
+
+interface RequestOptions { file?: Blob | null; url: string; method?: UploaderHttpRequestMethod; headerFields?: UploadHeaderField[]; multipart?: boolean; onProgress?: (loaded: number, total: number) => void }
+
+/** Sends one file with XMLHttpRequest; `onEnd` is called synchronously when it finishes, fails or is aborted. */
+function request(o: RequestOptions, onEnd: (xhr: XMLHttpRequest, how: 'load' | 'error' | 'abort') => void): XMLHttpRequest {
+  const xhr = new XMLHttpRequest();
+  xhr.open(o.method === 'Put' ? 'PUT' : 'POST', o.url, true);
+  for (const h of o.headerFields ?? []) xhr.setRequestHeader(h.name, h.value);
+  if (xhr.upload && o.onProgress) xhr.upload.onprogress = (e) => o.onProgress?.(e.loaded, e.lengthComputable ? e.total : 0);
+  xhr.onload = () => onEnd(xhr, 'load');
+  xhr.onerror = () => onEnd(xhr, 'error');
+  xhr.onabort = () => onEnd(xhr, 'abort');
+  let body: Blob | FormData | null = o.file ?? null;
+  if (o.multipart && o.file) {
+    // as UI5: the form field is named after the file, plus _charset_
+    const name = o.file instanceof globalThis.File ? o.file.name : 'file';
+    body = new FormData();
+    body.append(name, o.file, name);
+    body.append('_charset_', 'UTF-8');
+  }
+  xhr.send(body);
+  return xhr;
+}
+
+/** Sends one file; resolves with the finished request (any status), rejects on a network error or abort. */
+function send(o: RequestOptions) {
   return new Promise<XMLHttpRequest>((resolve, reject) => {
-    const xhr = new XMLHttpRequest();
-    xhr.open(o.method === 'Put' ? 'PUT' : 'POST', o.url, true);
-    for (const h of o.headerFields ?? []) xhr.setRequestHeader(h.name, h.value);
-    if (xhr.upload && o.onProgress) xhr.upload.onprogress = (e) => o.onProgress?.(e.loaded, e.lengthComputable ? e.total : 0);
-    xhr.onload = () => resolve(xhr);
-    xhr.onerror = () => reject(xhr);
-    xhr.onabort = () => reject(xhr);
-    o.onStart?.(xhr);
-    let body: Blob | FormData | null = o.file ?? null;
-    if (o.multipart && o.file) {
-      body = new FormData();
-      body.append('file', o.file, o.file instanceof globalThis.File ? o.file.name : 'file');
-    }
-    xhr.send(body);
+    request(o, (xhr, how) => (how === 'load' ? resolve(xhr) : reject(xhr)));
   });
 }
 
-/** Static methods of sap.m.upload.UploaderTableItem. */
-export const UploaderTableItem = {
+/** Saves a URL as a file: a save dialog with `askForLocation` where the browser has one, else a download link. */
+function saveUrl(url: string, fileName: string | undefined, headerFields: UploadHeaderField[], askForLocation?: boolean) {
+  const w = window as unknown as { showSaveFilePicker?: (o: { suggestedName?: string }) => Promise<{ createWritable(): Promise<{ write(b: Blob): Promise<void>; close(): Promise<void> }> }> };
+  if (askForLocation && w.showSaveFilePicker) {
+    void (async () => {
+      const handle = await w.showSaveFilePicker!({ suggestedName: fileName });
+      const blob = await (await fetch(url, { headers: headerFields.map((h) => [h.name, h.value] as [string, string]) })).blob();
+      const out = await handle.createWritable();
+      await out.write(blob);
+      await out.close();
+    })().catch(() => {});
+    return;
+  }
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = fileName ?? '';
+  a.rel = 'noopener';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+}
+
+type UploaderEvent =
+  | ['started', UploaderTableItem$UploadStartedEvent] | ['progressed', UploaderTableItem$UploadProgressedEvent]
+  | ['completed', UploaderTableItem$UploadCompletedEvent] | ['terminated', UploaderTableItem$UploadTerminatedEvent];
+type UploaderListener = (...e: UploaderEvent) => void;
+/** Listeners of UploadSetwithTable.registerUploaderEvents, and the abort-all of unmounting, per uploader instance. */
+const uploaderListeners = new WeakMap<UploaderTableItem, Set<UploaderListener>>();
+const uploaderAbortAll = new WeakMap<UploaderTableItem, () => void>();
+
+function createUploader(settings: () => $UploaderTableItemSettings): UploaderTableItem {
+  const running = new Map<string, { xhr?: XMLHttpRequest; aborted: boolean; silent?: boolean }>();
+  const listeners = new Set<UploaderListener>();
+  const emit = (...e: UploaderEvent) => {
+    const s = settings();
+    if (e[0] === 'started') s.onUploadStarted?.(e[1]);
+    else if (e[0] === 'progressed') s.onUploadProgressed?.(e[1]);
+    else if (e[0] === 'completed') s.onUploadCompleted?.(e[1]);
+    else s.onUploadTerminated?.(e[1]);
+    for (const l of [...listeners]) l(...e);
+  };
+  const self: UploaderTableItem = {
+    uploadItem(item, headerFields) {
+      const s = settings();
+      const url = item.uploadUrl || s.uploadUrl;
+      if (!url) return;
+      const entry: { xhr?: XMLHttpRequest; aborted: boolean; silent?: boolean } = { aborted: false };
+      running.set(item.id, entry);
+      const done = (xhr: XMLHttpRequest) => {
+        running.delete(item.id);
+        if (entry.silent) return;
+        if (entry.aborted) {
+          emit('terminated', { item });
+          return;
+        }
+        const responseXML = xhr.responseType === '' || xhr.responseType === 'document' ? xhr.responseXML : null;
+        emit('completed', {
+          item,
+          responseXHR: { response: xhr.response ?? xhr.responseText, responseXML, responseText: xhr.responseText, readyState: xhr.readyState, status: xhr.status, headers: xhr.getAllResponseHeaders?.() ?? '' },
+        });
+      };
+      entry.xhr = request({
+        file: item.file, url, method: s.httpRequestMethod, multipart: s.useMultipart, headerFields,
+        onProgress: (loaded, total) => emit('progressed', { item, loaded, total }),
+      }, done);
+      emit('started', { item });
+    },
+    terminateItem(item) {
+      const entry = running.get(item.id);
+      if (!entry?.xhr) return;
+      entry.aborted = true;
+      entry.xhr.abort();
+    },
+    download(item, headerFields = [], askForLocation) {
+      const url = settings().downloadUrl || item.url || (item.file && typeof URL.createObjectURL === 'function' ? URL.createObjectURL(item.file) : undefined);
+      if (!url) return false;
+      saveUrl(url, item.fileName, headerFields, askForLocation);
+      return true;
+    },
+  };
+  uploaderListeners.set(self, listeners);
+  uploaderAbortAll.set(self, () => {
+    for (const entry of running.values()) {
+      entry.silent = true;
+      entry.xhr?.abort();
+    }
+    running.clear();
+  });
+  return self;
+}
+
+/** sap.m.upload.UploaderTableItem: renders nothing; UploadSetwithTable uses it through its `ref` (or an implicit one). */
+function UploaderTableItemControl(p: $UploaderTableItemSettings): null {
+  const props = useRef(p);
+  useEffect(() => { props.current = p; });
+  const [instance] = useState(() => createUploader(() => props.current));
+  useImperativeHandle(p.ref, () => instance, [instance]);
+  useEffect(() => () => uploaderAbortAll.get(instance)?.(), [instance]);
+  return null;
+}
+
+/** sap.m.upload.UploaderTableItem, with the static `uploadFile`. */
+export const UploaderTableItem = Object.assign(UploaderTableItemControl, {
   /** Uploads a file to a URL (POST, raw body); resolves with the finished XMLHttpRequest. */
   uploadFile: (file: Blob, url: string, headerFields?: UploadHeaderField[]) => send({ file, url, headerFields }),
-};
+});
 
 /** sap.m.plugins.UploadSetwithTable.FilenameValidationConfig */
 export interface FilenameValidationConfig {
@@ -145,17 +287,34 @@ export interface UploadSetwithTableColumn {
   width?: string;
 }
 
-export interface UploadCompletedEvent {
+/** Event object of `onUploadCompleted`. */
+export interface UploadSetwithTable$UploadCompletedEvent {
   item: UploadItemInstance;
   response: string;
   readyState: number;
   status: number;
-  responseXML: Document | null;
+  /** Text content of the XML response (as in UI5), or null. */
+  responseXML: string | null;
   responseText: string;
+  /** The response headers, names in lower case. */
   headers: Record<string, string>;
 }
 
-type ItemEvent = { item: UploadItemInstance };
+export interface UploadSetwithTable$ItemRenamedEvent { item: UploadItemInstance }
+export interface UploadSetwithTable$ItemRenameCanceledEvent { item: UploadItemInstance }
+/** Preventable: `preventDefault()` keeps the item from being uploaded. */
+export interface UploadSetwithTable$BeforeUploadStartsEvent { item: UploadItemInstance; preventDefault(): void }
+export interface UploadSetwithTable$FileTypeMismatchEvent { item: UploadItemInstance }
+export interface UploadSetwithTable$FileNameLengthExceededEvent { item: UploadItemInstance }
+export interface UploadSetwithTable$FileSizeExceededEvent { item: UploadItemInstance }
+export interface UploadSetwithTable$MediaTypeMismatchEvent { item: UploadItemInstance }
+export interface UploadSetwithTable$BeforeInitiatingItemUploadEvent { item: UploadItemInstance }
+/** UI5 event `onActivated`: the control is ready. */
+export interface UploadSetwithTable$OnActivatedEvent { oPlugin: UploadSetwithTable }
+/** UI5 event `onDeactivated`: the control is removed; `control` is its root element. */
+export interface UploadSetwithTable$OnDeactivatedEvent { control: HTMLElement | null }
+/** Extension: event object of `onRemove`. */
+export interface UploadSetwithTableRemoveEvent { item: UploadItemInstance }
 
 export interface $UploadSetwithTableSettings {
   items?: UploadItem[];
@@ -166,21 +325,23 @@ export interface $UploadSetwithTableSettings {
   maxFileSize?: number;
   /** Allowed media types ("image/png", also "image/*"). */
   mediaTypes?: string[];
+  /** URL of the implicit uploader (without `uploader`). */
   uploadUrl?: string;
-  /** Default 'Post'. */
+  /** Method of the implicit uploader (without `uploader`). @defaultValue 'Post' */
   httpRequestMethod?: UploaderHttpRequestMethod;
-  /** Several files at once (default false). */
+  /** Several files at once. @defaultValue false */
   multiple?: boolean;
-  /** Hides the upload button (default false); drag and drop still works. */
+  /** Hides the upload button; drag and drop still works. @defaultValue false */
   uploadButtonInvisible?: boolean;
-  /** Default true. */
+  /** @defaultValue true */
   uploadEnabled?: boolean;
   /** Called for each new item before its upload; resolve (with the item to upload) to go on, reject to skip it. */
   itemValidationHandler?: (info: UploadSetwithTableItemInfo) => Promise<UploadItem>;
-  /** Selects folders instead of files (default false). */
+  /** Selects folders instead of files. @defaultValue false */
   directory?: boolean;
   fileNameValidationConfig?: FilenameValidationConfig;
-  uploader?: UploaderTableItem;
+  /** The uploader: an `<UploaderTableItem … />` element (default: an implicit one with `uploadUrl` and `httpRequestMethod`). */
+  uploader?: ReactElement<$UploaderTableItemSettings>;
   headerFields?: UploadHeaderField[];
   /** Empty state; default an IllustratedMessage "UploadToCloud". */
   noDataIllustration?: ReactNode;
@@ -192,16 +353,20 @@ export interface $UploadSetwithTableSettings {
   /** Extension: columns after the file name, size and status. */
   columns?: UploadSetwithTableColumn[];
   /** Extension: shows a remove button per row. */
-  onRemove?: (e: ItemEvent) => void;
-  onItemRenamed?: (e: ItemEvent) => void;
-  onItemRenameCanceled?: (e: ItemEvent) => void;
-  onBeforeUploadStarts?: (e: PreventableEvent<ItemEvent>) => void;
-  onUploadCompleted?: (e: UploadCompletedEvent) => void;
-  onFileTypeMismatch?: (e: ItemEvent) => void;
-  onFileNameLengthExceeded?: (e: ItemEvent) => void;
-  onFileSizeExceeded?: (e: ItemEvent) => void;
-  onMediaTypeMismatch?: (e: ItemEvent) => void;
-  onBeforeInitiatingItemUpload?: (e: ItemEvent) => void;
+  onRemove?: (e: UploadSetwithTableRemoveEvent) => void;
+  onItemRenamed?: (e: UploadSetwithTable$ItemRenamedEvent) => void;
+  onItemRenameCanceled?: (e: UploadSetwithTable$ItemRenameCanceledEvent) => void;
+  onBeforeUploadStarts?: (e: UploadSetwithTable$BeforeUploadStartsEvent) => void;
+  onUploadCompleted?: (e: UploadSetwithTable$UploadCompletedEvent) => void;
+  onFileTypeMismatch?: (e: UploadSetwithTable$FileTypeMismatchEvent) => void;
+  onFileNameLengthExceeded?: (e: UploadSetwithTable$FileNameLengthExceededEvent) => void;
+  onFileSizeExceeded?: (e: UploadSetwithTable$FileSizeExceededEvent) => void;
+  onMediaTypeMismatch?: (e: UploadSetwithTable$MediaTypeMismatchEvent) => void;
+  onBeforeInitiatingItemUpload?: (e: UploadSetwithTable$BeforeInitiatingItemUploadEvent) => void;
+  /** UI5 event `onActivated`: fired when the control is mounted. */
+  onOnActivated?: (e: UploadSetwithTable$OnActivatedEvent) => void;
+  /** UI5 event `onDeactivated`: fired when the control is unmounted. */
+  onOnDeactivated?: (e: UploadSetwithTable$OnDeactivatedEvent) => void;
   ref?: Ref<UploadSetwithTable>;
 }
 
@@ -217,12 +382,19 @@ export interface UploadSetwithTable {
   uploadItemViaUrl(name: string, url: string, promise: Promise<unknown>): Promise<UploadItemInstance>;
   /** Adds an item without a file; `promise` resolves to its data (file name, URL…), then it is uploaded. */
   uploadItemWithoutFile(promise: Promise<Partial<UploadItem> | undefined>): Promise<UploadItemInstance>;
+  /** Lets the control follow the uploads of an UploaderTableItem instance (the `uploader` and the implicit one are registered already). */
+  registerUploaderEvents(uploader: UploaderTableItem): void;
 }
 
 const UploadButtonContext = createContext<ReactNode>(null);
 
+export interface $ActionsPlaceholderSettings {
+  /** Which button the placeholder stands for. */
+  placeholderFor?: UploadSetwithTableActionPlaceHolder;
+}
+
 /** sap.m.upload.ActionsPlaceholder: where the upload button goes inside `actions`. */
-export function ActionsPlaceholder({ placeholderFor }: { placeholderFor?: UploadSetwithTableActionPlaceHolder }) {
+export function ActionsPlaceholder({ placeholderFor }: $ActionsPlaceholderSettings) {
   const button = useContext(UploadButtonContext);
   return placeholderFor === 'UploadButtonPlaceholder' ? <>{button}</> : null;
 }
@@ -271,13 +443,37 @@ function parseHeaders(raw: string): Record<string, string> {
 const signature = (items: UploadItem[] | undefined) => (items ?? []).map((i) => [i.id, i.fileName, i.url, i.uploadState, i.fileSize].join('\u0001')).join('\u0002');
 let seq = 0;
 
+/** The UI5 file size text: KB below 1 MB, MB below 1 GB, else GB, two decimals. */
+function fileSizeWithUnits(iFileSize: number): string {
+  const kb = 1024;
+  const mb = kb * 1024;
+  const gb = mb * 1024;
+  if (typeof iFileSize !== 'number') return String(iFileSize);
+  if (iFileSize < mb) return `${(iFileSize / kb).toFixed(2)} KB`;
+  if (iFileSize < gb) return `${(iFileSize / mb).toFixed(2)} MB`;
+  return `${(iFileSize / gb).toFixed(2)} GB`;
+}
+
+/** The icon of a file by media type, else by extension (a React element instead of the UI5 icon URI, ADR-032 rule 5). */
+function iconForFileType(mediaType: string | undefined, fileName: string | undefined): ReactElement {
+  const type = (mediaType ?? '').toLowerCase();
+  const ext = extensionOf(fileName);
+  if (type.startsWith('image/') || ['png', 'jpg', 'jpeg', 'gif', 'bmp', 'svg', 'webp', 'tif', 'tiff'].includes(ext)) return <FileImage aria-hidden="true" />;
+  if (type === 'application/pdf' || type.startsWith('text/') || ['pdf', 'txt', 'doc', 'docx', 'rtf'].includes(ext)) return <FileText aria-hidden="true" />;
+  if (/sheet|excel|csv/.test(type) || ['xls', 'xlsx', 'xlsm', 'csv'].includes(ext)) return <FileSpreadsheet aria-hidden="true" />;
+  return <FileGeneric aria-hidden="true" />;
+}
+
+/** Root elements of the mounted controls (static `findOn`). */
+const mounted = new Map<Element, UploadSetwithTable>();
+
 export function UploadSetwithTable(p: $UploadSetwithTableSettings) {
   const t = useControlText(TEXTS);
   const { intlLocale } = useControlLocale();
+  const root = useRef<HTMLDivElement>(null);
   const input = useRef<HTMLInputElement>(null);
   const props = useRef(p);
   useEffect(() => { props.current = p; });
-  const xhrs = useRef(new Map<string, XMLHttpRequest>());
   // own items (selected files, uploads in progress); `items` come from the application
   const [own, setOwn] = useState<UploadItem[]>([]);
   const ownRef = useRef<UploadItem[]>([]);
@@ -294,7 +490,6 @@ export function UploadSetwithTable(p: $UploadSetwithTableSettings) {
     setOwn(own.filter((i) => i.uploadState !== 'Complete'));
   }
   useEffect(() => { ownRef.current = own; }, [own]);
-  useEffect(() => () => xhrs.current.forEach((x) => x.abort()), []);
 
   const [renaming, setRenaming] = useState<{ id: string; name: string } | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
@@ -307,6 +502,7 @@ export function UploadSetwithTable(p: $UploadSetwithTableSettings) {
   const all = [...appItems, ...own.filter((it) => !appIds.has(it.id!)).map((it) => ({ ...it, id: it.id! }))];
 
   const patch = (id: string, changes: Partial<UploadItem>) => {
+    if (!ownRef.current.some((i) => i.id === id)) return undefined;
     const next = ownRef.current.map((i) => (i.id === id ? { ...i, ...changes } : i));
     commit(next);
     return next.find((i) => i.id === id);
@@ -317,33 +513,72 @@ export function UploadSetwithTable(p: $UploadSetwithTableSettings) {
     return list.find((i) => i.id === item.id) ?? list.find((i) => i.fileName === item.fileName && i.url === item.url);
   };
 
-  const download = (item: UploadItem, askForLocation?: boolean) => {
-    const url = props.current.uploader?.downloadUrl ?? item.url ?? (item.file && typeof URL.createObjectURL === 'function' ? URL.createObjectURL(item.file) : undefined);
-    if (!url) return;
-    const w = window as unknown as { showSaveFilePicker?: (o: { suggestedName?: string }) => Promise<{ createWritable(): Promise<{ write(b: Blob): Promise<void>; close(): Promise<void> }> }> };
-    if (askForLocation && w.showSaveFilePicker) {
-      void (async () => {
-        const handle = await w.showSaveFilePicker!({ suggestedName: item.fileName });
-        const blob = await (await fetch(url)).blob();
-        const out = await handle.createWritable();
-        await out.write(blob);
-        await out.close();
-      })().catch(() => {});
-      return;
-    }
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = item.fileName ?? '';
-    a.rel = 'noopener';
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
+  // the active uploader: the `uploader` element or the implicit one (UI5 _getActiveUploader)
+  const uploaderRef = useRef<UploaderTableItem | null>(null);
+  const registered = useRef(new Set<UploaderTableItem>());
+  const pending = useRef(new Map<string, () => void>());
+  const settle = (id: string) => {
+    pending.current.get(id)?.();
+    pending.current.delete(id);
   };
-  const aborted = useRef(new Set<string>());
+  const headers = (item?: UploadItem) => [...(props.current.headerFields ?? []), ...(item?.headerFields ?? [])];
+  const onUploaderEvent: UploaderListener = (...e) => {
+    const id = e[1].item.id;
+    if (e[0] === 'started') patch(id, { uploadState: 'Uploading', progress: 0 });
+    else if (e[0] === 'progressed') {
+      const { loaded, total } = e[1];
+      patch(id, { progress: total ? Math.round((loaded / total) * 100) : 0 })?.onUploadProgress?.({ loaded, total });
+    } else if (e[0] === 'terminated') {
+      const row = ownRef.current.find((i) => i.id === id);
+      remove(id);
+      row?.onUploadTerminated?.({ item: instance(row) });
+      settle(id);
+    } else {
+      const x = e[1].responseXHR;
+      const ok = x.status >= 200 && x.status < 300;
+      const done = patch(id, { uploadState: ok ? 'Complete' : 'Error', progress: ok ? 100 : undefined });
+      if (done) {
+        props.current.onUploadCompleted?.({
+          item: instance(done), response: typeof x.response === 'string' ? x.response : x.responseText, readyState: x.readyState, status: x.status,
+          responseXML: x.responseXML?.documentElement?.textContent ?? null, responseText: x.responseText, headers: parseHeaders(x.headers),
+        });
+      }
+      settle(id);
+    }
+  };
+  const listener = useRef(onUploaderEvent);
+  useEffect(() => { listener.current = onUploaderEvent; });
+  const [stableListener] = useState<UploaderListener>(() => (...e: UploaderEvent) => listener.current(...e));
+  const registerUploaderEvents = (u: UploaderTableItem) => {
+    if (registered.current.has(u)) return;
+    registered.current.add(u);
+    uploaderListeners.get(u)?.add(stableListener);
+  };
+  useEffect(() => {
+    const set = registered.current;
+    return () => {
+      for (const u of set) uploaderListeners.get(u)?.delete(stableListener);
+      set.clear();
+    };
+  }, [stableListener]);
+  const ownUploaderRef = p.uploader?.props.ref;
+  const setUploader = useCallback((u: UploaderTableItem | null) => {
+    uploaderRef.current = u;
+    if (u) registerUploaderEvents(u);
+    if (typeof ownUploaderRef === 'function') ownUploaderRef(u);
+    else if (ownUploaderRef && typeof ownUploaderRef === 'object') (ownUploaderRef as { current: UploaderTableItem | null }).current = u;
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- registerUploaderEvents only touches refs
+  }, [ownUploaderRef]);
+  const uploaderElement = p.uploader && isValidElement(p.uploader)
+    ? cloneElement(p.uploader, { ref: setUploader })
+    : <UploaderTableItem ref={setUploader} uploadUrl={p.uploadUrl} httpRequestMethod={p.httpRequestMethod} />;
+
+  const download = (item: UploadItem, askForLocation?: boolean) => {
+    uploaderRef.current?.download(item, headers(item), askForLocation);
+  };
   const terminateUpload = (id: string) => {
-    if (!xhrs.current.has(id)) return;
-    aborted.current.add(id);
-    xhrs.current.get(id)?.abort();
+    const row = ownRef.current.find((i) => i.id === id);
+    if (row) uploaderRef.current?.terminateItem(instance(row));
   };
   const instance = (item: UploadItem): UploadItemInstance => {
     const id = item.id ?? '';
@@ -355,56 +590,21 @@ export function UploadSetwithTable(p: $UploadSetwithTableSettings) {
     };
   };
 
-  /** beforeInitiatingItemUpload → beforeUploadStarts (preventable) → XMLHttpRequest with progress → uploadCompleted. */
-  const upload = async (id: string) => {
+  /** beforeInitiatingItemUpload → beforeUploadStarts (preventable) → the uploader's uploadItem; resolves when the upload ends. */
+  const upload = (id: string) => new Promise<void>((resolve) => {
     const cur = ownRef.current.find((i) => i.id === id);
     const q = props.current;
-    if (!cur) return;
+    if (!cur) return resolve();
     q.onBeforeInitiatingItemUpload?.({ item: instance(cur) });
     const ev = preventable({ item: instance(cur) });
     q.onBeforeUploadStarts?.(ev);
-    if (ev.defaultPrevented) return;
-    const url = cur.uploadUrl ?? q.uploader?.uploadUrl ?? q.uploadUrl;
-    if (!url) return;
-    const started = patch(id, { uploadState: 'Uploading', progress: 0 });
-    if (started) q.uploader?.onUploadStarted?.({ item: instance(started) });
-    try {
-      const xhr = await send({
-        file: cur.file, url, method: q.uploader?.httpRequestMethod ?? q.httpRequestMethod, multipart: q.uploader?.useMultipart,
-        headerFields: [...(q.headerFields ?? []), ...(cur.headerFields ?? [])],
-        onStart: (x) => xhrs.current.set(id, x),
-        onProgress: (loaded, total) => {
-          const it = patch(id, { progress: total ? Math.round((loaded / total) * 100) : 0 });
-          if (!it) return;
-          it.onUploadProgress?.({ loaded, total });
-          props.current.uploader?.onUploadProgressed?.({ item: instance(it), loaded, total });
-        },
-      });
-      xhrs.current.delete(id);
-      const ok = xhr.status >= 200 && xhr.status < 300;
-      const done = patch(id, { uploadState: ok ? 'Complete' : 'Error', progress: ok ? 100 : undefined });
-      if (!done) return;
-      const item = instance(done);
-      props.current.uploader?.onUploadCompleted?.({ item, responseXHR: xhr });
-      props.current.onUploadCompleted?.({
-        item, response: xhr.responseText, readyState: xhr.readyState, status: xhr.status,
-        responseXML: (xhr.responseType === '' || xhr.responseType === 'document') ? xhr.responseXML : null, responseText: xhr.responseText, headers: parseHeaders(xhr.getAllResponseHeaders()),
-      });
-    } catch {
-      xhrs.current.delete(id);
-      const cur2 = ownRef.current.find((i) => i.id === id);
-      if (!cur2) return;
-      if (aborted.current.has(id)) {
-        aborted.current.delete(id);
-        remove(id);
-        const item = instance(cur2);
-        cur2.onUploadTerminated?.({ item });
-        props.current.uploader?.onUploadTerminated?.({ item });
-        return;
-      }
-      patch(id, { uploadState: 'Error', progress: undefined });
-    }
-  };
+    if (ev.defaultPrevented) return resolve();
+    const url = cur.uploadUrl ?? (q.uploader ? q.uploader.props.uploadUrl : q.uploadUrl);
+    const uploader = uploaderRef.current;
+    if (!url || !uploader) return resolve();
+    pending.current.set(id, resolve);
+    uploader.uploadItem(instance(cur), headers(cur));
+  });
 
   /** Validates new items, asks itemValidationHandler, then uploads them. */
   const addItems = async (items: UploadItem[]) => {
@@ -457,7 +657,8 @@ export function UploadSetwithTable(p: $UploadSetwithTableSettings) {
       if (it?.id) setRenaming({ id: it.id, name: baseName(it.fileName) });
     },
     uploadItemViaUrl: async (name, url, promise) => {
-      const item: UploadItem = { id: `sk-upload-${++seq}`, fileName: name, url, uploadState: 'Ready' };
+      // as UI5: an empty file object with the given name
+      const item: UploadItem = { id: `sk-upload-${++seq}`, fileName: name, url, file: new File([new Blob([])], name), uploadState: 'Ready' };
       commit([...ownRef.current, item]);
       try {
         await promise;
@@ -482,8 +683,23 @@ export function UploadSetwithTable(p: $UploadSetwithTableSettings) {
       await upload(item.id!);
       return instance(ownRef.current.find((i) => i.id === item.id) ?? item);
     },
+    registerUploaderEvents,
   };
   useImperativeHandle(p.ref, () => api);
+  // a stable instance with the current methods (onActivated, findOn)
+  const [handle] = useState(() => ({ ...api }));
+  useEffect(() => { Object.assign(handle, api); });
+
+  // UI5 plugin lifecycle: onActivated when the control is ready, onDeactivated when it is removed
+  useEffect(() => {
+    const el = root.current;
+    if (el) mounted.set(el, handle);
+    props.current.onOnActivated?.({ oPlugin: handle });
+    return () => {
+      if (el) mounted.delete(el);
+      props.current.onOnDeactivated?.({ control: el });
+    };
+  }, [handle]);
 
   const finishRename = (ok: boolean) => {
     if (!renaming) return;
@@ -523,6 +739,7 @@ export function UploadSetwithTable(p: $UploadSetwithTableSettings) {
 
   return (
     <div
+      ref={root}
       className={cx('sk-upload-table', drag && 'sk-upload-table--drag')}
       onDragEnter={onDrag}
       onDragOver={onDrag}
@@ -539,6 +756,7 @@ export function UploadSetwithTable(p: $UploadSetwithTableSettings) {
         <span className="sk-upload-table__spacer" />
         <UploadButtonContext.Provider value={uploadButton}>{p.actions}</UploadButtonContext.Provider>
         {!hasPlaceholder && uploadButton}
+        {uploaderElement}
         <input ref={input} type="file" hidden multiple={p.multiple} accept={accept} {...dirAttrs} data-testid="sk-upload-input"
           onChange={(e) => { addFiles(Array.from(e.currentTarget.files ?? [])); e.currentTarget.value = ''; }} />
       </div>
@@ -605,7 +823,7 @@ export function UploadSetwithTable(p: $UploadSetwithTableSettings) {
                         <ActionIcon variant="subtle" aria-label={t('ctl.uploadSet.terminate')} onClick={() => terminateUpload(it.id)}><X className="sk-upload-table__icon" aria-hidden="true" /></ActionIcon>
                       ) : (
                         <>
-                          {(it.url || it.file || p.uploader?.downloadUrl) && (
+                          {(it.url || it.file || p.uploader?.props.downloadUrl) && (
                             <ActionIcon variant="subtle" aria-label={t('ctl.uploadSet.download')} onClick={() => download(it)}><Download className="sk-upload-table__icon" aria-hidden="true" /></ActionIcon>
                           )}
                           <ActionIcon variant="subtle" aria-label={t('ctl.uploadSet.rename')} onClick={() => setRenaming({ id: it.id, name: baseName(it.fileName) })}><Pencil className="sk-upload-table__icon" aria-hidden="true" /></ActionIcon>
@@ -631,6 +849,17 @@ export function UploadSetwithTable(p: $UploadSetwithTableSettings) {
     </div>
   );
 }
+
+/** Static methods of sap.m.plugins.UploadSetwithTable. */
+UploadSetwithTable.findOn = (element: Element | null | undefined): UploadSetwithTable | undefined => {
+  if (!element) return undefined;
+  const el = element.closest('.sk-upload-table') ?? element.querySelector('.sk-upload-table');
+  return el ? mounted.get(el) : undefined;
+};
+/** File size with unit as UI5 formats it ("248.05 KB", "2.29 MB", "1.00 GB"). */
+UploadSetwithTable.getFileSizeWithUnits = fileSizeWithUnits;
+/** The file icon for a media type or file name (a React element). */
+UploadSetwithTable.getIconForFileType = iconForFileType;
 
 function containsPlaceholder(node: ReactNode): boolean {
   if (Array.isArray(node)) return node.some(containsPlaceholder);

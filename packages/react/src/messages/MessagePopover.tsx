@@ -4,7 +4,10 @@
 import { CloseButton, Popover, type PopoverProps } from '@mantine/core';
 import { useCallback, useEffect, useImperativeHandle, useRef, useState, type CSSProperties, type Ref } from 'react';
 import { useControlText } from '../controls/context';
-import { MessageViewBody, useViewItems, type $MessageViewSettings, type MessageView } from './MessageView';
+import {
+  MessageViewBody, useViewItems, type $MessageViewSettings, type MessageView, type MessageView$ActiveTitlePressEvent,
+  type MessageView$ItemSelectEvent, type MessageView$ListSelectEvent,
+} from './MessageView';
 import { TEXTS } from './texts';
 
 /** sap.m.VerticalPlacementType */
@@ -20,15 +23,35 @@ export interface MessagePopover extends MessageView {
   toggle(control: Element): void;
 }
 
-export interface $MessagePopoverSettings extends Omit<$MessageViewSettings, 'ref' | 'showDetailsPageHeader'> {
-  /** UI5 default 'Vertical' (below, or above when there is no room). */
+/** Event object of `onBeforeOpen` (sap.m.MessagePopover#beforeOpen): the control the popover opens at. */
+export interface MessagePopover$BeforeOpenEvent { openBy: Element }
+/** Event object of `onAfterOpen` (sap.m.MessagePopover#afterOpen). */
+export interface MessagePopover$AfterOpenEvent { openBy: Element }
+/** Event object of `onBeforeClose` (sap.m.MessagePopover#beforeClose). */
+export interface MessagePopover$BeforeCloseEvent { openBy: Element }
+/** Event object of `onAfterClose` (sap.m.MessagePopover#afterClose). */
+export interface MessagePopover$AfterCloseEvent { openBy: Element }
+/** Event object of `onItemSelect` (sap.m.MessagePopover#itemSelect). */
+export type MessagePopover$ItemSelectEvent = MessageView$ItemSelectEvent;
+/** Event object of `onListSelect` (sap.m.MessagePopover#listSelect). */
+export type MessagePopover$ListSelectEvent = MessageView$ListSelectEvent;
+/** Event object of `onActiveTitlePress` (sap.m.MessagePopover#activeTitlePress). */
+export type MessagePopover$ActiveTitlePressEvent = MessageView$ActiveTitlePressEvent;
+
+export interface $MessagePopoverSettings extends Omit<$MessageViewSettings, 'ref' | 'showDetailsPageHeader' | 'groupItems' | 'onItemSelect' | 'onListSelect' | 'onActiveTitlePress'> {
+  /** Position of the popover: below, or above when there is no room ('Vertical'), always 'Top' or 'Bottom'. @defaultValue 'Vertical' */
   placement?: VerticalPlacementType;
-  /** Opens with the message list shown (UI5 default true); false opens with only the header and filter. */
+  /** Opens with the message list shown; false opens with only the header and filter. @defaultValue true */
   initiallyExpanded?: boolean;
-  onBeforeOpen?: (e: { openBy: Element }) => void;
-  onAfterOpen?: (e: { openBy: Element }) => void;
-  onBeforeClose?: (e: { openBy: Element }) => void;
-  onAfterClose?: (e: { openBy: Element }) => void;
+  /** Groups the items by `groupName`. @defaultValue false */
+  groupItems?: boolean;
+  onItemSelect?: (e: MessagePopover$ItemSelectEvent) => void;
+  onListSelect?: (e: MessagePopover$ListSelectEvent) => void;
+  onActiveTitlePress?: (e: MessagePopover$ActiveTitlePressEvent) => void;
+  onBeforeOpen?: (e: MessagePopover$BeforeOpenEvent) => void;
+  onAfterOpen?: (e: MessagePopover$AfterOpenEvent) => void;
+  onBeforeClose?: (e: MessagePopover$BeforeCloseEvent) => void;
+  onAfterClose?: (e: MessagePopover$AfterCloseEvent) => void;
   /** Accessible name of the popover (default "Messages"). */
   'aria-label'?: string;
   ref?: Ref<MessagePopover>;

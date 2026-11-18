@@ -210,3 +210,105 @@ import { Card, Header, NumericHeader, ListContent, TableContent, ObjectContent,
 | 演示数据 | 列表标题是订单号；时间线时间按浏览器时区显示 | 列表改用描述和供应商名称；演示页的卡片用柏林时区（与页面说明一致） |
 
 仍然不同的：Card Explorer 里每张卡片的数据和配置不同（例如表格列宽在 manifest 里指定、对象卡片里有可编辑字段的表单），图表区仍是 `SimpleChart`（见第 9 节），字体仍是本库字体。截图：`21-evidence/CD-15-list-sky.png`、`CD-18-table-sky.png`、`CD-page-sky.png`。
+
+## 11. 与集成卡片 manifest 的对照（阶段 1）
+
+卡片内容（`ui/integration/cards/*Content`）在 UI5 里是内部类，没有公开 API；它们的设置就是集成卡片 manifest 里 `sap.card` › `content` 的设置。阶段 1 把每个内容组件的属性和 SAPUI5 1.154.0 的 manifest 结构（`https://ui5.sap.com/1.154.0/resources/sap/ui/integration/schemas/sap-card.json`，按 `type` 取 `$defs/ContentType.<类型>`；只下载到 `.cache/ui5/1.154.0/src/`，不进仓库）逐项核对。
+
+总的原则（docs/20 第 0 节、ADR-028）：smart-kit 的卡片由**注解驱动**，manifest 里描述"数据从哪来、字段怎么映射"的设置（`data`、`item` 模板里的字段绑定、`row.columns`、`groups`、`dimensions` / `measures` / `feeds`）在 smart-kit 里由 OData 注解决定，组件上相应的属性是 OVP 卡片设置的名字（`entitySet`、`annotationPath`、`presentationAnnotationPath`、`selectionAnnotationPath`、`chartAnnotationPath`、`identificationAnnotationPath`、`listType`、`listFlavor`），算 smart-kit 扩展；manifest 的 `actions`（Navigation 等）在 React 里写成事件（`onItemPress`、`onAppointmentPress`……）和导航适配器。下表"结果"一列：**一致**（同名同义）、**注解**（manifest 的设置由注解表达）、**事件**（manifest 动作改为 React 事件）、**扩展**（manifest 没有）、**不同**（有对应但名字或取值不同，写明原因）、**未实现**（manifest 有、smart-kit 没做）。
+
+本次顺带改名或补齐的：时间线 `item` 的路径改为 manifest 的 `title`、`description`、`dateTime`（原为 `title`、`text`、`startDate`）；日历新增 `use12HourFormat`，用 `calendarWeekNumbering` 取代原来的 `firstDayOfWeek`（数字）。
+
+### 11.1 ListContent ↔ `sap.card` List
+
+| manifest（`content`） | smart-kit | 结果 |
+| --- | --- | --- |
+| `data` | `entitySet`、`service`、`filters` | 注解（取数由 `$metadata` 和注解决定） |
+| `item.title`、`item.description`、`item.info`（`value`、`state`）、`item.attributes`、`item.icon` | `UI.LineItem`（`annotationPath`，或 `presentationAnnotationPath` 指定的那组）的前几个字段；头像来自 `UI.HeaderInfo/ImageUrl` | 注解；取几个值由 `listType`（OVP：`condensed` 3 个、`extended` 6 个）决定 |
+| `item.highlight`（每项的状态值） | `highlight`（布尔，开启后取每行的 criticality） | 不同：manifest 在每项上绑定状态值，smart-kit 状态来自注解，所以只是开关 |
+| `item.info.showStateIcon` | `showStateIcon`（布尔） | 一致（名字和含义相同，放在内容上而不是 `info` 里） |
+| `item.attributesLayoutType`（`OneColumn` / `TwoColumns`，默认 `TwoColumns`） | 无，扩展项的属性固定两列 | 未实现（行为等于默认值 `TwoColumns`） |
+| `item.chart`（`Bullet`、`StackedBar` 微图） | `listFlavor="bar"`，数据点有目标值时画 Bullet | 注解（OVP 条形图列表卡）；StackedBar 未实现 |
+| `item.actions` | `onItemPress`，默认打开对象页（导航适配器） | 事件 |
+| `item.actionsStrip` | 无 | 未实现 |
+| `maxItems` | `maxItems`（默认 `UI.PresentationVariant/MaxItems`，否则 5 / 3） | 一致 |
+| `minItems` | 无 | 未实现（manifest 用来在加载前预留高度；smart-kit 的占位块按 `maxItems` 画） |
+| `group`（`title`、`order`） | `UI.PresentationVariant/GroupBy` | 注解 |
+| — | `listType`、`listFlavor`、`annotationPath`、`presentationAnnotationPath`、`selectionAnnotationPath`、`headerNavigation` | 扩展（OVP 卡片设置） |
+
+### 11.2 TableContent ↔ `sap.card` Table
+
+| manifest（`content`） | smart-kit | 结果 |
+| --- | --- | --- |
+| `data` | `entitySet`、`service`、`filters` | 注解 |
+| `row.columns[]`（`title`、`value`、`width`、`hAlign`、`visible`） | `UI.LineItem` 的前 `maxColumns` 列；标题取字段标签，数值右对齐 | 注解；列宽不可设（卡片宽度固定，列等分） |
+| `row.columns[].identifier`、`additionalText` | 语义键（或 `UI.HeaderInfo/Title`）列显示为链接，下面一行 `UI.HeaderInfo/Description` | 注解 |
+| `row.columns[].state`、`showStateIcon`、`progressIndicator` | 字段的 `Criticality`；`UI.DataPoint` 的 `Visualization: Progress` 画进度条 | 注解；`inverted`、`customStateIcon` 未实现 |
+| `row.columns[].importance`、`autoPopinWidth`；`autoPopinMode`（默认 false）、`hiddenInPopin`、`popinLayout`（默认 `Block`） | 无 | 未实现（列数由 `maxColumns` 限制，不做弹出行） |
+| `row.actions`、`row.columns[].actions` | `onItemPress`（整行），默认打开对象页 | 事件；单元格级动作未实现 |
+| `maxItems` | `maxItems` | 一致 |
+| `minItems` | 无 | 未实现（同列表卡） |
+| `group` | `UI.PresentationVariant/GroupBy` | 注解 |
+| — | `maxColumns`（默认 3，OVP 表格卡）、`annotationPath`、`presentationAnnotationPath`、`selectionAnnotationPath`、`headerNavigation` | 扩展 |
+
+### 11.3 ObjectContent ↔ `sap.card` Object
+
+| manifest（`content`） | smart-kit | 结果 |
+| --- | --- | --- |
+| `data` | `entitySet`、`service`、`keys` 或 `path` | 注解 |
+| `groups[]`（`title`、`items`、`visible`） | `annotationPath`：`UI.QuickViewFacets`（默认）、`UI.Facets` 或 `UI.FieldGroup#…`；组标题取分面标签 | 注解 |
+| `groups[].items[]`（`label`、`value`、`type`：`link`、`email`、`phone`……，`icon`、`state`） | 字段标签和值；链接、邮件、电话、状态由字段类型和注解（`Communication`、`Criticality`）决定 | 注解 |
+| `groups[].items[]` 的表单类型（`Input`、`TextArea`、`ComboBox`、`RadioButtonGroup`、`DateRange`、`Duration`、`RatingIndicator`、`Image`、`IconGroup`、数值指标）和 `validations` | 无 | 未实现（对象卡片只读） |
+| `groups[].titleMaxLines`（默认 1）、`labelWrapping`（默认 true）、`alignment`（默认 `Default`）、`itemsLayout`（默认 `Vertical`） | 无，行为等于这些默认值 | 未实现（布局固定为默认值） |
+| `actions`（已废弃）、`footer.actionsStrip` | `identificationAnnotationPath`（默认 `UI.Identification`）的动作放在页脚，`onAction` 可替换执行方式 | 注解 / 事件 |
+| `hasData`（默认 true） | 无，对象读不到时显示"无数据" | 未实现（由数据决定） |
+| — | `headerNavigation`（页头默认打开对象页） | 扩展 |
+
+### 11.4 AnalyticalContent ↔ `sap.card` Analytical
+
+| manifest（`content`） | smart-kit | 结果 |
+| --- | --- | --- |
+| `data` | `entitySet`、`service`、`filters`、`selectionAnnotationPath` | 注解（服务端 `$apply` 聚合） |
+| `chartType` | `UI.Chart/ChartType`（`chartAnnotationPath`，或 `presentationAnnotationPath` 里的图表） | 注解；SimpleChart 画不了的类型提示"不支持"，可用 `renderChart` 自己画 |
+| `dimensions`、`measures`、`feeds` | `UI.Chart` 的 `Dimensions`、`Measures`（及其属性） | 注解 |
+| `chartProperties`（实验）、`legend`、`tooltips`、`popover`；已废弃的 `plotArea`、`title`、`measureAxis`、`dimensionAxis` | 无，SimpleChart 样式固定（docs/20 第 9 节） | 未实现（VizFrame 专有） |
+| `minHeight`（CSS 字符串，内容的最小高度） | `height`（图表区的固定高度） | 不同：smart-kit 按 OVP 固定版式定高；名字和含义都和 `minHeight` 不同，暂不改 |
+| `actions`、`actionableArea`（`Full` / `Chart`，默认 `Full`） | `navigation`（OVP：`dataPointNav`（默认，页头和数据点）、`headerNav`、`noHeaderNav`）、`onDataPointPress(dimension, value)` | 不同：smart-kit 用 OVP 卡片的 `navigation` 设置；数据点点击是事件 |
+| — | `maxItems`（默认 4，OVP 固定版式）、`presentationAnnotationPath`、`renderChart` | 扩展 |
+
+### 11.5 TimelineContent ↔ `sap.card` Timeline
+
+| manifest（`content`） | smart-kit | 结果 |
+| --- | --- | --- |
+| `data` | `entitySet`、`service`、`filters`、`selectionAnnotationPath` | 注解 |
+| `item.title`、`item.description`、`item.dateTime` | `item.title`、`item.description`、`item.dateTime`（属性路径；默认 `Communication.Event` 的 `summary`、`description`（无则 `location`）、`dtstart`） | 一致（阶段 1 改名） |
+| `item.owner`、`item.ownerImage` | 无 | 未实现 |
+| `item.icon`（每项的图标，可绑定） | `icon`（内容上，所有项同一个图标元素） | 不同：没有按行绑定的图标 |
+| `item.actions` | `onItemPress`，默认打开对象页 | 事件 |
+| `maxItems` | `maxItems` | 一致 |
+| `minItems` | 无 | 未实现 |
+| — | `sortOldestFirst`（默认最新在前，同 UI5 Timeline）、`now`、`presentationAnnotationPath`、`headerNavigation` | 扩展 |
+
+### 11.6 CalendarContent ↔ `sap.card` Calendar
+
+| manifest（`content`） | smart-kit | 结果 |
+| --- | --- | --- |
+| `data`、`item.path` | `entitySet`、`service`、`filters`、`selectionAnnotationPath` | 注解 |
+| `item.template`（`startDate`、`endDate`、`title`、`text`、`type`） | `item`（同名的属性路径；默认 `Communication.Event` 的 `dtstart`、`dtend`、`summary`、`description`、`categories`） | 一致（manifest 是绑定模板，smart-kit 是属性路径） |
+| `item.template.icon` | 无 | 未实现 |
+| `item.template.actions` | `onAppointmentPress(row)` | 事件 |
+| `specialDate`（`template`：`startDate`、`endDate`、`type`；`path`） | `specialDates`：`{ startDate, endDate?, type }[]` | 不同：manifest 是绑定到数据的模板，smart-kit 直接收数组，所以用复数名；条目字段同名 |
+| `legendItem`（`template`：`category`、`text`、`type`；`path`） | `legendItems`：`{ category, text, type }[]`；数据里出现的日程类型自动加进图例 | 不同：同上 |
+| `type` 的取值 `Type01`～`Type20` | 任意字符串（`Type01` 等也可以），颜色按出现顺序取 6 种类别色 | 不同：smart-kit 的类型来自数据（`categories`），不是固定的 20 种 |
+| `date`（ISO 8601） | `date`（`YYYY-MM-DD`，默认今天） | 一致 |
+| `maxItems` | `maxItems`（默认 2） | 一致 |
+| `maxLegendItems` | `maxLegendItems`（默认 2，其余计入"More (x)"） | 一致 |
+| `noItemsText` | `noItemsText` | 一致 |
+| `use12HourFormat`（默认 24 小时制） | `use12HourFormat` | 一致（阶段 1 新增） |
+| `calendarWeekNumbering`（`Default`、`ISO_8601`、`MiddleEastern`、`WesternTraditional`，默认 `Default`） | `calendarWeekNumbering`：一周第一天和第 1 周的最少天数（`Default` 按语言区域） | 一致（阶段 1 新增，取代 `firstDayOfWeek`） |
+| `moreItems.actions` | `onMorePress(date)`，默认打开实体集的列表页 | 事件 |
+| — | `onSelect(date)`、`now` | 扩展 |
+
+### 11.7 结论
+
+六种内容的 manifest 设置都已逐项核对：同名的设置名字和取值一致；其余的差别都写在上面的表里，原因只有三类——注解驱动（ADR-028）、动作改为 React 事件、以及明确列出的未实现项（`minItems`、表格弹出行、对象卡片的表单项、时间线的 `owner`、`attributesLayoutType` 等）。映射表里这六个模块可以标 `settingsVerified`。
