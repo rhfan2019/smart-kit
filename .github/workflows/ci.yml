@@ -74,7 +74,10 @@ jobs:
 
   e2e:
     name: e2e (${{ matrix.shard }}/3)
-    if: ${{ github.head_ref != 'changeset-release/main' && !startsWith(github.event.head_commit.message, 'chore: version packages') && !contains(github.event.head_commit.message, '/changeset-release/main') }}
+    if: >-
+      ${{ github.head_ref != 'changeset-release/main'
+      && !startsWith(github.event.head_commit.message, 'chore: version packages')
+      && !contains(github.event.head_commit.message, '/changeset-release/main') }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     strategy:
@@ -108,7 +111,10 @@ jobs:
 
   e2e-pg:
     name: e2e PostgreSQL (${{ matrix.shard }}/2)
-    if: ${{ github.head_ref != 'changeset-release/main' && !startsWith(github.event.head_commit.message, 'chore: version packages') && !contains(github.event.head_commit.message, '/changeset-release/main') }}
+    if: >-
+      ${{ github.head_ref != 'changeset-release/main'
+      && !startsWith(github.event.head_commit.message, 'chore: version packages')
+      && !contains(github.event.head_commit.message, '/changeset-release/main') }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     strategy:
