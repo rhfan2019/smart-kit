@@ -7,21 +7,20 @@
 | Category | Count |
 | --- | --- |
 | fe-behavior | 32 |
-| kit-extension | 249 |
-| no-binding | 7 |
-| not-implemented | 441 |
-| react-idiom | 29 |
-| **total** | **758** |
+| kit-extension | 187 |
+| no-binding | 13 |
+| not-implemented | 119 |
+| react-idiom | 75 |
+| **total** | **426** |
 
 ## not-implemented + fe-behavior by planned stage
 
 | Stage | Count |
 | --- | --- |
-| 2 | 382 |
 | 3 | 8 |
-| 4 | 13 |
-| 5 | 15 |
-| 6 | 55 |
+| 4 | 16 |
+| 5 | 25 |
+| 6 | 102 |
 
 ## Per export
 
@@ -29,8 +28,8 @@
 | --- | --- | --- | --- | --- |
 | base/i18n/date/CalendarWeekNumbering | module:sap/base/i18n/date/CalendarWeekNumbering | 4 | 0 | 0 |
 | f/Card | sap.f.Card | 8 | 5 | 0 |
-| f/DynamicPage | sap.f.DynamicPage | 3 | 38 | 0 |
-| f/FlexibleColumnLayout | sap.f.FlexibleColumnLayout | 1 | 46 | 0 |
+| f/DynamicPage | sap.f.DynamicPage | 14 | 7 | 0 |
+| f/FlexibleColumnLayout | sap.f.FlexibleColumnLayout | 8 | 31 | 0 |
 | f/cards/Header | sap.f.cards.Header | 18 | 0 | 0 |
 | f/cards/NumericHeader | sap.f.cards.NumericHeader | 29 | 6 | 0 |
 | f/cards/NumericSideIndicator | sap.f.cards.NumericSideIndicator | 4 | 0 | 0 |
@@ -42,7 +41,7 @@
 | m/ExpandableText | sap.m.ExpandableText | 7 | 4 | 0 |
 | m/FeedInput | sap.m.FeedInput | 16 | 1 | 0 |
 | m/FeedListItem | sap.m.FeedListItem | 30 | 2 | 0 |
-| m/GenericTag | sap.m.GenericTag | 4 | 6 | 0 |
+| m/GenericTag | sap.m.GenericTag | 6 | 3 | 0 |
 | m/IconTabBar | sap.m.IconTabBar | 18 | 0 | 0 |
 | m/IconTabFilter | sap.m.IconTabFilter | 10 | 3 | 0 |
 | m/IconTabSeparator | sap.m.IconTabSeparator | 2 | 1 | 0 |
@@ -63,7 +62,7 @@
 | m/OverflowToolbar | sap.m.OverflowToolbar | 10 | 5 | 0 |
 | m/SelectDialog | sap.m.SelectDialog | 25 | 3 | 0 |
 | m/TableSelectDialog | sap.m.TableSelectDialog | 25 | 3 | 0 |
-| m/Table | sap.m.Table | 3 | 95 | 0 |
+| m/Table | sap.m.Table | 46 | 28 | 0 |
 | m/ToggleButton | sap.m.ToggleButton | 12 | 12 | 0 |
 | m/ToolbarSpacer | sap.m.ToolbarSpacer | 1 | 0 | 0 |
 | m/ViewSettingsDialog | sap.m.ViewSettingsDialog | 21 | 6 | 0 |
@@ -104,8 +103,6 @@
 | m/upload/ActionsPlaceholder | sap.m.upload.ActionsPlaceholder | 1 | 0 | 0 |
 | m/upload/UploaderHttpRequestMethod | sap.m.upload.UploaderHttpRequestMethod | 2 | 0 | 0 |
 | m/upload/UploaderTableItem | sap.m.upload.UploaderTableItem | 12 | 0 | 0 |
-| object#DraftMarker | delete | 0 | 1 | 0 |
-| page#OverflowActions | delete | 0 | 1 | 0 |
 | suite/ui/commons/MicroProcessFlowItem | sap.suite.ui.commons.MicroProcessFlowItem | 9 | 1 | 0 |
 | suite/ui/commons/MicroProcessFlow | sap.suite.ui.commons.MicroProcessFlow | 3 | 1 | 0 |
 | suite/ui/commons/ProcessFlow | sap.suite.ui.commons.ProcessFlow | 21 | 4 | 0 |
@@ -132,17 +129,17 @@
 | ui/integration/cards/TableContent | manifest:sap.card/Table | 0 | 0 | 0 |
 | ui/integration/cards/TimelineContent | manifest:sap.card/Timeline | 0 | 0 | 0 |
 | ui/unified/Currency | sap.ui.unified.Currency | 6 | 3 | 0 |
-| uxap/AnchorBar | sap.uxap.AnchorBar | 1 | 21 | 0 |
-| uxap/ObjectPageLayout | sap.uxap.ObjectPageLayout | 3 | 62 | 0 |
-| v4/fe/macros/Chart | sap.fe.macros.Chart | 0 | 32 | 0 |
-| v4/fe/macros/Field | sap.fe.macros.Field | 3 | 30 | 0 |
-| v4/fe/macros/FilterBar | sap.fe.macros.FilterBar | 0 | 37 | 0 |
-| v4/fe/macros/Form | sap.fe.macros.Form | 0 | 19 | 0 |
-| v4/fe/macros/MessageButton | sap.fe.macros.MessageButton | 0 | 2 | 0 |
-| v4/fe/macros/MicroChart | sap.fe.macros.MicroChart | 2 | 34 | 0 |
-| v4/fe/macros/Share | sap.fe.macros.Share | 0 | 5 | 0 |
-| v4/fe/macros/Table | sap.fe.macros.Table | 2 | 131 | 0 |
-| v4/fe/macros/VariantManagement | sap.fe.macros.VariantManagement | 0 | 12 | 0 |
+| uxap/AnchorBar | sap.uxap.AnchorBar | 15 | 3 | 0 |
+| uxap/ObjectPageLayout | sap.uxap.ObjectPageLayout | 35 | 13 | 0 |
+| v4/fe/macros/Chart | sap.fe.macros.Chart | 10 | 14 | 0 |
+| v4/fe/macros/Field | sap.fe.macros.Field | 16 | 9 | 0 |
+| v4/fe/macros/FilterBar | sap.fe.macros.FilterBar | 24 | 12 | 0 |
+| v4/fe/macros/Form | sap.fe.macros.Form | 5 | 10 | 0 |
+| v4/fe/macros/MessageButton | sap.fe.macros.MessageButton | 1 | 0 | 0 |
+| v4/fe/macros/MicroChart | sap.fe.macros.MicroChart | 8 | 30 | 0 |
+| v4/fe/macros/Share | sap.fe.macros.Share | 1 | 2 | 0 |
+| v4/fe/macros/Table | sap.fe.macros.Table | 49 | 59 | 0 |
+| v4/fe/macros/VariantManagement | sap.fe.macros.VariantManagement | 4 | 6 | 0 |
 | v4/fe/templates/ListReport | manifest:sap.fe.templates.ListReport | 0 | 2 | 0 |
 | v4/fe/templates/ObjectPage | manifest:sap.fe.templates.ObjectPage | 0 | 2 | 0 |
 | context#MissingProviderError | none | 0 | 0 | 0 |
@@ -155,64 +152,84 @@
 | i18n#MESSAGES | none | 0 | 0 | 0 |
 | i18n#createText | none | 0 | 0 | 0 |
 | i18n#typedText | none | 0 | 0 | 0 |
-| kit/AdaptFiltersDialog | none | 0 | 1 | 0 |
-| kit/ColumnContext | none | 0 | 1 | 0 |
-| kit/ConditionInput | none | 0 | 1 | 0 |
-| kit/CreateDialog | none | 0 | 1 | 0 |
-| kit/CriticalityIcon | none | 0 | 1 | 0 |
-| kit/FieldEditor | none | 0 | 1 | 0 |
-| kit/FilterSummary | none | 0 | 1 | 0 |
-| kit/HeaderFacet | none | 0 | 1 | 0 |
+| kit/AdaptFiltersDialog | none | 0 | 0 | 0 |
+| kit/ColumnContext | none | 0 | 0 | 0 |
+| kit/ConditionInput | none | 0 | 0 | 0 |
+| kit/CreateDialog | none | 0 | 0 | 0 |
+| kit/CriticalityIcon | none | 0 | 0 | 0 |
+| kit/FieldEditor | none | 0 | 0 | 0 |
+| kit/FilterSummary | none | 0 | 0 | 0 |
+| kit/HeaderFacet | none | 0 | 0 | 0 |
 | kit/MessageHost | none | 0 | 0 | 0 |
 | kit/MessageIcon | none | 0 | 0 | 0 |
 | kit/MessageProvider | none | 0 | 0 | 0 |
-| kit/QuickViewLink | none | 0 | 1 | 0 |
-| kit/SimpleChart | none | 0 | 1 | 0 |
-| kit/ValueHelpDialog | none | 0 | 1 | 0 |
-| kit/useActionRunner | none | 0 | 1 | 0 |
-| kit/useColumn | none | 0 | 1 | 0 |
-| kit/useDynamicPage | none | 0 | 1 | 0 |
-| kit/useEditStrategy | none | 0 | 1 | 0 |
-| kit/useFilterBarContext | none | 0 | 1 | 0 |
-| kit/useFilterState | none | 0 | 1 | 0 |
-| kit/useListQuery | none | 0 | 1 | 0 |
+| kit/QuickViewLink | none | 0 | 0 | 0 |
+| kit/SimpleChart | none | 0 | 0 | 0 |
+| kit/ValueHelpDialog | none | 0 | 0 | 0 |
+| kit/useActionRunner | none | 0 | 0 | 0 |
+| kit/useColumn | none | 0 | 0 | 0 |
+| kit/useDynamicPage | none | 0 | 0 | 0 |
+| kit/useEditStrategy | none | 0 | 0 | 0 |
+| kit/useFilterBarContext | none | 0 | 0 | 0 |
+| kit/useFilterState | none | 0 | 0 | 0 |
+| kit/useListQuery | none | 0 | 0 | 0 |
 | kit/useMessages | none | 0 | 0 | 0 |
-| kit/useObjectTitle | none | 0 | 1 | 0 |
-| kit/useObject | none | 0 | 1 | 0 |
-| kit/useSectionScrollSpy | none | 0 | 1 | 0 |
-| kit/useTableContext | none | 0 | 1 | 0 |
-| kit/useValueList | none | 0 | 1 | 0 |
-| kit/useVariants | none | 0 | 1 | 0 |
+| kit/useObjectTitle | none | 0 | 0 | 0 |
+| kit/useObject | none | 0 | 0 | 0 |
+| kit/useSectionScrollSpy | none | 0 | 0 | 0 |
+| kit/useTableContext | none | 0 | 0 | 0 |
+| kit/useValueList | none | 0 | 0 | 0 |
+| kit/useVariants | none | 0 | 0 | 0 |
 | theme#readToken | none | 0 | 0 | 0 |
 | theme#smartKitCssVariablesResolver | none | 0 | 0 | 0 |
-| theme#smartKitGridTheme | none | 0 | 1 | 0 |
+| kit/smartKitGridTheme | none | 0 | 0 | 0 |
 | theme#smartKitMantineTheme | none | 0 | 0 | 0 |
 | theme#useThemeTokens | none | 0 | 0 | 0 |
 | util#DEFAULT_STANDARD_OPTIONS | none | 0 | 0 | 0 |
-| util#MICRO_COMPARISON_MAX | none | 0 | 1 | 0 |
+| util#MICRO_COMPARISON_MAX | none | 0 | 0 | 0 |
 | util#RESTRICTED_FILE_NAME_CHARACTERS | none | 0 | 0 | 0 |
-| util#actionPaths | none | 0 | 1 | 0 |
+| util#actionPaths | none | 0 | 0 | 0 |
 | util#applyExtensions | none | 0 | 0 | 0 |
-| util#conditionText | none | 0 | 1 | 0 |
-| util#createFields | none | 0 | 1 | 0 |
-| util#createWith | none | 0 | 1 | 0 |
-| util#draftState | none | 0 | 1 | 0 |
+| util#conditionText | none | 0 | 0 | 0 |
+| util#createFields | none | 0 | 0 | 0 |
+| util#createWith | none | 0 | 0 | 0 |
+| util#draftState | none | 0 | 0 | 0 |
 | util#dynamicDateValueTypes | none | 0 | 0 | 0 |
-| util#fclArrows | none | 0 | 1 | 0 |
-| util#fieldErrors | none | 0 | 1 | 0 |
-| util#fieldValue | none | 0 | 1 | 0 |
-| util#filterSummaryText | none | 0 | 1 | 0 |
-| util#getPath | none | 0 | 1 | 0 |
-| util#hiddenByImportance | none | 0 | 1 | 0 |
-| util#isActionAvailable | none | 0 | 1 | 0 |
-| util#isEditable | none | 0 | 1 | 0 |
-| util#linkify | none | 0 | 1 | 0 |
+| util#fclArrows | none | 0 | 0 | 0 |
+| util#fieldErrors | none | 0 | 0 | 0 |
+| util#fieldValue | none | 0 | 0 | 0 |
+| util#filterSummaryText | none | 0 | 0 | 0 |
+| util#getPath | none | 0 | 0 | 0 |
+| util#hiddenByImportance | none | 0 | 0 | 0 |
+| util#isActionAvailable | none | 0 | 0 | 0 |
+| util#isEditable | none | 0 | 0 | 0 |
+| util#linkify | none | 0 | 0 | 0 |
 | util#messageTypeOf | none | 0 | 0 | 0 |
-| util#niceTicks | none | 0 | 1 | 0 |
-| util#parseConditionText | none | 0 | 1 | 0 |
-| util#relativeDateText | none | 0 | 1 | 0 |
-| util#resolveRef | none | 0 | 1 | 0 |
+| util#niceTicks | none | 0 | 0 | 0 |
+| util#parseConditionText | none | 0 | 0 | 0 |
+| util#relativeDateText | none | 0 | 0 | 0 |
+| util#resolveRef | none | 0 | 0 | 0 |
 | util#toDates | none | 0 | 0 | 0 |
 | util#usePageState | none | 0 | 0 | 0 |
-| util#validate | none | 0 | 1 | 0 |
+| util#validate | none | 0 | 0 | 0 |
 | util#viewSettingsFilterString | none | 0 | 0 | 0 |
+| f/DynamicPageTitle | sap.f.DynamicPageTitle | 13 | 1 | 0 |
+| f/DynamicPageHeader | sap.f.DynamicPageHeader | 2 | 0 | 0 |
+| uxap/ObjectPageDynamicHeaderTitle | sap.uxap.ObjectPageDynamicHeaderTitle | 13 | 1 | 0 |
+| uxap/ObjectPageDynamicHeaderContent | sap.uxap.ObjectPageDynamicHeaderContent | 2 | 0 | 0 |
+| v4/fe/macros/KPITag | sap.fe.macros.KPITag | 7 | 0 | 0 |
+| v4/fe/macros/Paginator | sap.fe.macros.Paginator | 1 | 2 | 0 |
+| v4/fe/macros/fcl/FlexibleColumnLayoutActions.block | sap.fe.macros.FlexibleColumnLayoutActions | 0 | 0 | 0 |
+| kit/DraftIndicator | none | 0 | 0 | 0 |
+| v4/fe/macros/TreeTable | sap.fe.macros.TreeTable | 51 | 59 | 0 |
+| f/library#LayoutType | sap.f.LayoutType | 9 | 0 | 0 |
+| f/library#DynamicPageTitleShrinkRatio | sap.f.DynamicPageTitleShrinkRatio | 0 | 0 | 0 |
+| m/library#ListMode | sap.m.ListMode | 5 | 0 | 0 |
+| m/library#PopinLayout | sap.m.PopinLayout | 3 | 0 | 0 |
+| m/library#Sticky | sap.m.Sticky | 4 | 0 | 0 |
+| m/library#MultiSelectMode | sap.m.MultiSelectMode | 3 | 0 | 0 |
+| m/library#ListSeparators | sap.m.ListSeparators | 3 | 0 | 0 |
+| m/library#GenericTagDesign | sap.m.GenericTagDesign | 2 | 0 | 0 |
+| m/library#GenericTagValueState | sap.m.GenericTagValueState | 2 | 0 | 0 |
+| uxap/library#Importance | sap.uxap.Importance | 3 | 0 | 0 |
+| uxap/library#ObjectPageSubSectionLayout | sap.uxap.ObjectPageSubSectionLayout | 2 | 0 | 0 |

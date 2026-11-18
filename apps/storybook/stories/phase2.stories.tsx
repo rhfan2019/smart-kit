@@ -1,7 +1,23 @@
 /** Phase 2 building blocks (docs/13): charts, messages, editing, drafts, responsive table, layouts. */
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Button } from '@mantine/core';
-import { ChartView, ColumnContext, CreateDialog, DraftMarker, DynamicPage, FieldEditor, FlexibleColumnLayout, GenericTag, MICRO_COMPARISON_MAX, MicroChart, OverflowActions, QuickViewLink, ResponsiveTable, ShareMenu, SimpleChart, SmartObjectPage, SmartTable, type FclLayout } from '@rhfan2019/smart-kit';
+import { MICRO_COMPARISON_MAX } from '@rhfan2019/smart-kit';
+import CreateDialog from '@rhfan2019/smart-kit/kit/CreateDialog';
+import FieldEditor from '@rhfan2019/smart-kit/kit/FieldEditor';
+import QuickViewLink from '@rhfan2019/smart-kit/kit/QuickViewLink';
+import { SmartObjectPage } from '@rhfan2019/smart-kit/templates';
+import TableMacro from '@rhfan2019/smart-kit/v4/fe/macros/Table';
+import MTable from '@rhfan2019/smart-kit/m/Table';
+import DynamicPage from '@rhfan2019/smart-kit/f/DynamicPage';
+import DynamicPageTitle from '@rhfan2019/smart-kit/f/DynamicPageTitle';
+import FlexibleColumnLayout, { type $FlexibleColumnLayoutSettings } from '@rhfan2019/smart-kit/f/FlexibleColumnLayout';
+import GenericTag from '@rhfan2019/smart-kit/m/GenericTag';
+import ObjectMarker from '@rhfan2019/smart-kit/m/ObjectMarker';
+import Share from '@rhfan2019/smart-kit/v4/fe/macros/Share';
+import FlexibleColumnLayoutActions from '@rhfan2019/smart-kit/v4/fe/macros/fcl/FlexibleColumnLayoutActions.block';
+import SimpleChart from '@rhfan2019/smart-kit/kit/SimpleChart';
+import ChartMacro from '@rhfan2019/smart-kit/v4/fe/macros/Chart';
+import MicroChart from '@rhfan2019/smart-kit/v4/fe/macros/MicroChart';
 import MessageButton from '@rhfan2019/smart-kit/v4/fe/macros/MessageButton';
 import MessageIcon from '@rhfan2019/smart-kit/kit/MessageIcon';
 import MessageProvider from '@rhfan2019/smart-kit/kit/MessageProvider';
@@ -37,11 +53,13 @@ export const Chart: Story = {
   render: () => <div style={pad}><SimpleChart kind="column" title="Revenue" measureLabel="Revenue" dimensionLabel="Status" data={[{ key: 'A', label: 'Active', value: 12 }, { key: 'B', label: 'Blocked', value: 5 }]} onSelect={() => undefined} /></div>,
 };
 
-export const ChartViewOfAList: Story = {
+// The shop fixture has no UI.Chart; the story adds one (as `@UI.Chart#S` would).
+model.ui['Shop.Product']!.charts.S ??= { id: 'S', title: 'Price by status', chartType: 'Column', dimensions: ['Status'], measures: ['Price'], dataPoints: {}, navigation: '', typeName: 'Shop.Product' };
+
+export const ChartOfAList: Story = {
   render: () => (
     <div style={pad}>
-      <ChartView entitySet="Products" chart={{ id: 'S', title: 'Price by status', chartType: 'Column', dimensions: ['Status'], measures: ['Price'], dataPoints: {}, navigation: '', typeName: 'Shop.Product' }}
-        filters={{}} executed title="Products" onDrilldown={() => undefined} />
+      <ChartMacro contextPath="/Products" metaPath="@com.sap.vocabularies.UI.v1.Chart#S" header="Products" onDrilldown={() => undefined} />
     </div>
   ),
 };
@@ -82,9 +100,10 @@ export const CreateInADialog: Story = { render: () => <CreateDemo /> };
 export const DraftMarkers: Story = {
   render: () => (
     <div style={{ ...pad, display: 'flex', gap: 24 }}>
-      <DraftMarker row={{ IsActiveEntity: false, DraftAdministrativeData: { DraftIsCreatedByMe: true } }} />
-      <DraftMarker row={{ IsActiveEntity: true, HasDraftEntity: true, DraftAdministrativeData: { DraftIsCreatedByMe: false, LastChangedByUser: 'Alex Miller', LastChangeDateTime: '2026-11-14T09:30:00Z' } }} />
-      <GenericTag text="Status" value="Overdue" status={1} />
+      <ObjectMarker type="Draft" />
+      <ObjectMarker type="UnsavedBy" additionalInfo="Alex Miller" />
+      <ObjectMarker type="LockedBy" additionalInfo="Alex Miller" />
+      <GenericTag text="Status" value="Overdue" status="Error" />
     </div>
   ),
 };
@@ -92,33 +111,36 @@ export const DraftMarkers: Story = {
 export const HeaderActions: Story = {
   render: () => (
     <DynamicPage
-      heading="Header with many actions" keyInfo={<GenericTag text="KPI" value="42" status={3} />}
-      actionItems={['Edit', 'Delete', 'Approve', 'Reject', 'Release', 'Copy', 'Print'].map((id) => ({ id, label: id, onPress: () => undefined }))}
-      actions={<ShareMenu title="Header" href="/" />}
-      layoutActions={<OverflowActions items={[{ id: 'close', label: 'Close', onPress: () => undefined }]} />}
-    >
-      <div style={pad}>Resize the window: actions move into the overflow menu from right to left.</div>
-    </DynamicPage>
+      title={(
+        <DynamicPageTitle
+          heading="Header with many actions" content={<GenericTag text="KPI" value="42" status="Success" />}
+          actions={[...['Edit', 'Delete', 'Approve', 'Reject', 'Release', 'Copy', 'Print'].map((id) => <Button key={id} variant="subtle">{id}</Button>), <Share key="share" title="Header" href="/" />]}
+          navigationActions={<Button variant="subtle">Close</Button>}
+        />
+      )}
+      content={<div style={pad}>Resize the window: actions move into the overflow from right to left.</div>}
+    />
   ),
 };
 
 export const ResponsiveTableAndQuickView: Story = {
   render: () => (
     <div style={pad}>
-      <SmartTable entitySet="Products" mode="responsive" />
-      <ResponsiveTable label="Plain" columns={[{ id: 'a', label: 'Name', importance: 'High', render: (r) => String(r.Name) }]} rows={data.Products!.slice(0, 3)} keyOf={(r) => String(r.ID)}
-        selectedKeys={new Set()} onSelectionChange={() => undefined} navigable={false} onNavigate={() => undefined} hasMore={false} loading={false} loadMore={() => undefined} showDetails={false} />
+      <TableMacro contextPath="/Products" type="ResponsiveTable" />
+      <MTable headerText="Plain" columns={[{ id: 'a', header: 'Name', importance: 'High', cell: (r) => String(r.Name) }]} items={data.Products!.slice(0, 3)} keyOf={(r) => String(r.ID)} mode="MultiSelect" />
       <QuickViewLink typeName="Shop.Product" field={model.ui['Shop.Product']!.lineItem[0]!} row={data.Products![0]}>Quick view (needs UI.QuickViewFacets)</QuickViewLink>
     </div>
   ),
 };
 
 function FclDemo() {
-  const [layout, setLayout] = useState<FclLayout>('TwoColumnsMidExpanded');
+  const [layout, setLayout] = useState<NonNullable<$FlexibleColumnLayoutSettings['layout']>>('TwoColumnsMidExpanded');
   return (
     <div style={{ height: '100vh' }}>
-      <FlexibleColumnLayout layout={layout} onLayoutChange={setLayout} begin={<SmartTable entitySet="Products" />} mid={<SmartObjectPage path="Products(1)" />} onCloseMid={() => setLayout('OneColumn')} />
-      <ColumnContext.Provider value={{ column: 0, showBreadcrumbs: true }} />
+      <FlexibleColumnLayout
+        layout={layout} onStateChange={(e) => setLayout(e.layout)} beginColumnPages={<TableMacro contextPath="/Products" />}
+        midColumnPages={<DynamicPage title={<DynamicPageTitle heading="Product" navigationActions={<FlexibleColumnLayoutActions />} />} content={<SmartObjectPage path="Products(1)" />} />}
+      />
     </div>
   );
 }

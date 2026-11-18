@@ -1,6 +1,14 @@
 /** Freestyle page from building blocks: own toolbar replaces the default one (AC-EXT-01). */
 import { Button, Group } from '@mantine/core';
-import { DynamicPage, FilterSummary, SmartFilterBar, SmartTable, useFilterState, useMetaModel, useTableContext } from '@rhfan2019/smart-kit';
+import { useMetaModel } from '@rhfan2019/smart-kit';
+import FilterSummary from '@rhfan2019/smart-kit/kit/FilterSummary';
+import useFilterState from '@rhfan2019/smart-kit/kit/useFilterState';
+import Table from '@rhfan2019/smart-kit/v4/fe/macros/Table';
+import useTableContext from '@rhfan2019/smart-kit/kit/useTableContext';
+import FilterBar from '@rhfan2019/smart-kit/v4/fe/macros/FilterBar';
+import DynamicPage from '@rhfan2019/smart-kit/f/DynamicPage';
+import DynamicPageTitle from '@rhfan2019/smart-kit/f/DynamicPageTitle';
+import DynamicPageHeader from '@rhfan2019/smart-kit/f/DynamicPageHeader';
 import { useShell } from '../App';
 
 function MyToolbar() {
@@ -8,12 +16,12 @@ function MyToolbar() {
   const table = useTableContext();
   return (
     <div className="sk-table__toolbar" data-demo-toolbar>
-      <SmartTable.Title />
+      <Table.Title />
       <span className="sk-grow" />
       <Group gap="xs">
         <span>{s('customToolbar')}</span>
         <Button variant="default" size="xs" onClick={table.refresh}>{s('refresh')}</Button>
-        <SmartTable.Settings />
+        <Table.Settings />
       </Group>
     </div>
   );
@@ -24,16 +32,15 @@ export function FreestylePage() {
   const { ui } = useMetaModel('PurchaseOrders');
   return (
     <DynamicPage
-      layout="fill"
-      snapOnScroll
-      heading={ui.headerInfo.typeNamePlural}
-      summary={<FilterSummary entitySet="PurchaseOrders" filters={filter.filters} search={filter.search} />}
-      header={<SmartFilterBar state={filter} />}
+      fitContent
+      title={<DynamicPageTitle heading={ui.headerInfo.typeNamePlural} snappedContent={<FilterSummary entitySet="PurchaseOrders" filters={filter.filters} search={filter.search} />} />}
+      header={<DynamicPageHeader><FilterBar state={filter} /></DynamicPageHeader>}
       data-testid="freestyle"
-    >
-      <SmartTable entitySet="PurchaseOrders" query={filter.applied} pageKey="freestyle">
-        <MyToolbar />
-      </SmartTable>
-    </DynamicPage>
+      content={(
+        <Table contextPath="/PurchaseOrders" query={filter.applied} pageKey="freestyle">
+          <MyToolbar />
+        </Table>
+      )}
+    />
   );
 }

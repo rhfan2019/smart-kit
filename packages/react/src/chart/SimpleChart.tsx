@@ -22,7 +22,10 @@ export interface SimpleChartProps {
   format?(n: number): string;
   /** Called when a data point is selected (click or Enter / Space on a focused bar); `anchor` is the bar element, e.g. for a popover. */
   onSelect?(d: ChartDatum, anchor: Element): void;
+  /** Key of the selected data point. */
   selectedKey?: string;
+  /** Keys of the selected data points (multiple selection); combined with `selectedKey`. */
+  selectedKeys?: readonly string[];
   /** Height in pixels (default 320). */
   height?: number;
 }
@@ -76,7 +79,8 @@ export function SimpleChart(p: SimpleChartProps) {
   const numberFormat = useMemo(() => new Intl.NumberFormat(intlLocale, { maximumFractionDigits: 2 }), [intlLocale]);
   const fmt = p.format ?? ((n: number) => numberFormat.format(n));
   const data = useMemo(() => p.data.filter((d) => Number.isFinite(d.value)), [p.data]);
-  const selectedIndex = data.findIndex((d) => d.key === p.selectedKey);
+  const isSelected = (key: string) => key === p.selectedKey || Boolean(p.selectedKeys?.includes(key));
+  const selectedIndex = data.findIndex((d) => isSelected(d.key));
   const [active, setActive] = useState(-1);
   const current = active >= 0 && active < data.length ? active : Math.max(selectedIndex, 0);
   const bars = useRef<(SVGGElement | null)[]>([]);
@@ -202,7 +206,7 @@ export function SimpleChart(p: SimpleChartProps) {
           const rect = vertical
             ? { x: left + offset, y: top + plotH - Math.max(a, zero), width: thick, height: Math.max(Math.abs(a - zero), 1) }
             : { x: left + Math.min(a, zero), y: top + offset, width: Math.max(Math.abs(a - zero), 1), height: thick };
-          const selected = d.key === p.selectedKey;
+          const selected = isSelected(d.key);
           const label = t('chart.point', { dimension: p.dimensionLabel, label: d.label, value: valueText(d) });
           return (
             <g

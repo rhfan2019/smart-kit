@@ -1,5 +1,8 @@
 /** No default UI at all: only headless hooks and plain HTML (AC-EXT-04). */
-import { getPath, useFilterState, useListQuery, useMetaModel, useObject } from '@rhfan2019/smart-kit';
+import { getPath, useMetaModel } from '@rhfan2019/smart-kit';
+import useFilterState from '@rhfan2019/smart-kit/kit/useFilterState';
+import useListQuery from '@rhfan2019/smart-kit/kit/useListQuery';
+import useObject from '@rhfan2019/smart-kit/kit/useObject';
 import { useState } from 'react';
 import { useShell } from '../App';
 

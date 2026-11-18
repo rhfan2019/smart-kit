@@ -8,7 +8,7 @@
 | `import … from '@rhfan2019/smart-kit'` everywhere | Import from the subpath (`@rhfan2019/smart-kit/templates`, `/cards`, `/chart`, …) | The root entry makes the bundler resolve AG Grid; subpaths keep the bundle to what you use. |
 | Use `/table` or `/templates` without installing AG Grid | `npm install ag-grid-community ag-grid-react`, or use `/cards`, `/chart`, `/field` and `useListQuery` | They are optional peer dependencies needed only by the grid table and the templates. |
 | Give the list page / object page no height | Make the route container fill the viewport (`height: 100%` down from `html, body, #root`) | Both pages lay out header, filter bar and table inside their container and scroll the table. |
-| Hand-build OData URLs (`$filter=…`) for a list | Use `useListQuery` / `SmartTable` with `filters` (conditions per path) | Query generation handles types, `$expand` for texts, `$count`, paging and the service's restrictions. |
+| Hand-build OData URLs (`$filter=…`) for a list | Use `useListQuery` (`kit/useListQuery`) / `Table` (`v4/fe/macros/Table`) with `query.filters` (conditions per path) | Query generation handles types, `$expand` for texts, `$count`, paging and the service's restrictions. |
 | Build entity paths by string concatenation of raw values | `` `Orders${keyPredicate(type, row)}` `` with `keyPredicate` from core | Keys are typed and quoted per Edm type (`'…'` for strings, composite keys `A='1',B=2`). |
 | Reuse one `SmartObjectPage` instance for different objects | Give it `key={path}` | State (edit mode, scroll, sections) belongs to one object. |
 | Create `tableExtend` / `sectionExtend` arrays inline in render | Define them outside the component or in `useMemo` | A new array each render rebuilds columns and sections. |

@@ -1,21 +1,11 @@
 'use client';
 
 /**
- * Root entry (not yet aligned subpaths only; the UI5-aligned modules are imported by their own paths, ADR-033).
- * Public API of @rhfan2019/smart-kit. Everything exported here is listed in docs/api.md (AC-Q-03).
- * The root entry only re-exports the subpath entries in ./entries (ADR-026); add new exports there.
+ * Root entry: the infrastructure only (context, i18n, theme, util; ADR-033, D38). Components are imported by their
+ * UI5 module path (`@rhfan2019/smart-kit/m/MessageBox`, `@rhfan2019/smart-kit/v4/fe/macros/Table`) or from `kit/…`;
+ * the page templates from `/templates` until stage 5. Everything exported here is listed in docs/api.md (AC-Q-03).
  */
 export * from './entries/context';
 export * from './entries/i18n';
 export * from './entries/theme';
 export * from './entries/util';
-export * from './entries/field';
-export * from './entries/filter';
-export * from './entries/variants';
-export * from './entries/table';
-export * from './entries/chart';
-export * from './entries/object';
-export * from './entries/page';
-export * from './entries/actions';
-export * from './entries/edit';
-export * from './entries/templates';

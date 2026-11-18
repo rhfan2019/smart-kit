@@ -19,7 +19,7 @@
 
 - **铁律：与 SAPUI5 一致（2026-11-17，D34，ADR-033）**：组件名、模块路径（只换前缀；`sap.fe.*` 带 `v4`；每个类一个模块）、API 和注解语义都和 SAPUI5 1.154 一致，注解积木对齐 sap.fe.macros，模板对齐 sap.fe.templates；不留旧名（D35）。**以后统一在 main 上开发**，不开功能分支；D31～D35 的改动已经合并进 main。开发文档 `30`、推进计划 `31`（阶段 0～7，有"进度"一节）、验收标准 `32`；新会话从 `docs/prompt/UI5对齐-推进提示词.md` 开始。已有核对结果：`26a`（控件 API）、`28`（已有组件和 UI5 的差异）、`29` / `29a`（列表页注解和 FE 的差异）。
 
-- **对齐进度**（`31` 第 3 节）：阶段 0 完成（D36）：`npm run check:ui5`、`npm run e2e:fe`、映射表和偏差表 `tools/ui5-alignment/`、`26b`、`26c`。阶段 1 完成（D37）：D31 控件、消息控件、卡片、枚举在 UI5 模块路径（`src/m/…` 等门面文件，exports 由 `node scripts/gen-exports.mjs` 生成，改了模块文件要重跑）；`/controls`、`/messages`、`/cards` 已删除。
+- **对齐进度**（`31` 第 3 节）：阶段 0 完成（D36）：`npm run check:ui5`、`npm run e2e:fe`、映射表和偏差表 `tools/ui5-alignment/`、`26b`、`26c`。阶段 1 完成（D37）：D31 控件、消息控件、卡片、枚举在 UI5 模块路径（`src/m/…` 等门面文件，exports 由 `node scripts/gen-exports.mjs` 生成，改了模块文件要重跑）；`/controls`、`/messages`、`/cards` 已删除。阶段 2 完成（D38）：积木在 `v4/fe/macros/*`，布局在 `f/`、`uxap/`、`m/`，hooks 在 `kit/`；旧子路径只剩 `/templates`（阶段 5），根入口只导出基础设施。
 
 ## 2. 下一步
 

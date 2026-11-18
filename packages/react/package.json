@@ -55,51 +55,6 @@
       "types": "./dist/entries/util.d.ts",
       "import": "./dist/entries/util.js"
     },
-    "./field": {
-      "smart-kit-source": "./src/entries/field.ts",
-      "types": "./dist/entries/field.d.ts",
-      "import": "./dist/entries/field.js"
-    },
-    "./filter": {
-      "smart-kit-source": "./src/entries/filter.ts",
-      "types": "./dist/entries/filter.d.ts",
-      "import": "./dist/entries/filter.js"
-    },
-    "./variants": {
-      "smart-kit-source": "./src/entries/variants.ts",
-      "types": "./dist/entries/variants.d.ts",
-      "import": "./dist/entries/variants.js"
-    },
-    "./table": {
-      "smart-kit-source": "./src/entries/table.ts",
-      "types": "./dist/entries/table.d.ts",
-      "import": "./dist/entries/table.js"
-    },
-    "./chart": {
-      "smart-kit-source": "./src/entries/chart.ts",
-      "types": "./dist/entries/chart.d.ts",
-      "import": "./dist/entries/chart.js"
-    },
-    "./object": {
-      "smart-kit-source": "./src/entries/object.ts",
-      "types": "./dist/entries/object.d.ts",
-      "import": "./dist/entries/object.js"
-    },
-    "./page": {
-      "smart-kit-source": "./src/entries/page.ts",
-      "types": "./dist/entries/page.d.ts",
-      "import": "./dist/entries/page.js"
-    },
-    "./actions": {
-      "smart-kit-source": "./src/entries/actions.ts",
-      "types": "./dist/entries/actions.d.ts",
-      "import": "./dist/entries/actions.js"
-    },
-    "./edit": {
-      "smart-kit-source": "./src/entries/edit.ts",
-      "types": "./dist/entries/edit.d.ts",
-      "import": "./dist/entries/edit.js"
-    },
     "./templates": {
       "smart-kit-source": "./src/entries/templates.ts",
       "types": "./dist/entries/templates.d.ts",
@@ -114,6 +69,26 @@
       "smart-kit-source": "./src/f/Card.ts",
       "types": "./dist/f/Card.d.ts",
       "import": "./dist/f/Card.js"
+    },
+    "./f/DynamicPage": {
+      "smart-kit-source": "./src/f/DynamicPage.ts",
+      "types": "./dist/f/DynamicPage.d.ts",
+      "import": "./dist/f/DynamicPage.js"
+    },
+    "./f/DynamicPageHeader": {
+      "smart-kit-source": "./src/f/DynamicPageHeader.ts",
+      "types": "./dist/f/DynamicPageHeader.d.ts",
+      "import": "./dist/f/DynamicPageHeader.js"
+    },
+    "./f/DynamicPageTitle": {
+      "smart-kit-source": "./src/f/DynamicPageTitle.ts",
+      "types": "./dist/f/DynamicPageTitle.d.ts",
+      "import": "./dist/f/DynamicPageTitle.js"
+    },
+    "./f/FlexibleColumnLayout": {
+      "smart-kit-source": "./src/f/FlexibleColumnLayout.ts",
+      "types": "./dist/f/FlexibleColumnLayout.d.ts",
+      "import": "./dist/f/FlexibleColumnLayout.js"
     },
     "./f/cards/Header": {
       "smart-kit-source": "./src/f/cards/Header.ts",
@@ -130,6 +105,56 @@
       "types": "./dist/f/cards/NumericSideIndicator.d.ts",
       "import": "./dist/f/cards/NumericSideIndicator.js"
     },
+    "./f/library": {
+      "smart-kit-source": "./src/f/library.ts",
+      "types": "./dist/f/library.d.ts",
+      "import": "./dist/f/library.js"
+    },
+    "./kit/AdaptFiltersDialog": {
+      "smart-kit-source": "./src/kit/AdaptFiltersDialog.ts",
+      "types": "./dist/kit/AdaptFiltersDialog.d.ts",
+      "import": "./dist/kit/AdaptFiltersDialog.js"
+    },
+    "./kit/ColumnContext": {
+      "smart-kit-source": "./src/kit/ColumnContext.ts",
+      "types": "./dist/kit/ColumnContext.d.ts",
+      "import": "./dist/kit/ColumnContext.js"
+    },
+    "./kit/ConditionInput": {
+      "smart-kit-source": "./src/kit/ConditionInput.ts",
+      "types": "./dist/kit/ConditionInput.d.ts",
+      "import": "./dist/kit/ConditionInput.js"
+    },
+    "./kit/CreateDialog": {
+      "smart-kit-source": "./src/kit/CreateDialog.ts",
+      "types": "./dist/kit/CreateDialog.d.ts",
+      "import": "./dist/kit/CreateDialog.js"
+    },
+    "./kit/CriticalityIcon": {
+      "smart-kit-source": "./src/kit/CriticalityIcon.ts",
+      "types": "./dist/kit/CriticalityIcon.d.ts",
+      "import": "./dist/kit/CriticalityIcon.js"
+    },
+    "./kit/DraftIndicator": {
+      "smart-kit-source": "./src/kit/DraftIndicator.ts",
+      "types": "./dist/kit/DraftIndicator.d.ts",
+      "import": "./dist/kit/DraftIndicator.js"
+    },
+    "./kit/FieldEditor": {
+      "smart-kit-source": "./src/kit/FieldEditor.ts",
+      "types": "./dist/kit/FieldEditor.d.ts",
+      "import": "./dist/kit/FieldEditor.js"
+    },
+    "./kit/FilterSummary": {
+      "smart-kit-source": "./src/kit/FilterSummary.ts",
+      "types": "./dist/kit/FilterSummary.d.ts",
+      "import": "./dist/kit/FilterSummary.js"
+    },
+    "./kit/HeaderFacet": {
+      "smart-kit-source": "./src/kit/HeaderFacet.ts",
+      "types": "./dist/kit/HeaderFacet.d.ts",
+      "import": "./dist/kit/HeaderFacet.js"
+    },
     "./kit/MessageHost": {
       "smart-kit-source": "./src/kit/MessageHost.ts",
       "types": "./dist/kit/MessageHost.d.ts",
@@ -145,10 +170,95 @@
       "types": "./dist/kit/MessageProvider.d.ts",
       "import": "./dist/kit/MessageProvider.js"
     },
+    "./kit/QuickViewLink": {
+      "smart-kit-source": "./src/kit/QuickViewLink.ts",
+      "types": "./dist/kit/QuickViewLink.d.ts",
+      "import": "./dist/kit/QuickViewLink.js"
+    },
+    "./kit/SimpleChart": {
+      "smart-kit-source": "./src/kit/SimpleChart.ts",
+      "types": "./dist/kit/SimpleChart.d.ts",
+      "import": "./dist/kit/SimpleChart.js"
+    },
+    "./kit/ValueHelpDialog": {
+      "smart-kit-source": "./src/kit/ValueHelpDialog.ts",
+      "types": "./dist/kit/ValueHelpDialog.d.ts",
+      "import": "./dist/kit/ValueHelpDialog.js"
+    },
+    "./kit/smartKitGridTheme": {
+      "smart-kit-source": "./src/kit/smartKitGridTheme.ts",
+      "types": "./dist/kit/smartKitGridTheme.d.ts",
+      "import": "./dist/kit/smartKitGridTheme.js"
+    },
+    "./kit/useActionRunner": {
+      "smart-kit-source": "./src/kit/useActionRunner.ts",
+      "types": "./dist/kit/useActionRunner.d.ts",
+      "import": "./dist/kit/useActionRunner.js"
+    },
+    "./kit/useColumn": {
+      "smart-kit-source": "./src/kit/useColumn.ts",
+      "types": "./dist/kit/useColumn.d.ts",
+      "import": "./dist/kit/useColumn.js"
+    },
+    "./kit/useDynamicPage": {
+      "smart-kit-source": "./src/kit/useDynamicPage.ts",
+      "types": "./dist/kit/useDynamicPage.d.ts",
+      "import": "./dist/kit/useDynamicPage.js"
+    },
+    "./kit/useEditStrategy": {
+      "smart-kit-source": "./src/kit/useEditStrategy.ts",
+      "types": "./dist/kit/useEditStrategy.d.ts",
+      "import": "./dist/kit/useEditStrategy.js"
+    },
+    "./kit/useFilterBarContext": {
+      "smart-kit-source": "./src/kit/useFilterBarContext.ts",
+      "types": "./dist/kit/useFilterBarContext.d.ts",
+      "import": "./dist/kit/useFilterBarContext.js"
+    },
+    "./kit/useFilterState": {
+      "smart-kit-source": "./src/kit/useFilterState.ts",
+      "types": "./dist/kit/useFilterState.d.ts",
+      "import": "./dist/kit/useFilterState.js"
+    },
+    "./kit/useListQuery": {
+      "smart-kit-source": "./src/kit/useListQuery.ts",
+      "types": "./dist/kit/useListQuery.d.ts",
+      "import": "./dist/kit/useListQuery.js"
+    },
     "./kit/useMessages": {
       "smart-kit-source": "./src/kit/useMessages.ts",
       "types": "./dist/kit/useMessages.d.ts",
       "import": "./dist/kit/useMessages.js"
+    },
+    "./kit/useObject": {
+      "smart-kit-source": "./src/kit/useObject.ts",
+      "types": "./dist/kit/useObject.d.ts",
+      "import": "./dist/kit/useObject.js"
+    },
+    "./kit/useObjectTitle": {
+      "smart-kit-source": "./src/kit/useObjectTitle.ts",
+      "types": "./dist/kit/useObjectTitle.d.ts",
+      "import": "./dist/kit/useObjectTitle.js"
+    },
+    "./kit/useSectionScrollSpy": {
+      "smart-kit-source": "./src/kit/useSectionScrollSpy.ts",
+      "types": "./dist/kit/useSectionScrollSpy.d.ts",
+      "import": "./dist/kit/useSectionScrollSpy.js"
+    },
+    "./kit/useTableContext": {
+      "smart-kit-source": "./src/kit/useTableContext.ts",
+      "types": "./dist/kit/useTableContext.d.ts",
+      "import": "./dist/kit/useTableContext.js"
+    },
+    "./kit/useValueList": {
+      "smart-kit-source": "./src/kit/useValueList.ts",
+      "types": "./dist/kit/useValueList.d.ts",
+      "import": "./dist/kit/useValueList.js"
+    },
+    "./kit/useVariants": {
+      "smart-kit-source": "./src/kit/useVariants.ts",
+      "types": "./dist/kit/useVariants.d.ts",
+      "import": "./dist/kit/useVariants.js"
     },
     "./m/AvatarShape": {
       "smart-kit-source": "./src/m/AvatarShape.ts",
@@ -189,6 +299,11 @@
       "smart-kit-source": "./src/m/FeedListItem.ts",
       "types": "./dist/m/FeedListItem.d.ts",
       "import": "./dist/m/FeedListItem.js"
+    },
+    "./m/GenericTag": {
+      "smart-kit-source": "./src/m/GenericTag.ts",
+      "types": "./dist/m/GenericTag.d.ts",
+      "import": "./dist/m/GenericTag.js"
     },
     "./m/IconTabBar": {
       "smart-kit-source": "./src/m/IconTabBar.ts",
@@ -285,6 +400,11 @@
       "types": "./dist/m/SelectDialog.d.ts",
       "import": "./dist/m/SelectDialog.js"
     },
+    "./m/Table": {
+      "smart-kit-source": "./src/m/Table.ts",
+      "types": "./dist/m/Table.d.ts",
+      "import": "./dist/m/Table.js"
+    },
     "./m/TableSelectDialog": {
       "smart-kit-source": "./src/m/TableSelectDialog.ts",
       "types": "./dist/m/TableSelectDialog.d.ts",
@@ -319,6 +439,11 @@
       "smart-kit-source": "./src/m/library.ts",
       "types": "./dist/m/library.d.ts",
       "import": "./dist/m/library.js"
+    },
+    "./m/p13n/Popup": {
+      "smart-kit-source": "./src/m/p13n/Popup.ts",
+      "types": "./dist/m/p13n/Popup.d.ts",
+      "import": "./dist/m/p13n/Popup.js"
     },
     "./m/plugins/UploadSetwithTable": {
       "smart-kit-source": "./src/m/plugins/UploadSetwithTable.ts",
@@ -415,10 +540,95 @@
       "types": "./dist/ui/unified/Currency.d.ts",
       "import": "./dist/ui/unified/Currency.js"
     },
+    "./uxap/AnchorBar": {
+      "smart-kit-source": "./src/uxap/AnchorBar.ts",
+      "types": "./dist/uxap/AnchorBar.d.ts",
+      "import": "./dist/uxap/AnchorBar.js"
+    },
+    "./uxap/ObjectPageDynamicHeaderContent": {
+      "smart-kit-source": "./src/uxap/ObjectPageDynamicHeaderContent.ts",
+      "types": "./dist/uxap/ObjectPageDynamicHeaderContent.d.ts",
+      "import": "./dist/uxap/ObjectPageDynamicHeaderContent.js"
+    },
+    "./uxap/ObjectPageDynamicHeaderTitle": {
+      "smart-kit-source": "./src/uxap/ObjectPageDynamicHeaderTitle.ts",
+      "types": "./dist/uxap/ObjectPageDynamicHeaderTitle.d.ts",
+      "import": "./dist/uxap/ObjectPageDynamicHeaderTitle.js"
+    },
+    "./uxap/ObjectPageLayout": {
+      "smart-kit-source": "./src/uxap/ObjectPageLayout.ts",
+      "types": "./dist/uxap/ObjectPageLayout.d.ts",
+      "import": "./dist/uxap/ObjectPageLayout.js"
+    },
+    "./uxap/library": {
+      "smart-kit-source": "./src/uxap/library.ts",
+      "types": "./dist/uxap/library.d.ts",
+      "import": "./dist/uxap/library.js"
+    },
+    "./v4/fe/macros/Chart": {
+      "smart-kit-source": "./src/v4/fe/macros/Chart.ts",
+      "types": "./dist/v4/fe/macros/Chart.d.ts",
+      "import": "./dist/v4/fe/macros/Chart.js"
+    },
+    "./v4/fe/macros/Field": {
+      "smart-kit-source": "./src/v4/fe/macros/Field.ts",
+      "types": "./dist/v4/fe/macros/Field.d.ts",
+      "import": "./dist/v4/fe/macros/Field.js"
+    },
+    "./v4/fe/macros/FilterBar": {
+      "smart-kit-source": "./src/v4/fe/macros/FilterBar.ts",
+      "types": "./dist/v4/fe/macros/FilterBar.d.ts",
+      "import": "./dist/v4/fe/macros/FilterBar.js"
+    },
+    "./v4/fe/macros/Form": {
+      "smart-kit-source": "./src/v4/fe/macros/Form.ts",
+      "types": "./dist/v4/fe/macros/Form.d.ts",
+      "import": "./dist/v4/fe/macros/Form.js"
+    },
+    "./v4/fe/macros/KPITag": {
+      "smart-kit-source": "./src/v4/fe/macros/KPITag.ts",
+      "types": "./dist/v4/fe/macros/KPITag.d.ts",
+      "import": "./dist/v4/fe/macros/KPITag.js"
+    },
     "./v4/fe/macros/MessageButton": {
       "smart-kit-source": "./src/v4/fe/macros/MessageButton.ts",
       "types": "./dist/v4/fe/macros/MessageButton.d.ts",
       "import": "./dist/v4/fe/macros/MessageButton.js"
+    },
+    "./v4/fe/macros/MicroChart": {
+      "smart-kit-source": "./src/v4/fe/macros/MicroChart.ts",
+      "types": "./dist/v4/fe/macros/MicroChart.d.ts",
+      "import": "./dist/v4/fe/macros/MicroChart.js"
+    },
+    "./v4/fe/macros/Paginator": {
+      "smart-kit-source": "./src/v4/fe/macros/Paginator.ts",
+      "types": "./dist/v4/fe/macros/Paginator.d.ts",
+      "import": "./dist/v4/fe/macros/Paginator.js"
+    },
+    "./v4/fe/macros/Share": {
+      "smart-kit-source": "./src/v4/fe/macros/Share.ts",
+      "types": "./dist/v4/fe/macros/Share.d.ts",
+      "import": "./dist/v4/fe/macros/Share.js"
+    },
+    "./v4/fe/macros/Table": {
+      "smart-kit-source": "./src/v4/fe/macros/Table.ts",
+      "types": "./dist/v4/fe/macros/Table.d.ts",
+      "import": "./dist/v4/fe/macros/Table.js"
+    },
+    "./v4/fe/macros/TreeTable": {
+      "smart-kit-source": "./src/v4/fe/macros/TreeTable.ts",
+      "types": "./dist/v4/fe/macros/TreeTable.d.ts",
+      "import": "./dist/v4/fe/macros/TreeTable.js"
+    },
+    "./v4/fe/macros/VariantManagement": {
+      "smart-kit-source": "./src/v4/fe/macros/VariantManagement.ts",
+      "types": "./dist/v4/fe/macros/VariantManagement.d.ts",
+      "import": "./dist/v4/fe/macros/VariantManagement.js"
+    },
+    "./v4/fe/macros/fcl/FlexibleColumnLayoutActions.block": {
+      "smart-kit-source": "./src/v4/fe/macros/fcl/FlexibleColumnLayoutActions.block.ts",
+      "types": "./dist/v4/fe/macros/fcl/FlexibleColumnLayoutActions.block.d.ts",
+      "import": "./dist/v4/fe/macros/fcl/FlexibleColumnLayoutActions.block.js"
     },
     "./styles.css": {
       "smart-kit-source": "./src/theme/styles.css",

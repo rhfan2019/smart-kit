@@ -9,7 +9,7 @@ const external = [...Object.keys(pkg.dependencies ?? {}), ...Object.keys(pkg.pee
 /** The root entry, one entry per subpath in src/entries (ADR-026) and one per UI5-aligned module (ADR-033, package.json exports). */
 const modules = Object.values(pkg.exports as Record<string, Record<string, string>>)
   .map((t) => t['smart-kit-source'])
-  .filter((f): f is string => Boolean(f) && /^\.\/src\/(base|f|kit|m|suite|ui|v4)\//.test(f))
+  .filter((f): f is string => Boolean(f) && /^\.\/src\/(base|f|kit|m|suite|ui|uxap|v4)\//.test(f))
   .map((f) => [f.slice('./src/'.length).replace(/\.tsx?$/, ''), f.slice(2)]);
 const entries = Object.fromEntries([
   ['index', 'src/index.ts'],

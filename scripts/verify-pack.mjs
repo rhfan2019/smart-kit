@@ -145,7 +145,7 @@ writeFileSync(join(web, 'index.html'), '<!doctype html><html><body><div id="root
 writeFileSync(join(web, 'src/main.tsx'), [
   "import '@rhfan2019/smart-kit/styles.css';",
   "import { createRoot } from 'react-dom/client';",
-  "import { MicroChart } from '@rhfan2019/smart-kit/chart';",
+  "import MicroChart from '@rhfan2019/smart-kit/v4/fe/macros/MicroChart';",
   "createRoot(document.getElementById('root')!).render(<MicroChart kind=\"column\" label=\"Sales\" points={[{ label: 'a', value: 1 }, { label: 'b', value: 3 }]} />);",
   '',
 ].join('\n'));
@@ -176,7 +176,7 @@ try {
 writeFileSync(join(web, 'measure.mjs'), `import { build } from 'vite';
 import { gzipSync } from 'node:zlib';
 const id = '\\0size-entry';
-const code = "import { MicroChart } from '@rhfan2019/smart-kit/chart'; console.log(MicroChart);";
+const code = "import MicroChart from '@rhfan2019/smart-kit/v4/fe/macros/MicroChart'; console.log(MicroChart);";
 const reactOnly = (s) => s === 'react' || s === 'react-dom' || s.startsWith('react/') || s.startsWith('react-dom/');
 const out = await build({ configFile: false, logLevel: 'silent', define: { 'process.env.NODE_ENV': '"production"' },
   plugins: [{ name: 'size-entry', resolveId: (s) => (s === 'size-entry' ? id : null), load: (s) => (s === id ? code : null) }],
@@ -187,8 +187,9 @@ console.log((chunks.reduce((n, o) => n + gzipSync(o.code).length, 0) / 1024).toF
 try {
   const installed = Number(run('node', ['measure.mjs'], web).trim());
   const sizeOut = run('node', ['scripts/check-size.mjs'], ROOT);
-  const repo = Number(/MicroChart only\s+([\d.]+) KB/.exec(sizeOut)?.[1]);
-  check(Math.abs(installed - repo) <= 0.3 && installed <= 8, 'size: an app with only MicroChart ships what check-size.mjs measures', `installed ${installed.toFixed(1)} KB, repo ${repo} KB gzip`);
+  const repo = Number(/MicroChart only \(v4\/fe\/macros\/MicroChart\)\s+([\d.]+) KB/.exec(sizeOut)?.[1]);
+  // 8 → 44 KB: sap.fe.macros.MicroChart is annotation-driven (stage 2, D38); the 8 KB data-only charts return in stage 6
+  check(Math.abs(installed - repo) <= 0.3 && installed <= 44, 'size: an app with only MicroChart ships what check-size.mjs measures', `installed ${installed.toFixed(1)} KB, repo ${repo} KB gzip`);
 } catch (e) {
   check(false, 'size: MicroChart only', String(e.stderr ?? e).split('\n').slice(0, 5).join(' | '));
 }

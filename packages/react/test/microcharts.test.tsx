@@ -4,7 +4,8 @@ import { render, screen } from '@testing-library/react';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { MicroChart, SmartField } from '../src';
+import MicroChart from '@rhfan2019/smart-kit/v4/fe/macros/MicroChart';
+import Field from '../src/v4/fe/macros/Field';
 import { chartHidden, chartProps, seriesChartProps } from '../src/chart/fromModel';
 import { wrap } from './helpers';
 
@@ -130,15 +131,15 @@ describe('docs/15 MC-10 micro chart in a cell', () => {
   const field: FieldModel = { id: 'c', kind: 'chart', label: 'Budget use', chart, criticalityIcon: false, isSemanticKey: false };
 
   it('renders the chart from the model; CriticalityCalculation colours it (MC-09)', () => {
-    render(wrap(<SmartField service="shop" typeName="Shop.Product" field={field} row={{ Price: '18.50' }} cell />));
+    render(wrap(<Field service="shop" typeName="Shop.Product" metaPath={field} row={{ Price: '18.50' }} cell />));
     expect(screen.getByRole('img', { name: /^Budget use: Actual 18\.5/ })).toHaveClass('sk-chart--negative');
   });
 
   it('MC-06 an empty cell without data; MC-60 MC-64 other chart types (Waterfall) draw nothing', () => {
     const { container } = render(wrap(
       <>
-        <span data-a><SmartField service="shop" typeName="Shop.Product" field={field} row={{}} cell /></span>
-        <span data-b><SmartField service="shop" typeName="Shop.Product" field={{ ...field, chart: { ...chart, chartType: 'Waterfall' } }} row={{ Price: 1 }} cell /></span>
+        <span data-a><Field service="shop" typeName="Shop.Product" metaPath={field} row={{}} cell /></span>
+        <span data-b><Field service="shop" typeName="Shop.Product" metaPath={{ ...field, chart: { ...chart, chartType: 'Waterfall' } }} row={{ Price: 1 }} cell /></span>
       </>,
     ));
     expect(container.querySelector('[data-a] [data-sk-microchart]')).toBeNull();
@@ -295,7 +296,7 @@ describe('docs/15 §3 series charts from the model (ADR-025)', () => {
   it('stacked bar: the dimension text names the segments; the cell renders from the expanded rows', () => {
     const props = chartProps(ctx, 'T.Order', cols[2]!.chart!, row)!;
     expect(props.points!.map((p) => p.label)).toEqual(['Freight', 'Price']);
-    render(wrap(<span data-c><SmartField service="shop" typeName="T.Order" field={cols[2]!} row={row} cell /></span>, { model }));
+    render(wrap(<span data-c><Field service="shop" typeName="T.Order" metaPath={cols[2]!} row={row} cell /></span>, { model }));
     expect(screen.getByRole('img', { name: 'Share: Freight 4 (25%), Price 12 (75%)' })).toBeInTheDocument();
   });
 });

@@ -22,9 +22,9 @@ const ENTRY_BUDGETS = {
   'core:.': 60,
   '.': 154, // everything, all subpaths together; 80 → 95 with the cards (ADR-028, /cards ≈ 18 KB); 95 → 154 with the controls (docs/26, /controls ≈ 57 KB) and the tree table
   // context, i18n, table, templates +1 to +2: the texts and the code of relative dates and the FCL separator (S6, S23)
-  context: 12, i18n: 8, theme: 2, util: 8, // util 1 → 8 with the helpers from /controls (stage 1, ADR-033: messageTypeOf, toDates, viewSettingsFilterString …)
-  field: 15, filter: 11, variants: 4, table: 40, chart: 12,
-  object: 30, page: 7, actions: 3, edit: 19, templates: 84,
+  context: 12, i18n: 8, theme: 2, util: 11, // util 1 → 11 with the helpers from /controls (stage 1, ADR-033: messageTypeOf, toDates, viewSettingsFilterString …)
+  // stage 2 (D38): the block subpaths are gone, the blocks are measured as modules below
+  templates: 100, // 84 → 100: the templates compose the UI5 page controls (DynamicPageTitle, ObjectPageDynamicHeaderTitle, OverflowToolbar title actions, Paginator, FlexibleColumnLayoutActions; stage 2)
 };
 
 /**
@@ -33,13 +33,19 @@ const ENTRY_BUDGETS = {
  */
 // most controls share about 8 KB (provider texts and helpers); budgets are the first measurement plus about 15 %
 const MODULE_DEFAULT = 14;
-const MODULE_BUDGETS = { 'm/DynamicDateRange': 19, 'm/IllustratedMessage': 16, 'm/plugins/UploadSetwithTable': 25 };
+const MODULE_BUDGETS = {
+  'm/DynamicDateRange': 19, 'm/IllustratedMessage': 16, 'm/plugins/UploadSetwithTable': 25,
+  // stage 2 (D38): the building blocks; Table / TreeTable are the former /table entry (40 KB) plus the sap.fe.macros.Table API
+  'v4/fe/macros/Table': 62, 'v4/fe/macros/TreeTable': 62, 'v4/fe/macros/Field': 17, 'v4/fe/macros/Form': 18,
+  'kit/CreateDialog': 18, 'kit/HeaderFacet': 21, 'kit/QuickViewLink': 17,
+};
 
 /** Budgets for what an application ships when it imports only this (React and React DOM excluded). */
 const SCENARIOS = [
-  { name: 'MicroChart only', code: "import { MicroChart } from '@rhfan2019/smart-kit/chart'; console.log(MicroChart);", budget: 8 },
-  { name: 'MicroChart from the root entry', code: "import { MicroChart } from '@rhfan2019/smart-kit'; console.log(MicroChart);", budget: 8 },
-  { name: 'SmartField only', code: "import { SmartField } from '@rhfan2019/smart-kit/field'; console.log(SmartField);", budget: 130 },
+  // sap.fe.macros.MicroChart is annotation-driven (provider, model); the 8 KB data-only micro chart returns with the nine
+  // sap.suite.ui.microchart controls in stage 6 (D38)
+  { name: 'MicroChart only (v4/fe/macros/MicroChart)', code: "import MicroChart from '@rhfan2019/smart-kit/v4/fe/macros/MicroChart'; console.log(MicroChart);", budget: 44 },
+  { name: 'Field only (v4/fe/macros/Field)', code: "import Field from '@rhfan2019/smart-kit/v4/fe/macros/Field'; console.log(Field);", budget: 130 },
   { name: 'List report page', code: "import { SmartListReport } from '@rhfan2019/smart-kit/templates'; console.log(SmartListReport);", budget: 560 },
   { name: 'Object page', code: "import { SmartObjectPage } from '@rhfan2019/smart-kit/templates'; console.log(SmartObjectPage);", budget: 560 },
   // Cards (docs/20, ADR-028): a card with its content, no AG Grid.
@@ -55,7 +61,7 @@ const SCENARIOS = [
 const alias = [
   { find: /^@rhfan2019\/smart-kit-core$/, replacement: join(CORE_DIST, 'index.js') },
   // UI5-aligned modules live at their path in dist (dist/m/MessageBox.js), the other subpaths in dist/entries
-  { find: /^@rhfan2019\/smart-kit\/((?:base|f|kit|m|suite|ui|v4)\/.+)$/, replacement: join(REACT_DIST, '$1.js') },
+  { find: /^@rhfan2019\/smart-kit\/((?:base|f|kit|m|suite|ui|uxap|v4)\/.+)$/, replacement: join(REACT_DIST, '$1.js') },
   { find: /^@rhfan2019\/smart-kit\/(.+)$/, replacement: join(REACT_DIST, 'entries/$1.js') },
   { find: /^@rhfan2019\/smart-kit$/, replacement: join(REACT_DIST, 'index.js') },
 ];
@@ -116,7 +122,7 @@ for (const name of entryNames) {
   report(spec, await bundle(`export * from '${spec}';`, (id) => isPackage(id) && !id.startsWith('@rhfan2019/'), true), budget);
 }
 const moduleNames = Object.keys(JSON.parse(readFileSync(join(ROOT, 'packages/react/package.json'), 'utf8')).exports)
-  .filter((k) => /^\.\/(base|f|kit|m|suite|ui|v4)\//.test(k)).map((k) => k.slice(2));
+  .filter((k) => /^\.\/(base|f|kit|m|suite|ui|uxap|v4)\//.test(k)).map((k) => k.slice(2));
 for (const name of moduleNames) {
   const spec = `@rhfan2019/smart-kit/${name}`;
   const code = name.endsWith('/library') ? `export * from '${spec}';` : `export { default } from '${spec}'; export * from '${spec}';`;
@@ -125,7 +131,7 @@ for (const name of moduleNames) {
 // P5: one stylesheet for all components (styles.css imports tokens.css). 13 → 16 KB with the cards (ADR-028, about 4 KB).
 const css = ['styles.css', 'tokens.css'].reduce((n, f) => n + gzipSync(readFileSync(join(REACT_DIST, f))).length, 0) / 1024;
 // 16 → 17 KB: data-sk-theme selectors beside the former data-theme ones (S7), FCL separator, relative dates (S6, S23)
-report('@rhfan2019/smart-kit/styles.css (with tokens.css)', css, 27); // 17 → 27 with the controls (docs/26, about 8 KB) and the tree table
+report('@rhfan2019/smart-kit/styles.css (with tokens.css)', css, 29); // 27 → 29: page controls of stage 2 (title toolbar, anchor bar, micro chart sizes) // 17 → 27 with the controls (docs/26, about 8 KB) and the tree table
 
 console.log('\nWhat an application ships (everything except React):');
 for (const s of SCENARIOS) report(s.name, await bundle(s.code, reactOnly), s.budget);

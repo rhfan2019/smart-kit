@@ -1,10 +1,14 @@
 /** Issues found by the first consumer (docs/25): texts, view saving, export, refresh, object page options. */
 import { MantineProvider } from '@mantine/core';
 import { buildModel, MemoryProvider, MemoryVariantStore, type MetaModel, type Variant, type VariantStore } from '@rhfan2019/smart-kit-core';
-import { fireEvent, render, renderHook, screen, waitFor } from '@testing-library/react';
-import type { ReactNode } from 'react';
+import { act, fireEvent, render, renderHook, screen, waitFor } from '@testing-library/react';
+import { createRef, type ReactNode } from 'react';
 import { describe, expect, it, vi } from 'vitest';
-import { createText, SmartKitProvider, smartKitMantineTheme, SmartObjectPage, SmartTable, SmartVariantManagement, useVariants } from '../src';
+import { createText, SmartKitProvider, smartKitMantineTheme } from '../src';
+import { SmartObjectPage } from '@rhfan2019/smart-kit/templates';
+import useVariants from '@rhfan2019/smart-kit/kit/useVariants';
+import Table from '../src/v4/fe/macros/Table';
+import VariantManagement from '../src/v4/fe/macros/VariantManagement';
 import { typedText } from '../src/i18n/text';
 import { zh } from '../src/i18n/messages.zh';
 import { exportRows } from '../src/table/exportRows';
@@ -39,7 +43,7 @@ describe('texts name the record type, never "object" (S22)', () => {
 
 function Views(p: { content?: Variant['content']; canSave?: boolean }) {
   const v = useVariants('page', { service: 'shop', standard: { filters: {} } });
-  return <SmartVariantManagement variants={v} content={p.content ?? { filters: { Status: [{ operator: 'EQ', values: ['A'] }] } }} onApply={() => undefined} canSave={p.canSave} />;
+  return <VariantManagement variants={v} content={p.content ?? { filters: { Status: [{ operator: 'EQ', values: ['A'] }] } }} onSelect={() => undefined} creationAllowed={p.canSave} />;
 }
 
 describe('view saving (S15, S18)', () => {
@@ -56,7 +60,7 @@ describe('view saving (S15, S18)', () => {
     expect(document.querySelector('[data-sk-variant-saveas-ok]')).not.toBeNull();
   });
 
-  it('canSave false (store or prop): the menu only selects views', async () => {
+  it('canSave false (store) or creationAllowed false: the menu only selects views', async () => {
     const store = Object.assign(new MemoryVariantStore(), { canSave: false });
     render(host(<Views />, { variants: store }));
     fireEvent.click(screen.getByTitle('Select view'));
@@ -87,15 +91,15 @@ describe('export (S4)', () => {
     expect(write).toHaveBeenCalledTimes(1);
   });
 
-  it('exportable false removes the button; onBeforeExport gets filters and the row count', async () => {
-    const { unmount } = render(host(<SmartTable service="shop" entitySet="Products" exportable={false} />));
+  it('enableExport false removes the button; onBeforeExport gets filters and the row count', async () => {
+    const { unmount } = render(host(<Table service="shop" contextPath="/Products" enableExport={false} />));
     await screen.findAllByText('P1');
     expect(document.querySelector('[data-sk-table-export]')).toBeNull();
     unmount();
     const onBeforeExport = vi.fn(() => false);
     const onExported = vi.fn();
     const query = { filters: { CategoryID: [{ operator: 'EQ' as const, values: ['C1'] }] }, search: '' };
-    render(host(<SmartTable service="shop" entitySet="Products" query={query} onBeforeExport={onBeforeExport} onExported={onExported} />));
+    render(host(<Table service="shop" contextPath="/Products" query={query} onBeforeExport={onBeforeExport} onExported={onExported} />));
     await screen.findAllByText('P2');
     fireEvent.click(document.querySelector('[data-sk-table-export]')!);
     await waitFor(() => expect(onBeforeExport).toHaveBeenCalled());
@@ -108,15 +112,16 @@ describe('export (S4)', () => {
 });
 
 describe('refresh (S16)', () => {
-  it('a new refreshToken reloads rows the host replaced', async () => {
+  it('ref refresh() reloads rows the host replaced', async () => {
     const provider = new MemoryProvider({ model: shopModel, data: structuredClone(shopData) });
-    const view = (n: number) => host(<SmartTable service="shop" entitySet="Products" mode="responsive" refreshToken={n} />, { provider });
-    const { rerender } = render(view(0));
+    const ref = createRef<Table>();
+    const view = () => host(<Table ref={ref} service="shop" contextPath="/Products" type="ResponsiveTable" />, { provider });
+    const { rerender } = render(view());
     await screen.findByText('P1');
     provider.setRows('Products', [{ ...shopData.Products![0]!, Code: 'NEW1' }]);
-    rerender(view(0));
+    rerender(view());
     expect(screen.queryByText('NEW1')).toBeNull();
-    rerender(view(1));
+    act(() => ref.current!.refresh());
     expect(await screen.findByText('NEW1')).toBeInTheDocument();
   });
 });

@@ -3,7 +3,7 @@
  * guidelines name for it, at the size of the place it lives in (header facet, table cell). The data is fixed
  * demo data; the pages driven by annotations are linked at the end.
  */
-import { MicroChart, type MicroChartCriticality, type MicroChartPoint, type MicroChartProps } from '@rhfan2019/smart-kit';
+import MicroChart, { type MicroChartCriticality, type MicroChartData, type MicroChartPoint } from '@rhfan2019/smart-kit/v4/fe/macros/MicroChart';
 import type { ReactNode } from 'react';
 import { Link } from 'react-router';
 import { useShell } from '../App';
@@ -57,7 +57,7 @@ interface Scenario {
   placement: Placement;
   why: Record<Lang, string>;
   rules: string;
-  chart: Omit<MicroChartProps, 'label'>;
+  chart: Omit<MicroChartData, 'label'>;
 }
 
 const monthNames = (lang: Lang, n: number, last = new Date(2026, 9, 1)) => Array.from({ length: n }, (_, i) =>

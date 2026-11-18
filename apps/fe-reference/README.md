@@ -35,9 +35,9 @@ The FE comparison opens `/po` and `/po-draft` of the smart-kit demo (`apps/demo/
 | `entitySet="PurchaseOrders"`, `service="purchasing"` / `"purchasing-draft"` | `contextPath: "/PurchaseOrders"`; `dataSources.mainService.uri` |
 | `liveMode` (default `true`) | `liveMode: true` |
 | `autoExecute` (default `true`) | `initialLoad: "Enabled"` |
-| page variant management (`SmartVariantManagement` in the page title) | `variantManagement: "Page"` |
+| page variant management (`VariantManagement` in the page title) | `variantManagement: "Page"` |
 | `tableType="grid"` | `controlConfiguration["@com.sap.vocabularies.UI.v1.LineItem"].tableSettings.type: "GridTable"` |
-| multi selection (default of `SmartTable`) | `tableSettings.selectionMode: "Multi"` |
+| multi selection (default of `Table`, `v4/fe/macros/Table`) | `tableSettings.selectionMode: "Multi"` |
 | `exportable` (default `true`) | `tableSettings.enableExport: true` |
 | `tableExtend` `Custom::Overdue` after `DataField::Supplier` | `columns["Custom::Overdue"]` with `position: { anchor: "DataField::Supplier", placement: "After" }`, template `fe.ref.ext.Overdue` |
 | `tableExtend` action `Custom::Copy` (`requiresSelection`) | `actions["Custom::Copy"]` with `requiresSelection: true`, press `fe.ref.ext.CustomActions.copy` |

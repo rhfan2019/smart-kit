@@ -4,20 +4,37 @@
  * edit (direct save or draft, ADR-018), create mode, delete, header and footer actions (ADR-024), messages (ADR-023),
  * object marker, temporary "Header" section, partial header edit, paging buttons, side content.
  */
-import { ActionIcon, Alert, Anchor, Avatar, Breadcrumbs, Button, Group, Image, Modal, Stack, Text, Tooltip, UnstyledButton } from '@mantine/core';
+import { Alert, Anchor, Avatar, Breadcrumbs, Button, Group, Image, Modal, Stack, Text, UnstyledButton } from '@mantine/core';
 import { useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
-  capabilitiesFor, childPathOf, ConcurrencyError, DERIVED_GENERAL_SECTION, isDraftRow, messagesFromError, resolveEntityPath, resolvePath,
+  capabilitiesFor, childPathOf, ConcurrencyError, DERIVED_GENERAL_SECTION, isDraftRow, messagesFromError, resolveEntityPath,
   siblingPath, targetEntitySet, type EditSession, type FieldModel, type Message, type Row, type SectionModel,
 } from '@rhfan2019/smart-kit-core';
-import { ChevronDown, ChevronUp, PanelRight } from 'lucide-react';
+import { PanelRight } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import {
-  actionPaths, DraftMarker, fieldErrors, getPath, HeaderFacet, isActionAvailable, isEditable, ObjectPageLayout, ShareMenu, SmartField,
-  SmartForm, SmartTable, typedText, useActionRunner, useColumn, useEditStrategy, useObject, useObjectTitle, usePageState, useService, useSmartKit, useText,
-  validate, type ExtendEntry, type SectionItem, type TableExtendEntry, type ToolbarAction,
+  actionPaths, fieldErrors, getPath, isActionAvailable, isEditable,
+  typedText, usePageState, useService, useSmartKit, useText,
+  validate, type ExtendEntry,
 } from '../index';
+import ObjectPageLayout, { type SectionItem } from '../uxap/ObjectPageLayout';
+import ObjectPageDynamicHeaderTitle from '../uxap/ObjectPageDynamicHeaderTitle';
+import type { OverflowToolbarLayoutData } from '../m/OverflowToolbar';
+import OverflowToolbarButton from '../m/OverflowToolbarButton';
+import Share from '../v4/fe/macros/Share';
+import Paginator from '../v4/fe/macros/Paginator';
+import FlexibleColumnLayoutActions from '../v4/fe/macros/fcl/FlexibleColumnLayoutActions.block';
+import HeaderFacet from '../kit/HeaderFacet';
+import useColumn from '../kit/useColumn';
+import useObject from '../kit/useObject';
+import useObjectTitle from '../kit/useObjectTitle';
+import DraftIndicator from '../kit/DraftIndicator';
+import Table, { type TableExtendEntry } from '../v4/fe/macros/Table';
 import MessageButton from '../v4/fe/macros/MessageButton';
+import Field from '../v4/fe/macros/Field';
+import Form from '../v4/fe/macros/Form';
+import useActionRunner from '../kit/useActionRunner';
+import useEditStrategy from '../kit/useEditStrategy';
 import MessageProvider from '../kit/MessageProvider';
 import useMessages from '../kit/useMessages';
 
@@ -342,7 +359,7 @@ function ObjectPageInner(p: SmartObjectPageProps & { registerNavigate(fn: (m: Me
     ? t('create.title', { type: ui.headerInfo.typeName })
     : titleValue === undefined || titleValue === null || titleValue === '' ? ui.headerInfo.typeName : String(titleValue);
   const subheading = ui.headerInfo.description && data ? (
-    <SmartField typeName={typeName} service={p.service} path={ui.headerInfo.description} row={data} />
+    <Field typeName={typeName} service={p.service} metaPath={ui.headerInfo.description} row={data} />
   ) : undefined;
   const image = ui.headerInfo.imageUrl ? ('path' in ui.headerInfo.imageUrl ? getPath(data, ui.headerInfo.imageUrl.path) : ui.headerInfo.imageUrl.value) : undefined;
   // OP Image Facet: pressing the image enlarges it.
@@ -390,7 +407,7 @@ function ObjectPageInner(p: SmartObjectPageProps & { registerNavigate(fn: (m: Me
           const subTitle = label(sub);
           if (sub.content.kind === 'form') {
             const groups = sub.content.groups;
-            return [{ id: sub.id, title: subTitle, partOfPreview: editing ? true : sub.partOfPreview, content: <SmartForm typeName={typeName} service={p.service} row={data} groups={groups} showGroupTitles={groups.length > 1} mode={editing ? 'edit' : 'display'} values={formValues} onChange={change} errors={errors} creating={creating} /> }];
+            return [{ id: sub.id, title: subTitle, partOfPreview: editing ? true : sub.partOfPreview, content: <Form typeName={typeName} service={p.service} row={data} metaPath={groups} readOnly={!editing} values={formValues} onChange={(e) => change(e.path, e.value)} errors={errors} creating={creating} /> }];
           }
           if (sub.content.kind === 'dataPoint') {
             return [{ id: sub.id, title: subTitle, partOfPreview: sub.partOfPreview, content: <HeaderFacet typeName={typeName} service={p.service} row={data} facet={{ id: sub.id, kind: 'dataPoint', label: subTitle, dataPoint: sub.content.dataPoint }} /> }];
@@ -410,21 +427,22 @@ function ObjectPageInner(p: SmartObjectPageProps & { registerNavigate(fn: (m: Me
             count: countOf(sub.id),
             partOfPreview: sub.partOfPreview,
             content: (
-              <SmartTable
+              <Table
                 service={p.service}
-                parent={{ path: readPath, navigation: nav }}
-                title={subTitle}
-                titleLevel={tableTitleLevel}
+                contextPath={`/${entitySet}/${nav}`}
+                bindingContext={readPath}
+                header={subTitle}
+                headerLevel={`H${tableTitleLevel}`}
                 pageKey={`${pageKey}:${sub.id}`}
-                showSearch
+                isSearchable
                 extend={p.tableExtend?.[nav]}
-                onRowNavigate={p.onRowNavigate}
+                onRowPress={p.onRowNavigate ? (e) => p.onRowNavigate!(e.bindingContext.getObject(), e.bindingContext.getPath().slice(1)) : undefined}
                 navigable={p.onRowNavigate ? true : Boolean(target && navigation?.hasObjectPage?.(target, service.name))}
                 onCountChange={(c) => setCounts((x) => (x[sub.id] === c ? x : { ...x, [sub.id]: c }))}
-                editing={editing}
-                createMode={p.subObjectCreate?.[nav] ?? 'inline'}
+                readOnly={!editing}
+                creationMode={{ none: { enabled: false }, dialog: { name: 'CreationDialog' as const }, inline: { name: 'Inline' as const } }[p.subObjectCreate?.[nav] ?? 'inline']}
                 onCreated={() => setCounts((x) => ({ ...x, [sub.id]: undefined }))}
-                growing={p.navigation === 'tabs' && last ? 'scroll' : 'button'}
+                growingScrollToLoad={p.navigation === 'tabs' && last}
                 showAllThreshold={p.showAllThreshold}
               />
             ),
@@ -438,7 +456,7 @@ function ObjectPageInner(p: SmartObjectPageProps & { registerNavigate(fn: (m: Me
       out.unshift({
         id: '$Header',
         title: t('edit.headerSection'),
-        subSections: [{ id: '$Header', title: t('edit.headerSection'), content: <SmartForm typeName={typeName} service={p.service} row={data} groups={[{ id: '$Header', fields: headerFields }]} mode="edit" values={formValues} onChange={change} errors={errors} creating={creating} /> }],
+        subSections: [{ id: '$Header', title: t('edit.headerSection'), content: <Form typeName={typeName} service={p.service} row={data} metaPath={[{ id: '$Header', fields: headerFields }]} readOnly={false} values={formValues} onChange={(e) => change(e.path, e.value)} errors={errors} creating={creating} /> }],
       });
     }
     return out;
@@ -477,25 +495,37 @@ function ObjectPageInner(p: SmartObjectPageProps & { registerNavigate(fn: (m: Me
     const row = siblings.data?.rows[index + d];
     if (row && parentLevel && lastNav) navigation?.toObject(childPathOf(model, parentLevel.path, lastNav, row), service.name);
   };
-  const paging = parentLevel && p.paging !== false && !editing ? (
-    <Group gap={2} wrap="nowrap" data-sk-paging>
-      <Tooltip label={t('layout.previous')}><ActionIcon variant="subtle" aria-label={t('layout.previous')} disabled={index <= 0} onClick={() => goSibling(-1)} data-sk-paging-previous><ChevronUp className="sk-icon" /></ActionIcon></Tooltip>
-      <Tooltip label={t('layout.next')}><ActionIcon variant="subtle" aria-label={t('layout.next')} disabled={index < 0 || index >= (siblings.data?.rows.length ?? 0) - 1} onClick={() => goSibling(1)} data-sk-paging-next><ChevronDown className="sk-icon" /></ActionIcon></Tooltip>
-    </Group>
-  ) : null;
-  const layoutActions = paging || column?.layoutActions ? <>{paging}{column?.layoutActions}</> : undefined;
+  // Navigation actions (DP Header Title (6)): the paginator (siblings of a sub-object, or the paging the column gives)
+  // and the flexible column layout actions.
+  const subPaging = Boolean(parentLevel) && p.paging !== false && !editing;
+  const navigationActions = subPaging || column?.paging || column?.close ? (
+    <>
+      {subPaging ? (
+        <Paginator
+          ariaTitle={ui.headerInfo.typeNamePlural}
+          onPrevious={index > 0 ? () => goSibling(-1) : undefined}
+          onNext={index >= 0 && index < (siblings.data?.rows.length ?? 0) - 1 ? () => goSibling(1) : undefined}
+        />
+      ) : <Paginator ariaTitle={ui.headerInfo.typeNamePlural} />}
+      <FlexibleColumnLayoutActions />
+    </>
+  ) : undefined;
 
   // Side content (OP Dynamic Side Content).
   const [sideOpen, setSideOpen] = useState(false);
   const side = typeof p.sideContent === 'function' ? p.sideContent(data) : p.sideContent;
 
   // Global actions (OP Components (6)): business actions as text buttons, generic ones as icons; overflow right to left.
-  const actionItems: ToolbarAction[] = editing ? [] : [
-    ...(editable ? [{ id: 'Edit', label: t('actions.edit'), emphasized: true, disabled: busy || !obj.data, onPress: () => void startEdit() }] : []),
-    ...(deletable ? [{ id: 'Delete', label: t('actions.delete'), onPress: () => setConfirm('delete') }] : []),
-    ...headerModelActions.map((a) => ({ id: a.id, label: a.label, onPress: () => runner.run(a, [objectTarget]) })),
-    ...(side ? [{ id: 'SideContent', label: sideOpen ? t('object.hideSideContent') : t('object.showSideContent'), icon: <PanelRight className="sk-icon" />, onPress: () => setSideOpen((o) => !o) }] : []),
-    ...(p.share === false ? [] : [{ id: 'Share', label: t('actions.share'), onPress: () => undefined, render: () => <ShareMenu title={heading} href={navigation?.href?.({ kind: 'object', path: activePath, service: service.name })} /> }]),
+  // The title's OverflowToolbar moves them into "More" from right to left; custom header actions and Share stay.
+  const actions = [
+    ...(p.headerActions ? [<Pinned key="headerActions" layoutData={{ priority: 'NeverOverflow' }}>{p.headerActions}</Pinned>] : []),
+    ...(editing ? [] : [
+      ...(editable ? [<Button key="Edit" variant="filled" disabled={busy || !obj.data} onClick={() => void startEdit()} data-sk-action="Edit">{t('actions.edit')}</Button>] : []),
+      ...(deletable ? [<Button key="Delete" variant="subtle" onClick={() => setConfirm('delete')} data-sk-action="Delete">{t('actions.delete')}</Button>] : []),
+      ...headerModelActions.map((a) => <Button key={a.id} variant="subtle" onClick={() => runner.run(a, [objectTarget])} data-sk-action={a.id}>{a.label}</Button>),
+      ...(side ? [<OverflowToolbarButton key="SideContent" text={sideOpen ? t('object.hideSideContent') : t('object.showSideContent')} icon={<PanelRight className="sk-icon" />} onPress={() => setSideOpen((o) => !o)} data-sk-action="SideContent" />] : []),
+      ...(p.share === false ? [] : [<Pinned key="Share" layoutData={{ priority: 'NeverOverflow' }}><Share title={heading} href={navigation?.href?.({ kind: 'object', path: activePath, service: service.name })} /></Pinned>]),
+    ]),
   ];
 
   const message = typeof p.headerMessage === 'function' ? p.headerMessage(data) : p.headerMessage;
@@ -525,42 +555,54 @@ function ObjectPageInner(p: SmartObjectPageProps & { registerNavigate(fn: (m: Me
     </Group>
   ) : undefined;
 
-  const marker = draftEnabled && (mode === 'edit' || obj.data?.HasDraftEntity === true) ? <DraftMarker row={session?.draft ? { ...obj.data, IsActiveEntity: false, DraftAdministrativeData: { DraftIsCreatedByMe: true, ...(obj.data?.DraftAdministrativeData as Row | undefined) } } : obj.data} /> : undefined;
+  const marker = draftEnabled && (mode === 'edit' || obj.data?.HasDraftEntity === true) ? <DraftIndicator row={session?.draft ? { ...obj.data, IsActiveEntity: false, DraftAdministrativeData: { DraftIsCreatedByMe: true, ...(obj.data?.DraftAdministrativeData as Row | undefined) } } : obj.data} /> : undefined;
   const keyInfo = typeof p.keyInfo === 'function' ? p.keyInfo(data) : p.keyInfo;
-  const editHeaderButton = p.partialHeaderEdit !== false && !editing && editable && headerFields.length && ui.headerFacets.length ? (
-    <Button variant="subtle" size="xs" onClick={() => setPartialEdit(true)} data-sk-edit-header>{t('actions.editHeader')}</Button>
-  ) : null;
+  const editHeaderButton = Boolean(p.partialHeaderEdit !== false && !editing && editable && headerFields.length && ui.headerFacets.length);
+  // The title (with the object marker next to it) and, while snapped, the small avatar before it.
+  const headingLine = <><h1 className="sk-dynamic-page__heading" data-sk-heading>{heading}</h1>{marker ? <span className="sk-dynamic-page__title-addon">{marker}</span> : null}</>;
+  const smallAvatar = avatar('sm');
+  const largeAvatar = avatar('lg');
 
   return (
     <div ref={rootRef} className="sk-object-page-root" data-mode={mode}>
       <ObjectPageLayout
         className={p.className}
         scope={typeName.replace(/\W/g, '_')}
-        heading={heading}
-        subheading={subheading}
-        breadcrumbs={breadcrumbs}
-        avatar={avatar('lg')}
-        collapsedAvatar={avatar('sm')}
-        actions={p.headerActions}
-        actionItems={actionItems}
-        keyInfo={keyInfo}
-        titleAddon={marker}
-        layoutActions={layoutActions}
+        headerTitle={(
+          <ObjectPageDynamicHeaderTitle
+            heading={headingLine}
+            snappedHeading={smallAvatar ? <><div className="sk-dynamic-page__avatar">{smallAvatar}</div>{headingLine}</> : undefined}
+            snappedTitleOnMobile={heading}
+            expandedContent={subheading}
+            snappedContent={subheading ? <div className="sk-dynamic-page__subheading" data-sk-subheading>{subheading}</div> : undefined}
+            breadcrumbs={breadcrumbs}
+            actions={actions.length ? actions : undefined}
+            content={keyInfo}
+            navigationActions={navigationActions}
+            onStateChange={(e) => setView((v) => (v.headerExpanded === e.isExpanded ? v : { ...v, headerExpanded: e.isExpanded }))}
+          />
+        )}
         headerMessage={errorStrip ?? message}
-        facets={ui.headerFacets.length || editHeaderButton ? <>
-          {ui.headerFacets.map((f) => <HeaderFacet key={f.id} facet={f} typeName={typeName} service={p.service} row={data} path={readPath || undefined} />)}
-          {editHeaderButton ? <div className="sk-object-header__edit">{editHeaderButton}</div> : null}
+        headerContent={largeAvatar || ui.headerFacets.length ? <>
+          {largeAvatar ? <div className="sk-object-header__avatar">{largeAvatar}</div> : null}
+          <div className="sk-object-header__facets">
+            {ui.headerFacets.map((f) => <HeaderFacet key={f.id} facet={f} typeName={typeName} service={p.service} row={data} path={readPath || undefined} />)}
+          </div>
         </> : undefined}
+        showEditHeaderButton={editHeaderButton}
+        onEditHeaderButtonPress={() => setPartialEdit(true)}
         sections={obj.error && !creating ? [] : sections}
         extend={p.sectionExtend}
-        navigation={p.navigation}
+        useIconTabBar={p.navigation === 'tabs'}
+        upperCaseAnchorBar={false}
+        enableLazyLoading
         selectedSection={p.navigation === 'tabs' ? view.section : undefined}
-        onSelectedSectionChange={(s) => setView((v) => (v.section === s ? v : { ...v, section: s }))}
+        onSectionChange={(e) => setView((v) => (v.section === e.section ? v : { ...v, section: e.section }))}
         headerExpanded={view.headerExpanded}
-        onHeaderExpandedChange={(e) => setView((v) => (v.headerExpanded === e ? v : { ...v, headerExpanded: e }))}
-        headerPinned={view.pinned}
-        onHeaderPinnedChange={(pin) => setView((v) => ({ ...v, pinned: pin }))}
+        headerContentPinned={view.pinned}
+        onHeaderContentPinnedStateChange={(e) => setView((v) => ({ ...v, pinned: e.pinned }))}
         footer={footer}
+        showFooter={Boolean(footer)}
         sideContent={side}
         sideContentOpen={sideOpen}
         sideContentTitle={p.sideContentTitle ?? t('object.sideContent')}
@@ -623,8 +665,8 @@ function PartialEditDialog(p: { path: string; row: Row | undefined; fields: Fiel
         <Stack gap="sm">
           {p.fields.map((f) => (
             <div key={f.id} data-sk-field-path={f.path}>
-              <SmartField typeName={p.typeName} service={p.service} field={f} row={values} mode="edit" showLabel value={values[f.path!]} error={errors[f.path!]}
-                required={resolvePath(service.model.entityTypes, p.typeName, f.path!).property?.mandatory} onChange={(v) => setValues((x) => ({ ...x, [f.path!]: v }))} />
+              <Field typeName={p.typeName} service={p.service} metaPath={f} row={values} readOnly={false} showLabel value={values[f.path!]} error={errors[f.path!]}
+                onChange={(e) => setValues((x) => ({ ...x, [f.path!]: e.value }))} onLiveChange={(e) => setValues((x) => ({ ...x, [f.path!]: e.value }))} />
             </div>
           ))}
           {errors.$form ? <div className="sk-form__error" role="alert">{errors.$form}</div> : null}
@@ -636,4 +678,9 @@ function PartialEditDialog(p: { path: string; row: Row | undefined; fields: Fiel
       </form>
     </Modal>
   );
+}
+
+/** A title action that never moves into the overflow (the OverflowToolbar reads `layoutData` from its children). */
+function Pinned({ children }: { children: ReactNode; layoutData?: OverflowToolbarLayoutData }) {
+  return <>{children}</>;
 }

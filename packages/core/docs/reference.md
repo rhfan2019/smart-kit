@@ -813,15 +813,15 @@ Parameters of the TopLevels function (OData Hierarchy vocabulary).
 
 | Member | Required | Type | Description |
 | --- | --- | --- | --- |
-| `source` | **yes** | `QuerySource` |  |
 | `columns` | **yes** | `FieldModel[]` | Visible columns, in display order. |
+| `source` | **yes** | `QuerySource` |  |
 | `qualifier` |  | `string` | Qualifier of Aggregation.RecursiveHierarchy; default the type's first hierarchy. |
 | `levels` |  | `number` | Levels shown from the roots (default 1). |
 | `expandLevels` |  | `HierarchyRequest['expandLevels']` | Nodes expanded or collapsed apart from `levels` (TopLevels ExpandLevels). |
 | `search` |  | `string` |  |
 | `filters` |  | `FilterState` |  |
-| `timeZone` |  | `string` |  |
 | `sort` |  | `SortItem[]` |  |
+| `timeZone` |  | `string` |  |
 | `extraSelect` |  | `string[]` | Extra paths to select (e.g. requested by custom content). |
 
 ### `highestSeverity` — function

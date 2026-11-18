@@ -1,11 +1,14 @@
 /** S6 relative dates in filter fields, S14 UI.TextArrangement of value list values, S23 FCL column separator. */
-import { createText, type FclLayout } from '../src';
+import { createText } from '../src';
+import FlexibleColumnLayout from '../src/f/FlexibleColumnLayout';
+import { fclArrows, type LayoutType } from '../src/layout/FlexibleColumnLayout';
 import { valueListTextArrangement, type Condition, type MetaModel, type TextArrangement } from '@rhfan2019/smart-kit-core';
 import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useState } from 'react';
 import { describe, expect, it, vi } from 'vitest';
-import { ConditionInput, conditionText, fclArrows, FlexibleColumnLayout } from '../src';
+import { conditionText } from '../src';
+import ConditionInput from '@rhfan2019/smart-kit/kit/ConditionInput';
 import { MantineProvider } from '@mantine/core';
 import { MemoryProvider, MemoryVariantStore } from '@rhfan2019/smart-kit-core';
 import { SmartKitProvider, smartKitMantineTheme } from '../src';
@@ -115,12 +118,12 @@ describe('FCL column separator (S23)', () => {
     expect(fclArrows('ThreeColumnsEndExpanded', true).map((a) => a?.layout)).toEqual([undefined, 'ThreeColumnsMidExpanded']);
     expect(fclArrows('ThreeColumnsMidExpandedEndHidden', true)[1]?.layout).toBe('ThreeColumnsMidExpanded');
     expect(fclArrows('ThreeColumnsMidExpanded', false)[1]).toBeUndefined();
-    for (const l of ['OneColumn', 'MidColumnFullScreen', 'EndColumnFullScreen'] as FclLayout[]) expect(fclArrows(l, true)).toEqual([undefined, undefined]);
+    for (const l of ['OneColumn', 'MidColumnFullScreen', 'EndColumnFullScreen'] as LayoutType[]) expect(fclArrows(l, true)).toEqual([undefined, undefined]);
   });
 
   it('the arrow asks the host for the new layout (controlled) and the widths follow the layout', () => {
     const onLayoutChange = vi.fn();
-    const ui = (layout: FclLayout) => wrap(<FlexibleColumnLayout layout={layout} onLayoutChange={onLayoutChange} begin={<p>list</p>} mid={<p>object</p>} />);
+    const ui = (layout: LayoutType) => wrap(<FlexibleColumnLayout layout={layout} onStateChange={(e) => onLayoutChange(e.layout)} beginColumnPages={<p>list</p>} midColumnPages={<p>object</p>} />);
     const { container, rerender } = render(ui('TwoColumnsMidExpanded'));
     expect(container.querySelector('[data-sk-fcl-separator="1"]')).not.toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Expand the first column' }));

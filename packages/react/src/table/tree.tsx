@@ -1,5 +1,5 @@
 /**
- * Tree tables (docs/26 §3.10): `SmartTable tableType="TreeTable"` reads the visible nodes of a recursive hierarchy
+ * Tree tables (docs/26 §3.10): `TreeTable` (sap.fe.macros.TreeTable) reads the visible nodes of a recursive hierarchy
  * with TopLevels (Levels plus ExpandLevels of the toggled nodes) and shows them in tree order, indented by
  * DistanceFromRoot, with an expand / collapse toggle in the first column. Methods and the event follow
  * sap.ui.table.TreeTable (ADR-032).
@@ -10,11 +10,8 @@ import { ChevronDown, ChevronRight } from 'lucide-react';
 import { useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { useText } from '../context/SmartKitProvider';
 
-/** sap.ui.comp.smarttable.TableType. */
-export type TableType = 'AnalyticalTable' | 'ResponsiveTable' | 'Table' | 'TreeTable';
-
-/** Instance methods of a tree table (sap.ui.table.TreeTable), through `ref`. Row indexes count the visible rows. */
-export interface SmartTableRef {
+/** Tree methods of `TreeTable` instances (sap.ui.table.TreeTable), through `ref`. Row indexes count the visible rows. */
+export interface TreeMethods {
   /** Expands the node(s) at the row index(es); leaves and expanded nodes stay as they are. */
   expand(rowIndex: number | number[]): void;
   collapse(rowIndex: number | number[]): void;
@@ -26,7 +23,7 @@ export interface SmartTableRef {
 }
 
 /** sap.ui.table.TreeTable#toggleOpenState; `rowContext` is the row data. */
-export interface ToggleOpenStateEvent {
+export interface TreeTable$ToggleOpenStateEvent {
   rowIndex: number;
   rowContext: Row;
   expanded: boolean;
@@ -43,7 +40,7 @@ export interface TreeModel {
   rows: Row[];
   nodeOf(row: Row): HierarchyNode | undefined;
   toggle(row: Row): void;
-  api: SmartTableRef;
+  api: TreeMethods;
 }
 
 /** Expansion state of a tree table; its `request` part goes into the TopLevels request. */
@@ -64,7 +61,7 @@ export function useTree(o: {
   hierarchy: RecursiveHierarchyModel | undefined;
   rows: Row[];
   tree: ReturnType<typeof useTreeState>;
-  onToggleOpenState?(e: ToggleOpenStateEvent): void;
+  onToggleOpenState?(e: TreeTable$ToggleOpenStateEvent): void;
 }): TreeModel {
   const { hierarchy: h, tree } = o;
   const { state, setState } = tree;
@@ -105,7 +102,7 @@ export function useTree(o: {
       if (v) setOpen(v.node, open);
     }
   };
-  const api: SmartTableRef = {
+  const api: TreeMethods = {
     expand: (i) => each(i, true),
     collapse: (i) => each(i, false),
     collapseAll: () => setState({ levels: 1, nodes: {} }),

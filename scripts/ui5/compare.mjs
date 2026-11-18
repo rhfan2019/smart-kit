@@ -17,6 +17,12 @@ export function enumModuleOf(ui5) {
   return kitModuleOf(ui5.module);
 }
 
+/** Compares a TSDoc default with an api.json default; arrays may be written as JSON (`[]`, `["A","B"]`) or comma-separated. */
+function sameDefault(kit, ui5) {
+  const norm = (v) => (Array.isArray(v) ? v.join(',') : typeof v === 'string' && /^\[.*\]$/.test(v.trim()) ? (() => { try { return JSON.parse(v).join(','); } catch { return v; } })() : String(v));
+  return norm(kit) === norm(ui5);
+}
+
 const ALLOWED_EVENT_FIELDS = new Set(['preventDefault']);
 
 /**
@@ -67,7 +73,8 @@ export function compareExport(entry, ui5, kit, where) {
   }
 
   // classes and namespaces
-  if (where.atTarget && entry.export !== 'default') add('export-name', '', 'a class module must export it as default');
+  // a namespace of constants in a library module (sap.f.DynamicPageTitleShrinkRatio) is a named export like an enum
+  if (where.atTarget && entry.export !== 'default' && !(ui5.kind === 'namespace' && ui5.module?.endsWith('/library'))) add('export-name', '', 'a class module must export it as default');
   if (where.exportName && where.exportName !== ui5.basename) add('class-name', '', `export named ${where.exportName}, UI5 class ${ui5.basename}`);
 
   // a UI5 class with settings must be a component; static-only APIs (MessageBox, MessageToast) may be plain objects
@@ -83,7 +90,7 @@ export function compareExport(entry, ui5, kit, where) {
     const d = p.defaultValue;
     if (d !== undefined && d !== '' && d !== null) {
       if (!k.hasDefaultTag) add('default-value', p.name, `UI5 default ${JSON.stringify(d)}, no @defaultValue`);
-      else if (String(k.defaultValue) !== String(d)) add('default-value', p.name, `UI5 default ${JSON.stringify(d)}, smart-kit ${JSON.stringify(k.defaultValue)}`);
+      else if (!sameDefault(k.defaultValue, d)) add('default-value', p.name, `UI5 default ${JSON.stringify(d)}, smart-kit ${JSON.stringify(k.defaultValue)}`);
     }
   }
   const hasChildren = kitProps.has('children');

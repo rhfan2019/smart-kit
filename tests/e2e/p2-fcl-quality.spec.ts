@@ -61,7 +61,7 @@ test('P2-FCL-04 paging buttons in the layout action area move to the neighbourin
   const nos = await table(page, 'PurchaseOrders').locator('.ag-row[row-index] [col-id="DataField::PurchaseOrder"]').allInnerTexts();
   await table(page, 'PurchaseOrders').locator('[data-sk-row-nav]').first().click();
   await expect(col(page, 1).locator('.sk-dynamic-page__heading')).toHaveText(nos[0]!);
-  const paging = col(page, 1).locator('[data-sk-layout-actions] [data-sk-fcl-paging]');
+  const paging = col(page, 1).locator('[data-sk-layout-actions] [data-sk-paging]');
   await expect(paging).toBeVisible();
   // paging buttons come before the full screen and close actions (which stay at the very right)
   const order = await col(page, 1).locator('[data-sk-layout-actions] [data-sk-layout-action]').evaluateAll((els) => els.map((e) => e.getAttribute('data-sk-layout-action')));

@@ -5,10 +5,16 @@
  * Phase 2: create mode, a generic tag in the key information, side content and layout blocks (docs/13).
  */
 import { Alert } from '@mantine/core';
-import { GenericTag, getPath, SmartObjectPage, type SectionItem } from '@rhfan2019/smart-kit';
+import { getPath } from '@rhfan2019/smart-kit';
+import { SmartObjectPage } from '@rhfan2019/smart-kit/templates';
+import GenericTag from '@rhfan2019/smart-kit/m/GenericTag';
+import type { SectionItem } from '@rhfan2019/smart-kit/uxap/ObjectPageLayout';
 import { useMemo } from 'react';
 import { useParams, useSearchParams } from 'react-router';
 import { useShell } from '../App';
+
+/** UI.CriticalityType (0–5) as the ValueState of a GenericTag. */
+const CRITICALITY_STATE = ['None', 'Error', 'Warning', 'Success', 'None', 'Information'] as const;
 
 const EXTRA = ['StatusCriticality', 'Status', '_Status/Name'];
 
@@ -58,7 +64,7 @@ export function ObjectRoute() {
       sectionExtend={sectionExtend}
       extraSelect={isOrder ? EXTRA : undefined}
       headerMessage={isOrder ? (row) => (getPath(row, 'StatusCriticality') === 1 ? <Alert color="red" variant="light" data-demo-header-message>{s('overdueMessage')}</Alert> : null) : undefined}
-      keyInfo={isOrder && !create ? (row) => (row ? <GenericTag text={s('statusTag')} value={String(getPath(row, '_Status/Name') ?? getPath(row, 'Status') ?? '')} status={Number(getPath(row, 'StatusCriticality') ?? 0)} /> : null) : undefined}
+      keyInfo={isOrder && !create ? (row) => (row ? <GenericTag text={s('statusTag')} value={String(getPath(row, '_Status/Name') ?? getPath(row, 'Status') ?? '')} status={CRITICALITY_STATE[Number(getPath(row, 'StatusCriticality') ?? 0)] ?? 'None'} /> : null) : undefined}
       sideContent={isOrder && !create ? (row) => <div className="demo__card" data-demo-side-content>{s('supplierInfoText', { id: String(getPath(row, 'Supplier') ?? '') })}</div> : undefined}
       sideContentTitle={s('supplierInfo')}
       subObjectCreate={service === 'purchasing-draft' ? { _Item: 'dialog' } : { _Item: 'inline' }}

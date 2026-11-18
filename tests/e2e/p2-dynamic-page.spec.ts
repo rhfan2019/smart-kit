@@ -184,14 +184,15 @@ test('P2-DP-09 P2-OPC-06 global actions move into the overflow from right to lef
   const actions = page.locator('[data-sk-global-actions]');
   await expect(actions.locator('[data-sk-action="Edit"]')).toBeVisible();
   await expect(actions.locator('[data-sk-action="Delete"]')).toBeVisible();
-  await expect(actions.locator('[data-sk-overflow-button]')).toHaveCount(0);
+  await expect(actions.locator('[data-sk-toolbar-more]')).toHaveCount(0);
   await page.setViewportSize({ width: 760, height: 900 });
-  await expect(actions.locator('[data-sk-overflow-button]')).toBeVisible();
+  await expect(actions.locator('[data-sk-toolbar-more]')).toBeVisible();
   await expect(actions.locator('[data-sk-action="Edit"]')).toBeVisible();
-  await actions.locator('[data-sk-overflow-button]').click();
-  // the rightmost actions are in the menu, in their original order
-  await expect(page.getByRole('menuitem').first()).toBeVisible();
-  const menu = await page.getByRole('menuitem').allInnerTexts();
+  await actions.locator('[data-sk-toolbar-more]').click();
+  // the rightmost actions are in the overflow, in their original order
+  const overflow = page.locator('[data-sk-toolbar-overflow]');
+  await expect(overflow.locator('button').first()).toBeVisible();
+  const menu = await overflow.locator('button').allInnerTexts();
   expect(menu.length).toBeGreaterThan(0);
   expect(menu[menu.length - 1]).not.toBe('Edit');
   // key information stays as long as possible

@@ -3,6 +3,7 @@ import { Checkbox, Select, Textarea, TextInput } from '@mantine/core';
 import { DateInput } from '@mantine/dates';
 import type { PropertyModel, ValueListModel } from '@rhfan2019/smart-kit-core';
 import dayjs from 'dayjs';
+import { useState } from 'react';
 import { useValueList } from '../filter/useValueList';
 
 export interface FieldEditorProps {
@@ -10,8 +11,14 @@ export interface FieldEditorProps {
   property?: PropertyModel;
   /** Value (controlled). */
   value: unknown;
-  /** Called with the new value. */
+  /** Called with the new value when it is committed (sap.fe.macros.Field#change): text editors on blur or Enter, the other editors at once. */
   onChange?(value: unknown): void;
+  /** Called on every keystroke of a text editor with the text typed so far (sap.fe.macros.Field#liveChange). */
+  onLiveChange?(value: string): void;
+  /** Lines of a multi-line text editor (FieldFormatOptions.textLinesEdit); default 2. */
+  minRows?: number;
+  /** Maximum number of characters (FieldFormatOptions.textMaxLength); default: the property's MaxLength. */
+  maxLength?: number;
   /** Accessible name / visible label. */
   label: string;
   /** Visible label (forms in dialogs); without it the label is only the accessible name. */
@@ -53,6 +60,11 @@ function FixedValues(p: FieldEditorProps & { valueList: ValueListModel }) {
 
 export function FieldEditor(p: FieldEditorProps) {
   const prop = p.property;
+  // text editors keep the typed text until it is committed (blur, Enter), as UI5 fires `change` only then
+  const [draft, setDraft] = useState<string | undefined>(undefined);
+  const type = (text: string) => { setDraft(text); p.onLiveChange?.(text); };
+  const commit = () => { if (draft !== undefined) { p.onChange?.(draft); setDraft(undefined); } };
+  const textValue = draft ?? (p.value === null || p.value === undefined ? '' : String(p.value));
   const common = {
     id: p.id,
     label: p.showLabel ? p.label : undefined,
@@ -76,18 +88,20 @@ export function FieldEditor(p: FieldEditorProps) {
     );
   }
   if (prop?.multiLine) {
-    return <Textarea {...common} value={String(p.value ?? '')} autosize minRows={2} maxLength={prop.maxLength} onChange={(e) => p.onChange?.(e.currentTarget.value)} data-sk-editor="text" />;
+    return <Textarea {...common} value={textValue} autosize minRows={p.minRows ?? 2} maxLength={p.maxLength ?? prop.maxLength} onChange={(e) => type(e.currentTarget.value)} onBlur={commit} data-sk-editor="text" />;
   }
   return (
     <TextInput
       {...common}
-      value={p.value === null || p.value === undefined ? '' : String(p.value)}
-      maxLength={prop?.maxLength}
+      value={textValue}
+      maxLength={p.maxLength ?? prop?.maxLength}
       inputMode={prop && NUMERIC.test(prop.edmType) ? 'decimal' : undefined}
       rightSection={p.unit ? <span className="sk-field__unit">{p.unit}</span> : undefined}
       rightSectionWidth={p.unit ? 48 : undefined}
       description={prop?.description}
-      onChange={(e) => p.onChange?.(e.currentTarget.value)}
+      onChange={(e) => type(e.currentTarget.value)}
+      onBlur={commit}
+      onKeyDown={(e) => { if (e.key === 'Enter') commit(); }}
       data-sk-editor={prop && NUMERIC.test(prop.edmType) ? 'number' : 'text'}
     />
   );

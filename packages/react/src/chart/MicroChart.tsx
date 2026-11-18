@@ -5,9 +5,14 @@
  * The chart fills its container within 64×18 – 320×94 px (MC-02, MC-03). The measured height decides which labels are
  * shown; a number that does not fit is hidden, never cut (MC-04).
  */
+import { chartExpand, chartIsSeries, formatNumber, resolvePath, type Row } from '@rhfan2019/smart-kit-core';
+import { useQuery } from '@tanstack/react-query';
 import { useLayoutEffect, useMemo, useState, type CSSProperties, type ReactNode } from 'react';
-import { useSmartKit } from '../context/SmartKitProvider';
+import { useService, useSmartKit, useText } from '../context/SmartKitProvider';
+import { getPath, resolveRef } from '../field/values';
 import type { TextFn } from '../i18n/text';
+import { chartHidden, chartProps, MICRO_CHART_KIND } from './fromModel';
+import { resolveChartMetaPath, resolveContextPath } from './metaPath';
 
 export type MicroChartKind = 'bullet' | 'radial' | 'harvey' | 'delta' | 'column' | 'line' | 'comparison' | 'area' | 'stackedBar';
 export type MicroChartCriticality = 0 | 1 | 2 | 3 | 5;
@@ -34,7 +39,12 @@ export interface MicroChartAreaThresholds {
 /** A bullet chart threshold marker (MC-25). */
 export interface MicroChartThreshold { value: number; criticality: MicroChartCriticality }
 
-export interface MicroChartProps {
+/** Size of the micro chart (sap.m.Size as used by sap.fe.macros.MicroChart); without it the chart fills its container. */
+export type MicroChartSize = 'XS' | 'S' | 'M' | 'L';
+
+
+/** The data-driven drawing of one micro chart (the plain-control usage; stage 6: the sap.suite.ui.microchart controls). */
+export interface MicroChartData {
   /** Chart type: "bullet" | "radial" | "harvey" | "delta" | "column" | "line" | "comparison" | "area" | "stackedBar" (from `UI.Chart/ChartType` when model-driven). */
   kind: MicroChartKind;
   /** Accessible name, e.g. the facet title or the column header. */
@@ -88,10 +98,44 @@ export interface MicroChartProps {
   formatLabel?(n: number): string;
   /** Render nothing when there is no data (table cells, MC-06); otherwise a "No data" placeholder (MC-05). */
   hideOnNoData?: boolean;
-  /** @deprecated The size follows the container (MC-02); ignored. */
-  size?: 'S' | 'M';
+  /** A fixed size; without it the chart fills its container (MC-02). */
+  size?: MicroChartSize;
   /** When set, the chart is a button (Enter / Space / click). Not used for the "No data" placeholder. */
   onPress?(): void;
+}
+
+export interface $MicroChartSettings extends Partial<Omit<MicroChartData, 'size' | 'hideOnNoData' | 'onPress'>> {
+  /** Entity set path of the annotated entity, e.g. "/Orders" (sap.fe.macros.MicroChart#contextPath). */
+  contextPath?: string;
+  /**
+   * Annotation path of the UI.Chart, e.g. "@com.sap.vocabularies.UI.v1.Chart#Budget" (alias "@UI.Chart#Budget"), or
+   * "_Items/@UI.Chart#Trend" over a collection. With it the chart, its title, subtitle and unit come from the
+   * annotations and the data from `row` / `path`; without it the data props (`kind`, `value`, `points`…) draw the chart.
+   */
+  metaPath?: string;
+  /**
+   * Only the chart, without title, subtitle and unit of measure.
+   * @defaultValue false
+   */
+  showOnlyChart?: boolean;
+  /** A fixed size; without it the chart fills its container (MC-02). */
+  size?: MicroChartSize;
+  /** Render nothing when there is no data (table cells, MC-06); otherwise a "No data" placeholder (MC-05). */
+  hideOnNoData?: boolean;
+  /** The title is a link that fires `titlePress`. */
+  titleAsLink?: boolean;
+  /** Accessible name of the title link. */
+  linkAriaText?: string;
+  /** The title link was pressed (`titleAsLink`). */
+  onTitlePress?(): void;
+  /** When set, the chart is a button (Enter / Space / click). Not used for the "No data" placeholder. */
+  onPress?(): void;
+  /** Name of the service in `SmartKitProvider` `services`; default: the provider's `defaultService`. */
+  service?: string;
+  /** The annotated entity as read from the service (the binding context in Fiori elements); undefined while loading. */
+  row?: Row;
+  /** Entity path of the annotated entity, e.g. "Orders('1')": reads the collection of a chart over a navigation. */
+  path?: string;
 }
 
 /** Maximum number of bars of a comparison chart (MC-41). */
@@ -112,7 +156,7 @@ interface Rendered { body: ReactNode; aria: string }
 interface Ctx { t: TextFn; fmt: (n: number) => string; short: (n: number) => string; pct: (f: number) => string; compact: boolean; w?: number; h?: number }
 
 /** Whether the chart has something to draw (false: "No data", MC-05 / MC-06). */
-export function microChartHasData(p: Pick<MicroChartProps, 'kind' | 'value' | 'target' | 'max' | 'points' | 'lines'>): boolean {
+export function microChartHasData(p: Pick<MicroChartData, 'kind' | 'value' | 'target' | 'max' | 'points' | 'lines'>): boolean {
   switch (p.kind) {
     case 'bullet': return finite(p.value);
     case 'radial': return finite(p.value) && (p.target === undefined || (finite(p.target) && p.target > 0));
@@ -152,7 +196,72 @@ function useFitLabels(root: HTMLElement | null) {
   });
 }
 
-export function MicroChart(p: MicroChartProps) {
+/**
+ * Micro chart building block (sap.fe.macros.MicroChart): with `metaPath` the UI.Chart annotation decides type, data,
+ * title and unit; without it the data props draw the chart directly.
+ */
+export function MicroChart(p: $MicroChartSettings) {
+  if (p.metaPath) return <AnnotationMicroChart {...p} metaPath={p.metaPath} />;
+  if (!p.kind) return null;
+  return <MicroChartDrawing {...p} kind={p.kind} label={p.label ?? ''} />;
+}
+
+/** A micro chart from its UI.Chart annotation (sap.fe.macros.MicroChart with `contextPath` and `metaPath`). */
+function AnnotationMicroChart(p: $MicroChartSettings & { metaPath: string }) {
+  const service = useService(p.service);
+  const { intlLocale, timeZone } = useSmartKit();
+  const t = useText();
+  const model = service.model;
+  const ctx = p.contextPath ? resolveContextPath(model, p.contextPath) : undefined;
+  const typeName = ctx?.typeName ?? '';
+  const chart = ctx ? resolveChartMetaPath(model, typeName, p.metaPath) : undefined;
+  const kind = chart ? MICRO_CHART_KIND[chart.chartType] : undefined;
+  const series = chart ? chartIsSeries(model, typeName, chart) : false;
+  const q = useQuery({
+    // The same key, $select, order and size as the header facets and table cells (ADR-025).
+    queryKey: ['smart-kit', 'microchart', service.name, p.path, chart?.navigation, chart?.id],
+    enabled: series && Boolean(p.path) && Boolean(kind),
+    queryFn: ({ signal }) => {
+      const e = chartExpand(model, chart!);
+      return service.dataProvider.query({ source: { parent: p.path!, navigation: chart!.navigation }, select: e.select, expand: [], orderBy: e.orderBy ?? [], top: e.top, count: false }, { signal });
+    },
+    staleTime: 30_000,
+  });
+  if (!chart || !kind || chartHidden(model, chart)) return null;
+  const data = chartProps({ model, locale: intlLocale, timeZone }, typeName, chart, p.row, series && p.path ? q.data?.rows ?? [] : undefined) ?? { kind };
+  const hasData = microChartHasData(data);
+  if (!hasData && p.hideOnNoData) return null;
+  const measure = chart.measures[0]!;
+  const dim = chart.dimensions[0];
+  const measureProp = resolvePath(model.entityTypes, chart.typeName, measure).property;
+  const dimProp = dim ? resolvePath(model.entityTypes, chart.typeName, dim).property : undefined;
+  const digits = chart.dataPoints[measure]?.fractionDigits ?? (typeof measureProp?.scale === 'number' ? measureProp.scale : undefined);
+  const fmt = (n: number) => formatNumber(String(n), intlLocale, digits !== undefined ? { min: digits, max: digits } : { max: 2 });
+  const unitRow = series ? q.data?.rows[0] : chart.navigation ? (getPath(p.row, chart.navigation) as Row | undefined) : p.row;
+  const unit = measureProp?.unit ? String(resolveRef(unitRow, measureProp.unit) ?? '') : '';
+  const title = p.label ?? chart.title;
+  const drawing = <MicroChartDrawing {...data} label={title} format={p.format ?? fmt} formatLabel={p.formatLabel} size={p.size} onPress={hasData ? p.onPress : undefined} />;
+  if (p.showOnlyChart) return drawing;
+  const subtitle = series && dimProp ? t('chart.caption', { measure: measureProp?.label ?? measure, dimension: dimProp.label }) : undefined;
+  return (
+    <div className="sk-microchart-block" data-sk-microchart-block={chart.id}>
+      <div className="sk-facet__title">
+        {p.titleAsLink ? (
+          <button type="button" className="sk-link sk-microchart-block__link" aria-label={p.linkAriaText} onClick={() => p.onTitlePress?.()} data-sk-microchart-title-link>{title}</button>
+        ) : title}
+      </div>
+      {subtitle ? <div className="sk-facet__subtitle">{subtitle}</div> : null}
+      <div className="sk-facet__chart">{drawing}</div>
+      {/* MC-06: without data the footer goes too; MC-51: a radial chart shows a percentage, no unit. */}
+      {unit && hasData && kind !== 'radial' ? <div className="sk-facet__footer" data-sk-facet-footer>{unit}</div> : null}
+    </div>
+  );
+}
+
+/** Draws one micro chart from its data (the plain-control usage). */
+export function MicroChartDrawing(p: MicroChartData) {
+  // the box of each size is in styles.css (`.sk-microchart--size-*`, within the 64×18 – 320×94 px range, MC-02)
+  const sizeClass = p.size ? `sk-microchart--size-${p.size}` : undefined;
   const { t, intlLocale } = useSmartKit();
   const [el, ref] = useState<HTMLElement | null>(null);
   const box = useBox(el);
@@ -176,7 +285,7 @@ export function MicroChart(p: MicroChartProps) {
     if (p.hideOnNoData) return null;
     // MC-05: a placeholder of the chart's size; focusable, never pressable, no labels.
     return (
-      <span ref={ref} className={cx('sk-microchart', `sk-microchart--${p.kind}`, 'sk-microchart--nodata')} role="img" aria-label={t('chart.noDataFor', { label: p.label })} tabIndex={0} data-sk-microchart={p.kind}>
+      <span ref={ref} className={cx('sk-microchart', `sk-microchart--${p.kind}`, 'sk-microchart--nodata', sizeClass)} role="img" aria-label={t('chart.noDataFor', { label: p.label })} tabIndex={0} data-sk-microchart={p.kind}>
         <span className="sk-microchart__nodata" aria-hidden>{t('chart.noData')}</span>
       </span>
     );
@@ -188,17 +297,17 @@ export function MicroChart(p: MicroChartProps) {
   const inner = <span className="sk-microchart__frame" aria-hidden>{r.body}</span>;
   if (p.onPress) {
     return (
-      <button ref={ref} type="button" className={cx(className, 'sk-microchart--pressable')} data-sk-microchart={p.kind} onClick={() => p.onPress?.()}>
+      <button ref={ref} type="button" className={cx(className, 'sk-microchart--pressable', sizeClass)} data-sk-microchart={p.kind} onClick={() => p.onPress?.()}>
         {/* The name comes from the content (not aria-label), so it never conflicts with the visible numbers. */}
         <span className="sk-visually-hidden">{r.aria}</span>
         {inner}
       </button>
     );
   }
-  return <span ref={ref} className={className} role="img" aria-label={r.aria} data-sk-microchart={p.kind}>{inner}</span>;
+  return <span ref={ref} className={cx(className, sizeClass)} role="img" aria-label={r.aria} data-sk-microchart={p.kind}>{inner}</span>;
 }
 
-function renderKind(p: MicroChartProps, c: Ctx): Rendered | undefined {
+function renderKind(p: MicroChartData, c: Ctx): Rendered | undefined {
   switch (p.kind) {
     case 'bullet': return bullet(p, c);
     case 'radial': return radial(p, c);
@@ -213,7 +322,7 @@ function renderKind(p: MicroChartProps, c: Ctx): Rendered | undefined {
 }
 
 /** The values plus the fixed scale ends, if any (MC-40). */
-const withScale = (p: MicroChartProps, values: number[]) => [...values, ...(finite(p.scaleMin) ? [p.scaleMin] : []), ...(finite(p.scaleMax) ? [p.scaleMax] : [])];
+const withScale = (p: MicroChartData, values: number[]) => [...values, ...(finite(p.scaleMin) ? [p.scaleMin] : []), ...(finite(p.scaleMax) ? [p.scaleMax] : [])];
 
 /** Linear scale of [lo, hi] (always containing 0 when `withZero`) onto [0, 100]. */
 function scale(values: number[], withZero = true) {
@@ -224,8 +333,8 @@ function scale(values: number[], withZero = true) {
   return (v: number) => ((v - lo) / (hi - lo)) * 100;
 }
 
-const seriesPoints = (p: MicroChartProps) => (p.points ?? []).filter((pt) => finite(pt.value));
-const seriesAria = (p: MicroChartProps, t: TextFn, fmt: (n: number) => string, pts: MicroChartPoint[], states = false) =>
+const seriesPoints = (p: MicroChartData) => (p.points ?? []).filter((pt) => finite(pt.value));
+const seriesAria = (p: MicroChartData, t: TextFn, fmt: (n: number) => string, pts: MicroChartPoint[], states = false) =>
   t('chart.series', { label: p.label, points: pts.map((pt) => t('chart.seriesItem', { name: pt.label, value: fmt(pt.value) }) + (states ? state(t, pt.criticality) : '')).join(t('chart.listSeparator')) });
 const signed = (fmt: (n: number) => string, n: number) => (n > 0 ? `+${fmt(n)}` : fmt(n));
 
@@ -236,7 +345,7 @@ const state = (t: TextFn, c: MicroChartCriticality | undefined) => (c === undefi
 /** A number label that is hidden (not cut) when it does not fit (MC-04). */
 const Num = ({ className, children, style }: { className?: string; children: ReactNode; style?: CSSProperties }) => <span className={className} style={style} data-sk-num>{children}</span>;
 
-function bullet(p: MicroChartProps, { t, fmt, short, compact }: Ctx): Rendered | undefined {
+function bullet(p: MicroChartData, { t, fmt, short, compact }: Ctx): Rendered | undefined {
   if (!finite(p.value)) return undefined;
   const value = p.value;
   const target = finite(p.target) ? p.target : undefined;
@@ -290,7 +399,7 @@ function bullet(p: MicroChartProps, { t, fmt, short, compact }: Ctx): Rendered |
   };
 }
 
-function radial(p: MicroChartProps, { t, pct, compact }: Ctx): Rendered | undefined {
+function radial(p: MicroChartData, { t, pct, compact }: Ctx): Rendered | undefined {
   // MC-51: without a target the value is the percentage itself (total 100).
   const total = p.target === undefined ? 100 : p.target;
   if (!finite(p.value) || !finite(total) || total <= 0) return undefined;
@@ -315,7 +424,7 @@ function radial(p: MicroChartProps, { t, pct, compact }: Ctx): Rendered | undefi
   };
 }
 
-function harvey(p: MicroChartProps, { t, fmt, short, compact }: Ctx): Rendered | undefined {
+function harvey(p: MicroChartData, { t, fmt, short, compact }: Ctx): Rendered | undefined {
   // MC-55: the total is MaximumValue.
   const total = finite(p.max) ? p.max : p.target;
   if (!finite(p.value) || !finite(total) || total <= 0) return undefined;
@@ -346,7 +455,7 @@ function harvey(p: MicroChartProps, { t, fmt, short, compact }: Ctx): Rendered |
   };
 }
 
-function delta(p: MicroChartProps, { t, fmt, short, compact }: Ctx): Rendered | undefined {
+function delta(p: MicroChartData, { t, fmt, short, compact }: Ctx): Rendered | undefined {
   if (!finite(p.value) || !finite(p.target)) return undefined;
   const v1 = p.value;
   const v2 = p.target;
@@ -396,7 +505,7 @@ function edgeLabels(first: ReactNode, last: ReactNode, kind: 'top' | 'bottom', c
   );
 }
 
-function column(p: MicroChartProps, { t, fmt, short, compact, w, h }: Ctx): Rendered | undefined {
+function column(p: MicroChartData, { t, fmt, short, compact, w, h }: Ctx): Rendered | undefined {
   const pts = seriesPoints(p);
   if (!pts.length) return undefined;
   const y = scale(withScale(p, pts.map((pt) => pt.value)));
@@ -432,7 +541,7 @@ function column(p: MicroChartProps, { t, fmt, short, compact, w, h }: Ctx): Rend
   };
 }
 
-function line(p: MicroChartProps, { t, fmt, short, compact }: Ctx): Rendered | undefined {
+function line(p: MicroChartData, { t, fmt, short, compact }: Ctx): Rendered | undefined {
   // MC-35: up to three lines, one per measure.
   const lines = (p.lines ?? [p.points ?? []]).slice(0, 3).map((l) => l.filter((pt) => finite(pt.value))).filter((l) => l.length);
   if (!lines.length) return undefined;
@@ -486,7 +595,7 @@ function line(p: MicroChartProps, { t, fmt, short, compact }: Ctx): Rendered | u
   };
 }
 
-function comparison(p: MicroChartProps, { t, fmt, short, w }: Ctx): Rendered | undefined {
+function comparison(p: MicroChartData, { t, fmt, short, w }: Ctx): Rendered | undefined {
   const pts = seriesPoints(p).slice(0, MICRO_COMPARISON_MAX);
   if (!pts.length) return undefined;
   const lo = Math.min(0, ...(finite(p.min) ? [p.min] : []), ...pts.map((pt) => pt.value));
@@ -526,7 +635,7 @@ function band(xs: (i: number) => number, ys: (v: number) => number, lower: numbe
   return [...top, ...bottom].join(' ');
 }
 
-function area(p: MicroChartProps, { t, fmt, short, compact, h }: Ctx): Rendered | undefined {
+function area(p: MicroChartData, { t, fmt, short, compact, h }: Ctx): Rendered | undefined {
   const pts = seriesPoints(p);
   if (!pts.length) return undefined;
   const targets = pts.map((pt) => pt.target).filter(finite);
@@ -611,7 +720,7 @@ function area(p: MicroChartProps, { t, fmt, short, compact, h }: Ctx): Rendered 
   };
 }
 
-function stackedBar(p: MicroChartProps, { t, fmt, compact }: Ctx, pct1: (f: number) => string): Rendered | undefined {
+function stackedBar(p: MicroChartData, { t, fmt, compact }: Ctx, pct1: (f: number) => string): Rendered | undefined {
   // MC-58: no negative values.
   const pts = seriesPoints(p).filter((pt) => pt.value > 0);
   if (!pts.length) return undefined;

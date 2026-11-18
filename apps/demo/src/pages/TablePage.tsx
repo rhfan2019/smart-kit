@@ -1,5 +1,8 @@
 /** "Show All (x)" target (OP Tables · Navigation to Another Page): a dynamic page with the whole table. */
-import { DynamicPage, SmartTable, useObjectTitle } from '@rhfan2019/smart-kit';
+import Table from '@rhfan2019/smart-kit/v4/fe/macros/Table';
+import DynamicPage from '@rhfan2019/smart-kit/f/DynamicPage';
+import DynamicPageTitle from '@rhfan2019/smart-kit/f/DynamicPageTitle';
+import useObjectTitle from '@rhfan2019/smart-kit/kit/useObjectTitle';
 import { useParams, useSearchParams } from 'react-router';
 import { useShell } from '../App';
 
@@ -12,8 +15,9 @@ export function TablePage() {
   const { title } = useObjectTitle(parent, service);
   if (!parent || !nav) return null;
   return (
-    <DynamicPage layout="fill" heading={s('orderItems', { id: title ?? '' })} data-testid="show-all-page">
-      <SmartTable service={service} parent={{ path: parent, navigation: nav }} mode="grid" title={s('allItems')} pageKey={`all:${parent}:${nav}`} />
-    </DynamicPage>
+    <DynamicPage
+      fitContent title={<DynamicPageTitle heading={s('orderItems', { id: title ?? '' })} />} data-testid="show-all-page"
+      content={<Table service={service} contextPath={`/${parent.replace(/\(.*$/, '')}/${nav}`} bindingContext={parent} rowCountMode="Auto" header={s('allItems')} pageKey={`all:${parent}:${nav}`} />}
+    />
   );
 }

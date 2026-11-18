@@ -14,3 +14,5 @@ export { StringFilterOperator } from '../controls/dialogs/ViewSettingsDialog';
 export { WizardRenderMode, PageBackgroundDesign } from '../controls/dialogs/Wizard';
 export { IconTabFilterDesign, IconTabFilterInteractionMode, IconTabHeaderMode, IconTabDensityMode, TabsOverflowMode, BackgroundDesign } from '../controls/dialogs/IconTabBar';
 export { VerticalPlacementType } from '../messages/MessagePopover';
+export { ListMode, PopinLayout, Sticky, MultiSelectMode, ListSeparators } from '../table/ResponsiveTable';
+export { GenericTagDesign, GenericTagValueState } from '../object/GenericTag';

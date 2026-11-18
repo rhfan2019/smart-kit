@@ -4,7 +4,7 @@
  */
 import { calculateCriticality, chartIsSeries, formatValue, MICRO_CHART_MAX_POINTS, resolvePath, type ChartModel, type CriticalityCalculationModel, type DataPointModel, type MetaModel, type Row, type ValueRef } from '@rhfan2019/smart-kit-core';
 import { getPath, resolveRef } from '../field/values';
-import { MICRO_COMPARISON_MAX, type MicroChartCriticality, type MicroChartKind, type MicroChartPoint, type MicroChartProps, type MicroChartThreshold } from './MicroChart';
+import { MICRO_COMPARISON_MAX, type MicroChartCriticality, type MicroChartKind, type MicroChartPoint, type MicroChartData, type MicroChartThreshold } from './MicroChart';
 
 /** UI.ChartType → micro chart (MC-60): the eight types of the OData V4 Fiori Elements. Others draw nothing. */
 export const MICRO_CHART_KIND: Partial<Record<string, MicroChartKind>> = {
@@ -54,7 +54,7 @@ export function chartHidden(model: MetaModel, chart: ChartModel): boolean {
 }
 
 /** Props of a row chart, or undefined when the chart type is not drawn from the row. */
-export function rowChartProps(chart: ChartModel, row: Row | undefined): Pick<MicroChartProps, 'kind' | 'value' | 'target' | 'forecast' | 'min' | 'max' | 'thresholds' | 'mode' | 'criticality'> | undefined {
+export function rowChartProps(chart: ChartModel, row: Row | undefined): Pick<MicroChartData, 'kind' | 'value' | 'target' | 'forecast' | 'min' | 'max' | 'thresholds' | 'mode' | 'criticality'> | undefined {
   const kind = MICRO_CHART_KIND[chart.chartType];
   if (!kind || !ROW_CHART_KINDS.includes(kind)) return undefined;
   const measure = chart.measures[0]!;
@@ -107,7 +107,7 @@ function measurePoints(ctx: SeriesContext, chart: ChartModel, measure: string, r
 }
 
 /** Props of a chart whose data is a navigation collection (ADR-025): one point per row of `rows`. */
-export function seriesChartProps(ctx: SeriesContext, chart: ChartModel, rows: Row[]): Omit<MicroChartProps, 'label'> | undefined {
+export function seriesChartProps(ctx: SeriesContext, chart: ChartModel, rows: Row[]): Omit<MicroChartData, 'label'> | undefined {
   const kind = MICRO_CHART_KIND[chart.chartType];
   if (!kind || ROW_CHART_KINDS.includes(kind)) return undefined;
   const measure = chart.measures[0]!;
@@ -132,7 +132,7 @@ export function seriesChartProps(ctx: SeriesContext, chart: ChartModel, rows: Ro
 
 /** Props of any micro chart from the model: `data` is the row (charts of the row or of a single-valued navigation)
  * or the rows of the collection navigation (series). */
-export function chartProps(ctx: SeriesContext, ownerType: string, chart: ChartModel, row: Row | undefined, rows?: Row[]): Omit<MicroChartProps, 'label'> | undefined {
+export function chartProps(ctx: SeriesContext, ownerType: string, chart: ChartModel, row: Row | undefined, rows?: Row[]): Omit<MicroChartData, 'label'> | undefined {
   if (chartIsSeries(ctx.model, ownerType, chart)) {
     const data = rows ?? (row ? getPath(row, chart.navigation) : undefined);
     // ADR-025: services may ignore $top inside $expand; the client keeps at most N rows.

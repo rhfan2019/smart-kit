@@ -185,8 +185,10 @@ describe('contrast (AC-THEME-04)', () => {
 describe('bundle size (AC-Q-02, P2-GEN-08)', () => {
   // check-size.mjs reads every build output (core, React, server, CLI, demo), so build them all: CI runs this test on a clean checkout.
   it('P2-GEN-08 both packages build and stay within the gzip budgets', () => {
-    execSync('npm run build', { cwd: ROOT, stdio: 'pipe' });
-    const out = execSync('node scripts/check-size.mjs', { cwd: ROOT, encoding: 'utf8' });
+    // build as a developer would: without the test runner's environment (NODE_ENV=test, VITEST*), which changes the output
+    const env = Object.fromEntries(Object.entries(process.env).filter(([k]) => k !== 'NODE_ENV' && !k.startsWith('VITEST')));
+    execSync('npm run build', { cwd: ROOT, stdio: 'pipe', env });
+    const out = execSync('node scripts/check-size.mjs', { cwd: ROOT, encoding: 'utf8', env });
     expect(out).not.toContain('FAIL');
   }, 180_000);
 });

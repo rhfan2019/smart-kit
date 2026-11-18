@@ -775,3 +775,21 @@ ADR-027 定的范围是"只实现 smart-kit 会发的请求"，用户也定过�
 **结果**：阶段 1 的模块 `check:ui5` 0 处未登记；全部偏差 758 条（`not-implemented` 441，基线 752；`kit-extension` 249；`react-idiom` 29；`no-binding` 7；`fe-behavior` 32）。阶段 1 模块剩下的偏差：`react-idiom`（`key`、`children`、基础类成员）、`kit-extension`（徽标、注解驱动的 KPI 设置等，理由逐条写明）、`no-binding`（`selectedContexts`、`itemsBinding` 等依赖 UI5 模型的参数）、`not-implemented`（上面 33 个 ref 方法，以及 BTP 云端文件选择、`asyncURLHandler` 等，阶段 6）。
 
 **用户决定**：待定——`MessageView` / `MessagePopover` 的 `asyncURLHandler`、`urlValidated` 只用来校验 `markupDescription` 渲染出的 HTML 链接，而 `26` 定了不解析 HTML；现在登记为 `not-implemented`（阶段 6）。如果维持"不解析 HTML"，它们应改为长期偏差（`different-value`），需要用户确认。
+
+## D38 对齐阶段 2：注解积木对齐 sap.fe.macros，布局控件对齐 sap.f / sap.uxap / sap.m（2026-11-17）
+
+**问题**：按 `31` 阶段 2，把注解驱动的积木改名并对齐 sap.fe.macros（`Table`、`TreeTable`、`FilterBar`、`VariantManagement`、`Field`、`Form`、`Chart`、`MicroChart`、`MessageButton`、`Share`、`KPITag`、`Paginator`、`FlexibleColumnLayoutActions`），把布局和普通控件对齐它们的 UI5 类（`m/Table`、`f/DynamicPage`、`f/FlexibleColumnLayout`、`uxap/ObjectPageLayout`、`uxap/AnchorBar`、`m/GenericTag`），删掉 `DraftMarker`、`OverflowActions`。
+
+**做法**：五个子代理按文件分组并行（表格；筛选栏和变体；字段和表单；页面布局；图表和消息按钮），沿用阶段 1 的门面写法；新模块和偏差先写进各组自己的登记文件，我合并。核对脚本加了 `--ignore-baseline`（把阶段 0 的基线占位当作没有），各组以"不靠基线也 0 处未登记"为准。
+- **定位方式按 FE**：`contextPath`（`'/PurchaseOrders'`，导航 `'/Set/_Nav'`）+ `metaPath`（`@UI.LineItem#Q`、`@UI.SelectionPresentationVariant#Q`、`@UI.FieldGroup#Q`、`@UI.Chart#Q`、属性路径）。smart-kit 没有 UI5 模型，多出的 `service`、`row`、`bindingContext`、`query`、`extend` 等登记为 `kit-extension`（理由逐条写明）。
+- **页面按 UI5 组合**：`DynamicPage` 拆成 `DynamicPage` + `DynamicPageTitle` + `DynamicPageHeader`；对象页标题是 `ObjectPageDynamicHeaderTitle`；FCL 的翻页和布局按钮是 `Paginator`、`FlexibleColumnLayoutActions`（模块名照 UI5 是 `v4/fe/macros/fcl/FlexibleColumnLayoutActions.block`）。
+- **默认值按 UI5**：`preserveHeaderStateOnScroll`（和原来的 `snapOnScroll` 意思相反）、`showFooter`、`upperCaseAnchorBar`、`enableLazyLoading`、`selectionLimit` 200、`Chart.selectionMode` Multiple 等都改成 UI5 / FE 的默认值；模板里需要原来效果的地方显式传了值，所以模板页面的外观和行为不变（端到端测试照旧通过）。
+- **`Field.onChange` 的时机**（字段组发现、我改的）：UI5 的 `change` 在提交时触发（失焦、回车），`liveChange` 在输入时触发。子代理起初保留了"每次按键触发 change"并写进注释；按铁律改成和 UI5 一样：文本编辑器保留草稿，提交时才发 `onChange`；库内部收集输入的地方（表单、行内新建、新建对话框、对象页局部编辑）同时听 `onLiveChange`。`liveChange` 的事件对象在 UI5 里没有参数，smart-kit 多给一个 `value`（登记为 `kit-extension`）。
+- **入口**：删除 `/field`、`/filter`、`/variants`、`/table`、`/chart`、`/object`、`/page`、`/actions`、`/edit`。**根入口**：D37 原定阶段 2 后删除；改为**只导出基础设施**（`context`、`i18n`、`theme`、`util` 的名字），`30` 第 3 节本来就允许"只导出基础设施"，这样使用方 `import { SmartKitProvider } from '@rhfan2019/smart-kit'` 不用改，而根入口不再有任何组件（AL-30）。`/templates` 留到阶段 5。AG Grid 主题移到 `kit/smartKitGridTheme`（放进 `/theme` 会让不用表格的应用也要装 AG Grid）。`TableP13nDialog` 先移到 `m/p13n/Popup`，API 阶段 6 对齐。
+- 新库模块 `f/library`、`uxap/library`，`m/library` 加了表格、通用标签的枚举。核对脚本：数组默认值可以写 JSON；库模块里的常量命名空间（`DynamicPageTitleShrinkRatio`）按具名导出处理。
+
+- **体积**：按模块量（`check-size.mjs`）。积木比原来的入口大：`v4/fe/macros/Table` 56 KB（原 `/table` 40 KB），`/templates` 96 KB（原 84 KB），原因是 sap.fe.macros 的属性和方法、页面按 UI5 组合（标题工具栏、Paginator 等）。"只用 MicroChart"的场景从 8 KB 变成 40 KB：sap.fe.macros.MicroChart 是注解驱动的，要带上 provider 和元数据模型；只按数据画的轻量微图表在阶段 6 做成九个 `suite/ui/microchart/*` 控件，那时恢复 8 KB 的预算（ADR-026 的"用多少付多少"在这之前对微图表暂时不成立）。实际应用的列表页、对象页场景仍在 560 KB 预算内。
+
+**结果**：114 个 UI5 模块；`check:ui5` 0 处未登记。偏差 450 条：`not-implemented` 119（阶段 1 后 441，基线 752），`kit-extension` 186，`react-idiom` 75，`no-binding` 13，`fe-behavior` 32（阶段 3、4 处理）；阶段 2 模块已经没有基线占位条目。迁移清单第 2 阶段 32 行。
+
+**用户决定**：待定（不阻塞）——`VariantManagement` 的 `supportApplyAutomatically`、`creationAllowed` 等取自 sap.fe.macros.VariantManagement 内部的 sap.m.VariantManagement（积木本身没有这些公开属性），登记为 `kit-extension`；如果希望积木只保留 sap.fe.macros 的公开属性，这些要去掉、由模板或宿主控制。

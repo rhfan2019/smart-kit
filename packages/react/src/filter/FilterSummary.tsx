@@ -16,7 +16,7 @@ export interface FilterSummaryProps {
   entitySet: string;
   /** Name of the service in `SmartKitProvider` `services`; default: the provider's `defaultService`. */
   service?: string;
-  /** Filter state (from `useFilterState` / `SmartFilterBar`), applied to the request. */
+  /** Filter state (from `useFilterState` / `FilterBar`), applied to the request. */
   filters: FilterState;
   /** Search term ($search). */
   search?: string;

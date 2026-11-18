@@ -1,6 +1,6 @@
 /** Phase 3 micro charts (docs/15-research-micro-chart.md): sizes, label hiding, no data, themes. */
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { MicroChart, type MicroChartProps } from '@rhfan2019/smart-kit';
+import MicroChart, { type MicroChartData } from '@rhfan2019/smart-kit/v4/fe/macros/MicroChart';
 
 const meta: Meta = { title: 'smart-kit/Phase 3 micro charts', parameters: { layout: 'fullscreen' } };
 export default meta;
@@ -14,7 +14,7 @@ const SIZES = [
   { name: '64 × 18', width: 64, height: 18 },
 ];
 
-function Grid({ charts }: { charts: (Omit<MicroChartProps, 'label'> & { label: string })[] }) {
+function Grid({ charts }: { charts: (Omit<MicroChartData, 'label'> & { label: string })[] }) {
   return (
     <table style={{ borderCollapse: 'separate', borderSpacing: 16, fontSize: 12 }}>
       <thead><tr><th />{SIZES.map((s) => <th key={s.name} style={{ textAlign: 'left' }}>{s.name}</th>)}</tr></thead>

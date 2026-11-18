@@ -209,12 +209,53 @@ useThemeTokens<const T extends readonly string[]>(names: T): Record<T[number], s
 
 ## `@rhfan2019/smart-kit/util`
 
-`applyExtensions` (function) · `DateLike` (type) · `DEFAULT_STANDARD_OPTIONS` (const) · `dynamicDateValueTypes` (function) · `ExtendEntry` (interface) · `ExtendPosition` (type) · `messageTypeOf` (function) · `PreventableEvent` (type) · `RESTRICTED_FILE_NAME_CHARACTERS` (const) · `toDates` (function) · `usePageState` (hook) · `viewSettingsFilterString` (function)
+`actionPaths` (function) · `applyExtensions` (function) · `conditionText` (function) · `ConditionTextOptions` (interface) · `createFields` (function) · `createWith` (function) · `DateLike` (type) · `DEFAULT_STANDARD_OPTIONS` (const) · `draftState` (function) · `DraftState` (type) · `dynamicDateValueTypes` (function) · `ExtendEntry` (interface) · `ExtendPosition` (type) · `FclArrow` (interface) · `fclArrows` (function) · `fieldErrors` (function) · `FieldRenderer` (type) · `FieldRenderProps` (interface) · `fieldValue` (function) · `FieldValue` (interface) · `filterSummaryText` (function) · `getPath` (function) · `hiddenByImportance` (function) · `isActionAvailable` (function) · `isEditable` (function) · `linkify` (function) · `messageTypeOf` (function) · `MICRO_COMPARISON_MAX` (const) · `niceTicks` (function) · `parseConditionText` (function) · `PreventableEvent` (type) · `relativeDateText` (function) · `RendererRegistry` (type) · `resolveRef` (function) · `RESTRICTED_FILE_NAME_CHARACTERS` (const) · `toDates` (function) · `usePageState` (hook) · `validate` (function) · `ValueContext` (interface) · `viewSettingsFilterString` (function)
+
+### `actionPaths` — function
+
+Paths an action needs in $select to decide its availability.
+
+```ts
+actionPaths(actions: ActionModel[]): string[]
+```
 
 ### `applyExtensions` — function
 
 ```ts
 applyExtensions<T extends { id: string; }>(items: T[], entries: ExtendEntry<T>[] | undefined, scope: string): T[]
+```
+
+### `conditionText` — function
+
+Token text of a condition, e.g. "Office (C1)", ">10", "!(=X)", "This month".
+
+```ts
+conditionText(c: Condition, prop: PropertyModel | undefined, locale: string, timeZone?: string, options?: ConditionTextOptions): string
+```
+
+### `ConditionTextOptions` — interface
+
+Options of `conditionText`.
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `t` |  | `TextFn` | Texts for relative dates ("This month", "Last 7 days"); without it the operator name is shown ("THISMONTH"). |
+| `textArrangement` |  | `TextArrangement` | How a selected value's text and code are shown (UI.TextArrangement); default: the property's, else TextFirst. |
+
+### `createFields` — function
+
+Fields of a create dialog: the mandatory properties (LR Add/Create Using a Dialog: fewer than 8 required fields).
+
+```ts
+createFields(model: MetaModel, typeName: string, lineItem: FieldModel[]): FieldModel[]
+```
+
+### `createWith` — function
+
+Creates an entity with the edit strategy (draft: create, set, activate; direct: POST).
+
+```ts
+createWith(strategy: EditStrategy, target: QuerySource, values: Row): Promise<{ path: string; row: Row; messages: Message[]; }>
 ```
 
 ### `DateLike` — type
@@ -231,6 +272,20 @@ The default `standardOptions` of 1.154 (all 68 keys, in the UI5 order).
 
 ```ts
 const DEFAULT_STANDARD_OPTIONS: readonly ("DATE" | "TODAY" | "YESTERDAY" | "TOMORROW" | "FIRSTDAYWEEK" | "LASTDAYWEEK" | "FIRSTDAYMONTH" | "LASTDAYMONTH" | "FIRSTDAYQUAR…
+```
+
+### `draftState` — function
+
+Draft state of a row: the user's own draft, another user's unsaved changes, or none.
+
+```ts
+draftState(row: Row | undefined): DraftState
+```
+
+### `DraftState` — type
+
+```ts
+export type DraftState = 'own' | 'other' | undefined;
 ```
 
 ### `dynamicDateValueTypes` — function
@@ -258,85 +313,31 @@ Id-based replace / insert for model-generated items. See docs/06-extension-and-t
 export type ExtendPosition = 'before' | 'after' | 'replace' | 'start' | 'end';
 ```
 
-### `messageTypeOf` — function
+### `FclArrow` — interface
 
-core `Message.type` (lower case, ADR-023) → MessageType.
+One arrow of a column separator: the layout it switches to and its accessible label.
 
-```ts
-messageTypeOf(type: Message["type"]): MessageType
-```
-
-### `PreventableEvent` — type
-
-An event object for handlers whose UI5 event can be prevented (`oEvent.preventDefault()`).
-
-```ts
-export type PreventableEvent<T> = T & { preventDefault(): void };
-```
-
-### `RESTRICTED_FILE_NAME_CHARACTERS` — const
-
-Characters not allowed in file names by default (UI5).
-
-```ts
-const RESTRICTED_FILE_NAME_CHARACTERS: "\\:/*?\"<>|[]{}@#$"
-```
-
-### `toDates` — function
-
-The dates of a value (sap.m.DynamicDateRange.toDates): start of the first day and end of the last day in local time; FROM / TO give one date, as in UI5. `now` is an internal hook for tests.
-
-```ts
-toDates(value: DynamicDateRangeValue, calendarWeekNumbering?: CalendarWeekNumbering, now?: Date): Date[]
-```
-
-### `usePageState` — hook
-
-```ts
-usePageState<T>(key: string | undefined, initial: T | (() => T)): [T, (next: T | ((prev: T) => T)) => void]
-```
-
-### `viewSettingsFilterString` — function
-
-"Filtered by: Status (New, Approved), Region (North)".
-
-```ts
-viewSettingsFilterString(filterItems: ViewSettingsFilterItem[], filters: Record<string, string[]>, t: TextFn): string
-```
-
-## `@rhfan2019/smart-kit/field`
-
-`CriticalityIcon` (component) · `FieldEditor` (component) · `FieldEditorProps` (interface) · `FieldRenderer` (type) · `FieldRenderProps` (interface) · `fieldValue` (function) · `FieldValue` (interface) · `getPath` (function) · `QuickViewLink` (component) · `RendererRegistry` (type) · `resolveRef` (function) · `SmartField` (component) · `SmartFieldProps` (interface) · `ValueContext` (interface)
-
-### `CriticalityIcon` — component
-
-`import { CriticalityIcon } from '@rhfan2019/smart-kit/field';`
-
-| Prop | Required | Type | Description |
+| Member | Required | Type | Description |
 | --- | --- | --- | --- |
-| `criticality` | **yes** | `number` |  |
+| `layout` | **yes** | `LayoutType` |  |
+| `direction` | **yes** | `'left' \| 'right'` |  |
+| `label` | **yes** | `'layout.expandBegin' \| 'layout.expandMid' \| 'layout.expandEnd' \| 'layout.showEnd'` |  |
 
-### `FieldEditor` — component
+### `fclArrows` — function
 
-`import { FieldEditor } from '@rhfan2019/smart-kit/field';`
+Arrows of the separators after the begin column ([0]) and after the mid column ([1]) in a layout (UI5 FCL). The second separator's arrows need an end column (`hasEnd`).
 
-| Prop | Required | Type | Description |
-| --- | --- | --- | --- |
-| `value` | **yes** | `unknown` | Value (controlled). |
-| `label` | **yes** | `string` | Accessible name / visible label. |
-| `property` |  | `PropertyModel` | Property model of the field (`model.entityTypes[type].properties[name]`). |
-| `onChange` |  | `(value: unknown) => void` | Called with the new value. |
-| `showLabel` |  | `boolean` | Visible label (forms in dialogs); without it the label is only the accessible name. |
-| `unit` |  | `string` | Unit or currency code shown with the value. |
-| `error` |  | `string` | Error text shown under the field. |
-| `required` |  | `boolean` | Shows the mandatory marker and validates that a value is entered. |
-| `disabled` |  | `boolean` | Disables the input. |
-| `id` |  | `string` | Element id (e.g. for an external `&lt;label htmlFor>`). |
-| `service` |  | `string` | Name of the service in `SmartKitProvider` `services`; default: the provider's `defaultService`. |
+```ts
+fclArrows(layout: LayoutType, hasEnd: boolean): [FclArrow | undefined, FclArrow | undefined]
+```
 
-### `FieldEditorProps` — interface
+### `fieldErrors` — function
 
-Props of `FieldEditor` (see above).
+Field errors by property path from messages.
+
+```ts
+fieldErrors(messages: Message[]): Record<string, string>
+```
 
 ### `FieldRenderer` — type
 
@@ -367,6 +368,12 @@ fieldValue(ctx: ValueContext, field: FieldModel, row: Row | undefined): FieldVal
 | `criticality` |  | `number` |  |
 | `property` |  | `PropertyModel` |  |
 
+### `filterSummaryText` — function
+
+```ts
+filterSummaryText(t: ReturnType<typeof useText>, labels: string[]): string
+```
+
 ### `getPath` — function
 
 Reads a value by property path, following expanded navigation objects ("_Partner/PartnerName").
@@ -375,17 +382,85 @@ Reads a value by property path, following expanded navigation objects ("_Partner
 getPath(row: Row | undefined, path: string): unknown
 ```
 
-### `QuickViewLink` — component
+### `hiddenByImportance` — function
 
-`import { QuickViewLink } from '@rhfan2019/smart-kit/field';`
+Widths below which Low, then Medium columns move out of the table (sap.m.Table pop-in by importance).
 
-| Prop | Required | Type | Description |
-| --- | --- | --- | --- |
-| `typeName` | **yes** | `string` |  |
-| `field` | **yes** | `FieldModel` |  |
-| `row` | **yes** | `Row \| undefined` |  |
-| `children` | **yes** | `ReactNode` |  |
-| `service` |  | `string` |  |
+```ts
+hiddenByImportance(width: number, importance: Priority | undefined): boolean
+```
+
+### `isActionAvailable` — function
+
+Whether an action can be applied to a row (Core.OperationAvailable; missing means available).
+
+```ts
+isActionAvailable(action: ActionModel, row: Row | undefined): boolean
+```
+
+### `isEditable` — function
+
+Whether a property can be changed: not computed, not a key, not read-only (immutable only when creating).
+
+```ts
+isEditable(prop: PropertyModel | undefined, creating: boolean): boolean
+```
+
+### `linkify` — function
+
+Plain text with http(s) URLs as links (no HTML from the server is rendered).
+
+```ts
+linkify(text: string): ReactNode[]
+```
+
+### `messageTypeOf` — function
+
+core `Message.type` (lower case, ADR-023) → MessageType.
+
+```ts
+messageTypeOf(type: Message["type"]): MessageType
+```
+
+### `MICRO_COMPARISON_MAX` — const
+
+Maximum number of bars of a comparison chart (MC-41).
+
+```ts
+const MICRO_COMPARISON_MAX: 12
+```
+
+### `niceTicks` — function
+
+4–6 "nice" ticks covering [min, max] (both extended to include 0).
+
+```ts
+niceTicks(min: number, max: number, count?: number): number[]
+```
+
+### `parseConditionText` — function
+
+Parses user input into a condition. Plain text means "equal to".
+
+```ts
+parseConditionText(input: string, prop: PropertyModel | undefined): Condition | undefined
+```
+
+### `PreventableEvent` — type
+
+An event object for handlers whose UI5 event can be prevented (`oEvent.preventDefault()`).
+
+```ts
+export type PreventableEvent<T> = T & { preventDefault(): void };
+```
+
+### `relativeDateText` — function
+
+Token text of a relative date condition, e.g. "This month", "Last 7 days".
+
+```ts
+relativeDateText(c: Condition, t?: TextFn): string
+```
 
 ### `RendererRegistry` — type
 
@@ -401,32 +476,35 @@ export type RendererRegistry = Record<string, FieldRenderer>;
 resolveRef(row: Row | undefined, ref: ValueRef | undefined): unknown
 ```
 
-### `SmartField` — component
+### `RESTRICTED_FILE_NAME_CHARACTERS` — const
 
-`import { SmartField } from '@rhfan2019/smart-kit/field';`
+Characters not allowed in file names by default (UI5).
 
-| Prop | Required | Type | Description |
-| --- | --- | --- | --- |
-| `row` | **yes** | `Row \| undefined` | The row to show the value of. Required (undefined while loading). Text, unit, criticality and links come from the annotations of the property. |
-| `typeName` |  | `string` | Entity type full name the field belongs to. Use `entitySet` instead when convenient. |
-| `entitySet` |  | `string` | Entity set the row belongs to (alternative to `typeName`). |
-| `service` |  | `string` | Name of the service in `SmartKitProvider` `services`; default: the provider's `defaultService`. |
-| `field` |  | `FieldModel` | A field from the model, or just a property path. |
-| `path` |  | `string` | Property path, e.g. "GrossAmount" or "_Owner/Name" (alternative to `field`). |
-| `mode` |  | `'display' \| 'edit'` | "display" (default): formatted value with text arrangement, unit, criticality; "edit": the editor for the Edm type (value help from `Common.ValueList`). |
-| `value` |  | `unknown` | Edit mode: controlled value and change handler. |
-| `onChange` |  | `(value: unknown) => void` | Edit mode: called with the new value. |
-| `aria-label` |  | `string` | Label for accessibility when used without a visible label. |
-| `error` |  | `string` | Edit mode: error text, mandatory marker, read-only, element id. |
-| `required` |  | `boolean` | Edit mode: mandatory marker. |
-| `readOnly` |  | `boolean` | Edit mode: show the value read-only. |
-| `id` |  | `string` | Edit mode: element id of the input. |
-| `showLabel` |  | `boolean` | Edit mode: show the label above the editor (dialogs). |
-| `cell` |  | `boolean` | Rendered in a table cell: a micro chart without data leaves the cell empty (docs/15 MC-06). |
+```ts
+const RESTRICTED_FILE_NAME_CHARACTERS: "\\:/*?\"<>|[]{}@#$"
+```
 
-### `SmartFieldProps` — interface
+### `toDates` — function
 
-Props of `SmartField` (see above).
+The dates of a value (sap.m.DynamicDateRange.toDates): start of the first day and end of the last day in local time; FROM / TO give one date, as in UI5. `now` is an internal hook for tests.
+
+```ts
+toDates(value: DynamicDateRangeValue, calendarWeekNumbering?: CalendarWeekNumbering, now?: Date): Date[]
+```
+
+### `usePageState` — hook
+
+```ts
+usePageState<T>(key: string | undefined, initial: T | (() => T)): [T, (next: T | ((prev: T) => T)) => void]
+```
+
+### `validate` — function
+
+Client validation (OP In Edit Mode): mandatory fields and number formats; messages target the property path.
+
+```ts
+validate(model: MetaModel, typeName: string, fields: FieldModel[], values: Row, t: TextFn, creating?: boolean): Message[]
+```
 
 ### `ValueContext` — interface
 
@@ -437,1250 +515,12 @@ Props of `SmartField` (see above).
 | `locale` | **yes** | `string` |  |
 | `timeZone` |  | `string` |  |
 
-## `@rhfan2019/smart-kit/filter`
+### `viewSettingsFilterString` — function
 
-`AdaptFiltersDialog` (component) · `AdaptFiltersDialogProps` (interface) · `AppliedFilter` (interface) · `ConditionInput` (component) · `ConditionInputProps` (interface) · `conditionText` (function) · `ConditionTextOptions` (interface) · `FilterFieldItem` (interface) · `FilterSnapshot` (interface) · `FilterStateApi` (interface) · `FilterSummary` (component) · `FilterSummaryProps` (interface) · `filterSummaryText` (function) · `parseConditionText` (function) · `relativeDateText` (function) · `SmartFilterBar` (component) · `SmartFilterBarProps` (interface) · `useFilterBarContext` (hook) · `useFilterState` (hook) · `UseFilterStateOptions` (interface) · `useValueList` (hook) · `ValueHelpDialog` (component) · `ValueHelpDialogProps` (interface)
-
-### `AdaptFiltersDialog` — component
-
-`import { AdaptFiltersDialog } from '@rhfan2019/smart-kit/filter';`
-
-| Prop | Required | Type | Description |
-| --- | --- | --- | --- |
-| `opened` | **yes** | `boolean` | Whether the dialog is open (controlled). |
-| `entitySet` | **yes** | `string` | Entity set name as in `$metadata`, e.g. "Orders". |
-| `fields` | **yes** | `string[]` |  |
-| `locked` | **yes** | `string[]` | Fields that cannot be hidden (they carry a condition or are mandatory). |
-| `onOk` | **yes** | `(fields: string[]) => void` | Called with the result when the user confirms. |
-| `onCancel` | **yes** | `() => void` | Called when the user cancels or closes the dialog. |
-| `service` |  | `string` | Name of the service in `SmartKitProvider` `services`; default: the provider's `defaultService`. |
-
-### `AdaptFiltersDialogProps` — interface
-
-Props of `AdaptFiltersDialog` (see above).
-
-### `AppliedFilter` — interface
-
-| Member | Required | Type | Description |
-| --- | --- | --- | --- |
-| `filters` | **yes** | `FilterState` |  |
-| `search` | **yes** | `string` |  |
-
-### `ConditionInput` — component
-
-`import { ConditionInput } from '@rhfan2019/smart-kit/filter';`
-
-| Prop | Required | Type | Description |
-| --- | --- | --- | --- |
-| `entitySet` | **yes** | `string` | Entity set of the filtered property. |
-| `path` | **yes** | `string` | Filtered property path, e.g. "Status". |
-| `conditions` | **yes** | `Condition[]` | Conditions of the field (controlled). |
-| `onChange` | **yes** | `(conditions: Condition[]) => void` | Called with the new conditions (typed values become "EQ" conditions; "=x", ">x", "a...b", "*x*" are parsed). |
-| `label` | **yes** | `string` | Accessible name, usually the property label. |
-| `service` |  | `string` | Name of the service in `SmartKitProvider` `services`; default: the provider's `defaultService`. |
-| `error` |  | `string` | Error text shown under the field. |
-| `required` |  | `boolean` | Shows the mandatory marker and validates that a value is entered. |
-| `onValueHelp` |  | `() => void` | Opens the value help dialog (rendered by the caller). |
-| `id` |  | `string` | Element id (e.g. for an external `&lt;label htmlFor>`). |
-
-### `ConditionInputProps` — interface
-
-Props of `ConditionInput` (see above).
-
-### `conditionText` — function
-
-Token text of a condition, e.g. "Office (C1)", ">10", "!(=X)", "This month".
+"Filtered by: Status (New, Approved), Region (North)".
 
 ```ts
-conditionText(c: Condition, prop: PropertyModel | undefined, locale: string, timeZone?: string, options?: ConditionTextOptions): string
-```
-
-### `ConditionTextOptions` — interface
-
-Options of `conditionText`.
-
-| Member | Required | Type | Description |
-| --- | --- | --- | --- |
-| `t` |  | `TextFn` | Texts for relative dates ("This month", "Last 7 days"); without it the operator name is shown ("THISMONTH"). |
-| `textArrangement` |  | `TextArrangement` | How a selected value's text and code are shown (UI.TextArrangement); default: the property's, else TextFirst. |
-
-### `FilterFieldItem` — interface
-
-| Member | Required | Type | Description |
-| --- | --- | --- | --- |
-| `id` | **yes** | `string` |  |
-| `label` | **yes** | `string` |  |
-| `render` |  | `(ctx: { conditions: Condition[]; onChange(c: Condition[]): void; label: string; id: string }) => ReactNode` | Custom editor; when omitted the default ConditionInput is used. |
-
-### `FilterSnapshot` — interface
-
-| Member | Required | Type | Description |
-| --- | --- | --- | --- |
-| `filters` | **yes** | `FilterState` |  |
-| `search` | **yes** | `string` |  |
-| `fields` | **yes** | `string[]` |  |
-| `applied` | **yes** | `AppliedFilter \| null` | Last executed query; null until "Go" (or auto-execution) happened. |
-
-### `FilterStateApi` — interface
-
-| Member | Required | Type | Description |
-| --- | --- | --- | --- |
-| `entitySet` | **yes** | `string` |  |
-| `liveMode` | **yes** | `boolean` |  |
-| `setFilters` | **yes** | `(next: FilterState) => void` |  |
-| `setConditions` | **yes** | `(path: string, conditions: Condition[]) => void` |  |
-| `setSearch` | **yes** | `(search: string) => void` |  |
-| `setFields` | **yes** | `(fields: string[]) => void` |  |
-| `go` | **yes** | `() => boolean` | Applies the current filters; returns false when mandatory fields are empty. |
-| `load` | **yes** | `(content: Partial&lt;Pick&lt;FilterSnapshot, 'filters' \| 'search' \| 'fields'>>, apply: boolean) => void` | Replaces filters, search and fields (e.g. from a variant); applies them when `apply` is true. |
-| `dirty` | **yes** | `boolean` | Filters differ from the applied query (manual mode shows an overlay). |
-| `missingRequired` | **yes** | `string[]` | Mandatory filter paths without a complete condition. |
-| `activeCount` | **yes** | `number` | Number of fields that carry a condition ("Adapt Filters (n)"). |
-| `showRequiredErrors` | **yes** | `boolean` | Set when "Go" was pressed with missing mandatory fields. |
-| `defaults` | **yes** | `Pick&lt;FilterSnapshot, 'filters' \| 'search' \| 'fields'>` | Defaults from the annotations (SelectionVariant, SelectionFields), i.e. the "Standard" variant. |
-| `filters` | **yes** | `FilterState` |  |
-| `search` | **yes** | `string` |  |
-| `fields` | **yes** | `string[]` |  |
-| `applied` | **yes** | `AppliedFilter \| null` | Last executed query; null until "Go" (or auto-execution) happened. |
-| `service` |  | `string` |  |
-
-### `FilterSummary` — component
-
-`import { FilterSummary } from '@rhfan2019/smart-kit/filter';`
-
-| Prop | Required | Type | Description |
-| --- | --- | --- | --- |
-| `entitySet` | **yes** | `string` | Entity set name as in `$metadata`, e.g. "Orders". |
-| `filters` | **yes** | `FilterState` | Filter state (from `useFilterState` / `SmartFilterBar`), applied to the request. |
-| `service` |  | `string` | Name of the service in `SmartKitProvider` `services`; default: the provider's `defaultService`. |
-| `search` |  | `string` | Search term ($search). |
-| `searchLabel` |  | `string` |  |
-
-### `FilterSummaryProps` — interface
-
-Props of `FilterSummary` (see above).
-
-### `filterSummaryText` — function
-
-```ts
-filterSummaryText(t: ReturnType<typeof useText>, labels: string[]): string
-```
-
-### `parseConditionText` — function
-
-Parses user input into a condition. Plain text means "equal to".
-
-```ts
-parseConditionText(input: string, prop: PropertyModel | undefined): Condition | undefined
-```
-
-### `relativeDateText` — function
-
-Token text of a relative date condition, e.g. "This month", "Last 7 days".
-
-```ts
-relativeDateText(c: Condition, t?: TextFn): string
-```
-
-### `SmartFilterBar` — component
-
-`import { SmartFilterBar } from '@rhfan2019/smart-kit/filter';`
-
-| Prop | Required | Type | Description |
-| --- | --- | --- | --- |
-| `state` | **yes** | `FilterStateApi` | State from useFilterState (controlled). |
-| `extend` |  | `ExtendEntry&lt;FilterFieldItem>[]` | Insert or replace filter fields. Custom fields store their conditions under their id. |
-| `actions` |  | `ReactNode` | Extra buttons before "Go". |
-| `children` |  | `ReactNode` | Replace the default parts: write &lt;SmartFilterBar.Search/>, &lt;SmartFilterBar.Fields/>, &lt;SmartFilterBar.Actions/>. |
-| `className` |  | `string` | Extra CSS class on the root element. |
-
-### `SmartFilterBarProps` — interface
-
-Props of `SmartFilterBar` (see above).
-
-### `useFilterBarContext` — hook
-
-Context for custom content inside the filter bar.
-
-```ts
-useFilterBarContext(): FilterStateApi
-```
-
-### `useFilterState` — hook
-
-```ts
-useFilterState(entitySet: string, o?: UseFilterStateOptions): FilterStateApi
-```
-
-### `UseFilterStateOptions` — interface
-
-| Member | Required | Type | Description |
-| --- | --- | --- | --- |
-| `service` |  | `string` |  |
-| `pageKey` |  | `string` | Key under which the state survives back navigation. |
-| `initial` |  | `Partial&lt;Pick&lt;FilterSnapshot, 'filters' \| 'search' \| 'fields'>>` | Initial state (non-controlled). Defaults to the SelectionVariant annotation. |
-| `autoExecute` |  | `boolean` | Execute on load when no mandatory field is empty (default true). |
-| `liveMode` |  | `boolean` | Live update mode: apply changes automatically after a short delay (default false = manual "Go"). |
-| `liveDelay` |  | `number` | Delay of the live mode in ms. |
-
-### `useValueList` — hook
-
-```ts
-useValueList(valueList: ValueListModel | undefined, q?: ValueListQuery, serviceName?: string): import("@tanstack/react-query").UseQueryResult<QueryResult, Error>
-```
-
-### `ValueHelpDialog` — component
-
-`import { ValueHelpDialog } from '@rhfan2019/smart-kit/filter';`
-
-| Prop | Required | Type | Description |
-| --- | --- | --- | --- |
-| `opened` | **yes** | `boolean` | Whether the dialog is open (controlled). |
-| `entitySet` | **yes** | `string` | Entity set of the filtered (or edited) property. |
-| `path` | **yes** | `string` | Property with a `Common.ValueList` annotation, e.g. "Owner". |
-| `title` | **yes** | `string` | Dialog title, usually the property label. |
-| `conditions` | **yes** | `Condition[]` | Current conditions (pre-selected in the dialog). |
-| `onOk` | **yes** | `(conditions: Condition[]) => void` | Called with the chosen conditions (selected values as "EQ" conditions, plus the defined conditions). |
-| `onCancel` | **yes** | `() => void` | Called when the user cancels or closes the dialog. |
-| `service` |  | `string` | Name of the service in `SmartKitProvider` `services`; default: the provider's `defaultService`. |
-
-### `ValueHelpDialogProps` — interface
-
-Props of `ValueHelpDialog` (see above).
-
-## `@rhfan2019/smart-kit/variants`
-
-`SmartVariantManagement` (component) · `SmartVariantManagementProps` (interface) · `useVariants` (hook) · `UseVariantsOptions` (interface) · `VariantsApi` (interface)
-
-### `SmartVariantManagement` — component
-
-`import { SmartVariantManagement } from '@rhfan2019/smart-kit/variants';`
-
-| Prop | Required | Type | Description |
-| --- | --- | --- | --- |
-| `variants` | **yes** | `VariantsApi` | Result of `useVariants(...)`. |
-| `content` | **yes** | `VariantContent` | Current page content, used for "Modified" and saving. |
-| `onApply` | **yes** | `(v: { content: VariantContent; autoApply: boolean }) => void` | Called after a variant was selected; apply its content (and execute when autoApply). |
-| `standardName` |  | `string` | Shown instead of "Standard" for the standard variant. |
-| `autoApplyOption` |  | `boolean` | Offer "Apply Automatically" (default true). The list report guideline offers it only in manual update mode. |
-| `canSave` |  | `boolean` | Whether views may be saved (default: `VariantStore.canSave`, else true). When false the menu only selects views: no Save, Save As or Manage. |
-
-### `SmartVariantManagementProps` — interface
-
-Props of `SmartVariantManagement` (see above).
-
-### `useVariants` — hook
-
-```ts
-useVariants(pageKey: string, o: UseVariantsOptions): VariantsApi
-```
-
-### `UseVariantsOptions` — interface
-
-| Member | Required | Type | Description |
-| --- | --- | --- | --- |
-| `standard` | **yes** | `VariantContent` | Content of the built-in "Standard" variant. |
-| `service` |  | `string` |  |
-| `onDefaultLoaded` |  | `(v: Variant) => void` | Called once when a default variant is selected on first load (no stored selection); apply it. |
-
-### `VariantsApi` — interface
-
-| Member | Required | Type | Description |
-| --- | --- | --- | --- |
-| `variants` | **yes** | `Variant[]` |  |
-| `currentId` | **yes** | `string` | Current variant ("" is Standard). |
-| `current` | **yes** | `Variant` |  |
-| `isLoading` | **yes** | `boolean` |  |
-| `canSave` | **yes** | `boolean` | Whether views may be saved (VariantStore.canSave, default true). |
-| `select` | **yes** | `(id: string) => Variant` |  |
-| `saveAs` | **yes** | `(name: string, content: VariantContent, opts: { isDefault: boolean; autoApply: boolean }) => Promise&lt;Variant>` |  |
-| `save` | **yes** | `(content: VariantContent) => Promise&lt;Variant \| undefined>` |  |
-| `update` | **yes** | `(v: Variant) => Promise&lt;void>` |  |
-| `remove` | **yes** | `(id: string) => Promise&lt;void>` |  |
-| `setDefault` | **yes** | `(id: string) => Promise&lt;void>` |  |
-| `isModified` | **yes** | `(content: VariantContent) => boolean` | Whether `content` differs from the current variant. |
-
-## `@rhfan2019/smart-kit/table`
-
-`ActionGroup` (interface) · `ActionItem` (interface) · `ColumnItem` (interface) · `ExportEvent` (interface) · `hiddenByImportance` (function) · `ListQueryOptions` (interface) · `ListQueryResult` (interface) · `ResponsiveColumn` (interface) · `ResponsiveTable` (component) · `ResponsiveTableProps` (interface) · `smartKitGridTheme` (const) · `SmartTable` (component) · `SmartTableProps` (interface) · `SmartTableRef` (interface) · `TableContextValue` (interface) · `TableExtendEntry` (type) · `TableP13nDialog` (component) · `TableP13nDialogProps` (interface) · `TableQuery` (interface) · `TableType` (type) · `ToggleOpenStateEvent` (interface) · `useListQuery` (hook) · `useTableContext` (hook)
-
-### `ActionGroup` — interface
-
-| Member | Required | Type | Description |
-| --- | --- | --- | --- |
-| `id` | **yes** | `string` |  |
-| `label` | **yes** | `string` |  |
-| `actions` | **yes** | `string[]` | Action ids (`DataFieldForAction::Namespace.action` or custom ids) shown in the menu. |
-
-### `ActionItem` — interface
-
-| Member | Required | Type | Description |
-| --- | --- | --- | --- |
-| `id` | **yes** | `string` |  |
-| `label` | **yes** | `string` |  |
-| `onPress` | **yes** | `(ctx: TableContextValue) => void` |  |
-| `requiresSelection` |  | `boolean` | Disabled while no row is selected (LR-18). |
-| `enabled` |  | `(selected: Row[]) => boolean` | Further enablement check on the selected rows. |
-| `group` |  | `string` | Menu button the action belongs to (similar actions grouped, LR Table Toolbar). |
-
-### `ColumnItem` — interface
-
-| Member | Required | Type | Description |
-| --- | --- | --- | --- |
-| `id` | **yes** | `string` |  |
-| `label` | **yes** | `string` |  |
-| `field` |  | `FieldModel` | Model field; omitted for custom columns. |
-| `render` |  | `(row: Row) => ReactNode` | Custom cell content. |
-| `width` |  | `number` |  |
-| `select` |  | `string[]` | Extra paths to select for custom columns. |
-| `importance` |  | `'High' \| 'Medium' \| 'Low'` | Importance in responsive tables (pop-in on narrow screens); default the field's `UI.Importance`, else Medium. |
-
-### `ExportEvent` — interface
-
-What is exported (`onBeforeExport`, `onExported`); the same filters, search and sort as the file.
-
-| Member | Required | Type | Description |
-| --- | --- | --- | --- |
-| `entitySet` | **yes** | `string` |  |
-| `title` | **yes** | `string` | Title of the table (also the file name). |
-| `filters` | **yes** | `FilterState` |  |
-| `search` | **yes** | `string` |  |
-| `sort` | **yes** | `SortItem[]` |  |
-| `columns` | **yes** | `string[]` | Ids of the exported columns, in order. |
-| `rowCount` | **yes** | `number` | Number of exported rows. |
-| `truncated` | **yes** | `boolean` | More rows matched than `exportLimit`; only the first `rowCount` are exported. |
-| `request` | **yes** | `QueryRequest` | The request that read the rows (without paging). |
-
-### `hiddenByImportance` — function
-
-Widths below which Low, then Medium columns move out of the table (sap.m.Table pop-in by importance).
-
-```ts
-hiddenByImportance(width: number, importance: ResponsiveColumn["importance"]): boolean
-```
-
-### `ListQueryOptions` — interface
-
-| Member | Required | Type | Description |
-| --- | --- | --- | --- |
-| `source` | **yes** | `QuerySource` |  |
-| `service` |  | `string` |  |
-| `columns` |  | `FieldModel[]` | Visible columns (drives $select/$expand); defaults to the LineItem. |
-| `filters` |  | `FilterState` |  |
-| `search` |  | `string` |  |
-| `sort` |  | `SortItem[]` |  |
-| `pageSize` |  | `number` | Rows of the first page. |
-| `growSize` |  | `number` | Rows of each following page. |
-| `enabled` |  | `boolean` | When false nothing is loaded (e.g. before "Go"). |
-| `extraSelect` |  | `string[]` |  |
-| `hierarchy` |  | `Pick&lt;HierarchyRequestOptions, 'qualifier' \| 'levels' \| 'expandLevels'>` | Tree tables (docs/26 §3.10): one TopLevels request for the visible nodes instead of pages. |
-
-### `ListQueryResult` — interface
-
-| Member | Required | Type | Description |
-| --- | --- | --- | --- |
-| `request` | **yes** | `QueryRequest` |  |
-| `rows` | **yes** | `Row[]` |  |
-| `isLoading` | **yes** | `boolean` |  |
-| `isFetching` | **yes** | `boolean` |  |
-| `error` | **yes** | `Error \| null` |  |
-| `hasMore` | **yes** | `boolean` |  |
-| `loadMore` | **yes** | `() => void` |  |
-| `refresh` | **yes** | `() => void` |  |
-| `pageRequest` | **yes** | `(skip: number, top: number, count: boolean) => QueryRequest` | Builds a request for an arbitrary page (export, grid blocks); never hierarchical. |
-| `count` |  | `number` |  |
-
-### `ResponsiveColumn` — interface
-
-| Member | Required | Type | Description |
-| --- | --- | --- | --- |
-| `id` | **yes** | `string` |  |
-| `label` | **yes** | `string` |  |
-| `importance` | **yes** | `'High' \| 'Medium' \| 'Low'` |  |
-| `render` | **yes** | `(row: Row) => ReactNode` |  |
-| `align` |  | `'end'` |  |
-| `groupValue` |  | `(row: Row) => string` | Text of the grouping header (value of the group property). |
-
-### `ResponsiveTable` — component
-
-`import { ResponsiveTable } from '@rhfan2019/smart-kit/table';`
-
-| Prop | Required | Type | Description |
-| --- | --- | --- | --- |
-| `label` | **yes** | `string` | Accessible name / visible label. |
-| `columns` | **yes** | `ResponsiveColumn[]` |  |
-| `rows` | **yes** | `Row[]` |  |
-| `keyOf` | **yes** | `(row: Row) => string` |  |
-| `selectedKeys` | **yes** | `Set&lt;string>` |  |
-| `onSelectionChange` | **yes** | `(keys: Set&lt;string>) => void` |  |
-| `navigable` | **yes** | `boolean` |  |
-| `onNavigate` | **yes** | `(row: Row) => void` |  |
-| `hasMore` | **yes** | `boolean` |  |
-| `loading` | **yes** | `boolean` | Shows a busy indicator. |
-| `loadMore` | **yes** | `() => void` |  |
-| `showDetails` | **yes** | `boolean` | Show the columns hidden on this width below each row (pop-in). |
-| `selectable` |  | `boolean` |  |
-| `groupBy` |  | `string` | Column id to group by. |
-| `noData` |  | `ReactNode` |  |
-| `inlineActions` |  | `(row: Row) => ReactNode` |  |
-| `changedKeys` |  | `Set&lt;string>` | Keys of rows marked as changed (continuous working mode). |
-| `rowMarker` |  | `(row: Row) => ReactNode` |  |
-| `onHiddenColumnsChange` |  | `(ids: string[]) => void` | Reports the ids of the columns hidden on the current width. |
-| `groupSummary` |  | `(row: Row) => GroupSummary \| undefined` | Subtotals of the group starting with `row`: row count and cells by column id (docs/23). |
-| `totals` |  | `{ label: ReactNode; cells: Record&lt;string, ReactNode> }` | Totals row after the last row: cells by column id (docs/23). |
-| `tree` |  | `{ nodeOf(row: Row): HierarchyNode \| undefined; toggle(row: Row): void }` | Tree rows (docs/26 §3.10): indentation and toggle in the first column. |
-
-### `ResponsiveTableProps` — interface
-
-Props of `ResponsiveTable` (see above).
-
-### `smartKitGridTheme` — const
-
-```ts
-const smartKitGridTheme: Theme<ThemeDefaultParams>
-```
-
-### `SmartTable` — component
-
-`import { SmartTable } from '@rhfan2019/smart-kit/table';`
-
-| Prop | Required | Type | Description |
-| --- | --- | --- | --- |
-| `service` |  | `string` | Name of the service in `SmartKitProvider` `services`; default: the provider's `defaultService`. |
-| `entitySet` |  | `string` | List: entity set. |
-| `parent` |  | `{ path: string; navigation: string }` | Sub-table: parent entity path and collection navigation. |
-| `mode` |  | `'grid' \| 'auto' \| 'responsive'` | Table type: "grid" (AG Grid, default for lists), "responsive" (list-like rows), "auto" (responsive below 600 px; default for sub-tables). |
-| `tableType` |  | `TableType` | Table type by its UI5 name (sap.ui.comp.smarttable.TableType). Without `mode` it picks the kernel: "ResponsiveTable" the responsive table, the others the grid (sub-tables: "auto"). "AnalyticalTable" is the grid table (grouping and totals come from the annotations, docs/23). "TreeTable" shows the recursive hierarchy of the entity type (Aggregation.RecursiveHierarchy, docs/26 §3.10) in the kernel of `mode`; without one it is a plain table. |
-| `hierarchyQualifier` |  | `string` | Tree tables: qualifier of Aggregation.RecursiveHierarchy (default: the type's first hierarchy). |
-| `initialExpansionLevel` |  | `number` | Tree tables: levels shown at first (default 1: the roots); `collapseAll` goes back to the roots. |
-| `onToggleOpenState` |  | `(e: ToggleOpenStateEvent) => void` | Tree tables: a node was expanded or collapsed by the user (sap.ui.table.TreeTable#toggleOpenState). |
-| `ref` |  | `Ref&lt;SmartTableRef>` | Tree tables: expand, collapse, collapseAll, expandToLevel, isExpanded (sap.ui.table.TreeTable). |
-| `query` |  | `TableQuery \| null` | Applied filters; null means "not executed yet" (shows "To start, set the relevant filters."). Undefined loads without filters. |
-| `columns` |  | `string[]` | Visible column ids in order (controlled) |
-| `onColumnsChange` |  | `(ids: string[]) => void` | Called with the visible column ids after personalization. |
-| `sort` |  | `SortItem[]` | Sort order (controlled); default from `UI.PresentationVariant/SortOrder`. |
-| `onSortChange` |  | `(sort: SortItem[]) => void` | Called with the new sort order. |
-| `onSelectionChange` |  | `(rows: Row[]) => void` | Called with the selected rows. |
-| `onCountChange` |  | `(count: number \| undefined) => void` | Called when the total count becomes known (object page tab counts). |
-| `onRowNavigate` |  | `(row: Row, path: string) => void` | Called with the row and its entity path; default: NavigationAdapter.toObject when the adapter has an object page. |
-| `navigable` |  | `boolean` | Whether rows navigate (shows the chevron). Defaults to the adapter's hasObjectPage. |
-| `extend` |  | `TableExtendEntry[]` | Insert, replace or remove columns and toolbar actions (ids as in the model, e.g. "DataField::GrossAmount"). |
-| `title` |  | `string` | Table title in the toolbar; default `UI.HeaderInfo/TypeNamePlural`, with the row count. |
-| `growingThreshold` |  | `number` | Sub-tables: initial rows (default 10) and growth (default 20). |
-| `growBy` |  | `number` | Rows loaded per "More" (default 20). |
-| `pageKey` |  | `string` | Key for restoring sort, columns, scroll and selection on back navigation. |
-| `overlay` |  | `boolean` | Grey out the table (filters changed in manual mode). |
-| `exportLimit` |  | `number` | Maximum rows of the Excel export (default 10 000). |
-| `exportable` |  | `boolean` | Offer "Export to Spreadsheet" in the toolbar (default true). |
-| `onBeforeExport` |  | `(e: ExportEvent) => boolean \| void \| Promise&lt;boolean \| void>` | Called when the rows to export are loaded, before the file is written. Return false (or a promise of false) to cancel: no file is written. Use it to check permissions or to log the export. |
-| `onExported` |  | `(e: ExportEvent) => void` | Called after the file was written. |
-| `showSearch` |  | `boolean` | Search field in the toolbar (sub-tables, when searchable). |
-| `children` |  | `ReactNode` | Replace the default parts: &lt;SmartTable.Toolbar> etc. |
-| `className` |  | `string` | Extra CSS class on the root element. |
-| `actionGroups` |  | `ActionGroup[]` | Menu buttons for similar actions. |
-| `modelActions` |  | `boolean` | Actions from UI.DataFieldForAction (default true). |
-| `createMode` |  | `'dialog' \| 'inline' \| 'none'` | Create: "dialog" (list pages; LR Add/Create Using a Dialog), "inline" (a new row at the top; OP inline create), "none". Default: "dialog" for entity sets, "inline" for sub-tables. Only offered when the set is insertable and, for sub-tables, while `editing`. |
-| `onCreated` |  | `(path: string, row: Row) => void` | Called after an object was created (default for lists: navigate to its object page). |
-| `deletable` |  | `boolean` | Offer "Delete" for selected rows when the set is deletable (default: lists always, sub-tables while editing). |
-| `editing` |  | `boolean` | Sub-tables: the parent object is in edit mode (enables Add and Delete). |
-| `copy` |  | `boolean` | "Copy" of the selected rows to the clipboard (default true). |
-| `growing` |  | `'button' \| 'scroll'` | "auto" mode: grow with a "More" button (default) or when the end of the table is scrolled into view. |
-| `showAllThreshold` |  | `number` | "auto" mode: above this count only a preview is shown with a "Show All (x)" link (OP Tables; default 200). |
-| `onShowAll` |  | `() => void` | "Show All (x)": default NavigationAdapter.toTable. |
-| `titleLevel` |  | `2 \| 3 \| 4 \| 5` | Heading level and style of the title (OP Title Styles). |
-| `workingMode` |  | `'worklist' \| 'continuous'` | Worklist (default): rows refresh after an action; continuous: changed rows stay and are marked (LR Working Modes). |
-| `onRowsChange` |  | `(rows: Row[]) => void` | Called with the loaded rows (e.g. paging buttons of a flexible column layout). |
-| `refreshToken` |  | `number` | Change this value to reload the table. |
-| `lineItem` |  | `FieldModel[]` | Columns instead of UI.LineItem (multiple views with their own LineItem). |
-| `titleAddon` |  | `ReactNode` | Toolbar content after the title (content switch of multiple views, LR Multiple Views). |
-| `toolbarEnd` |  | `ReactNode` | Toolbar content before the settings (table / chart toggle). |
-| `groupBy` |  | `string \| null` | Group column id (controlled, docs/23; grid tables then load rows in blocks of 100 while scrolling and show group header rows). Default: the column of the first `UI.PresentationVariant/GroupBy` path; null: not grouped. |
-| `onGroupByChange` |  | `(id: string \| null) => void` | Called with the group column id after personalization; when given, `groupBy` is fully controlled (undefined: the default). |
-| `totals` |  | `string[]` | Column ids whose totals are shown (controlled, docs/23). Default: the columns of `UI.PresentationVariant/Total`. |
-| `onTotalsChange` |  | `(ids: string[]) => void` | Called with the total column ids after personalization; when given, `totals` is fully controlled (undefined: the default). |
-| `presentation` |  | `PresentationModel` | Presentation variant giving the default sort, grouping and totals (multiple views); default the entity's. |
-
-### `SmartTableProps` — interface
-
-Props of `SmartTable` (see above).
-
-### `SmartTableRef` — interface
-
-Instance methods of a tree table (sap.ui.table.TreeTable), through `ref`. Row indexes count the visible rows.
-
-| Member | Required | Type | Description |
-| --- | --- | --- | --- |
-| `expand` | **yes** | `(rowIndex: number \| number[]) => void` | Expands the node(s) at the row index(es); leaves and expanded nodes stay as they are. |
-| `collapse` | **yes** | `(rowIndex: number \| number[]) => void` |  |
-| `collapseAll` | **yes** | `() => void` | Collapses all nodes: only the roots stay visible. |
-| `expandToLevel` | **yes** | `(level: number) => void` | Expands all nodes down to `level` (1: the roots only); single expansions and collapses are dropped. |
-| `isExpanded` | **yes** | `(rowIndex: number) => boolean` |  |
-
-### `TableContextValue` — interface
-
-| Member | Required | Type | Description |
-| --- | --- | --- | --- |
-| `entitySet` | **yes** | `string` |  |
-| `typeName` | **yes** | `string` |  |
-| `source` | **yes** | `QuerySource` |  |
-| `rows` | **yes** | `Row[]` |  |
-| `selected` | **yes** | `Row[]` |  |
-| `filters` | **yes** | `FilterState` |  |
-| `search` | **yes** | `string` |  |
-| `sort` | **yes** | `SortItem[]` |  |
-| `refresh` | **yes** | `() => void` |  |
-| `count` |  | `number` |  |
-
-### `TableExtendEntry` — type
-
-```ts
-export type TableExtendEntry = | (ExtendEntry<ColumnItem> & { kind?: 'column' }) | (ExtendEntry<ActionItem> & { kind: 'action' });
-```
-
-### `TableP13nDialog` — component
-
-`import { TableP13nDialog } from '@rhfan2019/smart-kit/table';`
-
-| Prop | Required | Type | Description |
-| --- | --- | --- | --- |
-| `opened` | **yes** | `boolean` | Whether the dialog is open (controlled). |
-| `columns` | **yes** | `{ id: string; label: string }[]` |  |
-| `visible` | **yes** | `string[]` |  |
-| `sort` | **yes** | `SortItem[]` |  |
-| `sortable` | **yes** | `{ path: string; label: string }[]` |  |
-| `onOk` | **yes** | `(visible: string[], sort: SortItem[], groupBy?: string \| null, totals?: string[]) => void` | Called with the result when the user confirms. |
-| `onCancel` | **yes** | `() => void` | Called when the user cancels or closes the dialog. |
-| `groupable` |  | `{ id: string; label: string }[]` | Columns that can be grouped by; the "Group" tab is shown only when given. |
-| `groupBy` |  | `string \| null` |  |
-| `totalable` |  | `{ id: string; label: string }[]` | Columns whose totals can be shown; the "Totals" tab is shown only when given and not empty (docs/23). |
-| `totals` |  | `string[]` | Column ids whose totals are shown. |
-
-### `TableP13nDialogProps` — interface
-
-Props of `TableP13nDialog` (see above).
-
-### `TableQuery` — interface
-
-| Member | Required | Type | Description |
-| --- | --- | --- | --- |
-| `filters` | **yes** | `FilterState` |  |
-| `search` | **yes** | `string` |  |
-
-### `TableType` — type
-
-sap.ui.comp.smarttable.TableType.
-
-```ts
-export type TableType = 'AnalyticalTable' | 'ResponsiveTable' | 'Table' | 'TreeTable';
-```
-
-### `ToggleOpenStateEvent` — interface
-
-sap.ui.table.TreeTable#toggleOpenState; `rowContext` is the row data.
-
-| Member | Required | Type | Description |
-| --- | --- | --- | --- |
-| `rowIndex` | **yes** | `number` |  |
-| `rowContext` | **yes** | `Row` |  |
-| `expanded` | **yes** | `boolean` |  |
-
-### `useListQuery` — hook
-
-```ts
-useListQuery(o: ListQueryOptions): ListQueryResult
-```
-
-### `useTableContext` — hook
-
-Context for custom content in and around the table (AC-EXT-02).
-
-```ts
-useTableContext(): TableContextValue
-```
-
-## `@rhfan2019/smart-kit/chart`
-
-`ChartDatum` (interface) · `ChartView` (component) · `ChartViewProps` (interface) · `MICRO_COMPARISON_MAX` (const) · `MicroChart` (component) · `MicroChartAreaThresholds` (interface) · `MicroChartCriticality` (type) · `MicroChartKind` (type) · `MicroChartPoint` (interface) · `MicroChartProps` (interface) · `MicroChartThreshold` (interface) · `niceTicks` (function) · `SimpleChart` (component) · `SimpleChartProps` (interface)
-
-### `ChartDatum` — interface
-
-| Member | Required | Type | Description |
-| --- | --- | --- | --- |
-| `key` | **yes** | `string` |  |
-| `label` | **yes** | `string` |  |
-| `value` | **yes** | `number` |  |
-| `formatted` |  | `string` |  |
-
-### `ChartView` — component
-
-`import { ChartView } from '@rhfan2019/smart-kit/chart';`
-
-| Prop | Required | Type | Description |
-| --- | --- | --- | --- |
-| `entitySet` | **yes** | `string` | Entity set name as in `$metadata`, e.g. "Orders". |
-| `chart` | **yes** | `ChartModel` | Chart from the model (`ui.charts[qualifier]`, from `UI.Chart`). |
-| `filters` | **yes** | `FilterState` | Filter state (from `useFilterState` / `SmartFilterBar`), applied to the request. |
-| `executed` | **yes** | `boolean` | null: not executed yet. |
-| `title` | **yes** | `string` | Toolbar title. |
-| `onDrilldown` | **yes** | `(dimension: string, value: string) => void` | Drilldown: the dimension value of the selected element. |
-| `service` |  | `string` | Name of the service in `SmartKitProvider` `services`; default: the provider's `defaultService`. |
-| `search` |  | `string` | Search term ($search). |
-| `titleAddon` |  | `ReactNode` | Toolbar content after the title (content switch). |
-| `toolbarEnd` |  | `ReactNode` | Toolbar content at the end (table / chart toggle). |
-| `revision` |  | `number` | Change to reload. |
-
-### `ChartViewProps` — interface
-
-Props of `ChartView` (see above).
-
-### `MICRO_COMPARISON_MAX` — const
-
-Maximum number of bars of a comparison chart (MC-41).
-
-```ts
-const MICRO_COMPARISON_MAX: 12
-```
-
-### `MicroChart` — component
-
-`import { MicroChart } from '@rhfan2019/smart-kit/chart';`
-
-| Prop | Required | Type | Description |
-| --- | --- | --- | --- |
-| `kind` | **yes** | `MicroChartKind` | Chart type: "bullet" \| "radial" \| "harvey" \| "delta" \| "column" \| "line" \| "comparison" \| "area" \| "stackedBar" (from `UI.Chart/ChartType` when model-driven). |
-| `label` | **yes** | `string` | Accessible name, e.g. the facet title or the column header. |
-| `value` |  | `number` | Single-value charts (bullet, radial, harvey, delta value 1). |
-| `target` |  | `number` | Bullet target; radial total (default 100: the value is a percentage, MC-51); delta value 2. |
-| `forecast` |  | `number` | Bullet forecast (MC-23). |
-| `min` |  | `number` | Bullet scale start (default: the smallest of 0 and all values, MC-26). |
-| `max` |  | `number` | Bullet scale end (default: the largest value); Harvey Ball total (MaximumValue, MC-55). |
-| `thresholds` |  | `MicroChartThreshold[]` | Bullet threshold markers (MC-25). |
-| `mode` |  | `'actual' \| 'delta'` | Bullet: 'delta' shows the difference between the value and the target (DeltaBulletChart, MC-24). |
-| `criticality` |  | `MicroChartCriticality` | Semantic colour of the value (from `UI.DataPoint/Criticality` or `CriticalityCalculation`). |
-| `color` |  | `number` | Qualitative palette colour 1–11, used when there is no criticality (Harvey Ball, MC-56). Default 1. |
-| `points` |  | `MicroChartPoint[]` | Series charts (column, line, comparison, area, stacked bar). Comparison shows at most 12 bars (MC-41). |
-| `lines` |  | `MicroChartPoint[][]` | Line: up to three lines, one per measure (MC-35); replaces `points`. |
-| `threshold` |  | `number` | Line: a threshold line (MC-39). |
-| `showPoints` |  | `boolean` | Line: show the data points (MC-37; default false). |
-| `areaThresholds` |  | `MicroChartAreaThresholds` | Area: threshold areas (MC-47). |
-| `view` |  | `'normal' \| 'wide'` | Area: 'wide' puts the labels before and after the chart (MC-49). |
-| `titles` |  | `[string, string]` | Delta: names (or dates) of the two values, the optional left labels (MC-62). |
-| `columnLabels` |  | `boolean` | Column: a value label on every column when the columns are wide enough and the chart is at least 72 px high (MC-31). |
-| `focusPoints` |  | `number[]` | Line: indexes of focus points of the first line, e.g. [0, n - 1] for the first and last value (MC-38). |
-| `thresholdLabel` |  | `boolean` | Line: show the threshold value next to the threshold line (MC-39). |
-| `minMaxLabels` |  | `boolean` | Area: the smallest and largest value as extra labels (MC-48). |
-| `scaleMin` |  | `number` | Line, column, area: a fixed scale, so that the charts of a table column are comparable (MC-40). |
-| `scaleMax` |  | `number` |  |
-| `format` |  | `(n: number) => string` | Formats numbers for the text alternative (default Intl.NumberFormat of the locale). |
-| `formatLabel` |  | `(n: number) => string` | Formats the visible number labels (default: short form of the locale, e.g. "6.7M", MC-13). |
-| `hideOnNoData` |  | `boolean` | Render nothing when there is no data (table cells, MC-06); otherwise a "No data" placeholder (MC-05). |
-| `size` |  | `'S' \| 'M'` |  **Deprecated**: The size follows the container (MC-02); ignored. |
-| `onPress` |  | `() => void` | When set, the chart is a button (Enter / Space / click). Not used for the "No data" placeholder. |
-
-### `MicroChartAreaThresholds` — interface
-
-Area threshold boundaries, one value per point (MC-47).
-
-| Member | Required | Type | Description |
-| --- | --- | --- | --- |
-| `direction` | **yes** | `'Maximize' \| 'Minimize' \| 'Target'` |  |
-| `deviationLow` |  | `number[]` |  |
-| `toleranceLow` |  | `number[]` |  |
-| `toleranceHigh` |  | `number[]` |  |
-| `deviationHigh` |  | `number[]` |  |
-
-### `MicroChartCriticality` — type
-
-```ts
-export type MicroChartCriticality = 0 | 1 | 2 | 3 | 5;
-```
-
-### `MicroChartKind` — type
-
-```ts
-export type MicroChartKind = 'bullet' | 'radial' | 'harvey' | 'delta' | 'column' | 'line' | 'comparison' | 'area' | 'stackedBar';
-```
-
-### `MicroChartPoint` — interface
-
-| Member | Required | Type | Description |
-| --- | --- | --- | --- |
-| `label` | **yes** | `string` | Dimension value (category or date) shown as a label. |
-| `value` | **yes** | `number` |  |
-| `criticality` |  | `MicroChartCriticality` |  |
-| `target` |  | `number` | Area: the target value at this point (MC-46). |
-| `display` |  | `string` | Stacked bar: text shown on the segment instead of the percentage (MC-59). |
-| `color` |  | `number` | Stacked bar: qualitative palette colour 1–11 when there is no criticality. |
-
-### `MicroChartProps` — interface
-
-Props of `MicroChart` (see above).
-
-### `MicroChartThreshold` — interface
-
-A bullet chart threshold marker (MC-25).
-
-| Member | Required | Type | Description |
-| --- | --- | --- | --- |
-| `value` | **yes** | `number` |  |
-| `criticality` | **yes** | `MicroChartCriticality` |  |
-
-### `niceTicks` — function
-
-4–6 "nice" ticks covering [min, max] (both extended to include 0).
-
-```ts
-niceTicks(min: number, max: number, count?: number): number[]
-```
-
-### `SimpleChart` — component
-
-`import { SimpleChart } from '@rhfan2019/smart-kit/chart';`
-
-| Prop | Required | Type | Description |
-| --- | --- | --- | --- |
-| `kind` | **yes** | `'column' \| 'bar' \| 'line' \| 'donut'` |  |
-| `measureLabel` | **yes** | `string` |  |
-| `dimensionLabel` | **yes** | `string` |  |
-| `data` | **yes** | `ChartDatum[]` |  |
-| `title` |  | `string` | Visible title; a visually hidden caption is used when omitted. |
-| `loading` |  | `boolean` | Shows a busy indicator. |
-| `format` |  | `(n: number) => string` | Formats a number for display. |
-| `onSelect` |  | `(d: ChartDatum, anchor: Element) => void` | Called when a data point is selected (click or Enter / Space on a focused bar); `anchor` is the bar element, e.g. for a popover. |
-| `selectedKey` |  | `string` |  |
-| `height` |  | `number` | Height in pixels (default 320). |
-
-### `SimpleChartProps` — interface
-
-Props of `SimpleChart` (see above).
-
-## `@rhfan2019/smart-kit/object`
-
-`AnchorBar` (component) · `AnchorBarProps` (interface) · `AnchorItem` (interface) · `BlockItem` (interface) · `DraftMarker` (component) · `draftState` (function) · `DraftState` (type) · `FormFieldItem` (interface) · `GenericTag` (component) · `GenericTagProps` (interface) · `HeaderFacet` (component) · `HeaderFacetProps` (interface) · `linkify` (function) · `ObjectPageLayout` (component) · `ObjectPageLayoutProps` (interface) · `ObjectResult` (interface) · `SectionItem` (interface) · `SmartForm` (component) · `SmartFormProps` (interface) · `SubSectionItem` (interface) · `useObject` (hook) · `UseObjectOptions` (interface) · `useObjectTitle` (hook) · `useSectionScrollSpy` (hook)
-
-### `AnchorBar` — component
-
-`import { AnchorBar } from '@rhfan2019/smart-kit/object';`
-
-| Prop | Required | Type | Description |
-| --- | --- | --- | --- |
-| `items` | **yes** | `AnchorItem[]` | Items to show. |
-| `onSelect` | **yes** | `(sectionId: string, subSectionId?: string) => void` | Called with the id of the selected item. |
-| `active` |  | `string` |  |
-| `tabs` |  | `boolean` | Tabs mode: render as tabs (OP-09). |
-
-### `AnchorBarProps` — interface
-
-Props of `AnchorBar` (see above).
-
-### `AnchorItem` — interface
-
-| Member | Required | Type | Description |
-| --- | --- | --- | --- |
-| `id` | **yes** | `string` |  |
-| `title` | **yes** | `string` |  |
-| `subSections` | **yes** | `{ id: string; title: string }[]` |  |
-| `count` |  | `number` |  |
-
-### `BlockItem` — interface
-
-A layout block of a subsection (OP Blocks): occupies 1, 2 or 3 columns, or fewer when fewer are available.
-
-| Member | Required | Type | Description |
-| --- | --- | --- | --- |
-| `id` | **yes** | `string` |  |
-| `columns` | **yes** | `1 \| 2 \| 3` |  |
-| `content` | **yes** | `ReactNode` |  |
-| `more` |  | `boolean` | Shown only after "Show More". |
-
-### `DraftMarker` — component
-
-`import { DraftMarker } from '@rhfan2019/smart-kit/object';`
-
-| Prop | Required | Type | Description |
-| --- | --- | --- | --- |
-| `row` | **yes** | `Row \| undefined` |  |
-| `compact` |  | `boolean` |  |
-
-### `draftState` — function
-
-Draft state of a row: the user's own draft, another user's unsaved changes, or none.
-
-```ts
-draftState(row: Row | undefined): DraftState
-```
-
-### `DraftState` — type
-
-```ts
-export type DraftState = 'own' | 'other' | undefined;
-```
-
-### `FormFieldItem` — interface
-
-| Member | Required | Type | Description |
-| --- | --- | --- | --- |
-| `id` | **yes** | `string` |  |
-| `label` | **yes** | `string` |  |
-| `render` |  | `(row: Row \| undefined) => ReactNode` |  |
-
-### `GenericTag` — component
-
-`import { GenericTag } from '@rhfan2019/smart-kit/object';`
-
-| Prop | Required | Type | Description |
-| --- | --- | --- | --- |
-| `text` | **yes** | `string` |  |
-| `value` |  | `string` | Optional value shown after the text (KPI). |
-| `status` |  | `number` | Criticality 0 neutral, 1 negative, 2 critical, 3 positive, 5 information. |
-| `onPress` |  | `() => void` |  |
-
-### `GenericTagProps` — interface
-
-Props of `GenericTag` (see above).
-
-### `HeaderFacet` — component
-
-`import { HeaderFacet } from '@rhfan2019/smart-kit/object';`
-
-| Prop | Required | Type | Description |
-| --- | --- | --- | --- |
-| `typeName` | **yes** | `string` | Full name of the entity type, e.g. "Shop.Order" (`model.entitySets[set].typeName`). |
-| `row` | **yes** | `Row \| undefined` | The entity row as read from the service (`Row`, property paths as keys, expanded navigations as nested objects); undefined while loading. |
-| `facet` |  | `HeaderFacetModel` | Header facet model (`ui.headerFacets[i]`). |
-| `service` |  | `string` | Name of the service in `SmartKitProvider` `services`; default: the provider's `defaultService`. |
-| `path` |  | `string` | Entity path of the object (micro charts over a collection navigation). |
-| `title` |  | `ReactNode` | Plain text facet or custom content. |
-| `children` |  | `ReactNode` | Content. |
-
-### `HeaderFacetProps` — interface
-
-Props of `HeaderFacet` (see above).
-
-### `linkify` — function
-
-Plain text with http(s) URLs as links (no HTML from the server is rendered).
-
-```ts
-linkify(text: string): ReactNode[]
-```
-
-### `ObjectPageLayout` — component
-
-`import { ObjectPageLayout } from '@rhfan2019/smart-kit/object';`
-
-| Prop | Required | Type | Description |
-| --- | --- | --- | --- |
-| `scope` | **yes** | `string` | Unique scope for element ids (e.g. the entity type). |
-| `heading` | **yes** | `ReactNode` | Title of the page. |
-| `sections` | **yes** | `SectionItem[]` |  |
-| `subheading` |  | `ReactNode` | Text under the title. |
-| `breadcrumbs` |  | `ReactNode` | Breadcrumb links above the title. |
-| `avatar` |  | `ReactNode` |  |
-| `collapsedAvatar` |  | `ReactNode` |  |
-| `actions` |  | `ReactNode` |  |
-| `facets` |  | `ReactNode` | Header facets. |
-| `headerMessage` |  | `ReactNode` | Message strip between title and header content (OP-17). |
-| `extend` |  | `ExtendEntry&lt;SectionItem>[]` | Insert, replace or remove items (ids as in the model). |
-| `navigation` |  | `'anchor' \| 'tabs'` |  |
-| `selectedSection` |  | `string` |  |
-| `onSelectedSectionChange` |  | `(id: string) => void` |  |
-| `headerExpanded` |  | `boolean` |  |
-| `onHeaderExpandedChange` |  | `(v: boolean) => void` |  |
-| `headerPinned` |  | `boolean` |  |
-| `onHeaderPinnedChange` |  | `(v: boolean) => void` |  |
-| `footer` |  | `ReactNode` | Footer toolbar content (e.g. Save / Cancel while editing). |
-| `className` |  | `string` | Extra CSS class on the root element. |
-| `keyInfo` |  | `ReactNode` | Header title extras (DynamicPage): key information, object marker, layout actions, overflowing actions. |
-| `titleAddon` |  | `ReactNode` |  |
-| `layoutActions` |  | `ReactNode` |  |
-| `actionItems` |  | `DynamicPageProps['actionItems']` |  |
-| `sideContent` |  | `ReactNode` | Dynamic side content (OP Dynamic Side Content): contextual information on the right. |
-| `sideContentOpen` |  | `boolean` |  |
-| `sideContentTitle` |  | `string` |  |
-| `letterboxing` |  | `boolean` |  |
-
-### `ObjectPageLayoutProps` — interface
-
-Props of `ObjectPageLayout` (see above).
-
-### `ObjectResult` — interface
-
-| Member | Required | Type | Description |
-| --- | --- | --- | --- |
-| `path` | **yes** | `string` |  |
-| `resolved` | **yes** | `ResolvedPath` |  |
-| `typeName` | **yes** | `string` |  |
-| `entitySet` | **yes** | `string` |  |
-| `ui` | **yes** | `EntityUi` |  |
-| `data` | **yes** | `Row \| undefined` |  |
-| `isLoading` | **yes** | `boolean` |  |
-| `error` | **yes** | `Error \| null` |  |
-| `refresh` | **yes** | `() => void` |  |
-
-### `SectionItem` — interface
-
-| Member | Required | Type | Description |
-| --- | --- | --- | --- |
-| `id` | **yes** | `string` |  |
-| `title` | **yes** | `string` |  |
-| `subSections` | **yes** | `SubSectionItem[]` |  |
-| `messageStrip` |  | `ReactNode` | Message strip at the top of the section, above its title (OP-17). |
-
-### `SmartForm` — component
-
-`import { SmartForm } from '@rhfan2019/smart-kit/object';`
-
-| Prop | Required | Type | Description |
-| --- | --- | --- | --- |
-| `typeName` | **yes** | `string` | Full name of the entity type, e.g. "Shop.Order" (`model.entitySets[set].typeName`). |
-| `row` | **yes** | `Row \| undefined` | The entity row as read from the service (`Row`, property paths as keys, expanded navigations as nested objects); undefined while loading. |
-| `groups` | **yes** | `FormGroupModel[]` | Field groups to show, e.g. `subSection.content.groups` of the model or `ui.fieldGroups[qualifier]`. |
-| `service` |  | `string` | Name of the service in `SmartKitProvider` `services`; default: the provider's `defaultService`. |
-| `mode` |  | `'display' \| 'edit'` | "display" (default) or "edit" (then pass `values`, `onChange`, `errors`). |
-| `extend` |  | `ExtendEntry&lt;FormFieldItem>[]` | Insert or replace fields (ids as in the model; anchors may be in any group). |
-| `values` |  | `Row` | Edit mode values and changes (edit seam). |
-| `onChange` |  | `(path: string, value: unknown) => void` | Edit mode: called with the property path and the new value. |
-| `showGroupTitles` |  | `boolean` | Show group titles (hidden when a group title would repeat the subsection title). |
-| `errors` |  | `Record&lt;string, string>` | Edit mode: error texts by property path. |
-| `creating` |  | `boolean` | Edit mode: creating a new object (key and immutable properties are editable). |
-
-### `SmartFormProps` — interface
-
-Props of `SmartForm` (see above).
-
-### `SubSectionItem` — interface
-
-| Member | Required | Type | Description |
-| --- | --- | --- | --- |
-| `id` | **yes** | `string` |  |
-| `title` | **yes** | `string` |  |
-| `count` |  | `number` |  |
-| `isTable` |  | `boolean` | The content is a single table: its toolbar carries the title (OP-12 ③ ④). |
-| `content` |  | `ReactNode` |  |
-| `blocks` |  | `BlockItem[]` | Layout blocks instead of (or after) `content`. |
-| `partOfPreview` |  | `boolean` | False: content is behind "Show More" (UI.PartOfPreview = false). |
-| `actions` |  | `ReactNode` |  |
-| `lazy` |  | `boolean` | Render only when scrolled near (tables). |
-
-### `useObject` — hook
-
-```ts
-useObject(path: string, o?: UseObjectOptions): ObjectResult
-```
-
-### `UseObjectOptions` — interface
-
-| Member | Required | Type | Description |
-| --- | --- | --- | --- |
-| `service` |  | `string` |  |
-| `extraFields` |  | `FieldModel[]` | Additional fields used by custom content. |
-| `extraSelect` |  | `string[]` |  |
-| `enabled` |  | `boolean` |  |
-
-### `useObjectTitle` — hook
-
-Title of an entity from its HeaderInfo (breadcrumbs, page title).
-
-```ts
-useObjectTitle(path: string, serviceName?: string): { title: string | undefined; typeName: string; }
-```
-
-### `useSectionScrollSpy` — hook
-
-```ts
-useSectionScrollSpy(scope: string, ids: string[], enabled?: boolean): { active: string | undefined; scrollTo(id: string): void; }
-```
-
-## `@rhfan2019/smart-kit/page`
-
-`ColumnContext` (component) · `ColumnContextValue` (interface) · `DynamicPage` (component) · `DynamicPageProps` (interface) · `FclArrow` (interface) · `fclArrows` (function) · `FclLayout` (type) · `FclPaging` (interface) · `FlexibleColumnLayout` (component) · `FlexibleColumnLayoutProps` (interface) · `OverflowActions` (component) · `OverflowActionsProps` (interface) · `ShareMenu` (component) · `ShareMenuProps` (interface) · `ToolbarAction` (interface) · `useColumn` (hook) · `useDynamicPage` (hook)
-
-### `ColumnContext` — component
-
-`import { ColumnContext } from '@rhfan2019/smart-kit/page';`
-
-| Prop | Required | Type | Description |
-| --- | --- | --- | --- |
-| `value` | **yes** | `T` |  |
-| `children` |  | `ReactNode \| undefined` |  |
-
-### `ColumnContextValue` — interface
-
-| Member | Required | Type | Description |
-| --- | --- | --- | --- |
-| `showBreadcrumbs` | **yes** | `boolean` | Breadcrumbs are only shown in full screen mode with one column (DP Header Title (3)). |
-| `column` | **yes** | `number` | Column index (0 begin, 1 mid, 2 end). |
-| `layoutActions` |  | `ReactNode` | Layout actions (close, full screen, exit full screen) and paging buttons, shown at the very right of the title bar. |
-
-### `DynamicPage` — component
-
-`import { DynamicPage } from '@rhfan2019/smart-kit/page';`
-
-| Prop | Required | Type | Description |
-| --- | --- | --- | --- |
-| `heading` | **yes** | `ReactNode` | Page or object title. |
-| `headingContent` |  | `ReactNode` | Replaces the heading area (e.g. a variant management control). |
-| `subheading` |  | `ReactNode` | Text under the title. |
-| `breadcrumbs` |  | `ReactNode` | Breadcrumb links above the title. |
-| `collapsedAvatar` |  | `ReactNode` | Shown left of the title while the header is collapsed (object page image). |
-| `actions` |  | `ReactNode` | Global actions on the right of the title area. |
-| `actionItems` |  | `ToolbarAction[]` | Global actions that move into an overflow menu from right to left when space runs out (after `actions`). |
-| `keyInfo` |  | `ReactNode` | Key information / KPIs in the middle of the title bar, left-aligned (DP Header Title (4)). |
-| `layoutActions` |  | `ReactNode` | Layout actions (DP Header Title (6)); a FlexibleColumnLayout column provides them through its context. |
-| `titleAddon` |  | `ReactNode` | Shown right of the title (object marker, DP Header Title / OP Unsaved Changes). |
-| `letterboxing` |  | `boolean` | Limits the page content to 1280px (DP Responsiveness · letterboxing). |
-| `summary` |  | `ReactNode` | Shown in the title area while the header is collapsed (filter information). |
-| `titleMessage` |  | `ReactNode` | Shown between title and header content; stays visible when collapsed (object page message strip). |
-| `header` |  | `ReactNode` |  |
-| `navigation` |  | `ReactNode` | Sticky navigation under the header (anchor bar). |
-| `footer` |  | `ReactNode` | Footer toolbar content (e.g. Save / Cancel while editing). |
-| `children` |  | `ReactNode` | Content. |
-| `headerExpanded` |  | `boolean` |  |
-| `defaultHeaderExpanded` |  | `boolean` |  |
-| `onHeaderExpandedChange` |  | `(expanded: boolean) => void` |  |
-| `pinned` |  | `boolean` |  |
-| `onPinnedChange` |  | `(pinned: boolean) => void` |  |
-| `snapOnScroll` |  | `boolean` | Collapse while scrolling and offer pinning. With layout "fill" the scrolling of the content is used (see contentScrolled). |
-| `filterToggle` |  | `boolean` | Show "Show Filters / Hide Filters" in the title actions instead of the expand/collapse and pin buttons. |
-| `layout` |  | `'fill' \| 'flow'` | 'fill' gives the content the remaining height (grid tables); 'flow' lets the page scroll. |
-| `className` |  | `string` | Extra CSS class on the root element. |
-| `data-testid` |  | `string` |  |
-
-### `DynamicPageProps` — interface
-
-Props of `DynamicPage` (see above).
-
-### `FclArrow` — interface
-
-One arrow of a column separator: the layout it switches to and its accessible label.
-
-| Member | Required | Type | Description |
-| --- | --- | --- | --- |
-| `layout` | **yes** | `FclLayout` |  |
-| `direction` | **yes** | `'left' \| 'right'` |  |
-| `label` | **yes** | `'layout.expandBegin' \| 'layout.expandMid' \| 'layout.expandEnd' \| 'layout.showEnd'` |  |
-
-### `fclArrows` — function
-
-Arrows of the separators after the begin column ([0]) and after the mid column ([1]) in a layout (UI5 FCL). The second separator's arrows need an end column (`hasEnd`).
-
-```ts
-fclArrows(layout: FclLayout, hasEnd: boolean): [FclArrow | undefined, FclArrow | undefined]
-```
-
-### `FclLayout` — type
-
-Column layouts and their widths (UI5 sap.f.LayoutType): begin / mid / end in percent.
-
-```ts
-export type FclLayout = | 'OneColumn' // 100 | 'TwoColumnsBeginExpanded' // 67 / 33 | 'TwoColumnsMidExpanded' // 33 / 67 | 'ThreeColumnsMidExpanded' // 25 / 50 / 25 | 'ThreeColumnsEndExpanded' // 25 / 25 / 50 | 'ThreeColumnsMidExpandedEndHidden' // 33 / 67 / 0 | 'ThreeColumnsBeginExpandedEndHidden' // 67 / 33 / 0 | 'MidColumnFullScreen' | 'EndColumnFullScreen';
-```
-
-### `FclPaging` — interface
-
-| Member | Required | Type | Description |
-| --- | --- | --- | --- |
-| `onPrevious` |  | `() => void` |  |
-| `onNext` |  | `() => void` |  |
-
-### `FlexibleColumnLayout` — component
-
-`import { FlexibleColumnLayout } from '@rhfan2019/smart-kit/page';`
-
-| Prop | Required | Type | Description |
-| --- | --- | --- | --- |
-| `layout` | **yes** | `FclLayout` |  |
-| `onLayoutChange` | **yes** | `(layout: FclLayout) => void` |  |
-| `begin` | **yes** | `ReactNode` |  |
-| `mid` |  | `ReactNode` |  |
-| `end` |  | `ReactNode` |  |
-| `onCloseMid` |  | `() => void` | Close of the mid / end column (the host clears its selection). |
-| `onCloseEnd` |  | `() => void` |  |
-| `midPaging` |  | `FclPaging` | Paging buttons of the mid / end column (DP Header Title Guidelines: paging buttons left of the layout actions). |
-| `endPaging` |  | `FclPaging` |  |
-| `separatorArrows` |  | `boolean` | Arrow buttons on the separators between the columns (default true). |
-| `className` |  | `string` | Extra CSS class on the root element. |
-
-### `FlexibleColumnLayoutProps` — interface
-
-Props of `FlexibleColumnLayout` (see above).
-
-### `OverflowActions` — component
-
-`import { OverflowActions } from '@rhfan2019/smart-kit/page';`
-
-| Prop | Required | Type | Description |
-| --- | --- | --- | --- |
-| `items` | **yes** | `ToolbarAction[]` | Items to show. |
-| `label` |  | `string` | Text of the overflow button. |
-| `className` |  | `string` | Extra CSS class on the root element. |
-| `data-sk` |  | `string` |  |
-| `availableWidth` |  | `() => number` | Width available to the toolbar (default: the parent's width minus its other children). |
-
-### `OverflowActionsProps` — interface
-
-Props of `OverflowActions` (see above).
-
-### `ShareMenu` — component
-
-`import { ShareMenu } from '@rhfan2019/smart-kit/page';`
-
-| Prop | Required | Type | Description |
-| --- | --- | --- | --- |
-| `title` | **yes** | `string` | Subject of the e-mail. |
-| `href` |  | `string` | Link to share (relative links are resolved against the document base URI). |
-
-### `ShareMenuProps` — interface
-
-Props of `ShareMenu` (see above).
-
-### `ToolbarAction` — interface
-
-| Member | Required | Type | Description |
-| --- | --- | --- | --- |
-| `id` | **yes** | `string` |  |
-| `label` | **yes** | `string` |  |
-| `onPress` | **yes** | `() => void` |  |
-| `icon` |  | `ReactNode` | Icon-only button (generic actions such as Share); business actions use text buttons. |
-| `disabled` |  | `boolean` |  |
-| `emphasized` |  | `boolean` | Emphasized (primary) button. |
-| `render` |  | `() => ReactNode` | Custom content instead of a button (e.g. a menu button); it never moves into the overflow. |
-| `data-testid` |  | `string` |  |
-
-### `useColumn` — hook
-
-```ts
-useColumn(): ColumnContextValue | null
-```
-
-### `useDynamicPage` — hook
-
-```ts
-useDynamicPage(): DynamicPageContext | null
-```
-
-## `@rhfan2019/smart-kit/actions`
-
-`actionPaths` (function) · `ActionResult` (interface) · `ActionRunner` (interface) · `ActionTarget` (interface) · `isActionAvailable` (function) · `useActionRunner` (hook)
-
-### `actionPaths` — function
-
-Paths an action needs in $select to decide its availability.
-
-```ts
-actionPaths(actions: ActionModel[]): string[]
-```
-
-### `ActionResult` — interface
-
-| Member | Required | Type | Description |
-| --- | --- | --- | --- |
-| `action` | **yes** | `ActionModel` |  |
-| `processed` | **yes** | `{ target: ActionTarget; row?: Row }[]` |  |
-| `failed` | **yes** | `{ target: ActionTarget; messages: Message[] }[]` |  |
-| `messages` | **yes** | `Message[]` |  |
-
-### `ActionRunner` — interface
-
-| Member | Required | Type | Description |
-| --- | --- | --- | --- |
-| `run` | **yes** | `(action: ActionModel, targets: ActionTarget[]) => void` |  |
-| `busy` | **yes** | `boolean` |  |
-| `dialogs` | **yes** | `ReactNode` | Dialogs (partial processing, parameters); render once. |
-
-### `ActionTarget` — interface
-
-| Member | Required | Type | Description |
-| --- | --- | --- | --- |
-| `row` | **yes** | `Row` |  |
-| `path` | **yes** | `string` |  |
-| `label` | **yes** | `string` | Short identifier shown in the partial processing dialog. |
-
-### `isActionAvailable` — function
-
-Whether an action can be applied to a row (Core.OperationAvailable; missing means available).
-
-```ts
-isActionAvailable(action: ActionModel, row: Row | undefined): boolean
-```
-
-### `useActionRunner` — hook
-
-```ts
-useActionRunner(o: { service?: string; onDone?(r: ActionResult): void; }): ActionRunner
-```
-
-## `@rhfan2019/smart-kit/edit`
-
-`CreateDialog` (component) · `CreateDialogProps` (interface) · `createFields` (function) · `createWith` (function) · `fieldErrors` (function) · `isEditable` (function) · `useEditStrategy` (hook) · `validate` (function)
-
-### `CreateDialog` — component
-
-Dialog with the fields of a new object (LR Add/Create Items Using a Dialog, OP Create and edit subobjects).
-
-`import { CreateDialog } from '@rhfan2019/smart-kit/edit';`
-
-| Prop | Required | Type | Description |
-| --- | --- | --- | --- |
-| `opened` | **yes** | `boolean` | Whether the dialog is open (controlled). |
-| `onClose` | **yes** | `() => void` | Called when the dialog closes. |
-| `title` | **yes** | `string` | Dialog title, e.g. "Create Purchase Order". |
-| `typeName` | **yes** | `string` | Full name of the entity type, e.g. "Shop.Order" (`model.entitySets[set].typeName`). |
-| `fields` | **yes** | `FieldModel[]` | Fields asked in the dialog (usually from `createFields(...)`: keys that are not computed and mandatory properties). |
-| `onCreate` | **yes** | `(values: Row) => Promise&lt;void>` | Creates the object from the values; throws to keep the dialog open (messages are shown in the dialog). |
-| `service` |  | `string` | Name of the service in `SmartKitProvider` `services`; default: the provider's `defaultService`. |
-
-### `CreateDialogProps` — interface
-
-Props of `CreateDialog` (see above).
-
-### `createFields` — function
-
-Fields of a create dialog: the mandatory properties (LR Add/Create Using a Dialog: fewer than 8 required fields).
-
-```ts
-createFields(model: MetaModel, typeName: string, lineItem: FieldModel[]): FieldModel[]
-```
-
-### `createWith` — function
-
-Creates an entity with the edit strategy (draft: create, set, activate; direct: POST).
-
-```ts
-createWith(strategy: EditStrategy, target: QuerySource, values: Row): Promise<{ path: string; row: Row; messages: Message[]; }>
-```
-
-### `fieldErrors` — function
-
-Field errors by property path from messages.
-
-```ts
-fieldErrors(messages: Message[]): Record<string, string>
-```
-
-### `isEditable` — function
-
-Whether a property can be changed: not computed, not a key, not read-only (immutable only when creating).
-
-```ts
-isEditable(prop: PropertyModel | undefined, creating: boolean): boolean
-```
-
-### `useEditStrategy` — hook
-
-The edit strategy of an entity set (service override or the default by model).
-
-```ts
-useEditStrategy(entitySet: string, serviceName?: string): EditStrategy
-```
-
-### `validate` — function
-
-Client validation (OP In Edit Mode): mandatory fields and number formats; messages target the property path.
-
-```ts
-validate(model: MetaModel, typeName: string, fields: FieldModel[], values: Row, t: TextFn, creating?: boolean): Message[]
+viewSettingsFilterString(filterItems: ViewSettingsFilterItem[], filters: Record<string, string[]>, t: TextFn): string
 ```
 
 ## `@rhfan2019/smart-kit/templates`
@@ -1717,7 +557,7 @@ validate(model: MetaModel, typeName: string, fields: FieldModel[], values: Row, 
 | `className` |  | `string` | Extra CSS class on the root element. |
 | `views` |  | `{ mode: 'switch' \| 'tabs'; ids?: string[] }` | Multiple views (LR Multiple Views) from the qualified UI.SelectionPresentationVariant annotations: "switch" replaces the table title area with a segmented button (≤ 3 views) or a select (> 3); "tabs" shows a tab per view. |
 | `contents` |  | `ListContentItem[]` | Multiple content (LR Multiple Content): a text-only tab per table, all filtered by the same filter bar. |
-| `tableType` |  | `'grid' \| 'responsive' \| 'auto' \| TableType` | Table type: grid (desktop), responsive, or auto = responsive below 600px (LR Responsiveness, docs/12 U-17). The UI5 names (sap.ui.comp.smarttable.TableType) are accepted too: "Table" and "AnalyticalTable" = grid, "ResponsiveTable" = responsive, "TreeTable" = grid tree table of the recursive hierarchy (docs/26 §3.10). |
+| `tableType` |  | `'grid' \| 'responsive' \| 'auto' \| 'AnalyticalTable' \| 'ResponsiveTable' \| 'Table' \| 'TreeTable'` | Table type: grid (desktop), responsive, or auto = responsive below 600px (LR Responsiveness, docs/12 U-17). The UI5 names (sap.ui.comp.smarttable.TableType) are accepted too: "Table" and "AnalyticalTable" = grid, "ResponsiveTable" = responsive, "TreeTable" = grid tree table of the recursive hierarchy (docs/26 §3.10). |
 | `hierarchyQualifier` |  | `string` | Tree tables: qualifier of Aggregation.RecursiveHierarchy (default: the type's first hierarchy). |
 | `chart` |  | `boolean \| string` | Offer a chart view from UI.Chart (qualifier; true = the first chart); views use the chart of their presentation variant. |
 | `workingMode` |  | `'worklist' \| 'continuous'` | Working mode after actions (LR Working Modes; default worklist). |
@@ -1726,8 +566,8 @@ validate(model: MetaModel, typeName: string, fields: FieldModel[], values: Row, 
 | `onRowsChange` |  | `(rows: Row[]) => void` | Loaded rows of the main table (e.g. paging buttons in a flexible column layout). |
 | `refreshToken` |  | `number \| string` | Change this value to reload the tables, tab counts and chart (after the host changed data elsewhere, e.g. in a drawer or dialog). The first value does not reload. |
 | `exportable` |  | `boolean` | Offer "Export to Spreadsheet" in the table toolbars (default true). |
-| `onBeforeExport` |  | `(e: ExportEvent) => boolean \| void \| Promise&lt;boolean \| void>` | Before an export is written; return false to cancel (see `SmartTable` `onBeforeExport`). |
-| `onExported` |  | `(e: ExportEvent) => void` | After an export was written. |
+| `onBeforeExport` |  | `(e: Table$BeforeExportEvent) => boolean \| void \| Promise&lt;boolean \| void>` | Before an export is written; return false to cancel (see `Table` `onBeforeExport`). |
+| `onExported` |  | `(e: Table$ExportedEvent) => void` | After an export was written. |
 | `canSaveVariants` |  | `boolean` | Whether views may be saved (default: the service's `VariantStore.canSave`, else true). False: the view menu only selects views (no Save, Save As, Manage). |
 
 ### `SmartListReportProps` — interface
@@ -1837,6 +677,216 @@ sap.f.cards.SemanticRole
 ```ts
 export type SemanticRole = 'Region' | 'ListItem';
 ```
+
+## `@rhfan2019/smart-kit/f/DynamicPage`
+
+`$DynamicPageSettings` (interface) · `default` (component) · `DynamicPage$BreakpointChangeEvent` (interface) · `DynamicPage$PinnedStateChangeEvent` (interface)
+
+### `$DynamicPageSettings` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `title` |  | `ReactNode` | The title, a DynamicPageTitle (or ObjectPageDynamicHeaderTitle). |
+| `header` |  | `ReactNode` | The header, a DynamicPageHeader. |
+| `content` |  | `ReactNode` | Page content. |
+| `footer` |  | `ReactNode` | Footer toolbar content (e.g. Save / Cancel while editing); shown with `showFooter`. |
+| `showFooter` |  | `boolean` | Shows the footer. |
+| `preserveHeaderStateOnScroll` |  | `boolean` | The header keeps its state while scrolling (no snap on scroll, no pin). |
+| `headerExpanded` |  | `boolean` | The header is expanded; without it the page keeps the state itself. |
+| `headerPinned` |  | `boolean` | The header is pinned; without it the page keeps the state itself. |
+| `toggleHeaderOnTitleClick` |  | `boolean` | Clicking the title bar expands or collapses the header. |
+| `backgroundDesign` |  | `PageBackgroundDesign` | Page background. |
+| `fitContent` |  | `boolean` | The content fills the remaining height and scrolls itself (grid tables); otherwise the page scrolls. |
+| `stickySubheaderProvider` |  | `ReactNode` | Sticky content under the header (an anchor bar or tab bar). |
+| `onPinnedStateChange` |  | `(e: DynamicPage$PinnedStateChangeEvent) => void` | Fired when the pin button is pressed. |
+| `onBreakpointChange` |  | `(e: DynamicPage$BreakpointChangeEvent) => void` | Fired when the page width moves into another media range. |
+| `titleMessage` |  | `ReactNode` | Extension: shown between title and header content; stays visible when snapped (object page message strip). |
+| `letterboxing` |  | `boolean` | Extension: limits the page content to 1280px (DP Responsiveness · letterboxing). |
+| `filterToggle` |  | `boolean` | Extension: "Show Filters / Hide Filters" in the title actions instead of the expand/collapse and pin buttons. |
+| `className` |  | `string` | Extra CSS class on the root element. |
+| `data-testid` |  | `string` |  |
+
+### `default` — component
+
+`import { default } from '@rhfan2019/smart-kit/f/DynamicPage';`
+
+| Prop | Required | Type | Description |
+| --- | --- | --- | --- |
+| `title` |  | `ReactNode` | The title, a DynamicPageTitle (or ObjectPageDynamicHeaderTitle). |
+| `header` |  | `ReactNode` | The header, a DynamicPageHeader. |
+| `content` |  | `ReactNode` | Page content. |
+| `footer` |  | `ReactNode` | Footer toolbar content (e.g. Save / Cancel while editing); shown with `showFooter`. |
+| `showFooter` |  | `boolean` | Shows the footer. |
+| `preserveHeaderStateOnScroll` |  | `boolean` | The header keeps its state while scrolling (no snap on scroll, no pin). |
+| `headerExpanded` |  | `boolean` | The header is expanded; without it the page keeps the state itself. |
+| `headerPinned` |  | `boolean` | The header is pinned; without it the page keeps the state itself. |
+| `toggleHeaderOnTitleClick` |  | `boolean` | Clicking the title bar expands or collapses the header. |
+| `backgroundDesign` |  | `PageBackgroundDesign` | Page background. |
+| `fitContent` |  | `boolean` | The content fills the remaining height and scrolls itself (grid tables); otherwise the page scrolls. |
+| `stickySubheaderProvider` |  | `ReactNode` | Sticky content under the header (an anchor bar or tab bar). |
+| `onPinnedStateChange` |  | `(e: DynamicPage$PinnedStateChangeEvent) => void` | Fired when the pin button is pressed. |
+| `onBreakpointChange` |  | `(e: DynamicPage$BreakpointChangeEvent) => void` | Fired when the page width moves into another media range. |
+| `titleMessage` |  | `ReactNode` | Extension: shown between title and header content; stays visible when snapped (object page message strip). |
+| `letterboxing` |  | `boolean` | Extension: limits the page content to 1280px (DP Responsiveness · letterboxing). |
+| `filterToggle` |  | `boolean` | Extension: "Show Filters / Hide Filters" in the title actions instead of the expand/collapse and pin buttons. |
+| `className` |  | `string` | Extra CSS class on the root element. |
+| `data-testid` |  | `string` |  |
+
+### `DynamicPage$BreakpointChangeEvent` — interface
+
+Event object of DynamicPage's breakpointChange.
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `currentRange` | **yes** | `string` | The new media range: Phone, Tablet, Desktop or LargeDesktop. |
+| `currentWidth` | **yes** | `number` | The page width in px. |
+
+### `DynamicPage$PinnedStateChangeEvent` — interface
+
+Event object of DynamicPage's pinnedStateChange.
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `pinned` | **yes** | `boolean` | True when the header is now pinned. |
+
+## `@rhfan2019/smart-kit/f/DynamicPageHeader`
+
+`$DynamicPageHeaderSettings` (interface) · `default` (component)
+
+### `$DynamicPageHeaderSettings` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `pinnable` |  | `boolean` | Offer the pin button (only while the page snaps on scroll). |
+| `backgroundDesign` |  | `BackgroundDesign` | Background of the header. |
+| `children` |  | `ReactNode` | Header content (e.g. a filter bar or header facets). |
+
+### `default` — component
+
+sap.f.DynamicPageHeader: its content is rendered by the DynamicPage it is given to (`header`).
+
+`import { default } from '@rhfan2019/smart-kit/f/DynamicPageHeader';`
+
+| Prop | Required | Type | Description |
+| --- | --- | --- | --- |
+| `pinnable` |  | `boolean` | Offer the pin button (only while the page snaps on scroll). |
+| `backgroundDesign` |  | `BackgroundDesign` | Background of the header. |
+| `children` |  | `ReactNode` | Header content (e.g. a filter bar or header facets). |
+
+## `@rhfan2019/smart-kit/f/DynamicPageTitle`
+
+`$DynamicPageTitleSettings` (interface) · `default` (component) · `DynamicPageTitle$StateChangeEvent` (interface)
+
+### `$DynamicPageTitleSettings` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `heading` |  | `ReactNode` | The title (an h1 for a string; any element, e.g. a variant management, otherwise). |
+| `snappedHeading` |  | `ReactNode` | Replaces `heading` while the header is snapped (e.g. a small avatar and the title). |
+| `expandedHeading` |  | `ReactNode` | Replaces `heading` while the header is expanded. |
+| `actions` |  | `ReactNode` | Actions on the right; they move into an overflow from right to left when space runs out (an OverflowToolbar). |
+| `navigationActions` |  | `ReactNode` | Layout actions at the very right (DP Header Title (6)), e.g. FlexibleColumnLayoutActions. |
+| `content` |  | `ReactNode` | Content in the middle of the title bar, e.g. key information (DP Header Title (4)). |
+| `snappedContent` |  | `ReactNode` | Shown under the heading while the header is snapped (e.g. the filter information). |
+| `expandedContent` |  | `ReactNode` | Shown under the heading while the header is expanded (e.g. the description). |
+| `snappedTitleOnMobile` |  | `ReactNode` | On phones, a snapped title shows only this title and a toggle (DP Summary Line). |
+| `breadcrumbs` |  | `ReactNode` | Breadcrumb links above the heading; inside a FlexibleColumnLayout only in full screen with one column. |
+| `areaShrinkRatio` |  | `DynamicPageTitleShrinkRatio` | Flex-shrink factors of the heading, content and actions areas. |
+| `backgroundDesign` |  | `BackgroundDesign` | Background of the title. |
+| `onStateChange` |  | `(e: DynamicPageTitle$StateChangeEvent) => void` | Fired when the header is expanded or collapsed (by the user or by scrolling). |
+
+### `default` — component
+
+sap.f.DynamicPageTitle: rendered by the DynamicPage it is given to (`title`).
+
+`import { default } from '@rhfan2019/smart-kit/f/DynamicPageTitle';`
+
+| Prop | Required | Type | Description |
+| --- | --- | --- | --- |
+| `heading` |  | `ReactNode` | The title (an h1 for a string; any element, e.g. a variant management, otherwise). |
+| `snappedHeading` |  | `ReactNode` | Replaces `heading` while the header is snapped (e.g. a small avatar and the title). |
+| `expandedHeading` |  | `ReactNode` | Replaces `heading` while the header is expanded. |
+| `actions` |  | `ReactNode` | Actions on the right; they move into an overflow from right to left when space runs out (an OverflowToolbar). |
+| `navigationActions` |  | `ReactNode` | Layout actions at the very right (DP Header Title (6)), e.g. FlexibleColumnLayoutActions. |
+| `content` |  | `ReactNode` | Content in the middle of the title bar, e.g. key information (DP Header Title (4)). |
+| `snappedContent` |  | `ReactNode` | Shown under the heading while the header is snapped (e.g. the filter information). |
+| `expandedContent` |  | `ReactNode` | Shown under the heading while the header is expanded (e.g. the description). |
+| `snappedTitleOnMobile` |  | `ReactNode` | On phones, a snapped title shows only this title and a toggle (DP Summary Line). |
+| `breadcrumbs` |  | `ReactNode` | Breadcrumb links above the heading; inside a FlexibleColumnLayout only in full screen with one column. |
+| `areaShrinkRatio` |  | `DynamicPageTitleShrinkRatio` | Flex-shrink factors of the heading, content and actions areas. |
+| `backgroundDesign` |  | `BackgroundDesign` | Background of the title. |
+| `onStateChange` |  | `(e: DynamicPageTitle$StateChangeEvent) => void` | Fired when the header is expanded or collapsed (by the user or by scrolling). |
+
+### `DynamicPageTitle$StateChangeEvent` — interface
+
+Event object of DynamicPageTitle's stateChange.
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `isExpanded` | **yes** | `boolean` | True when the header is now expanded. |
+
+## `@rhfan2019/smart-kit/f/FlexibleColumnLayout`
+
+`$FlexibleColumnLayoutSettings` (interface) · `default` (component) · `FlexibleColumnLayout$ColumnResizeEvent` (interface) · `FlexibleColumnLayout$StateChangeEvent` (interface)
+
+### `$FlexibleColumnLayoutSettings` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `layout` |  | `LayoutType` | The column layout. |
+| `beginColumnPages` |  | `ReactNode` | Pages of the begin column (the first one is shown). |
+| `midColumnPages` |  | `ReactNode` | Pages of the mid column. |
+| `endColumnPages` |  | `ReactNode` | Pages of the end column. |
+| `backgroundDesign` |  | `BackgroundDesign` | Background of the layout. |
+| `onStateChange` |  | `(e: FlexibleColumnLayout$StateChangeEvent) => void` | Fired when the user asks for another layout (arrows, layout actions) or the maximum column count changes. |
+| `onColumnResize` |  | `(e: FlexibleColumnLayout$ColumnResizeEvent) => void` | Fired when column widths change; true for each column that changed. |
+| `midPaging` |  | `ColumnPaging` | Extension: paging of the mid column for its Paginator (the host's list). |
+| `endPaging` |  | `ColumnPaging` | Extension: paging of the end column for its Paginator. |
+| `separatorArrows` |  | `boolean` | Extension: arrow buttons on the separators between the columns (default true). |
+| `className` |  | `string` | Extra CSS class on the root element. |
+| `ref` |  | `Ref&lt;FlexibleColumnLayout>` |  |
+
+### `default` — component
+
+Instance methods of FlexibleColumnLayout.
+
+`import { default } from '@rhfan2019/smart-kit/f/FlexibleColumnLayout';`
+
+| Prop | Required | Type | Description |
+| --- | --- | --- | --- |
+| `layout` |  | `LayoutType` | The column layout. |
+| `beginColumnPages` |  | `ReactNode` | Pages of the begin column (the first one is shown). |
+| `midColumnPages` |  | `ReactNode` | Pages of the mid column. |
+| `endColumnPages` |  | `ReactNode` | Pages of the end column. |
+| `backgroundDesign` |  | `BackgroundDesign` | Background of the layout. |
+| `onStateChange` |  | `(e: FlexibleColumnLayout$StateChangeEvent) => void` | Fired when the user asks for another layout (arrows, layout actions) or the maximum column count changes. |
+| `onColumnResize` |  | `(e: FlexibleColumnLayout$ColumnResizeEvent) => void` | Fired when column widths change; true for each column that changed. |
+| `midPaging` |  | `ColumnPaging` | Extension: paging of the mid column for its Paginator (the host's list). |
+| `endPaging` |  | `ColumnPaging` | Extension: paging of the end column for its Paginator. |
+| `separatorArrows` |  | `boolean` | Extension: arrow buttons on the separators between the columns (default true). |
+| `className` |  | `string` | Extra CSS class on the root element. |
+| `ref` |  | `Ref&lt;FlexibleColumnLayout>` |  |
+
+### `FlexibleColumnLayout$ColumnResizeEvent` — interface
+
+Event object of FlexibleColumnLayout's columnResize.
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `beginColumn` | **yes** | `boolean` |  |
+| `midColumn` | **yes** | `boolean` |  |
+| `endColumn` | **yes** | `boolean` |  |
+
+### `FlexibleColumnLayout$StateChangeEvent` — interface
+
+Event object of FlexibleColumnLayout's stateChange.
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `layout` | **yes** | `LayoutType` | The layout to apply. |
+| `maxColumnsCount` | **yes** | `number` | How many columns fit (3 from 1280px, 2 from 960px, 1 below). |
+| `isNavigationArrow` | **yes** | `boolean` | The change comes from a separator arrow. |
+| `isResize` | **yes** | `boolean` | The change comes from a resize (the maximum column count changed). |
 
 ## `@rhfan2019/smart-kit/f/cards/Header`
 
@@ -2058,6 +1108,223 @@ Side indicator of a numeric header (e.g. target, deviation).
 | `unit` |  | `string` | Unit or currency code shown with the value. |
 | `state` |  | `ValueColor` | Colour of the number. |
 
+## `@rhfan2019/smart-kit/f/library`
+
+`DynamicPageTitleShrinkRatio` (const) · `LayoutType` (const)
+
+### `DynamicPageTitleShrinkRatio` — const
+
+sap.f.DynamicPageTitleShrinkRatio: flex-shrink factors of heading, content and actions ("1:1.6:1.6").
+
+```ts
+const DynamicPageTitleShrinkRatio: { readonly '1:1.6:1.6': "1:1.6:1.6"; readonly '1:1:1': "1:1:1"; readonly '1.6:1:1.6': "1.6:1:1.6"; readonly '1.6:1.6:1': "1.6:1.6:1"; rea…
+```
+
+### `LayoutType` — const
+
+sap.f.LayoutType: the column layouts of a FlexibleColumnLayout.
+
+```ts
+const LayoutType: { readonly OneColumn: "OneColumn"; readonly TwoColumnsBeginExpanded: "TwoColumnsBeginExpanded"; readonly TwoColumnsMidExpanded: "TwoColum…
+```
+
+## `@rhfan2019/smart-kit/kit/AdaptFiltersDialog`
+
+`AdaptFiltersDialogProps` (interface) · `default` (component)
+
+### `AdaptFiltersDialogProps` — interface
+
+Props of `AdaptFiltersDialog` (see above).
+
+### `default` — component
+
+`import { default } from '@rhfan2019/smart-kit/kit/AdaptFiltersDialog';`
+
+| Prop | Required | Type | Description |
+| --- | --- | --- | --- |
+| `opened` | **yes** | `boolean` | Whether the dialog is open (controlled). |
+| `entitySet` | **yes** | `string` | Entity set name as in `$metadata`, e.g. "Orders". |
+| `fields` | **yes** | `string[]` |  |
+| `locked` | **yes** | `string[]` | Fields that cannot be hidden (they carry a condition or are mandatory). |
+| `onOk` | **yes** | `(fields: string[]) => void` | Called with the result when the user confirms. |
+| `onCancel` | **yes** | `() => void` | Called when the user cancels or closes the dialog. |
+| `service` |  | `string` | Name of the service in `SmartKitProvider` `services`; default: the provider's `defaultService`. |
+| `extraFields` |  | `{ path: string; label: string }[]` | Further fields offered after the properties (custom filter fields of `FilterBar` `filterFields`). |
+| `excluded` |  | `string[]` | Fields not offered at all (`FilterBar.setFilterFieldsActive` with `active: false`). |
+| `labels` |  | `Record&lt;string, string>` | Label overrides by path (`FilterBar.setFilterFieldsLabel`). |
+| `navigationProperties` |  | `string[]` | Single-valued navigation properties whose properties are offered too (`FilterBar` `navigationPropertiesForPersonalization`). |
+
+## `@rhfan2019/smart-kit/kit/ColumnContext`
+
+`ColumnContextValue` (interface) · `default` (component)
+
+### `ColumnContextValue` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `column` | **yes** | `number` | Column index (0 begin, 1 mid, 2 end). |
+| `layout` | **yes** | `LayoutType` | The current layout. |
+| `showBreadcrumbs` | **yes** | `boolean` | Breadcrumbs are only shown in full screen mode with one column (DP Header Title (3)). |
+| `fullScreen` |  | `{ active: boolean; toggle(): void }` | Layout actions of the mid and end column (FlexibleColumnLayoutActions): the layout to switch to. |
+| `close` |  | `() => void` | Closes the column (the layout without it). |
+| `paging` |  | `ColumnPaging` | Paging of the column (Paginator), given by the host. |
+
+### `default` — component
+
+`import { default } from '@rhfan2019/smart-kit/kit/ColumnContext';`
+
+| Prop | Required | Type | Description |
+| --- | --- | --- | --- |
+| `value` | **yes** | `T` |  |
+| `children` |  | `ReactNode \| undefined` |  |
+
+## `@rhfan2019/smart-kit/kit/ConditionInput`
+
+`ConditionInputProps` (interface) · `default` (component)
+
+### `ConditionInputProps` — interface
+
+Props of `ConditionInput` (see above).
+
+### `default` — component
+
+`import { default } from '@rhfan2019/smart-kit/kit/ConditionInput';`
+
+| Prop | Required | Type | Description |
+| --- | --- | --- | --- |
+| `entitySet` | **yes** | `string` | Entity set of the filtered property. |
+| `path` | **yes** | `string` | Filtered property path, e.g. "Status". |
+| `conditions` | **yes** | `Condition[]` | Conditions of the field (controlled). |
+| `onChange` | **yes** | `(conditions: Condition[]) => void` | Called with the new conditions (typed values become "EQ" conditions; "=x", ">x", "a...b", "*x*" are parsed). |
+| `label` | **yes** | `string` | Accessible name, usually the property label. |
+| `service` |  | `string` | Name of the service in `SmartKitProvider` `services`; default: the provider's `defaultService`. |
+| `error` |  | `string` | Error text shown under the field. |
+| `required` |  | `boolean` | Shows the mandatory marker and validates that a value is entered. |
+| `onValueHelp` |  | `() => void` | Opens the value help dialog (rendered by the caller). |
+| `id` |  | `string` | Element id (e.g. for an external `&lt;label htmlFor>`). |
+| `disabled` |  | `boolean` | Disables the field (`FilterBar.setFilterFieldEnabled`). |
+| `title` |  | `string` | Tooltip of the field (`FilterBar.setFilterFieldsTooltip`). |
+
+## `@rhfan2019/smart-kit/kit/CreateDialog`
+
+`CreateDialogProps` (interface) · `default` (component)
+
+### `CreateDialogProps` — interface
+
+Props of `CreateDialog` (see above).
+
+### `default` — component
+
+Dialog with the fields of a new object (LR Add/Create Items Using a Dialog, OP Create and edit subobjects).
+
+`import { default } from '@rhfan2019/smart-kit/kit/CreateDialog';`
+
+| Prop | Required | Type | Description |
+| --- | --- | --- | --- |
+| `opened` | **yes** | `boolean` | Whether the dialog is open (controlled). |
+| `onClose` | **yes** | `() => void` | Called when the dialog closes. |
+| `title` | **yes** | `string` | Dialog title, e.g. "Create Purchase Order". |
+| `typeName` | **yes** | `string` | Full name of the entity type, e.g. "Shop.Order" (`model.entitySets[set].typeName`). |
+| `fields` | **yes** | `FieldModel[]` | Fields asked in the dialog (usually from `createFields(...)`: keys that are not computed and mandatory properties). |
+| `onCreate` | **yes** | `(values: Row) => Promise&lt;void>` | Creates the object from the values; throws to keep the dialog open (messages are shown in the dialog). |
+| `service` |  | `string` | Name of the service in `SmartKitProvider` `services`; default: the provider's `defaultService`. |
+
+## `@rhfan2019/smart-kit/kit/CriticalityIcon`
+
+`default` (component)
+
+### `default` — component
+
+`import { default } from '@rhfan2019/smart-kit/kit/CriticalityIcon';`
+
+| Prop | Required | Type | Description |
+| --- | --- | --- | --- |
+| `criticality` | **yes** | `number` |  |
+
+## `@rhfan2019/smart-kit/kit/DraftIndicator`
+
+`default` (component)
+
+### `default` — component
+
+`import { default } from '@rhfan2019/smart-kit/kit/DraftIndicator';`
+
+| Prop | Required | Type | Description |
+| --- | --- | --- | --- |
+| `row` | **yes** | `Row \| undefined` |  |
+| `compact` |  | `boolean` |  |
+
+## `@rhfan2019/smart-kit/kit/FieldEditor`
+
+`default` (component) · `FieldEditorProps` (interface)
+
+### `default` — component
+
+`import { default } from '@rhfan2019/smart-kit/kit/FieldEditor';`
+
+| Prop | Required | Type | Description |
+| --- | --- | --- | --- |
+| `value` | **yes** | `unknown` | Value (controlled). |
+| `label` | **yes** | `string` | Accessible name / visible label. |
+| `property` |  | `PropertyModel` | Property model of the field (`model.entityTypes[type].properties[name]`). |
+| `onChange` |  | `(value: unknown) => void` | Called with the new value when it is committed (sap.fe.macros.Field#change): text editors on blur or Enter, the other editors at once. |
+| `onLiveChange` |  | `(value: string) => void` | Called on every keystroke of a text editor with the text typed so far (sap.fe.macros.Field#liveChange). |
+| `minRows` |  | `number` | Lines of a multi-line text editor (FieldFormatOptions.textLinesEdit); default 2. |
+| `maxLength` |  | `number` | Maximum number of characters (FieldFormatOptions.textMaxLength); default: the property's MaxLength. |
+| `showLabel` |  | `boolean` | Visible label (forms in dialogs); without it the label is only the accessible name. |
+| `unit` |  | `string` | Unit or currency code shown with the value. |
+| `error` |  | `string` | Error text shown under the field. |
+| `required` |  | `boolean` | Shows the mandatory marker and validates that a value is entered. |
+| `disabled` |  | `boolean` | Disables the input. |
+| `id` |  | `string` | Element id (e.g. for an external `&lt;label htmlFor>`). |
+| `service` |  | `string` | Name of the service in `SmartKitProvider` `services`; default: the provider's `defaultService`. |
+
+### `FieldEditorProps` — interface
+
+Props of `FieldEditor` (see above).
+
+## `@rhfan2019/smart-kit/kit/FilterSummary`
+
+`default` (component) · `FilterSummaryProps` (interface)
+
+### `default` — component
+
+`import { default } from '@rhfan2019/smart-kit/kit/FilterSummary';`
+
+| Prop | Required | Type | Description |
+| --- | --- | --- | --- |
+| `entitySet` | **yes** | `string` | Entity set name as in `$metadata`, e.g. "Orders". |
+| `filters` | **yes** | `FilterState` | Filter state (from `useFilterState` / `FilterBar`), applied to the request. |
+| `service` |  | `string` | Name of the service in `SmartKitProvider` `services`; default: the provider's `defaultService`. |
+| `search` |  | `string` | Search term ($search). |
+| `searchLabel` |  | `string` |  |
+
+### `FilterSummaryProps` — interface
+
+Props of `FilterSummary` (see above).
+
+## `@rhfan2019/smart-kit/kit/HeaderFacet`
+
+`default` (component) · `HeaderFacetProps` (interface)
+
+### `default` — component
+
+`import { default } from '@rhfan2019/smart-kit/kit/HeaderFacet';`
+
+| Prop | Required | Type | Description |
+| --- | --- | --- | --- |
+| `typeName` | **yes** | `string` | Full name of the entity type, e.g. "Shop.Order" (`model.entitySets[set].typeName`). |
+| `row` | **yes** | `Row \| undefined` | The entity row as read from the service (`Row`, property paths as keys, expanded navigations as nested objects); undefined while loading. |
+| `facet` |  | `HeaderFacetModel` | Header facet model (`ui.headerFacets[i]`). |
+| `service` |  | `string` | Name of the service in `SmartKitProvider` `services`; default: the provider's `defaultService`. |
+| `path` |  | `string` | Entity path of the object (micro charts over a collection navigation). |
+| `title` |  | `ReactNode` | Plain text facet or custom content. |
+| `children` |  | `ReactNode` | Content. |
+
+### `HeaderFacetProps` — interface
+
+Props of `HeaderFacet` (see above).
+
 ## `@rhfan2019/smart-kit/kit/MessageHost`
 
 `default` (component)
@@ -2095,6 +1362,295 @@ _no props_
 | `children` |  | `ReactNode` |  |
 | `onNavigate` |  | `(m: Message) => void` |  |
 
+## `@rhfan2019/smart-kit/kit/QuickViewLink`
+
+`default` (component)
+
+### `default` — component
+
+`import { default } from '@rhfan2019/smart-kit/kit/QuickViewLink';`
+
+| Prop | Required | Type | Description |
+| --- | --- | --- | --- |
+| `typeName` | **yes** | `string` |  |
+| `field` | **yes** | `FieldModel` |  |
+| `row` | **yes** | `Row \| undefined` |  |
+| `children` | **yes** | `ReactNode` |  |
+| `service` |  | `string` |  |
+
+## `@rhfan2019/smart-kit/kit/SimpleChart`
+
+`ChartDatum` (interface) · `default` (component) · `SimpleChartProps` (interface)
+
+### `ChartDatum` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `key` | **yes** | `string` |  |
+| `label` | **yes** | `string` |  |
+| `value` | **yes** | `number` |  |
+| `formatted` |  | `string` |  |
+
+### `default` — component
+
+`import { default } from '@rhfan2019/smart-kit/kit/SimpleChart';`
+
+| Prop | Required | Type | Description |
+| --- | --- | --- | --- |
+| `kind` | **yes** | `'column' \| 'bar' \| 'line' \| 'donut'` |  |
+| `measureLabel` | **yes** | `string` |  |
+| `dimensionLabel` | **yes** | `string` |  |
+| `data` | **yes** | `ChartDatum[]` |  |
+| `title` |  | `string` | Visible title; a visually hidden caption is used when omitted. |
+| `loading` |  | `boolean` | Shows a busy indicator. |
+| `format` |  | `(n: number) => string` | Formats a number for display. |
+| `onSelect` |  | `(d: ChartDatum, anchor: Element) => void` | Called when a data point is selected (click or Enter / Space on a focused bar); `anchor` is the bar element, e.g. for a popover. |
+| `selectedKey` |  | `string` | Key of the selected data point. |
+| `selectedKeys` |  | `readonly string[]` | Keys of the selected data points (multiple selection); combined with `selectedKey`. |
+| `height` |  | `number` | Height in pixels (default 320). |
+
+### `SimpleChartProps` — interface
+
+Props of `SimpleChart` (see above).
+
+## `@rhfan2019/smart-kit/kit/ValueHelpDialog`
+
+`default` (component) · `ValueHelpDialogProps` (interface)
+
+### `default` — component
+
+`import { default } from '@rhfan2019/smart-kit/kit/ValueHelpDialog';`
+
+| Prop | Required | Type | Description |
+| --- | --- | --- | --- |
+| `opened` | **yes** | `boolean` | Whether the dialog is open (controlled). |
+| `entitySet` | **yes** | `string` | Entity set of the filtered (or edited) property. |
+| `path` | **yes** | `string` | Property with a `Common.ValueList` annotation, e.g. "Owner". |
+| `title` | **yes** | `string` | Dialog title, usually the property label. |
+| `conditions` | **yes** | `Condition[]` | Current conditions (pre-selected in the dialog). |
+| `onOk` | **yes** | `(conditions: Condition[]) => void` | Called with the chosen conditions (selected values as "EQ" conditions, plus the defined conditions). |
+| `onCancel` | **yes** | `() => void` | Called when the user cancels or closes the dialog. |
+| `service` |  | `string` | Name of the service in `SmartKitProvider` `services`; default: the provider's `defaultService`. |
+
+### `ValueHelpDialogProps` — interface
+
+Props of `ValueHelpDialog` (see above).
+
+## `@rhfan2019/smart-kit/kit/smartKitGridTheme`
+
+`default` (const)
+
+### `default` — const
+
+```ts
+const default: Theme<ThemeDefaultParams>
+```
+
+## `@rhfan2019/smart-kit/kit/useActionRunner`
+
+`ActionResult` (interface) · `ActionRunner` (interface) · `ActionTarget` (interface) · `default` (hook)
+
+### `ActionResult` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `action` | **yes** | `ActionModel` |  |
+| `processed` | **yes** | `{ target: ActionTarget; row?: Row }[]` |  |
+| `failed` | **yes** | `{ target: ActionTarget; messages: Message[] }[]` |  |
+| `messages` | **yes** | `Message[]` |  |
+
+### `ActionRunner` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `run` | **yes** | `(action: ActionModel, targets: ActionTarget[]) => void` |  |
+| `busy` | **yes** | `boolean` |  |
+| `dialogs` | **yes** | `ReactNode` | Dialogs (partial processing, parameters); render once. |
+
+### `ActionTarget` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `row` | **yes** | `Row` |  |
+| `path` | **yes** | `string` |  |
+| `label` | **yes** | `string` | Short identifier shown in the partial processing dialog. |
+
+### `default` — hook
+
+```ts
+default(o: { service?: string; onDone?(r: ActionResult): void; }): ActionRunner
+```
+
+## `@rhfan2019/smart-kit/kit/useColumn`
+
+`ColumnContextValue` (interface) · `default` (hook)
+
+### `ColumnContextValue` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `column` | **yes** | `number` | Column index (0 begin, 1 mid, 2 end). |
+| `layout` | **yes** | `LayoutType` | The current layout. |
+| `showBreadcrumbs` | **yes** | `boolean` | Breadcrumbs are only shown in full screen mode with one column (DP Header Title (3)). |
+| `fullScreen` |  | `{ active: boolean; toggle(): void }` | Layout actions of the mid and end column (FlexibleColumnLayoutActions): the layout to switch to. |
+| `close` |  | `() => void` | Closes the column (the layout without it). |
+| `paging` |  | `ColumnPaging` | Paging of the column (Paginator), given by the host. |
+
+### `default` — hook
+
+```ts
+default(): ColumnContextValue | null
+```
+
+## `@rhfan2019/smart-kit/kit/useDynamicPage`
+
+`default` (hook) · `DynamicPageContext` (interface)
+
+### `default` — hook
+
+```ts
+default(): DynamicPageContext | null
+```
+
+### `DynamicPageContext` — interface
+
+State of the surrounding DynamicPage (`kit/useDynamicPage`).
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `collapsed` | **yes** | `boolean` |  |
+| `expanded` | **yes** | `boolean` |  |
+| `setExpanded` | **yes** | `(v: boolean) => void` |  |
+| `pinned` | **yes** | `boolean` |  |
+| `stickyHeight` | **yes** | `() => number` | Height of the sticky area (title + pinned header + sticky subheader), for scroll offsets. |
+| `collapseThen` | **yes** | `(fn: () => void) => void` | Collapses the header, then calls `fn` (object page anchors: collapse first, then scroll). |
+| `contentScrolled` | **yes** | `(top: number) => void` | `fitContent`: the content scrolled to `top` (px). Collapses or expands the header unless it is pinned. |
+
+## `@rhfan2019/smart-kit/kit/useEditStrategy`
+
+`default` (hook)
+
+### `default` — hook
+
+The edit strategy of an entity set (service override or the default by model).
+
+```ts
+default(entitySet: string, serviceName?: string): EditStrategy
+```
+
+## `@rhfan2019/smart-kit/kit/useFilterBarContext`
+
+`default` (hook)
+
+### `default` — hook
+
+Context for custom content inside the filter bar.
+
+```ts
+default(): FilterStateApi
+```
+
+## `@rhfan2019/smart-kit/kit/useFilterState`
+
+`AppliedFilter` (interface) · `default` (hook) · `FilterSnapshot` (interface) · `FilterStateApi` (interface) · `UseFilterStateOptions` (interface)
+
+### `AppliedFilter` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `filters` | **yes** | `FilterState` |  |
+| `search` | **yes** | `string` |  |
+
+### `default` — hook
+
+```ts
+default(entitySet: string, o?: UseFilterStateOptions): FilterStateApi
+```
+
+### `FilterSnapshot` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `filters` | **yes** | `FilterState` |  |
+| `search` | **yes** | `string` |  |
+| `fields` | **yes** | `string[]` |  |
+| `applied` | **yes** | `AppliedFilter \| null` | Last executed query; null until "Go" (or auto-execution) happened. |
+
+### `FilterStateApi` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `entitySet` | **yes** | `string` |  |
+| `liveMode` | **yes** | `boolean` |  |
+| `setFilters` | **yes** | `(next: FilterState) => void` |  |
+| `setConditions` | **yes** | `(path: string, conditions: Condition[]) => void` |  |
+| `setSearch` | **yes** | `(search: string) => void` |  |
+| `setFields` | **yes** | `(fields: string[]) => void` |  |
+| `go` | **yes** | `() => boolean` | Applies the current filters; returns false when mandatory fields are empty. |
+| `load` | **yes** | `(content: Partial&lt;Pick&lt;FilterSnapshot, 'filters' \| 'search' \| 'fields'>>, apply: boolean) => void` | Replaces filters, search and fields (e.g. from a variant); applies them when `apply` is true. |
+| `dirty` | **yes** | `boolean` | Filters differ from the applied query (manual mode shows an overlay). |
+| `missingRequired` | **yes** | `string[]` | Mandatory filter paths without a complete condition. |
+| `activeCount` | **yes** | `number` | Number of fields that carry a condition ("Adapt Filters (n)"). |
+| `showRequiredErrors` | **yes** | `boolean` | Set when "Go" was pressed with missing mandatory fields. |
+| `defaults` | **yes** | `Pick&lt;FilterSnapshot, 'filters' \| 'search' \| 'fields'>` | Defaults from the annotations (SelectionVariant, SelectionFields), i.e. the "Standard" variant. |
+| `filters` | **yes** | `FilterState` |  |
+| `search` | **yes** | `string` |  |
+| `fields` | **yes** | `string[]` |  |
+| `applied` | **yes** | `AppliedFilter \| null` | Last executed query; null until "Go" (or auto-execution) happened. |
+| `service` |  | `string` |  |
+
+### `UseFilterStateOptions` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `service` |  | `string` |  |
+| `pageKey` |  | `string` | Key under which the state survives back navigation. |
+| `initial` |  | `Partial&lt;Pick&lt;FilterSnapshot, 'filters' \| 'search' \| 'fields'>>` | Initial state (non-controlled). Defaults to the SelectionVariant annotation. |
+| `autoExecute` |  | `boolean` | Execute on load when no mandatory field is empty (default true). |
+| `liveMode` |  | `boolean` | Live update mode: apply changes automatically after a short delay (default false = manual "Go"). |
+| `liveDelay` |  | `number` | Delay of the live mode in ms. |
+
+## `@rhfan2019/smart-kit/kit/useListQuery`
+
+`default` (hook) · `ListQueryOptions` (interface) · `ListQueryResult` (interface)
+
+### `default` — hook
+
+```ts
+default(o: ListQueryOptions): ListQueryResult
+```
+
+### `ListQueryOptions` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `source` | **yes** | `QuerySource` |  |
+| `service` |  | `string` |  |
+| `columns` |  | `FieldModel[]` | Visible columns (drives $select/$expand); defaults to the LineItem. |
+| `filters` |  | `FilterState` |  |
+| `search` |  | `string` |  |
+| `sort` |  | `SortItem[]` |  |
+| `pageSize` |  | `number` | Rows of the first page. |
+| `growSize` |  | `number` | Rows of each following page. |
+| `enabled` |  | `boolean` | When false nothing is loaded (e.g. before "Go"). |
+| `extraSelect` |  | `string[]` |  |
+| `hierarchy` |  | `Pick&lt;HierarchyRequestOptions, 'qualifier' \| 'levels' \| 'expandLevels'>` | Tree tables (docs/26 §3.10): one TopLevels request for the visible nodes instead of pages. |
+
+### `ListQueryResult` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `request` | **yes** | `QueryRequest` |  |
+| `rows` | **yes** | `Row[]` |  |
+| `isLoading` | **yes** | `boolean` |  |
+| `isFetching` | **yes** | `boolean` |  |
+| `error` | **yes** | `Error \| null` |  |
+| `hasMore` | **yes** | `boolean` |  |
+| `loadMore` | **yes** | `() => void` |  |
+| `refresh` | **yes** | `() => void` |  |
+| `pageRequest` | **yes** | `(skip: number, top: number, count: boolean) => QueryRequest` | Builds a request for an arbitrary page (export, grid blocks); never hierarchical. |
+| `count` |  | `number` |  |
+
 ## `@rhfan2019/smart-kit/kit/useMessages`
 
 `default` (hook) · `MessagesApi` (interface)
@@ -2117,6 +1673,142 @@ default(): MessagesApi | null
 | `remove` | **yes** | `(id: string) => void` |  |
 | `clear` | **yes** | `() => void` |  |
 | `onNavigate` |  | `(m: Message) => void` | Called when a message with a target is pressed (focus the field). |
+
+## `@rhfan2019/smart-kit/kit/useObject`
+
+`default` (hook) · `ObjectResult` (interface) · `UseObjectOptions` (interface)
+
+### `default` — hook
+
+```ts
+default(path: string, o?: UseObjectOptions): ObjectResult
+```
+
+### `ObjectResult` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `path` | **yes** | `string` |  |
+| `resolved` | **yes** | `ResolvedPath` |  |
+| `typeName` | **yes** | `string` |  |
+| `entitySet` | **yes** | `string` |  |
+| `ui` | **yes** | `EntityUi` |  |
+| `data` | **yes** | `Row \| undefined` |  |
+| `isLoading` | **yes** | `boolean` |  |
+| `error` | **yes** | `Error \| null` |  |
+| `refresh` | **yes** | `() => void` |  |
+
+### `UseObjectOptions` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `service` |  | `string` |  |
+| `extraFields` |  | `FieldModel[]` | Additional fields used by custom content. |
+| `extraSelect` |  | `string[]` |  |
+| `enabled` |  | `boolean` |  |
+
+## `@rhfan2019/smart-kit/kit/useObjectTitle`
+
+`default` (hook)
+
+### `default` — hook
+
+Title of an entity from its HeaderInfo (breadcrumbs, page title).
+
+```ts
+default(path: string, serviceName?: string): { title: string | undefined; typeName: string; }
+```
+
+## `@rhfan2019/smart-kit/kit/useSectionScrollSpy`
+
+`default` (hook)
+
+### `default` — hook
+
+```ts
+default(scope: string, ids: string[], enabled?: boolean): { active: string | undefined; scrollTo(id: string): void; }
+```
+
+## `@rhfan2019/smart-kit/kit/useTableContext`
+
+`default` (hook) · `TableContextValue` (interface)
+
+### `default` — hook
+
+Context for custom content in and around the table (AC-EXT-02).
+
+```ts
+default(): TableContextValue
+```
+
+### `TableContextValue` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `entitySet` | **yes** | `string` |  |
+| `typeName` | **yes** | `string` |  |
+| `source` | **yes** | `QuerySource` |  |
+| `rows` | **yes** | `Row[]` |  |
+| `selected` | **yes** | `Row[]` |  |
+| `filters` | **yes** | `FilterState` |  |
+| `search` | **yes** | `string` |  |
+| `sort` | **yes** | `SortItem[]` |  |
+| `refresh` | **yes** | `() => void` |  |
+| `count` |  | `number` |  |
+
+## `@rhfan2019/smart-kit/kit/useValueList`
+
+`default` (hook) · `ValueListQuery` (interface)
+
+### `default` — hook
+
+```ts
+default(valueList: ValueListModel | undefined, q?: ValueListQuery, serviceName?: string): import("@tanstack/react-query").UseQueryResult<QueryResult, Error>
+```
+
+### `ValueListQuery` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `search` |  | `string` |  |
+| `top` |  | `number` |  |
+| `skip` |  | `number` |  |
+| `enabled` |  | `boolean` |  |
+
+## `@rhfan2019/smart-kit/kit/useVariants`
+
+`default` (hook) · `UseVariantsOptions` (interface) · `VariantsApi` (interface)
+
+### `default` — hook
+
+```ts
+default(pageKey: string, o: UseVariantsOptions): VariantsApi
+```
+
+### `UseVariantsOptions` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `standard` | **yes** | `VariantContent` | Content of the built-in "Standard" variant. |
+| `service` |  | `string` |  |
+| `onDefaultLoaded` |  | `(v: Variant) => void` | Called once when a default variant is selected on first load (no stored selection); apply it. |
+
+### `VariantsApi` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `variants` | **yes** | `Variant[]` |  |
+| `currentId` | **yes** | `string` | Current variant ("" is Standard). |
+| `current` | **yes** | `Variant` |  |
+| `isLoading` | **yes** | `boolean` |  |
+| `canSave` | **yes** | `boolean` | Whether views may be saved (VariantStore.canSave, default true). |
+| `select` | **yes** | `(id: string) => Variant` |  |
+| `saveAs` | **yes** | `(name: string, content: VariantContent, opts: { isDefault: boolean; autoApply: boolean }) => Promise&lt;Variant>` |  |
+| `save` | **yes** | `(content: VariantContent) => Promise&lt;Variant \| undefined>` |  |
+| `update` | **yes** | `(v: Variant) => Promise&lt;void>` |  |
+| `remove` | **yes** | `(id: string) => Promise&lt;void>` |  |
+| `setDefault` | **yes** | `(id: string) => Promise&lt;void>` |  |
+| `isModified` | **yes** | `(content: VariantContent) => boolean` | Whether `content` differs from the current variant. |
 
 ## `@rhfan2019/smart-kit/m/AvatarShape`
 
@@ -3632,6 +3324,38 @@ sap.m.FeedListItemAction (data array `actions` of FeedListItem).
 | `enabled` |  | `boolean` | Default true. |
 | `visible` |  | `boolean` | Default true. |
 | `onPress` |  | `() => void` |  |
+
+## `@rhfan2019/smart-kit/m/GenericTag`
+
+`$GenericTagSettings` (interface) · `default` (component)
+
+### `$GenericTagSettings` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `text` |  | `string` | The label. |
+| `status` |  | `ValueState` | Status colour and icon. |
+| `design` |  | `GenericTagDesign` | StatusIconHidden hides the status icon. |
+| `valueState` |  | `GenericTagValueState` | Error shows an error icon instead of the value. |
+| `value` |  | `ReactNode` | The value after the text (a string or an ObjectNumber). |
+| `onPress` |  | `(e: Record&lt;string, never>) => void` | Makes the tag clickable. |
+| `data-testid` |  | `string` |  |
+
+### `default` — component
+
+sap.m.GenericTag.
+
+`import { default } from '@rhfan2019/smart-kit/m/GenericTag';`
+
+| Prop | Required | Type | Description |
+| --- | --- | --- | --- |
+| `text` |  | `string` | The label. |
+| `status` |  | `ValueState` | Status colour and icon. |
+| `design` |  | `GenericTagDesign` | StatusIconHidden hides the status icon. |
+| `valueState` |  | `GenericTagValueState` | Error shows an error icon instead of the value. |
+| `value` |  | `ReactNode` | The value after the text (a string or an ObjectNumber). |
+| `onPress` |  | `(e: Record&lt;string, never>) => void` | Makes the tag clickable. |
+| `data-testid` |  | `string` |  |
 
 ## `@rhfan2019/smart-kit/m/IconTabBar`
 
@@ -7991,6 +7715,213 @@ sap.ui.core.VerticalAlign
 export type VerticalAlign = 'Bottom' | 'Inherit' | 'Middle' | 'Top';
 ```
 
+## `@rhfan2019/smart-kit/m/Table`
+
+`$ColumnSettings` (interface) · `$TableSettings` (interface) · `default` (component) · `GroupSummary` (interface) · `PopinDisplay` (type) · `Table$DeleteEvent` (interface) · `Table$ItemPressEvent` (interface) · `Table$PasteEvent` (interface) · `Table$PopinChangedEvent` (interface) · `Table$SelectionChangeEvent` (interface) · `Table$UpdateFinishedEvent` (type) · `Table$UpdateStartedEvent` (interface)
+
+### `$ColumnSettings` — interface
+
+A column (sap.m.Column) of the `columns` aggregation.
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `id` | **yes** | `string` | Column id (the element id in UI5); used in events and for `groupBy`. |
+| `header` | **yes** | `ReactNode` | Column header (sap.m.Column aggregation `header`). |
+| `cell` | **yes** | `(row: Row) => ReactNode` | Cell of a row: the column list item template (React form of the items binding). |
+| `importance` |  | `Priority` | Importance for the automatic pop-in (`autoPopinMode`); "None" counts as "Medium". |
+| `hAlign` |  | `'Begin' \| 'End' \| 'Center' \| 'Left' \| 'Right' \| 'Initial'` | Horizontal alignment of the header and the cells. |
+| `width` |  | `string` | Column width (CSS length). |
+| `visible` |  | `boolean` |  |
+| `demandPopin` |  | `boolean` | Without `autoPopinMode`: below `minScreenWidth` the column goes into the pop-in instead of being hidden. |
+| `minScreenWidth` |  | `string` | Without `autoPopinMode`: a sap.m.ScreenSize ("Phone", "Tablet", "Desktop", …) or a CSS width below which the column is hidden or popped in. |
+| `popinDisplay` |  | `PopinDisplay` | How the pop-in shows header and value. |
+| `footer` |  | `ReactNode` | Footer of the column (sap.m.Column aggregation `footer`). |
+| `groupValue` |  | `(row: Row) => string` | Text of the grouping header (value of the group property; smart-kit addition). |
+
+### `$TableSettings` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `columns` | **yes** | `$ColumnSettings[]` | Columns (sap.m.Column). |
+| `items` | **yes** | `Row[]` | The rows (React form of the items binding: data, rendered with the columns' `cell`). |
+| `keyOf` | **yes** | `(row: Row) => string` | Key of a row (React key, selection and events). |
+| `aria-label` |  | `string` | Accessible name of the table when there is no `headerText`. |
+| `headerText` |  | `string` | Title shown above the table. |
+| `headerLevel` |  | `TitleLevel` | Heading level of `headerText` ("Auto" = H2). |
+| `footerText` |  | `string` | Text shown below the table. |
+| `headerToolbar` |  | `ReactNode` | Toolbar above the column headers. |
+| `infoToolbar` |  | `ReactNode` | Info bar below the header toolbar. |
+| `mode` |  | `ListMode` | Selection mode: "MultiSelect" check boxes, "SingleSelectLeft" radio buttons, "SingleSelectMaster" the row, "Delete" a delete button per row. |
+| `selectedKeys` |  | `string[]` | Selected row keys (controlled; smart-kit addition). Without it the table keeps the selection itself. |
+| `includeItemInSelection` |  | `boolean` | A click on the row toggles its selection (selection modes). |
+| `rememberSelections` |  | `boolean` | Keeps the selection when the items change (uncontrolled selection). |
+| `multiSelectMode` |  | `MultiSelectMode` | "ClearAll" shows a "clear selection" button instead of the "select all" check box. |
+| `width` |  | `string` |  |
+| `fixedLayout` |  | `boolean \| 'Strict'` | `table-layout: fixed`; false: column widths follow the content. |
+| `showOverlay` |  | `boolean` | Greys out the table (e.g. filters changed but not applied). |
+| `backgroundDesign` |  | `'Solid' \| 'Translucent' \| 'Transparent'` | Background: "Solid", "Translucent" (the page shows through the theme's table colors) or "Transparent". |
+| `alternateRowColors` |  | `boolean` | Every other row with a background. |
+| `showSeparators` |  | `ListSeparators` | Row separators: "All", "Inner" (not after the last row) or "None". |
+| `inset` |  | `boolean` | Space around the table. |
+| `popinLayout` |  | `PopinLayout` | Arrangement of the pop-in: "Block" (one below the other) or "GridSmall" / "GridLarge" (a grid of small or large cells). |
+| `noDataText` |  | `string` | Text when there are no items; default "No items available.". |
+| `noData` |  | `ReactNode` | Content when there are no items (replaces `noDataText`). |
+| `showNoData` |  | `boolean` |  |
+| `busy` |  | `boolean` | Shows the busy indicator (rows are loading). |
+| `enableBusyIndicator` |  | `boolean` |  |
+| `growing` |  | `boolean` | Shows the items in pages: a "More" button or scrolling loads the next one. |
+| `growingThreshold` |  | `number` | Items per page when the table grows over `items` itself (no `hasMore`). |
+| `growingTriggerText` |  | `string` | Text of the "More" button (default "More"). |
+| `growingScrollToLoad` |  | `boolean` | Load the next page when the end of the table scrolls into view instead of a button. |
+| `hasMore` |  | `boolean` | More items can be loaded by the parent (`onUpdateStarted` with reason "Growing" asks for them; smart-kit addition). |
+| `autoPopinMode` |  | `boolean` | Moves columns into the pop-in by `importance` as the width shrinks. |
+| `hiddenInPopin` |  | `Priority[]` | Importances whose popped-in columns are not shown in the pop-in area ("Show Details" off). |
+| `contextualWidth` |  | `string` | Width used for the pop-in: "Inherit" (the table's), "Desktop", "Tablet", "Phone" or a CSS width. |
+| `sticky` |  | `Sticky[]` | Parts that stay visible when the page scrolls; "ColumnHeaders" keeps the column headers. |
+| `navigable` |  | `boolean` | Rows can navigate: a chevron and `onItemPress` on click and Enter (type "Navigation" of the items; smart-kit addition). |
+| `groupBy` |  | `string` | Column id to group by (React form of a grouping sorter; smart-kit addition). |
+| `groupSummary` |  | `(row: Row) => GroupSummary \| undefined` | Subtotals of the group starting with `row`: row count and cells by column id (docs/23). |
+| `totals` |  | `{ label: ReactNode; cells: Record&lt;string, ReactNode> }` | Totals row after the last row: cells by column id (docs/23). |
+| `tree` |  | `{ nodeOf(row: Row): HierarchyNode \| undefined; toggle(row: Row): void }` | Tree rows (docs/26 §3.10): indentation and toggle in the first column. |
+| `inlineActions` |  | `(row: Row) => ReactNode` | Actions in a column at the end of each row. |
+| `changedKeys` |  | `Set&lt;string>` | Keys of rows marked as changed (continuous working mode). |
+| `rowMarker` |  | `(row: Row) => ReactNode` | Content after the first cell (e.g. draft markers). |
+| `onSelectionChange` |  | `(e: Table$SelectionChangeEvent) => void` |  |
+| `onItemPress` |  | `(e: Table$ItemPressEvent) => void` |  |
+| `onDelete` |  | `(e: Table$DeleteEvent) => void` | A row's delete button was pressed (mode "Delete"). |
+| `onUpdateStarted` |  | `(e: Table$UpdateStartedEvent) => void` | More items are needed (reason "Growing"). |
+| `onUpdateFinished` |  | `(e: Table$UpdateFinishedEvent) => void` | The items changed. |
+| `onPopinChanged` |  | `(e: Table$PopinChangedEvent) => void` | The set of columns in the pop-in changed. |
+| `onPaste` |  | `(e: Table$PasteEvent) => void` | Text was pasted into the table (e.g. from a spreadsheet). |
+| `ref` |  | `Ref&lt;Table>` | Instance methods (sap.m.Table / sap.m.ListBase). |
+
+### `default` — component
+
+Instance methods of sap.m.Table (through `ref`). Rows stand for the list items.
+
+`import { default } from '@rhfan2019/smart-kit/m/Table';`
+
+| Prop | Required | Type | Description |
+| --- | --- | --- | --- |
+| `columns` | **yes** | `$ColumnSettings[]` | Columns (sap.m.Column). |
+| `items` | **yes** | `Row[]` | The rows (React form of the items binding: data, rendered with the columns' `cell`). |
+| `keyOf` | **yes** | `(row: Row) => string` | Key of a row (React key, selection and events). |
+| `aria-label` |  | `string` | Accessible name of the table when there is no `headerText`. |
+| `headerText` |  | `string` | Title shown above the table. |
+| `headerLevel` |  | `TitleLevel` | Heading level of `headerText` ("Auto" = H2). |
+| `footerText` |  | `string` | Text shown below the table. |
+| `headerToolbar` |  | `ReactNode` | Toolbar above the column headers. |
+| `infoToolbar` |  | `ReactNode` | Info bar below the header toolbar. |
+| `mode` |  | `ListMode` | Selection mode: "MultiSelect" check boxes, "SingleSelectLeft" radio buttons, "SingleSelectMaster" the row, "Delete" a delete button per row. |
+| `selectedKeys` |  | `string[]` | Selected row keys (controlled; smart-kit addition). Without it the table keeps the selection itself. |
+| `includeItemInSelection` |  | `boolean` | A click on the row toggles its selection (selection modes). |
+| `rememberSelections` |  | `boolean` | Keeps the selection when the items change (uncontrolled selection). |
+| `multiSelectMode` |  | `MultiSelectMode` | "ClearAll" shows a "clear selection" button instead of the "select all" check box. |
+| `width` |  | `string` |  |
+| `fixedLayout` |  | `boolean \| 'Strict'` | `table-layout: fixed`; false: column widths follow the content. |
+| `showOverlay` |  | `boolean` | Greys out the table (e.g. filters changed but not applied). |
+| `backgroundDesign` |  | `'Solid' \| 'Translucent' \| 'Transparent'` | Background: "Solid", "Translucent" (the page shows through the theme's table colors) or "Transparent". |
+| `alternateRowColors` |  | `boolean` | Every other row with a background. |
+| `showSeparators` |  | `ListSeparators` | Row separators: "All", "Inner" (not after the last row) or "None". |
+| `inset` |  | `boolean` | Space around the table. |
+| `popinLayout` |  | `PopinLayout` | Arrangement of the pop-in: "Block" (one below the other) or "GridSmall" / "GridLarge" (a grid of small or large cells). |
+| `noDataText` |  | `string` | Text when there are no items; default "No items available.". |
+| `noData` |  | `ReactNode` | Content when there are no items (replaces `noDataText`). |
+| `showNoData` |  | `boolean` |  |
+| `busy` |  | `boolean` | Shows the busy indicator (rows are loading). |
+| `enableBusyIndicator` |  | `boolean` |  |
+| `growing` |  | `boolean` | Shows the items in pages: a "More" button or scrolling loads the next one. |
+| `growingThreshold` |  | `number` | Items per page when the table grows over `items` itself (no `hasMore`). |
+| `growingTriggerText` |  | `string` | Text of the "More" button (default "More"). |
+| `growingScrollToLoad` |  | `boolean` | Load the next page when the end of the table scrolls into view instead of a button. |
+| `hasMore` |  | `boolean` | More items can be loaded by the parent (`onUpdateStarted` with reason "Growing" asks for them; smart-kit addition). |
+| `autoPopinMode` |  | `boolean` | Moves columns into the pop-in by `importance` as the width shrinks. |
+| `hiddenInPopin` |  | `Priority[]` | Importances whose popped-in columns are not shown in the pop-in area ("Show Details" off). |
+| `contextualWidth` |  | `string` | Width used for the pop-in: "Inherit" (the table's), "Desktop", "Tablet", "Phone" or a CSS width. |
+| `sticky` |  | `Sticky[]` | Parts that stay visible when the page scrolls; "ColumnHeaders" keeps the column headers. |
+| `navigable` |  | `boolean` | Rows can navigate: a chevron and `onItemPress` on click and Enter (type "Navigation" of the items; smart-kit addition). |
+| `groupBy` |  | `string` | Column id to group by (React form of a grouping sorter; smart-kit addition). |
+| `groupSummary` |  | `(row: Row) => GroupSummary \| undefined` | Subtotals of the group starting with `row`: row count and cells by column id (docs/23). |
+| `totals` |  | `{ label: ReactNode; cells: Record&lt;string, ReactNode> }` | Totals row after the last row: cells by column id (docs/23). |
+| `tree` |  | `{ nodeOf(row: Row): HierarchyNode \| undefined; toggle(row: Row): void }` | Tree rows (docs/26 §3.10): indentation and toggle in the first column. |
+| `inlineActions` |  | `(row: Row) => ReactNode` | Actions in a column at the end of each row. |
+| `changedKeys` |  | `Set&lt;string>` | Keys of rows marked as changed (continuous working mode). |
+| `rowMarker` |  | `(row: Row) => ReactNode` | Content after the first cell (e.g. draft markers). |
+| `onSelectionChange` |  | `(e: Table$SelectionChangeEvent) => void` |  |
+| `onItemPress` |  | `(e: Table$ItemPressEvent) => void` |  |
+| `onDelete` |  | `(e: Table$DeleteEvent) => void` | A row's delete button was pressed (mode "Delete"). |
+| `onUpdateStarted` |  | `(e: Table$UpdateStartedEvent) => void` | More items are needed (reason "Growing"). |
+| `onUpdateFinished` |  | `(e: Table$UpdateFinishedEvent) => void` | The items changed. |
+| `onPopinChanged` |  | `(e: Table$PopinChangedEvent) => void` | The set of columns in the pop-in changed. |
+| `onPaste` |  | `(e: Table$PasteEvent) => void` | Text was pasted into the table (e.g. from a spreadsheet). |
+| `ref` |  | `Ref&lt;Table>` | Instance methods (sap.m.Table / sap.m.ListBase). |
+
+### `GroupSummary` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `cells` | **yes** | `Record&lt;string, ReactNode>` |  |
+| `count` |  | `number` |  |
+
+### `PopinDisplay` — type
+
+sap.m.PopinDisplay
+
+```ts
+export type PopinDisplay = 'Block' | 'Inline' | 'WithoutHeader';
+```
+
+### `Table$DeleteEvent` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `listItem` | **yes** | `Row` |  |
+
+### `Table$ItemPressEvent` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `listItem` | **yes** | `Row` |  |
+| `srcControl` | **yes** | `HTMLElement` | The element that was clicked. |
+
+### `Table$PasteEvent` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `data` | **yes** | `string[][]` | Pasted text as rows of cells (tab-separated columns, one line per row). |
+| `preventDefault` | **yes** | `() => void` | Stops the browser's default paste handling. |
+
+### `Table$PopinChangedEvent` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `hasPopin` | **yes** | `boolean` |  |
+| `visibleInPopin` | **yes** | `$ColumnSettings[]` | Columns shown in the pop-in area. |
+| `hiddenInPopin` | **yes** | `$ColumnSettings[]` | Columns moved out of the table whose pop-in is hidden (`hiddenInPopin`). |
+
+### `Table$SelectionChangeEvent` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `listItem` | **yes** | `Row \| undefined` | The row whose selection changed (the first one when several changed). |
+| `listItems` | **yes** | `Row[]` | The rows whose selection changed. |
+| `selected` | **yes** | `boolean` | Whether they were selected (true) or deselected (false). |
+| `selectAll` | **yes** | `boolean` | The change came from the "select all" checkbox. |
+
+### `Table$UpdateFinishedEvent` — type
+
+```ts
+export type Table$UpdateFinishedEvent = Table$UpdateStartedEvent;
+```
+
+### `Table$UpdateStartedEvent` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `reason` | **yes** | `string` | "Growing" when more items are requested, "Change" otherwise. |
+| `actual` | **yes** | `number` | Number of items shown. |
+| `total` | **yes** | `number \| undefined` | Total number of items, when known. |
+
 ## `@rhfan2019/smart-kit/m/TableSelectDialog`
 
 `$TableSelectDialogSettings` (interface) · `Column` (interface) · `ColumnListItem` (interface) · `default` (component) · `ListUpdateEvent` (interface) · `TableSelectDialog$ConfirmEvent` (type) · `TableSelectDialog$LiveChangeEvent` (type) · `TableSelectDialog$SearchEvent` (type) · `TableSelectDialog$SelectionChangeEvent` (type) · `TableSelectDialog$UpdateFinishedEvent` (type) · `TableSelectDialog$UpdateStartedEvent` (type)
@@ -8485,7 +8416,7 @@ A step of a Wizard; rendered by the Wizard (alone it renders nothing).
 
 ## `@rhfan2019/smart-kit/m/library`
 
-`BackgroundDesign` (const) · `BadgeStyle` (const) · `ButtonAccessibleRole` (const) · `ButtonType` (const) · `EmptyIndicatorMode` (const) · `ExpandableTextOverflowMode` (const) · `IconTabDensityMode` (const) · `IconTabFilterDesign` (const) · `IconTabFilterInteractionMode` (const) · `IconTabHeaderMode` (const) · `LinkConversion` (const) · `ListType` (const) · `ObjectMarkerType` (const) · `ObjectMarkerVisibility` (const) · `ObjectNumberDisplayMode` (const) · `OverflowToolbarPriority` (const) · `PageBackgroundDesign` (const) · `ReactiveAreaMode` (const) · `SelectDialogInitialFocus` (const) · `StandardDynamicDateRangeKeys` (const) · `StringFilterOperator` (const) · `TabsOverflowMode` (const) · `TitleAlignment` (const) · `ToolbarDesign` (const) · `ToolbarStyle` (const) · `UploadSetwithTableActionPlaceHolder` (const) · `UploadState` (const) · `VerticalPlacementType` (const) · `WizardRenderMode` (const) · `WrappingType` (const)
+`BackgroundDesign` (const) · `BadgeStyle` (const) · `ButtonAccessibleRole` (const) · `ButtonType` (const) · `EmptyIndicatorMode` (const) · `ExpandableTextOverflowMode` (const) · `GenericTagDesign` (const) · `GenericTagValueState` (const) · `IconTabDensityMode` (const) · `IconTabFilterDesign` (const) · `IconTabFilterInteractionMode` (const) · `IconTabHeaderMode` (const) · `LinkConversion` (const) · `ListMode` (const) · `ListSeparators` (const) · `ListType` (const) · `MultiSelectMode` (const) · `ObjectMarkerType` (const) · `ObjectMarkerVisibility` (const) · `ObjectNumberDisplayMode` (const) · `OverflowToolbarPriority` (const) · `PageBackgroundDesign` (const) · `PopinLayout` (const) · `ReactiveAreaMode` (const) · `SelectDialogInitialFocus` (const) · `StandardDynamicDateRangeKeys` (const) · `Sticky` (const) · `StringFilterOperator` (const) · `TabsOverflowMode` (const) · `TitleAlignment` (const) · `ToolbarDesign` (const) · `ToolbarStyle` (const) · `UploadSetwithTableActionPlaceHolder` (const) · `UploadState` (const) · `VerticalPlacementType` (const) · `WizardRenderMode` (const) · `WrappingType` (const)
 
 ### `BackgroundDesign` — const
 
@@ -8535,6 +8466,22 @@ sap.m.ExpandableTextOverflowMode
 const ExpandableTextOverflowMode: { readonly InPlace: "InPlace"; readonly Popover: "Popover"; }
 ```
 
+### `GenericTagDesign` — const
+
+sap.m.GenericTagDesign
+
+```ts
+const GenericTagDesign: { readonly Full: "Full"; readonly StatusIconHidden: "StatusIconHidden"; }
+```
+
+### `GenericTagValueState` — const
+
+sap.m.GenericTagValueState
+
+```ts
+const GenericTagValueState: { readonly None: "None"; readonly Error: "Error"; }
+```
+
 ### `IconTabDensityMode` — const
 
 sap.m.IconTabDensityMode
@@ -8575,12 +8522,36 @@ sap.m.LinkConversion
 const LinkConversion: { readonly None: "None"; readonly All: "All"; readonly ProtocolOnly: "ProtocolOnly"; }
 ```
 
+### `ListMode` — const
+
+sap.m.ListMode (the deprecated SingleSelect is left out).
+
+```ts
+const ListMode: { readonly None: "None"; readonly SingleSelectLeft: "SingleSelectLeft"; readonly SingleSelectMaster: "SingleSelectMaster"; readonly Multi…
+```
+
+### `ListSeparators` — const
+
+sap.m.ListSeparators
+
+```ts
+const ListSeparators: { readonly All: "All"; readonly Inner: "Inner"; readonly None: "None"; }
+```
+
 ### `ListType` — const
 
 sap.m.ListType
 
 ```ts
 const ListType: { readonly Active: "Active"; readonly Detail: "Detail"; readonly DetailAndActive: "DetailAndActive"; readonly Inactive: "Inactive"; reado…
+```
+
+### `MultiSelectMode` — const
+
+sap.m.MultiSelectMode
+
+```ts
+const MultiSelectMode: { readonly Default: "Default"; readonly ClearAll: "ClearAll"; readonly SelectAll: "SelectAll"; }
 ```
 
 ### `ObjectMarkerType` — const
@@ -8623,6 +8594,14 @@ sap.m.PageBackgroundDesign
 const PageBackgroundDesign: { readonly List: "List"; readonly Solid: "Solid"; readonly Standard: "Standard"; readonly Transparent: "Transparent"; }
 ```
 
+### `PopinLayout` — const
+
+sap.m.PopinLayout
+
+```ts
+const PopinLayout: { readonly Block: "Block"; readonly GridLarge: "GridLarge"; readonly GridSmall: "GridSmall"; }
+```
+
 ### `ReactiveAreaMode` — const
 
 sap.m.ReactiveAreaMode: Overlay enlarges the clickable area of a small active control to the touch target size.
@@ -8645,6 +8624,14 @@ sap.m.StandardDynamicDateRangeKeys
 
 ```ts
 const StandardDynamicDateRangeKeys: { readonly DATE: "DATE"; readonly TODAY: "TODAY"; readonly YESTERDAY: "YESTERDAY"; readonly TOMORROW: "TOMORROW"; readonly FIRSTDAYWEEK: …
+```
+
+### `Sticky` — const
+
+sap.m.Sticky
+
+```ts
+const Sticky: { readonly ColumnHeaders: "ColumnHeaders"; readonly GroupHeaders: "GroupHeaders"; readonly HeaderToolbar: "HeaderToolbar"; readonly InfoT…
 ```
 
 ### `StringFilterOperator` — const
@@ -8726,6 +8713,32 @@ sap.m.WrappingType
 ```ts
 const WrappingType: { readonly Normal: "Normal"; readonly Hyphenated: "Hyphenated"; }
 ```
+
+## `@rhfan2019/smart-kit/m/p13n/Popup`
+
+`default` (component) · `TableP13nDialogProps` (interface)
+
+### `default` — component
+
+`import { default } from '@rhfan2019/smart-kit/m/p13n/Popup';`
+
+| Prop | Required | Type | Description |
+| --- | --- | --- | --- |
+| `opened` | **yes** | `boolean` | Whether the dialog is open (controlled). |
+| `columns` | **yes** | `{ id: string; label: string }[]` |  |
+| `visible` | **yes** | `string[]` |  |
+| `sort` | **yes** | `SortItem[]` |  |
+| `sortable` | **yes** | `{ path: string; label: string }[]` |  |
+| `onOk` | **yes** | `(visible: string[], sort: SortItem[], groupBy?: string \| null, totals?: string[]) => void` | Called with the result when the user confirms. |
+| `onCancel` | **yes** | `() => void` | Called when the user cancels or closes the dialog. |
+| `groupable` |  | `{ id: string; label: string }[]` | Columns that can be grouped by; the "Group" tab is shown only when given. |
+| `groupBy` |  | `string \| null` |  |
+| `totalable` |  | `{ id: string; label: string }[]` | Columns whose totals can be shown; the "Totals" tab is shown only when given and not empty (docs/23). |
+| `totals` |  | `string[]` | Column ids whose totals are shown. |
+
+### `TableP13nDialogProps` — interface
+
+Props of `TableP13nDialog` (see above).
 
 ## `@rhfan2019/smart-kit/m/plugins/UploadSetwithTable`
 
@@ -10650,16 +10663,1604 @@ Property paths of the timeline items, named as the manifest's `content.item` (sa
 | `onTransitionStart` |  | `TransitionEventHandler&lt;T> \| undefined` |  |
 | `onTransitionStartCapture` |  | `TransitionEventHandler&lt;T> \| undefined` |  |
 
-## `@rhfan2019/smart-kit/v4/fe/macros/MessageButton`
+## `@rhfan2019/smart-kit/uxap/AnchorBar`
 
-`default` (component)
+`$AnchorBarSettings` (interface) · `AnchorBar$PressEvent` (interface) · `AnchorItem` (interface) · `default` (component)
+
+### `$AnchorBarSettings` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `content` |  | `AnchorItem[]` | The anchors: one per section, with the subsections for the popover. |
+| `selectedButton` |  | `string` | Id of the selected anchor (section). |
+| `showPopover` |  | `boolean` | Anchors of sections with several subsections open a menu of the subsections. |
+| `upperCase` |  | `boolean` | Anchor texts in upper case. |
+| `backgroundDesign` |  | `BackgroundDesign` | Background of the bar. |
+| `width` |  | `string` | Width (CSS length; default 100%). |
+| `active` |  | `boolean` | The whole bar is clickable and fires onPress. |
+| `enabled` |  | `boolean` | Enabled; a disabled bar disables its anchors. |
+| `height` |  | `string` | Height (CSS length; default: the bar height). |
+| `design` |  | `ToolbarDesign` | Background design of the toolbar. |
+| `style` |  | `ToolbarStyle` | Clear removes the border. |
+| `ariaHasPopup` |  | `AriaHasPopup` | aria-haspopup of an active bar. |
+| `onPress` |  | `(e: AnchorBar$PressEvent) => void` | Fired when an active bar is pressed outside its anchors; `srcControl` is the clicked element. |
+| `onSelect` |  | `(sectionId: string, subSectionId?: string) => void` | Extension: an anchor (and optionally one of its subsections) was chosen; the page scrolls to it. |
+| `ref` |  | `Ref&lt;AnchorBar>` |  |
+
+### `AnchorBar$PressEvent` — interface
+
+Event object of AnchorBar's press.
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `srcControl` | **yes** | `HTMLElement` | The clicked element. |
+
+### `AnchorItem` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `id` | **yes** | `string` |  |
+| `title` | **yes** | `string` |  |
+| `subSections` | **yes** | `{ id: string; title: string }[]` |  |
+| `count` |  | `number` |  |
 
 ### `default` — component
 
-Footer message button with the message popover (MessagePopover, docs/26). Renders nothing without messages.
+sap.uxap.AnchorBar. Instance methods of AnchorBar.
+
+`import { default } from '@rhfan2019/smart-kit/uxap/AnchorBar';`
+
+| Prop | Required | Type | Description |
+| --- | --- | --- | --- |
+| `content` |  | `AnchorItem[]` | The anchors: one per section, with the subsections for the popover. |
+| `selectedButton` |  | `string` | Id of the selected anchor (section). |
+| `showPopover` |  | `boolean` | Anchors of sections with several subsections open a menu of the subsections. |
+| `upperCase` |  | `boolean` | Anchor texts in upper case. |
+| `backgroundDesign` |  | `BackgroundDesign` | Background of the bar. |
+| `width` |  | `string` | Width (CSS length; default 100%). |
+| `active` |  | `boolean` | The whole bar is clickable and fires onPress. |
+| `enabled` |  | `boolean` | Enabled; a disabled bar disables its anchors. |
+| `height` |  | `string` | Height (CSS length; default: the bar height). |
+| `design` |  | `ToolbarDesign` | Background design of the toolbar. |
+| `style` |  | `ToolbarStyle` | Clear removes the border. |
+| `ariaHasPopup` |  | `AriaHasPopup` | aria-haspopup of an active bar. |
+| `onPress` |  | `(e: AnchorBar$PressEvent) => void` | Fired when an active bar is pressed outside its anchors; `srcControl` is the clicked element. |
+| `onSelect` |  | `(sectionId: string, subSectionId?: string) => void` | Extension: an anchor (and optionally one of its subsections) was chosen; the page scrolls to it. |
+| `ref` |  | `Ref&lt;AnchorBar>` |  |
+
+## `@rhfan2019/smart-kit/uxap/ObjectPageDynamicHeaderContent`
+
+`$ObjectPageDynamicHeaderContentSettings` (type) · `default` (component)
+
+### `$ObjectPageDynamicHeaderContentSettings` — type
+
+sap.uxap.ObjectPageDynamicHeaderContent: the same as DynamicPageHeader.
+
+```ts
+export type $ObjectPageDynamicHeaderContentSettings = $DynamicPageHeaderSettings;
+```
+
+### `default` — component
+
+sap.uxap.ObjectPageDynamicHeaderContent.
+
+`import { default } from '@rhfan2019/smart-kit/uxap/ObjectPageDynamicHeaderContent';`
+
+| Prop | Required | Type | Description |
+| --- | --- | --- | --- |
+| `pinnable` |  | `boolean` | Offer the pin button (only while the page snaps on scroll). |
+| `backgroundDesign` |  | `BackgroundDesign` | Background of the header. |
+| `children` |  | `ReactNode` | Header content (e.g. a filter bar or header facets). |
+
+## `@rhfan2019/smart-kit/uxap/ObjectPageDynamicHeaderTitle`
+
+`$ObjectPageDynamicHeaderTitleSettings` (type) · `default` (component) · `ObjectPageDynamicHeaderTitle$StateChangeEvent` (interface)
+
+### `$ObjectPageDynamicHeaderTitleSettings` — type
+
+sap.uxap.ObjectPageDynamicHeaderTitle: the same title as DynamicPageTitle.
+
+```ts
+export type $ObjectPageDynamicHeaderTitleSettings = $DynamicPageTitleSettings;
+```
+
+### `default` — component
+
+sap.uxap.ObjectPageDynamicHeaderTitle (rendered by the ObjectPageLayout it is given to as `headerTitle`).
+
+`import { default } from '@rhfan2019/smart-kit/uxap/ObjectPageDynamicHeaderTitle';`
+
+| Prop | Required | Type | Description |
+| --- | --- | --- | --- |
+| `heading` |  | `ReactNode` | The title (an h1 for a string; any element, e.g. a variant management, otherwise). |
+| `snappedHeading` |  | `ReactNode` | Replaces `heading` while the header is snapped (e.g. a small avatar and the title). |
+| `expandedHeading` |  | `ReactNode` | Replaces `heading` while the header is expanded. |
+| `actions` |  | `ReactNode` | Actions on the right; they move into an overflow from right to left when space runs out (an OverflowToolbar). |
+| `navigationActions` |  | `ReactNode` | Layout actions at the very right (DP Header Title (6)), e.g. FlexibleColumnLayoutActions. |
+| `content` |  | `ReactNode` | Content in the middle of the title bar, e.g. key information (DP Header Title (4)). |
+| `snappedContent` |  | `ReactNode` | Shown under the heading while the header is snapped (e.g. the filter information). |
+| `expandedContent` |  | `ReactNode` | Shown under the heading while the header is expanded (e.g. the description). |
+| `snappedTitleOnMobile` |  | `ReactNode` | On phones, a snapped title shows only this title and a toggle (DP Summary Line). |
+| `breadcrumbs` |  | `ReactNode` | Breadcrumb links above the heading; inside a FlexibleColumnLayout only in full screen with one column. |
+| `areaShrinkRatio` |  | `DynamicPageTitleShrinkRatio` | Flex-shrink factors of the heading, content and actions areas. |
+| `backgroundDesign` |  | `BackgroundDesign` | Background of the title. |
+| `onStateChange` |  | `(e: DynamicPageTitle$StateChangeEvent) => void` | Fired when the header is expanded or collapsed (by the user or by scrolling). |
+
+### `ObjectPageDynamicHeaderTitle$StateChangeEvent` — interface
+
+Event object of ObjectPageDynamicHeaderTitle's stateChange.
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `isExpanded` | **yes** | `boolean` | True when the header is now expanded. |
+
+## `@rhfan2019/smart-kit/uxap/ObjectPageLayout`
+
+`$ObjectPageLayoutSettings` (interface) · `BlockItem` (interface) · `default` (component) · `ObjectPageLayout$BeforeNavigateEvent` (type) · `ObjectPageLayout$BreakpointChangeEvent` (type) · `ObjectPageLayout$HeaderContentPinnedStateChangeEvent` (interface) · `ObjectPageLayout$NavigateEvent` (interface) · `ObjectPageLayout$SectionChangeEvent` (interface) · `ObjectPageLayout$SubSectionVisibilityChangeEvent` (interface) · `ObjectPageLayout$ToggleAnchorBarEvent` (interface) · `SectionItem` (interface) · `SubSectionItem` (interface)
+
+### `$ObjectPageLayoutSettings` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `sections` | **yes** | `SectionItem[]` | The sections. |
+| `scope` | **yes** | `string` | Extension: unique scope for element ids (e.g. the entity type). |
+| `headerTitle` |  | `ReactNode` | The title, an ObjectPageDynamicHeaderTitle. |
+| `headerContent` |  | `ReactNode` | Header content (header facets, the avatar). |
+| `footer` |  | `ReactNode` | Footer toolbar content (e.g. Save / Cancel while editing); shown with `showFooter`. |
+| `selectedSection` |  | `string` | Id of the selected section (with `useIconTabBar`: the tab shown). |
+| `showAnchorBar` |  | `boolean` | Shows the anchor bar. |
+| `showAnchorBarPopover` |  | `boolean` | Anchors of sections with several subsections open a menu of the subsections. |
+| `upperCaseAnchorBar` |  | `boolean` | Anchor texts in upper case. |
+| `backgroundDesignAnchorBar` |  | `BackgroundDesign` | Background of the anchor bar. |
+| `enableLazyLoading` |  | `boolean` | Subsections marked `lazy` render only when scrolled near. |
+| `subSectionLayout` |  | `ObjectPageSubSectionLayout` | Subsection titles above or left of their content. |
+| `sectionTitleLevel` |  | `TitleLevel` | Heading level of the section titles (subsection titles one below); Auto: H2. |
+| `useIconTabBar` |  | `boolean` | One section at a time, with a tab bar instead of the anchor bar. |
+| `showHeaderContent` |  | `boolean` | Shows the header content. |
+| `useTwoColumnsForLargeScreen` |  | `boolean` | Blocks use two columns instead of three on large screens. |
+| `showTitleInHeaderContent` |  | `boolean` | No effect with ObjectPageDynamicHeaderTitle (as in SAPUI5: only for the classic ObjectPageHeader). |
+| `showOnlyHighImportance` |  | `boolean` | Hides sections and subsections whose importance is not High. |
+| `isChildPage` |  | `boolean` | A child page: a stripe left of the header content. |
+| `alwaysShowContentHeader` |  | `boolean` | No effect with ObjectPageDynamicHeaderTitle (as in SAPUI5: only for the classic ObjectPageHeader). |
+| `headerContentPinnable` |  | `boolean` | Offers the pin button for the header content. |
+| `headerContentPinned` |  | `boolean` | The header content is pinned; without it the page keeps the state itself. |
+| `toggleHeaderOnTitleClick` |  | `boolean` | Clicking the title bar expands or collapses the header. |
+| `preserveHeaderStateOnScroll` |  | `boolean` | The header keeps its state while scrolling (no snap on scroll, no pin). |
+| `showEditHeaderButton` |  | `boolean` | Shows an "Edit Header" button in the header content (fires onEditHeaderButtonPress). |
+| `showFooter` |  | `boolean` | Shows the footer. |
+| `onHeaderContentPinnedStateChange` |  | `(e: ObjectPageLayout$HeaderContentPinnedStateChangeEvent) => void` | Fired when the pin button is pressed. |
+| `onToggleAnchorBar` |  | `(e: ObjectPageLayout$ToggleAnchorBarEvent) => void` | Fired when the anchor bar becomes fixed under the snapped title, or moves with the header again. |
+| `onSectionChange` |  | `(e: ObjectPageLayout$SectionChangeEvent) => void` | Fired when the current section changes (scrolling, or another tab). |
+| `onEditHeaderButtonPress` |  | `(e: Record&lt;string, never>) => void` | Fired when the "Edit Header" button is pressed. |
+| `onBeforeNavigate` |  | `(e: ObjectPageLayout$BeforeNavigateEvent) => void` | Fired before navigating to a section chosen in the anchor bar or tab bar; preventDefault() cancels it. |
+| `onNavigate` |  | `(e: ObjectPageLayout$NavigateEvent) => void` | Fired when a section is chosen in the anchor bar or tab bar. |
+| `onSubSectionVisibilityChange` |  | `(e: ObjectPageLayout$SubSectionVisibilityChangeEvent) => void` | Fired when the subsections in view change. |
+| `onBreakpointChange` |  | `(e: ObjectPageLayout$BreakpointChangeEvent) => void` | Fired when the page width moves into another media range. |
+| `extend` |  | `ExtendEntry&lt;SectionItem>[]` | Extension: insert, replace or remove sections (ids as in the model). |
+| `headerMessage` |  | `ReactNode` | Extension: message strip between title and header content (OP-17). |
+| `headerExpanded` |  | `boolean` | Extension: the header is expanded (state restoration); without it the page keeps the state itself. |
+| `sideContent` |  | `ReactNode` | Extension: dynamic side content (OP Dynamic Side Content): contextual information on the right. |
+| `sideContentOpen` |  | `boolean` | Extension: shows the side content. |
+| `sideContentTitle` |  | `string` | Extension: title of the side content. |
+| `letterboxing` |  | `boolean` | Extension: limits the page content to 1280px. |
+| `className` |  | `string` | Extra CSS class on the root element. |
+| `ref` |  | `Ref&lt;ObjectPageLayout>` |  |
+
+### `BlockItem` — interface
+
+A layout block of a subsection (OP Blocks): occupies 1, 2 or 3 columns, or fewer when fewer are available.
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `id` | **yes** | `string` |  |
+| `columns` | **yes** | `1 \| 2 \| 3` |  |
+| `content` | **yes** | `ReactNode` |  |
+| `more` |  | `boolean` | Shown only after "Show More" (the subsection's moreBlocks). |
+
+### `default` — component
+
+Instance methods of ObjectPageLayout.
+
+`import { default } from '@rhfan2019/smart-kit/uxap/ObjectPageLayout';`
+
+| Prop | Required | Type | Description |
+| --- | --- | --- | --- |
+| `sections` | **yes** | `SectionItem[]` | The sections. |
+| `scope` | **yes** | `string` | Extension: unique scope for element ids (e.g. the entity type). |
+| `headerTitle` |  | `ReactNode` | The title, an ObjectPageDynamicHeaderTitle. |
+| `headerContent` |  | `ReactNode` | Header content (header facets, the avatar). |
+| `footer` |  | `ReactNode` | Footer toolbar content (e.g. Save / Cancel while editing); shown with `showFooter`. |
+| `selectedSection` |  | `string` | Id of the selected section (with `useIconTabBar`: the tab shown). |
+| `showAnchorBar` |  | `boolean` | Shows the anchor bar. |
+| `showAnchorBarPopover` |  | `boolean` | Anchors of sections with several subsections open a menu of the subsections. |
+| `upperCaseAnchorBar` |  | `boolean` | Anchor texts in upper case. |
+| `backgroundDesignAnchorBar` |  | `BackgroundDesign` | Background of the anchor bar. |
+| `enableLazyLoading` |  | `boolean` | Subsections marked `lazy` render only when scrolled near. |
+| `subSectionLayout` |  | `ObjectPageSubSectionLayout` | Subsection titles above or left of their content. |
+| `sectionTitleLevel` |  | `TitleLevel` | Heading level of the section titles (subsection titles one below); Auto: H2. |
+| `useIconTabBar` |  | `boolean` | One section at a time, with a tab bar instead of the anchor bar. |
+| `showHeaderContent` |  | `boolean` | Shows the header content. |
+| `useTwoColumnsForLargeScreen` |  | `boolean` | Blocks use two columns instead of three on large screens. |
+| `showTitleInHeaderContent` |  | `boolean` | No effect with ObjectPageDynamicHeaderTitle (as in SAPUI5: only for the classic ObjectPageHeader). |
+| `showOnlyHighImportance` |  | `boolean` | Hides sections and subsections whose importance is not High. |
+| `isChildPage` |  | `boolean` | A child page: a stripe left of the header content. |
+| `alwaysShowContentHeader` |  | `boolean` | No effect with ObjectPageDynamicHeaderTitle (as in SAPUI5: only for the classic ObjectPageHeader). |
+| `headerContentPinnable` |  | `boolean` | Offers the pin button for the header content. |
+| `headerContentPinned` |  | `boolean` | The header content is pinned; without it the page keeps the state itself. |
+| `toggleHeaderOnTitleClick` |  | `boolean` | Clicking the title bar expands or collapses the header. |
+| `preserveHeaderStateOnScroll` |  | `boolean` | The header keeps its state while scrolling (no snap on scroll, no pin). |
+| `showEditHeaderButton` |  | `boolean` | Shows an "Edit Header" button in the header content (fires onEditHeaderButtonPress). |
+| `showFooter` |  | `boolean` | Shows the footer. |
+| `onHeaderContentPinnedStateChange` |  | `(e: ObjectPageLayout$HeaderContentPinnedStateChangeEvent) => void` | Fired when the pin button is pressed. |
+| `onToggleAnchorBar` |  | `(e: ObjectPageLayout$ToggleAnchorBarEvent) => void` | Fired when the anchor bar becomes fixed under the snapped title, or moves with the header again. |
+| `onSectionChange` |  | `(e: ObjectPageLayout$SectionChangeEvent) => void` | Fired when the current section changes (scrolling, or another tab). |
+| `onEditHeaderButtonPress` |  | `(e: Record&lt;string, never>) => void` | Fired when the "Edit Header" button is pressed. |
+| `onBeforeNavigate` |  | `(e: ObjectPageLayout$BeforeNavigateEvent) => void` | Fired before navigating to a section chosen in the anchor bar or tab bar; preventDefault() cancels it. |
+| `onNavigate` |  | `(e: ObjectPageLayout$NavigateEvent) => void` | Fired when a section is chosen in the anchor bar or tab bar. |
+| `onSubSectionVisibilityChange` |  | `(e: ObjectPageLayout$SubSectionVisibilityChangeEvent) => void` | Fired when the subsections in view change. |
+| `onBreakpointChange` |  | `(e: ObjectPageLayout$BreakpointChangeEvent) => void` | Fired when the page width moves into another media range. |
+| `extend` |  | `ExtendEntry&lt;SectionItem>[]` | Extension: insert, replace or remove sections (ids as in the model). |
+| `headerMessage` |  | `ReactNode` | Extension: message strip between title and header content (OP-17). |
+| `headerExpanded` |  | `boolean` | Extension: the header is expanded (state restoration); without it the page keeps the state itself. |
+| `sideContent` |  | `ReactNode` | Extension: dynamic side content (OP Dynamic Side Content): contextual information on the right. |
+| `sideContentOpen` |  | `boolean` | Extension: shows the side content. |
+| `sideContentTitle` |  | `string` | Extension: title of the side content. |
+| `letterboxing` |  | `boolean` | Extension: limits the page content to 1280px. |
+| `className` |  | `string` | Extra CSS class on the root element. |
+| `ref` |  | `Ref&lt;ObjectPageLayout>` |  |
+
+### `ObjectPageLayout$BeforeNavigateEvent` — type
+
+Event object of ObjectPageLayout's beforeNavigate.
+
+```ts
+export type ObjectPageLayout$BeforeNavigateEvent = PreventableEvent<{ /** Id of the section. */ section: string; /** Id of the subsection, when one was chosen. */ subSection?: string; }>;
+```
+
+### `ObjectPageLayout$BreakpointChangeEvent` — type
+
+Event object of ObjectPageLayout's breakpointChange.
+
+```ts
+export type ObjectPageLayout$BreakpointChangeEvent = DynamicPage$BreakpointChangeEvent;
+```
+
+### `ObjectPageLayout$HeaderContentPinnedStateChangeEvent` — interface
+
+Event object of ObjectPageLayout's headerContentPinnedStateChange.
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `pinned` | **yes** | `boolean` | True when the header content is now pinned. |
+
+### `ObjectPageLayout$NavigateEvent` — interface
+
+Event object of ObjectPageLayout's navigate.
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `section` | **yes** | `string` | Id of the section. |
+| `subSection` |  | `string` | Id of the subsection, when one was chosen. |
+
+### `ObjectPageLayout$SectionChangeEvent` — interface
+
+Event object of ObjectPageLayout's sectionChange.
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `section` | **yes** | `string` | Id of the section. |
+| `subSection` |  | `string` | Id of the subsection, when one was chosen. |
+
+### `ObjectPageLayout$SubSectionVisibilityChangeEvent` — interface
+
+Event object of ObjectPageLayout's subSectionVisibilityChange.
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `visibleSubSections` | **yes** | `Record&lt;string, SubSectionItem>` | The subsections in view, by id. |
+
+### `ObjectPageLayout$ToggleAnchorBarEvent` — interface
+
+Event object of ObjectPageLayout's toggleAnchorBar.
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `fixed` | **yes** | `boolean` | True: the anchor bar is fixed under the snapped title; false: it moves with the header. |
+
+### `SectionItem` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `id` | **yes** | `string` |  |
+| `title` | **yes** | `string` |  |
+| `subSections` | **yes** | `SubSectionItem[]` |  |
+| `messageStrip` |  | `ReactNode` | Message strip at the top of the section, above its title (OP-17). |
+| `importance` |  | `Importance` | With `showOnlyHighImportance` only High is shown (default High). |
+
+### `SubSectionItem` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `id` | **yes** | `string` |  |
+| `title` | **yes** | `string` |  |
+| `count` |  | `number` |  |
+| `isTable` |  | `boolean` | The content is a single table: its toolbar carries the title (OP-12 ③ ④). |
+| `content` |  | `ReactNode` |  |
+| `blocks` |  | `BlockItem[]` | Layout blocks instead of (or after) `content`. |
+| `partOfPreview` |  | `boolean` | False: content is behind "Show More" (UI.PartOfPreview = false). |
+| `actions` |  | `ReactNode` |  |
+| `lazy` |  | `boolean` | Render only when scrolled near (tables), with `enableLazyLoading`. |
+| `importance` |  | `Importance` | With `showOnlyHighImportance` only High is shown (default High). |
+
+## `@rhfan2019/smart-kit/uxap/library`
+
+`Importance` (const) · `ObjectPageSubSectionLayout` (const)
+
+### `Importance` — const
+
+sap.uxap.Importance
+
+```ts
+const Importance: { readonly High: "High"; readonly Medium: "Medium"; readonly Low: "Low"; }
+```
+
+### `ObjectPageSubSectionLayout` — const
+
+sap.uxap.ObjectPageSubSectionLayout
+
+```ts
+const ObjectPageSubSectionLayout: { readonly TitleOnTop: "TitleOnTop"; readonly TitleOnLeft: "TitleOnLeft"; }
+```
+
+## `@rhfan2019/smart-kit/v4/fe/macros/Chart`
+
+`$ChartSettings` (interface) · `Chart$DrilldownEvent` (interface) · `Chart$SelectionChangeEvent` (interface) · `ChartQuery` (interface) · `ChartSelectionData` (interface) · `default` (component)
+
+### `$ChartSettings` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `contextPath` | **yes** | `string` | Entity set path, e.g. "/Orders" (sap.fe.macros.Chart#contextPath). |
+| `metaPath` | **yes** | `string` | Annotation path of the chart, e.g. "@com.sap.vocabularies.UI.v1.Chart#Q" (alias "@UI.Chart#Q"), or of a UI.PresentationVariant / UI.SelectionPresentationVariant that contains one. |
+| `header` |  | `string` | Header text of the chart; default the UI.Chart Title. |
+| `headerVisible` |  | `boolean` | Whether the header (title and the content after it) is shown; the toolbar actions stay. |
+| `selectionMode` |  | `'None' \| 'Single' \| 'Multiple'` | "None": the data points cannot be selected; "Single": one; "Multiple": selecting adds to the selection. |
+| `actions` |  | `ReactNode` | Toolbar actions at the end of the toolbar (sap.fe.macros.Chart `actions`). |
+| `onSelectionChange` |  | `(e: Chart$SelectionChangeEvent) => void` | Data points were selected or deselected. |
+| `service` |  | `string` | Name of the service in `SmartKitProvider` `services`; default: the provider's `defaultService`. |
+| `query` |  | `ChartQuery \| null` | Applied filters (from `useFilterState` / the filter bar); null means "not executed yet". Undefined loads without filters. |
+| `headerContent` |  | `ReactNode` | Content after the header text (e.g. the view switch of the list report). |
+| `onDrilldown` |  | `(e: Chart$DrilldownEvent) => void` | Drilldown: "Show Details" of the selected data point. |
+| `revision` |  | `number` | Change to reload. |
+| `ref` |  | `Ref&lt;Chart>` | getSelectedContexts, getSelectionVariant, setSelectionVariant. |
+
+### `Chart$DrilldownEvent` — interface
+
+Drilldown from the popover's "Show Details" (smart-kit).
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `dimension` | **yes** | `string` | Property path of the dimension. |
+| `value` | **yes** | `string` | The dimension value of the selected data point. |
+
+### `Chart$SelectionChangeEvent` — interface
+
+sap.fe.macros.Chart `selectionChange`: data points were selected or deselected.
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `data` | **yes** | `ChartSelectionData[]` | The data points whose selection changed. |
+| `selected` | **yes** | `boolean` | True when they were selected, false when deselected. |
+
+### `ChartQuery` — interface
+
+Applied filters of the chart; null: not executed yet.
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `filters` | **yes** | `FilterState` |  |
+| `search` |  | `string` |  |
+
+### `ChartSelectionData` — interface
+
+One data point in `selectionChange`: the dimension and measure values by property path.
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `data` | **yes** | `Record&lt;string, unknown>` |  |
+
+### `default` — component
+
+Chart building block (sap.fe.macros.Chart). Renders nothing when the metaPath does not resolve to a UI.Chart. Instance of the chart building block (`ref`), sap.fe.macros.Chart.
+
+`import { default } from '@rhfan2019/smart-kit/v4/fe/macros/Chart';`
+
+| Prop | Required | Type | Description |
+| --- | --- | --- | --- |
+| `contextPath` | **yes** | `string` | Entity set path, e.g. "/Orders" (sap.fe.macros.Chart#contextPath). |
+| `metaPath` | **yes** | `string` | Annotation path of the chart, e.g. "@com.sap.vocabularies.UI.v1.Chart#Q" (alias "@UI.Chart#Q"), or of a UI.PresentationVariant / UI.SelectionPresentationVariant that contains one. |
+| `header` |  | `string` | Header text of the chart; default the UI.Chart Title. |
+| `headerVisible` |  | `boolean` | Whether the header (title and the content after it) is shown; the toolbar actions stay. |
+| `selectionMode` |  | `'None' \| 'Single' \| 'Multiple'` | "None": the data points cannot be selected; "Single": one; "Multiple": selecting adds to the selection. |
+| `actions` |  | `ReactNode` | Toolbar actions at the end of the toolbar (sap.fe.macros.Chart `actions`). |
+| `onSelectionChange` |  | `(e: Chart$SelectionChangeEvent) => void` | Data points were selected or deselected. |
+| `service` |  | `string` | Name of the service in `SmartKitProvider` `services`; default: the provider's `defaultService`. |
+| `query` |  | `ChartQuery \| null` | Applied filters (from `useFilterState` / the filter bar); null means "not executed yet". Undefined loads without filters. |
+| `headerContent` |  | `ReactNode` | Content after the header text (e.g. the view switch of the list report). |
+| `onDrilldown` |  | `(e: Chart$DrilldownEvent) => void` | Drilldown: "Show Details" of the selected data point. |
+| `revision` |  | `number` | Change to reload. |
+| `ref` |  | `Ref&lt;Chart>` | getSelectedContexts, getSelectionVariant, setSelectionVariant. |
+
+## `@rhfan2019/smart-kit/v4/fe/macros/Field`
+
+`$FieldSettings` (interface) · `default` (component) · `Field$ChangeEvent` (interface) · `Field$LiveChangeEvent` (interface) · `Field$MessageParameters` (interface) · `FieldFormatOptions` (interface)
+
+### `$FieldSettings` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `row` | **yes** | `Row \| undefined` | The row (binding context) to show the value of; undefined while loading. Text, unit, criticality and links come from the annotations of the property. |
+| `contextPath` |  | `string` | Entity set path the property belongs to, e.g. "/Items" (navigation: "/Items/_Category"). |
+| `metaPath` |  | `string \| FieldModel` | Property path relative to `contextPath` ("GrossAmount", "_Owner/Name"), a data point ("@com.sap.vocabularies.UI.v1.DataPoint#Rating", alias "@UI.DataPoint#Rating"), or the field model of a DataField as the model read it from the annotations (tables, forms). |
+| `typeName` |  | `string` | Entity type full name; instead of `contextPath` for types without an entity set (quick views, pages that have the type). |
+| `service` |  | `string` | Name of the service in `SmartKitProvider` `services`; default: the provider's `defaultService`. |
+| `readOnly` |  | `boolean` | false: the editor for the Edm type (value help from `Common.ValueList`); true or not set: the formatted value (text arrangement, unit, criticality). |
+| `value` |  | `unknown` | The value; default: read from `row` by the property path. |
+| `description` |  | `string` | The description (text) of the value; default: the property's Common.Text read from `row`. |
+| `formatOptions` |  | `FieldFormatOptions` | How the value is shown or edited (sap.fe.macros.field.FieldFormatOptions). |
+| `onChange` |  | `(e: Field$ChangeEvent) => void` | Edit mode: fired with the new value when it is committed (text: on blur or Enter; selection, date, checkbox: at once), as sap.fe.macros.Field#change. |
+| `onLiveChange` |  | `(e: Field$LiveChangeEvent) => void` | Edit mode: fired while text is typed. |
+| `aria-label` |  | `string` | Label for accessibility when used without a visible label. |
+| `error` |  | `string` | Edit mode: error text from the page (validation, server messages that target the property). |
+| `id` |  | `string` | Edit mode: element id of the input. |
+| `showLabel` |  | `boolean` | Edit mode: show the label above the editor (dialogs). |
+| `cell` |  | `boolean` | Rendered in a table cell: a micro chart without data leaves the cell empty (docs/15 MC-06). |
+| `ref` |  | `Ref&lt;Field>` |  |
+
+### `default` — component
+
+sap.fe.macros.Field Instance (ref) of a Field.
+
+`import { default } from '@rhfan2019/smart-kit/v4/fe/macros/Field';`
+
+| Prop | Required | Type | Description |
+| --- | --- | --- | --- |
+| `row` | **yes** | `Row \| undefined` | The row (binding context) to show the value of; undefined while loading. Text, unit, criticality and links come from the annotations of the property. |
+| `contextPath` |  | `string` | Entity set path the property belongs to, e.g. "/Items" (navigation: "/Items/_Category"). |
+| `metaPath` |  | `string \| FieldModel` | Property path relative to `contextPath` ("GrossAmount", "_Owner/Name"), a data point ("@com.sap.vocabularies.UI.v1.DataPoint#Rating", alias "@UI.DataPoint#Rating"), or the field model of a DataField as the model read it from the annotations (tables, forms). |
+| `typeName` |  | `string` | Entity type full name; instead of `contextPath` for types without an entity set (quick views, pages that have the type). |
+| `service` |  | `string` | Name of the service in `SmartKitProvider` `services`; default: the provider's `defaultService`. |
+| `readOnly` |  | `boolean` | false: the editor for the Edm type (value help from `Common.ValueList`); true or not set: the formatted value (text arrangement, unit, criticality). |
+| `value` |  | `unknown` | The value; default: read from `row` by the property path. |
+| `description` |  | `string` | The description (text) of the value; default: the property's Common.Text read from `row`. |
+| `formatOptions` |  | `FieldFormatOptions` | How the value is shown or edited (sap.fe.macros.field.FieldFormatOptions). |
+| `onChange` |  | `(e: Field$ChangeEvent) => void` | Edit mode: fired with the new value when it is committed (text: on blur or Enter; selection, date, checkbox: at once), as sap.fe.macros.Field#change. |
+| `onLiveChange` |  | `(e: Field$LiveChangeEvent) => void` | Edit mode: fired while text is typed. |
+| `aria-label` |  | `string` | Label for accessibility when used without a visible label. |
+| `error` |  | `string` | Edit mode: error text from the page (validation, server messages that target the property). |
+| `id` |  | `string` | Edit mode: element id of the input. |
+| `showLabel` |  | `boolean` | Edit mode: show the label above the editor (dialogs). |
+| `cell` |  | `boolean` | Rendered in a table cell: a micro chart without data leaves the cell empty (docs/15 MC-06). |
+| `ref` |  | `Ref&lt;Field>` |  |
+
+### `Field$ChangeEvent` — interface
+
+Event object of `onChange` (sap.fe.macros.Field#change).
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `value` | **yes** | `boolean \| number \| string \| undefined \| null` | The new value. |
+| `isValid` | **yes** | `boolean` | False when the entered text is not a valid value of the property's type (e.g. not a number). |
+
+### `Field$LiveChangeEvent` — interface
+
+Event object of `onLiveChange` (sap.fe.macros.Field#liveChange has no parameters; `value`, the text typed so far, is a smart-kit extension).
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `value` | **yes** | `string` |  |
+
+### `Field$MessageParameters` — interface
+
+Parameters of `addMessage` (sap.fe.macros.field.mixin.FieldMixin#addMessage).
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `message` |  | `string` |  |
+| `description` |  | `string` |  |
+| `persistent` |  | `boolean` |  |
+| `type` |  | `MessageType` |  |
+
+### `FieldFormatOptions` — interface
+
+sap.fe.macros.field.FieldFormatOptions: how the value is shown or edited (a data aggregation, ADR-032 rule 2).
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `displayMode` |  | `'Description' \| 'DescriptionValue' \| 'Value' \| 'ValueDescription'` | Value and its Common.Text: 'Description', 'DescriptionValue', 'Value' or 'ValueDescription'; default from UI.TextArrangement. |
+| `measureDisplayMode` |  | `'Hidden' \| 'ReadOnly'` | 'Hidden' hides the unit or currency of an amount. |
+| `textMaxCharactersDisplay` |  | `number` | Display mode: at most this many characters of a text are shown, the rest as "…". |
+| `textMaxLines` |  | `number` | Display mode: at most this many lines of a multi-line text are shown. |
+| `textLinesEdit` |  | `number` | Edit mode: number of lines of a multi-line text editor. |
+| `textMaxLength` |  | `number` | Edit mode: maximum number of characters (default: the property's MaxLength). |
+| `dateTimePattern` |  | `string` | Not yet used by smart-kit (stage 3/4): dateTimePattern, dateTimeStyle, showDate, showTime, showTimezone, … |
+| `dateTimeStyle` |  | `'short' \| 'medium' \| 'long' \| 'full'` |  |
+| `disableIntegerGrouping` |  | `boolean` |  |
+| `enableEnlargeImage` |  | `boolean` |  |
+| `fieldEditStyle` |  | `'RadioButtons' \| ''` |  |
+| `hasSituationsIndicator` |  | `boolean` |  |
+| `imageFitType` |  | `'Cover' \| 'Contain'` |  |
+| `radioButtonsHorizontalLayout` |  | `boolean` |  |
+| `reactiveAreaMode` |  | `'Inline' \| 'Overlay'` |  |
+| `showDate` |  | `boolean` |  |
+| `showTime` |  | `boolean` |  |
+| `showTimezone` |  | `boolean` |  |
+| `textExpandBehaviorDisplay` |  | `'InPlace' \| 'Popover'` |  |
+
+## `@rhfan2019/smart-kit/v4/fe/macros/FilterBar`
+
+`$FilterBarSettings` (interface) · `$FilterFieldSettings` (interface) · `default` (component) · `FilterBarFilters` (interface) · `FilterFieldItem` (interface) · `FilterFieldTemplateContext` (interface) · `SelectionVariant` (interface) · `SelectionVariantRange` (interface)
+
+### `$FilterBarSettings` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `contextPath` |  | `string` | Entity set path, e.g. `/Items`; used when no `state` is given (and then required). |
+| `metaPath` |  | `string` | Annotation path of the selection fields, e.g. `@com.sap.vocabularies.UI.v1.SelectionFields` (alias `@UI.SelectionFields`). Stage 2 reads the unqualified SelectionFields; qualified paths follow with the annotation work (docs/31 stage 3). |
+| `liveMode` |  | `boolean` | If true, the search is triggered automatically when a filter value is changed (no "Go" button). With a `state` of `useFilterState({ liveMode: true })` the bar is in live mode as well. |
+| `showClearButton` |  | `boolean` | Shows the "Clear" button. |
+| `showMessages` |  | `boolean` | Shows errors of the search (empty mandatory fields) in a message box. The list report template sets it to false. |
+| `ignorePersonalizationChanges` |  | `boolean` | When true, changes of "Adapt Filters" stay in this filter bar instance and are not written to `state` (so they are neither saved in views nor restored on back navigation). |
+| `navigationPropertiesForPersonalization` |  | `string[]` | Single-valued navigation properties whose properties are offered in "Adapt Filters" (paths `Nav/Property`). |
+| `filterFields` |  | `$FilterFieldSettings[]` | Custom filter fields (sap.fe.macros.filterBar.FilterField). |
+| `onFilterChanged` |  | `() => void` | Fired after a filter value or the visibility of a filter field changed. |
+| `onSearch` |  | `() => void` | Fired when the search was executed ("Go", Enter in the search field, live mode, `triggerSearch`). |
+| `onAfterClear` |  | `() => void` | Fired after the "Clear" button was pressed. |
+| `state` |  | `FilterStateApi` | Filter state from `useFilterState` (controlled); without it the bar keeps its own state for `contextPath`. |
+| `service` |  | `string` | Name of the service in `SmartKitProvider` `services` (own state only). |
+| `extend` |  | `ExtendEntry&lt;FilterFieldItem>[]` | Insert, replace or remove fields by id (property path); custom fields store their conditions under their id. |
+| `actions` |  | `ReactNode` | Extra buttons before "Go". |
+| `children` |  | `ReactNode` | Replace the default parts: write &lt;FilterBar.Search/>, &lt;FilterBar.Fields/>, &lt;FilterBar.Actions/>. |
+| `className` |  | `string` | Extra CSS class on the root element. |
+| `ref` |  | `Ref&lt;FilterBar>` |  |
+
+### `$FilterFieldSettings` — interface
+
+Settings of one entry of the `filterFields` aggregation (sap.fe.macros.filterBar.FilterField).
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `key` | **yes** | `string` | The property name of the FilterField; its conditions are stored under this key. |
+| `label` |  | `string` | The text that will be displayed for this FilterField. |
+| `property` |  | `string` | Defines which property are influenced by the FilterField. Without a `template` smart-kit shows the default condition input for this property (default: `key`). |
+| `anchor` |  | `string` | Reference to the key of another filter to place this one. |
+| `placement` |  | `'Before' \| 'After'` | Where the field is placed relative to `anchor` (default: after the last field). |
+| `required` |  | `boolean` | If set, the FilterField is marked as a mandatory field. |
+| `availability` |  | `'Default' \| 'Adaptation' \| 'Hidden'` | `Default` (shown), `Adaptation` (only offered in "Adapt Filters") or `Hidden`. |
+| `template` |  | `(ctx: FilterFieldTemplateContext) => ReactNode` | The editor of the field (FE: the `template` aggregation). |
+
+### `default` — component
+
+sap.fe.macros.FilterBar (docs/26b). Without `state` it keeps its own filter state for `contextPath`. Instance methods (ref) of `FilterBar` (sap.fe.macros.FilterBar).
+
+`import { default } from '@rhfan2019/smart-kit/v4/fe/macros/FilterBar';`
+
+| Prop | Required | Type | Description |
+| --- | --- | --- | --- |
+| `contextPath` |  | `string` | Entity set path, e.g. `/Items`; used when no `state` is given (and then required). |
+| `metaPath` |  | `string` | Annotation path of the selection fields, e.g. `@com.sap.vocabularies.UI.v1.SelectionFields` (alias `@UI.SelectionFields`). Stage 2 reads the unqualified SelectionFields; qualified paths follow with the annotation work (docs/31 stage 3). |
+| `liveMode` |  | `boolean` | If true, the search is triggered automatically when a filter value is changed (no "Go" button). With a `state` of `useFilterState({ liveMode: true })` the bar is in live mode as well. |
+| `showClearButton` |  | `boolean` | Shows the "Clear" button. |
+| `showMessages` |  | `boolean` | Shows errors of the search (empty mandatory fields) in a message box. The list report template sets it to false. |
+| `ignorePersonalizationChanges` |  | `boolean` | When true, changes of "Adapt Filters" stay in this filter bar instance and are not written to `state` (so they are neither saved in views nor restored on back navigation). |
+| `navigationPropertiesForPersonalization` |  | `string[]` | Single-valued navigation properties whose properties are offered in "Adapt Filters" (paths `Nav/Property`). |
+| `filterFields` |  | `$FilterFieldSettings[]` | Custom filter fields (sap.fe.macros.filterBar.FilterField). |
+| `onFilterChanged` |  | `() => void` | Fired after a filter value or the visibility of a filter field changed. |
+| `onSearch` |  | `() => void` | Fired when the search was executed ("Go", Enter in the search field, live mode, `triggerSearch`). |
+| `onAfterClear` |  | `() => void` | Fired after the "Clear" button was pressed. |
+| `state` |  | `FilterStateApi` | Filter state from `useFilterState` (controlled); without it the bar keeps its own state for `contextPath`. |
+| `service` |  | `string` | Name of the service in `SmartKitProvider` `services` (own state only). |
+| `extend` |  | `ExtendEntry&lt;FilterFieldItem>[]` | Insert, replace or remove fields by id (property path); custom fields store their conditions under their id. |
+| `actions` |  | `ReactNode` | Extra buttons before "Go". |
+| `children` |  | `ReactNode` | Replace the default parts: write &lt;FilterBar.Search/>, &lt;FilterBar.Fields/>, &lt;FilterBar.Actions/>. |
+| `className` |  | `string` | Extra CSS class on the root element. |
+| `ref` |  | `Ref&lt;FilterBar>` |  |
+
+### `FilterBarFilters` — interface
+
+Result of `getFilters()`: the current conditions (smart-kit has no sap.ui.model.Filter) and the search text.
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `filters` | **yes** | `FilterState` |  |
+| `search` |  | `string` |  |
+
+### `FilterFieldItem` — interface
+
+A filter field of the `extend` extension point (kit-extension): ids are property paths or custom keys.
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `id` | **yes** | `string` |  |
+| `label` | **yes** | `string` |  |
+| `render` |  | `(ctx: FilterFieldTemplateContext) => ReactNode` | Custom editor; when omitted the default ConditionInput is used. |
+
+### `FilterFieldTemplateContext` — interface
+
+Context of a custom filter field's editor (the `template` of a FilterField, or the `render` of an `extend` item).
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `conditions` | **yes** | `Condition[]` |  |
+| `onChange` | **yes** | `(c: Condition[]) => void` |  |
+| `label` | **yes** | `string` |  |
+| `id` | **yes** | `string` |  |
+| `required` |  | `boolean` |  |
+| `disabled` |  | `boolean` |  |
+
+### `SelectionVariant` — interface
+
+The JSON object of a sap.fe.navigation.SelectionVariant.
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `SelectionVariantID` |  | `string` |  |
+| `Text` |  | `string` |  |
+| `ODataFilterExpression` |  | `string` |  |
+| `Parameters` |  | `{ PropertyName: string; PropertyValue: string }[]` |  |
+| `SelectOptions` |  | `{ PropertyName: string; Ranges: SelectionVariantRange[] }[]` |  |
+
+### `SelectionVariantRange` — interface
+
+One range of a select option (sap.fe.navigation.SelectionVariant).
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `Sign` | **yes** | `'I' \| 'E'` |  |
+| `Option` | **yes** | `string` |  |
+| `Low` | **yes** | `string` |  |
+| `High` |  | `string \| null` |  |
+| `Text` |  | `string` | Description of the value (used by `setSelectionVariant(sv, true)`). |
+
+## `@rhfan2019/smart-kit/v4/fe/macros/Form`
+
+`$FormSettings` (interface) · `default` (component) · `Form$ChangeEvent` (interface) · `FormFieldItem` (interface) · `FormLayoutOptions` (interface)
+
+### `$FormSettings` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `row` | **yes** | `Row \| undefined` | The entity row (binding context) as read from the service; undefined while loading. |
+| `contextPath` |  | `string` | Entity set path, e.g. "/Items". |
+| `metaPath` |  | `string \| FormGroupModel[]` | The field group or facet: "@com.sap.vocabularies.UI.v1.FieldGroup#Q" (alias "@UI.FieldGroup#Q"), "@UI.Identification", the id of a facet of UI.Facets (a reference facet, or a collection facet: all its field groups), or the field groups as the model read them (`subSection.content.groups`). |
+| `typeName` |  | `string` | Entity type full name; instead of `contextPath` when the page has the type. |
+| `service` |  | `string` | Name of the service in `SmartKitProvider` `services`; default: the provider's `defaultService`. |
+| `title` |  | `string` | Title shown above the form. |
+| `visible` |  | `boolean` |  |
+| `layout` |  | `FormLayoutOptions` | Layout (sap.fe.macros.form.FormLayoutOptions); default ColumnLayout with columnsM 3, columnsL 4, columnsXL 6. |
+| `readOnly` |  | `boolean` | false: editable fields show editors (then pass `values`, `onChange`, `errors`); true or not set: display. |
+| `extend` |  | `ExtendEntry&lt;FormFieldItem>[]` | Insert or replace fields (ids as in the model; anchors may be in any group). |
+| `values` |  | `Row` | Edit mode values by property path (the page keeps them). |
+| `onChange` |  | `(e: Form$ChangeEvent) => void` | Edit mode: fired with the property path and the new value. |
+| `errors` |  | `Record&lt;string, string>` | Edit mode: error texts by property path. |
+| `creating` |  | `boolean` | Edit mode: creating a new object (key and immutable properties are editable). |
+
+### `default` — component
+
+sap.fe.macros.Form
+
+`import { default } from '@rhfan2019/smart-kit/v4/fe/macros/Form';`
+
+| Prop | Required | Type | Description |
+| --- | --- | --- | --- |
+| `row` | **yes** | `Row \| undefined` | The entity row (binding context) as read from the service; undefined while loading. |
+| `contextPath` |  | `string` | Entity set path, e.g. "/Items". |
+| `metaPath` |  | `string \| FormGroupModel[]` | The field group or facet: "@com.sap.vocabularies.UI.v1.FieldGroup#Q" (alias "@UI.FieldGroup#Q"), "@UI.Identification", the id of a facet of UI.Facets (a reference facet, or a collection facet: all its field groups), or the field groups as the model read them (`subSection.content.groups`). |
+| `typeName` |  | `string` | Entity type full name; instead of `contextPath` when the page has the type. |
+| `service` |  | `string` | Name of the service in `SmartKitProvider` `services`; default: the provider's `defaultService`. |
+| `title` |  | `string` | Title shown above the form. |
+| `visible` |  | `boolean` |  |
+| `layout` |  | `FormLayoutOptions` | Layout (sap.fe.macros.form.FormLayoutOptions); default ColumnLayout with columnsM 3, columnsL 4, columnsXL 6. |
+| `readOnly` |  | `boolean` | false: editable fields show editors (then pass `values`, `onChange`, `errors`); true or not set: display. |
+| `extend` |  | `ExtendEntry&lt;FormFieldItem>[]` | Insert or replace fields (ids as in the model; anchors may be in any group). |
+| `values` |  | `Row` | Edit mode values by property path (the page keeps them). |
+| `onChange` |  | `(e: Form$ChangeEvent) => void` | Edit mode: fired with the property path and the new value. |
+| `errors` |  | `Record&lt;string, string>` | Edit mode: error texts by property path. |
+| `creating` |  | `boolean` | Edit mode: creating a new object (key and immutable properties are editable). |
+
+### `Form$ChangeEvent` — interface
+
+Event object of `onChange` (smart-kit extension: the form's values are kept by the page).
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `path` | **yes** | `string` | Property path of the changed field. |
+| `value` | **yes** | `unknown` | The new value. |
+
+### `FormFieldItem` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `id` | **yes** | `string` |  |
+| `label` | **yes** | `string` |  |
+| `render` |  | `(row: Row \| undefined) => ReactNode` |  |
+
+### `FormLayoutOptions` — interface
+
+sap.fe.macros.form.FormLayoutOptions (a data aggregation, ADR-032 rule 2). Only the ColumnLayout column counts are used.
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `type` |  | `'ColumnLayout' \| 'ResponsiveGridLayout'` | 'ColumnLayout' (FE default) or 'ResponsiveGridLayout' (shown as ColumnLayout). |
+| `columnsM` |  | `number` | Columns at container width ≥ 600px. |
+| `columnsL` |  | `number` | Columns at container width ≥ 1024px. |
+| `columnsXL` |  | `number` | Columns at container width ≥ 1440px. |
+| `labelCellsLarge` |  | `number` | Not used by smart-kit (labels are always on top): labelCellsLarge, emptyCellsLarge, label and empty spans, breakpoints … |
+| `emptyCellsLarge` |  | `number` |  |
+| `adjustLabelSpan` |  | `boolean` |  |
+| `backgroundDesign` |  | `string` |  |
+| `breakpointL` |  | `number` |  |
+| `breakpointM` |  | `number` |  |
+| `breakpointXL` |  | `number` |  |
+| `emptySpanL` |  | `number` |  |
+| `emptySpanM` |  | `number` |  |
+| `emptySpanS` |  | `number` |  |
+| `emptySpanXL` |  | `number` |  |
+| `labelSpanL` |  | `number` |  |
+| `labelSpanM` |  | `number` |  |
+| `labelSpanS` |  | `number` |  |
+| `labelSpanXL` |  | `number` |  |
+| `singleContainerFullSize` |  | `boolean` |  |
+
+## `@rhfan2019/smart-kit/v4/fe/macros/KPITag`
+
+`$KPITagSettings` (interface) · `default` (component)
+
+### `$KPITagSettings` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `text` |  | `string` | The KPI label. |
+| `number` |  | `string` | The KPI value. |
+| `unit` |  | `string` | The unit after the value. |
+| `status` |  | `string` | Status colour (a ValueState). |
+| `showIcon` |  | `boolean` | Shows the status icon. |
+| `tooltip` |  | `string` | Tooltip of the tag. |
+| `onPress` |  | `(e: Record&lt;string, never>) => void` | Fired when the tag is pressed (e.g. to open the KPI card). |
+
+### `default` — component
+
+sap.fe.macros.KPITag: the KPI usage of GenericTag (text, number and unit, status colour).
+
+`import { default } from '@rhfan2019/smart-kit/v4/fe/macros/KPITag';`
+
+| Prop | Required | Type | Description |
+| --- | --- | --- | --- |
+| `text` |  | `string` | The KPI label. |
+| `number` |  | `string` | The KPI value. |
+| `unit` |  | `string` | The unit after the value. |
+| `status` |  | `string` | Status colour (a ValueState). |
+| `showIcon` |  | `boolean` | Shows the status icon. |
+| `tooltip` |  | `string` | Tooltip of the tag. |
+| `onPress` |  | `(e: Record&lt;string, never>) => void` | Fired when the tag is pressed (e.g. to open the KPI card). |
+
+## `@rhfan2019/smart-kit/v4/fe/macros/MessageButton`
+
+`$MessageButtonSettings` (interface) · `default` (component) · `MessageButton$VisibilityChangeEvent` (interface)
+
+### `$MessageButtonSettings` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `onVisibilityChange` |  | `(e: MessageButton$VisibilityChangeEvent) => void` | The button was shown (the first message arrived) or hidden (the last message went). |
+
+### `default` — component
+
+Footer message button with the message popover (sap.fe.macros.MessageButton; MessagePopover, docs/26): visible only while there are messages.
 
 `import { default } from '@rhfan2019/smart-kit/v4/fe/macros/MessageButton';`
 
 | Prop | Required | Type | Description |
 | --- | --- | --- | --- |
-| `defaultOpened` |  | `boolean` |  |
+| `onVisibilityChange` |  | `(e: MessageButton$VisibilityChangeEvent) => void` | The button was shown (the first message arrived) or hidden (the last message went). |
+
+### `MessageButton$VisibilityChangeEvent` — interface
+
+sap.fe.macros.MessageButton `visibilityChange`: the button was shown or hidden.
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `visible` | **yes** | `boolean` | Whether the button is visible now. |
+
+## `@rhfan2019/smart-kit/v4/fe/macros/MicroChart`
+
+`$MicroChartSettings` (interface) · `default` (component) · `MicroChartAreaThresholds` (interface) · `MicroChartCriticality` (type) · `MicroChartData` (interface) · `MicroChartKind` (type) · `MicroChartPoint` (interface) · `MicroChartSize` (type) · `MicroChartThreshold` (interface)
+
+### `$MicroChartSettings` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `contextPath` |  | `string` | Entity set path of the annotated entity, e.g. "/Orders" (sap.fe.macros.MicroChart#contextPath). |
+| `metaPath` |  | `string` | Annotation path of the UI.Chart, e.g. "@com.sap.vocabularies.UI.v1.Chart#Budget" (alias "@UI.Chart#Budget"), or "_Items/@UI.Chart#Trend" over a collection. With it the chart, its title, subtitle and unit come from the annotations and the data from `row` / `path`; without it the data props (`kind`, `value`, `points`…) draw the chart. |
+| `showOnlyChart` |  | `boolean` | Only the chart, without title, subtitle and unit of measure. |
+| `size` |  | `MicroChartSize` | A fixed size; without it the chart fills its container (MC-02). |
+| `hideOnNoData` |  | `boolean` | Render nothing when there is no data (table cells, MC-06); otherwise a "No data" placeholder (MC-05). |
+| `titleAsLink` |  | `boolean` | The title is a link that fires `titlePress`. |
+| `linkAriaText` |  | `string` | Accessible name of the title link. |
+| `onTitlePress` |  | `() => void` | The title link was pressed (`titleAsLink`). |
+| `onPress` |  | `() => void` | When set, the chart is a button (Enter / Space / click). Not used for the "No data" placeholder. |
+| `service` |  | `string` | Name of the service in `SmartKitProvider` `services`; default: the provider's `defaultService`. |
+| `row` |  | `Row` | The annotated entity as read from the service (the binding context in Fiori elements); undefined while loading. |
+| `path` |  | `string` | Entity path of the annotated entity, e.g. "Orders('1')": reads the collection of a chart over a navigation. |
+| `color` |  | `number` | Qualitative palette colour 1–11, used when there is no criticality (Harvey Ball, MC-56). Default 1. |
+| `kind` |  | `MicroChartKind` | Chart type: "bullet" \| "radial" \| "harvey" \| "delta" \| "column" \| "line" \| "comparison" \| "area" \| "stackedBar" (from `UI.Chart/ChartType` when model-driven). |
+| `label` |  | `string` | Accessible name, e.g. the facet title or the column header. |
+| `value` |  | `number` | Single-value charts (bullet, radial, harvey, delta value 1). |
+| `target` |  | `number` | Bullet target; radial total (default 100: the value is a percentage, MC-51); delta value 2. |
+| `forecast` |  | `number` | Bullet forecast (MC-23). |
+| `min` |  | `number` | Bullet scale start (default: the smallest of 0 and all values, MC-26). |
+| `max` |  | `number` | Bullet scale end (default: the largest value); Harvey Ball total (MaximumValue, MC-55). |
+| `thresholds` |  | `MicroChartThreshold[]` | Bullet threshold markers (MC-25). |
+| `mode` |  | `'actual' \| 'delta'` | Bullet: 'delta' shows the difference between the value and the target (DeltaBulletChart, MC-24). |
+| `criticality` |  | `MicroChartCriticality` | Semantic colour of the value (from `UI.DataPoint/Criticality` or `CriticalityCalculation`). |
+| `points` |  | `MicroChartPoint[]` | Series charts (column, line, comparison, area, stacked bar). Comparison shows at most 12 bars (MC-41). |
+| `lines` |  | `MicroChartPoint[][]` | Line: up to three lines, one per measure (MC-35); replaces `points`. |
+| `threshold` |  | `number` | Line: a threshold line (MC-39). |
+| `showPoints` |  | `boolean` | Line: show the data points (MC-37; default false). |
+| `areaThresholds` |  | `MicroChartAreaThresholds` | Area: threshold areas (MC-47). |
+| `view` |  | `'normal' \| 'wide'` | Area: 'wide' puts the labels before and after the chart (MC-49). |
+| `titles` |  | `[string, string]` | Delta: names (or dates) of the two values, the optional left labels (MC-62). |
+| `columnLabels` |  | `boolean` | Column: a value label on every column when the columns are wide enough and the chart is at least 72 px high (MC-31). |
+| `focusPoints` |  | `number[]` | Line: indexes of focus points of the first line, e.g. [0, n - 1] for the first and last value (MC-38). |
+| `thresholdLabel` |  | `boolean` | Line: show the threshold value next to the threshold line (MC-39). |
+| `minMaxLabels` |  | `boolean` | Area: the smallest and largest value as extra labels (MC-48). |
+| `scaleMin` |  | `number` | Line, column, area: a fixed scale, so that the charts of a table column are comparable (MC-40). |
+| `scaleMax` |  | `number` |  |
+| `format` |  | `(n: number) => string` | Formats numbers for the text alternative (default Intl.NumberFormat of the locale). |
+| `formatLabel` |  | `(n: number) => string` | Formats the visible number labels (default: short form of the locale, e.g. "6.7M", MC-13). |
+
+### `default` — component
+
+Micro chart building block (sap.fe.macros.MicroChart): with `metaPath` the UI.Chart annotation decides type, data, title and unit; without it the data props draw the chart directly.
+
+`import { default } from '@rhfan2019/smart-kit/v4/fe/macros/MicroChart';`
+
+| Prop | Required | Type | Description |
+| --- | --- | --- | --- |
+| `contextPath` |  | `string` | Entity set path of the annotated entity, e.g. "/Orders" (sap.fe.macros.MicroChart#contextPath). |
+| `metaPath` |  | `string` | Annotation path of the UI.Chart, e.g. "@com.sap.vocabularies.UI.v1.Chart#Budget" (alias "@UI.Chart#Budget"), or "_Items/@UI.Chart#Trend" over a collection. With it the chart, its title, subtitle and unit come from the annotations and the data from `row` / `path`; without it the data props (`kind`, `value`, `points`…) draw the chart. |
+| `showOnlyChart` |  | `boolean` | Only the chart, without title, subtitle and unit of measure. |
+| `size` |  | `MicroChartSize` | A fixed size; without it the chart fills its container (MC-02). |
+| `hideOnNoData` |  | `boolean` | Render nothing when there is no data (table cells, MC-06); otherwise a "No data" placeholder (MC-05). |
+| `titleAsLink` |  | `boolean` | The title is a link that fires `titlePress`. |
+| `linkAriaText` |  | `string` | Accessible name of the title link. |
+| `onTitlePress` |  | `() => void` | The title link was pressed (`titleAsLink`). |
+| `onPress` |  | `() => void` | When set, the chart is a button (Enter / Space / click). Not used for the "No data" placeholder. |
+| `service` |  | `string` | Name of the service in `SmartKitProvider` `services`; default: the provider's `defaultService`. |
+| `row` |  | `Row` | The annotated entity as read from the service (the binding context in Fiori elements); undefined while loading. |
+| `path` |  | `string` | Entity path of the annotated entity, e.g. "Orders('1')": reads the collection of a chart over a navigation. |
+| `color` |  | `number` | Qualitative palette colour 1–11, used when there is no criticality (Harvey Ball, MC-56). Default 1. |
+| `kind` |  | `MicroChartKind` | Chart type: "bullet" \| "radial" \| "harvey" \| "delta" \| "column" \| "line" \| "comparison" \| "area" \| "stackedBar" (from `UI.Chart/ChartType` when model-driven). |
+| `label` |  | `string` | Accessible name, e.g. the facet title or the column header. |
+| `value` |  | `number` | Single-value charts (bullet, radial, harvey, delta value 1). |
+| `target` |  | `number` | Bullet target; radial total (default 100: the value is a percentage, MC-51); delta value 2. |
+| `forecast` |  | `number` | Bullet forecast (MC-23). |
+| `min` |  | `number` | Bullet scale start (default: the smallest of 0 and all values, MC-26). |
+| `max` |  | `number` | Bullet scale end (default: the largest value); Harvey Ball total (MaximumValue, MC-55). |
+| `thresholds` |  | `MicroChartThreshold[]` | Bullet threshold markers (MC-25). |
+| `mode` |  | `'actual' \| 'delta'` | Bullet: 'delta' shows the difference between the value and the target (DeltaBulletChart, MC-24). |
+| `criticality` |  | `MicroChartCriticality` | Semantic colour of the value (from `UI.DataPoint/Criticality` or `CriticalityCalculation`). |
+| `points` |  | `MicroChartPoint[]` | Series charts (column, line, comparison, area, stacked bar). Comparison shows at most 12 bars (MC-41). |
+| `lines` |  | `MicroChartPoint[][]` | Line: up to three lines, one per measure (MC-35); replaces `points`. |
+| `threshold` |  | `number` | Line: a threshold line (MC-39). |
+| `showPoints` |  | `boolean` | Line: show the data points (MC-37; default false). |
+| `areaThresholds` |  | `MicroChartAreaThresholds` | Area: threshold areas (MC-47). |
+| `view` |  | `'normal' \| 'wide'` | Area: 'wide' puts the labels before and after the chart (MC-49). |
+| `titles` |  | `[string, string]` | Delta: names (or dates) of the two values, the optional left labels (MC-62). |
+| `columnLabels` |  | `boolean` | Column: a value label on every column when the columns are wide enough and the chart is at least 72 px high (MC-31). |
+| `focusPoints` |  | `number[]` | Line: indexes of focus points of the first line, e.g. [0, n - 1] for the first and last value (MC-38). |
+| `thresholdLabel` |  | `boolean` | Line: show the threshold value next to the threshold line (MC-39). |
+| `minMaxLabels` |  | `boolean` | Area: the smallest and largest value as extra labels (MC-48). |
+| `scaleMin` |  | `number` | Line, column, area: a fixed scale, so that the charts of a table column are comparable (MC-40). |
+| `scaleMax` |  | `number` |  |
+| `format` |  | `(n: number) => string` | Formats numbers for the text alternative (default Intl.NumberFormat of the locale). |
+| `formatLabel` |  | `(n: number) => string` | Formats the visible number labels (default: short form of the locale, e.g. "6.7M", MC-13). |
+
+### `MicroChartAreaThresholds` — interface
+
+Area threshold boundaries, one value per point (MC-47).
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `direction` | **yes** | `'Maximize' \| 'Minimize' \| 'Target'` |  |
+| `deviationLow` |  | `number[]` |  |
+| `toleranceLow` |  | `number[]` |  |
+| `toleranceHigh` |  | `number[]` |  |
+| `deviationHigh` |  | `number[]` |  |
+
+### `MicroChartCriticality` — type
+
+```ts
+export type MicroChartCriticality = 0 | 1 | 2 | 3 | 5;
+```
+
+### `MicroChartData` — interface
+
+The data-driven drawing of one micro chart (the plain-control usage; stage 6: the sap.suite.ui.microchart controls).
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `kind` | **yes** | `MicroChartKind` | Chart type: "bullet" \| "radial" \| "harvey" \| "delta" \| "column" \| "line" \| "comparison" \| "area" \| "stackedBar" (from `UI.Chart/ChartType` when model-driven). |
+| `label` | **yes** | `string` | Accessible name, e.g. the facet title or the column header. |
+| `value` |  | `number` | Single-value charts (bullet, radial, harvey, delta value 1). |
+| `target` |  | `number` | Bullet target; radial total (default 100: the value is a percentage, MC-51); delta value 2. |
+| `forecast` |  | `number` | Bullet forecast (MC-23). |
+| `min` |  | `number` | Bullet scale start (default: the smallest of 0 and all values, MC-26). |
+| `max` |  | `number` | Bullet scale end (default: the largest value); Harvey Ball total (MaximumValue, MC-55). |
+| `thresholds` |  | `MicroChartThreshold[]` | Bullet threshold markers (MC-25). |
+| `mode` |  | `'actual' \| 'delta'` | Bullet: 'delta' shows the difference between the value and the target (DeltaBulletChart, MC-24). |
+| `criticality` |  | `MicroChartCriticality` | Semantic colour of the value (from `UI.DataPoint/Criticality` or `CriticalityCalculation`). |
+| `color` |  | `number` | Qualitative palette colour 1–11, used when there is no criticality (Harvey Ball, MC-56). Default 1. |
+| `points` |  | `MicroChartPoint[]` | Series charts (column, line, comparison, area, stacked bar). Comparison shows at most 12 bars (MC-41). |
+| `lines` |  | `MicroChartPoint[][]` | Line: up to three lines, one per measure (MC-35); replaces `points`. |
+| `threshold` |  | `number` | Line: a threshold line (MC-39). |
+| `showPoints` |  | `boolean` | Line: show the data points (MC-37; default false). |
+| `areaThresholds` |  | `MicroChartAreaThresholds` | Area: threshold areas (MC-47). |
+| `view` |  | `'normal' \| 'wide'` | Area: 'wide' puts the labels before and after the chart (MC-49). |
+| `titles` |  | `[string, string]` | Delta: names (or dates) of the two values, the optional left labels (MC-62). |
+| `columnLabels` |  | `boolean` | Column: a value label on every column when the columns are wide enough and the chart is at least 72 px high (MC-31). |
+| `focusPoints` |  | `number[]` | Line: indexes of focus points of the first line, e.g. [0, n - 1] for the first and last value (MC-38). |
+| `thresholdLabel` |  | `boolean` | Line: show the threshold value next to the threshold line (MC-39). |
+| `minMaxLabels` |  | `boolean` | Area: the smallest and largest value as extra labels (MC-48). |
+| `scaleMin` |  | `number` | Line, column, area: a fixed scale, so that the charts of a table column are comparable (MC-40). |
+| `scaleMax` |  | `number` |  |
+| `format` |  | `(n: number) => string` | Formats numbers for the text alternative (default Intl.NumberFormat of the locale). |
+| `formatLabel` |  | `(n: number) => string` | Formats the visible number labels (default: short form of the locale, e.g. "6.7M", MC-13). |
+| `hideOnNoData` |  | `boolean` | Render nothing when there is no data (table cells, MC-06); otherwise a "No data" placeholder (MC-05). |
+| `size` |  | `MicroChartSize` | A fixed size; without it the chart fills its container (MC-02). |
+| `onPress` |  | `() => void` | When set, the chart is a button (Enter / Space / click). Not used for the "No data" placeholder. |
+
+### `MicroChartKind` — type
+
+```ts
+export type MicroChartKind = 'bullet' | 'radial' | 'harvey' | 'delta' | 'column' | 'line' | 'comparison' | 'area' | 'stackedBar';
+```
+
+### `MicroChartPoint` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `label` | **yes** | `string` | Dimension value (category or date) shown as a label. |
+| `value` | **yes** | `number` |  |
+| `criticality` |  | `MicroChartCriticality` |  |
+| `target` |  | `number` | Area: the target value at this point (MC-46). |
+| `display` |  | `string` | Stacked bar: text shown on the segment instead of the percentage (MC-59). |
+| `color` |  | `number` | Stacked bar: qualitative palette colour 1–11 when there is no criticality. |
+
+### `MicroChartSize` — type
+
+Size of the micro chart (sap.m.Size as used by sap.fe.macros.MicroChart); without it the chart fills its container.
+
+```ts
+export type MicroChartSize = 'XS' | 'S' | 'M' | 'L';
+```
+
+### `MicroChartThreshold` — interface
+
+A bullet chart threshold marker (MC-25).
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `value` | **yes** | `number` |  |
+| `criticality` | **yes** | `MicroChartCriticality` |  |
+
+## `@rhfan2019/smart-kit/v4/fe/macros/Paginator`
+
+`$PaginatorSettings` (interface) · `default` (component)
+
+### `$PaginatorSettings` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `ariaTitle` |  | `string` | Accessible name of the paginator (the object type, e.g. "Purchase Orders"). |
+| `onPrevious` |  | `() => void` | Extension: go to the previous object; without it (and without column paging) the button is disabled. |
+| `onNext` |  | `() => void` | Extension: go to the next object; without it (and without column paging) the button is disabled. |
+
+### `default` — component
+
+sap.fe.macros.Paginator: previous / next object buttons. Without handlers it uses the paging of its column.
+
+`import { default } from '@rhfan2019/smart-kit/v4/fe/macros/Paginator';`
+
+| Prop | Required | Type | Description |
+| --- | --- | --- | --- |
+| `ariaTitle` |  | `string` | Accessible name of the paginator (the object type, e.g. "Purchase Orders"). |
+| `onPrevious` |  | `() => void` | Extension: go to the previous object; without it (and without column paging) the button is disabled. |
+| `onNext` |  | `() => void` | Extension: go to the next object; without it (and without column paging) the button is disabled. |
+
+## `@rhfan2019/smart-kit/v4/fe/macros/Share`
+
+`$ShareSettings` (interface) · `default` (component) · `ShareOptions` (interface)
+
+### `$ShareSettings` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `title` | **yes** | `string` | Extension: subject of the e-mail; FE takes the page title. |
+| `shareOptions` |  | `ShareOptions` | Options of the share menu. |
+| `href` |  | `string` | Extension: link to share (relative links are resolved against the document base URI); FE takes the app URL. |
+
+### `default` — component
+
+`import { default } from '@rhfan2019/smart-kit/v4/fe/macros/Share';`
+
+| Prop | Required | Type | Description |
+| --- | --- | --- | --- |
+| `title` | **yes** | `string` | Extension: subject of the e-mail; FE takes the page title. |
+| `shareOptions` |  | `ShareOptions` | Options of the share menu. |
+| `href` |  | `string` | Extension: link to share (relative links are resolved against the document base URI); FE takes the app URL. |
+
+### `ShareOptions` — interface
+
+sap.fe.macros.share.ShareOptions
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `showShareInWorkzone` |  | `boolean` | Offer "Share in SAP Build Work Zone": not available outside SAP BTP, so never shown (as SAPUI5 does there). |
+
+## `@rhfan2019/smart-kit/v4/fe/macros/Table`
+
+`$ActionSettings` (interface) · `$ColumnSettings` (interface) · `$TableCreationOptionsSettings` (interface) · `$TableSettings` (interface) · `ActionGroup` (interface) · `ActionItem` (interface) · `ColumnItem` (interface) · `Context` (interface) · `default` (component) · `Table$BeforeExportEvent` (interface) · `Table$ExportedEvent` (type) · `Table$RowPressEvent` (interface) · `Table$SelectionChangeEvent` (interface) · `TableContextValue` (interface) · `TableExtendEntry` (type) · `TableQuery` (interface)
+
+### `$ActionSettings` — interface
+
+A custom action (sap.fe.macros.table.Action) of the `actions` aggregation.
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `key` | **yes** | `string` | Unique key; annotation actions have keys like "DataFieldForAction::Namespace.action". |
+| `text` | **yes** | `string` | Button text. |
+| `anchor` |  | `string` | Key of the action the new one is placed next to; default: after the last action. |
+| `placement` |  | `'After' \| 'Before'` |  |
+| `enabled` |  | `boolean` |  |
+| `enableOnSelect` |  | `'single' \| 'multi'` | Enabled only with one ("single") or at least one ("multi") selected row. |
+| `requiresSelection` |  | `boolean` | Enabled only with selected rows. |
+| `visible` |  | `boolean` |  |
+| `onPress` |  | `(e: { selectedContexts: Context[] }) => void` | The button was pressed; the contexts of the selected rows are passed. |
+
+### `$ColumnSettings` — interface
+
+A custom column (sap.fe.macros.table.Column) of the `columns` aggregation.
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `key` | **yes** | `string` | Unique key; annotation columns have keys like "DataField::GrossAmount". |
+| `header` |  | `string` | Column header. |
+| `anchor` |  | `string` | Key of the column the new one is placed next to; default: after the last column. |
+| `placement` |  | `'After' \| 'Before'` |  |
+| `width` |  | `string` | Column width (CSS length). |
+| `importance` |  | `'High' \| 'Medium' \| 'Low' \| 'None'` | Importance for the pop-in of responsive tables. |
+| `horizontalAlign` |  | `'Begin' \| 'Center' \| 'End'` | Horizontal alignment of the cells. |
+| `properties` |  | `string[]` | Properties the column shows: they are selected from the service (and exported). |
+| `disableExport` |  | `boolean` | The column is not exported. |
+| `template` |  | `(row: Row) => ReactNode` | Cell content (the template control of the column in FE). |
+
+### `$TableCreationOptionsSettings` — interface
+
+Creation options (sap.fe.macros.table.TableCreationOptions) of the `creationMode` aggregation.
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `name` |  | `'AddViaValueHelp' \| 'CreationDialog' \| 'External' \| 'Inline' \| 'InlineCreationRows' \| 'NewPage'` | "CreationDialog" (a dialog with the line item fields; then the object page of a list), "Inline" / "InlineCreationRows" (a new row in sub-tables). Default: "CreationDialog" for lists, "Inline" for sub-tables; "NewPage", "External" and "AddViaValueHelp" are not implemented yet (they behave as the default). |
+| `enabled` |  | `boolean` | false: no "Create" button (smart-kit addition; FE hides it with UI.CreateHidden). |
+
+### `$TableSettings` — interface
+
+Settings of sap.fe.macros.Table (docs/26b; defaults in "实际默认值（源码）").
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `contextPath` |  | `string` | Entity set path as in FE: "/Orders"; a sub-table "/Orders/_Item" (the navigation of the object in `bindingContext`). |
+| `metaPath` |  | `string` | Annotation path of the table: "@com.sap.vocabularies.UI.v1.LineItem#Q" (alias "@UI.LineItem#Q"), "@…SelectionPresentationVariant#Q" or "@…PresentationVariant#Q" (their line item, sort, grouping and totals); sub-tables may prefix the navigation ("_Item/@UI.LineItem"). Default: the LineItem (sub-tables: the one of the UI.Facets entry). |
+| `bindingContext` |  | `string` | Instance path of the parent object of a sub-table, e.g. "Orders('1')" (FE: the binding context; smart-kit addition). |
+| `service` |  | `string` | Name of the service in `SmartKitProvider` `services`; default: the provider's `defaultService` (smart-kit addition). |
+| `type` |  | `'GridTable' \| 'ResponsiveTable' \| 'AnalyticalTable'` | Table type: "ResponsiveTable" (sap.m.Table, rows scroll with the page), "GridTable" and "AnalyticalTable" (the grid; grouping and totals come from the annotations, docs/23). Default: the grid (FE derives it from the annotations, stage 4). |
+| `rowCountMode` |  | `'Auto' \| 'Fixed' \| 'Interactive'` | Grid tables: "Auto" fills the available height with its own scrollbar (default of list tables); "Fixed" and "Interactive" grow with the rows and a "More" button (default of sub-tables). |
+| `header` |  | `string` | Table title in the toolbar; default `UI.HeaderInfo/TypeNamePlural`, with the row count. |
+| `headerVisible` |  | `boolean` | Shows the title. Default true. |
+| `headerLevel` |  | `TitleLevel` | Heading level of the title (OP Title Styles; smart-kit addition). Default "H2". |
+| `busy` |  | `boolean` | Shows the busy indicator. |
+| `condensedTableLayout` |  | `boolean` | Grid tables: lower rows (condensed content density). Default false. |
+| `enableFullScreen` |  | `boolean` | A button in the toolbar shows the table in full screen. |
+| `initialLoad` |  | `boolean` | false: rows are loaded only after `refresh()` (or a new `query`). Default: loaded at once. |
+| `modeForNoDataMessage` |  | `'illustratedMessage-Auto' \| 'illustratedMessage-Base' \| 'illustratedMessage-Medium' \| 'illustratedMessage-Dot' \| 'illustratedMessage-Extr…` | "No data" display: "text", or an illustrated message ("illustratedMessage-Auto", "-Base", "-ExtraSmall", "-Small", "-Medium", "-Large"; "-Dot", "-Spot", "-Scene" as ExtraSmall, Small, Large). Default "text" (FE: illustratedMessage-Auto, stage 4). |
+| `popinLayout` |  | `PopinLayout` | Responsive tables: arrangement of the pop-in ("Block", "GridSmall", "GridLarge"). Default "Block". |
+| `selectionLimit` |  | `number` | Maximum number of selected rows (0: no limit). Default 200. |
+| `enableExport` |  | `boolean` | Offers "Export to Spreadsheet" in the toolbar. Default true. |
+| `exportFileName` |  | `string` | File name of the export (without .xlsx); default the header. |
+| `exportSheetName` |  | `string` | Sheet name of the export. |
+| `exportRequestSize` |  | `number` | Maximum rows of the export (read in requests of 500). Default 10 000. |
+| `disableCopyToClipboard` |  | `boolean` | Hides "Copy" of the selected rows to the clipboard. Default false. |
+| `readOnly` |  | `boolean` | Display only: no create, no delete in sub-tables. Default for sub-tables: true (the parent is not in edit mode). |
+| `isSearchable` |  | `boolean` | Search field in the toolbar (when the service can search). Default: no search field. |
+| `selectionMode` |  | `'None' \| 'Single' \| 'Multi' \| 'Auto' \| 'ForceMulti' \| 'ForceSingle'` | "None", "Single", "Multi"; "Auto", "ForceMulti" are "Multi", "ForceSingle" is "Single". Default "Multi". |
+| `enableSelectAll` |  | `boolean` | "Select all" check box in tables that hold all rows (responsive, sub-tables); false hides it. |
+| `threshold` |  | `number` | Rows per request when growing (sub-tables and responsive tables); default 10 for the first, 20 for each further page. |
+| `scrollThreshold` |  | `number` | Grid tables: rows per request while scrolling. Default 100. |
+| `disableColumnFreeze` |  | `boolean` | Grid tables: no column is frozen. |
+| `frozenColumnCount` |  | `number` | Grid tables: number of frozen (pinned) columns. Default 1. |
+| `enableAutoColumnWidth` |  | `boolean` | Column widths follow the type of their content; false: one width for all. |
+| `widthIncludingColumnHeader` |  | `boolean` | Automatic column widths are at least as wide as the column header. |
+| `ignoredFields` |  | `string` | Comma-separated properties whose columns are left out. |
+| `ignorePersonalizationChanges` |  | `boolean` | Ignores the stored personalization (columns, sort, grouping, totals) of `pageKey`. |
+| `personalization` |  | `string` | Personalization: "false" hides the settings button; a comma-separated list of "Column", "Sort", "Group", "Aggregate" offers grouping and totals only when listed. Default: all. |
+| `noData` |  | `ReactNode` | Content when there are no rows (replaces the "no data" text). |
+| `columns` |  | `$ColumnSettings[]` | Custom columns (sap.fe.macros.table.Column), placed by `anchor` and `placement`. |
+| `actions` |  | `$ActionSettings[]` | Custom actions (sap.fe.macros.table.Action), placed by `anchor` and `placement`. |
+| `creationMode` |  | `$TableCreationOptionsSettings` | Creation (sap.fe.macros.table.TableCreationOptions). |
+| `query` |  | `TableQuery \| null` | Applied filters; null means "not executed yet" (shows "To start, set the relevant filters."). Undefined loads without filters (smart-kit addition). |
+| `visibleColumns` |  | `string[]` | Visible column ids in order (controlled, smart-kit addition). |
+| `onVisibleColumnsChange` |  | `(ids: string[]) => void` | Called with the visible column ids after personalization. |
+| `sort` |  | `SortItem[]` | Sort order (controlled); default from `UI.PresentationVariant/SortOrder` (smart-kit addition). |
+| `onSortChange` |  | `(sort: SortItem[]) => void` | Called with the new sort order. |
+| `onSelectionChange` |  | `(e: Table$SelectionChangeEvent) => void` | The selection changed. |
+| `onCountChange` |  | `(count: number \| undefined) => void` | Called when the total count becomes known (object page tab counts; smart-kit addition). |
+| `onRowPress` |  | `(e: Table$RowPressEvent) => void` | A row was pressed; without a handler rows navigate with NavigationAdapter.toObject when the adapter has an object page. |
+| `navigable` |  | `boolean` | Whether rows navigate (shows the chevron). Defaults to `onRowPress` or the adapter's hasObjectPage (smart-kit addition). |
+| `extend` |  | `TableExtendEntry[]` | Insert, replace or remove columns and toolbar actions (ids as in the model, e.g. "DataField::GrossAmount"; smart-kit addition). |
+| `pageKey` |  | `string` | Key for restoring sort, columns, scroll and selection on back navigation (smart-kit addition). |
+| `showOverlay` |  | `boolean` | Grey out the table (filters changed in manual mode; sap.m.Table showOverlay). |
+| `onBeforeExport` |  | `(e: Table$BeforeExportEvent) => boolean \| void \| Promise&lt;boolean \| void>` | Called when the rows to export are loaded, before the file is written. Return false (or a promise of false) to cancel: no file is written. Use it to check permissions or to log the export. |
+| `onExported` |  | `(e: Table$ExportedEvent) => void` | Called after the file was written. |
+| `children` |  | `ReactNode` | Replace the default parts: &lt;Table.Toolbar> etc. |
+| `className` |  | `string` | Extra CSS class on the root element. |
+| `actionGroups` |  | `ActionGroup[]` | Menu buttons for similar actions (smart-kit addition). |
+| `onCreated` |  | `(path: string, row: Row) => void` | Called after an object was created (default for lists: navigate to its object page). |
+| `growingScrollToLoad` |  | `boolean` | Sub-tables ("Fixed" rows): grow when the end of the table is scrolled into view instead of a "More" button. |
+| `showAllThreshold` |  | `number` | Sub-tables: above this count only a preview is shown with a "Show All (x)" link (OP Tables; default 200). |
+| `onShowAll` |  | `() => void` | "Show All (x)": default NavigationAdapter.toTable. |
+| `workingMode` |  | `'worklist' \| 'continuous'` | Worklist (default): rows refresh after an action; continuous: changed rows stay and are marked (LR Working Modes). |
+| `onRowsChange` |  | `(rows: Row[]) => void` | Called with the loaded rows (e.g. paging buttons of a flexible column layout). |
+| `titleAddon` |  | `ReactNode` | Toolbar content after the title (content switch of multiple views, LR Multiple Views). |
+| `toolbarEnd` |  | `ReactNode` | Toolbar content before the settings (table / chart toggle). |
+| `groupBy` |  | `string \| null` | Group column id (controlled, docs/23; grid tables then load rows in blocks of 100 while scrolling and show group header rows). Default: the column of the first `UI.PresentationVariant/GroupBy` path; null: not grouped. |
+| `onGroupByChange` |  | `(id: string \| null) => void` | Called with the group column id after personalization; when given, `groupBy` is fully controlled (undefined: the default). |
+| `totals` |  | `string[]` | Column ids whose totals are shown (controlled, docs/23). Default: the columns of `UI.PresentationVariant/Total`. |
+| `onTotalsChange` |  | `(ids: string[]) => void` | Called with the total column ids after personalization; when given, `totals` is fully controlled (undefined: the default). |
+| `ref` |  | `Ref&lt;Table>` | Instance methods: refresh, getSelectedContexts, clearSelection, … (sap.fe.macros.Table). |
+
+### `ActionGroup` — interface
+
+Menu button grouping annotation and custom actions by id (smart-kit addition).
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `id` | **yes** | `string` |  |
+| `label` | **yes** | `string` |  |
+| `actions` | **yes** | `string[]` | Action ids (`DataFieldForAction::Namespace.action` or custom ids) shown in the menu. |
+
+### `ActionItem` — interface
+
+A toolbar action (annotation or custom); the internal form of `actions` and `extend`.
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `id` | **yes** | `string` |  |
+| `label` | **yes** | `string` |  |
+| `onPress` | **yes** | `(ctx: TableContextValue) => void` |  |
+| `requiresSelection` |  | `boolean` | Disabled while no row is selected (LR-18). |
+| `enabled` |  | `(selected: Row[]) => boolean` | Further enablement check on the selected rows. |
+| `group` |  | `string` | Menu button the action belongs to (similar actions grouped, LR Table Toolbar). |
+
+### `ColumnItem` — interface
+
+A column of the table (annotation or custom); the internal form of `columns` and `extend`.
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `id` | **yes** | `string` |  |
+| `label` | **yes** | `string` |  |
+| `field` |  | `FieldModel` | Model field; omitted for custom columns. |
+| `render` |  | `(row: Row) => ReactNode` | Custom cell content. |
+| `width` |  | `number` |  |
+| `select` |  | `string[]` | Extra paths to select for custom columns. |
+| `importance` |  | `'High' \| 'Medium' \| 'Low'` | Importance in responsive tables (pop-in on narrow screens); default the field's `UI.Importance`, else Medium. |
+| `align` |  | `'Begin' \| 'Center' \| 'End'` | Horizontal alignment of the cells; default right for numbers. |
+| `disableExport` |  | `boolean` | Not exported to the spreadsheet. |
+
+### `Context` — interface
+
+A row of the table, as sap.ui.model.odata.v4.Context: its entity path and its data.
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `getPath` | **yes** | `() => string` | Entity path, e.g. "/Orders('1')". |
+| `getObject` | **yes** | `() => Row` | The row data. |
+
+### `default` — component
+
+sap.fe.macros.Table: annotation-driven table (`contextPath`, `metaPath`, docs/30 §5.2). Instance methods of sap.fe.macros.Table (through `ref`).
+
+`import { default } from '@rhfan2019/smart-kit/v4/fe/macros/Table';`
+
+| Prop | Required | Type | Description |
+| --- | --- | --- | --- |
+| `contextPath` |  | `string` | Entity set path as in FE: "/Orders"; a sub-table "/Orders/_Item" (the navigation of the object in `bindingContext`). |
+| `metaPath` |  | `string` | Annotation path of the table: "@com.sap.vocabularies.UI.v1.LineItem#Q" (alias "@UI.LineItem#Q"), "@…SelectionPresentationVariant#Q" or "@…PresentationVariant#Q" (their line item, sort, grouping and totals); sub-tables may prefix the navigation ("_Item/@UI.LineItem"). Default: the LineItem (sub-tables: the one of the UI.Facets entry). |
+| `bindingContext` |  | `string` | Instance path of the parent object of a sub-table, e.g. "Orders('1')" (FE: the binding context; smart-kit addition). |
+| `service` |  | `string` | Name of the service in `SmartKitProvider` `services`; default: the provider's `defaultService` (smart-kit addition). |
+| `type` |  | `'GridTable' \| 'ResponsiveTable' \| 'AnalyticalTable'` | Table type: "ResponsiveTable" (sap.m.Table, rows scroll with the page), "GridTable" and "AnalyticalTable" (the grid; grouping and totals come from the annotations, docs/23). Default: the grid (FE derives it from the annotations, stage 4). |
+| `rowCountMode` |  | `'Auto' \| 'Fixed' \| 'Interactive'` | Grid tables: "Auto" fills the available height with its own scrollbar (default of list tables); "Fixed" and "Interactive" grow with the rows and a "More" button (default of sub-tables). |
+| `header` |  | `string` | Table title in the toolbar; default `UI.HeaderInfo/TypeNamePlural`, with the row count. |
+| `headerVisible` |  | `boolean` | Shows the title. Default true. |
+| `headerLevel` |  | `TitleLevel` | Heading level of the title (OP Title Styles; smart-kit addition). Default "H2". |
+| `busy` |  | `boolean` | Shows the busy indicator. |
+| `condensedTableLayout` |  | `boolean` | Grid tables: lower rows (condensed content density). Default false. |
+| `enableFullScreen` |  | `boolean` | A button in the toolbar shows the table in full screen. |
+| `initialLoad` |  | `boolean` | false: rows are loaded only after `refresh()` (or a new `query`). Default: loaded at once. |
+| `modeForNoDataMessage` |  | `'illustratedMessage-Auto' \| 'illustratedMessage-Base' \| 'illustratedMessage-Medium' \| 'illustratedMessage-Dot' \| 'illustratedMessage-Extr…` | "No data" display: "text", or an illustrated message ("illustratedMessage-Auto", "-Base", "-ExtraSmall", "-Small", "-Medium", "-Large"; "-Dot", "-Spot", "-Scene" as ExtraSmall, Small, Large). Default "text" (FE: illustratedMessage-Auto, stage 4). |
+| `popinLayout` |  | `PopinLayout` | Responsive tables: arrangement of the pop-in ("Block", "GridSmall", "GridLarge"). Default "Block". |
+| `selectionLimit` |  | `number` | Maximum number of selected rows (0: no limit). Default 200. |
+| `enableExport` |  | `boolean` | Offers "Export to Spreadsheet" in the toolbar. Default true. |
+| `exportFileName` |  | `string` | File name of the export (without .xlsx); default the header. |
+| `exportSheetName` |  | `string` | Sheet name of the export. |
+| `exportRequestSize` |  | `number` | Maximum rows of the export (read in requests of 500). Default 10 000. |
+| `disableCopyToClipboard` |  | `boolean` | Hides "Copy" of the selected rows to the clipboard. Default false. |
+| `readOnly` |  | `boolean` | Display only: no create, no delete in sub-tables. Default for sub-tables: true (the parent is not in edit mode). |
+| `isSearchable` |  | `boolean` | Search field in the toolbar (when the service can search). Default: no search field. |
+| `selectionMode` |  | `'None' \| 'Single' \| 'Multi' \| 'Auto' \| 'ForceMulti' \| 'ForceSingle'` | "None", "Single", "Multi"; "Auto", "ForceMulti" are "Multi", "ForceSingle" is "Single". Default "Multi". |
+| `enableSelectAll` |  | `boolean` | "Select all" check box in tables that hold all rows (responsive, sub-tables); false hides it. |
+| `threshold` |  | `number` | Rows per request when growing (sub-tables and responsive tables); default 10 for the first, 20 for each further page. |
+| `scrollThreshold` |  | `number` | Grid tables: rows per request while scrolling. Default 100. |
+| `disableColumnFreeze` |  | `boolean` | Grid tables: no column is frozen. |
+| `frozenColumnCount` |  | `number` | Grid tables: number of frozen (pinned) columns. Default 1. |
+| `enableAutoColumnWidth` |  | `boolean` | Column widths follow the type of their content; false: one width for all. |
+| `widthIncludingColumnHeader` |  | `boolean` | Automatic column widths are at least as wide as the column header. |
+| `ignoredFields` |  | `string` | Comma-separated properties whose columns are left out. |
+| `ignorePersonalizationChanges` |  | `boolean` | Ignores the stored personalization (columns, sort, grouping, totals) of `pageKey`. |
+| `personalization` |  | `string` | Personalization: "false" hides the settings button; a comma-separated list of "Column", "Sort", "Group", "Aggregate" offers grouping and totals only when listed. Default: all. |
+| `noData` |  | `ReactNode` | Content when there are no rows (replaces the "no data" text). |
+| `columns` |  | `$ColumnSettings[]` | Custom columns (sap.fe.macros.table.Column), placed by `anchor` and `placement`. |
+| `actions` |  | `$ActionSettings[]` | Custom actions (sap.fe.macros.table.Action), placed by `anchor` and `placement`. |
+| `creationMode` |  | `$TableCreationOptionsSettings` | Creation (sap.fe.macros.table.TableCreationOptions). |
+| `query` |  | `TableQuery \| null` | Applied filters; null means "not executed yet" (shows "To start, set the relevant filters."). Undefined loads without filters (smart-kit addition). |
+| `visibleColumns` |  | `string[]` | Visible column ids in order (controlled, smart-kit addition). |
+| `onVisibleColumnsChange` |  | `(ids: string[]) => void` | Called with the visible column ids after personalization. |
+| `sort` |  | `SortItem[]` | Sort order (controlled); default from `UI.PresentationVariant/SortOrder` (smart-kit addition). |
+| `onSortChange` |  | `(sort: SortItem[]) => void` | Called with the new sort order. |
+| `onSelectionChange` |  | `(e: Table$SelectionChangeEvent) => void` | The selection changed. |
+| `onCountChange` |  | `(count: number \| undefined) => void` | Called when the total count becomes known (object page tab counts; smart-kit addition). |
+| `onRowPress` |  | `(e: Table$RowPressEvent) => void` | A row was pressed; without a handler rows navigate with NavigationAdapter.toObject when the adapter has an object page. |
+| `navigable` |  | `boolean` | Whether rows navigate (shows the chevron). Defaults to `onRowPress` or the adapter's hasObjectPage (smart-kit addition). |
+| `extend` |  | `TableExtendEntry[]` | Insert, replace or remove columns and toolbar actions (ids as in the model, e.g. "DataField::GrossAmount"; smart-kit addition). |
+| `pageKey` |  | `string` | Key for restoring sort, columns, scroll and selection on back navigation (smart-kit addition). |
+| `showOverlay` |  | `boolean` | Grey out the table (filters changed in manual mode; sap.m.Table showOverlay). |
+| `onBeforeExport` |  | `(e: Table$BeforeExportEvent) => boolean \| void \| Promise&lt;boolean \| void>` | Called when the rows to export are loaded, before the file is written. Return false (or a promise of false) to cancel: no file is written. Use it to check permissions or to log the export. |
+| `onExported` |  | `(e: Table$ExportedEvent) => void` | Called after the file was written. |
+| `children` |  | `ReactNode` | Replace the default parts: &lt;Table.Toolbar> etc. |
+| `className` |  | `string` | Extra CSS class on the root element. |
+| `actionGroups` |  | `ActionGroup[]` | Menu buttons for similar actions (smart-kit addition). |
+| `onCreated` |  | `(path: string, row: Row) => void` | Called after an object was created (default for lists: navigate to its object page). |
+| `growingScrollToLoad` |  | `boolean` | Sub-tables ("Fixed" rows): grow when the end of the table is scrolled into view instead of a "More" button. |
+| `showAllThreshold` |  | `number` | Sub-tables: above this count only a preview is shown with a "Show All (x)" link (OP Tables; default 200). |
+| `onShowAll` |  | `() => void` | "Show All (x)": default NavigationAdapter.toTable. |
+| `workingMode` |  | `'worklist' \| 'continuous'` | Worklist (default): rows refresh after an action; continuous: changed rows stay and are marked (LR Working Modes). |
+| `onRowsChange` |  | `(rows: Row[]) => void` | Called with the loaded rows (e.g. paging buttons of a flexible column layout). |
+| `titleAddon` |  | `ReactNode` | Toolbar content after the title (content switch of multiple views, LR Multiple Views). |
+| `toolbarEnd` |  | `ReactNode` | Toolbar content before the settings (table / chart toggle). |
+| `groupBy` |  | `string \| null` | Group column id (controlled, docs/23; grid tables then load rows in blocks of 100 while scrolling and show group header rows). Default: the column of the first `UI.PresentationVariant/GroupBy` path; null: not grouped. |
+| `onGroupByChange` |  | `(id: string \| null) => void` | Called with the group column id after personalization; when given, `groupBy` is fully controlled (undefined: the default). |
+| `totals` |  | `string[]` | Column ids whose totals are shown (controlled, docs/23). Default: the columns of `UI.PresentationVariant/Total`. |
+| `onTotalsChange` |  | `(ids: string[]) => void` | Called with the total column ids after personalization; when given, `totals` is fully controlled (undefined: the default). |
+| `ref` |  | `Ref&lt;Table>` | Instance methods: refresh, getSelectedContexts, clearSelection, … (sap.fe.macros.Table). |
+
+### `Table$BeforeExportEvent` — interface
+
+What is exported (`onBeforeExport`, `onExported`); the same filters, search and sort as the file.
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `entitySet` | **yes** | `string` |  |
+| `title` | **yes** | `string` | File name (without .xlsx): `exportFileName`, else the header. |
+| `filters` | **yes** | `FilterState` |  |
+| `search` | **yes** | `string` |  |
+| `sort` | **yes** | `SortItem[]` |  |
+| `columns` | **yes** | `string[]` | Ids of the exported columns, in order. |
+| `rowCount` | **yes** | `number` | Number of exported rows. |
+| `truncated` | **yes** | `boolean` | More rows matched than `exportRequestSize`; only the first `rowCount` are exported. |
+| `request` | **yes** | `QueryRequest` | The request that read the rows (without paging). |
+
+### `Table$ExportedEvent` — type
+
+```ts
+export type Table$ExportedEvent = Table$BeforeExportEvent;
+```
+
+### `Table$RowPressEvent` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `bindingContext` | **yes** | `Context` | The pressed row. |
+
+### `Table$SelectionChangeEvent` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `selectedContexts` | **yes** | `Context[]` | The selected rows (also `getSelectedContexts()`). |
+
+### `TableContextValue` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `entitySet` | **yes** | `string` |  |
+| `typeName` | **yes** | `string` |  |
+| `source` | **yes** | `QuerySource` |  |
+| `rows` | **yes** | `Row[]` |  |
+| `selected` | **yes** | `Row[]` |  |
+| `filters` | **yes** | `FilterState` |  |
+| `search` | **yes** | `string` |  |
+| `sort` | **yes** | `SortItem[]` |  |
+| `refresh` | **yes** | `() => void` |  |
+| `count` |  | `number` |  |
+
+### `TableExtendEntry` — type
+
+```ts
+export type TableExtendEntry = | (ExtendEntry<ColumnItem> & { kind?: 'column' }) | (ExtendEntry<ActionItem> & { kind: 'action' });
+```
+
+### `TableQuery` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `filters` | **yes** | `FilterState` |  |
+| `search` | **yes** | `string` |  |
+
+## `@rhfan2019/smart-kit/v4/fe/macros/TreeTable`
+
+`$TreeTableSettings` (interface) · `Context` (interface) · `default` (component) · `TreeTable$RowPressEvent` (interface) · `TreeTable$SelectionChangeEvent` (interface) · `TreeTable$ToggleOpenStateEvent` (interface)
+
+### `$TreeTableSettings` — interface
+
+Settings of sap.fe.macros.TreeTable: those of `Table` plus the hierarchy.
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `type` |  | `'TreeTable'` | The only value. |
+| `hierarchyQualifier` |  | `string` | Qualifier of Aggregation.RecursiveHierarchy (default: the type's first hierarchy; without one it is a plain table). |
+| `initialExpansionLevel` |  | `number` | Levels shown at first (default 1: the roots); `collapseAll` goes back to the roots (smart-kit addition). |
+| `disableLeafSelection` |  | `boolean` | Leaves (nodes without children) cannot be selected. Default false. |
+| `responsive` |  | `boolean` | Shows the tree in the responsive table (sap.m.Table) kernel, e.g. on phones (smart-kit addition; FE always uses the grid). |
+| `onToggleOpenState` |  | `(e: TreeTable$ToggleOpenStateEvent) => void` | A node was expanded or collapsed by the user (sap.ui.table.TreeTable#toggleOpenState; smart-kit addition). |
+| `ref` |  | `Ref&lt;TreeTable>` | Instance methods of `Table` plus expand, collapse, collapseAll, expandToLevel, isExpanded (sap.ui.table.TreeTable). |
+| `children` |  | `ReactNode` | Replace the default parts: &lt;Table.Toolbar> etc. |
+| `className` |  | `string` | Extra CSS class on the root element. |
+| `threshold` |  | `number` | Rows per request when growing (sub-tables and responsive tables); default 10 for the first, 20 for each further page. |
+| `contextPath` |  | `string` | Entity set path as in FE: "/Orders"; a sub-table "/Orders/_Item" (the navigation of the object in `bindingContext`). |
+| `metaPath` |  | `string` | Annotation path of the table: "@com.sap.vocabularies.UI.v1.LineItem#Q" (alias "@UI.LineItem#Q"), "@…SelectionPresentationVariant#Q" or "@…PresentationVariant#Q" (their line item, sort, grouping and totals); sub-tables may prefix the navigation ("_Item/@UI.LineItem"). Default: the LineItem (sub-tables: the one of the UI.Facets entry). |
+| `bindingContext` |  | `string` | Instance path of the parent object of a sub-table, e.g. "Orders('1')" (FE: the binding context; smart-kit addition). |
+| `service` |  | `string` | Name of the service in `SmartKitProvider` `services`; default: the provider's `defaultService` (smart-kit addition). |
+| `rowCountMode` |  | `'Auto' \| 'Fixed' \| 'Interactive'` | Grid tables: "Auto" fills the available height with its own scrollbar (default of list tables); "Fixed" and "Interactive" grow with the rows and a "More" button (default of sub-tables). |
+| `header` |  | `string` | Table title in the toolbar; default `UI.HeaderInfo/TypeNamePlural`, with the row count. |
+| `headerVisible` |  | `boolean` | Shows the title. Default true. |
+| `headerLevel` |  | `TitleLevel` | Heading level of the title (OP Title Styles; smart-kit addition). Default "H2". |
+| `busy` |  | `boolean` | Shows the busy indicator. |
+| `condensedTableLayout` |  | `boolean` | Grid tables: lower rows (condensed content density). Default false. |
+| `enableFullScreen` |  | `boolean` | A button in the toolbar shows the table in full screen. |
+| `initialLoad` |  | `boolean` | false: rows are loaded only after `refresh()` (or a new `query`). Default: loaded at once. |
+| `modeForNoDataMessage` |  | `'illustratedMessage-Auto' \| 'illustratedMessage-Base' \| 'illustratedMessage-Medium' \| 'illustratedMessage-Dot' \| 'illustratedMessage-Extr…` | "No data" display: "text", or an illustrated message ("illustratedMessage-Auto", "-Base", "-ExtraSmall", "-Small", "-Medium", "-Large"; "-Dot", "-Spot", "-Scene" as ExtraSmall, Small, Large). Default "text" (FE: illustratedMessage-Auto, stage 4). |
+| `popinLayout` |  | `PopinLayout` | Responsive tables: arrangement of the pop-in ("Block", "GridSmall", "GridLarge"). Default "Block". |
+| `selectionLimit` |  | `number` | Maximum number of selected rows (0: no limit). Default 200. |
+| `enableExport` |  | `boolean` | Offers "Export to Spreadsheet" in the toolbar. Default true. |
+| `exportFileName` |  | `string` | File name of the export (without .xlsx); default the header. |
+| `exportSheetName` |  | `string` | Sheet name of the export. |
+| `exportRequestSize` |  | `number` | Maximum rows of the export (read in requests of 500). Default 10 000. |
+| `disableCopyToClipboard` |  | `boolean` | Hides "Copy" of the selected rows to the clipboard. Default false. |
+| `readOnly` |  | `boolean` | Display only: no create, no delete in sub-tables. Default for sub-tables: true (the parent is not in edit mode). |
+| `isSearchable` |  | `boolean` | Search field in the toolbar (when the service can search). Default: no search field. |
+| `selectionMode` |  | `'None' \| 'Single' \| 'Multi' \| 'Auto' \| 'ForceMulti' \| 'ForceSingle'` | "None", "Single", "Multi"; "Auto", "ForceMulti" are "Multi", "ForceSingle" is "Single". Default "Multi". |
+| `enableSelectAll` |  | `boolean` | "Select all" check box in tables that hold all rows (responsive, sub-tables); false hides it. |
+| `scrollThreshold` |  | `number` | Grid tables: rows per request while scrolling. Default 100. |
+| `disableColumnFreeze` |  | `boolean` | Grid tables: no column is frozen. |
+| `frozenColumnCount` |  | `number` | Grid tables: number of frozen (pinned) columns. Default 1. |
+| `enableAutoColumnWidth` |  | `boolean` | Column widths follow the type of their content; false: one width for all. |
+| `widthIncludingColumnHeader` |  | `boolean` | Automatic column widths are at least as wide as the column header. |
+| `ignoredFields` |  | `string` | Comma-separated properties whose columns are left out. |
+| `ignorePersonalizationChanges` |  | `boolean` | Ignores the stored personalization (columns, sort, grouping, totals) of `pageKey`. |
+| `personalization` |  | `string` | Personalization: "false" hides the settings button; a comma-separated list of "Column", "Sort", "Group", "Aggregate" offers grouping and totals only when listed. Default: all. |
+| `noData` |  | `ReactNode` | Content when there are no rows (replaces the "no data" text). |
+| `columns` |  | `$ColumnSettings[]` | Custom columns (sap.fe.macros.table.Column), placed by `anchor` and `placement`. |
+| `actions` |  | `$ActionSettings[]` | Custom actions (sap.fe.macros.table.Action), placed by `anchor` and `placement`. |
+| `creationMode` |  | `$TableCreationOptionsSettings` | Creation (sap.fe.macros.table.TableCreationOptions). |
+| `query` |  | `TableQuery \| null` | Applied filters; null means "not executed yet" (shows "To start, set the relevant filters."). Undefined loads without filters (smart-kit addition). |
+| `visibleColumns` |  | `string[]` | Visible column ids in order (controlled, smart-kit addition). |
+| `onVisibleColumnsChange` |  | `(ids: string[]) => void` | Called with the visible column ids after personalization. |
+| `sort` |  | `SortItem[]` | Sort order (controlled); default from `UI.PresentationVariant/SortOrder` (smart-kit addition). |
+| `onSortChange` |  | `(sort: SortItem[]) => void` | Called with the new sort order. |
+| `onSelectionChange` |  | `(e: Table$SelectionChangeEvent) => void` | The selection changed. |
+| `onCountChange` |  | `(count: number \| undefined) => void` | Called when the total count becomes known (object page tab counts; smart-kit addition). |
+| `onRowPress` |  | `(e: Table$RowPressEvent) => void` | A row was pressed; without a handler rows navigate with NavigationAdapter.toObject when the adapter has an object page. |
+| `navigable` |  | `boolean` | Whether rows navigate (shows the chevron). Defaults to `onRowPress` or the adapter's hasObjectPage (smart-kit addition). |
+| `extend` |  | `TableExtendEntry[]` | Insert, replace or remove columns and toolbar actions (ids as in the model, e.g. "DataField::GrossAmount"; smart-kit addition). |
+| `pageKey` |  | `string` | Key for restoring sort, columns, scroll and selection on back navigation (smart-kit addition). |
+| `showOverlay` |  | `boolean` | Grey out the table (filters changed in manual mode; sap.m.Table showOverlay). |
+| `onBeforeExport` |  | `(e: Table$BeforeExportEvent) => boolean \| void \| Promise&lt;boolean \| void>` | Called when the rows to export are loaded, before the file is written. Return false (or a promise of false) to cancel: no file is written. Use it to check permissions or to log the export. |
+| `onExported` |  | `(e: Table$ExportedEvent) => void` | Called after the file was written. |
+| `actionGroups` |  | `ActionGroup[]` | Menu buttons for similar actions (smart-kit addition). |
+| `onCreated` |  | `(path: string, row: Row) => void` | Called after an object was created (default for lists: navigate to its object page). |
+| `growingScrollToLoad` |  | `boolean` | Sub-tables ("Fixed" rows): grow when the end of the table is scrolled into view instead of a "More" button. |
+| `showAllThreshold` |  | `number` | Sub-tables: above this count only a preview is shown with a "Show All (x)" link (OP Tables; default 200). |
+| `onShowAll` |  | `() => void` | "Show All (x)": default NavigationAdapter.toTable. |
+| `workingMode` |  | `'worklist' \| 'continuous'` | Worklist (default): rows refresh after an action; continuous: changed rows stay and are marked (LR Working Modes). |
+| `onRowsChange` |  | `(rows: Row[]) => void` | Called with the loaded rows (e.g. paging buttons of a flexible column layout). |
+| `titleAddon` |  | `ReactNode` | Toolbar content after the title (content switch of multiple views, LR Multiple Views). |
+| `toolbarEnd` |  | `ReactNode` | Toolbar content before the settings (table / chart toggle). |
+
+### `Context` — interface
+
+A row of the table, as sap.ui.model.odata.v4.Context: its entity path and its data.
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `getPath` | **yes** | `() => string` | Entity path, e.g. "/Orders('1')". |
+| `getObject` | **yes** | `() => Row` | The row data. |
+
+### `default` — component
+
+sap.fe.macros.TreeTable: the recursive hierarchy of the entity type (Aggregation.RecursiveHierarchy, docs/26 §3.10). Instance methods of sap.fe.macros.TreeTable: those of `Table` plus the tree methods of sap.ui.table.TreeTable.
+
+`import { default } from '@rhfan2019/smart-kit/v4/fe/macros/TreeTable';`
+
+| Prop | Required | Type | Description |
+| --- | --- | --- | --- |
+| `type` |  | `'TreeTable'` | The only value. |
+| `hierarchyQualifier` |  | `string` | Qualifier of Aggregation.RecursiveHierarchy (default: the type's first hierarchy; without one it is a plain table). |
+| `initialExpansionLevel` |  | `number` | Levels shown at first (default 1: the roots); `collapseAll` goes back to the roots (smart-kit addition). |
+| `disableLeafSelection` |  | `boolean` | Leaves (nodes without children) cannot be selected. Default false. |
+| `responsive` |  | `boolean` | Shows the tree in the responsive table (sap.m.Table) kernel, e.g. on phones (smart-kit addition; FE always uses the grid). |
+| `onToggleOpenState` |  | `(e: TreeTable$ToggleOpenStateEvent) => void` | A node was expanded or collapsed by the user (sap.ui.table.TreeTable#toggleOpenState; smart-kit addition). |
+| `ref` |  | `Ref&lt;TreeTable>` | Instance methods of `Table` plus expand, collapse, collapseAll, expandToLevel, isExpanded (sap.ui.table.TreeTable). |
+| `children` |  | `ReactNode` | Replace the default parts: &lt;Table.Toolbar> etc. |
+| `className` |  | `string` | Extra CSS class on the root element. |
+| `threshold` |  | `number` | Rows per request when growing (sub-tables and responsive tables); default 10 for the first, 20 for each further page. |
+| `contextPath` |  | `string` | Entity set path as in FE: "/Orders"; a sub-table "/Orders/_Item" (the navigation of the object in `bindingContext`). |
+| `metaPath` |  | `string` | Annotation path of the table: "@com.sap.vocabularies.UI.v1.LineItem#Q" (alias "@UI.LineItem#Q"), "@…SelectionPresentationVariant#Q" or "@…PresentationVariant#Q" (their line item, sort, grouping and totals); sub-tables may prefix the navigation ("_Item/@UI.LineItem"). Default: the LineItem (sub-tables: the one of the UI.Facets entry). |
+| `bindingContext` |  | `string` | Instance path of the parent object of a sub-table, e.g. "Orders('1')" (FE: the binding context; smart-kit addition). |
+| `service` |  | `string` | Name of the service in `SmartKitProvider` `services`; default: the provider's `defaultService` (smart-kit addition). |
+| `rowCountMode` |  | `'Auto' \| 'Fixed' \| 'Interactive'` | Grid tables: "Auto" fills the available height with its own scrollbar (default of list tables); "Fixed" and "Interactive" grow with the rows and a "More" button (default of sub-tables). |
+| `header` |  | `string` | Table title in the toolbar; default `UI.HeaderInfo/TypeNamePlural`, with the row count. |
+| `headerVisible` |  | `boolean` | Shows the title. Default true. |
+| `headerLevel` |  | `TitleLevel` | Heading level of the title (OP Title Styles; smart-kit addition). Default "H2". |
+| `busy` |  | `boolean` | Shows the busy indicator. |
+| `condensedTableLayout` |  | `boolean` | Grid tables: lower rows (condensed content density). Default false. |
+| `enableFullScreen` |  | `boolean` | A button in the toolbar shows the table in full screen. |
+| `initialLoad` |  | `boolean` | false: rows are loaded only after `refresh()` (or a new `query`). Default: loaded at once. |
+| `modeForNoDataMessage` |  | `'illustratedMessage-Auto' \| 'illustratedMessage-Base' \| 'illustratedMessage-Medium' \| 'illustratedMessage-Dot' \| 'illustratedMessage-Extr…` | "No data" display: "text", or an illustrated message ("illustratedMessage-Auto", "-Base", "-ExtraSmall", "-Small", "-Medium", "-Large"; "-Dot", "-Spot", "-Scene" as ExtraSmall, Small, Large). Default "text" (FE: illustratedMessage-Auto, stage 4). |
+| `popinLayout` |  | `PopinLayout` | Responsive tables: arrangement of the pop-in ("Block", "GridSmall", "GridLarge"). Default "Block". |
+| `selectionLimit` |  | `number` | Maximum number of selected rows (0: no limit). Default 200. |
+| `enableExport` |  | `boolean` | Offers "Export to Spreadsheet" in the toolbar. Default true. |
+| `exportFileName` |  | `string` | File name of the export (without .xlsx); default the header. |
+| `exportSheetName` |  | `string` | Sheet name of the export. |
+| `exportRequestSize` |  | `number` | Maximum rows of the export (read in requests of 500). Default 10 000. |
+| `disableCopyToClipboard` |  | `boolean` | Hides "Copy" of the selected rows to the clipboard. Default false. |
+| `readOnly` |  | `boolean` | Display only: no create, no delete in sub-tables. Default for sub-tables: true (the parent is not in edit mode). |
+| `isSearchable` |  | `boolean` | Search field in the toolbar (when the service can search). Default: no search field. |
+| `selectionMode` |  | `'None' \| 'Single' \| 'Multi' \| 'Auto' \| 'ForceMulti' \| 'ForceSingle'` | "None", "Single", "Multi"; "Auto", "ForceMulti" are "Multi", "ForceSingle" is "Single". Default "Multi". |
+| `enableSelectAll` |  | `boolean` | "Select all" check box in tables that hold all rows (responsive, sub-tables); false hides it. |
+| `scrollThreshold` |  | `number` | Grid tables: rows per request while scrolling. Default 100. |
+| `disableColumnFreeze` |  | `boolean` | Grid tables: no column is frozen. |
+| `frozenColumnCount` |  | `number` | Grid tables: number of frozen (pinned) columns. Default 1. |
+| `enableAutoColumnWidth` |  | `boolean` | Column widths follow the type of their content; false: one width for all. |
+| `widthIncludingColumnHeader` |  | `boolean` | Automatic column widths are at least as wide as the column header. |
+| `ignoredFields` |  | `string` | Comma-separated properties whose columns are left out. |
+| `ignorePersonalizationChanges` |  | `boolean` | Ignores the stored personalization (columns, sort, grouping, totals) of `pageKey`. |
+| `personalization` |  | `string` | Personalization: "false" hides the settings button; a comma-separated list of "Column", "Sort", "Group", "Aggregate" offers grouping and totals only when listed. Default: all. |
+| `noData` |  | `ReactNode` | Content when there are no rows (replaces the "no data" text). |
+| `columns` |  | `$ColumnSettings[]` | Custom columns (sap.fe.macros.table.Column), placed by `anchor` and `placement`. |
+| `actions` |  | `$ActionSettings[]` | Custom actions (sap.fe.macros.table.Action), placed by `anchor` and `placement`. |
+| `creationMode` |  | `$TableCreationOptionsSettings` | Creation (sap.fe.macros.table.TableCreationOptions). |
+| `query` |  | `TableQuery \| null` | Applied filters; null means "not executed yet" (shows "To start, set the relevant filters."). Undefined loads without filters (smart-kit addition). |
+| `visibleColumns` |  | `string[]` | Visible column ids in order (controlled, smart-kit addition). |
+| `onVisibleColumnsChange` |  | `(ids: string[]) => void` | Called with the visible column ids after personalization. |
+| `sort` |  | `SortItem[]` | Sort order (controlled); default from `UI.PresentationVariant/SortOrder` (smart-kit addition). |
+| `onSortChange` |  | `(sort: SortItem[]) => void` | Called with the new sort order. |
+| `onSelectionChange` |  | `(e: Table$SelectionChangeEvent) => void` | The selection changed. |
+| `onCountChange` |  | `(count: number \| undefined) => void` | Called when the total count becomes known (object page tab counts; smart-kit addition). |
+| `onRowPress` |  | `(e: Table$RowPressEvent) => void` | A row was pressed; without a handler rows navigate with NavigationAdapter.toObject when the adapter has an object page. |
+| `navigable` |  | `boolean` | Whether rows navigate (shows the chevron). Defaults to `onRowPress` or the adapter's hasObjectPage (smart-kit addition). |
+| `extend` |  | `TableExtendEntry[]` | Insert, replace or remove columns and toolbar actions (ids as in the model, e.g. "DataField::GrossAmount"; smart-kit addition). |
+| `pageKey` |  | `string` | Key for restoring sort, columns, scroll and selection on back navigation (smart-kit addition). |
+| `showOverlay` |  | `boolean` | Grey out the table (filters changed in manual mode; sap.m.Table showOverlay). |
+| `onBeforeExport` |  | `(e: Table$BeforeExportEvent) => boolean \| void \| Promise&lt;boolean \| void>` | Called when the rows to export are loaded, before the file is written. Return false (or a promise of false) to cancel: no file is written. Use it to check permissions or to log the export. |
+| `onExported` |  | `(e: Table$ExportedEvent) => void` | Called after the file was written. |
+| `actionGroups` |  | `ActionGroup[]` | Menu buttons for similar actions (smart-kit addition). |
+| `onCreated` |  | `(path: string, row: Row) => void` | Called after an object was created (default for lists: navigate to its object page). |
+| `growingScrollToLoad` |  | `boolean` | Sub-tables ("Fixed" rows): grow when the end of the table is scrolled into view instead of a "More" button. |
+| `showAllThreshold` |  | `number` | Sub-tables: above this count only a preview is shown with a "Show All (x)" link (OP Tables; default 200). |
+| `onShowAll` |  | `() => void` | "Show All (x)": default NavigationAdapter.toTable. |
+| `workingMode` |  | `'worklist' \| 'continuous'` | Worklist (default): rows refresh after an action; continuous: changed rows stay and are marked (LR Working Modes). |
+| `onRowsChange` |  | `(rows: Row[]) => void` | Called with the loaded rows (e.g. paging buttons of a flexible column layout). |
+| `titleAddon` |  | `ReactNode` | Toolbar content after the title (content switch of multiple views, LR Multiple Views). |
+| `toolbarEnd` |  | `ReactNode` | Toolbar content before the settings (table / chart toggle). |
+
+### `TreeTable$RowPressEvent` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `bindingContext` | **yes** | `Context` | The pressed row. |
+
+### `TreeTable$SelectionChangeEvent` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `selectedContexts` | **yes** | `Context[]` | The selected rows (also `getSelectedContexts()`). |
+
+### `TreeTable$ToggleOpenStateEvent` — interface
+
+sap.ui.table.TreeTable#toggleOpenState; `rowContext` is the row data.
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `rowIndex` | **yes** | `number` |  |
+| `rowContext` | **yes** | `Row` |  |
+| `expanded` | **yes** | `boolean` |  |
+
+## `@rhfan2019/smart-kit/v4/fe/macros/VariantManagement`
+
+`$VariantManagementSettings` (interface) · `default` (component) · `VariantManagement$SelectEvent` (interface)
+
+### `$VariantManagementSettings` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `variants` | **yes** | `VariantsApi` | Result of `useVariants(...)`: the views (FE keeps them in the flexibility service). |
+| `content` | **yes** | `VariantContent` | Current page content, used for "Modified" and saving (FE reads it from the `for` controls). |
+| `onSelect` | **yes** | `(e: VariantManagement$SelectEvent) => void` | Called after a view was selected; apply its content (and execute when `autoApply`). |
+| `id` |  | `string` | Identifier of the variant management (id of the root element). |
+| `for` |  | `string[]` | Ids of the controls the views apply to (written to `data-sk-for` of the root element); their state reaches the views through `content` and `onSelect`. |
+| `showSetAsDefault` |  | `boolean` | Whether the "Set as Default" option is visible (Save As dialog and Manage Views). |
+| `headerLevel` |  | `HeaderLevel \| (string & {})` | Header level of the view title (sap.ui.core.TitleLevel); unset or `Auto`: H1 (the page title). |
+| `standardName` |  | `string` | Shown instead of "Standard" for the standard variant. |
+| `supportApplyAutomatically` |  | `boolean` | Offers "Apply Automatically" (sap.m.VariantManagement `supportApplyAutomatically`). The list report guideline offers it only in manual update mode. |
+| `creationAllowed` |  | `boolean` | Whether views may be saved (sap.m.VariantManagement `creationAllowed`; default: `VariantStore.canSave`, else true). When false the menu only selects views: no Save, Save As or Manage. |
+
+### `default` — component
+
+sap.fe.macros.VariantManagement (docs/26b): page views of filters and table settings (LR-02).
+
+`import { default } from '@rhfan2019/smart-kit/v4/fe/macros/VariantManagement';`
+
+| Prop | Required | Type | Description |
+| --- | --- | --- | --- |
+| `variants` | **yes** | `VariantsApi` | Result of `useVariants(...)`: the views (FE keeps them in the flexibility service). |
+| `content` | **yes** | `VariantContent` | Current page content, used for "Modified" and saving (FE reads it from the `for` controls). |
+| `onSelect` | **yes** | `(e: VariantManagement$SelectEvent) => void` | Called after a view was selected; apply its content (and execute when `autoApply`). |
+| `id` |  | `string` | Identifier of the variant management (id of the root element). |
+| `for` |  | `string[]` | Ids of the controls the views apply to (written to `data-sk-for` of the root element); their state reaches the views through `content` and `onSelect`. |
+| `showSetAsDefault` |  | `boolean` | Whether the "Set as Default" option is visible (Save As dialog and Manage Views). |
+| `headerLevel` |  | `HeaderLevel \| (string & {})` | Header level of the view title (sap.ui.core.TitleLevel); unset or `Auto`: H1 (the page title). |
+| `standardName` |  | `string` | Shown instead of "Standard" for the standard variant. |
+| `supportApplyAutomatically` |  | `boolean` | Offers "Apply Automatically" (sap.m.VariantManagement `supportApplyAutomatically`). The list report guideline offers it only in manual update mode. |
+| `creationAllowed` |  | `boolean` | Whether views may be saved (sap.m.VariantManagement `creationAllowed`; default: `VariantStore.canSave`, else true). When false the menu only selects views: no Save, Save As or Manage. |
+
+### `VariantManagement$SelectEvent` — interface
+
+Event of `onSelect`: `key` as in sap.m.VariantManagement `select`, plus the variant's content to apply.
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `key` | **yes** | `string` | Key of the selected variant ("" is the standard variant). |
+| `content` | **yes** | `VariantContent` | Content of the variant; apply it to the page. |
+| `autoApply` | **yes** | `boolean` | "Apply Automatically" of the variant: execute the search after applying. |
+
+## `@rhfan2019/smart-kit/v4/fe/macros/fcl/FlexibleColumnLayoutActions.block`
+
+`default` (component)
+
+### `default` — component
+
+sap.fe.macros.FlexibleColumnLayoutActions: full screen / exit full screen and close of the mid and end column.
+
+`import { default } from '@rhfan2019/smart-kit/v4/fe/macros/fcl/FlexibleColumnLayoutActions.block';`
+
+_no props_

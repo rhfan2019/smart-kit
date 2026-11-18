@@ -5,7 +5,9 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useState } from 'react';
 import { describe, expect, it, vi } from 'vitest';
-import { ConditionInput, SmartKitProvider, smartKitMantineTheme, ValueHelpDialog } from '../src';
+import { SmartKitProvider, smartKitMantineTheme } from '../src';
+import ConditionInput from '@rhfan2019/smart-kit/kit/ConditionInput';
+import ValueHelpDialog from '@rhfan2019/smart-kit/kit/ValueHelpDialog';
 import { shopData, shopModel } from './helpers';
 
 function restricted(expressions: Record<string, FilterExpression>): MetaModel {

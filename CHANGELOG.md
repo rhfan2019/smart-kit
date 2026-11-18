@@ -5,6 +5,14 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+### Changed — breaking (SAPUI5 alignment, stage 2, D38)
+
+- smart-kit: annotation-driven building blocks follow sap.fe.macros: `SmartTable` → `v4/fe/macros/Table` (and `TreeTable`), `SmartFilterBar` → `v4/fe/macros/FilterBar`, `SmartVariantManagement` → `v4/fe/macros/VariantManagement`, `SmartField` → `v4/fe/macros/Field`, `SmartForm` → `v4/fe/macros/Form`, `ChartView` → `v4/fe/macros/Chart`, `MicroChart` → `v4/fe/macros/MicroChart`, `ShareMenu` → `v4/fe/macros/Share`; new `KPITag`, `Paginator`, `fcl/FlexibleColumnLayoutActions.block`. They take `contextPath` (`'/PurchaseOrders'`) and `metaPath` (`@UI.LineItem#Q`, a property path, …) and use the sap.fe.macros property, event and method names.
+- smart-kit: layouts follow their UI5 classes: `f/DynamicPage` with `f/DynamicPageTitle` / `f/DynamicPageHeader`, `f/FlexibleColumnLayout` (`beginColumnPages`…, `onStateChange`), `uxap/ObjectPageLayout` with `uxap/ObjectPageDynamicHeaderTitle`, `uxap/AnchorBar`, `m/Table` (from `ResponsiveTable`), `m/GenericTag` (`status` is a `ValueState`). Defaults follow UI5 (`preserveHeaderStateOnScroll`, `showFooter`, `upperCaseAnchorBar`, `enableLazyLoading`…); the templates pass what they need, so the pages look and behave as before.
+- smart-kit: `DraftMarker` and `OverflowActions` are removed (`m/ObjectMarker`, `m/OverflowToolbar`); hooks and components without a UI5 counterpart are in `kit/` (`kit/useFilterState`, `kit/useListQuery`, `kit/ValueHelpDialog`, `kit/smartKitGridTheme`…); helpers in `/util`.
+- smart-kit: the subpaths `/field`, `/filter`, `/variants`, `/table`, `/chart`, `/object`, `/page`, `/actions`, `/edit` are removed; the root entry exports only `context`, `i18n`, `theme` and `util`.
+- smart-kit: `Field` / `FieldEditor` fire `onChange` when the value is committed (blur or Enter for text) and `onLiveChange` while typing, as sap.fe.macros.Field.
+
 ### Changed — breaking (SAPUI5 alignment, stage 1, D37)
 
 - smart-kit: the general controls, message controls, cards and enums are imported by their SAPUI5 module path with the prefix replaced, one class per module, default export: `m/MessageBox`, `m/MessageStrip`, `m/ObjectStatus`, `f/Card`, `f/cards/Header`, `ui/integration/cards/ListContent`, `suite/ui/commons/ProcessFlow`, `m/plugins/UploadSetwithTable`, `ui/unified/Currency`, …; enums from `ui/core/library`, `m/library`, `suite/ui/commons/library` (or their own module: `ui/core/message/MessageType`, `m/IllustratedMessageType`); infrastructure without a UI5 counterpart in `kit/` (`kit/MessageProvider`, `kit/useMessages`, `kit/MessageHost`, `kit/MessageIcon`); `MessageButton` in `v4/fe/macros/MessageButton`. The subpaths `/controls`, `/messages` and `/cards` are removed; the root entry no longer exports these names. The full table is in docs/api.md.

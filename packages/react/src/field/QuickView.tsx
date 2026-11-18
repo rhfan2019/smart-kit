@@ -4,7 +4,7 @@ import { buildObjectRequest, keyPredicate, type FieldModel, type Row } from '@rh
 import { useQuery } from '@tanstack/react-query';
 import { useMemo, useState, type ReactNode } from 'react';
 import { useService, useSmartKit, useText } from '../context/SmartKitProvider';
-import { SmartField } from './SmartField';
+import { Field } from './Field';
 import { getPath } from './values';
 
 export function QuickViewLink({ typeName, field, row, service: serviceName, children }: { typeName: string; field: FieldModel; row: Row | undefined; service?: string; children: ReactNode }) {
@@ -70,7 +70,7 @@ export function QuickViewLink({ typeName, field, row, service: serviceName, chil
                 {g.fields.map((f) => (
                   <div key={f.id} className="sk-facet__pair">
                     <dt>{f.label}:</dt>
-                    <dd><SmartField typeName={qv.typeName} service={service.name} field={f} row={data} /></dd>
+                    <dd><Field typeName={qv.typeName} service={service.name} metaPath={f} row={data} /></dd>
                   </div>
                 ))}
               </dl>

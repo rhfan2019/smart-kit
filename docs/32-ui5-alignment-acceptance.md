@@ -69,4 +69,9 @@
 | AL-08 | 1 | S、D | 偏差表 `not-implemented` 752 → 441、`fe-behavior` 32 → 32；每条都有理由和计划阶段（核对：Claude，2026-11-17） |
 | AL-09 | 1 | S | `check:ui5` 的 `settings-type` / `instance-type` / `event-type` |
 | AL-30 | 1 | U、Z | `packages/react/test/api.test.ts`（`/controls`、`/messages`、`/cards` 不存在）；`verify:pack` |
+| AL-04 | 2 | S | `check:ui5`：`v4/fe/macros/*`、`m/Table`、`f/*`、`uxap/*`、`m/GenericTag` 没有未登记的属性、聚合、关联；没有基线占位条目 |
+| AL-05 | 2 | S、U | `packages/react/test/table-ui5.test.tsx`、`filterBar.test.tsx`、`field-form.test.tsx`、`page.test.tsx`、`ui5-chart-macros.test.tsx` 里 `AL-05` 开头的测试 |
+| AL-06 | 2 | S、U | 同上，`AL-06` 开头（含 `Field` 的 change / liveChange 时机） |
+| AL-07 | 2 | S、U | 同上，`AL-07` 开头 |
+| AL-30 | 2 | U、Z | `api.test.ts`：旧子路径全部不存在，根入口只导出基础设施；`verify:pack` |
 

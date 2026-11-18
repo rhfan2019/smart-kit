@@ -67,19 +67,24 @@ Use when the template does not fit: your own layout, a filter bar and a table wi
 
 ```tsx
 import { Button } from '@mantine/core';
-import { FilterSummary, SmartFilterBar, useFilterState } from '@rhfan2019/smart-kit/filter';
-import { DynamicPage } from '@rhfan2019/smart-kit/page';
-import { SmartTable, useTableContext } from '@rhfan2019/smart-kit/table';
+import FilterSummary from '@rhfan2019/smart-kit/kit/FilterSummary';
+import useFilterState from '@rhfan2019/smart-kit/kit/useFilterState';
+import FilterBar from '@rhfan2019/smart-kit/v4/fe/macros/FilterBar';
+import DynamicPage from '@rhfan2019/smart-kit/f/DynamicPage';
+import DynamicPageTitle from '@rhfan2019/smart-kit/f/DynamicPageTitle';
+import DynamicPageHeader from '@rhfan2019/smart-kit/f/DynamicPageHeader';
+import Table from '@rhfan2019/smart-kit/v4/fe/macros/Table';
+import useTableContext from '@rhfan2019/smart-kit/kit/useTableContext';
 import { useMetaModel } from '@rhfan2019/smart-kit/context';
 
 function Toolbar() {
   const table = useTableContext();
   return (
     <div className="sk-table__toolbar">
-      <SmartTable.Title />
+      <Table.Title />
       <span className="sk-grow" />
       <Button variant="default" size="xs" onClick={table.refresh}>Refresh</Button>
-      <SmartTable.Settings />
+      <Table.Settings />
     </div>
   );
 }
@@ -89,27 +94,27 @@ export function OrdersWorklist() {
   const { ui } = useMetaModel('PurchaseOrders');
   return (
     <DynamicPage
-      heading={ui.headerInfo.typeNamePlural}
-      summary={<FilterSummary entitySet="PurchaseOrders" filters={filter.filters} search={filter.search} />}
-      header={<SmartFilterBar state={filter} />}
-    >
-      {/* query: the applied filters; null = not executed yet (mandatory filters missing) */}
-      <SmartTable entitySet="PurchaseOrders" query={filter.applied} pageKey="worklist">
-        <Toolbar />
-      </SmartTable>
-    </DynamicPage>
+      title={<DynamicPageTitle heading={ui.headerInfo.typeNamePlural} snappedContent={<FilterSummary entitySet="PurchaseOrders" filters={filter.filters} search={filter.search} />} />}
+      header={<DynamicPageHeader><FilterBar state={filter} /></DynamicPageHeader>}
+      content={(
+        // query: the applied filters; null = not executed yet (mandatory filters missing)
+        <Table contextPath="/PurchaseOrders" query={filter.applied} pageKey="worklist">
+          <Toolbar />
+        </Table>
+      )}
+    />
   );
 }
 ```
 
-Without AG Grid: `<SmartTable mode="responsive" …>` still needs the `/table` subpath, which imports AG Grid. If AG
-Grid is not installed, use `useListQuery` and render rows yourself (§ 4) or `ResponsiveTable` with your own data.
+Without AG Grid: `<Table type="ResponsiveTable" …>` (`v4/fe/macros/Table`) still imports AG Grid. If AG Grid is not
+installed, use `useListQuery` (`kit/useListQuery`) and render rows yourself (§ 4) or `m/Table` (sap.m.Table) with your own data.
 
 ## 4. Fully custom UI with hooks (no AG Grid)
 
 ```tsx
-import { useListQuery } from '@rhfan2019/smart-kit/table';
-import { SmartField } from '@rhfan2019/smart-kit/field';
+import useListQuery from '@rhfan2019/smart-kit/kit/useListQuery';
+import Field from '@rhfan2019/smart-kit/v4/fe/macros/Field';
 import { useMetaModel } from '@rhfan2019/smart-kit/context';
 import { keyPredicate } from '@rhfan2019/smart-kit-core';
 
@@ -128,8 +133,8 @@ export function OpenOrders() {
       {list.rows.map((row) => (
         <li key={keyPredicate(type, row)}>
           {/* formatted like the table: text arrangement, currency, criticality */}
-          <SmartField entitySet="PurchaseOrders" path="PurchaseOrder" row={row} /> —{' '}
-          <SmartField entitySet="PurchaseOrders" path="NetAmount" row={row} />
+          <Field contextPath="/PurchaseOrders" metaPath="PurchaseOrder" row={row} /> —{' '}
+          <Field contextPath="/PurchaseOrders" metaPath="NetAmount" row={row} />
         </li>
       ))}
       {list.hasMore && <button onClick={list.loadMore}>More</button>}
@@ -145,7 +150,8 @@ Operators: `EQ`, `NE`, `BT` (two values), `NB`, `LT`, `LE`, `GT`, `GE`, `Contain
 ## 5. One object, custom layout
 
 ```tsx
-import { useObject, SmartForm } from '@rhfan2019/smart-kit/object';
+import useObject from '@rhfan2019/smart-kit/kit/useObject';
+import Form from '@rhfan2019/smart-kit/v4/fe/macros/Form';
 
 export function SupplierPanel({ path }: { path: string }) {
   const obj = useObject(path); // e.g. "Suppliers('0000100001')"
@@ -153,7 +159,7 @@ export function SupplierPanel({ path }: { path: string }) {
   if (obj.error) return <p role="alert">{obj.error.message}</p>;
   // the first form of the first section, as the annotations describe it
   const content = obj.ui.sections[0]?.subSections[0]?.content;
-  return content?.kind === 'form' ? <SmartForm typeName={obj.typeName} row={obj.data} groups={content.groups} /> : null;
+  return content?.kind === 'form' ? <Form typeName={obj.typeName} row={obj.data} metaPath={content.groups} /> : null;
 }
 ```
 
@@ -167,7 +173,8 @@ export function SupplierPanel({ path }: { path: string }) {
 - Standalone, with your own numbers (no service needed, about 5 KB gzip):
 
 ```tsx
-import { MicroChart, SimpleChart } from '@rhfan2019/smart-kit/chart';
+import MicroChart from '@rhfan2019/smart-kit/v4/fe/macros/MicroChart'; // sap/fe/macros/MicroChart
+import SimpleChart from '@rhfan2019/smart-kit/kit/SimpleChart';
 
 export function Kpis() {
   return (
@@ -178,6 +185,20 @@ export function Kpis() {
     </>
   );
 }
+```
+
+- From the annotations, outside the templates (sap.fe.macros building blocks):
+
+```tsx
+import Chart from '@rhfan2019/smart-kit/v4/fe/macros/Chart'; // sap/fe/macros/Chart
+import MicroChart from '@rhfan2019/smart-kit/v4/fe/macros/MicroChart';
+import type { FilterState, Row } from '@rhfan2019/smart-kit-core';
+
+declare const filters: FilterState, search: string, order: Row;
+<>
+  <Chart contextPath="/PurchaseOrders" metaPath="@com.sap.vocabularies.UI.v1.Chart#ByStatus" query={{ filters, search }} onSelectionChange={(e) => console.log(e.data, e.selected)} />
+  <MicroChart contextPath="/PurchaseOrders" metaPath="@UI.Chart#BudgetBullet" row={order} size="M" />
+</>
 ```
 
 ## 7. Cards (overview tiles)
@@ -221,13 +242,14 @@ Cards pass `filters` down for a page-level filter bar above them. Cards do not n
 ## 8. Value help
 
 No component code: annotate the property with `Common.ValueList` (see `docs/annotations.md` § Value help). The filter
-bar, the edit field (`SmartField mode="edit"`) and the create dialog then show a value help dialog (search, table of
+bar, the edit field (`Field readOnly={false}`) and the create dialog then show a value help dialog (search, table of
 `CollectionPath`, conditions tab) or, with `Common.ValueListWithFixedValues`, a dropdown. Standalone:
 
 ```tsx
 import { useState } from 'react';
 import type { Condition } from '@rhfan2019/smart-kit-core';
-import { ConditionInput, ValueHelpDialog } from '@rhfan2019/smart-kit/filter';
+import ConditionInput from '@rhfan2019/smart-kit/kit/ConditionInput';
+import ValueHelpDialog from '@rhfan2019/smart-kit/kit/ValueHelpDialog';
 
 export function SupplierFilter() {
   const [conditions, setConditions] = useState<Condition[]>([]);
@@ -274,8 +296,8 @@ several selected rows get a partial-processing dialog. After the action the list
 or keeps and marks the changed rows (`"continuous"`). To run one from your own button:
 
 ```tsx
-import { useActionRunner } from '@rhfan2019/smart-kit/actions';
-import { useObject } from '@rhfan2019/smart-kit/object';
+import useActionRunner from '@rhfan2019/smart-kit/kit/useActionRunner';
+import useObject from '@rhfan2019/smart-kit/kit/useObject';
 
 export function ApproveButton({ path }: { path: string }) {
   const obj = useObject(path);
@@ -317,7 +339,7 @@ export function PageWithMessages({ children }: { children: ReactNode }) {
 
 ```tsx
 import { SmartListReport } from '@rhfan2019/smart-kit/templates';
-import type { TableExtendEntry } from '@rhfan2019/smart-kit/table';
+import type { TableExtendEntry } from '@rhfan2019/smart-kit/v4/fe/macros/Table';
 
 // Defined outside the component (or in useMemo): a new array on every render re-creates the columns.
 const tableExtend: TableExtendEntry[] = [
@@ -340,7 +362,7 @@ export function OrdersWithExtras() {
 import { MemoryProvider, ODataVariantStore, type MetaModel, type ODataV4Provider, type Row } from '@rhfan2019/smart-kit-core';
 import type { ServiceConfig } from '@rhfan2019/smart-kit/context';
 import { SmartListReport } from '@rhfan2019/smart-kit/templates';
-import type { ExportEvent } from '@rhfan2019/smart-kit/table';
+import type { Table$BeforeExportEvent } from '@rhfan2019/smart-kit/v4/fe/macros/Table';
 
 // Views: users without the permission only select views (no Save, Save As, Manage).
 export const variantsFor = (provider: ODataV4Provider, canSave: boolean) => new ODataVariantStore(provider, 'Variants', { canSave });
@@ -351,7 +373,7 @@ export function worklistService(model: MetaModel, rows: Row[]): { service: Servi
   return { service: { model, dataProvider: provider }, provider };
 }
 
-export function Worklist(p: { revision: number; log(e: ExportEvent): Promise<boolean> }) {
+export function Worklist(p: { revision: number; log(e: Table$BeforeExportEvent): Promise<boolean> }) {
   return (
     <SmartListReport
       entitySet="Worklist"
@@ -419,16 +441,25 @@ export const recent: FilterState = {
 
 `FlexibleColumnLayout` shows arrow buttons on the separators between columns that switch between the ratios
 (`TwoColumnsMidExpanded` 33/67 ↔ `TwoColumnsBeginExpanded` 67/33; three columns 25/50/25 ↔ 25/25/50 ↔ 67/33/0 …).
-The arrows only call `onLayoutChange`; the host's router stores the layout (ADR-022). `separatorArrows={false}` hides
-them.
+The arrows (and the full screen / close buttons of `FlexibleColumnLayoutActions` in a column's title) only fire
+`onStateChange({ layout, maxColumnsCount, isNavigationArrow, isResize })`; the host's router stores the layout (ADR-022).
+`separatorArrows={false}` hides the arrows.
 
 ```tsx
-import { FlexibleColumnLayout, type FclLayout } from '@rhfan2019/smart-kit/page';
+import FlexibleColumnLayout, { type $FlexibleColumnLayoutSettings } from '@rhfan2019/smart-kit/f/FlexibleColumnLayout';
 import { useState, type ReactNode } from 'react';
 
+type LayoutType = NonNullable<$FlexibleColumnLayoutSettings['layout']>;
+
 export function TwoColumns(p: { list: ReactNode; detail: ReactNode; onClose(): void }) {
-  const [layout, setLayout] = useState<FclLayout>('TwoColumnsMidExpanded'); // usually a URL parameter
-  return <FlexibleColumnLayout layout={layout} onLayoutChange={setLayout} begin={p.list} mid={p.detail} onCloseMid={p.onClose} />;
+  const [layout, setLayout] = useState<LayoutType>('TwoColumnsMidExpanded'); // usually a URL parameter
+  // closing the mid column (FlexibleColumnLayoutActions) asks for OneColumn
+  return (
+    <FlexibleColumnLayout
+      layout={layout} onStateChange={(e) => (e.layout === 'OneColumn' ? p.onClose() : setLayout(e.layout))}
+      beginColumnPages={p.list} midColumnPages={p.detail}
+    />
+  );
 }
 ```
 
@@ -437,20 +468,19 @@ export function TwoColumns(p: { list: ReactNode; detail: ReactNode; onClose(): v
 The entity type needs `Aggregation.RecursiveHierarchy#Q` (`NodeProperty`, `ParentNavigationProperty`) and
 `Hierarchy.RecursiveHierarchy#Q` (`DrillState`, `DistanceFromRoot`, `LimitedDescendantCount`). The table reads the
 visible nodes with `$apply=…/com.sap.vocabularies.Hierarchy.v1.TopLevels(…)` (filters and search through
-`ancestors(…,keep start)`); `MemoryProvider` answers the same requests. `tableType` takes the UI5 names
-(`ResponsiveTable`, `Table`, `AnalyticalTable`, `TreeTable`); `mode="responsive"` gives a responsive tree. Methods and
-the event are those of `sap.ui.table.TreeTable`; row indexes count the visible rows. No paging, grouping or totals.
+`ancestors(…,keep start)`); `MemoryProvider` answers the same requests. `TreeTable` (`v4/fe/macros/TreeTable`, sap.fe.macros.TreeTable)
+shows it; `responsive` gives a responsive tree. The tree methods and the event are those of `sap.ui.table.TreeTable`; row
+indexes count the visible rows. No paging, grouping or totals.
 
 ```tsx
-import { SmartTable, type SmartTableRef } from '@rhfan2019/smart-kit/table';
+import TreeTable from '@rhfan2019/smart-kit/v4/fe/macros/TreeTable';
 import { useRef } from 'react';
 
 export function CostCenterTree() {
-  const ref = useRef<SmartTableRef>(null);
+  const ref = useRef<TreeTable>(null);
   return (
-    <SmartTable
-      entitySet="CostCenters"
-      tableType="TreeTable"
+    <TreeTable
+      contextPath="/CostCenters"
       hierarchyQualifier="CostCenterHierarchy" // default: the first hierarchy of the type
       ref={ref} // expand(rowIndex), collapse(rowIndex), collapseAll(), expandToLevel(level), isExpanded(rowIndex)
       onToggleOpenState={(e) => console.log(e.rowIndex, e.rowContext, e.expanded)} // user toggles only

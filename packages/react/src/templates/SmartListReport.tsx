@@ -10,13 +10,24 @@ import {
 } from '@rhfan2019/smart-kit-core';
 import { useQueries } from '@tanstack/react-query';
 import { BarChart3, Table2 } from 'lucide-react';
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import {
-  ChartView, DynamicPage, FilterSummary, ShareMenu, SmartFilterBar, SmartTable, SmartVariantManagement, useFilterState,
-  useMetaModel, usePageState, useService, useSmartKit, useText, useVariants,
-  type ActionGroup, type ExportEvent, type ExtendEntry, type FilterFieldItem, type TableExtendEntry, type TableType,
+  useMetaModel, usePageState, useService, useSmartKit, useText,
+  type ExtendEntry,
 } from '../index';
+import FilterSummary from '../kit/FilterSummary';
+import useFilterState from '../kit/useFilterState';
+import useVariants from '../kit/useVariants';
+import Table, { type $TableSettings, type ActionGroup, type Table$BeforeExportEvent, type Table$ExportedEvent, type TableExtendEntry } from '../v4/fe/macros/Table';
+import TreeTable from '../v4/fe/macros/TreeTable';
+import FilterBar, { type FilterFieldItem } from '../v4/fe/macros/FilterBar';
+import VariantManagement from '../v4/fe/macros/VariantManagement';
 import MessageButton from '../v4/fe/macros/MessageButton';
+import Share from '../v4/fe/macros/Share';
+import DynamicPage from '../f/DynamicPage';
+import DynamicPageTitle from '../f/DynamicPageTitle';
+import DynamicPageHeader from '../f/DynamicPageHeader';
+import Chart from '../v4/fe/macros/Chart';
 import MessageProvider from '../kit/MessageProvider';
 import useMessages from '../kit/useMessages';
 
@@ -74,7 +85,7 @@ export interface SmartListReportProps {
    * names (sap.ui.comp.smarttable.TableType) are accepted too: "Table" and "AnalyticalTable" = grid,
    * "ResponsiveTable" = responsive, "TreeTable" = grid tree table of the recursive hierarchy (docs/26 §3.10).
    */
-  tableType?: 'grid' | 'responsive' | 'auto' | TableType;
+  tableType?: 'grid' | 'responsive' | 'auto' | 'AnalyticalTable' | 'ResponsiveTable' | 'Table' | 'TreeTable';
   /** Tree tables: qualifier of Aggregation.RecursiveHierarchy (default: the type's first hierarchy). */
   hierarchyQualifier?: string;
   /** Offer a chart view from UI.Chart (qualifier; true = the first chart); views use the chart of their presentation variant. */
@@ -94,10 +105,10 @@ export interface SmartListReportProps {
   refreshToken?: number | string;
   /** Offer "Export to Spreadsheet" in the table toolbars (default true). */
   exportable?: boolean;
-  /** Before an export is written; return false to cancel (see `SmartTable` `onBeforeExport`). */
-  onBeforeExport?(e: ExportEvent): boolean | void | Promise<boolean | void>;
+  /** Before an export is written; return false to cancel (see `Table` `onBeforeExport`). */
+  onBeforeExport?(e: Table$BeforeExportEvent): boolean | void | Promise<boolean | void>;
   /** After an export was written. */
-  onExported?(e: ExportEvent): void;
+  onExported?(e: Table$ExportedEvent): void;
   /**
    * Whether views may be saved (default: the service's `VariantStore.canSave`, else true). False: the view menu only
    * selects views (no Save, Save As, Manage).
@@ -292,6 +303,19 @@ function ListReportInner(props: SmartListReportProps) {
     lastToken.current = p.refreshToken;
     setRefreshRevision((n) => n + 1);
   }, [p.refreshToken]);
+  // The tables reload through their ref (sap.fe.macros.Table#refresh).
+  const tableRefs = useRef(new Set<{ refresh(): void }>());
+  const tableRef = useCallback((r: { refresh(): void } | null) => {
+    if (!r) return undefined;
+    tableRefs.current.add(r);
+    return () => { tableRefs.current.delete(r); };
+  }, []);
+  const refreshedRevision = useRef(refreshRevision);
+  useEffect(() => {
+    if (refreshedRevision.current === refreshRevision) return;
+    refreshedRevision.current = refreshRevision;
+    for (const r of tableRefs.current) r.refresh();
+  }, [refreshRevision]);
 
   // Tab counts (LR Icon Tab Bar: display the number of items of each table).
   const countable = tabs.map((x) => ({ ...x, q: queryFor(x.entitySet, views.find((v) => v.id === x.key)) }));
@@ -306,6 +330,7 @@ function ListReportInner(props: SmartListReportProps) {
   // Chart (LR Simple Content: switch between table and chart).
   const chartModel = activeView?.chart ?? (p.chart ? (typeof p.chart === 'string' ? ui.charts[p.chart] : Object.values(ui.charts)[0]) : undefined);
   const showChart = Boolean(view.chart && chartModel);
+  const chartQualifier = chartModel ? Object.keys(ui.charts).find((k) => ui.charts[k] === chartModel) : undefined;
   const chartToggle = chartModel ? (
     <SegmentedControl
       size="xs" value={showChart ? 'chart' : 'table'} aria-label={t('views.switch')} data-sk-chart-toggle
@@ -336,44 +361,43 @@ function ListReportInner(props: SmartListReportProps) {
   const table = (entitySet: string, key: string, v: ViewModel | undefined, extend: TableExtendEntry[] | undefined, title: string, withSwitch: boolean) => {
     const q = queryFor(entitySet, v);
     if (showChart && chartModel && entitySet === p.entitySet) {
-      return <ChartView revision={refreshRevision} entitySet={entitySet} service={p.service} chart={chartModel} filters={q.query?.filters ?? {}} search={q.query?.search} executed={q.query !== null} title={title} titleAddon={withSwitch ? contentSwitch : undefined} toolbarEnd={chartToggle} onDrilldown={drilldown} />;
+      return <Chart revision={refreshRevision} contextPath={`/${entitySet}`} metaPath={`@com.sap.vocabularies.UI.v1.Chart${chartQualifier ? `#${chartQualifier}` : ''}`} service={p.service} query={q.query} header={title} headerContent={withSwitch ? contentSwitch : undefined} actions={chartToggle} onDrilldown={(e) => drilldown(e.dimension, e.value)} />;
     }
     return (
       <>
         {q.ignored.length ? <Text size="sm" c="dimmed" data-sk-ignored-filters>{t('views.ignoredFilters', { fields: q.ignored.join(', ') })}</Text> : null}
-        <SmartTable
-          key={`${key}:${responsive ? 'r' : 'g'}`}
-          service={p.service}
-          entitySet={entitySet}
-          mode={responsive ? 'responsive' : 'grid'}
-          tableType={tableType === 'TreeTable' ? 'TreeTable' : undefined}
-          hierarchyQualifier={p.hierarchyQualifier}
-          query={q.query}
-          overlay={filter.dirty && !p.liveMode}
-          columns={entitySet === p.entitySet && !v ? columns : undefined}
-          onColumnsChange={entitySet === p.entitySet && !v ? (c) => setView((s) => ({ ...s, columns: c })) : undefined}
-          sort={entitySet === p.entitySet && !v ? sort : v?.presentation.sortOrder}
-          onSortChange={entitySet === p.entitySet && !v ? (s) => setView((x) => ({ ...x, sort: s })) : undefined}
-          groupBy={entitySet === p.entitySet && !v ? view.groupBy : undefined}
-          onGroupByChange={entitySet === p.entitySet && !v ? (g) => setView((x) => ({ ...x, groupBy: g })) : undefined}
-          totals={entitySet === p.entitySet && !v ? view.totals : undefined}
-          onTotalsChange={entitySet === p.entitySet && !v ? (ids) => setView((x) => ({ ...x, totals: ids })) : undefined}
-          presentation={v?.presentation}
-          lineItem={v?.lineItem}
-          extend={extend}
-          onRowNavigate={p.onRowNavigate}
-          pageKey={`${pageKey}${key === 'main' ? '' : `:${key}`}`}
-          title={title}
-          titleAddon={withSwitch ? contentSwitch : undefined}
-          toolbarEnd={entitySet === p.entitySet ? chartToggle : undefined}
-          actionGroups={p.actionGroups}
-          workingMode={p.workingMode}
-          onRowsChange={entitySet === p.entitySet ? p.onRowsChange : undefined}
-          refreshToken={refreshRevision}
-          exportable={p.exportable}
-          onBeforeExport={p.onBeforeExport}
-          onExported={p.onExported}
-        />
+        {(() => {
+          const common: Omit<$TableSettings, 'type' | 'ref'> = {
+            service: p.service,
+            contextPath: `/${entitySet}`,
+            metaPath: v ? `@com.sap.vocabularies.UI.v1.SelectionPresentationVariant#${v.id}` : undefined,
+            query: q.query,
+            showOverlay: filter.dirty && !p.liveMode,
+            visibleColumns: entitySet === p.entitySet && !v ? columns : undefined,
+            onVisibleColumnsChange: entitySet === p.entitySet && !v ? (c) => setView((s) => ({ ...s, columns: c })) : undefined,
+            sort: entitySet === p.entitySet && !v ? sort : v?.presentation.sortOrder,
+            onSortChange: entitySet === p.entitySet && !v ? (s) => setView((x) => ({ ...x, sort: s })) : undefined,
+            groupBy: entitySet === p.entitySet && !v ? view.groupBy : undefined,
+            onGroupByChange: entitySet === p.entitySet && !v ? (g) => setView((x) => ({ ...x, groupBy: g })) : undefined,
+            totals: entitySet === p.entitySet && !v ? view.totals : undefined,
+            onTotalsChange: entitySet === p.entitySet && !v ? (ids) => setView((x) => ({ ...x, totals: ids })) : undefined,
+            extend,
+            onRowPress: p.onRowNavigate ? (e) => p.onRowNavigate!(e.bindingContext.getObject(), e.bindingContext.getPath().slice(1)) : undefined,
+            pageKey: `${pageKey}${key === 'main' ? '' : `:${key}`}`,
+            header: title,
+            titleAddon: withSwitch ? contentSwitch : undefined,
+            toolbarEnd: entitySet === p.entitySet ? chartToggle : undefined,
+            actionGroups: p.actionGroups,
+            workingMode: p.workingMode,
+            onRowsChange: entitySet === p.entitySet ? p.onRowsChange : undefined,
+            enableExport: p.exportable,
+            onBeforeExport: p.onBeforeExport,
+            onExported: p.onExported,
+          };
+          return tableType === 'TreeTable'
+            ? <TreeTable key={`${key}:${responsive ? 'r' : 'g'}`} ref={tableRef} {...common} responsive={responsive} hierarchyQualifier={p.hierarchyQualifier} />
+            : <Table key={`${key}:${responsive ? 'r' : 'g'}`} ref={tableRef} {...common} type={responsive ? 'ResponsiveTable' : undefined} />;
+        })()}
       </>
     );
   };
@@ -402,30 +426,33 @@ function ListReportInner(props: SmartListReportProps) {
   }
 
   const shareHref = navigation?.href?.({ kind: 'list', entitySet: p.entitySet, service: service.name });
-  const share = (p.share ?? true) && shareHref ? <ShareMenu title={p.title ?? ui.headerInfo.typeNamePlural} href={shareHref} /> : null;
+  const share = (p.share ?? true) && shareHref ? <Share title={p.title ?? ui.headerInfo.typeNamePlural} href={shareHref} /> : null;
   const hasMessages = Boolean(messages?.messages.length);
 
   return (
     <div ref={rootRef} className={['sk-list-report', responsive ? 'sk-list-report--responsive' : '', p.className].filter(Boolean).join(' ')}>
       <DynamicPage
-        layout={responsive ? 'flow' : 'fill'}
+        fitContent={!responsive}
         filterToggle={p.filterToggle}
-        snapOnScroll={!p.filterToggle}
-        pinned={view.headerPinned ?? false}
-        onPinnedChange={(v) => setView((s) => ({ ...s, headerPinned: v }))}
-        heading={p.title ?? ui.headerInfo.typeNamePlural}
-        headingContent={<SmartVariantManagement variants={variants} content={content} onApply={apply} standardName={p.title} autoApplyOption={!p.liveMode} canSave={p.canSaveVariants} />}
-        actions={<Group gap="xs" wrap="nowrap">{p.headerActions}{share}</Group>}
-        summary={<FilterSummary entitySet={p.entitySet} service={p.service} filters={Object.fromEntries(Object.entries(filter.filters).filter(([k]) => k !== EDITING_STATUS))} search={filter.search} />}
-        header={<SmartFilterBar state={barState} extend={filterExtend} />}
+        preserveHeaderStateOnScroll={Boolean(p.filterToggle)}
+        headerPinned={view.headerPinned ?? false}
+        onPinnedStateChange={(e) => setView((s) => ({ ...s, headerPinned: e.pinned }))}
+        title={(
+          <DynamicPageTitle
+            heading={<VariantManagement variants={variants} content={content} onSelect={apply} standardName={p.title} supportApplyAutomatically={!p.liveMode} creationAllowed={p.canSaveVariants} />}
+            snappedTitleOnMobile={p.title ?? ui.headerInfo.typeNamePlural}
+            actions={p.headerActions || share ? <Group gap="xs" wrap="nowrap">{p.headerActions}{share}</Group> : undefined}
+            snappedContent={<FilterSummary entitySet={p.entitySet} service={p.service} filters={Object.fromEntries(Object.entries(filter.filters).filter(([k]) => k !== EDITING_STATUS))} search={filter.search} />}
+            onStateChange={(e) => setHeaderExpanded(e.isExpanded)}
+          />
+        )}
+        header={<DynamicPageHeader><FilterBar state={barState} extend={filterExtend} showMessages={false} /></DynamicPageHeader>}
         headerExpanded={headerExpanded}
-        onHeaderExpandedChange={setHeaderExpanded}
         footer={hasMessages ? <Group justify="flex-start" data-sk-footer><MessageButton /></Group> : undefined}
+        showFooter={hasMessages}
         data-testid={`list-${p.entitySet}`}
-      >
-        {p.beforeTable}
-        {body}
-      </DynamicPage>
+        content={<>{p.beforeTable}{body}</>}
+      />
     </div>
   );
 }

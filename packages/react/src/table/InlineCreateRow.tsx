@@ -1,10 +1,10 @@
 /** A new row at the top of a sub-table (OP Create and edit subobjects: Add / Ctrl+Enter creates a row at the top). */
 import { Button, Group } from '@mantine/core';
-import { messagesFromError, resolvePath, type FieldModel, type Row } from '@rhfan2019/smart-kit-core';
+import { messagesFromError, type FieldModel, type Row } from '@rhfan2019/smart-kit-core';
 import { useState } from 'react';
 import { useService, useText } from '../context/SmartKitProvider';
 import { fieldErrors, validate } from '../edit/editing';
-import { SmartField } from '../field/SmartField';
+import { Field } from '../field/Field';
 
 export function InlineCreateRow(p: { service?: string; typeName: string; fields: FieldModel[]; onCreate(values: Row): Promise<void>; onCancel(): void }) {
   const t = useText();
@@ -36,10 +36,10 @@ export function InlineCreateRow(p: { service?: string; typeName: string; fields:
       <div className="sk-inline-create__fields">
         {p.fields.map((f, i) => (
           <div key={f.id} className="sk-inline-create__field" data-sk-create-field={f.path}>
-            <SmartField
-              typeName={p.typeName} service={p.service} field={f} row={values} mode="edit" showLabel aria-label={f.label}
-              value={f.path ? values[f.path] : undefined} required={f.path ? resolvePath(service.model.entityTypes, p.typeName, f.path).property?.mandatory : false}
-              error={f.path ? errors[f.path] : undefined} onChange={(v) => setValues((x) => ({ ...x, [f.path!]: v }))}
+            <Field
+              typeName={p.typeName} service={p.service} metaPath={f} row={values} readOnly={false} showLabel aria-label={f.label}
+              value={f.path ? values[f.path] : undefined}
+              error={f.path ? errors[f.path] : undefined} onChange={(e) => setValues((x) => ({ ...x, [f.path!]: e.value }))} onLiveChange={(e) => setValues((x) => ({ ...x, [f.path!]: e.value }))}
               id={i === 0 ? 'sk-inline-create-first' : undefined}
             />
           </div>

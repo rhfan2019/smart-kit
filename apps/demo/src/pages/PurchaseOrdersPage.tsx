@@ -5,7 +5,8 @@
  * contents=1 (multiple content), table=responsive|auto, chart=1, working=continuous, filterToggle=1.
  */
 import { Alert } from '@mantine/core';
-import { SmartListReport, type ActionGroup, type TableExtendEntry } from '@rhfan2019/smart-kit';
+import { SmartListReport } from '@rhfan2019/smart-kit/templates';
+import type { ActionGroup, TableExtendEntry } from '@rhfan2019/smart-kit/v4/fe/macros/Table';
 import { useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router';
 import { useShell } from '../App';

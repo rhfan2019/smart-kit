@@ -3,7 +3,7 @@ import type { QueryRequest, Row } from '@rhfan2019/smart-kit-core';
 import type { ServiceHandle } from '../context/SmartKitProvider';
 import { fieldValue, getPath } from '../field/values';
 import type { TextFn } from '../i18n/text';
-import type { ColumnItem } from './SmartTable';
+import type { ColumnItem } from './Table';
 
 const CHUNK = 500;
 
@@ -18,7 +18,9 @@ export interface ExportOptions {
   timeZone?: string;
   t: TextFn;
   /** Injected for tests; defaults to downloading an .xlsx file. */
-  write?(rows: string[][], fileName: string): Promise<void>;
+  write?(rows: string[][], fileName: string, sheetName?: string): Promise<void>;
+  /** Sheet name of the file. */
+  sheetName?: string;
   /** Called with the collected rows before the file is written; false cancels the export (no file). */
   before?(r: { count: number; truncated: boolean }): Promise<boolean>;
 }
@@ -48,10 +50,10 @@ export function toCells(o: Pick<ExportOptions, 'service' | 'typeName' | 'columns
   return [header, ...body];
 }
 
-async function downloadXlsx(cells: string[][], fileName: string): Promise<void> {
+async function downloadXlsx(cells: string[][], fileName: string, sheetName?: string): Promise<void> {
   const { default: writeXlsxFile } = await import('write-excel-file/browser');
   const data = cells.map((row, i) => row.map((value) => ({ value, type: String, fontWeight: i === 0 ? ('bold' as const) : undefined })));
-  await writeXlsxFile(data).toFile(fileName);
+  await writeXlsxFile(data, sheetName ? { sheet: sheetName } : undefined).toFile(fileName);
 }
 
 export async function exportRows(o: ExportOptions): Promise<{ count: number; truncated: boolean; cancelled?: boolean }> {
@@ -59,7 +61,7 @@ export async function exportRows(o: ExportOptions): Promise<{ count: number; tru
   if (o.before && !(await o.before({ count: rows.length, truncated }))) return { count: rows.length, truncated, cancelled: true };
   const cells = toCells(o, rows);
   const safe = o.title.replace(/[\\/:*?"<>|]+/g, ' ').trim() || 'export';
-  await (o.write ?? downloadXlsx)(cells, `${safe}.xlsx`);
+  await (o.write ?? downloadXlsx)(cells, `${safe}.xlsx`, o.sheetName);
   if (truncated && typeof window !== 'undefined') console.info(o.t('table.exportLimit', { limit: o.limit }));
   return { count: rows.length, truncated };
 }

@@ -39,6 +39,10 @@ export interface ConditionInputProps {
   onValueHelp?(): void;
   /** Element id (e.g. for an external `<label htmlFor>`). */
   id?: string;
+  /** Disables the field (`FilterBar.setFilterFieldEnabled`). */
+  disabled?: boolean;
+  /** Tooltip of the field (`FilterBar.setFilterFieldsTooltip`). */
+  title?: string;
 }
 
 function isDateType(p: PropertyModel | undefined) {
@@ -89,6 +93,7 @@ export function ConditionInput(p: ConditionInputProps) {
   const hint = rules.expression && rules.expression !== 'MultiRange' && rules.expression !== 'MultiRangeOrSearchExpression' ? t(`filterBar.only.${rules.expression}`) : undefined;
   const common = {
     label: p.label, error: p.error ?? (rejected ? hint : undefined), required: p.required, id: p.id, withAsterisk: p.required, className: 'sk-filter-field',
+    disabled: p.disabled, title: p.title,
     'data-sk-filter-expression': rules.expression,
   };
 
@@ -130,7 +135,7 @@ export function ConditionInput(p: ConditionInputProps) {
   }
 
   const range = isDateType(prop) && !hasRelative ? rangeOf(p.conditions) ?? (rules.expression === 'SingleRange' ? [null, null] : undefined) : undefined;
-  const relative = relativeOps.length ? (
+  const relative = relativeOps.length && !p.disabled ? (
     <RelativeDateButton
       operators={relativeOps}
       onPick={(c) => {
@@ -188,7 +193,7 @@ export function ConditionInput(p: ConditionInputProps) {
       splitChars={[]}
       classNames={{ pillsList: 'sk-tokens__list', inputField: 'sk-tokens__input' }}
       rightSection={
-        vl && !vl.fixedValues ? (
+        vl && !vl.fixedValues && !p.disabled ? (
           <ActionIcon onClick={p.onValueHelp} aria-label={t('filterBar.showValueHelp')} title={t('filterBar.showValueHelp')}>
             <Copy className="sk-icon" />
           </ActionIcon>

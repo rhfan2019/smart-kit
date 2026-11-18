@@ -1,13 +1,16 @@
 /**
  * Flexible column layout (NAV-07, ADR-022): list in the first column, object page in the second, sub-object page in
- * the third. The layout lives in the URL: /fcl?object=<path>&sub=<path>&layout=<FclLayout>.
+ * the third. The layout lives in the URL: /fcl?object=<path>&sub=<path>&layout=<LayoutType>.
  */
-import { FlexibleColumnLayout, SmartListReport, SmartObjectPage, type FclLayout } from '@rhfan2019/smart-kit';
+import { SmartListReport, SmartObjectPage } from '@rhfan2019/smart-kit/templates';
+import FlexibleColumnLayout, { type $FlexibleColumnLayoutSettings, type FlexibleColumnLayout$StateChangeEvent } from '@rhfan2019/smart-kit/f/FlexibleColumnLayout';
 import type { Row } from '@rhfan2019/smart-kit-core';
 import { useMemo, useRef } from 'react';
 import { useSearchParams } from 'react-router';
 
-const LAYOUTS: FclLayout[] = [
+type LayoutType = NonNullable<$FlexibleColumnLayoutSettings['layout']>;
+
+const LAYOUTS: LayoutType[] = [
   'OneColumn', 'TwoColumnsBeginExpanded', 'TwoColumnsMidExpanded', 'ThreeColumnsMidExpanded', 'ThreeColumnsEndExpanded',
   'ThreeColumnsMidExpandedEndHidden', 'ThreeColumnsBeginExpandedEndHidden', 'MidColumnFullScreen', 'EndColumnFullScreen',
 ];
@@ -16,8 +19,8 @@ export function FclPage() {
   const [params, setParams] = useSearchParams();
   const object = params.get('object') ?? undefined;
   const sub = params.get('sub') ?? undefined;
-  const requested = params.get('layout') as FclLayout | null;
-  const layout: FclLayout = requested && LAYOUTS.includes(requested) ? requested : sub ? 'ThreeColumnsMidExpanded' : object ? 'TwoColumnsMidExpanded' : 'OneColumn';
+  const requested = params.get('layout') as LayoutType | null;
+  const layout: LayoutType = requested && LAYOUTS.includes(requested) ? requested : sub ? 'ThreeColumnsMidExpanded' : object ? 'TwoColumnsMidExpanded' : 'OneColumn';
   const update = (next: Record<string, string | undefined>) => {
     const p = new URLSearchParams(params);
     for (const [k, v] of Object.entries(next)) if (v === undefined) p.delete(k); else p.set(k, v);
@@ -30,25 +33,30 @@ export function FclPage() {
     const r = rows.current[index() + d];
     if (r) update({ object: `PurchaseOrders('${String(r.PurchaseOrder)}')`, sub: undefined, layout: undefined });
   };
+  // The layout decides the columns (as Fiori elements does): closing a column drops its object from the URL.
+  const onStateChange = (e: FlexibleColumnLayout$StateChangeEvent) => {
+    if (e.isResize) return;
+    if (e.layout === 'OneColumn') update({ object: undefined, sub: undefined, layout: undefined });
+    else if (sub && e.layout.startsWith('TwoColumns')) update({ sub: undefined, layout: undefined });
+    else update({ layout: e.layout });
+  };
   return (
     <FlexibleColumnLayout
       layout={layout}
-      onLayoutChange={(l) => update({ layout: l })}
-      begin={(
+      onStateChange={onStateChange}
+      beginColumnPages={(
         <SmartListReport
           entitySet="PurchaseOrders" pageKey="fcl:po" onRowsChange={(r) => { rows.current = r; }}
           onRowNavigate={(_row, path) => update({ object: path, sub: undefined, layout: undefined })}
         />
       )}
-      mid={object ? (
+      midColumnPages={object ? (
         <SmartObjectPage
           key={object} path={object} navigation="anchor"
           onRowNavigate={(_row, path) => update({ sub: path, layout: undefined })}
         />
       ) : undefined}
-      end={sub ? <SmartObjectPage key={sub} path={sub} navigation="anchor" paging={false} /> : undefined}
-      onCloseMid={() => update({ object: undefined, sub: undefined, layout: undefined })}
-      onCloseEnd={() => update({ sub: undefined, layout: undefined })}
+      endColumnPages={sub ? <SmartObjectPage key={sub} path={sub} navigation="anchor" paging={false} /> : undefined}
       midPaging={{ onPrevious: () => page(-1), onNext: () => page(1) }}
     />
   );

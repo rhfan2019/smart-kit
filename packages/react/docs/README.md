@@ -25,8 +25,8 @@ Two levels, use the highest one that fits:
 
 1. **Templates** (`/templates`): `SmartListReport` (filter bar + variant management + table, optional chart) and
    `SmartObjectPage` (header, sections from `UI.Facets`, sub-tables, edit / create / delete, actions). One element per page.
-2. **Building blocks**: `SmartFilterBar` + `useFilterState`, `SmartTable`, `SmartField`, `SmartForm`, `ChartView`,
-   `MicroChart`, `DynamicPage`, `ObjectPageLayout`, cards (`/cards`), value help, messages — for pages the templates
+2. **Building blocks**: `FilterBar` (`v4/fe/macros/FilterBar`) + `useFilterState`, `Table` / `TreeTable` (`v4/fe/macros/Table`, `v4/fe/macros/TreeTable`), `Field` (`v4/fe/macros/Field`), `Form` (`v4/fe/macros/Form`), `Chart` (`v4/fe/macros/Chart`),
+   `MicroChart` (`v4/fe/macros/MicroChart`), `DynamicPage` (`f/DynamicPage`), `ObjectPageLayout` (`uxap/ObjectPageLayout`), cards (`/cards`), value help, messages — for pages the templates
    do not cover. Every block also has hooks (`useListQuery`, `useObject`, `useValueList`, …) for fully custom UI.
 
 It is built on **Mantine 9** (components and theme), **TanStack Query 5** (data), **AG Grid 36** (grid table, optional).
@@ -37,7 +37,7 @@ The host app owns routing; smart-kit calls a `NavigationAdapter` you give it.
 ```bash
 npm install @rhfan2019/smart-kit @rhfan2019/smart-kit-core \
   react react-dom @mantine/core @mantine/hooks @mantine/dates dayjs @tanstack/react-query
-# only if you use the grid table (SmartTable mode "grid", SmartListReport, SmartObjectPage):
+# only if you use the grid table (v4/fe/macros/Table, SmartListReport, SmartObjectPage):
 npm install ag-grid-community ag-grid-react
 ```
 
@@ -167,15 +167,10 @@ ships about 5 KB gzip of smart-kit).
 | `@rhfan2019/smart-kit/theme` | `smartKitMantineTheme`, `smartKitCssVariablesResolver`, `readToken`, `useThemeTokens` | no |
 | `@rhfan2019/smart-kit/i18n` | `createText`, `MESSAGES` | no |
 | `@rhfan2019/smart-kit/util` | `applyExtensions`, `usePageState` | no |
-| `@rhfan2019/smart-kit/field` | `SmartField`, `FieldEditor`, `CriticalityIcon`, `QuickViewLink` | no |
-| `@rhfan2019/smart-kit/filter` | `SmartFilterBar`, `useFilterState`, `ConditionInput`, `ValueHelpDialog`, `AdaptFiltersDialog`, `FilterSummary` | no |
-| `@rhfan2019/smart-kit/variants` | `SmartVariantManagement`, `useVariants` | no |
-| `@rhfan2019/smart-kit/table` | `SmartTable`, `ResponsiveTable`, `TableP13nDialog`, `useListQuery`, `smartKitGridTheme` | **yes** |
-| `@rhfan2019/smart-kit/chart` | `MicroChart`, `SimpleChart`, `ChartView` | no |
-| `@rhfan2019/smart-kit/object` | `ObjectPageLayout`, `HeaderFacet`, `AnchorBar`, `SmartForm`, `DraftMarker`, `GenericTag`, `useObject` | no |
-| `@rhfan2019/smart-kit/page` | `DynamicPage`, `FlexibleColumnLayout`, `OverflowActions`, `ShareMenu` | no |
-| `@rhfan2019/smart-kit/actions` | `useActionRunner`, `isActionAvailable` | no |
-| `@rhfan2019/smart-kit/edit` | `CreateDialog`, `useEditStrategy`, `validate` | no |
+| `@rhfan2019/smart-kit/f/DynamicPage`, `f/DynamicPageTitle`, `f/DynamicPageHeader`, `f/FlexibleColumnLayout` | sap.f page layouts | no |
+| `@rhfan2019/smart-kit/uxap/ObjectPageLayout`, `uxap/ObjectPageDynamicHeaderTitle`, `uxap/ObjectPageDynamicHeaderContent`, `uxap/AnchorBar` | sap.uxap object page layout | no |
+| `@rhfan2019/smart-kit/m/GenericTag`; `v4/fe/macros/Share`, `KPITag`, `Paginator`, `fcl/FlexibleColumnLayoutActions.block` | tags, share, paging and column actions | no |
+| `@rhfan2019/smart-kit/kit/HeaderFacet`, `kit/useObject`, `kit/useObjectTitle`, `kit/useDynamicPage`, `kit/ColumnContext`, `kit/useColumn`, `kit/useSectionScrollSpy` | no UI5 counterpart | no |
 | `@rhfan2019/smart-kit/templates` | `SmartListReport`, `SmartObjectPage` | **yes** |
 | `@rhfan2019/smart-kit/styles.css` | the one stylesheet of all components | — |
 | `@rhfan2019/smart-kit/styles.layered.css` | the same stylesheet inside `@layer smart-kit` | — |
@@ -202,5 +197,5 @@ ships about 5 KB gzip of smart-kit).
 Templates and blocks take `*Extend` props (`filterExtend`, `tableExtend`, `sectionExtend`) with
 `{ id, position: 'before' | 'after' | 'replace' | 'start' | 'end', anchor?, item }` entries; ids are the
 model ids (a column is `DataField::<Path>` unless the record has an `ID`, an action `DataFieldForAction::<Namespace.action>`, a section the facet `ID`). To hide a model column or field, annotate it (`UI.Hidden`) or leave it out of `UI.LineItem`; there is no "remove" position. Field rendering can be replaced per type
-or property with `renderers` on `SmartKitProvider`. `SmartTable` and `SmartFilterBar` accept children to replace their
+or property with `renderers` on `SmartKitProvider`. `Table` and `FilterBar` accept children to replace their
 default parts. See `docs/recipes.md` § "Freestyle page" and § "Extend a template".

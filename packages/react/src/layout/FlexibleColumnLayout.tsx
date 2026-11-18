@@ -1,54 +1,73 @@
 /**
- * Flexible column layout (ADR-022, NAV-07; DP Combining the Dynamic Page with the FCL): up to three columns, each with
- * its own dynamic page. The layout is controlled by the host (its router); the columns get layout actions (full screen,
- * exit full screen, close) and optional paging buttons, shown at the very right of their title bar. Between the columns a
- * separator carries arrow buttons that switch between the column ratios (UI5 FCL: 33/67 ↔ 67/33, 25/50/25 ↔ 25/25/50 …);
- * the arrows call `onLayoutChange`, the host's router applies the new layout.
+ * sap.f.FlexibleColumnLayout (ADR-022, ADR-033, NAV-07; DP Combining the Dynamic Page with the FCL): up to three columns,
+ * each with its own page. The layout is controlled by the host (its router): every change the user asks for (separator
+ * arrows, the full screen and close buttons of FlexibleColumnLayoutActions) and every change of the maximum column count
+ * fires `onStateChange`, the host's router applies the new layout. The columns give their content a ColumnContext
+ * (layout actions, paging for Paginator, breadcrumbs only in full screen).
  */
-import { ActionIcon, Group, Tooltip } from '@mantine/core';
-import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Maximize2, Minimize2, X } from 'lucide-react';
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { ActionIcon, Tooltip } from '@mantine/core';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { useEffect, useImperativeHandle, useRef, useState, type ReactNode, type Ref } from 'react';
 import { useText } from '../context/SmartKitProvider';
-import { ColumnContext } from '../page/columnContext';
+import type { BackgroundDesign } from '../controls/dialogs/IconTabBar';
+import { ColumnContext, type ColumnPaging, type LayoutType } from '../page/columnContext';
 
-/** Column layouts and their widths (UI5 sap.f.LayoutType): begin / mid / end in percent. */
-export type FclLayout =
-  | 'OneColumn' // 100
-  | 'TwoColumnsBeginExpanded' // 67 / 33
-  | 'TwoColumnsMidExpanded' // 33 / 67
-  | 'ThreeColumnsMidExpanded' // 25 / 50 / 25
-  | 'ThreeColumnsEndExpanded' // 25 / 25 / 50
-  | 'ThreeColumnsMidExpandedEndHidden' // 33 / 67 / 0
-  | 'ThreeColumnsBeginExpandedEndHidden' // 67 / 33 / 0
-  | 'MidColumnFullScreen'
-  | 'EndColumnFullScreen';
+export { LayoutType } from '../page/columnContext';
 
-export interface FclPaging {
-  onPrevious?(): void;
-  onNext?(): void;
-}
-
-export interface FlexibleColumnLayoutProps {
-  layout: FclLayout;
-  onLayoutChange(layout: FclLayout): void;
-  begin: ReactNode;
-  mid?: ReactNode;
-  end?: ReactNode;
-  /** Close of the mid / end column (the host clears its selection). */
-  onCloseMid?(): void;
-  onCloseEnd?(): void;
-  /** Paging buttons of the mid / end column (DP Header Title Guidelines: paging buttons left of the layout actions). */
-  midPaging?: FclPaging;
-  endPaging?: FclPaging;
-  /** Arrow buttons on the separators between the columns (default true). */
+export interface $FlexibleColumnLayoutSettings {
+  /** The column layout. @defaultValue 'OneColumn' */
+  layout?: LayoutType;
+  /** Pages of the begin column (the first one is shown). */
+  beginColumnPages?: ReactNode;
+  /** Pages of the mid column. */
+  midColumnPages?: ReactNode;
+  /** Pages of the end column. */
+  endColumnPages?: ReactNode;
+  /** Background of the layout. @defaultValue 'Transparent' */
+  backgroundDesign?: BackgroundDesign;
+  /** Fired when the user asks for another layout (arrows, layout actions) or the maximum column count changes. */
+  onStateChange?(e: FlexibleColumnLayout$StateChangeEvent): void;
+  /** Fired when column widths change; true for each column that changed. */
+  onColumnResize?(e: FlexibleColumnLayout$ColumnResizeEvent): void;
+  /** Extension: paging of the mid column for its Paginator (the host's list). */
+  midPaging?: ColumnPaging;
+  /** Extension: paging of the end column for its Paginator. */
+  endPaging?: ColumnPaging;
+  /** Extension: arrow buttons on the separators between the columns (default true). */
   separatorArrows?: boolean;
   /** Extra CSS class on the root element. */
   className?: string;
+  ref?: Ref<FlexibleColumnLayout>;
+}
+
+/** Event object of FlexibleColumnLayout's stateChange. */
+export interface FlexibleColumnLayout$StateChangeEvent {
+  /** The layout to apply. */
+  layout: LayoutType;
+  /** How many columns fit (3 from 1280px, 2 from 960px, 1 below). */
+  maxColumnsCount: number;
+  /** The change comes from a separator arrow. */
+  isNavigationArrow: boolean;
+  /** The change comes from a resize (the maximum column count changed). */
+  isResize: boolean;
+}
+
+/** Event object of FlexibleColumnLayout's columnResize. */
+export interface FlexibleColumnLayout$ColumnResizeEvent {
+  beginColumn: boolean;
+  midColumn: boolean;
+  endColumn: boolean;
+}
+
+/** Instance methods of FlexibleColumnLayout. */
+export interface FlexibleColumnLayout {
+  /** How many columns fit the current width (3, 2 or 1). */
+  getMaxColumnsCount(): number;
 }
 
 /** One arrow of a column separator: the layout it switches to and its accessible label. */
 export interface FclArrow {
-  layout: FclLayout;
+  layout: LayoutType;
   direction: 'left' | 'right';
   label: 'layout.expandBegin' | 'layout.expandMid' | 'layout.expandEnd' | 'layout.showEnd';
 }
@@ -57,8 +76,8 @@ export interface FclArrow {
  * Arrows of the separators after the begin column ([0]) and after the mid column ([1]) in a layout (UI5 FCL). The
  * second separator's arrows need an end column (`hasEnd`).
  */
-export function fclArrows(layout: FclLayout, hasEnd: boolean): [FclArrow | undefined, FclArrow | undefined] {
-  const a = (to: FclLayout, direction: FclArrow['direction'], label: FclArrow['label']): FclArrow => ({ layout: to, direction, label });
+export function fclArrows(layout: LayoutType, hasEnd: boolean): [FclArrow | undefined, FclArrow | undefined] {
+  const a = (to: LayoutType, direction: FclArrow['direction'], label: FclArrow['label']): FclArrow => ({ layout: to, direction, label });
   switch (layout) {
     case 'TwoColumnsMidExpanded': return [a('TwoColumnsBeginExpanded', 'right', 'layout.expandBegin'), undefined];
     case 'TwoColumnsBeginExpanded': return [a('TwoColumnsMidExpanded', 'left', 'layout.expandMid'), undefined];
@@ -70,11 +89,14 @@ export function fclArrows(layout: FclLayout, hasEnd: boolean): [FclArrow | undef
   }
 }
 
-/** Below this width only the last visible column is shown (UI5 FCL: one column on small screens). */
-const NARROW = 1024;
+/** How many columns fit (sap.f.FlexibleColumnLayout: desktop 3 from 1280px, tablet 2 from 960px, phone 1). */
+function maxColumns(width: number): number {
+  return width >= 1280 ? 3 : width >= 960 ? 2 : 1;
+}
 
-function widths(layout: FclLayout, narrow: boolean): [number, number, number] {
-  if (narrow) {
+/** Column widths in percent (begin / mid / end) of a layout for the maximum column count (sap.f.LayoutType). */
+function widths(layout: LayoutType, max: number): [number, number, number] {
+  if (max === 1) {
     if (layout === 'OneColumn') return [100, 0, 0];
     if (layout === 'ThreeColumnsMidExpanded' || layout === 'ThreeColumnsEndExpanded' || layout === 'EndColumnFullScreen') return [0, 0, 100];
     return [0, 100, 0];
@@ -82,8 +104,8 @@ function widths(layout: FclLayout, narrow: boolean): [number, number, number] {
   switch (layout) {
     case 'TwoColumnsBeginExpanded': return [67, 33, 0];
     case 'TwoColumnsMidExpanded': return [33, 67, 0];
-    case 'ThreeColumnsMidExpanded': return [25, 50, 25];
-    case 'ThreeColumnsEndExpanded': return [25, 25, 50];
+    case 'ThreeColumnsMidExpanded': return max === 2 ? [0, 67, 33] : [25, 50, 25];
+    case 'ThreeColumnsEndExpanded': return max === 2 ? [0, 33, 67] : [25, 25, 50];
     case 'ThreeColumnsMidExpandedEndHidden': return [33, 67, 0];
     case 'ThreeColumnsBeginExpandedEndHidden': return [67, 33, 0];
     case 'MidColumnFullScreen': return [0, 100, 0];
@@ -92,58 +114,65 @@ function widths(layout: FclLayout, narrow: boolean): [number, number, number] {
   }
 }
 
-export function FlexibleColumnLayout(p: FlexibleColumnLayoutProps) {
+export function FlexibleColumnLayout(p: $FlexibleColumnLayoutSettings) {
   const t = useText();
-  const ref = useRef<HTMLDivElement>(null);
+  const layout = p.layout ?? 'OneColumn';
+  const rootRef = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(1440);
   useEffect(() => {
-    const el = ref.current;
+    const el = rootRef.current;
     if (!el || typeof ResizeObserver === 'undefined') return;
     const ro = new ResizeObserver(() => setWidth(el.clientWidth || 1440));
     ro.observe(el);
     return () => ro.disconnect();
   }, []);
-  const narrow = width < NARROW;
-  const [wb, wm, we] = widths(p.layout, narrow);
-  const fullScreen = p.layout === 'MidColumnFullScreen' || p.layout === 'EndColumnFullScreen';
+  const max = maxColumns(width);
+  useImperativeHandle(p.ref, () => ({ getMaxColumnsCount: () => max }), [max]);
+  const [wb, wm, we] = widths(layout, max);
+  const fullScreen = layout === 'MidColumnFullScreen' || layout === 'EndColumnFullScreen';
   const single = [wb, wm, we].filter((w) => w > 0).length === 1;
 
-  const btn = (label: string, icon: ReactNode, onClick: () => void, data: string) => (
-    <Tooltip label={label} key={data}><ActionIcon variant="subtle" aria-label={label} onClick={onClick} data-sk-layout-action={data}>{icon}</ActionIcon></Tooltip>
-  );
-  const pagingButtons = (paging?: FclPaging) => (paging ? (
-    <Group gap={2} wrap="nowrap" data-sk-fcl-paging>
-      {btn(t('layout.previous'), <ChevronUp className="sk-icon" />, () => paging.onPrevious?.(), 'previous')}
-      {btn(t('layout.next'), <ChevronDown className="sk-icon" />, () => paging.onNext?.(), 'next')}
-    </Group>
-  ) : null);
-  const midActions = (
-    <Group gap={2} wrap="nowrap">
-      {pagingButtons(p.midPaging)}
-      {p.layout === 'MidColumnFullScreen'
-        ? btn(t('layout.exitFullScreen'), <Minimize2 className="sk-icon" />, () => p.onLayoutChange(p.end ? 'ThreeColumnsMidExpanded' : 'TwoColumnsMidExpanded'), 'exit-full-screen')
-        : btn(t('layout.fullScreen'), <Maximize2 className="sk-icon" />, () => p.onLayoutChange('MidColumnFullScreen'), 'full-screen')}
-      {btn(t('layout.close'), <X className="sk-icon" />, () => p.onCloseMid?.(), 'close')}
-    </Group>
-  );
-  const endActions = (
-    <Group gap={2} wrap="nowrap">
-      {pagingButtons(p.endPaging)}
-      {p.layout === 'EndColumnFullScreen'
-        ? btn(t('layout.exitFullScreen'), <Minimize2 className="sk-icon" />, () => p.onLayoutChange('ThreeColumnsMidExpanded'), 'exit-full-screen')
-        : btn(t('layout.fullScreen'), <Maximize2 className="sk-icon" />, () => p.onLayoutChange('EndColumnFullScreen'), 'full-screen')}
-      {btn(t('layout.close'), <X className="sk-icon" />, () => p.onCloseEnd?.(), 'close')}
-    </Group>
-  );
-  const col = (index: number, w: number, content: ReactNode, actions: ReactNode | undefined) => (
+  const latest = useRef(p);
+  latest.current = p;
+  const change = (next: LayoutType, isNavigationArrow = false) => latest.current.onStateChange?.({ layout: next, maxColumnsCount: max, isNavigationArrow, isResize: false });
+  // A change of the maximum column count is a state change too (isResize).
+  const lastMax = useRef(max);
+  useEffect(() => {
+    if (lastMax.current === max) return;
+    lastMax.current = max;
+    latest.current.onStateChange?.({ layout: latest.current.layout ?? 'OneColumn', maxColumnsCount: max, isNavigationArrow: false, isResize: true });
+  }, [max]);
+  const lastWidths = useRef<[number, number, number]>([wb, wm, we]);
+  useEffect(() => {
+    const [b, m, e] = lastWidths.current;
+    lastWidths.current = [wb, wm, we];
+    if (b === wb && m === wm && e === we) return;
+    latest.current.onColumnResize?.({ beginColumn: b !== wb, midColumn: m !== wm, endColumn: e !== we });
+  }, [wb, wm, we]);
+
+  const hasEnd = Boolean(p.endColumnPages);
+  const col = (index: 0 | 1 | 2, w: number, content: ReactNode) => (
     <div className="sk-fcl__column" data-sk-fcl-column={index} data-width={w} hidden={w === 0} style={{ flexBasis: `${w}%` }}>
       {w > 0 && content ? (
-        // DP Header Title (3): breadcrumbs only in full screen mode with one column.
-        <ColumnContext.Provider value={{ column: index, layoutActions: actions, showBreadcrumbs: single && (fullScreen || narrow) }}>{content}</ColumnContext.Provider>
+        <ColumnContext.Provider
+          value={{
+            column: index,
+            layout,
+            // DP Header Title (3): breadcrumbs only in full screen mode with one column.
+            showBreadcrumbs: single && (fullScreen || max === 1),
+            fullScreen: index === 1
+              ? { active: layout === 'MidColumnFullScreen', toggle: () => change(layout === 'MidColumnFullScreen' ? (hasEnd ? 'ThreeColumnsMidExpanded' : 'TwoColumnsMidExpanded') : 'MidColumnFullScreen') }
+              : index === 2 ? { active: layout === 'EndColumnFullScreen', toggle: () => change(layout === 'EndColumnFullScreen' ? 'ThreeColumnsMidExpanded' : 'EndColumnFullScreen') } : undefined,
+            close: index === 1 ? () => change('OneColumn') : index === 2 ? () => change('TwoColumnsMidExpanded') : undefined,
+            paging: index === 1 ? p.midPaging : index === 2 ? p.endPaging : undefined,
+          }}
+        >
+          {content}
+        </ColumnContext.Provider>
       ) : null}
     </div>
   );
-  const arrows = narrow || p.separatorArrows === false ? [undefined, undefined] : fclArrows(p.layout, Boolean(p.end));
+  const arrows = max === 1 || p.separatorArrows === false ? [undefined, undefined] : fclArrows(layout, hasEnd);
   // A separator between two visible columns, or after the mid column when its arrow shows the hidden end column.
   const separator = (index: 1 | 2, visible: boolean) => {
     const arrow = arrows[index - 1];
@@ -153,7 +182,7 @@ export function FlexibleColumnLayout(p: FlexibleColumnLayoutProps) {
       <div className="sk-fcl__separator" data-sk-fcl-separator={index}>
         {arrow ? (
           <Tooltip label={label}>
-            <ActionIcon variant="default" size="sm" radius="xl" aria-label={label} onClick={() => p.onLayoutChange(arrow.layout)} data-sk-fcl-arrow={arrow.layout} className="sk-fcl__arrow">
+            <ActionIcon variant="default" size="sm" radius="xl" aria-label={label} onClick={() => change(arrow.layout, true)} data-sk-fcl-arrow={arrow.layout} className="sk-fcl__arrow">
               {arrow.direction === 'left' ? <ChevronLeft className="sk-icon" /> : <ChevronRight className="sk-icon" />}
             </ActionIcon>
           </Tooltip>
@@ -162,12 +191,12 @@ export function FlexibleColumnLayout(p: FlexibleColumnLayoutProps) {
     );
   };
   return (
-    <div ref={ref} className={['sk-fcl', p.className].filter(Boolean).join(' ')} data-sk-fcl={p.layout}>
-      {col(0, wb, p.begin, undefined)}
+    <div ref={rootRef} className={['sk-fcl', p.className].filter(Boolean).join(' ')} data-sk-fcl={layout} data-background-design={p.backgroundDesign ?? 'Transparent'}>
+      {col(0, wb, p.beginColumnPages)}
       {separator(1, wb > 0 && wm > 0)}
-      {col(1, wm, p.mid, p.mid ? midActions : undefined)}
+      {col(1, wm, p.midColumnPages)}
       {separator(2, wm > 0 && we > 0)}
-      {col(2, we, p.end, p.end ? endActions : undefined)}
+      {col(2, we, p.endColumnPages)}
     </div>
   );
 }

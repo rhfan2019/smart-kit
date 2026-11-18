@@ -6,11 +6,11 @@ import { Modal } from '@mantine/core';
 import { chartExpand, chartIsSeries, formatNumber, resolvePath, type ChartModel, type FieldModel, type HeaderFacetModel, type Row } from '@rhfan2019/smart-kit-core';
 import { useQuery } from '@tanstack/react-query';
 import { Fragment, useState, type ReactNode } from 'react';
-import { MicroChart, microChartHasData, type MicroChartProps } from '../chart/MicroChart';
+import { MicroChart, microChartHasData, type MicroChartData } from '../chart/MicroChart';
 import { chartHidden, chartProps, MICRO_CHART_KIND } from '../chart/fromModel';
 import { SimpleChart } from '../chart/SimpleChart';
 import { useService, useSmartKit, useText } from '../context/SmartKitProvider';
-import { CriticalityIcon, SmartField } from '../field/SmartField';
+import { CriticalityIcon, Field } from '../field/Field';
 import { fieldValue, getPath, resolveRef } from '../field/values';
 
 export interface HeaderFacetProps {
@@ -70,7 +70,7 @@ function ChartFacet({ facet, chart, row, typeName, service: serviceName, path }:
     if (!kind && import.meta.env?.DEV) console.warn(`[smart-kit] UI.ChartType "${chart.chartType}" is not a micro chart type (docs/15 MC-60)`);
     return null;
   }
-  const props: Omit<MicroChartProps, 'label'> = chartProps({ model, locale: intlLocale, timeZone }, typeName, chart, row, series ? q.data?.rows ?? [] : undefined) ?? { kind };
+  const props: Omit<MicroChartData, 'label'> = chartProps({ model, locale: intlLocale, timeZone }, typeName, chart, row, series ? q.data?.rows ?? [] : undefined) ?? { kind };
   const seriesPoints = props.points ?? props.lines?.[0] ?? [];
   const hasData = microChartHasData(props);
   const loading = series && Boolean(path) && q.isPending;
@@ -120,7 +120,7 @@ export function HeaderFacet(p: HeaderFacetProps) {
           {f.fields.slice(0, 5).map((fd) => (
             <div key={fd.id} className="sk-facet__pair">
               <dt>{fd.label}:</dt>
-              <dd><SmartField typeName={p.typeName} service={p.service} field={fd} row={p.row} /></dd>
+              <dd><Field typeName={p.typeName} service={p.service} metaPath={fd} row={p.row} /></dd>
             </div>
           ))}
         </dl>
@@ -148,7 +148,7 @@ export function HeaderFacet(p: HeaderFacetProps) {
       <div className={`sk-facet sk-facet--${dp.visualization.toLowerCase()}`} data-sk-facet={f.id} data-sk-facet-kind={dp.visualization === 'Rating' ? (samples !== undefined ? 'rating-aggregated' : 'rating') : 'progress'}>
         <div className="sk-facet__title">{f.label ?? dp.title}</div>
         {samples !== undefined ? <div className="sk-facet__subtitle" data-sk-facet-subtitle>{t('rating.samples', { count: String(samples) })}</div> : null}
-        <div className="sk-facet__chart"><SmartField typeName={p.typeName} service={p.service} field={field} row={p.row} /></div>
+        <div className="sk-facet__chart"><Field typeName={p.typeName} service={p.service} metaPath={field} row={p.row} /></div>
         {samples !== undefined && value !== undefined && value !== null ? (
           <div className="sk-facet__footer" data-sk-facet-footer>{t('rating.outOf', { value: formatNumber(String(value), intlLocale, { min: 1, max: 1 }), max })}</div>
         ) : null}

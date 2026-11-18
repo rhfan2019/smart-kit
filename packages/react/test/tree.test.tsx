@@ -1,4 +1,4 @@
-/** Tree tables (docs/26 §3.10, docs/27 UE-84–UE-88): SmartTable tableType="TreeTable" on the grid and responsive kernels. */
+/** Tree tables (docs/26 §3.10, docs/27 UE-84–UE-88): TreeTable (sap.fe.macros.TreeTable) on the grid and responsive kernels. */
 import { MantineProvider } from '@mantine/core';
 import { buildModel, MemoryProvider, MemoryVariantStore, type QueryRequest, type Row } from '@rhfan2019/smart-kit-core';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
@@ -6,7 +6,10 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { createRef, type ReactNode } from 'react';
 import { describe, expect, it, vi } from 'vitest';
-import { SmartKitProvider, SmartListReport, smartKitMantineTheme, SmartTable, type SmartTableRef } from '../src';
+import { SmartKitProvider, smartKitMantineTheme } from '../src';
+import { SmartListReport } from '@rhfan2019/smart-kit/templates';
+import Table from '../src/v4/fe/macros/Table';
+import TreeTable from '../src/v4/fe/macros/TreeTable';
 
 const model = buildModel(readFileSync(join(import.meta.dirname, '../../core/test/fixtures/tree.xml'), 'utf8'));
 const units = (): Row[] => [
@@ -39,7 +42,7 @@ const toggleOf = (name: string) => screen.getByText(name).closest('.sk-tree')!.q
 
 describe('responsive tree table (UE-84, UE-85)', () => {
   it('UE-84 first level from TopLevels, indentation by DistanceFromRoot, the toggle expands with ExpandLevels and collapses', async () => {
-    const { ui, requests } = host(<SmartTable service="org" entitySet="Units" tableType="TreeTable" mode="responsive" exportable={false} />);
+    const { ui, requests } = host(<TreeTable service="org" contextPath="/Units" responsive enableExport={false} />);
     render(ui);
     await waitFor(() => expect(shown()).toEqual(['0:A:collapsed', '0:B:collapsed']));
     expect(requests.at(-1)!.hierarchy).toEqual({ qualifier: 'Org', nodeProperty: 'ID', levels: 1 });
@@ -54,8 +57,8 @@ describe('responsive tree table (UE-84, UE-85)', () => {
   });
 
   it('UE-85 treegrid semantics: aria-level, aria-expanded, labelled toggle; row clicks on the toggle do not navigate', async () => {
-    const onRowNavigate = vi.fn();
-    const { ui } = host(<SmartTable service="org" entitySet="Units" tableType="TreeTable" mode="responsive" onRowNavigate={onRowNavigate} exportable={false} />);
+    const onRowPress = vi.fn();
+    const { ui } = host(<TreeTable service="org" contextPath="/Units" responsive onRowPress={onRowPress} enableExport={false} />);
     render(ui);
     const table = await screen.findByRole('treegrid');
     await waitFor(() => expect(table.querySelectorAll('tr[data-sk-row]')).toHaveLength(2));
@@ -68,14 +71,14 @@ describe('responsive tree table (UE-84, UE-85)', () => {
     await waitFor(() => expect(toggleOf('Alpha')).toHaveAccessibleName('Collapse node'));
     expect(table.querySelector('tr[data-sk-row]')).toHaveAttribute('aria-expanded', 'true');
     expect(screen.getByText('Alpha One').closest('tr')).toHaveAttribute('aria-level', '2');
-    expect(onRowNavigate).not.toHaveBeenCalled();
+    expect(onRowPress).not.toHaveBeenCalled();
   });
 });
 
 describe('TreeTable methods and event (UE-86, UE-87)', () => {
   it('UE-86 ref: expand, collapse (single and several rows), isExpanded, expandToLevel, collapseAll', async () => {
-    const ref = createRef<SmartTableRef>();
-    const { ui, requests } = host(<SmartTable service="org" entitySet="Units" tableType="TreeTable" mode="responsive" ref={ref} exportable={false} />);
+    const ref = createRef<TreeTable>();
+    const { ui, requests } = host(<TreeTable service="org" contextPath="/Units" responsive ref={ref} enableExport={false} />);
     render(ui);
     await waitFor(() => expect(shown()).toHaveLength(2));
     expect(ref.current!.isExpanded(0)).toBe(false);
@@ -98,8 +101,8 @@ describe('TreeTable methods and event (UE-86, UE-87)', () => {
 
   it('UE-87 onToggleOpenState({ rowIndex, rowContext, expanded }) on user toggles, not on method calls', async () => {
     const onToggleOpenState = vi.fn();
-    const ref = createRef<SmartTableRef>();
-    const { ui } = host(<SmartTable service="org" entitySet="Units" tableType="TreeTable" mode="responsive" ref={ref} onToggleOpenState={onToggleOpenState} exportable={false} />);
+    const ref = createRef<TreeTable>();
+    const { ui } = host(<TreeTable service="org" contextPath="/Units" responsive ref={ref} onToggleOpenState={onToggleOpenState} enableExport={false} />);
     render(ui);
     await waitFor(() => expect(shown()).toHaveLength(2));
     fireEvent.click(toggleOf('Beta'));
@@ -113,9 +116,36 @@ describe('TreeTable methods and event (UE-86, UE-87)', () => {
   });
 });
 
+describe('sap.fe.macros.TreeTable (v4/fe/macros/TreeTable)', () => {
+  it('AL-05 TreeTable: disableLeafSelection keeps leaves out of the selection', async () => {
+    const onSelectionChange = vi.fn();
+    const { ui } = host(<TreeTable service="org" contextPath="/Units" responsive initialExpansionLevel={2} disableLeafSelection onSelectionChange={onSelectionChange} enableExport={false} />);
+    render(ui);
+    await waitFor(() => expect(shown()).toContain('1:A2:leaf'));
+    const checkbox = (name: string) => screen.getByText(name).closest('tr')!.querySelector<HTMLInputElement>('input[type="checkbox"]')!;
+    fireEvent.click(checkbox('Alpha Two'));
+    expect(onSelectionChange).toHaveBeenLastCalledWith({ selectedContexts: [] });
+    fireEvent.click(checkbox('Alpha'));
+    const last = onSelectionChange.mock.calls.at(-1)![0] as { selectedContexts: { getPath(): string }[] };
+    expect(last.selectedContexts.map((c) => c.getPath())).toEqual(["/Units('A')"]);
+  });
+
+  it('AL-07 TreeTable: ref has the Table methods (refresh, getAllCurrentContexts, getSelectedContexts) besides the tree methods', async () => {
+    const ref = createRef<TreeTable>();
+    const { ui, requests } = host(<TreeTable service="org" contextPath="/Units" responsive ref={ref} enableExport={false} />);
+    render(ui);
+    await waitFor(() => expect(shown()).toHaveLength(2));
+    expect(ref.current!.getAllCurrentContexts().map((c) => c.getPath())).toEqual(["/Units('A')", "/Units('B')"]);
+    expect(ref.current!.getSelectedContexts()).toEqual([]);
+    const before = requests.length;
+    act(() => ref.current!.refresh());
+    await waitFor(() => expect(requests.length).toBeGreaterThan(before));
+  });
+});
+
 describe('table types (UE-88)', () => {
   it('UE-88 grid tree table: client-side rows with the toggle in the first column; no grouping or totals offered', async () => {
-    const { ui, requests } = host(<SmartTable service="org" entitySet="Units" tableType="TreeTable" exportable={false} />);
+    const { ui, requests } = host(<TreeTable service="org" contextPath="/Units" enableExport={false} />);
     render(ui);
     await waitFor(() => expect(document.querySelectorAll('.ag-row [data-sk-tree-toggle]').length).toBeGreaterThan(0));
     expect(document.querySelector('.sk-table--grid')).not.toBeNull();
@@ -126,19 +156,19 @@ describe('table types (UE-88)', () => {
     expect(await screen.findByRole('dialog')).not.toHaveTextContent('Group');
   });
 
-  it('UE-88 UI5 names: ResponsiveTable picks the responsive kernel, Table the grid; TreeTable without a hierarchy is a plain table', async () => {
-    const a = host(<SmartTable service="org" entitySet="Units" tableType="ResponsiveTable" exportable={false} />);
+  it('UE-88 type ResponsiveTable picks the responsive kernel, GridTable the grid; TreeTable without a hierarchy is a plain table', async () => {
+    const a = host(<Table service="org" contextPath="/Units" type="ResponsiveTable" enableExport={false} />);
     const { unmount } = render(a.ui);
     await waitFor(() => expect(document.querySelectorAll('tr[data-sk-row]')).toHaveLength(6));
     expect(document.querySelector('[data-sk-tree-toggle]')).toBeNull();
     expect(a.requests.every((r) => !r.hierarchy)).toBe(true);
     unmount();
-    const b = host(<SmartTable service="org" entitySet="Flats" tableType="TreeTable" mode="responsive" exportable={false} />);
+    const b = host(<TreeTable service="org" contextPath="/Flats" responsive enableExport={false} />);
     const second = render(b.ui);
     await waitFor(() => expect(document.querySelectorAll('tr[data-sk-row]')).toHaveLength(1));
     expect(b.requests.every((r) => !r.hierarchy)).toBe(true);
     second.unmount();
-    const c = host(<SmartTable service="org" entitySet="Units" tableType="Table" exportable={false} />);
+    const c = host(<Table service="org" contextPath="/Units" type="GridTable" enableExport={false} />);
     render(c.ui);
     await waitFor(() => expect(document.querySelector('.sk-table--grid')).not.toBeNull());
   });

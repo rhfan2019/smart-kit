@@ -7,7 +7,7 @@ import {
 import { useMemo, useState } from 'react';
 import { useService, useText } from '../context/SmartKitProvider';
 import type { TextFn } from '../i18n/text';
-import { SmartField } from '../field/SmartField';
+import { Field } from '../field/Field';
 
 /** The edit strategy of an entity set (service override or the default by model). */
 export function useEditStrategy(entitySet: string, serviceName?: string): EditStrategy {
@@ -107,13 +107,12 @@ export function CreateDialog(p: CreateDialogProps) {
       <form noValidate onSubmit={(e) => { e.preventDefault(); void submit(); }}>
         <Stack gap="sm">
           {p.fields.map((f) => {
-            const prop = f.path ? resolvePath(service.model.entityTypes, p.typeName, f.path).property : undefined;
             return (
               <div key={f.id} data-sk-create-field={f.path}>
-                <SmartField
-                  typeName={p.typeName} service={p.service} field={f} row={values} mode="edit" showLabel aria-label={f.label}
-                  value={f.path ? values[f.path] : undefined} required={prop?.mandatory} error={f.path ? errors[f.path] : undefined}
-                  onChange={(v) => setValues((x) => ({ ...x, [f.path!]: v }))}
+                <Field
+                  typeName={p.typeName} service={p.service} metaPath={f} row={values} readOnly={false} showLabel aria-label={f.label}
+                  value={f.path ? values[f.path] : undefined} error={f.path ? errors[f.path] : undefined}
+                  onChange={(e) => setValues((x) => ({ ...x, [f.path!]: e.value }))} onLiveChange={(e) => setValues((x) => ({ ...x, [f.path!]: e.value }))}
                 />
               </div>
             );

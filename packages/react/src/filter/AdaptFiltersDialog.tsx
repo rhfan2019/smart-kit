@@ -3,7 +3,7 @@ import { Button, Checkbox, Group, Modal, ScrollArea, Stack, TextInput, Tooltip }
 import { isFilterable } from '@rhfan2019/smart-kit-core';
 import { Search } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
-import { useMetaModel, useText } from '../context/SmartKitProvider';
+import { useMetaModel, useService, useText } from '../context/SmartKitProvider';
 
 export interface AdaptFiltersDialogProps {
   /** Whether the dialog is open (controlled). */
@@ -15,28 +15,51 @@ export interface AdaptFiltersDialogProps {
   fields: string[];
   /** Fields that cannot be hidden (they carry a condition or are mandatory). */
   locked: string[];
+  /** Further fields offered after the properties (custom filter fields of `FilterBar` `filterFields`). */
+  extraFields?: { path: string; label: string }[];
+  /** Fields not offered at all (`FilterBar.setFilterFieldsActive` with `active: false`). */
+  excluded?: string[];
+  /** Label overrides by path (`FilterBar.setFilterFieldsLabel`). */
+  labels?: Record<string, string>;
+  /** Single-valued navigation properties whose properties are offered too (`FilterBar` `navigationPropertiesForPersonalization`). */
+  navigationProperties?: string[];
   /** Called with the result when the user confirms. */
   onOk(fields: string[]): void;
   /** Called when the user cancels or closes the dialog. */
   onCancel(): void;
 }
 
-/** All properties that can be offered as filter fields. */
-export function useFilterableProperties(entitySet: string, service?: string): { path: string; label: string }[] {
+/**
+ * All properties that can be offered as filter fields; with `navigationProperties` also the properties of these
+ * single-valued navigation targets (paths `Nav/Property`).
+ */
+export function useFilterableProperties(entitySet: string, service?: string, navigationProperties?: string[]): { path: string; label: string }[] {
   const { type, capabilities } = useMetaModel(entitySet, { service });
-  return useMemo(
-    () =>
-      type.propertyOrder
-        .map((n) => type.properties[n]!)
-        .filter((p) => !p.hidden && !p.hiddenFilter && p.edmType.startsWith('Edm.') && !/Stream|Binary|Geo/.test(p.edmType) && isFilterable(capabilities, p.name))
-        .map((p) => ({ path: p.name, label: p.label })),
-    [type, capabilities],
-  );
+  const { model } = useService(service);
+  const navKey = (navigationProperties ?? []).join('|');
+  return useMemo(() => {
+    const offered = (t: typeof type, prefix: string) =>
+      t.propertyOrder
+        .map((n) => t.properties[n]!)
+        .filter((p) => !p.hidden && !p.hiddenFilter && p.edmType.startsWith('Edm.') && !/Stream|Binary|Geo/.test(p.edmType) && isFilterable(capabilities, prefix + p.name))
+        .map((p) => ({ path: prefix + p.name, label: p.label }));
+    const out = offered(type, '');
+    for (const nav of navKey ? navKey.split('|') : []) {
+      const n = type.navigations[nav];
+      const target = n && !n.collection ? model.entityTypes[n.targetType] : undefined;
+      if (target) out.push(...offered(target, `${nav}/`));
+    }
+    return out;
+  }, [type, capabilities, model, navKey]);
 }
 
 export function AdaptFiltersDialog(p: AdaptFiltersDialogProps) {
   const t = useText();
-  const all = useFilterableProperties(p.entitySet, p.service);
+  const properties = useFilterableProperties(p.entitySet, p.service, p.navigationProperties);
+  const all = useMemo(
+    () => [...properties, ...(p.extraFields ?? [])].filter((f) => !p.excluded?.includes(f.path)).map((f) => ({ ...f, label: p.labels?.[f.path] ?? f.label })),
+    [properties, p.extraFields, p.excluded, p.labels],
+  );
   const [selected, setSelected] = useState(p.fields);
   const [q, setQ] = useState('');
   useEffect(() => {

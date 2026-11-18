@@ -45,14 +45,35 @@ export function MessageIcon({ type }: { type: Message['type'] }) {
   return <Info className="sk-icon sk-status--info" aria-hidden />;
 }
 
-/** Footer message button with the message popover (MessagePopover, docs/26). Renders nothing without messages. */
-export function MessageButton({ defaultOpened = false }: { defaultOpened?: boolean }) {
+/** sap.fe.macros.MessageButton `visibilityChange`: the button was shown or hidden. */
+export interface MessageButton$VisibilityChangeEvent {
+  /** Whether the button is visible now. */
+  visible: boolean;
+}
+
+export interface $MessageButtonSettings {
+  /** The button was shown (the first message arrived) or hidden (the last message went). */
+  onVisibilityChange?(e: MessageButton$VisibilityChangeEvent): void;
+}
+
+/**
+ * Footer message button with the message popover (sap.fe.macros.MessageButton; MessagePopover, docs/26): visible only
+ * while there are messages.
+ */
+export function MessageButton({ onVisibilityChange }: $MessageButtonSettings = {}) {
   const api = useMessages();
   const t = useText();
   const button = useRef<HTMLButtonElement>(null);
   const popover = useRef<MessagePopover>(null);
   const count = api?.messages.length ?? 0;
-  useEffect(() => { if (defaultOpened && count && button.current) popover.current?.openBy(button.current); }, [defaultOpened, count]);
+  const visible = Boolean(api && count);
+  // The button starts hidden; only changes are reported.
+  const shown = useRef(false);
+  useEffect(() => {
+    if (shown.current === visible) return;
+    shown.current = visible;
+    onVisibilityChange?.({ visible });
+  }, [visible, onVisibilityChange]);
   if (!api || !count) return null;
   const top = highestSeverity(api.messages)!;
   const order: Message['type'][] = ['error', 'warning', 'info', 'success'];

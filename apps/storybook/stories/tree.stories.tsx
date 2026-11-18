@@ -1,7 +1,8 @@
-/** Tree table (docs/26 §3.10): SmartTable tableType="TreeTable" over an in-memory recursive hierarchy (TopLevels in MemoryProvider). */
+/** Tree table (docs/26 §3.10): TreeTable (sap.fe.macros.TreeTable) over an in-memory recursive hierarchy (TopLevels in MemoryProvider). */
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { buildModel, MemoryProvider, MemoryVariantStore, type Row } from '@rhfan2019/smart-kit-core';
-import { SmartKitProvider, SmartTable, useSmartKit, type SmartTableRef, type ToggleOpenStateEvent } from '@rhfan2019/smart-kit';
+import { SmartKitProvider, useSmartKit } from '@rhfan2019/smart-kit';
+import TreeTable, { type TreeTable$ToggleOpenStateEvent } from '@rhfan2019/smart-kit/v4/fe/macros/TreeTable';
 import { useMemo, useRef, useState, type ReactNode } from 'react';
 import treeXml from '../../../packages/core/test/fixtures/tree.xml?raw';
 
@@ -23,14 +24,13 @@ function TreeService({ children }: { children: ReactNode }) {
 }
 
 function TreeDemo({ mode }: { mode?: 'responsive' }) {
-  const ref = useRef<SmartTableRef>(null);
-  const [last, setLast] = useState<ToggleOpenStateEvent | null>(null);
+  const ref = useRef<TreeTable>(null);
+  const [last, setLast] = useState<TreeTable$ToggleOpenStateEvent | null>(null);
   return (
     <div style={{ height: mode ? undefined : '80vh', display: 'flex', flexDirection: 'column', padding: 16 }}>
-      <SmartTable
-        entitySet="Units"
-        tableType="TreeTable"
-        mode={mode}
+      <TreeTable
+        contextPath="/Units"
+        responsive={mode === 'responsive'}
         ref={ref}
         onToggleOpenState={setLast}
         navigable={false}

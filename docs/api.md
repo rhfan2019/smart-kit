@@ -219,13 +219,44 @@
 | --- | --- |
 | `@rhfan2019/smart-kit/base/i18n/date/CalendarWeekNumbering` | module:sap/base/i18n/date/CalendarWeekNumbering |
 | `@rhfan2019/smart-kit/f/Card` | sap.f.Card |
+| `@rhfan2019/smart-kit/f/DynamicPage` | sap.f.DynamicPage |
+| `@rhfan2019/smart-kit/f/DynamicPageHeader` | sap.f.DynamicPageHeader |
+| `@rhfan2019/smart-kit/f/DynamicPageTitle` | sap.f.DynamicPageTitle |
+| `@rhfan2019/smart-kit/f/FlexibleColumnLayout` | sap.f.FlexibleColumnLayout |
 | `@rhfan2019/smart-kit/f/cards/Header` | sap.f.cards.Header |
 | `@rhfan2019/smart-kit/f/cards/NumericHeader` | sap.f.cards.NumericHeader |
 | `@rhfan2019/smart-kit/f/cards/NumericSideIndicator` | sap.f.cards.NumericSideIndicator |
+| `@rhfan2019/smart-kit/f/library` | sap.f.LayoutType → `LayoutType`；sap.f.DynamicPageTitleShrinkRatio → `DynamicPageTitleShrinkRatio` |
+| `@rhfan2019/smart-kit/kit/AdaptFiltersDialog` | 无（FE 用 sap.ui.mdc 的 p13n 内部对话框，无公开类） |
+| `@rhfan2019/smart-kit/kit/ColumnContext` | 无（React 上下文：弹性分栏的当前列，无 UI5 对应） |
+| `@rhfan2019/smart-kit/kit/ConditionInput` | 无（FE 用 sap.ui.mdc 的 FilterField 内部实现，sap.fe.macros 没有公开类） |
+| `@rhfan2019/smart-kit/kit/CreateDialog` | 无（FE 的新建对话框由 EditFlow 内部生成，无公开类） |
+| `@rhfan2019/smart-kit/kit/CriticalityIcon` | 无（FE 在字段内部按 Criticality 画图标（sap.fe.macros 内部），无公开类） |
+| `@rhfan2019/smart-kit/kit/DraftIndicator` | 无（草稿标记加弹出框（谁、何时改的）：FE 里是 sap.fe.macros 的内部组件（draftIndicator），没有公开类；公开的标记控件是 m/ObjectMarker） |
+| `@rhfan2019/smart-kit/kit/FieldEditor` | 无（FE 的编辑控件由 Field 内部按类型选（sap.fe.macros 内部），无公开类） |
+| `@rhfan2019/smart-kit/kit/FilterSummary` | 无（FE 列表页折叠页头里的筛选摘要是模板内部实现，无公开类） |
+| `@rhfan2019/smart-kit/kit/HeaderFacet` | 无（FE 对象页页头 Facet 由模板内部生成（templates/ObjectPage），无公开类） |
 | `@rhfan2019/smart-kit/kit/MessageHost` | 无（React 宿主：承载 MessageToast / MessageBox（UI5 由核心渲染），无对应） |
 | `@rhfan2019/smart-kit/kit/MessageIcon` | 无（消息类型图标，UI5 没有单独的控件） |
 | `@rhfan2019/smart-kit/kit/MessageProvider` | 无（React 上下文：页面消息模型（UI5 用 sap.ui.core.Messaging），无对应的控件） |
+| `@rhfan2019/smart-kit/kit/QuickViewLink` | 无（FE 在字段里内部生成的快速预览链接，无公开类；sap.m.QuickView 在阶段 6 另做） |
+| `@rhfan2019/smart-kit/kit/SimpleChart` | 无（smart-kit 自己的 SVG 图表（ADR-021）；FE 用 sap.viz / sap.chart，无可对齐的公开类） |
+| `@rhfan2019/smart-kit/kit/ValueHelpDialog` | 无（FE 的值帮助是 sap.ui.mdc.ValueHelp 的内部组合（macros/internal/valuehelp），无公开类） |
+| `@rhfan2019/smart-kit/kit/smartKitGridTheme` | 无（AG Grid 的主题，UI5 没有对应；单独一个模块，/theme 不需要 AG Grid） |
+| `@rhfan2019/smart-kit/kit/useActionRunner` | 无（React hook：执行动作（UI5 由 EditFlow 控制器扩展承担）） |
+| `@rhfan2019/smart-kit/kit/useColumn` | 无（React hook：弹性分栏的当前列，无 UI5 对应） |
+| `@rhfan2019/smart-kit/kit/useDynamicPage` | 无（React hook：动态页状态，无 UI5 对应） |
+| `@rhfan2019/smart-kit/kit/useEditStrategy` | 无（React hook：编辑策略（UI5 由 EditFlow 承担）） |
+| `@rhfan2019/smart-kit/kit/useFilterBarContext` | 无（React hook：筛选栏上下文，无 UI5 对应） |
+| `@rhfan2019/smart-kit/kit/useFilterState` | 无（React hook：筛选条件状态（UI5 由 FilterBar 和 ConditionModel 承担）） |
+| `@rhfan2019/smart-kit/kit/useListQuery` | 无（React hook：列表请求（UI5 由 ODataListBinding 承担）） |
 | `@rhfan2019/smart-kit/kit/useMessages` | 无（React hook：页面消息（UI5 用 sap.ui.core.Messaging）） |
+| `@rhfan2019/smart-kit/kit/useObject` | 无（React hook：读一个对象（UI5 由 ODataContextBinding 承担）） |
+| `@rhfan2019/smart-kit/kit/useObjectTitle` | 无（React hook：对象标题，无 UI5 对应） |
+| `@rhfan2019/smart-kit/kit/useSectionScrollSpy` | 无（React hook：区块滚动定位（ObjectPageLayout 内部），无 UI5 对应） |
+| `@rhfan2019/smart-kit/kit/useTableContext` | 无（React hook：表格上下文，无 UI5 对应） |
+| `@rhfan2019/smart-kit/kit/useValueList` | 无（React hook：读取 ValueList 注解，无 UI5 对应） |
+| `@rhfan2019/smart-kit/kit/useVariants` | 无（React hook：变体存取（UI5 由 flex 变体服务承担）） |
 | `@rhfan2019/smart-kit/m/AvatarShape` | sap.m.AvatarShape |
 | `@rhfan2019/smart-kit/m/AvatarSize` | sap.m.AvatarSize |
 | `@rhfan2019/smart-kit/m/BusyDialog` | sap.m.BusyDialog |
@@ -234,6 +265,7 @@
 | `@rhfan2019/smart-kit/m/ExpandableText` | sap.m.ExpandableText |
 | `@rhfan2019/smart-kit/m/FeedInput` | sap.m.FeedInput |
 | `@rhfan2019/smart-kit/m/FeedListItem` | sap.m.FeedListItem |
+| `@rhfan2019/smart-kit/m/GenericTag` | sap.m.GenericTag |
 | `@rhfan2019/smart-kit/m/IconTabBar` | sap.m.IconTabBar |
 | `@rhfan2019/smart-kit/m/IconTabFilter` | sap.m.IconTabFilter |
 | `@rhfan2019/smart-kit/m/IconTabSeparator` | sap.m.IconTabSeparator |
@@ -253,13 +285,15 @@
 | `@rhfan2019/smart-kit/m/OverflowToolbar` | sap.m.OverflowToolbar |
 | `@rhfan2019/smart-kit/m/OverflowToolbarButton` | sap.m.OverflowToolbarButton |
 | `@rhfan2019/smart-kit/m/SelectDialog` | sap.m.SelectDialog |
+| `@rhfan2019/smart-kit/m/Table` | sap.m.Table |
 | `@rhfan2019/smart-kit/m/TableSelectDialog` | sap.m.TableSelectDialog |
 | `@rhfan2019/smart-kit/m/ToggleButton` | sap.m.ToggleButton |
 | `@rhfan2019/smart-kit/m/ToolbarSpacer` | sap.m.ToolbarSpacer |
 | `@rhfan2019/smart-kit/m/ViewSettingsDialog` | sap.m.ViewSettingsDialog |
 | `@rhfan2019/smart-kit/m/Wizard` | sap.m.Wizard |
 | `@rhfan2019/smart-kit/m/WizardStep` | sap.m.WizardStep |
-| `@rhfan2019/smart-kit/m/library` | sap.m.BackgroundDesign → `BackgroundDesign`；sap.m.BadgeStyle → `BadgeStyle`；sap.m.ButtonAccessibleRole → `ButtonAccessibleRole`；sap.m.ButtonType → `ButtonType`；sap.m.EmptyIndicatorMode → `EmptyIndicatorMode`；sap.m.ExpandableTextOverflowMode → `ExpandableTextOverflowMode`；sap.m.IconTabDensityMode → `IconTabDensityMode`；sap.m.IconTabFilterDesign → `IconTabFilterDesign`；sap.m.IconTabFilterInteractionMode → `IconTabFilterInteractionMode`；sap.m.IconTabHeaderMode → `IconTabHeaderMode`；sap.m.LinkConversion → `LinkConversion`；sap.m.ListType → `ListType`；sap.m.ObjectMarkerType → `ObjectMarkerType`；sap.m.ObjectMarkerVisibility → `ObjectMarkerVisibility`；sap.m.ObjectNumberDisplayMode → `ObjectNumberDisplayMode`；sap.m.OverflowToolbarPriority → `OverflowToolbarPriority`；sap.m.PageBackgroundDesign → `PageBackgroundDesign`；sap.m.ReactiveAreaMode → `ReactiveAreaMode`；sap.m.SelectDialogInitialFocus → `SelectDialogInitialFocus`；sap.m.StandardDynamicDateRangeKeys → `StandardDynamicDateRangeKeys`；sap.m.StringFilterOperator → `StringFilterOperator`；sap.m.TabsOverflowMode → `TabsOverflowMode`；sap.m.TitleAlignment → `TitleAlignment`；sap.m.ToolbarDesign → `ToolbarDesign`；sap.m.ToolbarStyle → `ToolbarStyle`；sap.m.UploadSetwithTableActionPlaceHolder → `UploadSetwithTableActionPlaceHolder`；sap.m.UploadState → `UploadState`；sap.m.VerticalPlacementType → `VerticalPlacementType`；sap.m.WizardRenderMode → `WizardRenderMode`；sap.m.WrappingType → `WrappingType` |
+| `@rhfan2019/smart-kit/m/library` | sap.m.BackgroundDesign → `BackgroundDesign`；sap.m.BadgeStyle → `BadgeStyle`；sap.m.ButtonAccessibleRole → `ButtonAccessibleRole`；sap.m.ButtonType → `ButtonType`；sap.m.EmptyIndicatorMode → `EmptyIndicatorMode`；sap.m.ExpandableTextOverflowMode → `ExpandableTextOverflowMode`；sap.m.IconTabDensityMode → `IconTabDensityMode`；sap.m.IconTabFilterDesign → `IconTabFilterDesign`；sap.m.IconTabFilterInteractionMode → `IconTabFilterInteractionMode`；sap.m.IconTabHeaderMode → `IconTabHeaderMode`；sap.m.LinkConversion → `LinkConversion`；sap.m.ListType → `ListType`；sap.m.ObjectMarkerType → `ObjectMarkerType`；sap.m.ObjectMarkerVisibility → `ObjectMarkerVisibility`；sap.m.ObjectNumberDisplayMode → `ObjectNumberDisplayMode`；sap.m.OverflowToolbarPriority → `OverflowToolbarPriority`；sap.m.PageBackgroundDesign → `PageBackgroundDesign`；sap.m.ReactiveAreaMode → `ReactiveAreaMode`；sap.m.SelectDialogInitialFocus → `SelectDialogInitialFocus`；sap.m.StandardDynamicDateRangeKeys → `StandardDynamicDateRangeKeys`；sap.m.StringFilterOperator → `StringFilterOperator`；sap.m.TabsOverflowMode → `TabsOverflowMode`；sap.m.TitleAlignment → `TitleAlignment`；sap.m.ToolbarDesign → `ToolbarDesign`；sap.m.ToolbarStyle → `ToolbarStyle`；sap.m.UploadSetwithTableActionPlaceHolder → `UploadSetwithTableActionPlaceHolder`；sap.m.UploadState → `UploadState`；sap.m.VerticalPlacementType → `VerticalPlacementType`；sap.m.WizardRenderMode → `WizardRenderMode`；sap.m.WrappingType → `WrappingType`；sap.m.ListMode → `ListMode`；sap.m.PopinLayout → `PopinLayout`；sap.m.Sticky → `Sticky`；sap.m.MultiSelectMode → `MultiSelectMode`；sap.m.ListSeparators → `ListSeparators`；sap.m.GenericTagDesign → `GenericTagDesign`；sap.m.GenericTagValueState → `GenericTagValueState` |
+| `@rhfan2019/smart-kit/m/p13n/Popup` | sap.m.p13n.Popup |
 | `@rhfan2019/smart-kit/m/plugins/UploadSetwithTable` | sap.m.plugins.UploadSetwithTable |
 | `@rhfan2019/smart-kit/m/upload/ActionsPlaceholder` | sap.m.upload.ActionsPlaceholder |
 | `@rhfan2019/smart-kit/m/upload/UploaderHttpRequestMethod` | sap.m.upload.UploaderHttpRequestMethod |
@@ -279,7 +313,24 @@
 | `@rhfan2019/smart-kit/ui/integration/cards/TableContent` | manifest sap.card/Table |
 | `@rhfan2019/smart-kit/ui/integration/cards/TimelineContent` | manifest sap.card/Timeline |
 | `@rhfan2019/smart-kit/ui/unified/Currency` | sap.ui.unified.Currency |
+| `@rhfan2019/smart-kit/uxap/AnchorBar` | sap.uxap.AnchorBar |
+| `@rhfan2019/smart-kit/uxap/ObjectPageDynamicHeaderContent` | sap.uxap.ObjectPageDynamicHeaderContent |
+| `@rhfan2019/smart-kit/uxap/ObjectPageDynamicHeaderTitle` | sap.uxap.ObjectPageDynamicHeaderTitle |
+| `@rhfan2019/smart-kit/uxap/ObjectPageLayout` | sap.uxap.ObjectPageLayout |
+| `@rhfan2019/smart-kit/uxap/library` | sap.uxap.Importance → `Importance`；sap.uxap.ObjectPageSubSectionLayout → `ObjectPageSubSectionLayout` |
+| `@rhfan2019/smart-kit/v4/fe/macros/Chart` | sap.fe.macros.Chart |
+| `@rhfan2019/smart-kit/v4/fe/macros/Field` | sap.fe.macros.Field |
+| `@rhfan2019/smart-kit/v4/fe/macros/FilterBar` | sap.fe.macros.FilterBar |
+| `@rhfan2019/smart-kit/v4/fe/macros/Form` | sap.fe.macros.Form |
+| `@rhfan2019/smart-kit/v4/fe/macros/KPITag` | sap.fe.macros.KPITag |
 | `@rhfan2019/smart-kit/v4/fe/macros/MessageButton` | sap.fe.macros.MessageButton |
+| `@rhfan2019/smart-kit/v4/fe/macros/MicroChart` | sap.fe.macros.MicroChart |
+| `@rhfan2019/smart-kit/v4/fe/macros/Paginator` | sap.fe.macros.Paginator |
+| `@rhfan2019/smart-kit/v4/fe/macros/Share` | sap.fe.macros.Share |
+| `@rhfan2019/smart-kit/v4/fe/macros/Table` | sap.fe.macros.Table |
+| `@rhfan2019/smart-kit/v4/fe/macros/TreeTable` | sap.fe.macros.TreeTable |
+| `@rhfan2019/smart-kit/v4/fe/macros/VariantManagement` | sap.fe.macros.VariantManagement |
+| `@rhfan2019/smart-kit/v4/fe/macros/fcl/FlexibleColumnLayoutActions.block` | sap.fe.macros.FlexibleColumnLayoutActions |
 <!-- ui5-modules:end -->
 
 ## 子路径入口（`@rhfan2019/smart-kit`）
@@ -292,15 +343,6 @@
 | `/i18n` | `createText`、`MESSAGES` | 否 |
 | `/theme` | `smartKitMantineTheme`、`smartKitCssVariablesResolver`、`readToken`、`useThemeTokens` | 否 |
 | `/util` | `applyExtensions`、`usePageState` | 否 |
-| `/field` | `SmartField`、`FieldEditor`、`CriticalityIcon`、`QuickViewLink` | 否 |
-| `/filter` | `SmartFilterBar`、`ConditionInput`、`ValueHelpDialog`、`AdaptFiltersDialog`、`FilterSummary` | 否 |
-| `/variants` | `SmartVariantManagement`、`useVariants` | 否 |
-| `/table` | `SmartTable`、`ResponsiveTable`、`TableP13nDialog`、`useListQuery`、`smartKitGridTheme` | 是 |
-| `/chart` | `MicroChart`、`SimpleChart`、`ChartView` | 否 |
-| `/object` | `ObjectPageLayout`、`HeaderFacet`、`AnchorBar`、`SmartForm`、`DraftMarker`、`GenericTag`、`useObject` | 否 |
-| `/page` | `DynamicPage`、`FlexibleColumnLayout`、`OverflowActions`、`ShareMenu` | 否 |
-| `/actions` | `useActionRunner`、`isActionAvailable` | 否 |
-| `/edit` | `CreateDialog`、`useEditStrategy`、`validate` | 否 |
 | `/templates` | `SmartListReport`、`SmartObjectPage` | 是 |
 | `/styles.css` | 样式（所有组件共用一个文件） | — |
 
@@ -311,33 +353,19 @@ AG Grid（`ag-grid-community`、`ag-grid-react`）是可选的 peer 依赖：不
 ### 值（运行时导出）
 
 - `actionPaths`
-- `AdaptFiltersDialog`
-- `AnchorBar`
 - `applyExtensions`
-- `ChartView`
-- `ColumnContext`
-- `ConditionInput`
 - `conditionText`
-- `CreateDialog`
 - `createFields`
 - `createText`
 - `createWith`
-- `CriticalityIcon`
 - `DEFAULT_STANDARD_OPTIONS`
-- `DraftMarker`
 - `draftState`
 - `dynamicDateValueTypes`
-- `DynamicPage`
 - `fclArrows`
-- `FieldEditor`
 - `fieldErrors`
 - `fieldValue`
-- `FilterSummary`
 - `filterSummaryText`
-- `FlexibleColumnLayout`
-- `GenericTag`
 - `getPath`
-- `HeaderFacet`
 - `hiddenByImportance`
 - `INTL_LOCALE`
 - `isActionAvailable`
@@ -346,149 +374,52 @@ AG Grid（`ag-grid-community`、`ag-grid-react`）是可选的 peer 依赖：不
 - `MESSAGES`
 - `messageTypeOf`
 - `MICRO_COMPARISON_MAX`
-- `MicroChart`
 - `MissingProviderError`
 - `niceTicks`
-- `ObjectPageLayout`
-- `OverflowActions`
 - `parseConditionText`
-- `QuickViewLink`
 - `readToken`
 - `relativeDateText`
 - `resolveRef`
-- `ResponsiveTable`
 - `RESTRICTED_FILE_NAME_CHARACTERS`
-- `ShareMenu`
-- `SimpleChart`
-- `SmartField`
-- `SmartFilterBar`
-- `SmartForm`
 - `smartKitCssVariablesResolver`
-- `smartKitGridTheme`
 - `smartKitMantineTheme`
 - `SmartKitProvider`
-- `SmartListReport`
-- `SmartObjectPage`
-- `SmartTable`
-- `SmartVariantManagement`
-- `TableP13nDialog`
 - `toDates`
 - `typedText`
-- `useActionRunner`
-- `useColumn`
-- `useDynamicPage`
-- `useEditStrategy`
-- `useFilterBarContext`
-- `useFilterState`
-- `useListQuery`
 - `useMetaModel`
-- `useObject`
-- `useObjectTitle`
 - `usePageState`
-- `useSectionScrollSpy`
 - `useService`
 - `useSmartKit`
-- `useTableContext`
 - `useText`
 - `useThemeTokens`
-- `useValueList`
-- `useVariants`
 - `validate`
-- `ValueHelpDialog`
 - `viewSettingsFilterString`
 
 ### 类型
 
-- `ActionGroup`
-- `ActionItem`
-- `ActionResult`
-- `ActionRunner`
-- `ActionTarget`
-- `AdaptFiltersDialogProps`
-- `AnchorBarProps`
-- `AnchorItem`
-- `AppliedFilter`
-- `BlockItem`
-- `ChartDatum`
-- `ChartViewProps`
-- `ColumnContextValue`
-- `ColumnItem`
-- `ConditionInputProps`
 - `ConditionTextOptions`
-- `CreateDialogProps`
 - `DateLike`
 - `DraftState`
-- `DynamicPageProps`
 - `EntitySetHandle`
-- `ExportEvent`
 - `ExtendEntry`
 - `ExtendPosition`
 - `FclArrow`
-- `FclLayout`
-- `FclPaging`
-- `FieldEditorProps`
 - `FieldRenderer`
 - `FieldRenderProps`
 - `FieldValue`
-- `FilterFieldItem`
-- `FilterSnapshot`
-- `FilterStateApi`
-- `FilterSummaryProps`
-- `FlexibleColumnLayoutProps`
-- `FormFieldItem`
-- `GenericTagProps`
-- `HeaderFacetProps`
-- `ListContentItem`
-- `ListQueryOptions`
-- `ListQueryResult`
 - `Locale`
 - `MessageKey`
 - `Messages`
-- `MicroChartAreaThresholds`
-- `MicroChartCriticality`
-- `MicroChartKind`
-- `MicroChartPoint`
-- `MicroChartProps`
-- `MicroChartThreshold`
-- `ObjectPageLayoutProps`
-- `ObjectResult`
-- `OverflowActionsProps`
 - `PreventableEvent`
 - `RendererRegistry`
-- `ResponsiveColumn`
-- `ResponsiveTableProps`
-- `SectionItem`
 - `ServiceConfig`
 - `ServiceHandle`
-- `ShareMenuProps`
-- `SimpleChartProps`
-- `SmartFieldProps`
-- `SmartFilterBarProps`
-- `SmartFormProps`
 - `SmartKitContextValue`
 - `SmartKitProviderProps`
-- `SmartListReportProps`
-- `SmartObjectPageProps`
-- `SmartTableProps`
-- `SmartTableRef`
-- `SmartVariantManagementProps`
-- `SubSectionItem`
-- `TableContextValue`
-- `TableExtendEntry`
-- `TableP13nDialogProps`
-- `TableQuery`
-- `TableType`
 - `TextFn`
 - `TextParams`
-- `ToggleOpenStateEvent`
-- `ToolbarAction`
 - `TypedKey`
-- `UseFilterStateOptions`
-- `UseObjectOptions`
-- `UseVariantsOptions`
 - `ValueContext`
-- `ValueHelpDialogProps`
-- `VariantsApi`
 
 ## `@rhfan2019/smart-kit-server`
 
