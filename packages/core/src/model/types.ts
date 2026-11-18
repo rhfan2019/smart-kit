@@ -27,6 +27,7 @@ export interface ValueListParameter {
 export interface ValueListModel {
   collectionPath: string;
   label?: string;
+  /** Common.ValueList/SearchSupported; the vocabulary default is true. */
   searchSupported: boolean;
   parameters: ValueListParameter[];
   /** The value list property that maps to the annotated property. */
@@ -62,6 +63,8 @@ export interface PropertyModel {
   multiLine: boolean;
   isDigitSequence: boolean;
   isUpperCase: boolean;
+  /** Common.FilterDefaultValue: default "EQ" filter condition when there is no default selection variant (FE FilterHelper). */
+  filterDefaultValue?: string | number | boolean;
   /** Common.FieldControl constant (0 hidden, 1 read-only, 3 optional, 7 mandatory) or a path. */
   fieldControl?: ValueRef;
   /** Common.FieldControl is the constant Mandatory (7). */
@@ -139,6 +142,12 @@ export interface AggregationModel {
   groupable: string[];
   /** AggregatableProperties; empty means any numeric property may be aggregated. */
   aggregatable: { path: string; methods: string[] }[];
+  /**
+   * Aggregation.CustomAggregate by qualifier (the name of the aggregate, usually the property it aggregates) → its
+   * type, e.g. `{ NetAmount: 'Edm.Decimal' }`. FE takes these as the aggregatable measures and requests
+   * `aggregate(Name)`, leaving the method to the service (docs/29 §4 P1-2).
+   */
+  customAggregates: Record<string, string>;
 }
 
 export interface DataPointModel {
@@ -220,6 +229,8 @@ export interface ChartModel {
   /** Property paths relative to the chart's entity. */
   dimensions: string[];
   measures: string[];
+  /** UI.Chart/DimensionAttributes Role by dimension path ("Category", "Series", "Category2"); absent: Category. */
+  dimensionRoles?: Record<string, string>;
   /** Data points of measures (MeasureAttributes/DataPoint), by measure path. */
   dataPoints: Record<string, DataPointModel>;
   /** Navigation from the annotated entity to the chart's entity ("" for the entity itself). */
@@ -321,6 +332,11 @@ export interface PresentationModel {
   groupBy: string[];
   /** UI.PresentationVariant/Total: properties whose totals are shown by default (docs/23). */
   total: string[];
+  /**
+   * Whether the presentation variant has `Total` at all (also an empty collection: no totals). Without it an analytical
+   * table totals all custom aggregates (FE getAggregateConditions, D39).
+   */
+  hasTotal?: boolean;
 }
 
 export interface InitialCondition {

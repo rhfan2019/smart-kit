@@ -1,0 +1,7 @@
+---
+"@rhfan2019/smart-kit": minor
+"@rhfan2019/smart-kit-core": minor
+"@rhfan2019/smart-kit-server": minor
+---
+
+SAPUI5 alignment, stage 3 (D39, docs/23 §10): totals and group subtotals follow Fiori elements 1.154 — only the analytical table (`v4/fe/macros/Table` `type="AnalyticalTable"`, `SmartListReport` `tableType="AnalyticalTable"`) groups with subtotals and shows totals; the responsive table groups without counts or subtotals; the grid table (`GridTable`, the default) neither groups nor totals. Only custom aggregates (`Aggregation.CustomAggregate`) are totalled (`canTotal`; no "numeric property with sum" fallback); without `UI.PresentationVariant/Total` an analytical table totals all of them. smart-kit-server accepts `aggregate(Name)` without `with` for declared custom aggregates (the property of the same name, summed, or with the first `SupportedAggregationMethods` entry when sum is not listed). As in FE, the unit is aggregated with the measure (`aggregate(NetAmount,Currency)`; subtotals `groupby((Group,Text),aggregate(NetAmount,Currency,$count as …))`, no longer grouped by the currency): a total over several currencies shows "Show Details", a popover "Totals" / "Subtotals" with the amount per currency (`buildTotalsRequest` option `byUnit`, `TotalAmount.multiUnit`); an empty `PresentationVariant/Total` totals nothing (`PresentationModel.hasTotal`). smart-kit-server returns the unit of a custom aggregate named in `aggregate()` (the currency, or null for several).

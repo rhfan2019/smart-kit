@@ -6,9 +6,19 @@
 
 ### 值（运行时导出）
 
+- `DRAFT_EDIT_STATES`
+- `EDIT_STATE`
+- `editStateFilter`
+- `editStateOf`
+- `matchesEditState`
+- `hiddenFilterPath`
+- `hiddenFiltersOf`
+- `withHiddenFilters`
 - `activeFilterPaths`
+- `aggregateMeasure`
 - `arrangeText`
 - `buildAggregateRequest`
+- `buildChartRequest`
 - `buildHierarchyRequest`
 - `buildListRequest`
 - `buildModel`
@@ -66,6 +76,7 @@
 - `humanize`
 - `isAbortError`
 - `isComplete`
+- `isCustomAggregate`
 - `isDraftRow`
 - `isFilterable`
 - `isRelativeDateOperator`
@@ -120,11 +131,14 @@
 ### 类型
 
 - `ActionModel`
+- `AggregateMeasure`
 - `AggregateRequestOptions`
 - `AggregationModel`
+- `DraftEditState`
 - `BuildModelOptions`
 - `CapabilityModel`
 - `ChartModel`
+- `ChartRequestOptions`
 - `ColumnModel`
 - `Condition`
 - `Criticality`

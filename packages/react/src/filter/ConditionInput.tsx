@@ -17,6 +17,7 @@ import { useService, useSmartKit, useText } from '../context/SmartKitProvider';
 import { getPath } from '../field/values';
 import { conditionText, parseConditionText, sameCondition } from './conditionText';
 import { useValueList } from './useValueList';
+import { propagateOut, useValueHelpSource } from './valueHelpSource';
 
 export interface ConditionInputProps {
   /** Entity set of the filtered property. */
@@ -74,8 +75,10 @@ export function ConditionInput(p: ConditionInputProps) {
   // picker does not treat "equal to the first date" as a finished range.
   const [pending, setPending] = useState<[string | null, string | null] | null>(null);
 
-  const fixed = useValueList(vl, { top: 200, enabled: Boolean(vl?.fixedValues) }, p.service);
-  const suggest = useValueList(vl, { search: typed, top: 10, enabled: Boolean(vl && !vl.fixedValues && typed.trim().length > 0) }, p.service);
+  // In / InOut parameters filter by the other fields of the surrounding filter bar (P1-5).
+  const source = useValueHelpSource();
+  const fixed = useValueList(vl, { top: 200, enabled: Boolean(vl?.fixedValues), filters: source?.filters }, p.service);
+  const suggest = useValueList(vl, { search: typed, top: 10, enabled: Boolean(vl && !vl.fixedValues && typed.trim().length > 0), filters: source?.filters }, p.service);
 
   // UI.TextArrangement of the values; TextSeparate has no second column in a field, so it reads like TextFirst.
   const annotated = valueListTextArrangement(service.model, prop);
@@ -176,7 +179,8 @@ export function ConditionInput(p: ConditionInputProps) {
   }
 
   const tokens = p.conditions.map((c) => conditionText(c, prop, intlLocale, timeZone, { t, textArrangement: arrangement }));
-  const suggestions = ((vl?.fixedValues ? fixed.data?.rows : suggest.data?.rows) ?? []).map(describe);
+  const suggestionRows = (vl?.fixedValues ? fixed.data?.rows : suggest.data?.rows) ?? [];
+  const suggestions = suggestionRows.map(describe);
   const suggestionLabel = valueLabel;
   return (
     <TagsInput
@@ -201,12 +205,17 @@ export function ConditionInput(p: ConditionInputProps) {
       }
       onChange={(next) => {
         const kept: Condition[] = [];
+        const picked: Record<string, unknown>[] = [];
         let refused = false;
         for (const token of next) {
           const i = tokens.indexOf(token);
           if (i >= 0) { kept.push(p.conditions[i]!); continue; }
           const s = suggestions.find((d) => suggestionLabel(d) === token);
-          if (s) { kept.push({ operator: 'EQ', values: [s.key], text: s.text }); continue; }
+          if (s) {
+            kept.push({ operator: 'EQ', values: [s.key], text: s.text });
+            picked.push(suggestionRows[suggestions.indexOf(s)]!);
+            continue;
+          }
           let c = parseConditionText(token, prop);
           // Search expressions: plain text means "contains" (P2-LR-19).
           if (c && rules.expression === 'SearchExpression' && c.operator === 'EQ' && !/^=/.test(token.trim())) c = { operator: 'Contains', values: c.values };
@@ -216,6 +225,7 @@ export function ConditionInput(p: ConditionInputProps) {
         setRejected(refused);
         setTyped('');
         p.onChange(kept);
+        if (vl) propagateOut(vl, picked, source);
       }}
     />
   );

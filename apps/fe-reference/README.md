@@ -21,6 +21,9 @@ node apps/fe-reference/server.mjs              # http://localhost:4420
 | --- | --- | --- |
 | `http://localhost:4420/index.html` | `fe.ref.purchasing` (`webapp/purchasing/`) | `/odata/purchasing/` |
 | `http://localhost:4420/index.html?app=purchasing-draft` | `fe.ref.purchasingdraft` (`webapp/purchasing-draft/`) | `/odata/purchasing-draft/` |
+| `http://localhost:4420/index.html?app=purchasing-chart` | `fe.ref.purchasingchart` (`webapp/purchasing-chart/`) | `/odata/purchasing/` |
+| `http://localhost:4420/index.html?app=purchasing-views` | `fe.ref.purchasingviews` (`webapp/purchasing-views/`) | `/odata/purchasing/` |
+| `http://localhost:4420/index.html?app=purchasing-analytical` | `fe.ref.purchasinganalytical` (`webapp/purchasing-analytical/`) | `/odata/purchasing/` |
 
 Both components start through `webapp/ext/start.js`; the shared extensions (custom column, custom action) are in
 `webapp/ext/`. Variants are kept in the session storage flexibility connector (no LREP backend).
@@ -46,6 +49,16 @@ The FE comparison opens `/po` and `/po-draft` of the smart-kit demo (`apps/demo/
 | row press → object page (`NavigationAdapter`) | `navigation.PurchaseOrders.detail.route: "PurchaseOrdersObjectPage"` |
 | `filterToggle` (default `false`), `views`, `contents`, `chart` not set | no `views`, no chart in the manifest |
 
+### Chart view (`purchasing-chart` ↔ `/po?chart=1`)
+
+`webapp/purchasing-chart/manifest.json` is the `purchasing` manifest plus `views.paths`: `table` =
+`com.sap.vocabularies.UI.v1.PresentationVariant` (the LineItem) and `chart` =
+`com.sap.vocabularies.UI.v1.PresentationVariant#ByStatusChart` (its `Visualizations` is `@UI.Chart#ByStatus`, added
+to the test service for this comparison). It corresponds to the demo's `/po?chart=1` (`chart="ByStatus"`: the table
+with the table/chart switch). FE shows the two as view tabs, smart-kit as the switch in the table toolbar, so the
+FE comparison `tests/e2e-fe/aggr.spec.ts` compares only the chart: the requests sent when the chart is shown (and
+after a filter), the chart type, its dimensions and measures, and what it draws.
+
 Not reproducible in the manifest (and therefore registered as differences, registered as `fe-behavior` in `tools/ui5-alignment/deviations.json`):
 
 - the demo's `tableExtend` entry `DataField::PurchaseOrderType` with `position: "replace"` (renders the raw code);
@@ -53,13 +66,32 @@ Not reproducible in the manifest (and therefore registered as differences, regis
 - the custom action's position `start`: FE places custom actions by `position.anchor` relative to other actions,
   and the order of the standard actions (Create, Delete) is fixed by FE.
 
+## Analytical table (`?app=purchasing-analytical` ↔ `/po?table=analytical`)
+
+`webapp/purchasing-analytical/` is the `purchasing` component with `tableSettings.type: "AnalyticalTable"` (the
+only FE table type with totals, group subtotals and grouping in a grid, D39). It corresponds to the demo's
+`/po?table=analytical` (`tableType="AnalyticalTable"`). The test service declares `Aggregation.CustomAggregate#NetAmount`
+and `UI.PresentationVariant/Total` = NetAmount, so both total the net amount. Used by `tests/e2e-fe/totals.spec.ts`
+(scenario `po-analytical-totals`): the collection requests of `PurchaseOrders`, the totalled columns, the
+personalization panels, the text of the totals row (several currencies: "Show Details") and the lines and request
+of its details popover; the remaining differences are in
+`tools/ui5-alignment/deviations.totals.json`.
+
+## Multiple views (`?app=purchasing-views`)
+
+`webapp/purchasing-views/` is the `purchasing` component with `views.paths` = the SelectionPresentationVariants
+`#Open`, `#InDelivery`, `#Closed` and `showCounts: true` (a table per view in an IconTabBar). It corresponds to the
+demo's `/po?views=tabs` (`views={{ mode: 'tabs', ids: ['Open', 'InDelivery', 'Closed'] }}`); used by
+`tests/e2e-fe/draft.spec.ts` (scenario `po-views-tabs`). The draft scenarios of that spec (`po-draft-list-locked`,
+`-unchanged`, `-own-draft`) use `?app=purchasing-draft` and `/po-draft`, choosing the editing status in both.
+
 ## Metadata adjustment
 
 sap.fe needs the draft navigation property `SiblingEntity` on draft-enabled entity types (the "All" editing
 status filters by `SiblingEntity/IsActiveEntity eq null`); the test service does not declare it, and without it
-the draft list report never sends its data request. `metadata.mjs` (`addSiblingEntity`) adds it to the proxied
-`$metadata` of entity types with `DraftAdministrativeData`, only when missing. @sap-ux/fe-mockserver-core already
-evaluates `SiblingEntity` paths. Once `apps/mock` declares the property, the patch is a no-op and can be removed.
+the draft list report never sends its data request. `apps/mock/lib/draft.mjs` now declares `SiblingEntity` (with
+its navigation property binding) and evaluates `SiblingEntity/IsActiveEntity eq null` and `IsActiveEntity eq false`
+as RAP / CAP do (`draftFilterCheck`), so `metadata.mjs` (`addSiblingEntity`) is a no-op and can be removed.
 
 ## Comparison
 
@@ -68,3 +100,13 @@ app (ports from `E2E_MOCK_PORT`, `E2E_DEMO_PORT`, `FE_PORT`), compares requests,
 writes `reports/fe-compare/<scenario>.{json,md}`. A difference passes only when it is registered as `fe-behavior`
 in `tools/ui5-alignment/deviations.json` (or the file named by `FE_DEVIATIONS`). `FE_BASELINE=1` rewrites
 `tools/ui5-alignment/fe-baseline.json` from the current differences instead of failing (to be merged into `deviations.json` with ids).
+
+## Annotation overlays (filter defaults and value help parameters)
+
+`tests/e2e-fe/filter3.spec.ts` (docs/29 §4 P1-4, P1-5, P1-7, P1-8) needs annotations the test service does not
+declare (`Common.FilterDefaultValue` without a default `UI.SelectionVariant`, a value list with In / Constant / Out
+parameters, `Common.IsDigitSequence`, a set without `Capabilities.SearchRestrictions`). It lays them over the
+purchasing `$metadata` in the browser (`page.route`), identically for this app and for the smart-kit demo `/po`, so
+the manifests, the demo page and the other scenarios are unchanged. The overlay reads the metadata from the test
+service directly, because `route.fetch` rejects this server's proxied response (it carries both `Content-Length`
+and `Transfer-Encoding`).

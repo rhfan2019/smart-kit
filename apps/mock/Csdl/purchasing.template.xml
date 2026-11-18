@@ -1108,6 +1108,19 @@
         </Annotation>
       </Annotations>
 
+      <!-- docs/29 §4 P1-2 (stage 3, aggr): NetAmount is a custom aggregate (qualifier = property name, value = its type);
+           FE takes it as the aggregatable measure of charts, KPIs and analytical tables and requests aggregate(NetAmount) -->
+      <Annotations Target="Purchasing.PurchaseOrder">
+        <Annotation Term="Aggregation.CustomAggregate" Qualifier="NetAmount" String="Edm.Decimal"/>
+        <!-- docs/29 §4 P1-3: the chart view of the FE reference app (purchasing-chart, views.paths) = the chart of /po?chart=1 -->
+        <Annotation Term="UI.PresentationVariant" Qualifier="ByStatusChart">
+          <Record Type="UI.PresentationVariantType">
+            <PropertyValue Property="Text" String="{{label:CH.ByStatus}}"/>
+            <PropertyValue Property="Visualizations"><Collection><AnnotationPath>@UI.Chart#ByStatus</AnnotationPath></Collection></PropertyValue>
+          </Record>
+        </Annotation>
+      </Annotations>
+
       <Annotations Target="Purchasing.PurchaseOrder/PurchaseOrder">
         <Annotation Term="Common.Label" String="{{label:F.PurchaseOrder}}"/>
       </Annotations>

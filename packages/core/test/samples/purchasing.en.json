@@ -1920,7 +1920,17 @@
      {
       "$PropertyPath": "PurchaseOrder"
      }
-    ]
+    ],
+    "@Aggregation.CustomAggregate#NetAmount": "Edm.Decimal",
+    "@UI.PresentationVariant#ByStatusChart": {
+     "@type": "com.sap.vocabularies.UI.v1.PresentationVariantType",
+     "Text": "Net Amount by Status",
+     "Visualizations": [
+      {
+       "$AnnotationPath": "@UI.Chart#ByStatus"
+      }
+     ]
+    }
    },
    "Purchasing.PurchaseOrder/PurchaseOrder": {
     "@Common.Label": "Purchase Order"

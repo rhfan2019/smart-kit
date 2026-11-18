@@ -557,7 +557,7 @@ viewSettingsFilterString(filterItems: ViewSettingsFilterItem[], filters: Record<
 | `className` |  | `string` | Extra CSS class on the root element. |
 | `views` |  | `{ mode: 'switch' \| 'tabs'; ids?: string[] }` | Multiple views (LR Multiple Views) from the qualified UI.SelectionPresentationVariant annotations: "switch" replaces the table title area with a segmented button (≤ 3 views) or a select (> 3); "tabs" shows a tab per view. |
 | `contents` |  | `ListContentItem[]` | Multiple content (LR Multiple Content): a text-only tab per table, all filtered by the same filter bar. |
-| `tableType` |  | `'grid' \| 'responsive' \| 'auto' \| 'AnalyticalTable' \| 'ResponsiveTable' \| 'Table' \| 'TreeTable'` | Table type: grid (desktop), responsive, or auto = responsive below 600px (LR Responsiveness, docs/12 U-17). The UI5 names (sap.ui.comp.smarttable.TableType) are accepted too: "Table" and "AnalyticalTable" = grid, "ResponsiveTable" = responsive, "TreeTable" = grid tree table of the recursive hierarchy (docs/26 §3.10). |
+| `tableType` |  | `'grid' \| 'responsive' \| 'auto' \| 'AnalyticalTable' \| 'ResponsiveTable' \| 'Table' \| 'TreeTable'` | Table type: grid (desktop), responsive, or auto = responsive below 600px (LR Responsiveness, docs/12 U-17). The UI5 names (sap.ui.comp.smarttable.TableType) are accepted too: "Table" = grid, "AnalyticalTable" = grid with grouping, subtotals and totals (the only type with totals, D39), "ResponsiveTable" = responsive, "TreeTable" = grid tree table of the recursive hierarchy (docs/26 §3.10). |
 | `hierarchyQualifier` |  | `string` | Tree tables: qualifier of Aggregation.RecursiveHierarchy (default: the type's first hierarchy). |
 | `chart` |  | `boolean \| string` | Offer a chart view from UI.Chart (qualifier; true = the first chart); views use the chart of their presentation variant. |
 | `workingMode` |  | `'worklist' \| 'continuous'` | Working mode after actions (LR Working Modes; default worklist). |
@@ -1253,6 +1253,8 @@ Dialog with the fields of a new object (LR Add/Create Items Using a Dialog, OP C
 | --- | --- | --- | --- |
 | `row` | **yes** | `Row \| undefined` |  |
 | `compact` |  | `boolean` |  |
+| `iconOnly` |  | `boolean` | Icon only, as FE's DraftIndicator in a table's "Editing Status" column (`getIconOnlyContent`): Draft for a draft, Locked when another user processes the draft (InProcessByUser), else Unsaved. |
+| `load` |  | `() => Promise&lt;Row \| undefined>` | Reads the row with its DraftAdministrativeData when the popover opens (lists request only InProcessByUser). |
 
 ## `@rhfan2019/smart-kit/kit/FieldEditor`
 
@@ -1388,8 +1390,10 @@ _no props_
 | --- | --- | --- | --- |
 | `key` | **yes** | `string` |  |
 | `label` | **yes** | `string` |  |
-| `value` | **yes** | `number` |  |
+| `value` | **yes** | `number` | Value of the first series. |
 | `formatted` |  | `string` |  |
+| `values` |  | `(number \| undefined)[]` | With `series`: one value per series (undefined: no value), and their display texts. |
+| `formattedValues` |  | `(string \| undefined)[]` |  |
 
 ### `default` — component
 
@@ -1408,6 +1412,7 @@ _no props_
 | `selectedKey` |  | `string` | Key of the selected data point. |
 | `selectedKeys` |  | `readonly string[]` | Keys of the selected data points (multiple selection); combined with `selectedKey`. |
 | `height` |  | `number` | Height in pixels (default 320). |
+| `series` |  | `ChartSeries[]` | Column and bar charts: several series per category (grouped bars, legend); each datum then has `values`. |
 
 ### `SimpleChartProps` — interface
 
@@ -1774,6 +1779,7 @@ default(valueList: ValueListModel | undefined, q?: ValueListQuery, serviceName?:
 | `top` |  | `number` |  |
 | `skip` |  | `number` |  |
 | `enabled` |  | `boolean` |  |
+| `filters` |  | `FilterState` | Conditions of the source by local property path (usually the filter bar's); the In and InOut parameters of the value list filter by them, Constant parameters always filter (docs/29 §4 P1-5). |
 
 ## `@rhfan2019/smart-kit/kit/useVariants`
 
@@ -11764,7 +11770,7 @@ Settings of sap.fe.macros.Table (docs/26b; defaults in "实际默认值（源码
 | `metaPath` |  | `string` | Annotation path of the table: "@com.sap.vocabularies.UI.v1.LineItem#Q" (alias "@UI.LineItem#Q"), "@…SelectionPresentationVariant#Q" or "@…PresentationVariant#Q" (their line item, sort, grouping and totals); sub-tables may prefix the navigation ("_Item/@UI.LineItem"). Default: the LineItem (sub-tables: the one of the UI.Facets entry). |
 | `bindingContext` |  | `string` | Instance path of the parent object of a sub-table, e.g. "Orders('1')" (FE: the binding context; smart-kit addition). |
 | `service` |  | `string` | Name of the service in `SmartKitProvider` `services`; default: the provider's `defaultService` (smart-kit addition). |
-| `type` |  | `'GridTable' \| 'ResponsiveTable' \| 'AnalyticalTable'` | Table type: "ResponsiveTable" (sap.m.Table, rows scroll with the page), "GridTable" and "AnalyticalTable" (the grid; grouping and totals come from the annotations, docs/23). Default: the grid (FE derives it from the annotations, stage 4). |
+| `type` |  | `'GridTable' \| 'ResponsiveTable' \| 'AnalyticalTable'` | Table type: "ResponsiveTable" (sap.m.Table, rows scroll with the page; grouping without subtotals), "GridTable" (the grid; no grouping, no totals) and "AnalyticalTable" (the grid with grouping, group subtotals and totals of the custom aggregates, on entity sets with Aggregation.ApplySupported; docs/23, D39). Default: the grid (FE derives it from the annotations, stage 4). |
 | `rowCountMode` |  | `'Auto' \| 'Fixed' \| 'Interactive'` | Grid tables: "Auto" fills the available height with its own scrollbar (default of list tables); "Fixed" and "Interactive" grow with the rows and a "More" button (default of sub-tables). |
 | `header` |  | `string` | Table title in the toolbar; default `UI.HeaderInfo/TypeNamePlural`, with the row count. |
 | `headerVisible` |  | `boolean` | Shows the title. Default true. |
@@ -11889,7 +11895,7 @@ sap.fe.macros.Table: annotation-driven table (`contextPath`, `metaPath`, docs/30
 | `metaPath` |  | `string` | Annotation path of the table: "@com.sap.vocabularies.UI.v1.LineItem#Q" (alias "@UI.LineItem#Q"), "@…SelectionPresentationVariant#Q" or "@…PresentationVariant#Q" (their line item, sort, grouping and totals); sub-tables may prefix the navigation ("_Item/@UI.LineItem"). Default: the LineItem (sub-tables: the one of the UI.Facets entry). |
 | `bindingContext` |  | `string` | Instance path of the parent object of a sub-table, e.g. "Orders('1')" (FE: the binding context; smart-kit addition). |
 | `service` |  | `string` | Name of the service in `SmartKitProvider` `services`; default: the provider's `defaultService` (smart-kit addition). |
-| `type` |  | `'GridTable' \| 'ResponsiveTable' \| 'AnalyticalTable'` | Table type: "ResponsiveTable" (sap.m.Table, rows scroll with the page), "GridTable" and "AnalyticalTable" (the grid; grouping and totals come from the annotations, docs/23). Default: the grid (FE derives it from the annotations, stage 4). |
+| `type` |  | `'GridTable' \| 'ResponsiveTable' \| 'AnalyticalTable'` | Table type: "ResponsiveTable" (sap.m.Table, rows scroll with the page; grouping without subtotals), "GridTable" (the grid; no grouping, no totals) and "AnalyticalTable" (the grid with grouping, group subtotals and totals of the custom aggregates, on entity sets with Aggregation.ApplySupported; docs/23, D39). Default: the grid (FE derives it from the annotations, stage 4). |
 | `rowCountMode` |  | `'Auto' \| 'Fixed' \| 'Interactive'` | Grid tables: "Auto" fills the available height with its own scrollbar (default of list tables); "Fixed" and "Interactive" grow with the rows and a "More" button (default of sub-tables). |
 | `header` |  | `string` | Table title in the toolbar; default `UI.HeaderInfo/TypeNamePlural`, with the row count. |
 | `headerVisible` |  | `boolean` | Shows the title. Default true. |

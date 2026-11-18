@@ -5,6 +5,13 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+### Changed — behaviour (SAPUI5 alignment, stage 3, D39, D40)
+
+- List report annotations follow Fiori elements 1.154 (checked by `npm run e2e:fe`, 15 scenarios): draft "All" and the six editing states; complete SelectionVariant per view; search field unless `Searchable=false`; `Common.FilterDefaultValue`; value help In/InOut/Constant filters and Out write-back; `Common.IsDigitSequence` padding; disabled unbound actions with `OperationAvailable` false.
+- `Aggregation.CustomAggregate` is the authority: totals, charts, KPIs and cards request `aggregate(M)`. Totals and subtotals only in the analytical table (`type="AnalyticalTable"`, user decision D39); no totals without CustomAggregate; several units: one value with "Show Details".
+- Charts: all dimensions and measures, grouped by the measure units ("Invalid data" for mixed units, as FE).
+- smart-kit-server: `aggregate(Name)` without `with` for custom aggregates and their units.
+
 ### Changed — breaking (SAPUI5 alignment, stage 2, D38)
 
 - smart-kit: annotation-driven building blocks follow sap.fe.macros: `SmartTable` → `v4/fe/macros/Table` (and `TreeTable`), `SmartFilterBar` → `v4/fe/macros/FilterBar`, `SmartVariantManagement` → `v4/fe/macros/VariantManagement`, `SmartField` → `v4/fe/macros/Field`, `SmartForm` → `v4/fe/macros/Form`, `ChartView` → `v4/fe/macros/Chart`, `MicroChart` → `v4/fe/macros/MicroChart`, `ShareMenu` → `v4/fe/macros/Share`; new `KPITag`, `Paginator`, `fcl/FlexibleColumnLayoutActions.block`. They take `contextPath` (`'/PurchaseOrders'`) and `metaPath` (`@UI.LineItem#Q`, a property path, …) and use the sap.fe.macros property, event and method names.

@@ -28,11 +28,13 @@ export {
   type EntityPath, type PathSegment, type ResolvedPath,
 } from './query/entityPath';
 export {
-  buildListRequest, buildObjectRequest, buildValueHelpRequest, buildAggregateRequest, chartFields, chartExpand, chartIsSeries, chartSeriesSelect, MICRO_CHART_MAX_POINTS, MICRO_COMPARISON_MAX_BARS, objectFields, fieldPaths, companionPaths, dataPointPaths, selectAndExpand,
+  buildListRequest, buildObjectRequest, buildValueHelpRequest, buildAggregateRequest, buildChartRequest, aggregateMeasure, isCustomAggregate, chartFields, chartExpand, chartIsSeries, chartSeriesSelect, MICRO_CHART_MAX_POINTS, MICRO_COMPARISON_MAX_BARS, objectFields, fieldPaths, companionPaths, dataPointPaths, selectAndExpand,
   toQueryString, readQueryString, filterString, sourcePath, sourceInfo, encodeOption,
-  type QueryRequest, type QueryResult, type ReadRequest, type Row, type SortItem, type ExpandSpec, type QuerySource, type HierarchyRequest,
+  type QueryRequest, type AggregateMeasure, type ChartRequestOptions, type QueryResult, type ReadRequest, type Row, type SortItem, type ExpandSpec, type QuerySource, type HierarchyRequest,
   type ListRequestOptions, type ValueHelpRequestOptions, type AggregateRequestOptions, type SourceInfo,
 } from './query/request';
+export { withHiddenFilters, hiddenFiltersOf, hiddenFilterPath } from './query/hiddenFilters';
+export { EDIT_STATE, DRAFT_EDIT_STATES, editStateOf, editStateFilter, matchesEditState, type DraftEditState } from './query/draftEditState';
 export { buildHierarchyRequest, hierarchyOf, hierarchyNodeOf, type HierarchyRequestOptions, type HierarchyNode, type DrillState } from './query/hierarchy';
 export {
   buildTotalsRequest, collectTotals, canTotal, canGroup, canSubtotal, unitPathOf, groupKey, TOTAL_COUNT_ALIAS, MAX_GROUP_VALUES,

@@ -168,9 +168,11 @@ describe('Capabilities', () => {
   it('ANN-41 SortRestrictions', () => {
     expect(caps.nonSortable).toEqual(['Notes']);
   });
-  it('ANN-42 SearchRestrictions; Searchable defaults to false', () => {
+  it('ANN-42 AL-10 P1-7 SearchRestrictions; Searchable defaults to true (vocabulary, FE)', () => {
     expect(caps.searchable).toBe(true);
-    expect(model.entitySets.Categories!.capabilities.searchable).toBe(false);
+    // no SearchRestrictions: searchable, as in FE (D34)
+    expect(model.entitySets.Categories!.capabilities.searchable).toBe(true);
+    expect(model.entitySets.Reviews!.capabilities.searchable).toBe(false);
   });
   it('ANN-43 CountRestrictions; Top/Skip default to supported', () => {
     expect(model.entitySets.Reviews!.capabilities.countable).toBe(false);

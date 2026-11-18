@@ -238,14 +238,21 @@ class FilterParser extends EmbeddedActionsParser {
           {
             ALT: () => {
               const path = this.SUBRULE(this.plainPath);
-              const withWord = this.CONSUME(Identifier).image;
-              const method = this.CONSUME2(Identifier).image;
-              const asWord = this.CONSUME3(Identifier).image;
-              const alias = this.CONSUME4(Identifier).image;
+              let words: [string, string, string] | undefined;
+              // `<path> with <method> as <alias>`, or `<name>` alone: a custom aggregate (Aggregation.CustomAggregate,
+              // OData Data Aggregation §3.1.3 / §5.1); the planner checks it is declared and picks its method.
+              this.OPTION(() => {
+                words = [this.CONSUME(Identifier).image, this.CONSUME2(Identifier).image, this.CONSUME3(Identifier).image];
+                const alias = this.CONSUME4(Identifier).image;
+                this.ACTION(() => {
+                  const [withWord, method, asWord] = words!;
+                  if (withWord !== 'with' || asWord !== 'as') throw badRequest('InvalidApply', `Expected "<path> with <method> as <alias>" in aggregate(), got "${withWord} ${method} ${asWord}".`);
+                  if (!AGGREGATE_METHODS.has(method as AggregateMethod)) throw notImplemented(`Aggregation method '${method}' is not supported.`);
+                  items.push({ path, method: method as AggregateMethod, alias });
+                });
+              });
               this.ACTION(() => {
-                if (withWord !== 'with' || asWord !== 'as') throw badRequest('InvalidApply', `Expected "<path> with <method> as <alias>" in aggregate(), got "${withWord} ${method} ${asWord}".`);
-                if (!AGGREGATE_METHODS.has(method as AggregateMethod)) throw notImplemented(`Aggregation method '${method}' is not supported.`);
-                items.push({ path, method: method as AggregateMethod, alias });
+                if (!words) items.push({ path, alias: path.join('/'), custom: true });
               });
             },
           },

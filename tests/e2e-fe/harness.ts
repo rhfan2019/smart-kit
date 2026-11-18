@@ -5,7 +5,7 @@
  *   FE_DEVIATIONS  register file to read (default tools/ui5-alignment/deviations.json; missing file = empty)
  *   FE_BASELINE=1  (re)write the scenario's entries in tools/ui5-alignment/fe-baseline.json instead of failing
  */
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { expect } from '@playwright/test';
 import { baselineEntries, checkAgainstRegister, diffSnapshots, feDeviations, mergeBaseline, toMarkdown, type Checked, type Diff, type Snapshot } from './compare';
@@ -17,6 +17,15 @@ export const REPORTS = resolve(ROOT, 'reports/fe-compare');
 
 const readJson = (file: string): unknown => (existsSync(file) ? JSON.parse(readFileSync(file, 'utf8')) : undefined);
 
+/** The register plus the group registers `deviations.<group>.json` next to it (as scripts/check-ui5-api.mjs reads them). */
+function readRegister(): unknown {
+  const main = readJson(REGISTER) as { deviations?: unknown[] } | undefined;
+  const dir = dirname(REGISTER);
+  const extra = existsSync(dir) ? readdirSync(dir).filter((f) => /^deviations\..+\.json$/.test(f)) : [];
+  const more = extra.flatMap((f) => ((readJson(resolve(dir, f)) as { deviations?: unknown[] } | undefined)?.deviations ?? []));
+  return { deviations: [...(main?.deviations ?? []), ...more] };
+}
+
 export interface Outcome {
   diffs: Diff[];
   checked: Checked;
@@ -25,7 +34,7 @@ export interface Outcome {
 /** Diffs the snapshots, writes reports/fe-compare/<scenario>.{json,md}, and fails on unregistered differences. */
 export function compareScenario(scenario: string, fe: Snapshot, sk: Snapshot, o: { report?: boolean; enforce?: boolean } = {}): Outcome {
   const diffs = diffSnapshots(fe, sk);
-  const checked = checkAgainstRegister(scenario, diffs, feDeviations(readJson(REGISTER)));
+  const checked = checkAgainstRegister(scenario, diffs, feDeviations(readRegister()));
   if (o.report !== false) {
     mkdirSync(REPORTS, { recursive: true });
     writeFileSync(resolve(REPORTS, `${scenario}.json`), `${JSON.stringify({ scenario, register: REGISTER, diffs, unregistered: checked.unregistered, unused: checked.unused, fe, sk }, null, 2)}\n`);

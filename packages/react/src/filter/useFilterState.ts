@@ -70,7 +70,13 @@ export function useFilterState(entitySet: string, o: UseFilterStateOptions = {})
       if (!type.properties[c.path] && !c.path.includes('/')) continue;
       (filters[c.path] ??= []).push({ operator: c.operator as Operator, values: c.values, exclude: c.exclude || undefined });
     }
-    const fields = [...new Set([...ui.selectionFields, ...capabilities.requiredFilters, ...Object.keys(filters)])].filter((p) => isFilterable(capabilities, p));
+    // A Common.FilterDefaultValue condition outside SelectionFields filters without adding a field to the bar
+    // (FE FilterBar converter `_getDefaultFilterFields`: property info only).
+    const fromDefaultValue = (p: string) =>
+      !ui.selectionFields.includes(p) && type.properties[p]?.filterDefaultValue !== undefined
+      && ui.selectionVariant.every((c) => c.operator === 'EQ' && !c.exclude && c.values[0] === type.properties[c.path]?.filterDefaultValue);
+    const conditionFields = Object.keys(filters).filter((p) => !fromDefaultValue(p));
+    const fields = [...new Set([...ui.selectionFields, ...capabilities.requiredFilters, ...conditionFields])].filter((p) => isFilterable(capabilities, p));
     return { filters: o.initial?.filters ?? filters, search: o.initial?.search ?? '', fields: o.initial?.fields ?? fields };
   }, [ui, capabilities, type, o.initial]);
 

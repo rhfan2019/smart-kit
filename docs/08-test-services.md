@@ -30,7 +30,7 @@
 - **实体集**：`Categories`、`Products`、`Suppliers`、`Customers`、`Orders`、`OrderDetails`、`Employees`。字段参照公开 Northwind V4 服务的结构，有删减。
 - **注解**：只有数据结构，**没有任何注解**（包括 Capabilities）。
 - **能力**：
-  - 不支持 `$search`：服务端收到 `$search` 时返回 400。客户端按 Searchable 的默认值 false 不显示搜索框，所以不会发出这样的请求。
+  - 支持 `$search`：没有 `SearchRestrictions` 时按词汇表默认可搜索（与 FE 一致，`29` §4 P1-7）；前置层在实体集的全部字符串字段里做包含匹配。只有 `Searchable=false` 的实体集收到 `$search` 时返回 400。
   - 支持 `$count`。
 - **规模**：产品 500 个、订单 5,000 张、订单明细约 15,000 条。
 

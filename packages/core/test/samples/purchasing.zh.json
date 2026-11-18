@@ -1920,7 +1920,17 @@
      {
       "$PropertyPath": "PurchaseOrder"
      }
-    ]
+    ],
+    "@Aggregation.CustomAggregate#NetAmount": "Edm.Decimal",
+    "@UI.PresentationVariant#ByStatusChart": {
+     "@type": "com.sap.vocabularies.UI.v1.PresentationVariantType",
+     "Text": "按状态的净值",
+     "Visualizations": [
+      {
+       "$AnnotationPath": "@UI.Chart#ByStatus"
+      }
+     ]
+    }
    },
    "Purchasing.PurchaseOrder/PurchaseOrder": {
     "@Common.Label": "采购订单"

@@ -1,6 +1,8 @@
 /** Query requests and their OData URL form. See docs/05-data-provider.md §2. */
-import { toFilter, type Condition, type FilterState } from '../conditions/conditions';
+import { isComplete, toFilter, type Condition, type FilterState } from '../conditions/conditions';
 import { restrictConditions } from '../conditions/filterExpressions';
+import { EDIT_STATE, editStateFilter, editStateOf } from './draftEditState';
+import { hiddenFilterPath, hiddenFiltersOf } from './hiddenFilters';
 import { capabilitiesFor, isFilterable, isSortable } from '../model/access';
 import { resolvePath } from '../model/buildModel';
 import type { ChartModel, DataPointModel, EntityUi, FieldModel, MetaModel, PropertyModel, ValueListModel } from '../model/types';
@@ -40,10 +42,20 @@ export interface QueryRequest {
   /** Time zone for calendar-day filters on Edm.DateTimeOffset properties. */
   timeZone?: string;
   /** Server-side aggregation ($apply, OData Data Aggregation): group by `groupBy` and aggregate the measures (ADR-021). */
-  aggregate?: { groupBy: string[]; measures: { path: string; with: 'sum' | 'average' | 'min' | 'max' | 'countdistinct' | 'count'; as?: string }[] };
-  // `with: 'count'` is `$count as <as>` (rows of the group; `path` is ignored).
+  aggregate?: { groupBy: string[]; measures: AggregateMeasure[] };
   /** Recursive hierarchy (docs/26 §3.10): the visible nodes as `$apply=…/com.sap.vocabularies.Hierarchy.v1.TopLevels(…)`. */
   hierarchy?: HierarchyRequest;
+}
+
+/**
+ * One aggregate of a `$apply` request. Without `with` it is the custom aggregate `path` (Aggregation.CustomAggregate:
+ * `aggregate(NetAmount)`, the service decides how); `with: 'count'` is `$count as <as>` (rows of the group; `path` is
+ * ignored).
+ */
+export interface AggregateMeasure {
+  path: string;
+  with?: 'sum' | 'average' | 'min' | 'max' | 'countdistinct' | 'count';
+  as?: string;
 }
 
 /** Parameters of the TopLevels function (OData Hierarchy vocabulary). */
@@ -203,7 +215,7 @@ export function buildListRequest(model: MetaModel, ui: EntityUi, o: ListRequestO
   const filters: FilterState = {};
   for (const [path, conds] of Object.entries(o.filters ?? {})) {
     // Conditions the service does not allow for the property are never sent (capability degradation, LR-35, P2-LR-19).
-    const allowed = isFilterable(caps, path) ? restrictConditions(caps.filterExpressions[path], conds) : [];
+    const allowed = path === EDIT_STATE || hiddenFilterPath(path) ? conds : isFilterable(caps, path) ? restrictConditions(caps.filterExpressions[path], conds) : [];
     if (allowed.length) filters[path] = allowed;
   }
 
@@ -357,6 +369,23 @@ function addChartExpands(model: MetaModel, typeName: string, fields: FieldModel[
   }
 }
 
+/**
+ * The aggregate of a measure as FE requests it (docs/29 §4 P1-2): a custom aggregate (Aggregation.CustomAggregate with
+ * the measure's name as qualifier) is requested by its name, `aggregate(NetAmount)`, and the service decides how it
+ * is aggregated (sap.fe.core.converters.helpers.Aggregation isPropertyAggregatable; sap.fe.macros.chart.ChartDelegate).
+ * Other measures are summed (`with sum`).
+ */
+export function aggregateMeasure(model: MetaModel, source: QuerySource, path: string): AggregateMeasure {
+  return isCustomAggregate(model, source, path) ? { path } : { path, with: 'sum' };
+}
+
+/** Whether `path` is a custom aggregate (Aggregation.CustomAggregate) of the source's entity set or type. */
+export function isCustomAggregate(model: MetaModel, source: QuerySource, path: string): boolean {
+  const info = sourceInfo(model, source);
+  const caps = info.parentSet ? capabilitiesFor(model, info.parentSet, info.navigation) : capabilitiesFor(model, info.entitySet);
+  return Boolean(caps.aggregation && Object.hasOwn(caps.aggregation.customAggregates ?? {}, path));
+}
+
 export interface AggregateRequestOptions {
   source: QuerySource;
   filters?: FilterState;
@@ -381,7 +410,7 @@ export function buildAggregateRequest(model: MetaModel, chart: { dimensions: str
   }
   const filters: FilterState = {};
   for (const [path, conds] of Object.entries(o.filters ?? {})) {
-    const allowed = isFilterable(caps, path) ? restrictConditions(caps.filterExpressions[path], conds) : [];
+    const allowed = path === EDIT_STATE || hiddenFilterPath(path) ? conds : isFilterable(caps, path) ? restrictConditions(caps.filterExpressions[path], conds) : [];
     if (allowed.length) filters[path] = allowed;
   }
   return {
@@ -394,7 +423,56 @@ export function buildAggregateRequest(model: MetaModel, chart: { dimensions: str
     top: o.top,
     count: false,
     timeZone: o.timeZone,
-    aggregate: { groupBy, measures: chart.measures.map((m) => ({ path: m, with: 'sum' as const })) },
+    aggregate: { groupBy, measures: chart.measures.map((m) => aggregateMeasure(model, o.source, m)) },
+  };
+}
+
+export interface ChartRequestOptions {
+  source: QuerySource;
+  filters?: FilterState;
+  search?: string;
+  timeZone?: string;
+  /** Sort of the chart (UI.PresentationVariant SortOrder of the chart's presentation variant); default none. */
+  sort?: SortItem[];
+}
+
+/**
+ * The aggregation request of the list report chart as FE sends it (sap.fe.macros.Chart with sap.chart on the V4
+ * model, docs/29 §4 P1-3): `$apply=filter(…)/groupby((<sorted groups>),aggregate(<measures>))&$count=true`. Groups are
+ * all dimensions, their Common.Text when it is groupable and not on a navigation (ChartDelegate), and the units of the
+ * measures (so amounts in different currencies are never added up); the measures are requested by
+ * `aggregateMeasure`. No `$top`; `$orderby` only from `sort`.
+ */
+export function buildChartRequest(model: MetaModel, chart: Pick<ChartModel, 'dimensions' | 'measures'>, o: ChartRequestOptions): QueryRequest {
+  const info = sourceInfo(model, o.source);
+  const caps = info.parentSet ? capabilitiesFor(model, info.parentSet, info.navigation) : capabilitiesFor(model, info.entitySet);
+  const groupable = caps.aggregation?.groupable ?? [];
+  const groups = new Set<string>();
+  for (const d of chart.dimensions) {
+    groups.add(d);
+    const text = resolvePath(model.entityTypes, info.typeName, d).property?.text;
+    if (text && !text.includes('/') && !d.includes('/') && (!groupable.length || groupable.includes(text))) groups.add(text);
+  }
+  for (const m of chart.measures) {
+    const prop = resolvePath(model.entityTypes, info.typeName, m).property;
+    if (prop?.unit && 'path' in prop.unit) groups.add(prefixed(m, prop.unit.path));
+  }
+  const filters: FilterState = {};
+  for (const [path, conds] of Object.entries(o.filters ?? {})) {
+    const allowed = path === EDIT_STATE || hiddenFilterPath(path) ? conds : isFilterable(caps, path) ? restrictConditions(caps.filterExpressions[path], conds) : [];
+    if (allowed.length) filters[path] = allowed;
+  }
+  return {
+    source: o.source,
+    select: [],
+    expand: [],
+    filters: Object.keys(filters).length ? filters : undefined,
+    search: caps.searchable && o.search?.trim() ? o.search.trim() : undefined,
+    orderBy: (o.sort ?? []).filter((s) => isSortable(caps, s.path)),
+    count: caps.countable,
+    timeZone: o.timeZone,
+    // the V4 model sorts the groups of $$aggregation (sap.ui.model.odata.v4.lib._AggregationHelper)
+    aggregate: { groupBy: [...groups].sort(), measures: chart.measures.map((m) => aggregateMeasure(model, o.source, m)) },
   };
 }
 
@@ -404,6 +482,35 @@ export interface ValueHelpRequestOptions {
   top?: number;
   /** Restrict to these key values (used to load descriptions of selected tokens). */
   keys?: string[];
+  /**
+   * Conditions of the source by local property path (the filter bar's filter state). The value list's In and InOut
+   * parameters take the conditions of their LocalDataProperty (FE ValueHelpDelegate
+   * `_getInitialFilterConditionsFromFilterBar`).
+   */
+  filters?: FilterState;
+}
+
+/**
+ * Filter of a value help request from its In, InOut and Constant parameters (FE ValueListHelper `getInParameters`,
+ * ValueHelpDelegate `_resolveInParameterConditions`): a Constant gives an "EQ" condition (none for an empty
+ * constant), In and InOut take the source's conditions of their LocalDataProperty. The parameter of the annotated
+ * property itself is left out (FE `_getValueListInfo`: LocalDataProperty !== the property).
+ */
+export function valueHelpInFilters(vl: ValueListModel, source: FilterState = {}): FilterState {
+  const own = vl.parameters.find((x) => x.valueListProperty === vl.keyProperty && x.local)?.local;
+  const out: FilterState = {};
+  // constants first, then the filter bar's conditions (the order FE builds the conditions in)
+  for (const p of vl.parameters) {
+    if (p.kind === 'Constant' && p.valueListProperty && p.constant !== undefined && p.constant !== '') out[p.valueListProperty] = [{ operator: 'EQ', values: [p.constant] }];
+  }
+  for (const p of vl.parameters) {
+    if (!p.valueListProperty) continue;
+    if ((p.kind === 'In' || p.kind === 'InOut') && p.local && p.local !== own) {
+      const conds = (source[p.local] ?? []).filter(isComplete).map(({ text: _text, ...c }) => c);
+      if (conds.length) out[p.valueListProperty] = conds;
+    }
+  }
+  return out;
 }
 
 /** Builds the value help request (Q-09). */
@@ -415,7 +522,8 @@ export function buildValueHelpRequest(model: MetaModel, vl: ValueListModel, o: V
   let anyOf: FilterState | undefined;
   let search: string | undefined;
   if (term) {
-    if (vl.searchSupported || caps?.searchable) search = term;
+    // FE ValueListHelper.entityIsSearchable: $search unless SearchSupported=false or Searchable=false (both default true).
+    if (vl.searchSupported && caps?.searchable !== false) search = term;
     else {
       const type = set ? model.entityTypes[set.typeName] : undefined;
       anyOf = {};
@@ -424,7 +532,11 @@ export function buildValueHelpRequest(model: MetaModel, vl: ValueListModel, o: V
       }
     }
   }
-  const filters: FilterState | undefined = o.keys?.length ? { [vl.keyProperty]: o.keys.map((k) => ({ operator: 'EQ' as const, values: [k] })) } : undefined;
+  // Descriptions of selected tokens are read by key only; otherwise In, InOut and Constant parameters filter.
+  const inFilters = o.keys?.length ? {} : valueHelpInFilters(vl, o.filters);
+  const keyFilter: FilterState = o.keys?.length ? { [vl.keyProperty]: o.keys.map((k) => ({ operator: 'EQ' as const, values: [k] })) } : {};
+  const merged = { ...inFilters, ...keyFilter };
+  const filters: FilterState | undefined = Object.keys(merged).length ? merged : undefined;
   const typeName = set?.typeName ?? '';
   const sel = set ? selectAndExpand(model, typeName, params) : { select: params, expand: [] };
   return {
@@ -478,7 +590,30 @@ export function filterString(model: MetaModel, typeName: string, req: Pick<Query
       .filter((x): x is string => Boolean(x));
     if (ors.length) parts.push(ors.length === 1 ? ors[0]! : `(${ors.join(' or ')})`);
   }
+  // Hidden filters (a view's selection variant), then the draft editing status (filter state key $editState):
+  // FE adds both after the filter bar conditions.
+  // Each property of a hidden selection variant is a filter of its own, in parentheses as the SAPUI5 V4 model writes
+  // FE's per-SelectOption filters ("(Status eq 'A' or Status eq 'B') and (CompanyCode eq '1000')").
+  for (const [path, conds] of Object.entries(hiddenFiltersOf(req.filters))) {
+    const f = toFilter({ [path]: conds }, typeOf, { timeZone: req.timeZone });
+    if (f) parts.push(wrapped(f) ? f : `(${f})`);
+  }
+  if (req.filters?.[EDIT_STATE]) parts.push(editStateFilter(editStateOf(req.filters), parts.length > 0));
   return parts.length ? parts.join(' and ') : undefined;
+}
+
+/** Whether a filter expression is one parenthesized group, e.g. "(a or b)" (not "(a) and (b)"). */
+function wrapped(f: string): boolean {
+  if (!f.startsWith('(')) return false;
+  let depth = 0;
+  let quoted = false;
+  for (let i = 0; i < f.length; i++) {
+    const c = f[i];
+    if (c === "'") quoted = !quoted;
+    else if (!quoted && c === '(') depth++;
+    else if (!quoted && c === ')' && --depth === 0) return i === f.length - 1;
+  }
+  return false;
 }
 
 /** The query string (without "?") of a list request. Options are emitted in a stable order. */
@@ -489,7 +624,9 @@ export function toQueryString(model: MetaModel, req: QueryRequest): string {
     // $apply is evaluated before $filter: filters go into a filter() transformation (OData Data Aggregation §3).
     const filter = filterString(model, info.typeName, req);
     const aggregates = req.aggregate.measures
-      .map((m) => (m.with === 'count' ? `$count as ${m.as ?? 'count'}` : `${m.path} with ${m.with} as ${m.as ?? m.path.replace(/\//g, '_')}`))
+      .map((m) => (m.with === 'count' ? `$count as ${m.as ?? 'count'}`
+        : m.with ? `${m.path} with ${m.with} as ${m.as ?? m.path.replace(/\//g, '_')}`
+          : m.as && m.as !== m.path ? `${m.path} as ${m.as}` : m.path))
       .join(',');
     const steps = [
       ...(filter ? [`filter(${filter})`] : []),
@@ -500,6 +637,7 @@ export function toQueryString(model: MetaModel, req: QueryRequest): string {
         : `aggregate(${aggregates})`,
     ];
     opts.push(`$apply=${encodeOption(steps.join('/'))}`);
+    if (req.count) opts.push('$count=true');
     if (req.orderBy.length) opts.push(`$orderby=${encodeOption(req.orderBy.map((s) => (s.descending ? `${s.path} desc` : s.path)).join(','))}`);
     if (req.top !== undefined) opts.push(`$top=${req.top}`);
     return opts.join('&');

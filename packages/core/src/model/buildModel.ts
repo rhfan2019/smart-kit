@@ -52,6 +52,12 @@ const bool = (v: unknown, dflt: boolean): boolean => {
   if (typeof v === 'object' && 'type' in (v as Any)) return dflt; // dynamic expressions are not evaluated in phase 1
   return String(v) === 'true';
 };
+/** A constant annotation value (String, Int, Decimal, Bool, Date …) as a primitive; expressions and records give undefined. */
+const primitive = (v: unknown): string | number | boolean | undefined => {
+  if (v === undefined || v === null) return undefined;
+  if (v instanceof String || v instanceof Number || v instanceof Boolean) return v.valueOf();
+  return typeof v === 'string' || typeof v === 'number' || typeof v === 'boolean' ? v : undefined;
+};
 const pathOf = (v: unknown): string | undefined => {
   if (v && typeof v === 'object' && !(v instanceof String)) {
     const o = v as Any;
@@ -121,8 +127,11 @@ export function fromConverted(c: ConvertedMetadata, diagnostics: string[] = []):
     for (const [path, target] of Object.entries((es.navigationPropertyBinding ?? {}) as Any)) bindings[path] = (target as Any).name;
     const { capabilities, navigationCapabilities } = buildCapabilities(es.annotations?.Capabilities ?? {}, es.annotations?.Core ?? {});
     // Aggregation.ApplySupported may annotate the entity set or its type (Aggregation vocabulary).
-    const apply = es.annotations?.Aggregation?.ApplySupported ?? raw[es.entityTypeName ?? es.entityType?.fullyQualifiedName]?.annotations?.Aggregation?.ApplySupported;
-    if (apply) capabilities.aggregation = aggregationFrom(apply);
+    const typeAggregation = raw[es.entityTypeName ?? es.entityType?.fullyQualifiedName]?.annotations?.Aggregation;
+    const apply = es.annotations?.Aggregation?.ApplySupported ?? typeAggregation?.ApplySupported;
+    // Aggregation.CustomAggregate is read where FE reads it: the entity set when it has ApplySupported, else the type
+    // (sap.fe.core.converters.helpers.Aggregation: _determineAggregationAnnotationTarget).
+    if (apply) capabilities.aggregation = aggregationFrom(apply, es.annotations?.Aggregation?.ApplySupported ? es.annotations.Aggregation : typeAggregation);
     entitySets[es.name] = { name: es.name, typeName: es.entityTypeName ?? es.entityType?.fullyQualifiedName, navigationBindings: bindings, capabilities, navigationCapabilities };
     // Core.OptimisticConcurrency applies to entity sets (Core vocabulary); the ETag property is kept on the type.
     const concurrency = es.annotations?.Core?.OptimisticConcurrency;
@@ -246,6 +255,7 @@ function buildProperty(p: Any, keys: string[], et: Any): PropertyModel {
     multiLine: bool(ui.MultiLineText, false),
     isDigitSequence: bool(common.IsDigitSequence, false),
     isUpperCase: bool(common.IsUpperCase, false),
+    filterDefaultValue: primitive(common.FilterDefaultValue),
     fieldControl: common.FieldControl === undefined ? undefined : valueRef(common.FieldControl),
     mandatory: enumName(common.FieldControl) === 'Mandatory',
     readOnly: enumName(common.FieldControl) === 'ReadOnly',
@@ -278,7 +288,7 @@ function buildValueList(p: Any, common: Any): ValueListModel | undefined {
   return {
     collectionPath: str(vl.CollectionPath) ?? '',
     label: str(vl.Label),
-    searchSupported: bool(vl.SearchSupported, false),
+    searchSupported: bool(vl.SearchSupported, true),
     parameters,
     keyProperty: key.valueListProperty,
     descriptionProperty: description?.valueListProperty,
@@ -321,9 +331,16 @@ function restrictions(cap: Any): Partial<CapabilityModel> {
   return out;
 }
 
-function aggregationFrom(a: Any): AggregationModel {
+function aggregationFrom(a: Any, target: Any): AggregationModel {
   const strings = (v: unknown) => ((v ?? []) as unknown[]).map((x) => str(x) ?? pathOf(x)).filter((x): x is string => Boolean(x));
+  const customAggregates: Record<string, string> = {};
+  for (const [key, value] of Object.entries((target ?? {}) as Any)) {
+    if (key.split('#')[0] !== 'CustomAggregate') continue;
+    const qualifier = (value as Any)?.qualifier ?? key.split('#')[1];
+    if (qualifier) customAggregates[qualifier] = str(value) ?? String((value as Any)?.valueOf?.() ?? '');
+  }
   return {
+    customAggregates,
     transformations: strings(a.Transformations),
     groupable: ((a.GroupableProperties ?? []) as unknown[]).map(pathOf).filter((x): x is string => Boolean(x)),
     aggregatable: ((a.AggregatableProperties ?? []) as Any[])
@@ -333,7 +350,8 @@ function aggregationFrom(a: Any): AggregationModel {
 }
 
 export const DEFAULT_CAPABILITIES: CapabilityModel = {
-  searchable: false,
+  // Capabilities.SearchRestrictions/Searchable defaults to true (vocabulary, FE FilterBar converter, D34).
+  searchable: true,
   countable: true,
   filterable: true,
   sortable: true,
@@ -480,6 +498,12 @@ function buildChart(rec: Any, id: string, navigation: string, ownerType: string,
     const dp = found ? buildDataPoint(found.value as Any, qualifier ?? 'DataPoint', n, typeName, ctx) : undefined;
     if (dp) dataPoints[measure] = dp;
   }
+  const dimensionRoles: Record<string, string> = {};
+  for (const da of (rec.DimensionAttributes ?? []) as Any[]) {
+    const dimension = pathOf(da.Dimension);
+    const role = enumName(da.Role);
+    if (dimension && role) dimensionRoles[dimension] = role;
+  }
   const first = resolvePath(ctx.entityTypes, typeName, measures[0]!).property;
   return {
     id,
@@ -487,6 +511,7 @@ function buildChart(rec: Any, id: string, navigation: string, ownerType: string,
     chartType: enumName(rec.ChartType) ?? 'Column',
     dimensions: paths(rec.Dimensions),
     measures,
+    ...(Object.keys(dimensionRoles).length ? { dimensionRoles } : {}),
     dataPoints,
     navigation,
     typeName,
@@ -652,7 +677,7 @@ function presentationFrom(pv: Any | undefined): { presentation: PresentationMode
   const total = ((pv?.Total ?? []) as unknown[]).map(pathOf).filter(Boolean) as string[];
   const viz = ((pv?.Visualizations ?? []) as unknown[]).map((v) => str((v as Any)?.value) ?? pathOf(v)).find((v) => v && v.includes('LineItem'));
   const lineItemQualifier = viz?.includes('#') ? viz.split('#')[1] : undefined;
-  return { presentation: { sortOrder, requestAtLeast, groupBy, total }, lineItemQualifier };
+  return { presentation: { sortOrder, requestAtLeast, groupBy, total, ...(pv?.Total !== undefined ? { hasTotal: true } : {}) }, lineItemQualifier };
 }
 
 const RANGE_OPTIONS = new Set(['EQ', 'NE', 'BT', 'NB', 'LT', 'LE', 'GT', 'GE']);
@@ -755,12 +780,20 @@ function buildUi(fullName: string, ctx: UiContext): EntityUi {
       })
     : undefined;
 
+  // Without a default selection variant, Common.FilterDefaultValue gives one EQ condition per property
+  // (FE macros/filterBar/FilterHelper getFilterConditions / _collectDefaultFilterConditions).
+  const selectionVariant = sv
+    ? selectionVariantFrom(sv)
+    : et.propertyOrder.flatMap((name) => {
+        const v = et.properties[name]?.filterDefaultValue;
+        return v === undefined ? [] : [{ path: name, exclude: false, operator: 'EQ', values: [v] }];
+      });
   const ui2 = deriveUi(et, ctx.entityTypes, {
     headerInfo,
     lineItem,
     selectionFields,
     presentation,
-    selectionVariant: selectionVariantFrom(sv),
+    selectionVariant,
     sections,
     headerFacets,
     semanticKey,

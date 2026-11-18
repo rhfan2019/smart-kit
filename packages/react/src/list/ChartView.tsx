@@ -1,15 +1,17 @@
 /**
  * Chart building block (sap.fe.macros.Chart, ADR-033): the chart of a list report (LR Simple Content / Multiple Views,
- * ADR-021), the data aggregated on the server by the chart's dimension. `contextPath` is the entity set, `metaPath` the
+ * ADR-021), the data aggregated on the server by all dimensions of the UI.Chart and the units of its measures, as FE
+ * requests it (docs/29 §4 P1-2, P1-3); all measures are drawn (grouped bars), dimensions with the role Series split the
+ * measures into series. `contextPath` is the entity set, `metaPath` the
  * UI.Chart (or a UI.PresentationVariant / UI.SelectionPresentationVariant with one, docs/30 §5.2). Selecting a bar opens
  * a popover whose "Show Details" drills down (docs/12 U-4).
  */
 import { Button, Popover, Text } from '@mantine/core';
-import { buildAggregateRequest, formatNumber, resolvePath, type FilterState, type Row } from '@rhfan2019/smart-kit-core';
+import { buildChartRequest, formatNumber, resolvePath, type FilterState, type PropertyModel, type Row } from '@rhfan2019/smart-kit-core';
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useImperativeHandle, useState, type ReactNode, type Ref } from 'react';
 import { resolveChartMetaPath, resolveContextPath } from '../chart/metaPath';
-import { SimpleChart, type ChartDatum } from '../chart/SimpleChart';
+import { SimpleChart, type ChartDatum, type ChartSeries } from '../chart/SimpleChart';
 import { useService, useSmartKit, useText } from '../context/SmartKitProvider';
 import { getPath } from '../field/values';
 import { fromSelectionVariant, toSelectionVariant, type SelectionVariant } from '../filter/selectionVariant';
@@ -99,14 +101,18 @@ export function Chart(p: $ChartSettings) {
   const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
   const [popover, setPopover] = useState<{ d: ChartDatum; anchor: Element } | null>(null);
   const typeName = ctx?.typeName ?? '';
-  const dim = chart?.dimensions[0];
-  const measure = chart?.measures[0] ?? '';
-  const dimProp = dim ? resolvePath(model.entityTypes, typeName, dim).property : undefined;
-  const measureProp = measure ? resolvePath(model.entityTypes, typeName, measure).property : undefined;
+  const dimensions = chart?.dimensions ?? [];
+  const measures = chart?.measures ?? [];
+  const propOf = (path: string): PropertyModel | undefined => resolvePath(model.entityTypes, typeName, path).property;
+  // Category dimensions make the categories; dimensions with the role "Series" split each measure into series (sap.chart roles).
+  const seriesDims = dimensions.filter((d) => chart?.dimensionRoles?.[d] === 'Series');
+  const categoryDims = dimensions.filter((d) => !seriesDims.includes(d));
+  const dim = categoryDims[0] ?? dimensions[0];
+  const dimProp = dim ? propOf(dim) : undefined;
   const [chartFilters, setChartFilters] = useState<FilterState>({});
   const executed = p.query !== null;
   const filters = { ...p.query?.filters, ...chartFilters };
-  const req = chart && ctx ? buildAggregateRequest(model, chart, { source: { entitySet: ctx.entitySet }, filters, search: p.query?.search, timeZone }) : undefined;
+  const req = chart && ctx ? buildChartRequest(model, chart, { source: { entitySet: ctx.entitySet }, filters, search: p.query?.search, timeZone }) : undefined;
   const reqKey = JSON.stringify(req);
   // A new query starts a new selection (data points of the old result may be gone).
   useEffect(() => { setSelectedKeys([]); setPopover(null); }, [reqKey, p.revision]);
@@ -116,16 +122,47 @@ export function Chart(p: $ChartSettings) {
     enabled: executed && Boolean(req),
   });
   const rows = q.data?.rows ?? [];
-  const keyOf = (r: Row) => String(getPath(r, dim ?? '') ?? '');
-  const measureKey = measure.replace(/\//g, '_');
-  const unit = measureProp?.unit && 'path' in measureProp.unit ? measureProp.unit.path : undefined;
-  const data: ChartDatum[] = rows.map((r) => {
-    const key = keyOf(r);
-    const text = dimProp?.text ? getPath(r, dimProp.text) : undefined;
-    const value = Number(r[measureKey] ?? 0);
-    const scale = typeof measureProp?.scale === 'number' ? measureProp.scale : 2;
-    return { key, label: text ? String(text) : key, value, formatted: `${formatNumber(String(value), intlLocale, { min: scale, max: scale })}${unit && r[unit] ? ` ${String(r[unit])}` : ''}` };
+  const textOf = (r: Row, d: string) => {
+    const text = propOf(d)?.text;
+    const v = text ? getPath(r, text) : undefined;
+    return v === undefined || v === null || v === '' ? String(getPath(r, d) ?? '') : String(v);
+  };
+  const keyOf = (r: Row) => categoryDims.map((d) => String(getPath(r, d) ?? '')).join('\u0000');
+  const unitPathOf = (m: string) => { const u = propOf(m)?.unit; return u && 'path' in u ? u.path : undefined; };
+  const measureKey = (m: string) => m.replace(/\//g, '_');
+  // FE (sap.chart): a measure whose rows have different units is not drawn ("Some measures have different units.")
+  const mixedUnits = measures.some((m) => { const u = unitPathOf(m); return Boolean(u) && new Set(rows.map((r) => String(getPath(r, u!) ?? ''))).size > 1; });
+  const formatted = (m: string, r: Row) => {
+    const prop = propOf(m);
+    const scale = typeof prop?.scale === 'number' ? prop.scale : 2;
+    const unit = unitPathOf(m);
+    return `${formatNumber(String(Number(r[measureKey(m)] ?? 0)), intlLocale, { min: scale, max: scale })}${unit && getPath(r, unit) ? ` ${String(getPath(r, unit))}` : ''}`;
+  };
+  // Series: each measure, split by the values of the series dimensions (in the order of the rows).
+  const seriesKeyOf = (r: Row) => seriesDims.map((d) => String(getPath(r, d) ?? '')).join('\u0000');
+  const seriesValues: { key: string; label: string }[] = [];
+  if (seriesDims.length) for (const r of rows) { const k = seriesKeyOf(r); if (!seriesValues.some((x) => x.key === k)) seriesValues.push({ key: k, label: seriesDims.map((d) => textOf(r, d)).join(' / ') }); }
+  const series: (ChartSeries & { measure: string; seriesKey?: string })[] = measures.flatMap((m) => {
+    const label = propOf(m)?.label ?? m;
+    return seriesDims.length
+      ? seriesValues.map((v) => ({ key: `${m}\u0001${v.key}`, label: measures.length > 1 ? `${label} / ${v.label}` : v.label, measure: m, seriesKey: v.key }))
+      : [{ key: m, label, measure: m }];
   });
+  const data: ChartDatum[] = [];
+  for (const r of rows) {
+    const key = keyOf(r);
+    let d = data.find((x) => x.key === key);
+    if (!d) {
+      d = { key, label: categoryDims.map((c) => textOf(r, c)).join(' / '), value: NaN, values: series.map(() => undefined), formattedValues: series.map(() => undefined) };
+      data.push(d);
+    }
+    series.forEach((s, i) => {
+      if (s.seriesKey !== undefined && seriesKeyOf(r) !== s.seriesKey) return;
+      d!.values![i] = Number(r[measureKey(s.measure)] ?? 0);
+      d!.formattedValues![i] = formatted(s.measure, r);
+    });
+  }
+  for (const d of data) { d.value = d.values![0] ?? NaN; d.formatted = d.formattedValues![0]; }
   const selectedRows = () => rows.filter((r) => selectedKeys.includes(keyOf(r)));
   useImperativeHandle(p.ref, () => ({
     getSelectedContexts: selectedRows,
@@ -135,7 +172,10 @@ export function Chart(p: $ChartSettings) {
   if (!chart || !ctx) return null;
   const selectionData = (key: string): ChartSelectionData => {
     const r = rows.find((x) => keyOf(x) === key);
-    return { data: { ...(dim ? { [dim]: key } : {}), [measure]: r ? Number(r[measureKey] ?? 0) : undefined } };
+    const out: Record<string, unknown> = {};
+    for (const d of categoryDims) out[d] = r ? getPath(r, d) : undefined;
+    for (const m of measures) out[m] = r ? Number(r[measureKey(m)] ?? 0) : undefined;
+    return { data: out };
   };
   const select = (d: ChartDatum, anchor: Element) => {
     const wasSelected = selectedKeys.includes(d.key);
@@ -155,7 +195,8 @@ export function Chart(p: $ChartSettings) {
   };
   const header = p.header ?? chart.title;
   return (
-    <section className="sk-table sk-chartview" aria-label={header} data-sk-chart-view={chart.id}>
+    <section className="sk-table sk-chartview" aria-label={header} data-sk-chart-view={chart.id}
+      data-sk-chart-dimensions={dimensions.map((d) => propOf(d)?.label ?? d).join('\u0001')} data-sk-chart-measures={measures.map((m) => propOf(m)?.label ?? m).join('\u0001')}>
       <div className="sk-table__toolbar" role="toolbar">
         {p.headerVisible === false ? null : (
           <>
@@ -167,13 +208,19 @@ export function Chart(p: $ChartSettings) {
         {p.actions}
       </div>
       <div className="sk-chartview__body">
-        {!executed ? <Text c="dimmed" ta="center" p="lg">{t('table.noData.start')}</Text> : (
+        {!executed ? <Text c="dimmed" ta="center" p="lg">{t('table.noData.start')}</Text> : !q.isLoading && mixedUnits ? (
+          <div className="sk-chart sk-chart__message" data-sk-chart={chart.chartType === 'Bar' ? 'bar' : 'column'} data-sk-chart-invalid role="status" style={{ height: 320 }}>
+            <span className="sk-chart__message-title">{t('chart.invalidData')}</span>
+            <span>{t('chart.differentUnits')}</span>
+          </div>
+        ) : (
           <SimpleChart
             kind={chart.chartType === 'Bar' ? 'bar' : 'column'}
             title={chart.title}
-            measureLabel={measureProp?.label ?? measure}
-            dimensionLabel={dimProp?.label ?? dim ?? ''}
+            measureLabel={series.length > 1 ? series.map((x) => x.label).join(', ') : (series[0]?.label ?? '')}
+            dimensionLabel={categoryDims.map((d) => propOf(d)?.label ?? d).join(' / ')}
             data={data}
+            series={series.length > 1 ? series : undefined}
             loading={q.isLoading}
             format={(n) => formatNumber(String(n), intlLocale, { max: 0 })}
             selectedKeys={selectedKeys}
@@ -188,7 +235,7 @@ export function Chart(p: $ChartSettings) {
             {popover ? (
               <div>
                 <Text fw={600} size="sm">{t('chart.drilldownTitle', { dimension: dimProp?.label ?? '', value: popover.d.label })}</Text>
-                <Text size="sm" mb="xs">{measureProp?.label}: {popover.d.formatted}</Text>
+                {series.map((x, i) => popover.d.formattedValues?.[i] === undefined ? null : <Text key={x.key} size="sm" mb="xs">{x.label}: {popover.d.formattedValues[i]}</Text>)}
                 {p.onDrilldown ? (
                   <Button size="xs" onClick={() => { const d = popover.d; setPopover(null); if (dim) p.onDrilldown?.({ dimension: dim, value: d.key }); }} data-sk-chart-drilldown>{t('chart.drilldown')}</Button>
                 ) : null}

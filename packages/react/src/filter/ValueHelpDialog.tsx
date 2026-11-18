@@ -8,8 +8,9 @@ import { Plus, Search, Trash2 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useService, useSmartKit, useText } from '../context/SmartKitProvider';
 import { getPath } from '../field/values';
-import { conditionText, sameCondition } from './conditionText';
+import { conditionText, digitSequenceValue, sameCondition } from './conditionText';
 import { useValueList } from './useValueList';
+import { propagateOut, useValueHelpSource } from './valueHelpSource';
 
 export interface ValueHelpDialogProps {
   /** Whether the dialog is open (controlled). */
@@ -61,12 +62,16 @@ export function ValueHelpDialog(p: ValueHelpDialogProps) {
       setDraft('');
       setSearch('');
       setTop(PAGE);
+      setPicked({});
       setTab(canSelect ? 'select' : 'conditions');
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- reset only when (re)opened
   }, [p.opened]);
 
-  const list = useValueList(vl, { search, top, enabled: p.opened && Boolean(vl) }, p.service);
+  // In / InOut / Constant parameters filter the list; Out / InOut write the chosen rows back (P1-5).
+  const source = useValueHelpSource();
+  const [picked, setPicked] = useState<Record<string, Record<string, unknown>>>({});
+  const list = useValueList(vl, { search, top, enabled: p.opened && Boolean(vl), filters: source?.filters }, p.service);
   const vlType = vl ? service.model.entitySets[vl.collectionPath]?.typeName : undefined;
   const columns = useMemo(
     () => (vl ? vl.parameters.filter((x) => x.kind !== 'Constant').map((x) => ({ path: x.valueListProperty, label: (vlType && getProperty(service.model, vlType, x.valueListProperty)?.label) || x.valueListProperty })) : []),
@@ -78,6 +83,7 @@ export function ValueHelpDialog(p: ValueHelpDialogProps) {
     const key = keyOf(row);
     if (isSelected(key)) setSelected(selected.filter((c) => !(c.operator === 'EQ' && !c.exclude && String(c.values[0]) === key)));
     else {
+      setPicked({ ...picked, [key]: row });
       const text = vl!.descriptionProperty ? getPath(row, vl!.descriptionProperty) : undefined;
       setSelected(restrictConditions(expression, [...selected, { operator: 'EQ', values: [key], text: text ? String(text) : undefined }]));
     }
@@ -153,12 +159,27 @@ export function ValueHelpDialog(p: ValueHelpDialogProps) {
         </Group>
       </div>
       <Group justify="flex-end" className="sk-dialog-footer">
-        <Button onClick={() => p.onOk(dedupe(selected.filter(isComplete)))}>{t('common.ok')}</Button>
+        <Button
+          onClick={() => {
+            const chosen = dedupe(selected.filter(isComplete).map((c) => digitSequence(c, prop)));
+            p.onOk(chosen);
+            if (vl) propagateOut(vl, chosen.filter((c) => c.operator === 'EQ' && !c.exclude && picked[String(c.values[0])]).map((c) => picked[String(c.values[0])]!), source);
+          }}
+        >
+          {t('common.ok')}
+        </Button>
         <Button variant="default" onClick={p.onCancel}>{t('common.cancel')}</Button>
       </Group>
     </Modal>
   );
 }
+
+/** Common.IsDigitSequence: defined conditions are parsed like typed ones (not the text operators, SelfNoParse). */
+function digitSequence(c: Condition, prop: PropertyModel | undefined): Condition {
+  if (!prop?.isDigitSequence || TEXT_OPS.has(c.operator)) return c;
+  return { ...c, values: c.values.map((v) => (typeof v === 'string' ? digitSequenceValue(v.trim(), prop) : v)) };
+}
+const TEXT_OPS = new Set<Operator>(['Contains', 'NotContains', 'StartsWith', 'EndsWith']);
 
 function dedupe(cs: Condition[]): Condition[] {
   return cs.filter((c, i) => cs.findIndex((x) => sameCondition(x, c)) === i);

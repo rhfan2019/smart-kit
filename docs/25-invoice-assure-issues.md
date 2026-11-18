@@ -143,3 +143,15 @@ smart-kit 按铁律（ADR-033）改名、改属性、改行为时不保留旧名
 | 2 | `OverflowActions` | 删除，改用 `m/OverflowToolbar` + `m/OverflowToolbarButton` | |
 | 2 | `useDynamicPage`、`ColumnContext`、`useColumn`、`useObject`、`useObjectTitle`、`useSectionScrollSpy`、`HeaderFacet` | `kit/<同名>` | |
 | 2 | 枚举 `ListMode`、`PopinLayout`、`Sticky`、`MultiSelectMode`、`ListSeparators`、`GenericTagDesign`、`GenericTagValueState`；`LayoutType`、`DynamicPageTitleShrinkRatio`；`Importance`、`ObjectPageSubSectionLayout` | `m/library`；`f/library`；`uxap/library` | |
+| 3 | 草稿列表的编辑状态（4 个选项，筛选键 `$editingStatus`） | 6 个选项（FE 的文字和 id），筛选键 `$editState`；"全部"列出自己的草稿（代替活动实例）和新建未激活的草稿 | **行为**：已保存的视图里旧键的条件失效，回到"全部"；网格表草稿列表多一列只显示图标的编辑状态；草稿弹出框打开时才读详细信息 |
+| 3 | 多视图 | 每个视图应用完整的 SelectionVariant，和筛选栏里同一属性的条件取交集；属于 SelectionFields 的视图字段留在筛选栏 | 行为：例如"已关闭"页签加上默认的 `Status ne CLOSED` 后是空的（同 FE） |
+| 3 | 没写 `Capabilities.SearchRestrictions` 的实体集 | 显示搜索框并发 `$search` | **不支持 `$search` 的服务要写 `Searchable=false`**；值帮助没写 `SearchSupported` 时也用 `$search` |
+| 3 | `Common.FilterDefaultValue` | 没有默认 SelectionVariant 时生成默认条件 | 行为 |
+| 3 | 值帮助的 In / InOut / Constant / Out 参数 | 值帮助按参数过滤；选中后回写其他筛选字段 | 行为 |
+| 3 | `Common.IsDigitSequence` 的筛选输入 | 补前导零到 MaxLength（"123" → "0000000123"）；包含 / 开头 / 结尾不处理；值 0 显示为空 | 行为 |
+| 3 | 非绑定动作 `Core.OperationAvailable` 为 false | 按钮禁用 | 行为 |
+| 3 | 合计、小计、网格内分组 | **只有 `type="AnalyticalTable"` 有**（D39，用户决定）；网格表没有合计和分组，响应式表分组时没有条数和小计 | 原来在网格表上用合计的要改成分析表 |
+| 3 | 服务没有声明 `Aggregation.CustomAggregate` | 不合计；声明了的度量请求 `aggregate(M)`（由服务决定算法），只有这些能合计；分析表没写 `PresentationVariant/Total` 时合计全部 CustomAggregate，`Total` 是空集合时不合计 | 自写服务要在注解里加 CustomAggregate（smart-kit-server 已支持） |
+| 3 | 多币种合计按币种分行 | 显示一个值加"显示详细信息"链接，点开弹出框（"总计" / "小计"）每个币种一行 | 请求：总计 `aggregate(M,Currency)`，小计的币种不进 `groupby`；服务要能在 `aggregate()` 里接受单位（相同则为该值，否则 null） |
+| 3 | 列表页图表 | 全部维度和度量；按单位分组，多币种时显示"Invalid data"（不再把不同币种相加）；不再按维度排序；导航上的文本不进分组，类别显示代码 | 行为 |
+| 3 | core 新导出 | `buildChartRequest`、`aggregateMeasure`、`isCustomAggregate`、`editStateFilter` 等；`AggregateMeasure.with` 可选；`TotalsRequestOptions.byUnit`、`TotalAmount.multiUnit`、`PresentationModel.hasTotal`；`ValueListModel.searchSupported` 缺省 true | |

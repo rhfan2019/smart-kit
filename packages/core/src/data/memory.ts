@@ -2,11 +2,16 @@
 import { compareValues, matches } from '../conditions/conditions';
 import type { EntityTypeModel, MetaModel, NavigationModel } from '../model/types';
 import { keyPredicate, resolveEntityPath, type EntityPath } from '../query/entityPath';
+import { EDIT_STATE, editStateOf, matchesEditState } from '../query/draftEditState';
+import { hiddenFilterPath } from '../query/hiddenFilters';
 import { hierarchyOf } from '../query/hierarchy';
 import { sourceInfo, type ExpandSpec, type HierarchyRequest, type QueryRequest, type QueryResult, type QuerySource, type ReadRequest, type Row } from '../query/request';
 import { resolvePath } from '../model/buildModel';
 import { ConcurrencyError, ODataError } from './errors';
 import type { DataProvider, RequestOptions, WriteResult } from './provider';
+
+/** Edm types summed by an aggregate without `with` (a custom aggregate); others are units (same value or null). */
+const NUMERIC_TYPES = new Set(['Edm.Decimal', 'Edm.Double', 'Edm.Single', 'Edm.Int16', 'Edm.Int32', 'Edm.Int64', 'Edm.Byte', 'Edm.SByte']);
 
 export interface MemoryProviderOptions {
   model: MetaModel;
@@ -123,7 +128,18 @@ export class MemoryProvider implements DataProvider {
     const val = (r: Row, p: string) => this.value(info.entitySet, info.typeName, r, p);
     if (req.filters) {
       const f = req.filters;
-      rows = rows.filter((r) => Object.entries(f).every(([p, cs]) => matches(val(r, p), cs, typeOf(p))));
+      rows = rows.filter((r) => Object.entries(f).every(([key, cs]) => {
+        if (key === EDIT_STATE) return true;
+        const p = hiddenFilterPath(key) ?? key;
+        return matches(val(r, p), cs, typeOf(p));
+      }));
+      if (f[EDIT_STATE]) {
+        // the other version of a draft-enabled row (OData SiblingEntity): same keys apart from IsActiveEntity
+        const keys = model.entityTypes[info.typeName]!.keys.filter((k) => k !== 'IsActiveEntity');
+        const sibling = (r: Row) => all.find((x) => x !== r && x.IsActiveEntity !== r.IsActiveEntity && keys.every((k) => x[k] === r[k]));
+        const state = editStateOf(f);
+        rows = rows.filter((r) => matchesEditState(state, r, sibling));
+      }
     }
     if (req.anyOf && Object.keys(req.anyOf).length) {
       const a = req.anyOf;
@@ -164,6 +180,13 @@ export class MemoryProvider implements DataProvider {
             continue;
           }
           const v = val(r, m.path);
+          if (!m.with && !NUMERIC_TYPES.has(typeOf(m.path))) {
+            // a unit named with a custom aggregate (`aggregate(NetAmount,Currency)`): the unit when all rows share it, else null
+            const first = !g.seen.has(alias(m));
+            g.seen.set(alias(m), new Set());
+            g.row[alias(m)] = first ? (v ?? null) : g.row[alias(m)] === v ? v : null;
+            continue;
+          }
           if (m.with === 'countdistinct') {
             const seen = g.seen.get(alias(m)) ?? new Set<string>();
             g.seen.set(alias(m), seen);

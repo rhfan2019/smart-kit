@@ -328,6 +328,12 @@
 .sk-chart__legend li { display: flex; align-items: center; gap: var(--sk-space-3); }
 .sk-chart__legend-value { margin-inline-start: auto; color: var(--sk-color-text); font-variant-numeric: tabular-nums; }
 .sk-chart__swatch { inline-size: var(--sk-space-4); block-size: var(--sk-space-4); border-radius: var(--sk-radius-1); background: var(--sk-chart-mark); flex: none; }
+/* grouped bars (several measures / series, docs/29 §4 P1-3): one colour per series, the legend in a row */
+.sk-chart__bar rect[data-sk-chart-series] { fill: var(--sk-chart-mark); }
+.sk-chart__bar--selected rect[data-sk-chart-series] { fill: var(--sk-chart-mark); stroke: var(--sk-chart-selected-color); stroke-width: calc(2 * var(--sk-size-border)); }
+.sk-chart__legend--series { display: flex; flex-wrap: wrap; gap: var(--sk-space-4); }
+.sk-chart__message { display: grid; place-content: center; gap: var(--sk-space-2); text-align: center; color: var(--sk-chart-label); }
+.sk-chart__message-title { color: var(--sk-color-text); font-weight: 600; }
 /* ================================================================ charts and micro charts (ADR-021) — end */
 
 /* ==== phase 2: dynamic page (docs/13 §8–9) */
@@ -414,6 +420,8 @@ tr.sk-rtable__total > * { position: sticky; top: auto; bottom: 0; z-index: 2; bo
 .sk-form__required { color: var(--sk-color-negative); }
 .sk-draft-indicator { display: inline-flex; align-items: center; }
 .sk-draft-indicator--compact { font-size: var(--sk-text-small); }
+/* FE draftStatus column: the header text is for screen readers only (headerVisible=false) */
+.sk-table__header--hidden .ag-header-cell-text { position: absolute; width: var(--sk-size-border); height: var(--sk-size-border); overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .sk-generic-tag { display: inline-flex; align-items: center; gap: var(--sk-space-1); min-height: var(--sk-size-generic-tag); padding: 0 var(--sk-space-2); border: var(--sk-size-border) solid var(--sk-color-border); border-radius: var(--sk-radius-control); background: var(--sk-color-surface); font-size: var(--sk-text-small); }
 .sk-generic-tag--negative { color: var(--sk-color-negative); border-color: var(--sk-color-negative); }
 .sk-generic-tag--critical { color: var(--sk-color-critical); border-color: var(--sk-color-critical); }

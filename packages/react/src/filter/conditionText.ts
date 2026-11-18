@@ -4,6 +4,18 @@ import type { MessageKey } from '../i18n/messages.en';
 import type { TextFn } from '../i18n/text';
 
 const NUMERIC = /Int|Decimal|Double|Single|Byte/;
+const DIGITS = /^\d+$/;
+
+/**
+ * Common.IsDigitSequence (sap.ui.model.odata.type.String `parseValue`, constraints from FE BindingToolkit
+ * `setUpConstraints`): a value of digits only loses its leading zeros and, with a MaxLength, is padded with zeros to
+ * MaxLength ("123" → "0000000123", ABAP NUMC). Other values are kept.
+ */
+export function digitSequenceValue(value: string, prop: PropertyModel | undefined): string {
+  if (!prop?.isDigitSequence || prop.edmType !== 'Edm.String' || !DIGITS.test(value)) return value;
+  const v = value.replace(/^0*(?=\d)/, '');
+  return prop.maxLength ? v.padStart(prop.maxLength, '0') : v;
+}
 
 /** Parses user input into a condition. Plain text means "equal to". */
 export function parseConditionText(input: string, prop: PropertyModel | undefined): Condition | undefined {
@@ -13,6 +25,11 @@ export function parseConditionText(input: string, prop: PropertyModel | undefine
   const norm = (v: string) => {
     const x = v.trim();
     if (prop && NUMERIC.test(prop.edmType)) return x.replace(/,/g, '');
+    return digitSequenceValue(prop?.isUpperCase ? x.toUpperCase() : x, prop);
+  };
+  // Contains, StartsWith and EndsWith take the text as typed (sap.ui.mdc FilterOperatorUtil: SelfNoParse).
+  const raw = (v: string) => {
+    const x = v.trim();
     return prop?.isUpperCase ? x.toUpperCase() : x;
   };
   let m: RegExpMatchArray | null;
@@ -26,9 +43,9 @@ export function parseConditionText(input: string, prop: PropertyModel | undefine
     const op: Record<string, Operator> = { '>=': 'GE', '<=': 'LE', '!=': 'NE', '>': 'GT', '<': 'LT', '=': 'EQ' };
     return { operator: op[m[1]!]!, values: [norm(m[2]!)] };
   }
-  if (isString && s.length > 1 && s.startsWith('*') && s.endsWith('*')) return { operator: 'Contains', values: [norm(s.slice(1, -1))] };
-  if (isString && s.endsWith('*')) return { operator: 'StartsWith', values: [norm(s.slice(0, -1))] };
-  if (isString && s.startsWith('*')) return { operator: 'EndsWith', values: [norm(s.slice(1))] };
+  if (isString && s.length > 1 && s.startsWith('*') && s.endsWith('*')) return { operator: 'Contains', values: [raw(s.slice(1, -1))] };
+  if (isString && s.endsWith('*')) return { operator: 'StartsWith', values: [raw(s.slice(0, -1))] };
+  if (isString && s.startsWith('*')) return { operator: 'EndsWith', values: [raw(s.slice(1))] };
   return { operator: 'EQ', values: [norm(s)] };
 }
 

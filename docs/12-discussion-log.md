@@ -793,3 +793,38 @@ ADR-027 定的范围是"只实现 smart-kit 会发的请求"，用户也定过�
 **结果**：114 个 UI5 模块；`check:ui5` 0 处未登记。偏差 450 条：`not-implemented` 119（阶段 1 后 441，基线 752），`kit-extension` 186，`react-idiom` 75，`no-binding` 13，`fe-behavior` 32（阶段 3、4 处理）；阶段 2 模块已经没有基线占位条目。迁移清单第 2 阶段 32 行。
 
 **用户决定**：待定（不阻塞）——`VariantManagement` 的 `supportApplyAutomatically`、`creationAllowed` 等取自 sap.fe.macros.VariantManagement 内部的 sap.m.VariantManagement（积木本身没有这些公开属性），登记为 `kit-extension`；如果希望积木只保留 sap.fe.macros 的公开属性，这些要去掉、由模板或宿主控制。
+
+## D39 表格的合计和小计按 FE：只给分析表；没有 CustomAggregate 不合计（2026-11-17）
+
+**问题**：阶段 3（P1-2）对照 FE 1.154 源码（`converters/controls/Common/Table.ts` 的 `updateTableVisualizationForType`、`getAggregateConditions`）发现：FE 只有 **AnalyticalTable** 才有合计和小计，GridTable 和 ResponsiveTable 没有（GridTable 也不能分组）；没有 `UI.PresentationVariant/Total` 时默认合计所有 `Aggregation.CustomAggregate` 的列；服务没有声明 CustomAggregate 时不合计。smart-kit 的网格表和响应式表都有合计和小计（`23` 的有意设计，GT-01～GT-10），没有 CustomAggregate 时对数值属性按 sum 合计。推翻有意设计，需要用户决定。
+
+**用户决定**（2026-11-17，选了推荐项）：
+1. 合计和小计**只给分析表**，网格表、响应式表去掉；示例和验收改用分析表。
+2. 没有 CustomAggregate **不合计**；自写服务（smart-kit-server、pg 测试床）补 CustomAggregate 注解，并支持不带 `with` 的 `aggregate(M)`。
+
+**据此改的**：见阶段 3 的 D40。
+
+**补记：多币种合计（2026-11-17）**：实现 D39 时发现，FE 的分析表合计遇到多种币种时只显示一个值加"多单位"标记（请求 `aggregate(NetAmount,Currency)`，按单位一并聚合），smart-kit 按币种分行显示（`23` 第 3.2 节的有意设计）。**用户决定**：按 FE，一个值加多单位标记。
+
+## D40 对齐阶段 3：列表页注解里结果会错的八项（D33 P1）（2026-11-18）
+
+**问题**：按 `31` 阶段 3，修 `29` 第 4 节的八项 P1 和非绑定动作的 `OperationAvailable` 缺陷，每项先在 FE 对比测试里看真 Fiori elements 1.154 的结果，再改 smart-kit，直到对比一致。
+
+**做法**：四个子代理并行（草稿 + 多视图 + 动作；聚合 + 图表；筛选栏 + 值帮助；合计），每组各用一套端口跑 `e2e:fe`。FE 对比从 3 个场景增加到 15 个（新增 FE 应用 `purchasing-chart`、`purchasing-views`、`purchasing-analytical`，和示例页一一对应，`apps/fe-reference/README.md`）。每项的 FE 源码模块写在 `02`（按 FE 源码重写）里。
+
+**结果**（逐项，FE 的依据见 `02`）：
+1. **草稿列表**：FE `macros/filterBar/DraftEditState` 的六个编辑状态和"全部"＝`IsActiveEntity eq false or SiblingEntity/IsActiveEntity eq null`；列表请求 `HasActiveEntity`、`HasDraftEntity`、`DraftAdministrativeData/InProcessByUser`；网格表多一列只显示图标的"编辑状态"。测试服务正式声明 `SiblingEntity`（FE 应用代理的补丁不再起作用）。D34 已定按 FE 改。
+2. **`Aggregation.CustomAggregate`**：合计、图表、KPI、卡片请求 `aggregate(M)`；只有声明了的属性能合计。**合计只给分析表、没有 CustomAggregate 不合计、多币种合计显示一个值加"显示详细信息"**——这三条推翻了 `23` 的有意设计，用户决定按 FE（D39）。smart-kit-server 支持不带 `with` 的 `aggregate(M)` 和单位（相同则为该值，否则 null）。
+3. **图表**：全部维度和度量，按度量的单位分组，导航上的文本不进分组，多币种时和 FE 一样显示"Invalid data"；两个场景 0 差异。
+4. **`Common.FilterDefaultValue`**：没有默认 SV 时生成 EQ 条件。
+5. **值帮助 In / InOut / Constant / Out**：按参数过滤值帮助请求，选中后回写其他筛选字段。
+6. **多视图**：每个视图应用完整的 SV（隐藏条件 `$hidden:<路径>`），属于 SelectionFields 的字段留在筛选栏。实测发现 `29a` 第 222 行写错了：多视图时 FE 仍然设置筛选栏初值。
+7. **搜索框**：没写 `Searchable=false` 就显示；值帮助 `SearchSupported` 缺省为可搜索。D34 已定按 FE 改。
+8. **`Common.IsDigitSequence`**：照 `sap/ui/model/odata/type/String` 的规则补前导零到 MaxLength（文本运算符不处理）。
+- 缺陷：非绑定动作 `OperationAvailable` 为 false 或路径时按钮禁用（FE `getActionEnabledExpression`）。
+
+**偏差登记的整理**：新场景会重复出现已知的差异（版本字段、文本 `$expand`、页大小、固定值预取……），逐场景登记会让 `fe-behavior` 从 32 涨到 117，违反 AL-08（只减不增）。改为 FE 对比的登记支持 `module: "fe:*"`（对所有场景有效，每种原因一条），`fe-behavior` 现为 28 条（基线 32）；修掉的 5 条（DV-F002、F006、F011、F017、F026）已删。
+
+**留给阶段 4**：分析表用一个 `$apply` 的 `concat` 同时取明细和合计（DV-totals-001/002）；按 `ApplySupported` 自动选分析表（FE `getTableType`）；文本导航的 `$expand`；协作草稿的选项；草稿节点子表的标记。
+
+**事故记录**：一个子代理误执行了一次 `git stash` / `git stash pop`（几秒，恢复无冲突）；其他子代理都核对过自己的改动，最后的全部检查以合并后的工作区为准。以后的简报写明不准用 stash / checkout / reset。

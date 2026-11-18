@@ -1,14 +1,16 @@
 /**
  * Grand totals and group subtotals of a table (docs/23): requested from the service with $apply for the current
- * filters and search, never added up from the loaded rows. Amounts are split by currency or unit.
+ * filters and search, never added up from the loaded rows. As in Fiori elements (D39), the unit is aggregated with the
+ * measure; a total over several currencies shows "Show Details", which lists the amounts per currency.
  */
+import { Anchor, Loader, Popover, Text } from '@mantine/core';
 import {
   buildTotalsRequest, collectTotals, formatValue, groupKey, MAX_GROUP_VALUES, resolvePath, sourceInfo, type FilterState, type QuerySource,
   type TotalAmount, type TotalsEntry,
 } from '@rhfan2019/smart-kit-core';
 import { useQueries, useQuery } from '@tanstack/react-query';
-import { useMemo, useRef } from 'react';
-import { useService, useSmartKit } from '../context/SmartKitProvider';
+import { useMemo, useRef, useState } from 'react';
+import { useService, useSmartKit, useText } from '../context/SmartKitProvider';
 
 /** Totals are reloaded through `revision` (refresh, actions, edits); remounts within this time reuse them. */
 const TOTALS_STALE_TIME = 60_000;
@@ -127,7 +129,7 @@ export function useTotalFormatter(service: string | undefined, source: QuerySour
   return (path: string, amounts: TotalAmount[] | undefined): string[] => {
     const prop = resolvePath(model.entityTypes, typeName, path).property;
     if (!prop || !amounts?.length) return [];
-    return amounts.map((a) => {
+    return amounts.filter((a) => !a.multiUnit).map((a) => {
       // Sums of binary floats: drop the noise beyond the precision of the property before formatting.
       const v = formatValue(Math.round(a.value * 1e6) / 1e6, prop, { locale: intlLocale, unitCode: a.unit });
       return a.unit ? `${v} ${a.unit}` : v;
@@ -144,3 +146,64 @@ export function TotalLines({ lines, path }: { lines: string[]; path?: string }) 
     </span>
   );
 }
+
+/** What a "Show Details" popover requests: the total (or one group's subtotal) of `path` per unit. */
+export interface UnitDetailsQuery {
+  service?: string;
+  source: QuerySource;
+  filters?: FilterState;
+  search?: string;
+  path: string;
+  /** Subtotal: the group property and value (FE: the filter of the group's context). */
+  groupBy?: string;
+  groupValue?: unknown;
+  revision?: number;
+}
+
+/**
+ * A total over several units (FE `getMultiCurrencyLink`, sap.fe.macros M_TABLE_SHOW_DETAILS): the link "Show Details"
+ * opens a popover titled "Totals" / "Subtotals" (sap.m.table.Util createOrUpdateMultiUnitPopover) with one line per
+ * unit, requested when it opens (`groupby((Currency),aggregate(NetAmount))&$orderby=Currency`).
+ */
+export function MultiUnitTotal({ query }: { query: UnitDetailsQuery }) {
+  const t = useText();
+  const [opened, setOpened] = useState(false);
+  const service = useService(query.service);
+  const { namespace, timeZone } = useSmartKit();
+  const format = useTotalFormatter(query.service, query.source);
+  const model = service.model;
+  const grand = query.groupBy === undefined;
+  const req = useMemo(
+    () => buildTotalsRequest(model, {
+      source: query.source, filters: query.filters, search: query.search, measures: [query.path], timeZone, byUnit: true,
+      ...(grand ? {} : { groupBy: query.groupBy, groupValues: [query.groupValue ?? null] }),
+    }),
+    [model, query.source, JSON.stringify(query.filters), query.search, query.path, query.groupBy, JSON.stringify(query.groupValue), timeZone], // eslint-disable-line react-hooks/exhaustive-deps
+  );
+  const q = useQuery({
+    queryKey: ['smart-kit', namespace, service.name, 'total-units', JSON.stringify(req), query.revision ?? 0],
+    enabled: opened,
+    staleTime: TOTALS_STALE_TIME,
+    queryFn: ({ signal }) => service.dataProvider.query(req, { signal }),
+  });
+  const lines = q.data ? format(query.path, collectTotals(model, { source: query.source, measures: [query.path], byUnit: true }, q.data.rows).get('')?.values[query.path]) : [];
+  const title = grand ? t('table.multiTotalTitle') : t('table.multiGroupTitle');
+  return (
+    <span className="sk-total" data-sk-total={query.path} data-sk-total-multi-unit>
+      <Popover opened={opened} onChange={setOpened} position={grand ? 'top' : 'bottom'} withArrow shadow="md" withinPortal trapFocus returnFocus>
+        <Popover.Target>
+          <Anchor component="button" type="button" size="sm" className="sk-total__details" onClick={(e) => { e.stopPropagation(); setOpened((o) => !o); }} data-sk-total-details>
+            {t('table.multiUnitDetails')}
+          </Anchor>
+        </Popover.Target>
+        <Popover.Dropdown aria-label={title} data-sk-total-units>
+          <Text fw={700} size="sm" mb={4}>{title}</Text>
+          {q.isFetching && !q.data ? <Loader size="xs" /> : q.error ? <Text size="sm" c="dimmed">–</Text> : (
+            <span className="sk-total">{lines.map((l, i) => <span key={i} className="sk-total__line" data-sk-total-unit-line>{l}</span>)}</span>
+          )}
+        </Popover.Dropdown>
+      </Popover>
+    </span>
+  );
+}
+

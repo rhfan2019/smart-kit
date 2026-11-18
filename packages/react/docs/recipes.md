@@ -380,7 +380,8 @@ export function Worklist(p: { revision: number; log(e: Table$BeforeExportEvent):
       refreshToken={p.revision} // change it after provider.setRows(...) or after the host changed data elsewhere
       exportable // false removes "Export to Spreadsheet"
       onBeforeExport={(e) => p.log(e)} // rows, filters and count of the file; false cancels (no file)
-      // grouping with row counts and subtotals: grid and responsive tables (view settings → Group, or `UI.PresentationVariant/GroupBy`)
+      // grouping with row counts, subtotals and totals: tableType="AnalyticalTable" (custom aggregates only, D39);
+      // responsive tables group without subtotals (view settings → Group, or `UI.PresentationVariant/GroupBy`)
     />
   );
 }

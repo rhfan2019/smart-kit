@@ -3,7 +3,7 @@
  * (LR-05–LR-11, docs/26b).
  */
 import { Button, Group, TextInput } from '@mantine/core';
-import { activeFilterPaths, isComplete, type Condition, type FilterState, type Operator } from '@rhfan2019/smart-kit-core';
+import { activeFilterPaths, filterExpressionRules, isComplete, type Condition, type FilterState, type Operator } from '@rhfan2019/smart-kit-core';
 import { Search } from 'lucide-react';
 import { createContext, useContext, useEffect, useImperativeHandle, useMemo, useRef, useState, type ReactNode, type Ref } from 'react';
 import { useMetaModel, useText } from '../context/SmartKitProvider';
@@ -15,6 +15,7 @@ import { filterSummaryText } from './FilterSummary';
 import { fromSelectionVariant, toSelectionVariant, type SelectionVariant } from './selectionVariant';
 import { useFilterState, type FilterStateApi } from './useFilterState';
 import { ValueHelpDialog } from './ValueHelpDialog';
+import { ValueHelpSourceContext, type ValueHelpSource } from './valueHelpSource';
 
 export type { SelectionVariant, SelectionVariantRange } from './selectionVariant';
 
@@ -409,10 +410,22 @@ function FilterBarWithState(p: $FilterBarSettings & { state: FilterStateApi }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- search and clear read the latest values through refs
     [p, s, fields, live, disabled, tooltips, missingCustom.join('|'), showErrors],
   );
+  // value helps of the fields read In parameters from, and write Out parameters to, this bar (P1-5)
+  const fieldIds = fields.map((f) => f.property ?? f.id).join('|');
+  const vhSource = useMemo<ValueHelpSource>(
+    () => ({
+      filters: s.filters,
+      fields: fieldIds.split('|'),
+      single: (path) => filterExpressionRules(capabilities.filterExpressions[path]).max === 1,
+      setConditions: s.setConditions,
+    }),
+    [s.filters, s.setConditions, fieldIds, capabilities.filterExpressions],
+  );
   const locked = [...new Set([...capabilities.requiredFilters, ...Object.keys(s.filters).filter((k) => (s.filters[k] ?? []).length)])];
   const adaptFields = [...shownFields, ...custom.filter((f) => customShown.has(f.key)).map((f) => f.key)];
   return (
     <Ctx.Provider value={value}>
+      <ValueHelpSourceContext.Provider value={vhSource}>
       <div className={['sk-filterbar', p.className].filter(Boolean).join(' ')} role="search">
         {p.children ?? (
           <>
@@ -449,6 +462,7 @@ function FilterBarWithState(p: $FilterBarSettings & { state: FilterStateApi }) {
         onOk={(f) => { writeFields(f); setAdapt(false); }}
         onCancel={() => setAdapt(false)}
       />
+      </ValueHelpSourceContext.Provider>
     </Ctx.Provider>
   );
 }

@@ -1,6 +1,7 @@
 # 23 列表页的分组、小计和总计：方案
 
 > 状态：已实施 · 2026-11-17。来源：讨论记录 D28；决定见 ADR-031；验收条目见第 7 节（`npm run trace -- --strict` 检查），结果见 `24-grouping-totals-report.md`。实施时与方案不同的地方见第 8 节。
+> **D39 修订（2026-11-17）**：合计、小计（以及网格里的分组）只给分析表格，只合计 `Aggregation.CustomAggregate`，见第 10 节；第 2、3.4、3.5、9 节里"两种表格都有合计""网格表格分组""数值属性按 sum 合计"的说法以第 10 节为准。
 
 ## 1. 现状
 
@@ -36,7 +37,9 @@
 
 ### 3.2 按单位（币种）分开
 
-度量带 `Measures.ISOCurrency` 或 `Measures.Unit` 时，单位字段加进 `groupby`，每种单位一个值，不能直接相加。例如总计：
+> **D39 补记（2026-11-17）改为按 FE**：下面的原方案（单位进 `groupby`、单元格里每种单位一行）已废止，现行做法见第 10 节"多币种"。
+
+原方案：度量带 `Measures.ISOCurrency` 或 `Measures.Unit` 时，单位字段加进 `groupby`，每种单位一个值，不能直接相加。例如总计：
 
 ```
 $apply=filter(CompanyCode eq '1000')/groupby((Currency),aggregate(NetAmount with sum as NetAmount))
@@ -144,4 +147,39 @@ invoice-assure 的工作清单要在网格表格里按供应商、到期日分�
 - 排序仍由服务端做：点表头改的是请求的排序，分组字段总在最前；客户端行模型自己的排序被 `postSortRows` 还原成服务端的顺序。
 - 分组时第一列不固定在左边：AG Grid 的跨列不能从固定区跨到滚动区。
 - 不做：多级分组、折叠和展开、恢复返回时的滚动位置（不分组时照旧）。
+
+## 10. D39 修订（2026-11-17）
+
+阶段 3（P1-2）对照 FE 1.154 源码（`sap/fe/core/converters/controls/Common/Table.ts`：`updateTableVisualizationForType`、`getAggregateConditions`、`getP13nMode`；`converters/helpers/Aggregation.ts`：`isPropertyAggregatable`）后，用户决定按 FE 做（讨论记录 D39）：
+
+| 项 | 修订前 | 修订后（= FE） |
+| --- | --- | --- |
+| 哪种表格有合计、小计 | 网格表格和响应式表格 | 只有分析表格：`Table` 的 `type="AnalyticalTable"`、`SmartListReport` 的 `tableType="AnalyticalTable"`，实体集要有 `Aggregation.ApplySupported` |
+| 分组 | 响应式表格（带条数、小计）和网格表格（D30） | 分析表格：分组带条数和小计（网格）；响应式表格：只分组，组标题只有组值，没有条数和小计（FE `groupConditions`、个性化 "Group"）；网格表格（`GridTable`）不能分组 |
+| 个性化对话框 | 两种表格都有"合计"页 | "合计"页只在分析表格；"分组"页在分析表格和响应式表格 |
+| 可合计的列 | `AggregatableProperties` 里的数值属性，方法含 sum；声明了 CustomAggregate 时只认它 | 只认 `Aggregation.CustomAggregate`（限定符 = 属性名）；没有 CustomAggregate 就不合计，去掉"数值属性按 sum"的退路 |
+| 默认合计哪些列 | `UI.PresentationVariant/Total`；没有就不合计 | 有 `Total` 用它（空集合 = 不合计，模型的 `PresentationModel.hasTotal`）；没有 `Total` 时合计所有 CustomAggregate 的列（FE `getAggregateConditions`） |
+| 请求 | `groupby((Currency),aggregate(M))`（CustomAggregate）或 `M with sum as M` | 按 FE：度量按名字、后面跟它的单位，总计 `filter(…)/aggregate(NetAmount,Currency)`，小计 `filter(…)/groupby((Supplier,供应商名称),aggregate(NetAmount,Currency,$count as smartkit_count))`；单位不再进 `groupby`。服务端对单位返回"所有行相同时的值，否则 null"。smart-kit-server 支持不带 `with` 的 `aggregate(M)`（同名属性求和，或 `SupportedAggregationMethods` 里不含 sum 时的第一个方法）和 CustomAggregate 的单位（`packages/server/docs/README.md`"Custom aggregates"）；测试服务（fe-mockserver）对单位属性也这样聚合（`apps/mock/server.mjs` 的补丁） |
+| 多币种（D39 补记） | 每种币种一行，按金额降序 | 按 FE：单位为 null（多个币种）时单元格只显示链接"显示详细信息"/"Show Details"（sap.fe.macros `M_TABLE_SHOW_DETAILS`，FE `getMultiCurrencyLink`）；点开弹出框，标题"总计"/"小计"（sap.m `TABLE_MULTI_TOTAL_TITLE` / `TABLE_MULTI_GROUP_TITLE`），每个币种一行，按币种排序，打开时才请求：`filter(…[ and 组条件])/groupby((Currency),aggregate(NetAmount))&$orderby=Currency&$top=100`（与 FE 的请求一致）。只有一种币种时照常显示金额和币种 |
+| 测试服务 | — | `apps/mock`、`apps/pg-server` 的采购订单都声明 `Aggregation.CustomAggregate#NetAmount` |
+| 示例 | `/po`（网格）、`/po?table=responsive` 有合计 | 合计、小计用 `/po?table=analytical`；`/po`（网格）和 `/po?table=responsive` 没有合计 |
+
+验收条目的变化（`tests/e2e/p5-totals.spec.ts`，内存服务和 `e2e:pg` 都跑）：
+
+| 编号 | 修订后 |
+| --- | --- |
+| GT-01 | "合计"页只在分析表格出现，只列 CustomAggregate 的可见列；网格表格既没有"分组"页也没有"合计"页，不发 `$apply`；响应式表格只有"分组"页 |
+| GT-02 | 合计行只在分析表格（`/po?table=analytical`）；响应式表格没有合计行、不发合计请求 |
+| GT-03 | 多币种的总计和小计显示"显示详细信息"，弹出框里每个币种一行，金额与服务端一致；只有一种币种时直接显示（D39 补记，按 FE） |
+| GT-04 | 响应式表格按状态分组：组标题只显示"状态: 值"，没有条数和小计，不发 `$apply`；条数和小计由 GT-10 在分析表格上验证 |
+| GT-05 | 改在分析表格（网格分组，滚动续载）上验证 |
+| GT-06 | 不变（响应式表格的分组选项只列可分组的可见列） |
+| GT-07 | 改在分析表格上验证（分组、合计存进视图并恢复） |
+| GT-08 | 改在分析表格上验证 |
+| GT-09 | 只验证分析表格的合计行（中文、暗色、紧凑）；响应式表格没有合计行 |
+| GT-10 | "网格表格按供应商分组"改为"分析表格按供应商分组"，内容不变 |
+
+FE 对照：`tests/e2e-fe/totals.spec.ts`（场景 `po-analytical-totals`，FE `?app=purchasing-analytical` ↔ `/po?table=analytical`）：两边合计的列（净值）和个性化面板（列、排序、分组、合计）一致，都请求 `aggregate(NetAmount,Currency)`；多币种总计两边都显示"Show Details"，弹出框的标题、各币种金额和请求（`groupby((Currency),aggregate(NetAmount))&$orderby=Currency&$top=100`）一致。剩下的差别登记在 `tools/ui5-alignment/deviations.totals.json`：FE 的分析表格用一个 `$apply`（`concat`）同时取明细行和总计，smart-kit 总计单独发、明细走列表请求（DV-totals-001、002，阶段 4：明细行改由 `$apply` 读取是分析表格的数据绑定方式，范围大，留到阶段 4）。DV-totals-003（多币种显示）已按 D39 补记改掉并删除。
+
+FE 根据注解自动选表格类型（`Table.ts` `getTableType`：`ApplySupported` 含全部 8 种转换时用 AnalyticalTable）是另一个函数，不在本次改动里，留给阶段 4（smart-kit 默认仍是网格表格）。
 

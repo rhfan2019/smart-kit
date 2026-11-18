@@ -21,16 +21,34 @@ export function draftState(row: Row | undefined): DraftState {
   return undefined;
 }
 
-export function DraftIndicator({ row, compact }: { row: Row | undefined; compact?: boolean }) {
+export interface DraftIndicatorProps {
+  row: Row | undefined;
+  compact?: boolean;
+  /**
+   * Icon only, as FE's DraftIndicator in a table's "Editing Status" column (`getIconOnlyContent`): Draft for a draft,
+   * Locked when another user processes the draft (InProcessByUser), else Unsaved.
+   */
+  iconOnly?: boolean;
+  /** Reads the row with its DraftAdministrativeData when the popover opens (lists request only InProcessByUser). */
+  load?(): Promise<Row | undefined>;
+}
+
+export function DraftIndicator({ row: listed, compact, iconOnly, load }: DraftIndicatorProps) {
   const t = useText();
   const { intlLocale, timeZone } = useSmartKit();
   const [opened, setOpened] = useState(false);
-  const state = draftState(row);
+  const [loaded, setLoaded] = useState<Row | undefined>();
+  const state = draftState(listed);
   if (!state) return null;
+  const row = loaded?.DraftAdministrativeData ? { ...listed, DraftAdministrativeData: { ...(listed?.DraftAdministrativeData as Row | undefined), ...(loaded.DraftAdministrativeData as Row) } } : listed;
+  const toggle = () => {
+    if (!opened && load && !loaded) void load().then(setLoaded, () => undefined);
+    setOpened((o) => !o);
+  };
   const locker = getPath(row, 'DraftAdministrativeData/InProcessByUser');
   const user = String(getPath(row, 'DraftAdministrativeData/LastChangedByUser') ?? locker ?? getPath(row, 'DraftAdministrativeData/CreatedByUser') ?? '');
   const when = getPath(row, 'DraftAdministrativeData/LastChangeDateTime');
-  const type = state === 'own' ? 'Draft' : locker ? 'LockedBy' : 'UnsavedBy';
+  const type = iconOnly ? (listed?.IsActiveEntity === false ? 'Draft' : locker ? 'Locked' : 'Unsaved') : state === 'own' ? 'Draft' : locker ? 'LockedBy' : 'UnsavedBy';
   // withRoles off: Mantine would put aria-expanded on the wrapping span (not allowed there); the marker button carries it
   return (
     <Popover opened={opened} onChange={setOpened} position="bottom-start" withArrow width={280} trapFocus returnFocus withRoles={false}>
@@ -38,8 +56,9 @@ export function DraftIndicator({ row, compact }: { row: Row | undefined; compact
         {/* a click on the marker must not reach the table row (navigation) */}
         <span className={['sk-draft-indicator', compact ? 'sk-draft-indicator--compact' : ''].filter(Boolean).join(' ')} onClick={(e) => e.stopPropagation()}>
           <ObjectMarker
-            type={type} additionalInfo={state === 'own' ? undefined : String(locker ?? user) || undefined}
-            aria-haspopup="dialog" aria-expanded={opened} onPress={() => setOpened((o) => !o)} data-sk-draft-marker={state}
+            type={type} additionalInfo={state === 'own' || iconOnly ? undefined : String(locker ?? user) || undefined}
+            visibility={iconOnly ? 'IconOnly' : undefined}
+            aria-haspopup="dialog" aria-expanded={opened} onPress={toggle} data-sk-draft-marker={state}
           />
         </span>
       </Popover.Target>

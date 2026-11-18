@@ -1,9 +1,9 @@
 // AST -> query plan. Every property path is resolved against $metadata here (unknown names are a 400, never SQL),
 // every literal is checked against the Edm type it is compared with, the Capabilities annotations are enforced,
 // and the data scope (permissions) of every entity set the query touches is added (ADR-027).
-import type { EdmType } from '@rhfan2019/smart-kit-core';
+import type { CapabilityModel, EdmType } from '@rhfan2019/smart-kit-core';
 import { badRequest, notFound, notImplemented } from './errors';
-import type { AggregateMethod, ApplyStep, CompareOp, Expr, Literal, OrderByItem, QueryOptions, SearchExpr } from './parser/ast';
+import type { AggregateItem, AggregateMethod, ApplyStep, CompareOp, Expr, Literal, OrderByItem, QueryOptions, SearchExpr } from './parser/ast';
 import { parseFilter } from './parser/filter';
 import type { PathSegment } from './parser/url';
 import type { ColumnInfo, EntitySetInfo, NavigationInfo, ServiceSchema } from './schema';
@@ -118,6 +118,8 @@ export interface PlanOptions<C> {
   context: C;
 }
 
+/** Methods a custom aggregate may use (SupportedAggregationMethods of its property). */
+const CUSTOM_METHODS = new Set<AggregateMethod>(['sum', 'min', 'max', 'average', 'countdistinct']);
 const NUMERIC = new Set(['Edm.Byte', 'Edm.SByte', 'Edm.Int16', 'Edm.Int32', 'Edm.Int64', 'Edm.Decimal', 'Edm.Double', 'Edm.Single']);
 const LITERAL_FOR: Record<string, Literal['type']> = {
   'Edm.String': 'string', 'Edm.Boolean': 'boolean', 'Edm.Date': 'date', 'Edm.DateTimeOffset': 'dateTimeOffset',
@@ -582,7 +584,7 @@ export class Planner<C> {
     if (o.filter || o.search || o.select || o.expand) throw notImplemented('$apply cannot be combined with $filter, $search, $select or $expand in this service; put filters into filter() of $apply.');
     const caps = this.capsFor(set, parent);
     const where: BoundExpr[] = [...this.scope(set)];
-    let grouped: { paths: string[][]; aggregates: { path: string[]; method: AggregateMethod; alias: string }[] } | undefined;
+    let grouped: { paths: string[][]; aggregates: AggregateItem[] } | undefined;
     for (const step of steps) {
       if (grouped) throw notImplemented('$apply: transformations after groupby() or aggregate() are not supported.');
       if (step.kind === 'filter') {
@@ -600,12 +602,9 @@ export class Planner<C> {
     const aggregates: AggregatePlan['aggregates'] = grouped.aggregates.map((a) => {
       if (aliases.has(a.alias) || groupBy.some((g) => g.path[0] === a.alias)) throw badRequest('InvalidApply', `$apply: alias '${a.alias}' is used twice.`);
       aliases.add(a.alias);
+      if (a.custom) return this.customAggregate(set, caps, a.path);
       if (a.method === 'count') return { method: a.method, alias: a.alias, edmType: 'Edm.Int64' as EdmType };
-      const ref = this.resolve(set, a.path, '$apply aggregate');
-      const t = ref.column.edmType;
-      if (a.method !== 'countdistinct' && a.method !== 'min' && a.method !== 'max' && !NUMERIC.has(t)) throw badRequest('InvalidApply', `$apply: ${a.method} needs a numeric property, '${a.path.join('/')}' is ${t}.`);
-      const edmType: EdmType = a.method === 'countdistinct' ? 'Edm.Int64' : a.method === 'average' ? 'Edm.Decimal' : t;
-      return { ref, method: a.method, alias: a.alias, edmType };
+      return this.aggregateOf(set, a.path, a.method!, a.alias);
     });
     const orderBy: AggregatePlan['orderBy'] = [];
     for (const item of o.orderBy ?? []) {
@@ -620,6 +619,40 @@ export class Planner<C> {
     const max = this.o.maxPageSize;
     if (o.count && !caps.countable) throw badRequest('CountNotSupported', `Entity set '${set.name}' is not countable (Capabilities.CountRestrictions/Countable is false).`);
     return { set, where, groupBy, aggregates, orderBy, skip: o.skip ?? 0, top: Math.min(o.top ?? max, max), count: !!o.count, parent };
+  }
+
+  private aggregateOf(set: EntitySetInfo, path: string[], method: AggregateMethod, alias: string): AggregatePlan['aggregates'][number] {
+    const ref = this.resolve(set, path, '$apply aggregate');
+    const t = ref.column.edmType;
+    if (method !== 'countdistinct' && method !== 'min' && method !== 'max' && !NUMERIC.has(t)) throw badRequest('InvalidApply', `$apply: ${method} needs a numeric property, '${path.join('/')}' is ${t}.`);
+    const edmType: EdmType = method === 'countdistinct' ? 'Edm.Int64' : method === 'average' ? 'Edm.Decimal' : t;
+    return { ref, method, alias, edmType };
+  }
+
+  /**
+   * `aggregate(Name)`: a custom aggregate. This service supports the custom aggregates that aggregate the property of
+   * the same name (Aggregation.CustomAggregate with qualifier = property name, as Fiori elements expects them): the
+   * result is that property aggregated with `sum`, or with the first method of its
+   * ApplySupported/AggregatableProperties/SupportedAggregationMethods when they are listed without `sum`. The result
+   * is named like the aggregate.
+   */
+  private customAggregate(set: EntitySetInfo, caps: CapabilityModel, path: string[]): AggregatePlan['aggregates'][number] {
+    const name = path.join('/');
+    const agg = caps.aggregation;
+    const customs = Object.keys(agg?.customAggregates ?? {});
+    // the unit of a custom aggregate (Measures.ISOCurrency / Measures.Unit path), as Fiori elements requests it with
+    // the measure (`aggregate(NetAmount,Currency)`): the unit when all rows share it, else null
+    if (path.length === 1 && agg && !customs.includes(name) && customs.some((m) => { const u = set.type.properties[m]?.unit; return Boolean(u && 'path' in u && u.path === name); })) {
+      const ref = this.resolve(set, path, '$apply aggregate');
+      return { ref, method: 'unit', alias: name, edmType: ref.column.edmType };
+    }
+    if (path.length !== 1 || !agg || !customs.includes(name)) {
+      throw badRequest('InvalidApply', `$apply: '${name}' is neither a custom aggregate of ${set.name} nor the unit of one (declare Aggregation.CustomAggregate with qualifier '${name}', or write "${name} with <method> as <alias>").`);
+    }
+    if (!set.columns[name]) throw notImplemented(`$apply: custom aggregate '${name}' has no property of the same name; this service only supports custom aggregates of a property.`);
+    const methods = (agg.aggregatable.find((x) => x.path === name)?.methods ?? []).filter((m): m is AggregateMethod => CUSTOM_METHODS.has(m as AggregateMethod));
+    const method: AggregateMethod = !methods.length || methods.includes('sum') ? 'sum' : methods[0]!;
+    return this.aggregateOf(set, path, method, name);
   }
 }
 

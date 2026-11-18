@@ -6,7 +6,7 @@
  */
 import { Group, SegmentedControl, Select, Tabs, Text, Tooltip } from '@mantine/core';
 import {
-  isFilterable, type Condition, type FilterState, type Operator, type Row, type SortItem, type VariantContent, type ViewModel,
+  DRAFT_EDIT_STATES, EDIT_STATE, editStateOf, isFilterable, withHiddenFilters, type FilterState, type Operator, type Row, type SortItem, type VariantContent, type ViewModel,
 } from '@rhfan2019/smart-kit-core';
 import { useQueries } from '@tanstack/react-query';
 import { BarChart3, Table2 } from 'lucide-react';
@@ -82,8 +82,8 @@ export interface SmartListReportProps {
   contents?: ListContentItem[];
   /**
    * Table type: grid (desktop), responsive, or auto = responsive below 600px (LR Responsiveness, docs/12 U-17). The UI5
-   * names (sap.ui.comp.smarttable.TableType) are accepted too: "Table" and "AnalyticalTable" = grid,
-   * "ResponsiveTable" = responsive, "TreeTable" = grid tree table of the recursive hierarchy (docs/26 §3.10).
+   * names (sap.ui.comp.smarttable.TableType) are accepted too: "Table" = grid, "AnalyticalTable" = grid with
+   * grouping, subtotals and totals (the only type with totals, D39), "ResponsiveTable" = responsive, "TreeTable" = grid tree table of the recursive hierarchy (docs/26 §3.10).
    */
   tableType?: 'grid' | 'responsive' | 'auto' | 'AnalyticalTable' | 'ResponsiveTable' | 'Table' | 'TreeTable';
   /** Tree tables: qualifier of Aggregation.RecursiveHierarchy (default: the type's first hierarchy). */
@@ -116,32 +116,32 @@ export interface SmartListReportProps {
   canSaveVariants?: boolean;
 }
 
-const EDITING_STATUS = '$editingStatus';
-
-/** Filters for a table: the custom editing status becomes draft conditions; conditions of other entity sets are dropped. */
-function tableFilters(filters: FilterState, applies: (path: string) => boolean, draft: boolean): { filters: FilterState; ignored: string[] } {
+/**
+ * Filters for a table: conditions of other entity sets are dropped; draft lists always get the editing status
+ * (FE DraftEditState: "All" when none is chosen); a view adds its complete selection variant as hidden filters
+ * (FE multiple views: the view's SV is the table's `filters.hiddenFilters`).
+ */
+export function tableFilters(filters: FilterState, applies: (path: string) => boolean, draft: boolean, view?: ViewModel): { filters: FilterState; ignored: string[] } {
   const out: FilterState = {};
   const ignored: string[] = [];
   for (const [path, conds] of Object.entries(filters)) {
-    if (path === EDITING_STATUS) continue;
+    if (path === EDIT_STATE) continue;
     if (applies(path)) out[path] = conds;
     else if (conds.length) ignored.push(path);
   }
-  if (draft) {
-    const status = String(filters[EDITING_STATUS]?.[0]?.values[0] ?? 'all');
-    const eq = (v: unknown): Condition[] => [{ operator: 'EQ' as Operator, values: [v] }];
-    out.IsActiveEntity = eq(true);
-    if (status === 'unchanged') out.HasDraftEntity = eq(false);
-    if (status === 'own') { out.HasDraftEntity = eq(true); out['DraftAdministrativeData/DraftIsCreatedByMe'] = eq(true); }
-    if (status === 'others') { out.HasDraftEntity = eq(true); out['DraftAdministrativeData/DraftIsCreatedByMe'] = eq(false); }
-  }
-  return { filters: out, ignored };
+  const hidden: FilterState = {};
+  for (const c of view?.conditions ?? []) (hidden[c.path] ??= []).push({ operator: c.operator as Operator, values: c.values, exclude: c.exclude || undefined });
+  const withView = withHiddenFilters(out, hidden);
+  if (draft) withView[EDIT_STATE] = [{ operator: 'EQ', values: [editStateOf(filters)] }];
+  return { filters: withView, ignored };
 }
 
-function viewConditions(v: ViewModel | undefined, paths: Set<string>): FilterState {
-  const out: FilterState = {};
-  for (const c of (v?.conditions ?? []).filter((x) => paths.has(x.path))) (out[c.path] ??= []).push({ operator: c.operator as Operator, values: c.values, exclude: c.exclude || undefined });
-  return out;
+/**
+ * Filter bar fields a set of views takes away (FE FilterBar.ts getExcludedFilterProperties): the properties of the
+ * views' selection variants that are not selection fields.
+ */
+export function viewExcludedPaths(views: ViewModel[], selectionFields: string[]): Set<string> {
+  return new Set(views.flatMap((v) => v.conditions.map((c) => c.path)).filter((path) => !selectionFields.includes(path)));
 }
 
 export function SmartListReport(props: SmartListReportProps) {
@@ -163,24 +163,14 @@ function ListReportInner(props: SmartListReportProps) {
   const { ui, set } = useMetaModel(p.entitySet, { service: p.service });
   const draft = Boolean(set.draft?.root);
 
-  // Multiple views: the views' filter fields are not offered in the filter bar (LR Multiple Views).
+  // Multiple views (LR Multiple Views, FE ListReportConverter / FilterBar.ts): each view's table applies the view's
+  // complete selection variant; the properties of the views' selection variants that are not selection fields leave
+  // the filter bar, which starts with the default selection variant as without views (checked against FE 1.154).
   const views = useMemo(() => (p.views ? ui.views.filter((v) => !p.views!.ids || p.views!.ids.includes(v.id)) : []), [p.views, ui.views]);
-  // View-defining fields: conditions that differ between the views (a condition shared by all views, such as a
-  // mandatory default, stays a normal filter field).
-  const viewPaths = useMemo(() => {
-    const all = new Set(views.flatMap((v) => v.conditions.map((c) => c.path)));
-    const sig = (v: ViewModel, path: string) => JSON.stringify(v.conditions.filter((c) => c.path === path));
-    return new Set([...all].filter((path) => views.some((v) => sig(v, path) !== sig(views[0]!, path))));
-  }, [views]);
-  const initialFilters = useMemo(() => {
-    if (!viewPaths.size) return undefined;
-    const filters: FilterState = {};
-    for (const c of ui.selectionVariant) if (!viewPaths.has(c.path)) (filters[c.path] ??= []).push({ operator: c.operator as Operator, values: c.values, exclude: c.exclude || undefined });
-    return { filters };
-  }, [viewPaths, ui.selectionVariant]);
+  const viewPaths = useMemo(() => viewExcludedPaths(views, ui.selectionFields), [views, ui.selectionFields]);
 
   // Execution on load waits for the variant list: a default variant decides whether to execute (LR-02, LR-15).
-  const filter = useFilterState(p.entitySet, { service: p.service, pageKey, liveMode: p.liveMode, autoExecute: false, initial: initialFilters });
+  const filter = useFilterState(p.entitySet, { service: p.service, pageKey, liveMode: p.liveMode, autoExecute: false });
   const [view, setView] = usePageState<{ columns?: string[]; sort?: SortItem[]; groupBy?: string | null; totals?: string[]; headerExpanded?: boolean; headerPinned?: boolean; tab?: string; chart?: boolean }>(`${pageKey}:view`, {});
   const columns = view.columns;
   const sort = view.sort ?? ui.presentation.sortOrder;
@@ -266,18 +256,18 @@ function ListReportInner(props: SmartListReportProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- once on mount
   }, []);
 
-  // Draft lists: "Editing Status" filter (LR Examples: draft handling enabled).
+  // Draft lists: "Editing Status" filter (FE sap.fe.macros.filterBar.DraftEditState, non-collaborative draft).
   const filterExtend = useMemo<ExtendEntry<FilterFieldItem>[] | undefined>(() => (draft ? [
     {
-      id: EDITING_STATUS, position: 'start',
+      id: EDIT_STATE, position: 'start',
       item: {
-        id: EDITING_STATUS, label: t('draft.editingStatus'),
+        id: EDIT_STATE, label: t('draft.editingStatus'),
         render: ({ conditions, onChange, label, id }) => (
           <Select
             id={id} label={label} allowDeselect={false} data-sk-editing-status
-            value={String(conditions[0]?.values[0] ?? 'all')}
-            data={(['all', 'own', 'others', 'unchanged'] as const).map((v) => ({ value: v, label: t(`draft.status.${v}`) }))}
-            onChange={(v) => onChange(!v || v === 'all' ? [] : [{ operator: 'EQ', values: [v] }])}
+            value={editStateOf({ [EDIT_STATE]: conditions }) || 'ALL'}
+            data={DRAFT_EDIT_STATES.map((v) => ({ value: v || 'ALL', label: t(`draft.editState.${v || 'ALL'}`) }))}
+            onChange={(v) => onChange(!v || v === 'ALL' ? [] : [{ operator: 'EQ', values: [v] }])}
           />
         ),
       },
@@ -291,8 +281,8 @@ function ListReportInner(props: SmartListReportProps) {
     const typeName = model.entitySets[entitySet]!.typeName;
     const caps = model.entitySets[entitySet]!.capabilities;
     const applies = (path: string) => Boolean(model.entityTypes[typeName]!.properties[path.split('/')[0]!] || model.entityTypes[typeName]!.navigations[path.split('/')[0]!]) && isFilterable(caps, path);
-    const r = tableFilters(filter.applied.filters, applies, Boolean(model.entitySets[entitySet]!.draft?.root));
-    return { query: { filters: { ...r.filters, ...viewConditions(v, viewPaths) }, search: filter.applied.search }, ignored: r.ignored };
+    const r = tableFilters(filter.applied.filters, applies, Boolean(model.entitySets[entitySet]!.draft?.root), v);
+    return { query: { filters: r.filters, search: filter.applied.search }, ignored: r.ignored };
   };
 
   // Host refresh (refreshToken): counts the changes, so the first value does not reload.
@@ -396,7 +386,7 @@ function ListReportInner(props: SmartListReportProps) {
           };
           return tableType === 'TreeTable'
             ? <TreeTable key={`${key}:${responsive ? 'r' : 'g'}`} ref={tableRef} {...common} responsive={responsive} hierarchyQualifier={p.hierarchyQualifier} />
-            : <Table key={`${key}:${responsive ? 'r' : 'g'}`} ref={tableRef} {...common} type={responsive ? 'ResponsiveTable' : undefined} />;
+            : <Table key={`${key}:${responsive ? 'r' : 'g'}`} ref={tableRef} {...common} type={responsive ? 'ResponsiveTable' : tableType === 'AnalyticalTable' ? 'AnalyticalTable' : undefined} />;
         })()}
       </>
     );
@@ -442,7 +432,7 @@ function ListReportInner(props: SmartListReportProps) {
             heading={<VariantManagement variants={variants} content={content} onSelect={apply} standardName={p.title} supportApplyAutomatically={!p.liveMode} creationAllowed={p.canSaveVariants} />}
             snappedTitleOnMobile={p.title ?? ui.headerInfo.typeNamePlural}
             actions={p.headerActions || share ? <Group gap="xs" wrap="nowrap">{p.headerActions}{share}</Group> : undefined}
-            snappedContent={<FilterSummary entitySet={p.entitySet} service={p.service} filters={Object.fromEntries(Object.entries(filter.filters).filter(([k]) => k !== EDITING_STATUS))} search={filter.search} />}
+            snappedContent={<FilterSummary entitySet={p.entitySet} service={p.service} filters={Object.fromEntries(Object.entries(filter.filters).filter(([k]) => k !== EDIT_STATE))} search={filter.search} />}
             onStateChange={(e) => setHeaderExpanded(e.isExpanded)}
           />
         )}

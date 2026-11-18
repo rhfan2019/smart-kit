@@ -145,6 +145,14 @@ describe('deviation register and baseline', () => {
     expect(toMarkdown('s', { requests: [], structure: structure(), text: [] }, { requests: [], structure: structure(), text: [] }, c)).toContain('| **unregistered** | structure | actions |');
   });
 
+  it('AL-08 an fe:* entry applies to every scenario and is never reported unused', () => {
+    const diffs = diffStructure(structure({ columns: ['A'], actions: ['X'] }), structure());
+    const c = checkAgainstRegister('s', diffs, [dev({ module: 'fe:*' }), dev({ module: 'fe:*', member: 'actions' }), dev({ module: 'fe:*', member: 'viewTabs' })]);
+    expect(c.registered.map((r) => r.diff.member).sort()).toEqual(['actions', 'columns']);
+    expect(c.unregistered).toEqual([]);
+    expect(c.unused).toEqual([]);
+  });
+
   it('writes one baseline entry per kind and member with a plan stage, and replaces only its scenario', () => {
     const diffs = [
       ...diffStructure(structure({ editingStatus: ['All'], columns: ['A'] }), structure()),

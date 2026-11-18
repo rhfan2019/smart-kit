@@ -328,6 +328,7 @@ export class SqlBuilder {
         case 'max': return sql`max(${c})`;
         case 'average': return sql`avg(${c})`;
         case 'countdistinct': return sql`count(distinct ${c})`;
+        case 'unit': return sql`case when count(distinct ${c}) = 1 then min(${c}) end`;
       }
     });
     const cols: Sql[] = [

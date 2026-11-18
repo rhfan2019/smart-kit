@@ -297,9 +297,15 @@ export interface Checked {
   unused: FeDeviation[];
 }
 
-/** A difference passes only when an entry with the same module, kind and member is registered. */
+/**
+ * A difference passes only when an entry with the same module, kind and member is registered. Entries with module
+ * `fe:*` apply to every scenario: one entry per known cause (page size, fixed-value preload…) instead of one per
+ * scenario, so that the fe-behavior count stays the number of distinct differences (AL-08).
+ */
 export function checkAgainstRegister(scenario: string, diffs: Diff[], deviations: FeDeviation[]): Checked {
-  const mine = deviations.filter((d) => d.module === moduleOf(scenario));
+  const own = deviations.filter((d) => d.module === moduleOf(scenario));
+  const shared = deviations.filter((d) => d.module === 'fe:*');
+  const mine = [...own, ...shared];
   const registered: Checked['registered'] = [];
   const unregistered: Diff[] = [];
   const used = new Set<FeDeviation>();
@@ -310,7 +316,7 @@ export function checkAgainstRegister(scenario: string, diffs: Diff[], deviations
       used.add(deviation);
     } else unregistered.push(diff);
   }
-  return { registered, unregistered, unused: mine.filter((d) => !used.has(d)) };
+  return { registered, unregistered, unused: own.filter((d) => !used.has(d)) };
 }
 
 /**

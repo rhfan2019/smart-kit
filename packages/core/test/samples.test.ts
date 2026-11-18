@@ -33,6 +33,7 @@ describe('test service samples (AC-MOD-01, AC-MOD-03)', () => {
     const ui = nw.ui['NorthwindLike.Product']!;
     expect(ui.derived).toEqual({ lineItem: true, selectionFields: true, headerInfo: true, sections: true });
     expect(ui.lineItem.length).toBeGreaterThan(2);
-    expect(nw.entitySets.Products!.capabilities.searchable).toBe(false);
+    // AL-10 P1-7: without Capabilities.SearchRestrictions the set is searchable (FE, D34)
+    expect(nw.entitySets.Products!.capabilities.searchable).toBe(true);
   });
 });

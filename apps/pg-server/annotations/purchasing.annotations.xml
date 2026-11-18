@@ -1892,6 +1892,12 @@
         <Annotation Term="Common.Label" String="{{label:F.ModifiedAt}}"/>
         <Annotation Term="Core.Computed" Bool="true"/>
       </Annotations>
+      <!-- D39 / docs/29 §4 P1-2: NetAmount is a custom aggregate (qualifier = property name, value = its type), as in the
+           test service (apps/mock): analytical tables total it, charts and KPIs request aggregate(NetAmount);
+           smart-kit-server sums it (packages/server/docs/README.md, "Custom aggregates") -->
+      <Annotations Target="Purchasing.PurchaseOrder">
+        <Annotation Term="Aggregation.CustomAggregate" Qualifier="NetAmount" String="Edm.Decimal"/>
+      </Annotations>
     </Schema>
   </edmx:DataServices>
 </edmx:Edmx>

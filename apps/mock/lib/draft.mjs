@@ -16,10 +16,13 @@ function insertAfterAnchor(xml, anchor, marker, text) {
   return xml.slice(0, m) + text + xml.slice(m);
 }
 
-const DRAFT_PROPS = `        <Property Name="IsActiveEntity" Type="Edm.Boolean" Nullable="false" DefaultValue="true"/>
+// SiblingEntity: the other version of the instance (the own draft of an active instance, the active instance of a
+// draft), as RAP and CAP declare it; sap.fe filters the editing status by SiblingEntity/IsActiveEntity.
+const draftProps = (type) => `        <Property Name="IsActiveEntity" Type="Edm.Boolean" Nullable="false" DefaultValue="true"/>
         <Property Name="HasActiveEntity" Type="Edm.Boolean" Nullable="false" DefaultValue="false"/>
         <Property Name="HasDraftEntity" Type="Edm.Boolean" Nullable="false" DefaultValue="false"/>
         <NavigationProperty Name="DraftAdministrativeData" Type="Purchasing.DraftAdministrativeData"/>
+        <NavigationProperty Name="SiblingEntity" Type="Purchasing.${type}"/>
 `;
 
 const ADMIN_PROPS = [
@@ -104,13 +107,13 @@ export function toDraftTemplate(template) {
   for (const type of ['PurchaseOrder', 'PurchaseOrderItem']) {
     const anchor = `<EntityType Name="${type}">`;
     x = insertAfterAnchor(x, anchor, '</Key>', '<PropertyRef Name="IsActiveEntity"/>');
-    x = insertAfterAnchor(x, anchor, '      </EntityType>', DRAFT_PROPS);
+    x = insertAfterAnchor(x, anchor, '      </EntityType>', draftProps(type));
   }
   x = x.replace('      <!-- =========================================================== bound actions', `${ADMIN_TYPE}${DRAFT_ACTION_XML}      <!-- =========================================================== bound actions`);
   if (!x.includes('Name="DraftAdministrativeData">')) throw new Error('[mock] draft transform: actions anchor not found');
   // container: entity set and navigation bindings
-  x = insertAfterAnchor(x, '<EntitySet Name="PurchaseOrders"', '        </EntitySet>', '          <NavigationPropertyBinding Path="DraftAdministrativeData" Target="DraftAdministrativeData"/>\n');
-  x = insertAfterAnchor(x, '<EntitySet Name="PurchaseOrderItems"', '        </EntitySet>', '          <NavigationPropertyBinding Path="DraftAdministrativeData" Target="DraftAdministrativeData"/>\n');
+  x = insertAfterAnchor(x, '<EntitySet Name="PurchaseOrders"', '        </EntitySet>', '          <NavigationPropertyBinding Path="DraftAdministrativeData" Target="DraftAdministrativeData"/>\n          <NavigationPropertyBinding Path="SiblingEntity" Target="PurchaseOrders"/>\n');
+  x = insertAfterAnchor(x, '<EntitySet Name="PurchaseOrderItems"', '        </EntitySet>', '          <NavigationPropertyBinding Path="DraftAdministrativeData" Target="DraftAdministrativeData"/>\n          <NavigationPropertyBinding Path="SiblingEntity" Target="PurchaseOrderItems"/>\n');
   x = insertAfterAnchor(x, '<EntitySet Name="Variants"', '\n', '\n        <EntitySet Name="DraftAdministrativeData" EntityType="Purchasing.DraftAdministrativeData"/>');
   // DraftRoot / DraftNode on the entity sets
   x = insertAfterAnchor(x, '<Annotations Target="Purchasing.Container/PurchaseOrders">', '      </Annotations>', DRAFT_ROOT);
@@ -123,6 +126,30 @@ ${draftPropertyAnnotations('PurchaseOrder')}${draftPropertyAnnotations('Purchase
       <!-- =========================================================== Variant`,
   );
   return x;
+}
+
+// ------------------------------------------------------------------ query semantics
+
+/**
+ * Draft filter semantics of RAP and CAP that @sap-ux/fe-mockserver-core does not have, for the engine's
+ * DraftMockEntitySet.checkSpecificProperties (null = let the engine evaluate):
+ * - a draft is visible to its owner only: `IsActiveEntity eq false` matches the user's own drafts, not the
+ *   draft another user is editing (DraftIsCreatedByMe false);
+ * - `SiblingEntity/IsActiveEntity eq null`: an active instance without an own draft (another user's draft is not
+ *   its sibling for this user), or a new draft without an active instance (HasActiveEntity false). The engine only
+ *   checks whether any draft with the same key exists.
+ * `others(row)` returns the other versions of the row (same key apart from IsActiveEntity).
+ */
+export function draftFilterCheck(expr, row, others) {
+  const id = expr.identifier;
+  if (id === 'IsActiveEntity' && expr.operator === 'eq' && expr.literal === 'false') return row.IsActiveEntity === false && row.DraftAdministrativeData?.DraftIsCreatedByMe !== false;
+  if (id === 'SiblingEntity/IsActiveEntity' && expr.literal === 'null' && (expr.operator === 'eq' || expr.operator === 'ne')) {
+    const none = row.IsActiveEntity === false
+      ? !row.HasActiveEntity
+      : !others(row).some((r) => r.IsActiveEntity === false && r.DraftAdministrativeData?.DraftIsCreatedByMe !== false);
+    return expr.operator === 'eq' ? none : !none;
+  }
+  return null;
 }
 
 // ------------------------------------------------------------------ data

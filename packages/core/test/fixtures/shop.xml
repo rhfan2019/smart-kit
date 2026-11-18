@@ -368,6 +368,7 @@
       </Annotations>
       <Annotations Target="Shop.Container/Reviews">
         <Annotation Term="Capabilities.CountRestrictions"><Record><PropertyValue Property="Countable" Bool="false"/></Record></Annotation>
+        <Annotation Term="Capabilities.SearchRestrictions"><Record><PropertyValue Property="Searchable" Bool="false"/></Record></Annotation>
       </Annotations>
     </Schema>
   </edmx:DataServices>

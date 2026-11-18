@@ -42,8 +42,11 @@ export interface ExpandItem {
   options: QueryOptions;
 }
 
-/** `count` is `$count as alias` (rows of the group; `path` is empty). */
-export type AggregateMethod = 'sum' | 'min' | 'max' | 'average' | 'countdistinct' | 'count';
+/**
+ * `count` is `$count as alias` (rows of the group; `path` is empty). `unit` is the unit (currency) of a custom
+ * aggregate named in the same aggregate(): its value when all rows of the group have the same one, else null.
+ */
+export type AggregateMethod = 'sum' | 'min' | 'max' | 'average' | 'countdistinct' | 'count' | 'unit';
 
 /** One step of $apply (OData Data Aggregation). Only the steps smart-kit sends (ADR-021). */
 export type ApplyStep =
@@ -54,8 +57,11 @@ export type ApplyStep =
 
 export interface AggregateItem {
   path: string[];
-  method: AggregateMethod;
+  /** Absent for a custom aggregate (`aggregate(Name)`): the planner takes the method of its declaration. */
+  method?: AggregateMethod;
   alias: string;
+  /** `aggregate(Name)` without `with`: a custom aggregate (Aggregation.CustomAggregate with qualifier Name). */
+  custom?: true;
 }
 
 /** System query options of one request or one $expand item. */

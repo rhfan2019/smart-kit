@@ -1048,6 +1048,15 @@
         </Annotation>
       </Annotations>
 
+      <Annotations Target="Purchasing.PurchaseOrder">
+        <Annotation Term="Aggregation.CustomAggregate" Qualifier="NetAmount" String="Edm.Decimal"/>
+        <Annotation Term="UI.PresentationVariant" Qualifier="ByStatusChart">
+          <Record Type="UI.PresentationVariantType">
+            <PropertyValue Property="Text" String="Net Amount by Status"/>
+            <PropertyValue Property="Visualizations"><Collection><AnnotationPath>@UI.Chart#ByStatus</AnnotationPath></Collection></PropertyValue>
+          </Record>
+        </Annotation>
+      </Annotations>
       <Annotations Target="Purchasing.PurchaseOrder/PurchaseOrder">
         <Annotation Term="Common.Label" String="Purchase Order"/>
       </Annotations>

@@ -20,7 +20,7 @@ import { convert } from '@sap-ux/annotation-converter';
 import { parse } from '@sap-ux/edmx-parser';
 import { applyLabels, csdlXmlToJson, stripComments } from './lib/csdl.mjs';
 import { initialData, resetData } from './lib/datasets.mjs';
-import { DRAFT_ACTIONS, toDraftTemplate } from './lib/draft.mjs';
+import { DRAFT_ACTIONS, draftFilterCheck, toDraftTemplate } from './lib/draft.mjs';
 import { encodeFilterLiterals, searchTerm, searchToFilter } from './lib/filter.mjs';
 import { SEVERITY, errorBody, text } from './lib/messages.mjs';
 import { ZH_TEXTS } from './lib/purchasing.mjs';
@@ -33,8 +33,16 @@ const FEMockserver = feMockserver.default ?? feMockserver;
 // like any other path into the inline DraftAdministrativeData.
 const { DraftMockEntitySet } = createRequire(import.meta.url)('@sap-ux/fe-mockserver-core/dist/data/entitySets/draftEntitySet.js');
 const engineSpecific = DraftMockEntitySet.prototype.checkSpecificProperties;
-DraftMockEntitySet.prototype.checkSpecificProperties = function (expr, ...rest) {
-  return expr.identifier === 'DraftAdministrativeData/InProcessByUser' ? null : engineSpecific.call(this, expr, ...rest);
+// The draft visibility and SiblingEntity semantics of RAP / CAP come from lib/draft.mjs (draftFilterCheck).
+DraftMockEntitySet.prototype.checkSpecificProperties = function (expr, row, allData, ...rest) {
+  const keys = this.entityTypeDefinition.keys.map((k) => k.name).filter((k) => k !== 'IsActiveEntity');
+  const others = (r) => {
+    const i = allData.getDataIndex({ ...Object.fromEntries(keys.map((k) => [k, r[k]])), IsActiveEntity: r.IsActiveEntity === false }, ...rest);
+    return i >= 0 ? [allData._mockData[i]] : [];
+  };
+  const draftCheck = draftFilterCheck(expr, row, others);
+  if (draftCheck !== null) return draftCheck;
+  return expr.identifier === 'DraftAdministrativeData/InProcessByUser' ? null : engineSpecific.call(this, expr, row, allData, ...rest);
 };
 // Memory: the engine's MockDataEntitySet.getProperty memoizes resolved properties but not misses. Every $filter
 // literal ("'1000'") is looked up as a property for every row it checks; each miss goes through the annotation
@@ -49,6 +57,25 @@ DraftMockEntitySet.prototype.checkSpecificProperties = function (expr, ...rest) 
     const found = getProperty.call(this, identifier);
     if (found === undefined) this.__skMisses.add(identifier);
     return found;
+  };
+}
+// D39 (totals): `aggregate(NetAmount,Currency)` aggregates the unit of a measure as OData services do (and as Fiori
+// elements expects): the unit when all rows have the same one, else null. The engine does this only for properties
+// with Common.IsCurrency; treat every Measures.ISOCurrency / Measures.Unit target of the type the same way.
+{
+  const { DataAccess } = createRequire(import.meta.url)('@sap-ux/fe-mockserver-core/dist/data/dataAccess.js');
+  const applyGroupBy = DataAccess.prototype._applyGroupBy;
+  DataAccess.prototype._applyGroupBy = function (data, applyDefinition, odataRequest, mockData, entityType, ...rest) {
+    if (entityType && !entityType.__skUnits) {
+      entityType.__skUnits = true;
+      const units = new Set(entityType.entityProperties.map((p) => (p.annotations?.Measures?.ISOCurrency ?? p.annotations?.Measures?.Unit)?.path).filter(Boolean));
+      for (const p of entityType.entityProperties) {
+        if (!units.has(p.name) || p.annotations?.Common?.IsCurrency !== undefined) continue;
+        p.annotations.Common ??= {};
+        p.annotations.Common.IsCurrency = true;
+      }
+    }
+    return applyGroupBy.call(this, data, applyDefinition, odataRequest, mockData, entityType, ...rest);
   };
 }
 const root = dirname(fileURLToPath(import.meta.url));
@@ -96,7 +123,9 @@ for (const svc of Object.keys(metadataDocs)) {
       type: es.entityType,
       keys: es.entityType.keys.map((k) => ({ name: k.name, type: k.type })),
       bindings: Object.fromEntries(Object.entries(es.navigationPropertyBinding ?? {}).map(([k, v]) => [k, v.name])),
-      searchable: caps.SearchRestrictions?.Searchable?.valueOf() === true,
+      // Capabilities vocabulary: Searchable defaults to true (as FE reads it, docs/29 §4 P1-7)
+      searchable: caps.SearchRestrictions?.Searchable?.valueOf() !== false,
+      stringFields: es.entityType.entityProperties.filter((p) => p.type === 'Edm.String').map((p) => p.name),
       countable: caps.CountRestrictions?.Countable?.valueOf() !== false,
       filterable: caps.FilterRestrictions?.Filterable?.valueOf() !== false,
       nonFilterable: paths(caps.FilterRestrictions, 'NonFilterableProperties'),
@@ -233,7 +262,7 @@ function checkCapabilities(svc, target, params) {
   const set = services[svc].sets[target.set];
   const search = params.get('$search');
   if (search !== null && !set.searchable)
-    return ['SearchNotSupported', `Entity set '${target.set}' does not support $search (Capabilities.SearchRestrictions/Searchable is not true).`];
+    return ['SearchNotSupported', `Entity set '${target.set}' does not support $search (Capabilities.SearchRestrictions/Searchable is false).`];
   if ((target.count || params.get('$count') === 'true') && !set.countable)
     return ['CountNotSupported', `Entity set '${target.set}' is not countable (Capabilities.CountRestrictions/Countable is false).`];
   const filter = params.get('$filter');
@@ -271,7 +300,9 @@ function rewriteQuery(svc, target, params) {
   const search = params.get('$search');
   let filter = params.get('$filter');
   if (search !== null && search.trim() !== '') {
-    const conf = SEARCH[svc]?.[target.set];
+    // sets without configured search fields (e.g. northwind) search their string properties
+    const strings = services[svc].sets[target.set].stringFields;
+    const conf = SEARCH[svc]?.[target.set] ?? (strings.length ? { fields: strings } : undefined);
     const fragment = conf ? searchToFilter(search, (t) => searchTerm(t, conf.fields, conf.lookups)) : 'false';
     filter = filter ? `(${filter}) and ${fragment}` : fragment;
   }

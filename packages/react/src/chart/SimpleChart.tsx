@@ -1,5 +1,6 @@
 /**
- * SimpleChart: the list report chart view (ADR-021): one dimension, one measure, column or bar, inline SVG.
+ * SimpleChart: the list report chart view (ADR-021): column or bar, inline SVG; several measures (or series) are drawn
+ * as grouped bars with a legend (`series`, docs/29 §4 P1-3).
  * Analytical cards (docs/20) also use "line" (the column layout with a line through the points) and "donut".
  * Bars are buttons with a roving tab stop (Tab enters at the selected or first bar, arrow keys move, Enter / Space select).
  */
@@ -7,7 +8,19 @@ import { Skeleton, VisuallyHidden } from '@mantine/core';
 import { useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { useSmartKit } from '../context/SmartKitProvider';
 
-export interface ChartDatum { key: string; label: string; value: number; formatted?: string }
+export interface ChartDatum {
+  key: string;
+  label: string;
+  /** Value of the first series. */
+  value: number;
+  formatted?: string;
+  /** With `series`: one value per series (undefined: no value), and their display texts. */
+  values?: (number | undefined)[];
+  formattedValues?: (string | undefined)[];
+}
+
+/** A series of a grouped chart (a measure, or a measure and the values of the series dimensions). */
+export interface ChartSeries { key: string; label: string }
 
 export interface SimpleChartProps {
   kind: 'column' | 'bar' | 'line' | 'donut';
@@ -28,6 +41,8 @@ export interface SimpleChartProps {
   selectedKeys?: readonly string[];
   /** Height in pixels (default 320). */
   height?: number;
+  /** Column and bar charts: several series per category (grouped bars, legend); each datum then has `values`. */
+  series?: ChartSeries[];
 }
 
 /** Width used until the container has been measured (and in environments without layout). */
@@ -78,7 +93,10 @@ export function SimpleChart(p: SimpleChartProps) {
   const [ref, width] = useWidth();
   const numberFormat = useMemo(() => new Intl.NumberFormat(intlLocale, { maximumFractionDigits: 2 }), [intlLocale]);
   const fmt = p.format ?? ((n: number) => numberFormat.format(n));
-  const data = useMemo(() => p.data.filter((d) => Number.isFinite(d.value)), [p.data]);
+  const grouped = (p.kind === 'column' || p.kind === 'bar') && (p.series?.length ?? 0) > 1;
+  const seriesCount = grouped ? p.series!.length : 1;
+  const valuesOf = (d: ChartDatum): (number | undefined)[] => (grouped ? p.series!.map((_, i) => d.values?.[i]) : [d.value]);
+  const data = useMemo(() => p.data.filter((d) => (grouped ? (d.values ?? []).some((v) => Number.isFinite(v)) : Number.isFinite(d.value))), [p.data, grouped]);
   const isSelected = (key: string) => key === p.selectedKey || Boolean(p.selectedKeys?.includes(key));
   const selectedIndex = data.findIndex((d) => isSelected(d.key));
   const [active, setActive] = useState(-1);
@@ -110,7 +128,8 @@ export function SimpleChart(p: SimpleChartProps) {
 
   if (p.kind === 'donut') return <DonutChart {...p} data={data} width={width} height={height} chartRef={ref} header={header} caption={caption} fmt={fmt} />;
 
-  const ticks = niceTicks(Math.min(...data.map((d) => d.value)), Math.max(...data.map((d) => d.value)));
+  const all = data.flatMap((d) => valuesOf(d).filter((v): v is number => Number.isFinite(v)));
+  const ticks = niceTicks(Math.min(...all), Math.max(...all));
   const lo = ticks[0]!;
   const hi = ticks[ticks.length - 1]!;
   const tickLabels = ticks.map(fmt);
@@ -151,8 +170,11 @@ export function SimpleChart(p: SimpleChartProps) {
     }
   };
   const interactive = !!p.onSelect;
+  const pointText = (d: ChartDatum) => (grouped
+    ? p.series!.map((s, k) => `${s.label} ${d.formattedValues?.[k] ?? (d.values?.[k] === undefined ? '' : fmt(d.values[k]!))}`.trim()).join(t('chart.listSeparator'))
+    : valueText(d));
   const rootLabel = interactive ? caption : t('chart.series', {
-    label: caption, points: data.map((d) => t('chart.seriesItem', { name: d.label, value: valueText(d) })).join(t('chart.listSeparator')),
+    label: caption, points: data.map((d) => t('chart.seriesItem', { name: d.label, value: pointText(d) })).join(t('chart.listSeparator')),
   });
 
   return (
@@ -201,13 +223,19 @@ export function SimpleChart(p: SimpleChartProps) {
         )}
         {data.map((d, i) => {
           const a = pos(d.value);
-          const thick = Math.min(band * 0.7, 64);
+          const thick = Math.min(band * 0.7, 64 * seriesCount);
           const offset = band * i + (band - thick) / 2;
-          const rect = vertical
-            ? { x: left + offset, y: top + plotH - Math.max(a, zero), width: thick, height: Math.max(Math.abs(a - zero), 1) }
-            : { x: left + Math.min(a, zero), y: top + offset, width: Math.max(Math.abs(a - zero), 1), height: thick };
+          const rectOf = (v: number, k: number, n: number) => {
+            const b = pos(v);
+            const w = thick / n;
+            const o = offset + w * k;
+            return vertical
+              ? { x: left + o, y: top + plotH - Math.max(b, zero), width: w, height: Math.max(Math.abs(b - zero), 1) }
+              : { x: left + Math.min(b, zero), y: top + o, width: Math.max(Math.abs(b - zero), 1), height: w };
+          };
+          const rect = rectOf(d.value, 0, 1);
           const selected = isSelected(d.key);
-          const label = t('chart.point', { dimension: p.dimensionLabel, label: d.label, value: valueText(d) });
+          const label = t('chart.point', { dimension: p.dimensionLabel, label: d.label, value: pointText(d) });
           return (
             <g
               key={d.key}
@@ -219,11 +247,19 @@ export function SimpleChart(p: SimpleChartProps) {
                 : { 'aria-hidden': true })}
             >
               <title>{label}</title>
-              {line ? <circle cx={left + band * i + band / 2} cy={top + plotH - a} r={MARKER} /> : <rect {...rect} />}
+              {line ? <circle cx={left + band * i + band / 2} cy={top + plotH - a} r={MARKER} />
+                : grouped ? valuesOf(d).map((v, k) => (v === undefined || !Number.isFinite(v) ? null
+                  : <rect key={p.series![k]!.key} className={`sk-chart--palette-${(k % 11) + 1}`} data-sk-chart-series={p.series![k]!.key} data-sk-chart-value={v} {...rectOf(v, k, seriesCount)} />))
+                  : <rect data-sk-chart-value={d.value} {...rect} />}
             </g>
           );
         })}
       </svg>
+      {grouped ? (
+        <ul className="sk-chart__legend sk-chart__legend--series" aria-hidden>
+          {p.series!.map((s, k) => <li key={s.key} data-sk-chart-legend={s.key}><span className={`sk-chart__swatch sk-chart--palette-${(k % 11) + 1}`} />{s.label}</li>)}
+        </ul>
+      ) : null}
     </div>
   );
 }

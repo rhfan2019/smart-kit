@@ -361,13 +361,13 @@ test.describe('list report: purchase orders', () => {
 });
 
 test.describe('capabilities and query shapes', () => {
-  test('AC-DATA-07 capability restrictions: no search box, no $count, no non-sortable sort', async ({ page }) => {
+  test('AC-DATA-07 capability restrictions: search box by default, no $count, no non-sortable sort', async ({ page }) => {
     const rec = recordOData(page);
-    // northwind declares nothing: Searchable defaults to false
+    // northwind declares nothing: Searchable defaults to true (vocabulary and FE, docs/29 §4 P1-7, D34)
     await open(page, '/nw/products');
     await waitForRows(page, 'Products');
     await showFilters(page);
-    await expect(page.locator('[data-sk-filter="$search"]')).toHaveCount(0);
+    await expect(page.locator('[data-sk-filter="$search"]')).toHaveCount(1);
     // purchasing: Description is not sortable, Notes not filterable
     await open(page, MANUAL);
     await waitForRows(page, 'PurchaseOrders');
@@ -381,7 +381,6 @@ test.describe('capabilities and query shapes', () => {
     await page.locator('[data-sk-anchor="History"]').click();
     await expect.poll(() => rec.urls.some((u) => u.includes('/_History?'))).toBe(true);
     expect(rec.urls.filter((u) => u.includes('/_History?')).every((u) => !u.includes('$count'))).toBe(true);
-    expect(rec.urls.filter((u) => u.includes('$search')).every((u) => !u.includes('northwind'))).toBe(true);
   });
 
   test('AC-DATA-08 query shapes match the reference rules (docs/query-shapes.md)', async ({ page }) => {

@@ -129,6 +129,11 @@ describe('query options', () => {
       { kind: 'groupby', paths: [['Status']], aggregates: [{ path: [], method: 'count', alias: 'N' }, { path: ['NetAmount'], method: 'sum', alias: 'S' }] },
     ]);
     fails(() => parseQueryOptions('$apply=groupby((Status),aggregate($count with N))'), 400);
+    // D39: a custom aggregate by its name, without "with" (OData Data Aggregation §3.1.3)
+    expect(parseQueryOptions('$apply=groupby((Currency),aggregate(NetAmount,$count as N))').apply).toEqual([
+      { kind: 'groupby', paths: [['Currency']], aggregates: [{ path: ['NetAmount'], alias: 'NetAmount', custom: true }, { path: [], method: 'count', alias: 'N' }] },
+    ]);
+    fails(() => parseQueryOptions('$apply=aggregate(NetAmount with sum)'), 400);
     fails(() => parseQueryOptions('$apply=topcount(3,NetAmount)'), 501);
     fails(() => parseQueryOptions('$apply=groupby((A),aggregate(B with median as M))'), 501);
   });

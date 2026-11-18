@@ -78,6 +78,13 @@ const SHAPES: [name: string, path: string][] = [
   ['grand totals by currency', "PurchaseOrders?$apply=filter(CompanyCode eq '1000')/groupby((Currency),aggregate(NetAmount with sum as NetAmount))&$orderby=Currency"],
   ['group subtotals with $count', "PurchaseOrders?$apply=filter((Supplier eq '0000100001' or Supplier eq '0000100007'))/groupby((Supplier,_Supplier/SupplierName,Currency),aggregate(NetAmount with sum as NetAmount,$count as smartkit_count))&$orderby=Supplier,Currency"],
   ['chart of a child collection', "PurchaseOrders('4500000001')/_Item?$apply=groupby((Plant),aggregate(NetAmount with sum as NetAmount))&$orderby=Plant"],
+  // D39: totals of the analytical table request the custom aggregate by its name
+  ['custom aggregate totals by currency', "PurchaseOrders?$apply=filter(CompanyCode eq '1000')/groupby((Currency),aggregate(NetAmount))&$orderby=Currency"],
+  ['custom aggregate subtotals with $count', "PurchaseOrders?$apply=filter((Supplier eq '0000100001' or Supplier eq '0000100007'))/groupby((Supplier,_Supplier/SupplierName,Currency),aggregate(NetAmount,$count as smartkit_count))&$orderby=Supplier,Currency"],
+  // D39: the unit with the measure, as FE (the currency when all rows share it, else null)
+  ['custom aggregate with its unit, grand total', "PurchaseOrders?$apply=filter(CompanyCode eq '1000' and Status eq 'NEW')/aggregate(NetAmount,Currency)"],
+  ['custom aggregate with its unit, subtotals', "PurchaseOrders?$apply=filter((Supplier eq '0000100001' or Supplier eq '0000100007'))/groupby((Supplier,_Supplier/SupplierName),aggregate(NetAmount,Currency,$count as smartkit_count))&$orderby=Supplier"],
+  ['custom aggregate per unit (Show Details)', "PurchaseOrders?$apply=filter(CompanyCode eq '1000')/groupby((Currency),aggregate(NetAmount))&$orderby=Currency"],
   // micro chart series: a collection expand with $select / $orderby (the mock ignores a nested $top, so none here)
   ['micro chart series', "PurchaseOrderItems(PurchaseOrder='4500000003',PurchaseOrderItem=10)?$select=PurchaseOrder,PurchaseOrderItem,OrderQuantity&$expand=_History($select=HistoryCounter,PostingDate,Quantity;$orderby=PostingDate)"],
   // (A list with a collection expand per row is left out: the mock takes ~45 s for it, PostgreSQL ~20 ms.)

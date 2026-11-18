@@ -6,12 +6,12 @@
 
 | Category | Count |
 | --- | --- |
-| fe-behavior | 32 |
+| fe-behavior | 28 |
 | kit-extension | 187 |
 | no-binding | 13 |
 | not-implemented | 119 |
 | react-idiom | 75 |
-| **total** | **426** |
+| **total** | **422** |
 
 ## not-implemented + fe-behavior by planned stage
 
@@ -19,7 +19,7 @@
 | --- | --- |
 | 3 | 8 |
 | 4 | 16 |
-| 5 | 25 |
+| 5 | 21 |
 | 6 | 102 |
 
 ## Per export

@@ -70,7 +70,7 @@ const INTEGER = /^Edm\.(Byte|SByte|Int16|Int32|Int64)$/;
  * Formats a property value for display (without unit, text or criticality decoration).
  * `unitCode` is the resolved currency code of amounts (drives fraction digits).
  */
-export function formatValue(value: unknown, prop: Pick<PropertyModel, 'edmType' | 'scale' | 'isCurrency' | 'isDigitSequence'>, o: FormatOptions & { unitCode?: string }): string {
+export function formatValue(value: unknown, prop: Pick<PropertyModel, 'edmType' | 'scale' | 'isCurrency' | 'isDigitSequence'> & Partial<Pick<PropertyModel, 'maxLength'>>, o: FormatOptions & { unitCode?: string }): string {
   if (value === null || value === undefined) return '';
   switch (prop.edmType) {
     case 'Edm.Decimal': {
@@ -89,7 +89,13 @@ export function formatValue(value: unknown, prop: Pick<PropertyModel, 'edmType' 
     case 'Edm.TimeOfDay':
       return formatTime(value, o.locale);
     case 'Edm.String':
-      return prop.isDigitSequence ? String(value).replace(/^0+(?=\d)/, '') : String(value);
+      // Common.IsDigitSequence (sap.ui.model.odata.type.String formatValue): digits only lose their leading zeros;
+      // with a MaxLength (ABAP NUMC) the value 0 is shown empty.
+      if (prop.isDigitSequence && /^\d+$/.test(String(value))) {
+        const v = String(value).replace(/^0*(?=\d)/, '');
+        return prop.maxLength && v === '0' ? '' : v;
+      }
+      return String(value);
     default:
       if (INTEGER.test(prop.edmType)) return formatNumber(value, o.locale, { max: 0 });
       return String(value);

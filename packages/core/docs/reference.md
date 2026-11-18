@@ -5,7 +5,7 @@
 
 ## `@rhfan2019/smart-kit-core`
 
-`ActionModel` (interface) · `activeFilterPaths` (function) · `AggregateRequestOptions` (interface) · `AggregationModel` (interface) · `arrangeText` (function) · `buildAggregateRequest` (function) · `buildHierarchyRequest` (function) · `buildListRequest` (function) · `buildModel` (function) · `BuildModelOptions` (interface) · `buildObjectRequest` (function) · `buildTotalsRequest` (function) · `buildValueHelpRequest` (function) · `calculateCriticality` (function) · `calculateTrend` (function) · `canGroup` (function) · `canSubtotal` (function) · `canTotal` (function) · `capabilitiesFor` (function) · `CapabilityModel` (interface) · `chartExpand` (function) · `chartFields` (function) · `chartIsSeries` (function) · `ChartModel` (interface) · `chartSeriesSelect` (function) · `childPathOf` (function) · `collectTotals` (function) · `ColumnModel` (type) · `companionPaths` (function) · `compareDecimal` (function) · `compareValues` (function) · `ConcurrencyError` (class) · `Condition` (interface) · `conditionAllowed` (function) · `createMessage` (function) · `createSessionPageStateStore` (function) · `Criticality` (type) · `CriticalityCalculationModel` (interface) · `csdlJsonToXml` (function) · `CsdlSource` (type) · `currencyDigits` (function) · `DataPointModel` (interface) · `dataPointPaths` (function) · `DataProvider` (type) · `DEFAULT_CAPABILITIES` (const) · `deriveColumns` (function) · `DERIVED_GENERAL_SECTION` (const) · `DirectEditStrategy` (class) · `DraftEditStrategy` (class) · `DraftModel` (interface) · `DrillState` (type) · `EditSession` (interface) · `EditStrategy` (interface) · `editStrategyFor` (function) · `EdmType` (type) · `encodeOption` (function) · `EntityPath` (type) · `EntityPathError` (class) · `entityPathOf` (function) · `EntitySetModel` (interface) · `EntityTypeModel` (interface) · `EntityUi` (interface) · `errorFromResponse` (function) · `EventModel` (interface) · `ExpandSpec` (interface) · `FetchLike` (type) · `FieldModel` (interface) · `fieldPaths` (function) · `FilterExpression` (type) · `filterExpressionRules` (function) · `FilterExpressionRules` (interface) · `FilterOptions` (interface) · `FilterState` (type) · `filterString` (function) · `formatDate` (function) · `formatDateTime` (function) · `formatNumber` (function) · `FormatOptions` (interface) · `formatTime` (function) · `formatValue` (function) · `FormGroupModel` (interface) · `getEntitySet` (function) · `getEntityType` (function) · `getProperty` (function) · `getUi` (function) · `groupKey` (function) · `HeaderFacetModel` (type) · `HeaderInfoModel` (interface) · `HierarchyNode` (interface) · `hierarchyNodeOf` (function) · `hierarchyOf` (function) · `HierarchyRequest` (interface) · `HierarchyRequestOptions` (interface) · `highestSeverity` (function) · `humanize` (function) · `Importance` (type) · `ImprovementDirection` (type) · `InitialCondition` (interface) · `isAbortError` (function) · `isComplete` (function) · `isDraftRow` (function) · `isFilterable` (function) · `isRelativeDateOperator` (function) · `isSortable` (function) · `keyPredicate` (function) · `ListRequestOptions` (interface) · `LiteralError` (class) · `loadService` (function) · `LoadServiceOptions` (interface) · `matches` (function) · `MAX_GROUP_VALUES` (const) · `MemoryPageStateStore` (class) · `MemoryProvider` (class) · `MemoryProviderOptions` (interface) · `MemoryVariantStore` (class) · `Message` (interface) · `messagesFromError` (function) · `messagesFromHeader` (function) · `MessageType` (type) · `MetaModel` (interface) · `MICRO_CHART_MAX_POINTS` (const) · `MICRO_COMPARISON_MAX_BARS` (const) · `MODEL_VERSION` (const) · `ModelError` (class) · `ModelWarning` (interface) · `NavigationAdapter` (interface) · `NavigationModel` (interface) · `NavigationTarget` (type) · `objectFields` (function) · `ODataError` (class) · `ODataErrorDetail` (interface) · `ODataV4Provider` (class) · `ODataV4ProviderOptions` (interface) · `ODataVariantStore` (class) · `ODataVariantStoreOptions` (interface) · `Operator` (type) · `OPERATOR_ARITY` (const) · `OPERATORS` (const) · `PageStateStore` (interface) · `parseAnnotationPath` (function) · `parseEntityPath` (function) · `PathSegment` (interface) · `PresentationModel` (interface) · `PresentationVariantModel` (interface) · `propertyFilter` (function) · `PropertyModel` (interface) · `QueryRequest` (interface) · `QueryResult` (interface) · `QuerySource` (type) · `ReadDataProvider` (interface) · `readQueryString` (function) · `ReadRequest` (interface) · `RecursiveHierarchyModel` (interface) · `RELATIVE_DATE_OPERATORS` (const) · `RelativeDateOperator` (type) · `relativeDateRange` (function) · `RequestOptions` (interface) · `resolveCondition` (function) · `ResolvedPath` (interface) · `resolveEntityPath` (function) · `resolvePath` (function) · `restrictConditions` (function) · `Row` (type) · `SectionModel` (interface) · `selectAndExpand` (function) · `siblingPath` (function) · `SortItem` (interface) · `sourceInfo` (function) · `SourceInfo` (interface) · `sourcePath` (function) · `STANDARD_VARIANT_ID` (const) · `startOfDayIso` (function) · `SubSectionContent` (type) · `SubSectionModel` (interface) · `targetEntitySet` (function) · `TextArrangement` (type) · `toCsdlXml` (function) · `todayIn` (function) · `toFilter` (function) · `toLiteral` (function) · `toQueryString` (function) · `TOTAL_COUNT_ALIAS` (const) · `TotalAmount` (interface) · `TotalsEntry` (interface) · `TotalsRequestOptions` (interface) · `TrendCalculationModel` (interface) · `unitPathOf` (function) · `UnknownEntitySetError` (class) · `ValueHelpRequestOptions` (interface) · `ValueListModel` (interface) · `ValueListParameter` (interface) · `valueListTextArrangement` (function) · `ValueOperator` (type) · `ValueRef` (type) · `Variant` (interface) · `VariantContent` (interface) · `VariantStore` (interface) · `ViewModel` (interface) · `WriteDataProvider` (interface) · `WriteResult` (interface)
+`ActionModel` (interface) · `activeFilterPaths` (function) · `aggregateMeasure` (function) · `AggregateMeasure` (interface) · `AggregateRequestOptions` (interface) · `AggregationModel` (interface) · `arrangeText` (function) · `buildAggregateRequest` (function) · `buildChartRequest` (function) · `buildHierarchyRequest` (function) · `buildListRequest` (function) · `buildModel` (function) · `BuildModelOptions` (interface) · `buildObjectRequest` (function) · `buildTotalsRequest` (function) · `buildValueHelpRequest` (function) · `calculateCriticality` (function) · `calculateTrend` (function) · `canGroup` (function) · `canSubtotal` (function) · `canTotal` (function) · `capabilitiesFor` (function) · `CapabilityModel` (interface) · `chartExpand` (function) · `chartFields` (function) · `chartIsSeries` (function) · `ChartModel` (interface) · `ChartRequestOptions` (interface) · `chartSeriesSelect` (function) · `childPathOf` (function) · `collectTotals` (function) · `ColumnModel` (type) · `companionPaths` (function) · `compareDecimal` (function) · `compareValues` (function) · `ConcurrencyError` (class) · `Condition` (interface) · `conditionAllowed` (function) · `createMessage` (function) · `createSessionPageStateStore` (function) · `Criticality` (type) · `CriticalityCalculationModel` (interface) · `csdlJsonToXml` (function) · `CsdlSource` (type) · `currencyDigits` (function) · `DataPointModel` (interface) · `dataPointPaths` (function) · `DataProvider` (type) · `DEFAULT_CAPABILITIES` (const) · `deriveColumns` (function) · `DERIVED_GENERAL_SECTION` (const) · `DirectEditStrategy` (class) · `DRAFT_EDIT_STATES` (const) · `DraftEditState` (type) · `DraftEditStrategy` (class) · `DraftModel` (interface) · `DrillState` (type) · `EDIT_STATE` (const) · `EditSession` (interface) · `editStateFilter` (function) · `editStateOf` (function) · `EditStrategy` (interface) · `editStrategyFor` (function) · `EdmType` (type) · `encodeOption` (function) · `EntityPath` (type) · `EntityPathError` (class) · `entityPathOf` (function) · `EntitySetModel` (interface) · `EntityTypeModel` (interface) · `EntityUi` (interface) · `errorFromResponse` (function) · `EventModel` (interface) · `ExpandSpec` (interface) · `FetchLike` (type) · `FieldModel` (interface) · `fieldPaths` (function) · `FilterExpression` (type) · `filterExpressionRules` (function) · `FilterExpressionRules` (interface) · `FilterOptions` (interface) · `FilterState` (type) · `filterString` (function) · `formatDate` (function) · `formatDateTime` (function) · `formatNumber` (function) · `FormatOptions` (interface) · `formatTime` (function) · `formatValue` (function) · `FormGroupModel` (interface) · `getEntitySet` (function) · `getEntityType` (function) · `getProperty` (function) · `getUi` (function) · `groupKey` (function) · `HeaderFacetModel` (type) · `HeaderInfoModel` (interface) · `hiddenFilterPath` (function) · `hiddenFiltersOf` (function) · `HierarchyNode` (interface) · `hierarchyNodeOf` (function) · `hierarchyOf` (function) · `HierarchyRequest` (interface) · `HierarchyRequestOptions` (interface) · `highestSeverity` (function) · `humanize` (function) · `Importance` (type) · `ImprovementDirection` (type) · `InitialCondition` (interface) · `isAbortError` (function) · `isComplete` (function) · `isCustomAggregate` (function) · `isDraftRow` (function) · `isFilterable` (function) · `isRelativeDateOperator` (function) · `isSortable` (function) · `keyPredicate` (function) · `ListRequestOptions` (interface) · `LiteralError` (class) · `loadService` (function) · `LoadServiceOptions` (interface) · `matches` (function) · `matchesEditState` (function) · `MAX_GROUP_VALUES` (const) · `MemoryPageStateStore` (class) · `MemoryProvider` (class) · `MemoryProviderOptions` (interface) · `MemoryVariantStore` (class) · `Message` (interface) · `messagesFromError` (function) · `messagesFromHeader` (function) · `MessageType` (type) · `MetaModel` (interface) · `MICRO_CHART_MAX_POINTS` (const) · `MICRO_COMPARISON_MAX_BARS` (const) · `MODEL_VERSION` (const) · `ModelError` (class) · `ModelWarning` (interface) · `NavigationAdapter` (interface) · `NavigationModel` (interface) · `NavigationTarget` (type) · `objectFields` (function) · `ODataError` (class) · `ODataErrorDetail` (interface) · `ODataV4Provider` (class) · `ODataV4ProviderOptions` (interface) · `ODataVariantStore` (class) · `ODataVariantStoreOptions` (interface) · `Operator` (type) · `OPERATOR_ARITY` (const) · `OPERATORS` (const) · `PageStateStore` (interface) · `parseAnnotationPath` (function) · `parseEntityPath` (function) · `PathSegment` (interface) · `PresentationModel` (interface) · `PresentationVariantModel` (interface) · `propertyFilter` (function) · `PropertyModel` (interface) · `QueryRequest` (interface) · `QueryResult` (interface) · `QuerySource` (type) · `ReadDataProvider` (interface) · `readQueryString` (function) · `ReadRequest` (interface) · `RecursiveHierarchyModel` (interface) · `RELATIVE_DATE_OPERATORS` (const) · `RelativeDateOperator` (type) · `relativeDateRange` (function) · `RequestOptions` (interface) · `resolveCondition` (function) · `ResolvedPath` (interface) · `resolveEntityPath` (function) · `resolvePath` (function) · `restrictConditions` (function) · `Row` (type) · `SectionModel` (interface) · `selectAndExpand` (function) · `siblingPath` (function) · `SortItem` (interface) · `sourceInfo` (function) · `SourceInfo` (interface) · `sourcePath` (function) · `STANDARD_VARIANT_ID` (const) · `startOfDayIso` (function) · `SubSectionContent` (type) · `SubSectionModel` (interface) · `targetEntitySet` (function) · `TextArrangement` (type) · `toCsdlXml` (function) · `todayIn` (function) · `toFilter` (function) · `toLiteral` (function) · `toQueryString` (function) · `TOTAL_COUNT_ALIAS` (const) · `TotalAmount` (interface) · `TotalsEntry` (interface) · `TotalsRequestOptions` (interface) · `TrendCalculationModel` (interface) · `unitPathOf` (function) · `UnknownEntitySetError` (class) · `ValueHelpRequestOptions` (interface) · `ValueListModel` (interface) · `ValueListParameter` (interface) · `valueListTextArrangement` (function) · `ValueOperator` (type) · `ValueRef` (type) · `Variant` (interface) · `VariantContent` (interface) · `VariantStore` (interface) · `ViewModel` (interface) · `withHiddenFilters` (function) · `WriteDataProvider` (interface) · `WriteResult` (interface)
 
 ### `ActionModel` — interface
 
@@ -32,6 +32,24 @@ Counts properties that carry at least one complete condition (for "Adapt Filters
 activeFilterPaths(state: FilterState): string[]
 ```
 
+### `aggregateMeasure` — function
+
+The aggregate of a measure as FE requests it (docs/29 §4 P1-2): a custom aggregate (Aggregation.CustomAggregate with the measure's name as qualifier) is requested by its name, `aggregate(NetAmount)`, and the service decides how it is aggregated (sap.fe.core.converters.helpers.Aggregation isPropertyAggregatable; sap.fe.macros.chart.ChartDelegate). Other measures are summed (`with sum`).
+
+```ts
+aggregateMeasure(model: MetaModel, source: QuerySource, path: string): AggregateMeasure
+```
+
+### `AggregateMeasure` — interface
+
+One aggregate of a `$apply` request. Without `with` it is the custom aggregate `path` (Aggregation.CustomAggregate: `aggregate(NetAmount)`, the service decides how); `with: 'count'` is `$count as <as>` (rows of the group; `path` is ignored).
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `path` | **yes** | `string` |  |
+| `with` |  | `'sum' \| 'average' \| 'min' \| 'max' \| 'countdistinct' \| 'count'` |  |
+| `as` |  | `string` |  |
+
 ### `AggregateRequestOptions` — interface
 
 | Member | Required | Type | Description |
@@ -51,6 +69,7 @@ Aggregation.ApplySupported.
 | `transformations` | **yes** | `string[]` | Supported transformations (filter, search, groupby, aggregate, …); empty when the annotation does not list them. |
 | `groupable` | **yes** | `string[]` | GroupableProperties; empty means any property may be grouped by. |
 | `aggregatable` | **yes** | `{ path: string; methods: string[] }[]` | AggregatableProperties; empty means any numeric property may be aggregated. |
+| `customAggregates` | **yes** | `Record&lt;string, string>` | Aggregation.CustomAggregate by qualifier (the name of the aggregate, usually the property it aggregates) → its type, e.g. `{ NetAmount: 'Edm.Decimal' }`. FE takes these as the aggregatable measures and requests `aggregate(Name)`, leaving the method to the service (docs/29 §4 P1-2). |
 
 ### `arrangeText` — function
 
@@ -66,6 +85,14 @@ Builds the aggregation request of a chart (ADR-021): group by the dimensions (an
 
 ```ts
 buildAggregateRequest(model: MetaModel, chart: { dimensions: string[]; measures: string[]; }, o: AggregateRequestOptions): QueryRequest
+```
+
+### `buildChartRequest` — function
+
+The aggregation request of the list report chart as FE sends it (sap.fe.macros.Chart with sap.chart on the V4 model, docs/29 §4 P1-3): `$apply=filter(…)/groupby((<sorted groups>),aggregate(<measures>))&$count=true`. Groups are all dimensions, their Common.Text when it is groupable and not on a navigation (ChartDelegate), and the units of the measures (so amounts in different currencies are never added up); the measures are requested by `aggregateMeasure`. No `$top`; `$orderby` only from `sort`.
+
+```ts
+buildChartRequest(model: MetaModel, chart: Pick<ChartModel, "dimensions" | "measures">, o: ChartRequestOptions): QueryRequest
 ```
 
 ### `buildHierarchyRequest` — function
@@ -109,7 +136,7 @@ buildObjectRequest(model: MetaModel, typeName: string, ui: EntityUi, extra?: Fie
 
 ### `buildTotalsRequest` — function
 
-Builds the $apply request of totals: `filter(…)/groupby((Group,GroupText,Currency),aggregate(NetAmount with sum as NetAmount,$count as smartkit_count))`. Units of the measures are always grouped by, so amounts in different currencies are never added up.
+Builds the $apply request of totals as Fiori elements does (D39, sap.ui.model.odata.v4 $$aggregation with `unit`): `filter(…)/aggregate(NetAmount,Currency)` for grand totals, `filter(…)/groupby((Group,GroupText),aggregate(NetAmount, Currency,$count as smartkit_count))` for subtotals — the custom aggregate by name (`NetAmount with sum as NetAmount` for a measure that is not one) followed by its unit, which the service returns when all rows share it and null otherwise (several currencies: never added up, shown as "Show Details"). With `byUnit` the units are grouped by instead: `groupby((Currency),aggregate(NetAmount))&$orderby=Currency`, the details of such a total.
 
 ```ts
 buildTotalsRequest(model: MetaModel, o: TotalsRequestOptions): QueryRequest
@@ -155,7 +182,7 @@ canSubtotal(model: MetaModel, source: QuerySource, path: string): boolean
 
 ### `canTotal` — function
 
-Whether totals can be requested for `path`: Aggregation.ApplySupported is declared, the property is numeric and aggregatable with sum.
+Whether totals can be requested for `path`: Aggregation.ApplySupported is declared and `path` is a custom aggregate (Aggregation.CustomAggregate with the property name as qualifier), as in FE: sap.fe.core.converters.helpers.Aggregation isPropertyAggregatable only knows custom aggregates (docs/29 §4 P1-2). Without a custom aggregate nothing is totalled (D39: no "numeric property with sum" fallback). Totals are shown by analytical tables only (D39, `Table` type).
 
 ```ts
 canTotal(model: MetaModel, source: QuerySource, path: string): boolean
@@ -227,6 +254,17 @@ UI.Chart (ADR-021).
 | `dataPoints` | **yes** | `Record&lt;string, DataPointModel>` | Data points of measures (MeasureAttributes/DataPoint), by measure path. |
 | `navigation` | **yes** | `string` | Navigation from the annotated entity to the chart's entity ("" for the entity itself). |
 | `typeName` | **yes** | `string` | Entity type the chart's paths are relative to. |
+| `dimensionRoles` |  | `Record&lt;string, string>` | UI.Chart/DimensionAttributes Role by dimension path ("Category", "Series", "Category2"); absent: Category. |
+
+### `ChartRequestOptions` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `source` | **yes** | `QuerySource` |  |
+| `filters` |  | `FilterState` |  |
+| `search` |  | `string` |  |
+| `timeZone` |  | `string` |  |
+| `sort` |  | `SortItem[]` | Sort of the chart (UI.PresentationVariant SortOrder of the chart's presentation variant); default none. |
 
 ### `chartSeriesSelect` — function
 
@@ -249,7 +287,7 @@ childPathOf(model: MetaModel, parent: EntityPath, navigation: string, row: Recor
 Turns the rows of a totals request into one entry per group (key: `groupKey(value)`; '' also for grand totals), merging the rows of the different units.
 
 ```ts
-collectTotals(model: MetaModel, o: Pick<TotalsRequestOptions, "source" | "measures" | "groupBy">, rows: Row[]): Map<string, TotalsEntry>
+collectTotals(model: MetaModel, o: Pick<TotalsRequestOptions, "source" | "measures" | "groupBy" | "byUnit">, rows: Row[]): Map<string, TotalsEntry>
 ```
 
 ### `ColumnModel` — type
@@ -422,6 +460,20 @@ Direct save: PATCH with If-Match for existing entities, POST for new ones.
 new DirectEditStrategy(provider: DataProvider)
 ```
 
+### `DRAFT_EDIT_STATES` — const
+
+Option ids as in FE `EDITSTATE` (non-collaborative draft): "" = All, then All (Hiding Drafts), Unchanged, Own Draft, Locked by Another User, Unsaved Changes by Another User.
+
+```ts
+const DRAFT_EDIT_STATES: readonly ["", "ALL_HIDING_DRAFTS", "UNCHANGED", "OWN_DRAFT", "LOCKED", "UNSAVED_CHANGES"]
+```
+
+### `DraftEditState` — type
+
+```ts
+export type DraftEditState = (typeof DRAFT_EDIT_STATES)[number];
+```
+
 ### `DraftEditStrategy` — class
 
 Draft: begin = EditAction (or resume the user's own draft), changes are PATCHed to the draft instance (flush), save = PreparationAction + ActivationAction, cancel = DELETE of the draft.
@@ -447,6 +499,14 @@ new DraftEditStrategy(model: MetaModel, provider: DataProvider)
 export type DrillState = 'expanded' | 'collapsed' | 'leaf';
 ```
 
+### `EDIT_STATE` — const
+
+Filter state key of the editing status (FE `$editState`).
+
+```ts
+const EDIT_STATE: "$editState"
+```
+
 ### `EditSession` — interface
 
 | Member | Required | Type | Description |
@@ -460,6 +520,22 @@ export type DrillState = 'expanded' | 'collapsed' | 'leaf';
 | `flush` | **yes** | `() => Promise&lt;{ messages: Message[] }>` | Draft: sends the pending changes to the draft (background save). Direct save: nothing to do. |
 | `save` | **yes** | `() => Promise&lt;{ row: Row; etag?: string; path: EntityPath; messages: Message[] }>` | Saves (direct) or activates (draft); returns the active entity and its path. Throws ConcurrencyError on stale ETags. |
 | `cancel` | **yes** | `() => Promise&lt;void>` | Discards the changes (and the draft). |
+
+### `editStateFilter` — function
+
+The `$filter` part of an editing status, written as the SAPUI5 V4 model writes FE's filter (`DraftEditState.getFilterForEditState`; ODataListBinding `fetchFilter`: an "or" inside an "and" is wrapped in parentheses, an "and" inside an "and" is not). `withinAnd`: other conditions are combined with it.
+
+```ts
+editStateFilter(state: DraftEditState, withinAnd: boolean): string
+```
+
+### `editStateOf` — function
+
+The editing status of a filter state ("" = All when none is set or the value is unknown).
+
+```ts
+editStateOf(filters: FilterState | undefined): DraftEditState
+```
 
 ### `EditStrategy` — interface
 
@@ -710,7 +786,7 @@ formatTime(value: unknown, locale: string): string
 Formats a property value for display (without unit, text or criticality decoration). `unitCode` is the resolved currency code of amounts (drives fraction digits).
 
 ```ts
-formatValue(value: unknown, prop: Pick<PropertyModel, "edmType" | "scale" | "isCurrency" | "isDigitSequence">, o: FormatOptions & { unitCode?: string; }): string
+formatValue(value: unknown, prop: Pick<PropertyModel, "edmType" | "scale" | "isCurrency" | "isDigitSequence"> & Partial<Pick<PropertyModel, "maxLength">>, o: FormatOptions & { unitCode?: string; }): string
 ```
 
 ### `FormGroupModel` — interface
@@ -772,6 +848,22 @@ export type HeaderFacetModel = | { id: string; kind: 'form'; label?: string; fie
 | `imageUrl` |  | `ValueRef` |  |
 | `initials` |  | `ValueRef` | UI.HeaderInfo/Initials: shown in an avatar when there is no image. |
 | `person` |  | `boolean` | The type describes a person (Communication.Contact): the avatar is round, otherwise a rounded square. |
+
+### `hiddenFilterPath` — function
+
+The property path of a hidden filter key, else undefined.
+
+```ts
+hiddenFilterPath(key: string): string | undefined
+```
+
+### `hiddenFiltersOf` — function
+
+The hidden conditions of a filter state, by property path.
+
+```ts
+hiddenFiltersOf(filters: FilterState | undefined): FilterState
+```
 
 ### `HierarchyNode` — interface
 
@@ -875,6 +967,14 @@ Whether a condition has all the values its operator needs.
 isComplete(c: Condition): boolean
 ```
 
+### `isCustomAggregate` — function
+
+Whether `path` is a custom aggregate (Aggregation.CustomAggregate) of the source's entity set or type.
+
+```ts
+isCustomAggregate(model: MetaModel, source: QuerySource, path: string): boolean
+```
+
 ### `isDraftRow` — function
 
 Whether a row is a draft instance.
@@ -955,6 +1055,14 @@ Evaluates conditions against a value in memory (used by the in-memory provider).
 
 ```ts
 matches(value: unknown, conditions: Condition[], type: EdmType, opts?: FilterOptions): boolean
+```
+
+### `matchesEditState` — function
+
+In-memory evaluation of an editing status (MemoryProvider). `sibling` returns the other version of the row (the own draft of an active instance, the active instance of a draft), as the service's `SiblingEntity` navigation does.
+
+```ts
+matchesEditState(state: DraftEditState, row: Row, sibling: (row: Row) => Row | undefined): boolean
 ```
 
 ### `MAX_GROUP_VALUES` — const
@@ -1220,6 +1328,7 @@ parseEntityPath(path: EntityPath): PathSegment[]
 | `requestAtLeast` | **yes** | `string[]` |  |
 | `groupBy` | **yes** | `string[]` | UI.PresentationVariant/GroupBy: default grouping (the table uses the first path, docs/23). |
 | `total` | **yes** | `string[]` | UI.PresentationVariant/Total: properties whose totals are shown by default (docs/23). |
+| `hasTotal` |  | `boolean` | Whether the presentation variant has `Total` at all (also an empty collection: no totals). Without it an analytical table totals all custom aggregates (FE getAggregateConditions, D39). |
 
 ### `PresentationVariantModel` — interface
 
@@ -1272,6 +1381,7 @@ propertyFilter(path: string, conditions: Condition[], type: EdmType, opts?: Filt
 | `unit` |  | `ValueRef` |  |
 | `valueList` |  | `ValueListModel` |  |
 | `criticality` |  | `ValueRef` |  |
+| `filterDefaultValue` |  | `string \| number \| boolean` | Common.FilterDefaultValue: default "EQ" filter condition when there is no default selection variant (FE FilterHelper). |
 | `fieldControl` |  | `ValueRef` | Common.FieldControl constant (0 hidden, 1 read-only, 3 optional, 7 mandatory) or a path. |
 
 ### `QueryRequest` — interface
@@ -1289,7 +1399,7 @@ propertyFilter(path: string, conditions: Condition[], type: EdmType, opts?: Filt
 | `skip` |  | `number` |  |
 | `top` |  | `number` |  |
 | `timeZone` |  | `string` | Time zone for calendar-day filters on Edm.DateTimeOffset properties. |
-| `aggregate` |  | `{ groupBy: string[]; measures: { path: string; with: 'sum' \| 'average' \| 'min' \| 'max' \| 'countdistinct' \| 'count'; as?: string }[] }` | Server-side aggregation ($apply, OData Data Aggregation): group by `groupBy` and aggregate the measures (ADR-021). |
+| `aggregate` |  | `{ groupBy: string[]; measures: AggregateMeasure[] }` | Server-side aggregation ($apply, OData Data Aggregation): group by `groupBy` and aggregate the measures (ADR-021). |
 | `hierarchy` |  | `HierarchyRequest` | Recursive hierarchy (docs/26 §3.10): the visible nodes as `$apply=…/com.sap.vocabularies.Hierarchy.v1.TopLevels(…)`. |
 
 ### `QueryResult` — interface
@@ -1577,6 +1687,7 @@ One amount of a total: the sum for one unit (unit is undefined when the measure 
 | --- | --- | --- | --- |
 | `value` | **yes** | `number` |  |
 | `unit` |  | `string` |  |
+| `multiUnit` |  | `boolean` | The rows have several units (the service returned null for the unit, D39): the value is not meaningful; show "Show Details" and request the amounts per unit (`byUnit`). |
 
 ### `TotalsEntry` — interface
 
@@ -1592,12 +1703,13 @@ One amount of a total: the sum for one unit (unit is undefined when the measure 
 | Member | Required | Type | Description |
 | --- | --- | --- | --- |
 | `source` | **yes** | `QuerySource` |  |
-| `measures` | **yes** | `string[]` | Properties to sum. |
+| `measures` | **yes** | `string[]` | Properties to aggregate (custom aggregates, or summed). |
 | `filters` |  | `FilterState` |  |
 | `search` |  | `string` |  |
 | `timeZone` |  | `string` |  |
 | `groupBy` |  | `string` | Group property: one result row per group (and unit). Without it: grand totals. |
 | `groupValues` |  | `unknown[]` | Only these groups (values of `groupBy`; null or '' for the empty group), at most MAX_GROUP_VALUES. |
+| `byUnit` |  | `boolean` | Details of a total over several units (FE "Show Details", sap.m.table.Util createOrUpdateMultiUnitPopover): one row per unit (`groupby((Currency),aggregate(NetAmount))`, sorted by the unit); `groupBy` / `groupValues` then only restrict the rows (a subtotal's group). Default: the units are aggregated with the measures. |
 
 ### `TrendCalculationModel` — interface
 
@@ -1634,13 +1746,14 @@ new UnknownEntitySetError(message?: string)
 | `skip` |  | `number` |  |
 | `top` |  | `number` |  |
 | `keys` |  | `string[]` | Restrict to these key values (used to load descriptions of selected tokens). |
+| `filters` |  | `FilterState` | Conditions of the source by local property path (the filter bar's filter state). The value list's In and InOut parameters take the conditions of their LocalDataProperty (FE ValueHelpDelegate `_getInitialFilterConditionsFromFilterBar`). |
 
 ### `ValueListModel` — interface
 
 | Member | Required | Type | Description |
 | --- | --- | --- | --- |
 | `collectionPath` | **yes** | `string` |  |
-| `searchSupported` | **yes** | `boolean` |  |
+| `searchSupported` | **yes** | `boolean` | Common.ValueList/SearchSupported; the vocabulary default is true. |
 | `parameters` | **yes** | `ValueListParameter[]` |  |
 | `keyProperty` | **yes** | `string` | The value list property that maps to the annotated property. |
 | `fixedValues` | **yes** | `boolean` |  |
@@ -1726,6 +1839,14 @@ UI.SelectionPresentationVariant with a qualifier: one view of a multi-view list 
 | `presentation` | **yes** | `PresentationModel` |  |
 | `lineItem` | **yes** | `ColumnModel[]` |  |
 | `chart` |  | `ChartModel` |  |
+
+### `withHiddenFilters` — function
+
+Adds `hidden` to `filters` as hidden conditions.
+
+```ts
+withHiddenFilters(filters: FilterState, hidden: FilterState): FilterState
+```
 
 ### `WriteDataProvider` — interface
 

@@ -6,7 +6,7 @@
 
 A **limited OData V4 service on PostgreSQL**, written for what the smart-kit front end sends: reads (`$select`,
 `$expand`, `$filter` (with `any` / `all` over collection navigations), `$orderby`, `$top`/`$skip`, `$count`, `$search`, `$apply` with `filter`/`search`/`groupby`/
-`aggregate` (`sum`, `min`, `max`, `average`, `countdistinct`, `$count as`)), value helps, `$metadata`, direct save (PATCH with ETag, POST to a set or a collection navigation,
+`aggregate` (`sum`, `min`, `max`, `average`, `countdistinct`, `$count as`, custom aggregates by name with their unit)), value helps, `$metadata`, direct save (PATCH with ETag, POST to a set or a collection navigation,
 DELETE), bound actions. **Not** supported (answers 501): drafts, `$batch`, deep insert, PUT, functions, `$compute`.
 Node only (≥ 24); never import it in browser code.
 
@@ -186,6 +186,30 @@ Kysely yourself only on a pool whose sessions are already in UTC, e.g.
 `new pg.Pool({ options: '-c TimeZone=UTC -c statement_timeout=15000' })` and
 `new Kysely({ dialect: new PostgresDialect({ pool }) })`: dates and times are written in UTC, and
 `timestamp without time zone` columns are read as UTC only in a UTC session.
+
+## Custom aggregates (totals of analytical tables)
+
+smart-kit (like Fiori elements) totals only **custom aggregates** and requests them by name, without `with`:
+`$apply=filter(…)/groupby((Currency),aggregate(NetAmount))`. Analytical tables (`type="AnalyticalTable"`) show
+totals and group subtotals only for them (D39). Declare one per measure in the annotation file, on the entity type
+(or set) that has `Aggregation.ApplySupported`; the qualifier is the property name, the value its type:
+
+```xml
+<Annotations Target="Purchasing.PurchaseOrder">
+  <Annotation Term="Aggregation.CustomAggregate" Qualifier="NetAmount" String="Edm.Decimal"/>
+</Annotations>
+```
+
+This service answers `aggregate(NetAmount)` with the property `NetAmount` **summed** (the result is named like the
+aggregate). To aggregate it with another method, list it in `ApplySupported/AggregatableProperties` with
+`SupportedAggregationMethods` without `sum` (e.g. `max`); the first listed method is used. Only custom aggregates of a
+property of the same name are supported (no computed aggregates); `aggregate(X)` for anything that is not declared
+answers 400 `InvalidApply` — write `X with sum as X` instead.
+
+The **unit** of a custom aggregate (its `Measures.ISOCurrency` / `Measures.Unit` path) may be named in the same
+`aggregate()`, as Fiori elements and smart-kit request totals: `aggregate(NetAmount,Currency)` returns the currency
+when all aggregated rows have the same one and **null** when they have several (the client then shows "Show Details"
+and asks `groupby((Currency),aggregate(NetAmount))&$orderby=Currency` for the amounts per currency).
 
 ## Other options
 

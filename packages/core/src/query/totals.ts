@@ -1,13 +1,14 @@
 /**
  * Group subtotals and grand totals of a list (docs/23): computed by the service with $apply, never by adding up the
- * loaded rows (lists load page by page). Amounts are split by unit or currency.
+ * loaded rows (lists load page by page). A total over several units or currencies is not added up: the service
+ * returns no unit for it and the amounts per unit are requested on demand (D39).
  */
 import type { Condition, FilterState } from '../conditions/conditions';
 import { restrictConditions } from '../conditions/filterExpressions';
 import { capabilitiesFor, isFilterable, isSortable } from '../model/access';
 import { resolvePath } from '../model/buildModel';
 import type { CapabilityModel, MetaModel } from '../model/types';
-import { companionPaths, sourceInfo, type QueryRequest, type QuerySource, type Row } from './request';
+import { aggregateMeasure, companionPaths, sourceInfo, type QueryRequest, type QuerySource, type Row } from './request';
 
 /** Alias of the number of rows of a group in a totals result. */
 export const TOTAL_COUNT_ALIAS = 'smartkit_count';
@@ -15,24 +16,23 @@ export const TOTAL_COUNT_ALIAS = 'smartkit_count';
 /** Maximum number of group values in one subtotal request (URL length). */
 export const MAX_GROUP_VALUES = 50;
 
-const NUMERIC = new Set(['Edm.Decimal', 'Edm.Double', 'Edm.Single', 'Edm.Int16', 'Edm.Int32', 'Edm.Int64', 'Edm.Byte', 'Edm.SByte']);
-
 function capsOf(model: MetaModel, source: QuerySource): { caps: CapabilityModel; typeName: string } {
   const info = sourceInfo(model, source);
   const caps = info.parentSet ? capabilitiesFor(model, info.parentSet, info.navigation) : capabilitiesFor(model, info.entitySet);
   return { caps, typeName: info.typeName };
 }
 
-/** Whether totals can be requested for `path`: Aggregation.ApplySupported is declared, the property is numeric and aggregatable with sum. */
+/**
+ * Whether totals can be requested for `path`: Aggregation.ApplySupported is declared and `path` is a custom aggregate
+ * (Aggregation.CustomAggregate with the property name as qualifier), as in FE: sap.fe.core.converters.helpers.Aggregation
+ * isPropertyAggregatable only knows custom aggregates (docs/29 §4 P1-2). Without a custom aggregate nothing is totalled
+ * (D39: no "numeric property with sum" fallback). Totals are shown by analytical tables only (D39, `Table` type).
+ */
 export function canTotal(model: MetaModel, source: QuerySource, path: string): boolean {
-  const { caps, typeName } = capsOf(model, source);
+  const { caps } = capsOf(model, source);
   const agg = caps.aggregation;
   if (!agg || (agg.transformations.length && !agg.transformations.includes('aggregate'))) return false;
-  const prop = resolvePath(model.entityTypes, typeName, path).property;
-  if (!prop || !NUMERIC.has(prop.edmType)) return false;
-  if (!agg.aggregatable.length) return !path.includes('/');
-  const entry = agg.aggregatable.find((a) => a.path === path);
-  return Boolean(entry && (!entry.methods.length || entry.methods.includes('sum')));
+  return Object.hasOwn(agg.customAggregates ?? {}, path);
 }
 
 /**
@@ -59,12 +59,18 @@ export interface TotalsRequestOptions {
   filters?: FilterState;
   search?: string;
   timeZone?: string;
-  /** Properties to sum. */
+  /** Properties to aggregate (custom aggregates, or summed). */
   measures: string[];
   /** Group property: one result row per group (and unit). Without it: grand totals. */
   groupBy?: string;
   /** Only these groups (values of `groupBy`; null or '' for the empty group), at most MAX_GROUP_VALUES. */
   groupValues?: unknown[];
+  /**
+   * Details of a total over several units (FE "Show Details", sap.m.table.Util createOrUpdateMultiUnitPopover): one
+   * row per unit (`groupby((Currency),aggregate(NetAmount))`, sorted by the unit); `groupBy` / `groupValues` then
+   * only restrict the rows (a subtotal's group). Default: the units are aggregated with the measures.
+   */
+  byUnit?: boolean;
 }
 
 /** Unit or currency property of a measure (Measures.ISOCurrency / Measures.Unit given by a path). */
@@ -82,9 +88,12 @@ function fixedUnitOf(model: MetaModel, typeName: string, path: string): string |
 }
 
 /**
- * Builds the $apply request of totals:
- * `filter(…)/groupby((Group,GroupText,Currency),aggregate(NetAmount with sum as NetAmount,$count as smartkit_count))`.
- * Units of the measures are always grouped by, so amounts in different currencies are never added up.
+ * Builds the $apply request of totals as Fiori elements does (D39, sap.ui.model.odata.v4 $$aggregation with `unit`):
+ * `filter(…)/aggregate(NetAmount,Currency)` for grand totals, `filter(…)/groupby((Group,GroupText),aggregate(NetAmount,
+ * Currency,$count as smartkit_count))` for subtotals — the custom aggregate by name (`NetAmount with sum as NetAmount`
+ * for a measure that is not one) followed by its unit, which the service returns when all rows share it and null
+ * otherwise (several currencies: never added up, shown as "Show Details"). With `byUnit` the units are grouped by
+ * instead: `groupby((Currency),aggregate(NetAmount))&$orderby=Currency`, the details of such a total.
  */
 export function buildTotalsRequest(model: MetaModel, o: TotalsRequestOptions): QueryRequest {
   const { caps, typeName } = capsOf(model, o.source);
@@ -92,12 +101,13 @@ export function buildTotalsRequest(model: MetaModel, o: TotalsRequestOptions): Q
   const add = (p: string | undefined) => {
     if (p && !groupBy.includes(p)) groupBy.push(p);
   };
-  if (o.groupBy) {
+  if (o.groupBy && !o.byUnit) {
     add(o.groupBy);
     const prop = resolvePath(model.entityTypes, typeName, o.groupBy).property;
     if (prop) for (const c of companionPaths(prop, o.groupBy)) add(c);
   }
-  for (const m of o.measures) add(unitPathOf(model, typeName, m));
+  const units = [...new Set(o.measures.map((m) => unitPathOf(model, typeName, m)).filter((u): u is string => Boolean(u)))];
+  if (o.byUnit) for (const u of units) add(u);
 
   const filters: FilterState = {};
   for (const [path, conds] of Object.entries(o.filters ?? {})) {
@@ -111,8 +121,15 @@ export function buildTotalsRequest(model: MetaModel, o: TotalsRequestOptions): Q
     );
     anyOf = { [o.groupBy]: conds };
   }
-  const measures: NonNullable<QueryRequest['aggregate']>['measures'] = o.measures.map((m) => ({ path: m, with: 'sum' }));
-  if (o.groupBy) measures.push({ path: '', with: 'count', as: TOTAL_COUNT_ALIAS });
+  // custom aggregates by name (`aggregate(NetAmount)`, the service decides how), other measures `with sum`; each
+  // followed by its unit (`aggregate(NetAmount,Currency)`) unless the units are grouped by
+  const measures: NonNullable<QueryRequest['aggregate']>['measures'] = [];
+  for (const m of o.measures) {
+    measures.push(aggregateMeasure(model, o.source, m));
+    const u = o.byUnit ? undefined : unitPathOf(model, typeName, m);
+    if (u && !measures.some((x) => !x.with && x.path === u)) measures.push({ path: u });
+  }
+  if (o.groupBy && !o.byUnit) measures.push({ path: '', with: 'count', as: TOTAL_COUNT_ALIAS });
   return {
     source: o.source,
     select: [],
@@ -120,7 +137,9 @@ export function buildTotalsRequest(model: MetaModel, o: TotalsRequestOptions): Q
     filters: Object.keys(filters).length ? filters : undefined,
     anyOf,
     search: caps.searchable && o.search?.trim() ? o.search.trim() : undefined,
-    orderBy: [],
+    orderBy: o.byUnit ? units.map((u) => ({ path: u, descending: false })) : [],
+    // the details list of FE reads the first 100 units (sap.m.List in the multi-unit popover)
+    top: o.byUnit ? 100 : undefined,
     count: false,
     timeZone: o.timeZone,
     aggregate: { groupBy, measures },
@@ -131,6 +150,11 @@ export function buildTotalsRequest(model: MetaModel, o: TotalsRequestOptions): Q
 export interface TotalAmount {
   value: number;
   unit?: string;
+  /**
+   * The rows have several units (the service returned null for the unit, D39): the value is not meaningful; show
+   * "Show Details" and request the amounts per unit (`byUnit`).
+   */
+  multiUnit?: boolean;
 }
 
 export interface TotalsEntry {
@@ -153,10 +177,10 @@ export const groupKey = (v: unknown): string => (v === null || v === undefined ?
  * Turns the rows of a totals request into one entry per group (key: `groupKey(value)`; '' also for grand totals),
  * merging the rows of the different units.
  */
-export function collectTotals(model: MetaModel, o: Pick<TotalsRequestOptions, 'source' | 'measures' | 'groupBy'>, rows: Row[]): Map<string, TotalsEntry> {
+export function collectTotals(model: MetaModel, o: Pick<TotalsRequestOptions, 'source' | 'measures' | 'groupBy' | 'byUnit'>, rows: Row[]): Map<string, TotalsEntry> {
   const { typeName } = capsOf(model, o.source);
   const textPath = (() => {
-    if (!o.groupBy) return undefined;
+    if (!o.groupBy || o.byUnit) return undefined;
     const prop = resolvePath(model.entityTypes, typeName, o.groupBy).property;
     if (!prop?.text) return undefined;
     const i = o.groupBy.lastIndexOf('/');
@@ -164,12 +188,12 @@ export function collectTotals(model: MetaModel, o: Pick<TotalsRequestOptions, 's
   })();
   const out = new Map<string, TotalsEntry>();
   for (const row of rows) {
-    const g = o.groupBy ? get(row, o.groupBy) : undefined;
+    const g = o.groupBy && !o.byUnit ? get(row, o.groupBy) : undefined;
     const key = groupKey(g);
     let e = out.get(key);
     if (!e) {
       e = { values: {} };
-      if (o.groupBy) e.group = g ?? null;
+      if (o.groupBy && !o.byUnit) e.group = g ?? null;
       const text = textPath ? get(row, textPath) : undefined;
       if (text !== undefined && text !== null) e.groupText = String(text);
       out.set(key, e);
@@ -182,12 +206,15 @@ export function collectTotals(model: MetaModel, o: Pick<TotalsRequestOptions, 's
       const unitPath = unitPathOf(model, typeName, m);
       const unitValue = unitPath ? get(row, unitPath) : fixedUnitOf(model, typeName, m);
       const unit = unitValue === undefined || unitValue === null || unitValue === '' ? undefined : String(unitValue);
+      // aggregated unit null: the rows have several units (sap.ui.model.odata.v4 "unit" of an aggregate)
+      const multiUnit = Boolean(unitPath && !o.byUnit && unitValue === null);
       const list = (e.values[m] ??= []);
-      const same = list.find((a) => a.unit === unit);
+      const same = list.find((a) => a.unit === unit && Boolean(a.multiUnit) === multiUnit);
       if (same) same.value += Number(raw ?? 0);
-      else list.push({ value: Number(raw ?? 0), unit });
+      else list.push(multiUnit ? { value: Number(raw ?? 0), multiUnit } : { value: Number(raw ?? 0), unit });
     }
   }
-  for (const e of out.values()) for (const list of Object.values(e.values)) list.sort((a, b) => Math.abs(b.value) - Math.abs(a.value));
+  // per unit (details): in the order of the service (sorted by the unit, as FE); otherwise largest first
+  if (!o.byUnit) for (const e of out.values()) for (const list of Object.values(e.values)) list.sort((a, b) => Math.abs(b.value) - Math.abs(a.value));
   return out;
 }

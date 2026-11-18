@@ -185,7 +185,7 @@ test('P2-LR-16 working modes: worklist removes items that no longer match; conti
   await expect(page.locator('[data-sk-message="info"]')).toContainText('no longer matches');
 });
 
-test('P2-LR-01 P2-LRC-08 multiple views with a segmented button (≤ 3) after the title; view filters are not in the filter bar', async ({ page }) => {
+test('P2-LR-01 P2-LRC-08 multiple views with a segmented button (≤ 3) after the title; view properties that are selection fields stay in the filter bar (FE)', async ({ page }) => {
   const rec = recordOData(page);
   await open(page, '/po?views=switch');
   await waitForRows(page, 'PurchaseOrders');
@@ -195,8 +195,9 @@ test('P2-LR-01 P2-LRC-08 multiple views with a segmented button (≤ 3) after th
   const title = await page.locator('[data-sk-table-title]').boundingBox();
   const s = await sw.boundingBox();
   expect(s!.x).toBeGreaterThan(title!.x + title!.width);
+  // FE getExcludedFilterProperties: only view properties that are not selection fields leave the filter bar
   await page.locator('[data-sk-header-toggle]').click();
-  await expect(page.locator('[data-sk-filter="Status"]')).toHaveCount(0);
+  await expect(page.locator('[data-sk-filter="Status"]')).toBeVisible();
   await page.locator('[data-sk-header-toggle]').click();
   await sw.getByText('Closed').click();
   await expect.poll(() => rec.urls.some((u) => u.includes("Status eq 'CLOSED'"))).toBe(true);
@@ -260,11 +261,18 @@ test('P2-LRC-10 P2-LR-04 chart view: switch between table and chart; selecting a
   await waitForRows(page, 'PurchaseOrders');
   await page.locator('[data-sk-chart-toggle]').getByLabel('Chart').click();
   const chart = page.locator('[data-sk-chart]');
+  // as in FE (docs/29 §4 P1-3, fe:po-chart): grouped by the currency too; orders in EUR and USD are not drawn
+  await expect(page.locator('[data-sk-chart-invalid]')).toContainText('Some measures have different units.');
+  await expect.poll(() => rec.urls.some((u) => u.includes('$apply=filter(') && u.includes('groupby((Currency,Status),aggregate(NetAmount))'))).toBe(true);
+  // a supplier with orders in EUR only (live mode applies the filter at once)
+  await showFilters(page);
+  await filterInput(page, 'Supplier').fill('0000100126');
+  await filterInput(page, 'Supplier').press('Enter');
   await expect(chart.locator('[data-sk-chart-bar]').first()).toBeVisible();
-  await expect.poll(() => rec.urls.some((u) => u.includes('$apply=filter(') && u.includes('groupby((Status'))).toBe(true);
   await evidence(page, 'P2-LRC-10');
   await chart.locator('[data-sk-chart-bar="APPR"]').click();
-  await expect(page.locator('[data-sk-chart-popover]')).toContainText('Approved');
+  // the dimension's Common.Text is on a navigation (_Status/Name): FE does not group by it, the code is shown
+  await expect(page.locator('[data-sk-chart-popover]')).toContainText('APPR');
   await page.locator('[data-sk-chart-drilldown]').click();
   await waitForRows(page, 'PurchaseOrders');
   await expect(page.locator('[data-sk-chart]')).toHaveCount(0);
@@ -389,8 +397,9 @@ test('P2-LR-17 draft list: editing status filter and draft markers on rows', asy
   await page.locator('[data-sk-header-toggle]').click();
   await expect(page.locator('[data-sk-editing-status]')).toBeVisible();
   await page.locator('[data-sk-editing-status]').click();
-  await page.getByRole('option', { name: 'Unsaved Changes by Another User' }).click();
-  await expect.poll(() => rec.urls.some((u) => u.includes('DraftIsCreatedByMe eq false'))).toBe(true);
+  // FE DraftEditState: "Locked by Another User" = active, no own draft, InProcessByUser set
+  await page.getByRole('option', { name: 'Locked by Another User' }).click();
+  await expect.poll(() => rec.urls.some((u) => u.includes("SiblingEntity/IsActiveEntity eq null and DraftAdministrativeData/InProcessByUser ne ''"))).toBe(true);
   await expect(rows(page)).toHaveCount(1);
   const marker = rows(page).first().locator('[data-sk-draft-marker="other"]');
   await expect(marker).toBeVisible();
@@ -399,7 +408,7 @@ test('P2-LR-17 draft list: editing status filter and draft markers on rows', asy
   await evidence(page, 'P2-LR-17');
 });
 
-test('P2-LR-02 views by order type from local annotations (overlay): tabs with counts, the type filter leaves the filter bar', async ({ page }) => {
+test('P2-LR-02 views by order type from local annotations (overlay): tabs with counts, each tab applies its whole selection variant', async ({ page }) => {
   const rec = recordOData(page);
   await open(page, '/po?views=type');
   const tabs = page.locator('[data-sk-list-tab]');
@@ -415,8 +424,9 @@ test('P2-LR-02 views by order type from local annotations (overlay): tabs with c
   expect(bar!.y + bar!.height).toBeLessThanOrEqual(toolbar!.y);
   await page.locator('[data-sk-list-tab="TypeFO"]').click();
   await expect.poll(() => rec.urls.some((u) => u.includes("PurchaseOrderType eq 'FO'") && !u.includes('$top=0'))).toBe(true);
+  // PurchaseOrderType is a selection field: it stays in the filter bar (FE getExcludedFilterProperties)
   await page.locator('[data-sk-header-toggle]').click();
-  await expect(page.locator('[data-sk-filter="PurchaseOrderType"]')).toHaveCount(0);
+  await expect(page.locator('[data-sk-filter="PurchaseOrderType"]')).toBeVisible();
   await expect(page.locator('[data-sk-filter="Status"]')).toBeVisible();
 });
 

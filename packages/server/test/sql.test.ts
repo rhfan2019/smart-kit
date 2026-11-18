@@ -120,6 +120,20 @@ describe('SQL: OData semantics', () => {
     rejects(() => compile('PurchaseOrders', '$apply=groupby((Status))&$orderby=NetAmount'), 400, 'InvalidOrderBy');
   });
 
+  it('D39 aggregates a custom aggregate (Aggregation.CustomAggregate) requested without "with": the property of its name, summed', () => {
+    const c = compile('PurchaseOrders', "$apply=filter(CompanyCode eq '1000')/groupby((Currency),aggregate(NetAmount,$count as N))");
+    expect(c.sql).toContain('sum("t0"."net_amount")');
+    expect(c.sql).toContain('count(*)');
+    expect(compile('PurchaseOrders', '$apply=aggregate(NetAmount)').sql).toContain('sum("t0"."net_amount")');
+    // only declared custom aggregates: other properties need "with <method> as <alias>"
+    expect(rejects(() => compile('PurchaseOrders', '$apply=groupby((Currency),aggregate(BudgetAmount))'), 400, 'InvalidApply')).toMatch(/neither a custom aggregate/);
+    rejects(() => compile('PurchaseOrders', '$apply=groupby((NetAmount),aggregate(NetAmount))'), 400, 'InvalidApply');
+    // the unit of a custom aggregate (Measures.ISOCurrency) with it, as FE requests it: the currency or null
+    const u = compile('PurchaseOrders', '$apply=aggregate(NetAmount,Currency)');
+    expect(u.sql).toContain('case when count(distinct "t0"."currency") = 1 then min("t0"."currency") end');
+    rejects(() => compile('PurchaseOrders', '$apply=aggregate(NetAmount,Status)'), 400, 'InvalidApply');
+  });
+
   it('restricts child collections and single navigations to the parent in the path', () => {
     const c = compile("PurchaseOrders('4500000001')/_Item", '$top=10');
     expect(c.sql).toMatch(/exists \(select 1 from "purchasing"\."purchase_order" as "p\d+" where "p\d+"\."purchase_order" = \$1::text and "p\d+"\."purchase_order" = "t\d+"\."purchase_order"\)/);

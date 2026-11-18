@@ -15,7 +15,7 @@
 import { ActionIcon, Alert, Anchor, Button, Group, Menu, Modal, Stack, Text, TextInput, Tooltip } from '@mantine/core';
 import {
   canGroup, canSubtotal, canTotal, capabilitiesFor, hierarchyOf, isAbortError, isSortable, keyPredicate, matches, parseAnnotationPath, resolvePath, sourceInfo,
-  type ActionModel, type FieldModel, type FilterState, type Message, type MessageType, type PresentationModel, type QueryRequest, type QuerySource, type Row, type SortItem, type TotalsEntry,
+  type ActionModel, type EntityTypeModel, type FieldModel, type FilterState, type MetaModel, type Message, type MessageType, type PresentationModel, type QueryRequest, type QuerySource, type Row, type SortItem, type TotalsEntry,
 } from '@rhfan2019/smart-kit-core';
 import { useQueryClient } from '@tanstack/react-query';
 import {
@@ -43,7 +43,7 @@ import { TableP13nDialog } from './TableP13nDialog';
 import { useListQuery } from './useListQuery';
 import { InlineCreateRow } from './InlineCreateRow';
 import { groupValueOf, Table as MTable, type $ColumnSettings as MColumn, type PopinLayout, type Priority } from './ResponsiveTable';
-import { TotalLines, useGrandTotals, useSubtotals, useTotalFormatter } from './useTotals';
+import { MultiUnitTotal, TotalLines, useGrandTotals, useSubtotals, useTotalFormatter } from './useTotals';
 import { TreeCell, useTree, useTreeState, type TreeMethods, type TreeTable$ToggleOpenStateEvent } from './tree';
 
 let gridModulesRegistered = false;
@@ -216,9 +216,10 @@ export interface $TableSettings {
   /** Name of the service in `SmartKitProvider` `services`; default: the provider's `defaultService` (smart-kit addition). */
   service?: string;
   /**
-   * Table type: "ResponsiveTable" (sap.m.Table, rows scroll with the page), "GridTable" and "AnalyticalTable" (the
-   * grid; grouping and totals come from the annotations, docs/23). Default: the grid (FE derives it from the
-   * annotations, stage 4).
+   * Table type: "ResponsiveTable" (sap.m.Table, rows scroll with the page; grouping without subtotals), "GridTable"
+   * (the grid; no grouping, no totals) and "AnalyticalTable" (the grid with grouping, group subtotals and totals of the
+   * custom aggregates, on entity sets with Aggregation.ApplySupported; docs/23, D39). Default: the grid (FE derives
+   * it from the annotations, stage 4).
    */
   type?: 'GridTable' | 'ResponsiveTable' | 'AnalyticalTable';
   /**
@@ -492,10 +493,16 @@ function defaultWidth(f: FieldModel | undefined, edmType: string | undefined): n
   return 200;
 }
 
-/** Draft administrative paths for markers and the editing status (ADR-018). */
-function draftPaths(type: { properties: Record<string, unknown>; navigations: Record<string, { targetType: string }> }): string[] {
-  const out = ['IsActiveEntity', 'HasDraftEntity'].filter((p) => p in type.properties);
-  if (type.navigations.DraftAdministrativeData) out.push('DraftAdministrativeData/DraftIsCreatedByMe', 'DraftAdministrativeData/InProcessByUser', 'DraftAdministrativeData/LastChangedByUser', 'DraftAdministrativeData/LastChangeDateTime', 'DraftAdministrativeData/CreatedByUser');
+/**
+ * Draft paths a list always requests (FE Table.ts "Some properties are always loaded"): HasActiveEntity on
+ * draft-enabled lists; on draft roots also HasDraftEntity and DraftAdministrativeData/InProcessByUser (not for tree
+ * tables, which show active instances only). The key of DraftAdministrativeData comes with it, as the SAPUI5 V4 model
+ * adds the keys of expanded entities. The draft indicator loads the rest of the administrative data when opened.
+ */
+function draftPaths(model: MetaModel, type: EntityTypeModel, root: boolean, tree: boolean): string[] {
+  const out = ['HasActiveEntity', ...(root ? ['HasDraftEntity'] : [])].filter((p) => p in type.properties);
+  const admin = type.navigations.DraftAdministrativeData;
+  if (root && !tree && admin) out.push(...(model.entityTypes[admin.targetType]?.keys ?? []).map((k) => `DraftAdministrativeData/${k}`), 'DraftAdministrativeData/InProcessByUser');
   return out;
 }
 
@@ -721,6 +728,8 @@ function TableCore(p: CoreSettings) {
   const treeState = useTreeState(p.initialExpansionLevel ?? 1);
   const messages = useMessages();
   const draftRoot = !parent && Boolean(model.entitySets[info.entitySet]?.draft?.root);
+  // Draft root or node list (FE isObjectPathDraftSupported, outside an object page).
+  const draftList = !parent && Boolean(model.entitySets[info.entitySet]?.draft);
   const meta = useMemo(() => resolveMetaPath(ui, p.metaPath), [ui, p.metaPath]);
   const [ignored, setIgnored] = useState(p.ignoredFields);
   useEffect(() => setIgnored(p.ignoredFields), [p.ignoredFields]);
@@ -778,23 +787,31 @@ function TableCore(p: CoreSettings) {
 
   const visibleColumns = visible.map((id) => allColumns.find((c) => c.id === id)!).filter(Boolean);
   const fields = visibleColumns.map((c) => c.field).filter((f): f is FieldModel => Boolean(f));
-  const draftFields = draftRoot ? draftPaths(type) : [];
+  const draftFields = draftList ? draftPaths(model, type, draftRoot, isTree) : [];
   const extraSelect = [...visibleColumns.flatMap((c) => c.select ?? []), ...actionPaths(modelActions), ...draftFields, ...(type.etag ? [type.etag] : [])];
-  // Grouping (responsive and grid tables, docs/12 U-5, docs/23): rows are sorted by the group property first.
+  // D39 (FE updateTableVisualizationForType, getP13nMode): only the analytical table (type "AnalyticalTable" on an
+  // entity set with Aggregation.ApplySupported) groups with subtotals and shows totals; the responsive table groups
+  // without subtotals (FE groupConditions, p13n "Group"); the grid table neither groups nor totals.
+  const analytical = p.type === 'AnalyticalTable' && !isTree && Boolean(caps.aggregation);
+  // Grouping (docs/12 U-5, docs/23): rows are sorted by the group property first.
   const fieldPath = (c: ColumnItem | undefined) => (c?.field?.kind === 'field' ? c.field.path : undefined);
   const columnOfPath = (path: string | undefined) => (path ? allColumns.find((c) => fieldPath(c) === path)?.id : undefined);
   const groupable = allColumns.filter((c) => { const path = fieldPath(c); return Boolean(path && canGroup(model, source, path)); });
   // With onGroupByChange the parent keeps the state (a variant): undefined there means the annotation default.
   const groupOwned = p.groupBy !== undefined || Boolean(p.onGroupByChange);
   const groupChoice = (groupOwned ? p.groupBy : own.groupBy) ?? (groupOwned || own.groupBy === undefined ? columnOfPath(presentation.groupBy[0]) ?? null : null);
-  const groupBy = !isTree && (responsive || mode === 'grid') && groupChoice && groupable.some((c) => c.id === groupChoice) ? groupChoice : null;
+  const canGroupHere = !isTree && (responsive || (analytical && mode === 'grid'));
+  const groupBy = canGroupHere && groupChoice && groupable.some((c) => c.id === groupChoice) ? groupChoice : null;
   const groupPath = groupBy ? fieldPath(allColumns.find((c) => c.id === groupBy)) : undefined;
   const setGroupBy = (id: string | null) => { if (!groupOwned) setOwn((x) => ({ ...x, groupBy: id })); p.onGroupByChange?.(id); };
-  // Totals (docs/23): numeric columns the service can aggregate (Aggregation.ApplySupported).
-  const totalPath = (c: ColumnItem | undefined) => { const path = fieldPath(c); return path && canTotal(model, source, path) ? path : undefined; };
-  const totalable = isTree ? [] : allColumns.filter((c) => totalPath(c));
+  // Totals (docs/23, D39): analytical tables only, columns of custom aggregates (Aggregation.CustomAggregate).
+  const totalPath = (c: ColumnItem | undefined) => { const path = analytical ? fieldPath(c) : undefined; return path && canTotal(model, source, path) ? path : undefined; };
+  const totalable = analytical ? allColumns.filter((c) => totalPath(c)) : [];
   const totalsOwned = p.totals !== undefined || Boolean(p.onTotalsChange);
-  const totalIds = (totalsOwned ? p.totals : own.totals) ?? totalable.filter((c) => presentation.total.includes(totalPath(c)!)).map((c) => c.id);
+  // Default (FE getAggregateConditions): the columns of UI.PresentationVariant/Total (an empty Total: none); without
+  // Total all custom aggregates.
+  const defaultTotals = presentation.hasTotal || presentation.total.length ? totalable.filter((c) => presentation.total.includes(totalPath(c)!)) : totalable;
+  const totalIds = (totalsOwned ? p.totals : own.totals) ?? defaultTotals.map((c) => c.id);
   const setTotals = (ids: string[]) => { if (!totalsOwned) setOwn((x) => ({ ...x, totals: ids })); p.onTotalsChange?.(ids); };
   const filters = p.query?.filters ?? {};
   const effectiveSearch = [p.query?.search, search].filter(Boolean).join(' ');
@@ -901,7 +918,7 @@ function TableCore(p: CoreSettings) {
   // ------------------------------------------------------------------ totals and subtotals (docs/23)
   const totalsQuery = { service: p.service, source, filters, search: effectiveSearch, measures, revision: totalsRevision };
   const grand = useGrandTotals({ ...totalsQuery, enabled: executed });
-  const subtotalsOn = Boolean(groupPath && canSubtotal(model, source, groupPath));
+  const subtotalsOn = Boolean(analytical && groupPath && canSubtotal(model, source, groupPath));
   const groupValues = useMemo(() => {
     if (!subtotalsOn || !groupPath) return [];
     const seen = new Set<string>();
@@ -918,7 +935,13 @@ function TableCore(p: CoreSettings) {
   const totalValue = (c: ColumnItem, entry: TotalsEntry | undefined, failed: boolean): ReactNode => {
     const path = totalPath(c);
     if (!path || !totalIds.includes(c.id)) return null;
-    return failed ? <span className="sk-total" data-sk-total={path}>–</span> : <TotalLines path={path} lines={formatTotal(path, entry?.values[path])} />;
+    if (failed) return <span className="sk-total" data-sk-total={path}>–</span>;
+    // several currencies (the service returned no unit): "Show Details" as FE (D39)
+    if (entry?.values[path]?.some((a) => a.multiUnit)) {
+      const sub = entry.group !== undefined && groupPath ? { groupBy: groupPath, groupValue: entry.group } : {};
+      return <MultiUnitTotal query={{ service: p.service, source, filters, search: effectiveSearch, path, revision: totalsRevision, ...sub }} />;
+    }
+    return <TotalLines path={path} lines={formatTotal(path, entry?.values[path])} />;
   };
   const totalCells = (entry: TotalsEntry | undefined, failed: boolean) => Object.fromEntries(totalColumns.map((c) => [c.id, totalValue(c, entry, failed)]));
   const totalLabel = (error: string | undefined) => (
@@ -998,7 +1021,7 @@ function TableCore(p: CoreSettings) {
         const merged = { ...x.target.row, ...(x.row ?? {}) };
         const k = keyOf(x.target.row);
         next[k] = merged;
-        const fits = Object.entries(filters).every(([path, conds]) => matches(getPath(merged, path), conds, resolvePath(model.entityTypes, info.typeName, path).property?.edmType ?? 'Edm.String'));
+        const fits = Object.entries(filters).every(([path, conds]) => path.startsWith('$') || matches(getPath(merged, path), conds, resolvePath(model.entityTypes, info.typeName, path).property?.edmType ?? 'Edm.String'));
         if (!fits) out.push({ id: `nm-${k}-${Date.now()}`, type: 'info', message: t('table.noLongerMatches', { item: x.target.label }), source: 'server' });
         apiRef.current?.getRowNode(k)?.setData(merged);
       }
@@ -1018,7 +1041,9 @@ function TableCore(p: CoreSettings) {
     for (const a of modelActions.filter((x) => !x.inline)) {
       base.push({
         id: a.id, label: a.label, requiresSelection: a.bound,
-        enabled: (sel) => !a.bound || sel.some((r) => isActionAvailable(a, r)),
+        // Core.OperationAvailable: bound actions per selected row; unbound actions by the constant or expression
+        // itself (FE Table.ts _useEnabledExpression, UIFormatters getActionEnabledExpression: equal(value, true)).
+        enabled: (sel) => (a.bound ? sel.some((r) => isActionAvailable(a, r)) : isActionAvailable(a, undefined)),
         onPress: (c) => runner.run(a, a.bound ? c.selected.map(targetOf) : [{ row: {}, path: '', label: '' }]),
       });
     }
@@ -1109,7 +1134,16 @@ function TableCore(p: CoreSettings) {
     ro.observe(bar);
     return () => ro.disconnect();
   }, [responsive]);
-  const marker = draftRoot ? (row: Row) => <DraftIndicator row={row} compact /> : undefined;
+  // Draft indicator (FE DraftIndicator): the details are read when the popover opens, as the SAPUI5 model reads the
+  // popover's properties late.
+  const loadDraftAdmin = useCallback((row: Row) => service.dataProvider.read(pathOf(row), { select: [], expand: [{ navigation: 'DraftAdministrativeData', select: [], expand: [] }] }), [service, pathOf]);
+  const marker = draftRoot ? (row: Row) => <DraftIndicator row={row} compact load={() => loadDraftAdmin(row)} /> : undefined;
+  // Grid tables of a list show the indicator in a separate "Editing Status" column after the first visible column
+  // (FE Columns.ts draftStatus, MdcTableTemplate getComputedColumn: header hidden, 3em, icon only), when a
+  // semantic key column would carry it; responsive tables keep it in the first column.
+  const statusColumn = draftList && !responsive && visibleColumns.some((c) => c.field?.kind === 'field' && Boolean(c.field.path) && ui.semanticKey.includes(c.field.path!));
+  const statusMarker = statusColumn ? (row: Row) => <DraftIndicator row={row} iconOnly load={() => loadDraftAdmin(row)} /> : undefined;
+  const cellMarker = statusColumn ? undefined : marker;
   const latest = useRef({ ctx, p, navigate, sort, totalCell, groupCell, groupLines, tree });
   latest.current = { ctx, p, navigate, sort, totalCell, groupCell, groupLines, tree };
 
@@ -1149,9 +1183,9 @@ function TableCore(p: CoreSettings) {
           const row = params.data;
           if (!row) return null;
           const content = (
-            <span className={i === 0 && marker ? 'sk-cell--with-marker' : undefined}>
+            <span className={i === 0 && cellMarker ? 'sk-cell--with-marker' : undefined}>
               {c.render ? c.render(row) : <Field typeName={info.typeName} service={p.service} metaPath={c.field!} row={row} cell />}
-              {i === 0 && marker ? marker(row) : null}
+              {i === 0 && cellMarker ? cellMarker(row) : null}
               {i === 0 && overridesRef.current[keyOf(row)] ? <span className="sk-table__changed" data-sk-changed-marker>{t('table.changedItem')}</span> : null}
             </span>
           );
@@ -1161,6 +1195,13 @@ function TableCore(p: CoreSettings) {
         context: { sortPath },
       } satisfies ColDef;
     });
+    if (statusMarker) {
+      defs.splice(1, 0, {
+        colId: 'draftStatus', headerName: t('draft.editingStatus'), headerTooltip: t('draft.editingStatus'), headerClass: 'sk-table__header--hidden',
+        width: 48, minWidth: 48, sortable: false, resizable: false, suppressMovable: true,
+        cellRenderer: (params: { data?: Row; node?: { rowPinned?: string | null } }) => (params.data && !params.node?.rowPinned && !groupOf(params.data) ? statusMarker(params.data) : null),
+      });
+    }
     if (inlineCell) {
       defs.push({
         colId: '$actions', headerName: t('actions.inline'), width: 160, sortable: false, resizable: false, suppressMovable: true,
@@ -1180,7 +1221,7 @@ function TableCore(p: CoreSettings) {
     }
     return defs;
     // eslint-disable-next-line react-hooks/exhaustive-deps -- column definitions depend on visible columns, sort indicator and navigability only
-  }, [visible.join('|'), allColumns, navigable, JSON.stringify(sort), intlLocale, timeZone, mode, Boolean(inlineCell), Boolean(marker), gridGrouped, totalIds.join('|'), isTree, frozen, p.enableAutoColumnWidth, p.widthIncludingColumnHeader]);
+  }, [visible.join('|'), allColumns, navigable, JSON.stringify(sort), intlLocale, timeZone, mode, Boolean(inlineCell), Boolean(cellMarker), Boolean(statusMarker), gridGrouped, totalIds.join('|'), isTree, frozen, p.enableAutoColumnWidth, p.widthIncludingColumnHeader]);
   const overridesRef = useRef(overrides);
   overridesRef.current = overrides;
   // Tree grids: a node collapsed on the client keeps its row data; redraw the first column's toggles.
@@ -1538,7 +1579,7 @@ function TableCore(p: CoreSettings) {
         visible={visible}
         sort={baseSort}
         sortable={allColumns.filter((c) => c.field?.kind === 'field' && c.field.path && isSortable(caps, c.field.path)).map((c) => ({ path: c.field!.path!, label: c.label }))}
-        groupable={!isTree && (responsive || mode === 'grid') && p13nAllows('Group') ? groupable.map((c) => ({ id: c.id, label: c.label })) : undefined}
+        groupable={canGroupHere && p13nAllows('Group') ? groupable.map((c) => ({ id: c.id, label: c.label })) : undefined}
         groupBy={groupBy}
         totalable={p13nAllows('Aggregate') ? totalable.filter((c) => visible.includes(c.id)).map((c) => ({ id: c.id, label: c.label })) : []}
         totals={totalIds}
