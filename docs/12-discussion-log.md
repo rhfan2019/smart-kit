@@ -737,3 +737,22 @@ ADR-027 定的范围是"只实现 smart-kit 会发的请求"，用户也定过�
 3. **提交当前改动，以后统一在 main 上开发**：每次合并分支耗时太多。
 
 **据此改的**：ADR-033 第 2、7、8 条和代价；`30` 第 3 节（路径规则，含类型名 `$XxxSettings`、`Xxx$YyyEvent`、实例类型同名）、第 4 节（每个现有导出的目标模块）、第 9 节（不留旧名，迁移清单写进 `25`）；`31` 阶段 1、2、7 和原则（在 main 上开发）；`32` 的 AL-02、AL-03、AL-09、AL-30、AL-31；提示词。分支 `claude/ui-elements` 提交后合并进 main，删掉这个分支。
+
+## D36 对齐阶段 0：两道核对工具和基线（2026-11-17）
+
+**问题**：按 `31` 阶段 0，先做核对工具（API 核对、和真 Fiori elements 的对比测试），跑出基线，之后每阶段"差异只减不增"。
+
+**做法**：
+- **API 核对** `npm run check:ui5`（`scripts/check-ui5-api.mjs`、`scripts/ui5/`）：下载 1.154.0 的 13 个库的 `api.json` 到 `.cache/ui5`（git 忽略）；UI5 一侧合并非基础祖先类的成员（`Control`、`Element`、`BuildingBlock` 等基础类的成员不比，ADR-032 规则 4）；smart-kit 一侧用 TypeScript 读出属性、`@defaultValue`、事件参数、`ref` 上的方法和静态成员。差异分 30 种（`30` 第 7.1 节），有未登记的或"过时"的偏差就失败。自测（AL-20）用故意改错属性名、默认值、事件参数的夹具组件。
+- **映射表** `tools/ui5-alignment/mapping.json`：全部 189 个公开值导出。`30` 第 4 节"待定"的一行定为 `kit/<名字>`：查过 sap.fe.macros 和 sap.m，`ValueHelpDialog`、`ConditionInput`、`AdaptFiltersDialog`、`FilterSummary`、`HeaderFacet`、`CreateDialog`、`SimpleChart`、`CriticalityIcon`、`FieldEditor`、`QuickViewLink` 都没有公开对应（FE 里是 `macros/internal/*`、sap.ui.mdc 内部组合或模板内部）。hooks 和上下文放 `kit/`，辅助函数放 `util`。卡片内容（`ListContent` 等）在 api.json 里没有公开类，按集成卡片 manifest 核对；模板按 `26c` 核对（`manifest:` 条目）。`DraftMarker`、`OverflowActions` 标为阶段 2 删除。
+- **有自己模块的枚举**：api.json 的 `module` 不是 `library` 的（`IllustratedMessageType`、`AvatarShape`、`MessageType` → `sap/ui/core/message/MessageType`、`CalendarWeekNumbering` → `sap/base/i18n/date/...`）按铁律放各自模块、默认导出。
+- **偏差表** `tools/ui5-alignment/deviations.json`：基线 1146 条（`not-implemented` 752，`kit-extension` 349，`react-idiom` 13 条对所有模块有效的规则——`className`、`style`、`textDirection`、aria 关联、图标密度等，`fe-behavior` 32）。基线里 smart-kit 多出的成员暂记 `kit-extension`，理由写"阶段 N 复核（多为改名前的旧名）"，各阶段改名后删掉或改成正式理由。报告 `reports/ui5-alignment.md` 提交（只有名字和计数）。
+- **FE 对比** `npm run e2e:fe`（子代理做）：`apps/fe-reference` 是真 FE V4 应用（运行时从 `ui5.sap.com/1.154.0` 加载，不提交 SAP 文件），连同一个测试服务；三个场景（采购订单列表首屏、带筛选、草稿服务首屏）比较请求、结构、文本；自测（AL-21）在 smart-kit 一侧去掉一个 `DataField`，比较报出列差异。测试服务缺草稿的 `SiblingEntity` 导航，FE 草稿列表因此报错；FE 应用的代理在 `$metadata` 里补上（应在 `apps/mock/lib/draft.mjs` 正式补，阶段 3 做）。
+- **资料**（子代理做）：`26b`（sap.fe.macros 66 个符号，加源码里的实际默认值）、`26c`（ListReport / ObjectPage 约 170 项 manifest 设置）。manifest 设置的权威来源定为 **sap.fe 1.154 的 TypeScript 源码**（模板组件的 `@property` 优先于 `ManifestSettings` 类型，再看转换器的读取点；api.json 里没有页面级设置；文档只作参考）。
+- 两道核对进 CI（缓存 `.cache/ui5`）；`npm run trace -- --strict` 加了 `32` 附表里的 AL 条目；AL-22 由 `packaging.test.ts` 检查 git 不跟踪 SAP 文件。
+
+**发现**（FE 对比基线，按计划阶段处理）：草稿列表的 `$filter` 和编辑状态选项（阶段 3，D33 已定按 FE 改）；smart-kit 多发合计请求（FE 网格表不发，阶段 3）；`$expand` 的文本字段、多选了 `Version`、固定值预取、页大小 100 对 144、动作的可用性（阶段 4、5）。`26c` 还发现：FE 列表页 `liveMode` 默认 false（smart-kit 默认即时模式，D-8 有意的做法）、`initialLoad` 是 `InitialLoadMode`（默认 `Auto`）、FE 非草稿列表页 1.154 不显示新建按钮——这些在阶段 5 对照处理，涉及推翻以前有意设计的（即时模式）到时候问用户。
+
+**结论**：阶段 0 完成，AL-01、AL-02、AL-20、AL-21、AL-22 通过。没有改 API，所以 invoice-assure 的迁移清单本阶段没有条目。
+
+**补记：exports 的写法**：`30` 第 3 节写的是通配（`./m/*`）或明确列出。阶段 1 采用**由脚本生成的明确列表**（`scripts/gen-exports.mjs`，按 `src/{m,f,ui,suite,base,kit,v4}/` 下的模块文件生成）：路径和通配一样，但参考文档生成、`verify:pack`、体积预算这些工具能看到每个模块，内部文件也不会被暴露。

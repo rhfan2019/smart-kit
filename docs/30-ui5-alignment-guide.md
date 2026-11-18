@@ -80,8 +80,10 @@ V2 的 sap.ui.comp（SmartTable 等）**不作为**对齐对象（ADR-033 取代
 | `ButtonType` 等 sap.m 枚举 | `m/library` | sap.m.* | 1 |
 | `DraftMarker` | 删除，改用 `m/ObjectMarker` | sap.m.ObjectMarker | 2 |
 | `OverflowActions` | 删除，改用 `m/OverflowToolbar` | sap.m.OverflowToolbar | 2 |
-| `ValueHelpDialog`、`ConditionInput`、`AdaptFiltersDialog`、`FilterSummary`、`HeaderFacet`、`CreateDialog`、`SimpleChart`、`CriticalityIcon`、`FieldEditor`、`QuickViewLink` | 先查 sap.fe.macros / sap.m 有没有公开对应（例如 `m/QuickView`）；没有的移到 `kit/<名字>` | 待定（阶段 0 定） | 0 |
-| `SmartKitProvider`、hooks（`useListQuery`、`useFilterState`、`useObject`、`useActionRunner`、`useMessages`…） | 基础子路径或 `kit/<名字>` | 无 | 0 |
+| `ValueHelpDialog`、`ConditionInput`、`AdaptFiltersDialog`、`FilterSummary`、`HeaderFacet`、`CreateDialog`、`SimpleChart`、`CriticalityIcon`、`FieldEditor`、`QuickViewLink` | `kit/<名字>`（阶段 0 查过：sap.fe.macros 和 sap.m 都没有公开对应，FE 里是 `macros/internal/*`、sap.ui.mdc 的内部组合或模板内部实现；`m/QuickView` 在阶段 6 另做，`QuickViewLink` 不是它） | 无（理由写在 `mapping.json`） | 0、2 |
+| `SmartKitProvider`、`useSmartKit` 等 | `context`；文案 `i18n`；主题 `theme`（含 AG Grid 主题 `smartKitGridTheme`）；辅助函数（`getPath`、`conditionText`、`hiddenByImportance`、`draftState`、`messageTypeOf`、`toDates`…）`util` | 无 | 0、1 |
+| hooks 和上下文（`useListQuery`、`useFilterState`、`useObject`、`useActionRunner`、`useMessages`、`MessageProvider`、`MessageHost`、`MessageIcon`、`ColumnContext`…） | `kit/<名字>`（每个一个模块） | 无 | 0、1、2 |
+| 有自己模块的枚举：`IllustratedMessageType`、`IllustratedMessageSize`、`AvatarShape`、`AvatarSize`、`UploaderHttpRequestMethod`、`MessageType`、`CalendarWeekNumbering` | `m/IllustratedMessageType` 等、`ui/core/message/MessageType`、`base/i18n/date/CalendarWeekNumbering`，**默认导出**（api.json 的 `module` 不是 `library`，UI5 的 TypeScript 也是默认导入） | 同名 | 1 |
 
 ## 5. API 写法
 
@@ -151,6 +153,13 @@ API 核对脚本只放过登记过的偏差；`not-implemented` 和 `fe-behavior
    - 枚举：值的集合相同（废弃的值可以没有）；
    - smart-kit 多出来的成员都登记为偏差。
 5. 输出差异表；有未登记的差异时退出码非 0。`--report` 写出 `reports/ui5-alignment.md`（每个导出一行：同名数、偏差数、未登记数）。
+
+实现（阶段 0）：`scripts/check-ui5-api.mjs` + `scripts/ui5/`（`api-cache.mjs` 下载和缓存，`ui5-model.mjs` 读 UI5 类并合并非基础祖先类的成员——`sap.ui.core.Control`、`Element`、`ManagedObject`、`BuildingBlock` 等基础类的成员不比，`kit-model.mjs` 用 TypeScript 读出属性、`@defaultValue`、事件参数、`ref` 上的方法和静态成员，`compare.mjs` 比对）。
+
+- 差异的种类（`kind`）：`module-path`（还不在 UI5 路径）、`mapping-path`、`export-name`、`class-name`、`property`、`aggregation`、`association`、`event`、`event-param`、`event-preventDefault`、`default-value`、`method`、`static-method`、`static-member`、`enum-value`、`settings-type`、`instance-type`、`event-type`、`enum-type`、`kind`，多出来的 `extra-property`、`extra-event`、`extra-event-param`、`extra-method`、`extra-static`、`extra-enum-value`，以及 `dom-attributes`（属性继承了根元素的 DOM 属性，算一条）、`to-delete`（映射表里标了删除、还没删）、`manifest-settings`（模板和卡片内容，按 manifest 核对，`26c`）、`unmapped`（公开导出不在映射表里）。
+- 偏差按 `module`（共享模块的具名导出写成 `m/library#ButtonType`）+ `kind` + `member` 匹配；`module: "*"` 对所有模块有效（例如 `className`、`textDirection`、aria 关联，ADR-032 规则 5、7）。
+- 修好以后，对应的偏差成了"过时"（stale），脚本也报错：`--prune` 删掉它们。`--baseline` 把当前全部差异登记进去（只在阶段 0 用过一次）；`--format` 把两个表重写成一行一条。
+- 自测：`tests/unit/check-ui5-api.test.ts`（AL-20），用 `tests/unit/fixtures/ui5-check/` 的组件故意改错属性名、默认值、事件参数。
 
 ### 7.2 Fiori elements 对比测试：`npm run e2e:fe`
 

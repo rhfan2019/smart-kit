@@ -6,7 +6,8 @@
 // - phase 3: every micro chart criterion of docs/17 tested by U or E maps to a passing test;
 // - cards: every criterion of docs/22 tested by U or E maps to a passing test;
 // - controls: the same for docs/27;
-// - grouping and totals: every criterion of docs/23 §7 tested by U or E maps to a passing test.
+// - grouping and totals: every criterion of docs/23 §7 tested by U or E maps to a passing test;
+// - SAPUI5 alignment: every row of the docs/32 appendix tested by U, E or F maps to a passing test (F: reports/e2e-fe-results.json).
 // `--strict` fails on any gap; `--verbose` lists the tests per id.
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
@@ -64,6 +65,16 @@ function results() {
     };
     for (const s of r.suites ?? []) walk(s, s.file);
   } else missing.push('reports/e2e-results.json (run `npm run e2e`)');
+  // the Fiori elements comparison (npm run e2e:fe, docs/30 §7.2) is optional here; AL rows that need it say so
+  const fe = join(ROOT, 'reports/e2e-fe-results.json');
+  if (existsSync(fe)) {
+    const r = JSON.parse(readFileSync(fe, 'utf8'));
+    const walk = (suite, file) => {
+      for (const spec of suite.specs ?? []) out.push({ title: spec.title, passed: spec.ok === true && spec.tests.some((t) => t.status !== 'skipped'), source: suite.file ?? file });
+      for (const s of suite.suites ?? []) walk(s, suite.file ?? file);
+    };
+    for (const s of r.suites ?? []) walk(s, s.file);
+  }
   return { tests: out, missing };
 }
 const p2doc = readFileSync(join(ROOT, 'docs/13-phase2-acceptance.md'), 'utf8');
@@ -139,5 +150,21 @@ if (gtNotTraced.length) console.log(`  without a test: ${gtNotTraced.join(', ')}
 if (gtNotPassing.length) console.log(`  failing: ${gtNotPassing.join(', ')}`);
 if (verbose) for (const r of gtRows) console.log(`${r.id}\t${r.passed}/${r.total}\t${r.sources.join(', ')}`);
 
-const failed = missingAnn.length || (strict && (missingAc.length || noResults.length || notTraced.length || notPassing.length || p3NotTraced.length || p3NotPassing.length || cdNotTraced.length || cdNotPassing.length || ueNotTraced.length || ueNotPassing.length || gtNotTraced.length || gtNotPassing.length));
+// ---------------------------------------------------------------- SAPUI5 alignment (docs/32 appendix)
+// Only the rows listed in the appendix of docs/32 ("已生效的条目") are required: each stage adds the ones it covers.
+const alDoc = readFileSync(join(ROOT, 'docs/32-ui5-alignment-acceptance.md'), 'utf8');
+const alSection = alDoc.split(/^## 附表/m)[1] ?? '';
+const al = [...alSection.matchAll(/^\| (AL-\d+(?:-[\w.]+)?) \| (\d+) \| ([^|]*) \|/gm)].filter((m) => /[UEF]/.test(m[3])).map((m) => m[1]);
+const alRows = al.map((id) => {
+  const ts = traced(id);
+  return { id, total: ts.length, passed: ts.filter((t) => t.passed).length, sources: [...new Set(ts.map((t) => t.source))] };
+});
+const alNotTraced = alRows.filter((r) => r.total === 0).map((r) => r.id);
+const alNotPassing = alRows.filter((r) => r.total > 0 && r.passed < r.total).map((r) => `${r.id} (${r.passed}/${r.total})`);
+console.log(`ui5 alignment · criteria (docs/32 appendix): ${alRows.length - alNotTraced.length - alNotPassing.length}/${alRows.length} traced to passing tests`);
+if (alNotTraced.length) console.log(`  without a test: ${alNotTraced.join(', ')}`);
+if (alNotPassing.length) console.log(`  failing: ${alNotPassing.join(', ')}`);
+if (verbose) for (const r of alRows) console.log(`${r.id}\t${r.passed}/${r.total}\t${r.sources.join(', ')}`);
+
+const failed = missingAnn.length || (strict && (alNotTraced.length || alNotPassing.length || missingAc.length || noResults.length || notTraced.length || notPassing.length || p3NotTraced.length || p3NotPassing.length || cdNotTraced.length || cdNotPassing.length || ueNotTraced.length || ueNotPassing.length || gtNotTraced.length || gtNotPassing.length));
 process.exit(failed ? 1 : 0);

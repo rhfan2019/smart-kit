@@ -55,3 +55,16 @@ describe('published manifests (ADR-029)', () => {
     for (const [, pkg] of manifests) for (const [dep, range] of Object.entries(pkg.peerDependencies ?? {})) expect(range, `${pkg.name} peer ${dep}`).toMatch(/^\^/);
   });
 });
+
+describe('no SAP files in the repository or the packages (ADR-033 §9, AL-22)', () => {
+  it('AL-22 git tracks no api.json, sap.fe sources or SAPUI5 runtime files', async () => {
+    const { execFileSync } = await import('node:child_process');
+    const tracked = execFileSync('git', ['ls-files'], { cwd: ROOT, encoding: 'utf8' }).split('\n').filter(Boolean);
+    const sap = tracked.filter((f) => /(^|\/)api\.json$|-dbg\.js$|library-preload\.js$|sap-ui-core\.js$|(^|\/)\.cache\//.test(f));
+    expect(sap).toEqual([]);
+  });
+
+  it.each(manifests)('AL-22 %s publishes only its own files', (_dir, pkg) => {
+    expect(pkg.files.every((f) => !/\.cache|api\.json|resources/.test(f))).toBe(true);
+  });
+});

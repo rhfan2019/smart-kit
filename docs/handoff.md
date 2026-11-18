@@ -1,6 +1,6 @@
 # 交接文档
 
-> 最后更新：2026-11-16（npm 发布准备和给 AI 编程工具的文档，ADR-029、ADR-030，D23、D24）。新会话先读本文，再读 `docs/prompt/项目目标与范围-v5.md`。
+> 最后更新：2026-11-17（SAPUI5 对齐，见第 1 节最后一条和 `31` 的进度）。新会话先读本文，再读 `docs/prompt/项目目标与范围-v5.md`。
 
 ## 1. 现状
 
@@ -18,6 +18,8 @@
 - **通用控件（2026-11-17，D31，ADR-032）**：分支 `claude/ui-elements`。参照 Fiori UI Elements，按 SAPUI5 1.154 的 API（`26a` 由官方 api.json 生成）做了 `/controls` 子路径的 23 个控件、`/messages` 的 5 个消息控件、`SmartTable tableType="TreeTable"` 和 `UploadSetwithTable`。计划 `26`、验收 `27`（UE-01～UE-99）、示例 `/controls`、`/tree`。Linux 截图基准没有更新（导航换行），推送后 CI 需要重新生成。
 
 - **铁律：与 SAPUI5 一致（2026-11-17，D34，ADR-033）**：组件名、模块路径（只换前缀；`sap.fe.*` 带 `v4`；每个类一个模块）、API 和注解语义都和 SAPUI5 1.154 一致，注解积木对齐 sap.fe.macros，模板对齐 sap.fe.templates；不留旧名（D35）。**以后统一在 main 上开发**，不开功能分支；D31～D35 的改动已经合并进 main。开发文档 `30`、推进计划 `31`（阶段 0～7，有"进度"一节）、验收标准 `32`；新会话从 `docs/prompt/UI5对齐-推进提示词.md` 开始。已有核对结果：`26a`（控件 API）、`28`（已有组件和 UI5 的差异）、`29` / `29a`（列表页注解和 FE 的差异）。
+
+- **对齐进度**（`31` 第 3 节）：阶段 0 完成（D36）：`npm run check:ui5`、`npm run e2e:fe`、映射表和偏差表 `tools/ui5-alignment/`、`26b`、`26c`。
 
 ## 2. 下一步
 
@@ -72,12 +74,15 @@
 | `node scripts/rename-scope.mjs <@scope> --dry-run` | 改 npm scope |
 | `npm run verify:pack` | 构建后执行：打 tgz，在仓库外新建 Vite + React 和 Node 项目从 tgz 安装，检查子路径、类型（bundler / nodenext）、体积、样式、随包文档、server 和 CLI（ADR-029） |
 | `node scripts/gen-agent-docs.mjs` | 重新生成各包 `docs/reference.md`（改了导出或 TSDoc 后执行；`--check` 只检查） |
+| `npm run check:ui5` | API 核对：和 SAPUI5 1.154.0 的 `api.json` 比（首次运行从 ui5.sap.com 下载到 `.cache/ui5`）；`-- --report` 写 `reports/ui5-alignment.md`，`-- --only m/` 只看某些模块，`-- --prune` 删修好的偏差（`30` 第 7.1 节） |
+| `npm run e2e:fe` | 和真 Fiori elements 1.154 对比（`apps/fe-reference`，端口 4420；需联网）；端口被占用时 `E2E_MOCK_PORT=4410 E2E_DEMO_PORT=4411 FE_PORT=4420 npm run e2e:fe`（`30` 第 7.2 节） |
 | `npx changeset` | 为要发布的改动写一条 changeset（四包同步版本，ADR-029） |
 
 ## 5. 环境
 
 - Node 24、npm 11。不再需要 .NET（本机 `~/.dotnet` 里装过的 SDK 可以删除）。
-- 端口：测试服务 4400，示例应用 4401，PostgreSQL 服务 4402，`e2e:pg` 用的示例应用 4403，Storybook 6006。
+- 端口：测试服务 4400，示例应用 4401，PostgreSQL 服务 4402，`e2e:pg` 用的示例应用 4403，FE 对比应用 4420，Storybook 6006。
+- `.cache/ui5/1.154.0/`：核对用的 SAP 文件（`api.json`、sap.fe 源码），git 忽略，不能提交（ADR-033 第 9 条）。
 - PostgreSQL 17（Homebrew，`localhost:5432`，本机认证为 trust）。上面还有其他项目的数据库（`invoice_assure`、`invoice_assure_replay`、`sap_delivery_workbench_dev`、`web_app_template`、`postgres`），**不能碰**；本项目只用角色 `smart_kit`、`smart_kit_reader` 和数据库 `smart_kit_purchasing`。
 - 示例应用的二期路由：`/po?views=switch|select|tabs|type|type-switch`（`type`：按订单类型的视图，来自示例的本地注解 `apps/demo/src/annotations.ts`）、`/po?contents=1`、`/po?table=responsive|auto`、`/po?chart=1`、`/po?working=continuous`、`/po-draft`（草稿服务）、`/fcl`（弹性分栏）、`/:service/object?create=PurchaseOrders`（新建模式）、`/:service/table?parent=…&nav=…`（"Show All"）。
 - 参考项目在 `../00-fiori-list-report-floorplan-folk`，遵守它 `AGENTS.md` 的隔离规则（不访问 `03-invoice-assure`）。

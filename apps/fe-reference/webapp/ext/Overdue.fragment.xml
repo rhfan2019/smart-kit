@@ -1,0 +1,4 @@
+<!-- Custom column "Overdue" (smart-kit demo: tableExtend Custom::Overdue, after DataField::Supplier). -->
+<core:FragmentDefinition xmlns:core="sap.ui.core" xmlns="sap.m">
+  <Text text="{= ${StatusCriticality} === 1 ? 'Overdue' : '' }"/>
+</core:FragmentDefinition>

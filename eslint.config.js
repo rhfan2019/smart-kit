@@ -46,7 +46,7 @@ const noUrlAccess = {
 };
 
 export default tseslint.config(
-  { ignores: ['**/node_modules/**', '**/dist/**', '**/bin/**', '**/obj/**', 'apps/mock/**', 'test-results/**', 'playwright-report/**', 'storybook-static/**', 'apps/storybook/storybook-static/**'] },
+  { ignores: ['.cache/**', '**/node_modules/**', '**/dist/**', '**/bin/**', '**/obj/**', 'apps/mock/**', 'test-results/**', 'playwright-report/**', 'storybook-static/**', 'apps/storybook/storybook-static/**'] },
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {

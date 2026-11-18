@@ -5,6 +5,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+### Added (SAPUI5 alignment tooling, docs/30–32, ADR-033, stage 0)
+
+- Repository: `npm run check:ui5` compares every public export with the SAPUI5 1.154.0 `api.json` (mapping `tools/ui5-alignment/mapping.json`, deviation register `tools/ui5-alignment/deviations.json`, report `reports/ui5-alignment.md`); `npm run e2e:fe` compares the demo list reports with a real Fiori elements 1.154 app (`apps/fe-reference`, SAPUI5 loaded from ui5.sap.com at runtime). No package changes.
+
 ### Added (general controls with SAPUI5 names, docs/26, ADR-032)
 
 - smart-kit: new subpath `/controls`: `ObjectStatus`, `ObjectIdentifier`, `ObjectNumber`, `ObjectMarker`, `ToggleButton`, `IllustratedMessage`, `BusyIndicator`, `BusyDialog`, `Currency`, `ExpandableText`, `OverflowToolbar` (+ `OverflowToolbarButton`, `ToolbarSpacer`), `ProcessFlow`, `MicroProcessFlow`, `Timeline`, `FeedInput`, `FeedListItem`, `UploadSetwithTable`, `DynamicDateRange`, `SelectDialog`, `TableSelectDialog`, `ViewSettingsDialog`, `Wizard`, `IconTabBar` and their enums. Properties, defaults, events (`on` + UI5 event name) and methods (static functions or `ref`) follow the SAPUI5 1.154 API (`docs/26a-ui5-api-1.154.md`).

@@ -47,6 +47,14 @@ jobs:
           git diff --exit-code -- apps/pg-server/generated
       - name: Unit tests (incl. conformance with fe-mockserver)
         run: npm test
+      # SAPUI5 api.json files are downloaded from ui5.sap.com into .cache/ui5 (never committed, ADR-033 §9)
+      - name: Cache SAPUI5 api.json (alignment checks)
+        uses: actions/cache@v4
+        with:
+          path: .cache/ui5
+          key: ui5-1.154.0-${{ hashFiles('scripts/ui5/api-cache.mjs') }}
+      - name: API alignment with SAPUI5 1.154 (docs/30 §7.1)
+        run: npm run check:ui5
       - name: Build and bundle size
         run: |
           npm run build
@@ -61,6 +69,9 @@ jobs:
         run: npx playwright install --with-deps chromium
       - name: End-to-end tests (axe, screenshots, performance)
         run: npm run e2e
+      # a real Fiori elements app (SAPUI5 loaded from ui5.sap.com at runtime) against the same test service (docs/30 §7.2)
+      - name: Comparison with Fiori elements 1.154 (AL-10..AL-12, AL-21)
+        run: npm run e2e:fe
       - name: End-to-end tests against PostgreSQL (smart-kit-server)
         run: npm run e2e:pg
       # needs the unit and end-to-end results (reports/*.json), so it runs after both

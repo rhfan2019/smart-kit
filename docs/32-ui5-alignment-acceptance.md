@@ -49,3 +49,15 @@
 | AL-30 | 改过名的组件、属性、子路径，旧的全部不存在（没有废弃别名、没有旧子路径、根入口不导出组件）；示例、Storybook、测试、文档都用新路径 | S、Z |
 | AL-31 | `25-invoice-assure-issues.md` 的迁移清单完整：每个旧名、旧属性、旧路径对应的新写法，以及每项行为改动；`deviations.json` 只剩 `kit-extension`、`react-idiom`、`no-binding` 和用户确认保留的条目 | D、S |
 | AL-32 | 每个阶段：`typecheck`、`lint`、`test`、`e2e`、`size`、`trace --strict`、`verify:pack`、`gen-agent-docs --check`、`check:ui5`、`e2e:fe` 全部通过 | 全部 |
+
+## 附表：已生效的条目
+
+每个阶段把它覆盖的条目（或细化后的编号，如 `AL-05-Table`）加到下表；`npm run trace -- --strict` 要求方式含 U、E、F 的每一行都有名字带该编号、并且通过的测试（F 读 `reports/e2e-fe-results.json`）。S 由 `npm run check:ui5` 检查（退出码 0 即通过），D 写核对人和日期。
+
+| 条目 | 从阶段 | 方式 | 范围 / 测试 |
+| --- | --- | --- | --- |
+| AL-01 | 0 | S | `check:ui5` 的 `unmapped` / `duplicate-mapping` / `mapping-reason` 检查：全部公开导出（189 个）都在 `mapping.json` |
+| AL-02 | 0 | S、U | `check:ui5` 的 `module-path` / `mapping-path`；`tests/unit/check-ui5-api.test.ts` 的前缀规则 |
+| AL-20 | 0 | U | `tests/unit/check-ui5-api.test.ts`（故意改错属性名、默认值、事件参数） |
+| AL-21 | 0 | F | `tests/e2e-fe/*.spec.ts`（三个场景；故意让 smart-kit 少一列） |
+| AL-22 | 0 | U | `tests/unit/packaging.test.ts`（git 不跟踪 SAP 文件；包的 `files` 不含缓存） |

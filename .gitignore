@@ -8,4 +8,8 @@ playwright-report/
 storybook-static/
 *.tsbuildinfo
 apps/mock/data/
-reports/
+reports/*
+# the UI5 alignment baseline report is committed (docs/31 stage 0): names and counts only
+!reports/ui5-alignment.md
+# SAP api.json, sap.fe sources: downloaded for the alignment checks only, never committed (ADR-033 §9)
+.cache/

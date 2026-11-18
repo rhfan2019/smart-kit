@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FE reference: Purchase Orders</title>
+  <style>html, body { height: 100%; margin: 0; }</style>
+  <!--
+    SAPUI5 1.154.0 from the SAP CDN at runtime (no SAP files in this repository, AL-22).
+    ?app=purchasing (default) or ?app=purchasing-draft selects the component; see README.md.
+  -->
+  <script>
+    (function () {
+      var app = new URLSearchParams(window.location.search).get('app') === 'purchasing-draft' ? 'purchasing-draft' : 'purchasing';
+      window.feReferenceApp = app;
+      document.title = app === 'purchasing-draft' ? 'FE reference: Purchase Orders (Draft)' : 'FE reference: Purchase Orders';
+    })();
+  </script>
+  <script
+    id="sap-ui-bootstrap"
+    src="https://ui5.sap.com/1.154.0/resources/sap-ui-core.js"
+    data-sap-ui-theme="sap_horizon"
+    data-sap-ui-language="en"
+    data-sap-ui-async="true"
+    data-sap-ui-compat-version="edge"
+    data-sap-ui-frame-options="trusted"
+    data-sap-ui-flexibility-services='[{"connector": "SessionStorageConnector"}]'
+    data-sap-ui-resource-roots='{"fe.ref.purchasing": "./purchasing/", "fe.ref.purchasingdraft": "./purchasing-draft/", "fe.ref.ext": "./ext/"}'
+    data-sap-ui-on-init="module:fe/ref/ext/start">
+  </script>
+</head>
+<body class="sapUiBody sapUiSizeCompact" id="content">
+</body>
+</html>
