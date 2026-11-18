@@ -5,7 +5,7 @@ import { act, fireEvent, render, renderHook, screen, waitFor } from '@testing-li
 import { createRef, type ReactNode } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { createText, SmartKitProvider, smartKitMantineTheme } from '../src';
-import { SmartObjectPage } from '@rhfan2019/smart-kit/templates';
+import ObjectPage from '@rhfan2019/smart-kit/v4/fe/templates/ObjectPage';
 import useVariants from '@rhfan2019/smart-kit/kit/useVariants';
 import Table from '../src/v4/fe/macros/Table';
 import VariantManagement from '../src/v4/fe/macros/VariantManagement';
@@ -150,15 +150,15 @@ describe('object page (S19, S21, S22)', () => {
   const model = buildModel(PERSON);
   const provider = () => new MemoryProvider({ model, data: { People: [{ ID: '1', Name: 'Ada Lovelace' }] } });
 
-  it('a person without an image gets a round initials avatar; share can be hidden', async () => {
+  it('a person without an image gets a round initials avatar; Share is always offered (FE has no setting to hide it)', async () => {
     expect(model.ui['People.Person']!.headerInfo).toMatchObject({ person: true });
-    render(host(<SmartObjectPage service="shop" path="People('1')" share={false} />, { model, provider: provider() }));
+    render(host(<ObjectPage service="shop" path="People('1')" />, { model, provider: provider() }));
     await waitFor(() => expect(document.querySelector('[data-sk-avatar-initials]')?.getAttribute('data-sk-avatar-initials')).toBe('AL'));
-    expect(screen.queryByText('Share')).toBeNull();
+    expect(document.querySelector('[data-sk-share]')).not.toBeNull();
   });
 
   it('not found names the type', async () => {
-    render(host(<SmartObjectPage service="shop" path="People('9')" />, { model, provider: provider() }));
+    render(host(<ObjectPage service="shop" path="People('9')" />, { model, provider: provider() }));
     expect(await screen.findByText('This User does not exist.')).toBeInTheDocument();
   });
 

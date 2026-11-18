@@ -48,7 +48,7 @@ function setPath(row: Row, path: string, value: unknown) {
 /**
  * In-memory data provider. Also the supported "host gives the rows" source (worklists the host computes): it evaluates
  * every filter operator, search, sort, paging, `$count`, grouping and `$apply` totals and subtotals in the browser.
- * After the host's rows change, call `setRows` and reload the page (`SmartListReport` `refreshToken`).
+ * After the host's rows change, call `setRows` and reload the page (`ListReport` `refreshToken`).
  */
 export class MemoryProvider implements DataProvider {
   constructor(private readonly o: MemoryProviderOptions) {}

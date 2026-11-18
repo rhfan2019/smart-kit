@@ -196,7 +196,8 @@ import { MantineProvider } from '@mantine/core';
 import { loadService, type NavigationAdapter } from '@rhfan2019/smart-kit-core';
 import { SmartKitProvider, type ServiceConfig } from '@rhfan2019/smart-kit/context';
 import { smartKitCssVariablesResolver, smartKitMantineTheme } from '@rhfan2019/smart-kit/theme';
-import { SmartListReport, SmartObjectPage } from '@rhfan2019/smart-kit/templates';
+import ListReport from '@rhfan2019/smart-kit/v4/fe/templates/ListReport';
+import ObjectPage from '@rhfan2019/smart-kit/v4/fe/templates/ObjectPage';
 import { useEffect, useMemo, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter, Route, Routes, useNavigate, useSearchParams } from 'react-router';
@@ -224,7 +225,7 @@ function App() {
   return (
     <SmartKitProvider services={services} locale="en" namespace="shop" navigation={navigation}>
       <Routes>
-        <Route path="/" element={<SmartListReport entitySet="SalesOrders" />} />
+        <Route path="/" element={<ListReport contextPath="/SalesOrders" />} />
         <Route path="/object" element={<ObjectRoute />} />
       </Routes>
     </SmartKitProvider>
@@ -234,7 +235,7 @@ function App() {
 function ObjectRoute() {
   const [params] = useSearchParams();
   const path = params.get('path') ?? '';
-  return <SmartObjectPage key={path} path={path} />;
+  return <ObjectPage key={path} path={path} />;
 }
 
 createRoot(document.getElementById('root')!).render(
@@ -262,7 +263,7 @@ At the repository root (one `AGENTS.md` for both), run it in each project and me
 1. Migration (table + comments) → `npx smart-kit generate --strict`.
 2. Annotate it (`UI.HeaderInfo`, `UI.LineItem`, `UI.SelectionFields`, `UI.Facets`; Capabilities on the set).
 3. List it in `entitySets` of the server if it is writable.
-4. Add a route with `SmartListReport entitySet="…"` and extend `hasObjectPage`.
+4. Add a route with `ListReport contextPath="/…"` (`v4/fe/templates/ListReport`) and extend `hasObjectPage`.
 
 ## If something is off
 

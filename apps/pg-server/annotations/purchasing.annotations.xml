@@ -1897,6 +1897,13 @@
            smart-kit-server sums it (packages/server/docs/README.md, "Custom aggregates") -->
       <Annotations Target="Purchasing.PurchaseOrder">
         <Annotation Term="Aggregation.CustomAggregate" Qualifier="NetAmount" String="Edm.Decimal"/>
+        <!-- the chart view of the FE reference app (purchasing-chart, views.paths) = the chart of /po?chart=1 (as apps/mock) -->
+        <Annotation Term="UI.PresentationVariant" Qualifier="ByStatusChart">
+          <Record Type="UI.PresentationVariantType">
+            <PropertyValue Property="Text" String="{{label:CH.ByStatus}}"/>
+            <PropertyValue Property="Visualizations"><Collection><AnnotationPath>@UI.Chart#ByStatus</AnnotationPath></Collection></PropertyValue>
+          </Record>
+        </Annotation>
       </Annotations>
     </Schema>
   </edmx:DataServices>

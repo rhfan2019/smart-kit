@@ -12,7 +12,7 @@ import { describe, expect, it } from 'vitest';
 import { SmartKitProvider } from '../src/context/SmartKitProvider';
 import { smartKitMantineTheme } from '../src/theme/mantine';
 import Table from '../src/v4/fe/macros/Table';
-import { SmartListReport, tableFilters, viewExcludedPaths } from '../src/templates/SmartListReport';
+import { ListReport, tableFilters, viewExcludedPaths } from '../src/templates/ListReport';
 import { shopData } from './helpers';
 
 const SHOP = readFileSync(join(import.meta.dirname, '../../core/test/fixtures/shop.xml'), 'utf8');
@@ -165,7 +165,7 @@ const rowsOf = (requests: QueryRequest[], set: string) => requests.filter((r) =>
 
 describe('draft list (FE DraftEditState)', () => {
   it('AL-10 AL-11 P1-1 draft list: All = IsActiveEntity eq false or SiblingEntity/IsActiveEntity eq null; six editing status options; Locked by Another User by InProcessByUser', async () => {
-    const { ui, requests } = draftHost(<SmartListReport service="d" entitySet="Orders" tableType="ResponsiveTable" />);
+    const { ui, requests } = draftHost(<ListReport service="d" contextPath="/Orders" initialLoad="Enabled" liveMode controlConfiguration={{ '@com.sap.vocabularies.UI.v1.LineItem': { tableSettings: { type: 'ResponsiveTable' } } }} />);
     render(ui);
     await waitFor(() => expect(listed()).toHaveLength(3));
     const first = rowsOf(requests, 'Orders').at(-1)!;
@@ -184,7 +184,7 @@ describe('draft list (FE DraftEditState)', () => {
   });
 
   it('AL-11 P1-1 draft list: grid tables show an "Editing Status" column (header hidden) after the first column', async () => {
-    const { ui } = draftHost(<SmartListReport service="d" entitySet="Orders" tableType="grid" />);
+    const { ui } = draftHost(<ListReport service="d" contextPath="/Orders" initialLoad="Enabled" controlConfiguration={{ '@com.sap.vocabularies.UI.v1.LineItem': { tableSettings: { type: 'GridTable' } } }} />);
     render(ui);
     await waitFor(() => expect(document.querySelector('.ag-header-cell[col-id="draftStatus"]')).not.toBeNull());
     const ids = [...document.querySelectorAll('.ag-header-row-column .ag-header-cell[col-id]')].map((h) => h.getAttribute('col-id')).filter((id) => !id!.startsWith('ag-Grid-'));
@@ -200,11 +200,11 @@ describe('multiple views (FE views.paths)', () => {
     expect(views.map((v) => v.id)).toEqual(['A', 'B']);
     expect([...viewExcludedPaths(views, ['Status'])]).toEqual(['Type']);
     // the condition shared by both views (Status eq N) is applied too, combined with the filter bar's by "and"
-    const r = tableFilters({ Status: [{ operator: 'EQ', values: ['O'] }] }, () => true, false, views[0]);
+    const r = tableFilters({ Status: [{ operator: 'EQ', values: ['O'] }] }, () => true, false, views[0]!.conditions);
     expect(r.filters.Status).toEqual([{ operator: 'EQ', values: ['O'] }]);
     expect(hiddenFiltersOf(r.filters)).toEqual({ Type: [{ operator: 'EQ', values: ['X'] }], Status: [{ operator: 'EQ', values: ['N'] }] });
 
-    const { ui, requests } = draftHost(<SmartListReport service="d" entitySet="Items" tableType="ResponsiveTable" views={{ mode: 'tabs' }} />);
+    const { ui, requests } = draftHost(<ListReport service="d" contextPath="/Items" initialLoad="Enabled" controlConfiguration={{ '@com.sap.vocabularies.UI.v1.LineItem': { tableSettings: { type: 'ResponsiveTable' } } }} views={{ paths: [{ key: 'A', annotationPath: 'com.sap.vocabularies.UI.v1.SelectionPresentationVariant#A' }, { key: 'B', annotationPath: 'com.sap.vocabularies.UI.v1.SelectionPresentationVariant#B' }] }} />);
     render(ui);
     await waitFor(() => expect(listed()).toHaveLength(1));
     const req = rowsOf(requests, 'Items').at(-1)!;

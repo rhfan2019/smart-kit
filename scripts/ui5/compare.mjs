@@ -165,6 +165,7 @@ export function matchDeviations(findings, deviations) {
     if (d) { used.add(d); registered.push({ ...x, deviation: d.id }); } else unregistered.push(x);
   }
   // fe:<scenario> entries belong to the Fiori elements comparison (npm run e2e:fe), not to this check
-  const stale = deviations.filter((d) => d.module !== '*' && !String(d.module).startsWith('fe:') && !used.has(d));
+  // manifest-* entries belong to the manifest settings check (scripts/check-manifest-settings.mjs, AL-13)
+  const stale = deviations.filter((d) => d.module !== '*' && !String(d.module).startsWith('fe:') && !String(d.kind).startsWith('manifest-') && !used.has(d));
   return { registered, unregistered, stale };
 }

@@ -50,6 +50,11 @@ export interface QueryRequest {
   /** String conditions are case-insensitive (Capabilities.FilterFunctions tolower). */
   caseInsensitive?: boolean;
   timeZone?: string;
+  /**
+   * The hidden filters (a view's selection variant) come before the filter bar conditions, as FE writes the `$count`
+   * requests of the list report's view tabs (MultipleModeControl); default after them.
+   */
+  hiddenFiltersFirst?: boolean;
   /** Server-side aggregation ($apply, OData Data Aggregation): group by `groupBy` and aggregate the measures (ADR-021). */
   aggregate?: { groupBy: string[]; measures: AggregateMeasure[] };
   /** Recursive hierarchy (docs/26 §3.10): the visible nodes as `$apply=…/com.sap.vocabularies.Hierarchy.v1.TopLevels(…)`. */
@@ -696,7 +701,7 @@ export function typeLookup(model: MetaModel, typeName: string) {
 }
 
 /** Builds the $filter string of a request (filters and anyOf). */
-export function filterString(model: MetaModel, typeName: string, req: Pick<QueryRequest, 'filters' | 'anyOf' | 'anyOfOnly' | 'timeZone' | 'caseInsensitive'>): string | undefined {
+export function filterString(model: MetaModel, typeName: string, req: Pick<QueryRequest, 'filters' | 'anyOf' | 'anyOfOnly' | 'timeZone' | 'caseInsensitive' | 'hiddenFiltersFirst'>, o: { wrapHidden?: boolean } = {}): string | undefined {
   const typeOf = typeLookup(model, typeName);
   const parts: string[] = [];
   if (req.anyOfOnly && req.anyOf && !req.filters) {
@@ -715,10 +720,13 @@ export function filterString(model: MetaModel, typeName: string, req: Pick<Query
   // FE adds both after the filter bar conditions.
   // Each property of a hidden selection variant is a filter of its own, in parentheses as the SAPUI5 V4 model writes
   // FE's per-SelectOption filters ("(Status eq 'A' or Status eq 'B') and (CompanyCode eq '1000')").
+  const hidden: string[] = [];
   for (const [path, conds] of Object.entries(hiddenFiltersOf(req.filters))) {
     const f = toFilter({ [path]: conds }, typeOf, { timeZone: req.timeZone, caseInsensitive: req.caseInsensitive });
-    if (f) parts.push(wrapped(f) ? f : `(${f})`);
+    if (f) hidden.push((o.wrapHidden === false && !/ or /.test(f)) || wrapped(f) ? f : `(${f})`);
   }
+  if (req.hiddenFiltersFirst) parts.unshift(...hidden);
+  else parts.push(...hidden);
   if (req.filters?.[EDIT_STATE]) parts.push(editStateFilter(editStateOf(req.filters), parts.length > 0));
   return parts.length ? parts.join(' and ') : undefined;
 }
@@ -746,7 +754,8 @@ export function toQueryString(model: MetaModel, request: QueryRequest): string {
   if (req.analytical) return analyticalQueryString(model, req, req.analytical, info.typeName);
   if (req.aggregate) {
     // $apply is evaluated before $filter: filters go into a filter() transformation (OData Data Aggregation §3).
-    const filter = filterString(model, info.typeName, req);
+    // A view's selection variant is appended without parentheses, as the FE chart writes it (fe:views4-chart-view).
+    const filter = filterString(model, info.typeName, req, { wrapHidden: false });
     const aggregates = req.aggregate.measures
       .map((m) => (m.with === 'count' ? `$count as ${m.as ?? 'count'}`
         : m.with ? `${m.path} with ${m.with} as ${m.as ?? m.path.replace(/\//g, '_')}`

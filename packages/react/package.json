@@ -55,11 +55,6 @@
       "types": "./dist/entries/util.d.ts",
       "import": "./dist/entries/util.js"
     },
-    "./templates": {
-      "smart-kit-source": "./src/entries/templates.ts",
-      "types": "./dist/entries/templates.d.ts",
-      "import": "./dist/entries/templates.js"
-    },
     "./base/i18n/date/CalendarWeekNumbering": {
       "smart-kit-source": "./src/base/i18n/date/CalendarWeekNumbering.ts",
       "types": "./dist/base/i18n/date/CalendarWeekNumbering.d.ts",
@@ -629,6 +624,16 @@
       "smart-kit-source": "./src/v4/fe/macros/fcl/FlexibleColumnLayoutActions.block.ts",
       "types": "./dist/v4/fe/macros/fcl/FlexibleColumnLayoutActions.block.d.ts",
       "import": "./dist/v4/fe/macros/fcl/FlexibleColumnLayoutActions.block.js"
+    },
+    "./v4/fe/templates/ListReport": {
+      "smart-kit-source": "./src/v4/fe/templates/ListReport.ts",
+      "types": "./dist/v4/fe/templates/ListReport.d.ts",
+      "import": "./dist/v4/fe/templates/ListReport.js"
+    },
+    "./v4/fe/templates/ObjectPage": {
+      "smart-kit-source": "./src/v4/fe/templates/ObjectPage.ts",
+      "types": "./dist/v4/fe/templates/ObjectPage.d.ts",
+      "import": "./dist/v4/fe/templates/ObjectPage.js"
     },
     "./styles.css": {
       "smart-kit-source": "./src/theme/styles.css",

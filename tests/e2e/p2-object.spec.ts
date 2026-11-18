@@ -269,18 +269,21 @@ test('P2-OP-29 loading: lazy sections show a busy placeholder; "Show More" conte
   await expect(page.locator('[data-sk-subsection="NotesData"] [data-sk-field-path="Notes"]')).toBeVisible();
 });
 
-test('P2-OP-30 dynamic side content: toggled in the header, on the right, contextual content only', async ({ page }) => {
+test('P2-OP-30 dynamic side content: shown next to its sub-section by a sub-section action (FE sideContent), contextual content only', async ({ page }) => {
+  // stage 5: side content belongs to a sub-section (manifest content.body.sections › subSections › sideContent) and is
+  // shown with the ExtensionAPI showSideContent, here from the sub-section action of Custom::Timeline
   await open(page, orderPath('4500000001'));
+  await page.locator('[data-sk-anchor="Custom::Timeline"]').first().click();
   await expect(page.locator('[data-sk-side-content]')).toHaveCount(0);
-  await page.locator('[data-sk-action="SideContent"]').click();
-  const side = page.locator('[data-sk-side-content]');
+  await page.locator('[data-sk-action="Custom::SupplierInfo"]').click();
+  const side = page.locator('[data-sk-side-content="Custom::Timeline"]');
   await expect(side).toBeVisible();
-  await expect(side).toContainText('Supplier Information');
+  await expect(side).toContainText('0000100001');
   const s = await side.boundingBox();
-  const main = await page.locator('.sk-object-page-wrap__main').boundingBox();
+  const main = await page.locator('[data-sk-custom-subsection="Custom::Timeline"] .sk-custom-subsection__main').boundingBox();
   expect(s!.x).toBeGreaterThanOrEqual(main!.x + main!.width - 1);
   await expect(side.locator('button')).toHaveCount(0); // no finalizing or global actions
   await evidence(page, 'P2-OP-30');
-  await page.locator('[data-sk-action="SideContent"]').click();
+  await page.locator('[data-sk-action="Custom::SupplierInfo"]').click();
   await expect(side).toHaveCount(0);
 });

@@ -2,7 +2,8 @@
  * Flexible column layout (NAV-07, ADR-022): list in the first column, object page in the second, sub-object page in
  * the third. The layout lives in the URL: /fcl?object=<path>&sub=<path>&layout=<LayoutType>.
  */
-import { SmartListReport, SmartObjectPage } from '@rhfan2019/smart-kit/templates';
+import ListReport from '@rhfan2019/smart-kit/v4/fe/templates/ListReport';
+import ObjectPage from '@rhfan2019/smart-kit/v4/fe/templates/ObjectPage';
 import FlexibleColumnLayout, { type $FlexibleColumnLayoutSettings, type FlexibleColumnLayout$StateChangeEvent } from '@rhfan2019/smart-kit/f/FlexibleColumnLayout';
 import type { Row } from '@rhfan2019/smart-kit-core';
 import { useMemo, useRef } from 'react';
@@ -45,18 +46,18 @@ export function FclPage() {
       layout={layout}
       onStateChange={onStateChange}
       beginColumnPages={(
-        <SmartListReport
-          entitySet="PurchaseOrders" pageKey="fcl:po" onRowsChange={(r) => { rows.current = r; }}
-          onRowNavigate={(_row, path) => update({ object: path, sub: undefined, layout: undefined })}
+        <ListReport
+          contextPath="/PurchaseOrders" pageKey="fcl:po" onRowsChange={(r) => { rows.current = r; }}
+          controlConfiguration={{ '@com.sap.vocabularies.UI.v1.LineItem': { tableSettings: { type: 'GridTable', rowPress: (e) => update({ object: e.bindingContext.getPath().slice(1), sub: undefined, layout: undefined }) } } }}
         />
       )}
       midColumnPages={object ? (
-        <SmartObjectPage
-          key={object} path={object} navigation="anchor"
+        <ObjectPage
+          key={object} path={object}
           onRowNavigate={(_row, path) => update({ sub: path, layout: undefined })}
         />
       ) : undefined}
-      endColumnPages={sub ? <SmartObjectPage key={sub} path={sub} navigation="anchor" paging={false} /> : undefined}
+      endColumnPages={sub ? <ObjectPage key={sub} path={sub} paging={false} /> : undefined}
       midPaging={{ onPrevious: () => page(-1), onNext: () => page(1) }}
     />
   );

@@ -44,6 +44,18 @@ export class ODataV4Provider implements DataProvider {
     return join(this.o.serviceUrl, sourcePath(this.o.model, req.source, req.filters)) + (qs ? `?${qs}` : '');
   }
 
+  /** URL of a `$count` request: `<set>/$count` with only `$filter` and `$search`. */
+  countUrl(req: QueryRequest): string {
+    const qs = toQueryString(this.o.model, { ...req, select: [], expand: [], orderBy: [], count: false, skip: undefined, top: undefined, analytical: undefined, aggregate: undefined, hierarchy: undefined });
+    return `${join(this.o.serviceUrl, sourcePath(this.o.model, req.source, req.filters))}/$count${qs ? `?${qs}` : ''}`;
+  }
+
+  async count(req: QueryRequest, opts: RequestOptions = {}): Promise<number> {
+    const res = await this.o.fetch(this.countUrl(req), { headers: this.headers({ Accept: 'text/plain' }), signal: opts.signal });
+    if (!res.ok) throw await errorFromResponse(res);
+    return Number((await res.text()).trim());
+  }
+
   readUrl(path: EntityPath, req: ReadRequest): string {
     const qs = readQueryString(req);
     return join(this.o.serviceUrl, resolveEntityPath(this.o.model, path).canonical) + (qs ? `?${qs}` : '');

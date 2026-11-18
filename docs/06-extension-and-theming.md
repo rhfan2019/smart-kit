@@ -31,7 +31,7 @@
 | `ObjectPageLayout` | `.Header`、`.Sections`、`.Footer` | 区块和子区块（Facet id） | 区块（相对于区块 id）；子区块（相对于子区块 id） | `useObjectContext()`：`data`、`path`、`refresh`、`mode` |
 | `ObjectPageHeader` | `.Title`、`.Actions`、`.Facets`、`.MessageStrip`、`.Breadcrumbs` | 页头 Facet（Facet id） | 页头 Facet；页头动作 | `useObjectContext()` |
 | `Section` / `SubSection` | `.MessageStrip`、`.Actions` | — | 子区块里的自定义内容 | `useObjectContext()` |
-| `SmartListReport` / `SmartObjectPage`（模板） | 透传以上全部 `extend` 和部件 | 同上 | 同上 | 同上 |
+| `ListReport` / `ObjectPage`（模板，`v4/fe/templates/*`，阶段 5 起属性是 manifest 设置，见 `26c`） | 透传以上全部 `extend` 和部件 | 同上 | 同上 | 同上 |
 
 ## 3. 令牌（三层）
 
@@ -140,8 +140,8 @@
 
 扩展点：
 - `SmartTable`：`actionGroups`（菜单按钮）、`modelActions={false}`（不用注解动作）、`createMode`、`deletable`、`workingMode`、`lineItem`、`titleAddon`、`toolbarEnd`；部件 `SmartTable.Copy`、`SmartTable.Details`。
-- `SmartListReport`：`views`、`contents`、`chart`、`tableType`、`share`、`onRowsChange`。
-- `SmartObjectPage`：`keyInfo`、`sideContent`、`subObjectCreate`、`create`、`onCreated`、`onDeleted`、`editable`、`paging`、`letterboxing`；`SectionItem.subSections[].blocks`（布局块）。
+- `ListReport`（阶段 5 前的属性名，现在按 `26c` 的 manifest 设置）：`views`、`contents`、`chart`、`tableType`、`share`、`onRowsChange`。
+- `ObjectPage`（同上）：`keyInfo`、`sideContent`、`subObjectCreate`、`create`、`onCreated`、`onDeleted`、`editable`、`paging`、`letterboxing`；`SectionItem.subSections[].blocks`（布局块）。
 - `DynamicPage`：`keyInfo`、`actionItems`、`layoutActions`、`titleAddon`、`letterboxing`；`ColumnContext`（弹性分栏给列的布局动作和面包屑规则）。
 - `ServiceConfig.editStrategy(entitySet)`：替换编辑策略（ADR-018）。
 - `NavigationAdapter.toTable(parent, navigation, service)`："Show All (x)" 的目标页。

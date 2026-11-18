@@ -71,19 +71,15 @@ test('P2-OP-20 global edit: editable header fields move to a temporary "Header" 
   await evidence(page, 'P2-OP-20');
 });
 
-test('P2-OP-21 partial edit: "Edit Header" opens a dialog with the header fields only', async ({ page }) => {
+test('P2-OP-21 no partial header edit (FE V4): no "Edit Header" button; editing hides the header content, the header is edited in its section', async ({ page }) => {
+  // Fiori elements V4 has no partial header edit dialog (stage 5, editableHeaderContent default true, D44)
   await open(page, orderPath('4500000005'));
-  await page.locator('[data-sk-edit-header]').click();
-  const dialog = page.getByRole('dialog', { name: 'Edit Header' });
-  await expect(dialog).toBeVisible();
-  await expect(dialog.locator('[data-sk-field-path]')).toHaveCount(4);
-  await dialog.locator('[data-sk-field-path="Description"] input').fill('Edited in the header dialog');
-  await evidence(page, 'P2-OP-21', dialog);
-  await dialog.locator('[data-sk-partial-save]').click();
-  await expect(dialog).toHaveCount(0);
-  await expect(page.locator('.sk-dynamic-page__subheading')).toHaveText('Edited in the header dialog');
-  // the page stays in display mode
-  await expect(page.locator('[data-sk-save]')).toHaveCount(0);
+  await expect(page.locator('[data-sk-facet]').first()).toBeVisible();
+  await expect(page.locator('[data-sk-edit-header]')).toHaveCount(0);
+  await page.locator('[data-sk-action="Edit"]').click();
+  await expect(page.locator('[data-sk-section]').first()).toHaveAttribute('data-sk-section', '$Header');
+  await expect(page.locator('.sk-object-header__facets [data-sk-facet]')).toHaveCount(0);
+  await evidence(page, 'P2-OP-21');
 });
 
 test('P2-OP-22 inline create of a subobject: "Create" adds a row at the top of the table; Ctrl+Enter does the same', async ({ page }) => {

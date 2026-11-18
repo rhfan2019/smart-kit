@@ -108,8 +108,7 @@
           "name": "sap.fe.templates.ObjectPage",
           "options": {
             "settings": {
-              "contextPath": "/SupplierContacts",
-              "editableHeaderContent": false
+              "contextPath": "/SupplierContacts"
             }
           }
         }

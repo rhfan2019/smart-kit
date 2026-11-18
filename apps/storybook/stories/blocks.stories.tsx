@@ -3,7 +3,8 @@ import type { Condition } from '@rhfan2019/smart-kit-core';
 import AdaptFiltersDialog from '@rhfan2019/smart-kit/kit/AdaptFiltersDialog';
 import ConditionInput from '@rhfan2019/smart-kit/kit/ConditionInput';
 import FilterSummary from '@rhfan2019/smart-kit/kit/FilterSummary';
-import { SmartListReport, SmartObjectPage } from '@rhfan2019/smart-kit/templates';
+import ListReport from '@rhfan2019/smart-kit/v4/fe/templates/ListReport';
+import ObjectPage from '@rhfan2019/smart-kit/v4/fe/templates/ObjectPage';
 import TableP13nDialog from '@rhfan2019/smart-kit/m/p13n/Popup';
 import useFilterState from '@rhfan2019/smart-kit/kit/useFilterState';
 import useVariants from '@rhfan2019/smart-kit/kit/useVariants';
@@ -32,8 +33,8 @@ const ui = model.ui['Shop.Product']!;
 const row = data.Products![0]!;
 const full = { height: '100vh' };
 
-export const ListReportTemplate: Story = { render: () => <div style={full}><SmartListReport entitySet="Products" /></div> };
-export const ObjectPageTemplate: Story = { render: () => <SmartObjectPage path="Products(1)" /> };
+export const ListReportTemplate: Story = { render: () => <div style={full}><ListReport contextPath="/Products" /></div> };
+export const ObjectPageTemplate: Story = { render: () => <ObjectPage path="Products(1)" /> };
 
 export const Table: Story = { render: () => <div style={{ ...full, display: 'flex', flexDirection: 'column', padding: 16 }}><TableMacro contextPath="/Products" /></div> };
 export const SubTable: Story = { render: () => <div style={{ padding: 16 }}><TableMacro contextPath="/Products/_Review" bindingContext="Products(1)" header="Reviews" isSearchable /></div> };

@@ -1,0 +1,25 @@
+{
+  "template": "Page",
+  "module": "fixture/Page",
+  "settingsType": "$PageSettings",
+  "settings": [
+    {"path": "initialLoad", "type": "enum", "values": ["Auto", "Disabled", "Enabled"], "default": "Auto"},
+    {"path": "liveMode", "type": "boolean", "default": false},
+    {"path": "variantManagement", "type": "enum", "values": ["Control", "None", "Page"], "default": "Page"},
+    {"path": "views", "type": "object"},
+    {"path": "views/paths", "type": "array"},
+    {"path": "views/paths/[]", "type": "object"},
+    {"path": "views/paths/[]/key", "type": "string"},
+    {"path": "views/paths/[]/annotationPath", "type": "string"},
+    {"path": "views/showCounts", "type": "boolean"},
+    {"path": "hideFilterBar", "type": "boolean", "default": false},
+    {"path": "stickyMultiTabHeader", "type": "boolean", "default": true, "unread": true},
+    {"path": "controlConfiguration", "type": "object"},
+    {"path": "controlConfiguration/*", "type": "object", "opaque": true},
+    {"path": "controlConfiguration/@com.sap.vocabularies.UI.v1.LineItem", "type": "object"},
+    {"path": "controlConfiguration/@com.sap.vocabularies.UI.v1.LineItem/columns", "type": "record"},
+    {"path": "controlConfiguration/@com.sap.vocabularies.UI.v1.LineItem/columns/*", "type": "object"},
+    {"path": "controlConfiguration/@com.sap.vocabularies.UI.v1.LineItem/columns/*/header", "type": "string"},
+    {"path": "controlConfiguration/@com.sap.vocabularies.UI.v1.LineItem/columns/*/template", "type": "string"}
+  ]
+}

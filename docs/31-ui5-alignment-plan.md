@@ -73,6 +73,7 @@
 
 1. 对象页注解：按 D33 的方法对照（FE 源码 `converters/ObjectPage/*`、`controls/Common/Form`、`HeaderFacet`、`SubSection` 等），写 `29b`、`29c`，再分 P1 / P2 修改，对比测试覆盖对象页（显示、编辑、草稿、子表、页头 Facet）。
 2. 九个微图表控件（`suite/ui/microchart/…`）、`m/p13n/Popup`、`m/QuickView` 等 `30` 第 4 节剩下的。
+3. 阶段 5 留下的（D46）：分组分析表改成可折叠层级；变式管理 `Control`；表格积木的变式和快速变式；组合视图；自定义页眉；后续块的 `$top`；草稿新建问非计算键的对话框；显示态页脚的确定性动作；编辑态页头的草稿切换；标为阶段 6 的 `manifest-missing`。另有两处声明了但没实现、也没登记的设置：对象页的 `variantManagement`（`ObjectPage.tsx` 不读）；列表页 `views.paths[].annotationPath` 指向 SelectionVariant（FE 允许，smart-kit 当默认视图处理）。
 
 完成标准：AL-12 扩展到对象页；AL-01～AL-09 全部模块通过。
 
@@ -100,6 +101,6 @@
 | 2 | 完成 | 89ac1fc | D38 | 114 个 UI5 模块；旧子路径只剩 `/templates`，根入口只有基础设施；`not-implemented` 441 → 119 |
 | 3 | 完成 | 360b348 | D39、D40 | 八项 P1 和 OperationAvailable 缺陷按 FE；FE 对比 15 个场景；`02` 按 FE 源码重写；`fe-behavior` 32 → 28 |
 | 4 | 完成 | 66c48a3 | D43 | 列、动作、筛选栏、值帮助、值的显示、视图、图表、KPI 按 FE；FE 对比 37 个场景；`fe-behavior` 28 → 13；收尾（D45）：分析表单请求、引用的值帮助、参数化实体集、列和动作的 FE 核对，FE 对比 60 个场景 |
-| 5 | 未开始 | | | |
+| 5 | 完成 | 阶段 5 提交 | D46 | `ListReport`、`ObjectPage` 在 `v4/fe/templates`，属性是 manifest 设置（AL-13 核对：LR 333 项、OP 382 项，0 未登记）；`/templates` 删除；FE 对比 75 个场景 |
 | 6 | 未开始 | | | |
 | 7 | 未开始 | | | |

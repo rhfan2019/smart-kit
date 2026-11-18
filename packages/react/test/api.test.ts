@@ -38,9 +38,9 @@ describe('subpath entries (ADR-026)', () => {
     }
   });
 
-  it('AL-30 the removed subpaths do not exist; only the base subpaths and /templates are left', () => {
+  it('AL-30 the removed subpaths do not exist; only the base subpaths are left (/templates removed in stage 5)', () => {
     for (const old of ['./controls', './messages', './cards', './field', './filter', './variants', './table', './chart', './object', './page', './actions', './edit']) expect(pkg.exports[old]).toBeUndefined();
-    expect(subpaths.sort()).toEqual(['./context', './i18n', './templates', './theme', './util']);
+    expect(subpaths.sort()).toEqual(['./context', './i18n', './theme', './util']);
   });
 
   it('every subpath has a source entry and a published entry (ADR-029)', () => {
@@ -57,7 +57,7 @@ describe('subpath entries (ADR-026)', () => {
 
   it('AL-30 the root entry exports exactly the base subpaths (context, i18n, theme, util), each name once, and no component', async () => {
     const seen: string[] = [];
-    for (const sub of subpaths.filter((s) => s !== './templates')) {
+    for (const sub of subpaths) {
       const mod = (await import(`../src/entries/${sub.slice(2)}.ts`)) as Record<string, unknown>;
       for (const name of Object.keys(mod)) {
         expect(react[name as keyof typeof react], `${sub} exports ${name}`).toBe(mod[name]);

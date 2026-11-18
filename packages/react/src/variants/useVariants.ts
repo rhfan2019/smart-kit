@@ -13,6 +13,8 @@ export interface UseVariantsOptions {
   standard: VariantContent;
   /** Called once when a default variant is selected on first load (no stored selection); apply it. */
   onDefaultLoaded?(v: Variant): void;
+  /** false: the variants are not read (a list report with `variantManagement` "None"). Default true. */
+  enabled?: boolean;
 }
 
 export interface VariantsApi {
@@ -46,7 +48,7 @@ export function useVariants(pageKey: string, o: UseVariantsOptions): VariantsApi
   }, [service]);
   const qc = useQueryClient();
   const key = ['smart-kit', namespace, service.name, 'variants', pageKey];
-  const q = useQuery({ queryKey: key, queryFn: () => store.list(pageKey), staleTime: Infinity });
+  const q = useQuery({ queryKey: key, queryFn: () => store.list(pageKey), staleTime: Infinity, enabled: o.enabled !== false });
   const variants = useMemo(() => q.data ?? [], [q.data]);
   const [state, setState] = usePageState<{ currentId: string | null }>(`${pageKey}:variant`, { currentId: null });
   const standard: Variant = useMemo(() => ({ id: STANDARD_VARIANT_ID, pageKey, name: '', isDefault: !variants.some((v) => v.isDefault), autoApply: true, content: o.standard }), [pageKey, variants, o.standard]);

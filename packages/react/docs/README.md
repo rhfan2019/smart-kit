@@ -23,8 +23,8 @@ annotations everything is derived (keys and first properties as columns, one for
 
 Two levels, use the highest one that fits:
 
-1. **Templates** (`/templates`): `SmartListReport` (filter bar + variant management + table, optional chart) and
-   `SmartObjectPage` (header, sections from `UI.Facets`, sub-tables, edit / create / delete, actions). One element per page.
+1. **Templates**: `ListReport` (`v4/fe/templates/ListReport`; filter bar + variant management + table or chart, views; props = the FE manifest settings) and
+   `ObjectPage` (`v4/fe/templates/ObjectPage`; header, sections from `UI.Facets`, sub-tables, edit / create / delete, actions). One element per page.
 2. **Building blocks**: `FilterBar` (`v4/fe/macros/FilterBar`) + `useFilterState`, `Table` / `TreeTable` (`v4/fe/macros/Table`, `v4/fe/macros/TreeTable`), `Field` (`v4/fe/macros/Field`), `Form` (`v4/fe/macros/Form`), `Chart` (`v4/fe/macros/Chart`),
    `MicroChart` (`v4/fe/macros/MicroChart`), `DynamicPage` (`f/DynamicPage`), `ObjectPageLayout` (`uxap/ObjectPageLayout`), cards (`/cards`), value help, messages — for pages the templates
    do not cover. Every block also has hooks (`useListQuery`, `useObject`, `useValueList`, …) for fully custom UI.
@@ -37,7 +37,7 @@ The host app owns routing; smart-kit calls a `NavigationAdapter` you give it.
 ```bash
 npm install @rhfan2019/smart-kit @rhfan2019/smart-kit-core \
   react react-dom @mantine/core @mantine/hooks @mantine/dates dayjs @tanstack/react-query
-# only if you use the grid table (v4/fe/macros/Table, SmartListReport, SmartObjectPage):
+# only if you use the grid table (v4/fe/macros/Table, v4/fe/templates/ListReport, v4/fe/templates/ObjectPage):
 npm install ag-grid-community ag-grid-react
 ```
 
@@ -66,7 +66,8 @@ import { MantineProvider } from '@mantine/core';
 import { loadService, type NavigationAdapter } from '@rhfan2019/smart-kit-core';
 import { SmartKitProvider, type ServiceConfig } from '@rhfan2019/smart-kit/context';
 import { smartKitCssVariablesResolver, smartKitMantineTheme } from '@rhfan2019/smart-kit/theme';
-import { SmartListReport, SmartObjectPage } from '@rhfan2019/smart-kit/templates';
+import ListReport from '@rhfan2019/smart-kit/v4/fe/templates/ListReport';
+import ObjectPage from '@rhfan2019/smart-kit/v4/fe/templates/ObjectPage';
 import { useEffect, useMemo, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter, Route, Routes, useNavigate, useSearchParams } from 'react-router';
@@ -103,7 +104,7 @@ function ObjectRoute() {
   const [params] = useSearchParams();
   const path = params.get('path') ?? '';
   // key: a new page instance per object, so state does not leak between objects
-  return <SmartObjectPage key={path} path={path} />;
+  return <ObjectPage key={path} path={path} />;
 }
 
 function App() {
@@ -114,7 +115,7 @@ function App() {
   return (
     <SmartKitProvider services={services} locale="en" namespace="my-app" navigation={navigation}>
       <Routes>
-        <Route path="/" element={<SmartListReport entitySet="PurchaseOrders" />} />
+        <Route path="/" element={<ListReport contextPath="/PurchaseOrders" />} />
         <Route path="/object" element={<ObjectRoute />} />
       </Routes>
     </SmartKitProvider>
@@ -133,7 +134,7 @@ createRoot(document.getElementById('root')!).render(
 Notes:
 - The list page and the object page fill their container: give the route a height (e.g. `html, body, #root { height: 100% }`).
 - An entity path is the OData key form, e.g. `PurchaseOrders('4500000001')` or
-  `PurchaseOrders(PurchaseOrder='4500000001')` — `SmartObjectPage` takes it in `path`; build one with `keyPredicate`
+  `PurchaseOrders(PurchaseOrder='4500000001')` — `ObjectPage` takes it in `path`; build one with `keyPredicate`
   from core (`` `PurchaseOrders${keyPredicate(type, row)}` ``) when you need it yourself.
 - `locale` is `"en"` or `"zh"`. Pass the same language to `loadService` (`language`) for translated labels.
 - Several services: put several entries in `services`, name one with `service="name"` on any component
@@ -171,7 +172,8 @@ ships about 5 KB gzip of smart-kit).
 | `@rhfan2019/smart-kit/uxap/ObjectPageLayout`, `uxap/ObjectPageDynamicHeaderTitle`, `uxap/ObjectPageDynamicHeaderContent`, `uxap/AnchorBar` | sap.uxap object page layout | no |
 | `@rhfan2019/smart-kit/m/GenericTag`; `v4/fe/macros/Share`, `KPITag`, `Paginator`, `fcl/FlexibleColumnLayoutActions.block` | tags, share, paging and column actions | no |
 | `@rhfan2019/smart-kit/kit/HeaderFacet`, `kit/useObject`, `kit/useObjectTitle`, `kit/useDynamicPage`, `kit/ColumnContext`, `kit/useColumn`, `kit/useSectionScrollSpy` | no UI5 counterpart | no |
-| `@rhfan2019/smart-kit/templates` | `SmartListReport`, `SmartObjectPage` | **yes** |
+| `@rhfan2019/smart-kit/v4/fe/templates/ListReport` | `ListReport` (props = the manifest settings of sap.fe.templates.ListReport) | **yes** |
+| `@rhfan2019/smart-kit/v4/fe/templates/ObjectPage` | `ObjectPage` (props = the manifest settings of sap.fe.templates.ObjectPage) | **yes** |
 | `@rhfan2019/smart-kit/styles.css` | the one stylesheet of all components | — |
 | `@rhfan2019/smart-kit/styles.layered.css` | the same stylesheet inside `@layer smart-kit` | — |
 

@@ -529,6 +529,8 @@ export interface EntityUi {
   presentationVariants: Record<string, PresentationVariantModel>;
   /** Every UI.SelectionVariant by qualifier ("" for the unqualified one). */
   selectionVariants: Record<string, InitialCondition[]>;
+  /** UI.SelectionVariant/Text by qualifier, where annotated (quick variant selection of the list report, FE QuickFilter). */
+  selectionVariantTexts?: Record<string, string>;
   /** Every UI.DataPoint by qualifier ("" for the unqualified one). */
   dataPoints: Record<string, DataPointModel>;
   /** Every UI.FieldGroup by qualifier ("" for the unqualified one). */
@@ -554,6 +556,8 @@ export interface KpiModel {
 /** UI.PresentationVariant with its qualifier (cards, docs/20). */
 export interface PresentationVariantModel {
   presentation: PresentationModel;
+  /** UI.PresentationVariant/Text (the tab text of a list report view, FE MultipleModeControl). */
+  text?: string;
   /** UI.PresentationVariant/MaxItems. */
   maxItems?: number;
   /** Qualifier of the UI.LineItem in Visualizations ("" for the unqualified one). */

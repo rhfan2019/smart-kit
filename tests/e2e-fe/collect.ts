@@ -112,8 +112,10 @@ export async function readFe(page: Page, rows = TEXT_ROWS): Promise<{ structure:
       .map((a: any) => (a.getAction ? a.getAction() : a))
       .filter((b: any) => b.getVisible())
       .map((b: any) => `${b.getText()}${b.getEnabled() ? '' : ' [disabled]'}`);
-    const viewTabs = of('sap.m.IconTabBar').flatMap((t) => t.getItems().map((i: any) => i.getText()))
-      .concat(of('sap.m.SegmentedButton').filter((s) => s.getId().includes('fe::')).flatMap((s) => s.getItems().map((i: any) => i.getText())));
+    // the view tabs (IconTabFilter texts; their counts are a property of their own, compared by tests/e2e-fe/lr5.spec.ts;
+    // the IconTabBar's overflow items have no text; the tabs of an open value help dialog are no view tabs)
+    const viewTabs = of('sap.m.IconTabBar').filter((t) => !t.getDomRef()?.closest('[role="dialog"]')).flatMap((t) => t.getItems().filter((i: any) => i.isA('sap.m.IconTabFilter') && i.getVisible() && i.getText()).map((i: any) => i.getText()))
+      .concat(of('sap.m.SegmentedButton').filter((s) => s.getId().includes('fe::')).flatMap((s) => s.getItems().map((i: any) => i.getText()).filter(Boolean)));
     const chart = of('sap.ui.mdc.Chart').find((x) => x.getDomRef());
     const inner = table?._oTable;
     const headers = (table?.getColumns() ?? []).map((c: any) => String(c.getHeader() ?? ''));
@@ -214,7 +216,7 @@ export async function readSk(page: Page, rows = TEXT_ROWS): Promise<{ structure:
       .map((b) => `${(b.textContent ?? '').trim()}${(b as HTMLButtonElement).disabled ? ' [disabled]' : ''}`);
     const viewTabs = [
       ...[...document.querySelectorAll('[data-sk-view-switch="segmented"] label')].map((x) => (x.textContent ?? '').trim()),
-      ...[...document.querySelectorAll('[data-sk-list-tab]')].map((x) => (x.textContent ?? '').trim()),
+      ...[...document.querySelectorAll('[data-sk-list-tab] [data-sk-tab-text]')].map((x) => (x.textContent ?? '').trim()),
     ];
     const chartType = [...document.querySelectorAll('.sk-chart[data-sk-chart]')].find((c) => !c.closest('[data-sk-table]'))?.getAttribute('data-sk-chart') ?? '';
     const text: Record<string, string>[] = [];

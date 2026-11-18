@@ -1,0 +1,4 @@
+<!-- Side content of the custom sub-section Custom::Timeline (manifest sideContent; shown by CustomActions.toggleSupplierInfo). -->
+<core:FragmentDefinition xmlns:core="sap.ui.core" xmlns="sap.m">
+  <Text text="{Supplier}"/>
+</core:FragmentDefinition>

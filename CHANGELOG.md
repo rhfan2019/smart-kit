@@ -5,6 +5,11 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+### Changed — breaking (SAPUI5 alignment, stage 5, D46)
+
+- smart-kit: `SmartListReport` → `v4/fe/templates/ListReport`, `SmartObjectPage` → `v4/fe/templates/ObjectPage`; the `/templates` subpath is removed. Props are the Fiori elements manifest settings (docs/26c), checked by `scripts/check-manifest-settings.mjs` in `npm run check:ui5` (AL-13).
+- Defaults follow FE: `liveMode` false, `initialLoad` 'Auto', responsive table when no `tableSettings.type`, FE page sizes (`threshold`), NewPage creation on draft lists, view tab counts via `/$count`; the object page has no "Edit Header" dialog (`editableHeaderContent`: header facets in a "Header" section in edit mode), side content belongs to sub-sections, empty sub-object tables show an illustration.
+
 ### Changed — behaviour (SAPUI5 alignment, stage 4 tail, D45)
 
 - Analytical table: one Fiori elements style `$apply` with `concat` for the first page, grand total and count; sorting only by grouped or aggregated properties; non-groupable columns read per row; basic search only with the `search` transformation; a failing first request shows the table error and no totals row.

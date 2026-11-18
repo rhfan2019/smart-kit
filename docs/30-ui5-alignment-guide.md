@@ -111,6 +111,8 @@ Fiori elements 的积木靠 `metaPath`（注解路径）和 `contextPath`（实�
 
 `ListReport`、`ObjectPage` 的属性对齐 Fiori elements 的 manifest 设置（`initialLoad`、`variantManagement`、`views`、`controlConfiguration` 里的 `tableSettings`（`type`、`selectionMode`、`creationMode`、`enableExport`…）、`sectionLayout`、`editableHeaderContent`、`content.header.anchorBarVisible` 等）。manifest 是嵌套结构，React 里用同样嵌套的对象属性（例如 `controlConfiguration={{ '@com.sap.vocabularies.UI.v1.LineItem': { tableSettings: { type: 'GridTable' } } }}`），不扁平化改名。设置的权威来源在阶段 0 定（第 8 节）。
 
+**阶段 5 已完成（D46）**：模块是 `v4/fe/templates/ListReport`、`v4/fe/templates/ObjectPage`（默认导出 `ListReport`、`ObjectPage`，设置类型 `$ListReportSettings`、`$ObjectPageSettings`），属性就是 manifest 设置（同名、同嵌套、同默认值，对照见 `26c` 第 10 节）。FE 写片段名或扩展函数名的地方（自定义列、动作、区块、页头 Facet 的 `template`，`press`、`rowPress`、`selectionChange`），在同一个键下放 React 渲染函数或处理函数（`react-idiom`）；ExtensionAPI 的实例方法用 `ref`（例如 `showSideContent`）。没有 FE 设置的属性登记为 `kit-extension`，没做的设置登记为 `manifest-missing`。AL-13 由 `scripts/check-manifest-settings.mjs` 核对（在 `npm run check:ui5` 里）：按 `tools/ui5-alignment/manifest.ListReport.json`、`manifest.ObjectPage.json` 逐项比较设置类型，未登记的差异让检查失败。
+
 ### 5.4 注解语义
 
 - 以 `29`、`29a` 为基线；`02` 在阶段 3 按 `29a` 重写，每条写明 FE 的模块（`converters/...`、`macros/...`）。

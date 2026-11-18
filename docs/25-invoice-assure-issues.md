@@ -181,3 +181,26 @@ smart-kit 按铁律（ADR-033）改名、改属性、改行为时不保留旧名
 | 4 收尾 | 表格个性化 | 列面板先显示中的列，再按字母序；排序和响应式表的分组选项是全部可排序属性（不含 NonSortable 和只显示文本的属性，另有文本和 criticality 属性） | 行为：例如按"Status Name"分组 |
 | 4 收尾 | 工具栏和删除确认 | 动作放得下时不进"更多"；删除确认分单复数 | 行为 |
 | 4 收尾 | core 新导出 | `buildAnalyticalRequests`、`ANALYTICAL_COUNT_ALIAS`、`readValueListService`、`referencedValueLists`、`resolveValueListReference`、`serviceRootOf`；`QueryRequest.analytical` / `anyOfOnly`、`QueryResult.grandTotal`、`EntitySetModel.parameters`、`PropertyModel.valueListReferences` 等 | 新增 |
+| 5 | `SmartListReport`（`/templates`） | `ListReport`（`v4/fe/templates/ListReport`，默认导出）；`/templates` 子路径删除 | |
+| 5 | `entitySet` | `entitySet` 或 `contextPath: '/Set'` | |
+| 5 | `autoExecute` | `initialLoad`：`'Auto'`（默认：有默认筛选值时打开就查）/ `'Enabled'` / `'Disabled'` | **默认变了**：没有默认值时不再自动查询 |
+| 5 | `liveMode` | 名字不变，**默认改为 false**（显示"Go"）；live 模式只应用用户的改动 | 行为 |
+| 5 | `headerActions`（节点） | `content.header.actions.<key>`：`{ text, press }` | |
+| 5 | `filterExtend` | `controlConfiguration['@com.sap.vocabularies.UI.v1.SelectionFields'].filterFields` | |
+| 5 | `tableExtend` | `controlConfiguration['@com.sap.vocabularies.UI.v1.LineItem'].columns` / `.actions`（`template` / `press` 是函数，`position: { anchor, placement }`）；不能再换掉注解列的单元格（`Table` 积木的 `extend` 仍可） | |
+| 5 | `actionGroups` | `….LineItem.actions.<key>.menu` | |
+| 5 | `onRowNavigate`（列表） | `tableSettings.rowPress(e)`；导航到对象页用 `navigation.<set>.detail.route` | |
+| 5 | `views: { mode: 'tabs' }` / `{ mode: 'switch' }` / `contents` / `chart` | `views.paths[]`（SPV / PV / 带 `entitySet` 的视图）/ `tableSettings.quickVariantSelection.paths` / `views.paths[].entitySet` / 图表视图 | 页签计数用 `/$count`，单独显示 |
+| 5 | `tableType`、`hierarchyQualifier`、`exportable` | `tableSettings.type`（没有 `grid` / `responsive` / `auto`）、`tableSettings.hierarchyQualifier`、`tableSettings.enableExport` | **没写 `type` 时是响应式表**（有分析能力时分析表、成对层级时树表）；页大小按 FE（响应式 30、网格 100、树 200） |
+| 5 | 草稿列表的"新建" | `tableSettings.creationMode.name` 默认 `NewPage`：直接新建草稿并打开对象页（`CreationDialog` 可选） | 行为；非草稿服务仍用对话框（长期偏差） |
+| 5 | `keyPerformanceIndicators` | 名字不变，是列表页的 manifest 设置：`{ <name>: { qualifier, entitySet, contextPath } }` | |
+| 5 | `share`（列表页、对象页）、`beforeTable`、`filterToggle`、`workingMode` | 删除（FE 没有对应设置；分享总是显示） | |
+| 5 | `SmartObjectPage`（`/templates`） | `ObjectPage`（`v4/fe/templates/ObjectPage`，默认导出） | |
+| 5 | `navigation: 'anchor' \| 'tabs'`（对象页） | `sectionLayout: 'Page' \| 'Tabs'`；`navigation` 现在是 FE 的导航设置 | |
+| 5 | `partialHeaderEdit` | `editableHeaderContent`（默认 true） | **没有"编辑页头"对话框了**：编辑态页头内容在最前面的"Header"区块里编辑 |
+| 5 | `headerActions`（对象页）、页脚按钮 | `content.header.actions.<key>`、`content.footer.actions.<key>` | |
+| 5 | `sectionExtend` | `content.body.sections.<key>`（自定义区块或覆盖注解区块；`subSections`、`position`） | |
+| 5 | `tableExtend[nav]`、`subObjectCreate` | `controlConfiguration['<nav>/@com.sap.vocabularies.UI.v1.LineItem']`：`columns` / `actions` / `tableSettings.creationMode.name`（`Inline`、`CreationDialog`、`NewPage`…，没有 `none`） | 子表新建默认 `NewPage`，没有导航目标时 `Inline` |
+| 5 | `extraSelect` | `additionalProperties` | |
+| 5 | `sideContent`、`sideContentTitle` | `content.body.sections.<s>.subSections.<k>.sideContent.template` + `ref.showSideContent(k)` | 侧边内容挂在子区块上，页头不再有切换按钮 |
+| 5 | 子表无数据 | 显示插图（illustratedMessage-ExtraSmall），`useTextForNoDataMessages: true` 时是文字 | 行为 |

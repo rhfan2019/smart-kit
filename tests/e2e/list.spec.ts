@@ -189,7 +189,9 @@ test.describe('list report: purchase orders', () => {
       await page.waitForTimeout(150);
     }
     await expect(table(page, 'PurchaseOrders').locator('.ag-row[row-index="9999"]')).toBeVisible({ timeout: 20_000 });
-    expect(rec.urls.some((u) => u.includes('$skip=9900&$top=100'))).toBe(true);
+    // blocks of FE's request size: threshold 100 + the rows sap.ui.table estimates for the window (height / 25 px)
+    const size = await page.evaluate(() => 100 + Math.ceil(window.innerHeight / 25));
+    expect(rec.urls.some((u) => u.includes(`$skip=${Math.floor(9999 / size) * size}&$top=${size}`))).toBe(true);
   });
 
   test('AC-LR-10 personalization updates columns, $select and $orderby', async ({ page }) => {
@@ -393,7 +395,9 @@ test.describe('capabilities and query shapes', () => {
     expect(list).toContain('$select=PurchaseOrder,Supplier,OrderDate,Status,StatusCriticality,NetAmount,Currency,DeliveredPercent,PurchaseOrderType');
     expect(list).toContain('$expand=_Supplier($select=SupplierName,Rating,Supplier),_Status($select=Name,Code),_PurchaseOrderType($select=Name,Code)');
     // Q-05 default sort from PresentationVariant; Q-06/Q-07 first block with $count
-    expect(list).toMatch(/\$count=true.*\$orderby=OrderDate desc.*\$skip=0&\$top=100/);
+    // first block: FE's request size, threshold 100 + window height / 25 px (lr5, sap.ui.table rowmodes.Auto)
+    const size = await page.evaluate(() => 100 + Math.ceil(window.innerHeight / 25));
+    expect(list).toMatch(new RegExp(`\\$count=true.*\\$orderby=OrderDate desc.*\\$skip=0&\\$top=${size}$`));
     // Q-05b sorting an amount sorts by currency first
     await table(page, 'PurchaseOrders').locator('.ag-header-cell[col-id="DataField::NetAmount"] .ag-header-cell-label').click();
     await expect.poll(() => rec.urls.some((u) => u.includes('$orderby=Currency,NetAmount'))).toBe(true);
@@ -418,16 +422,16 @@ test.describe('extensions in the list', () => {
     await t.locator('.ag-row[row-index]').first().locator('.ag-selection-checkbox input, input[type="checkbox"]').first().check();
     await expect(action).toBeEnabled();
     await action.click();
-    await expect(page.locator('[data-demo-message]')).toContainText('Copied: 45');
+    // the handler of the manifest action shows a message toast (as apps/fe-reference/webapp/ext/CustomActions.js)
+    await expect(page.locator('[data-sk-message-toast]')).toContainText('Copied: 45');
   });
 
   test('AC-EXT-01 replaced cell renderer and replaced toolbar', async ({ page }) => {
-    await open(page, MANUAL);
+    // the list report has no setting that replaces an annotation column's template (FE): the freestyle page's table does it
+    await open(page, '/freestyle');
     const t = await waitForRows(page, 'PurchaseOrders');
     await t.locator('.ag-grid-viewport').evaluate((el) => el.scrollTo(el.scrollWidth, 0));
     await expect(t.locator('[data-demo-type]').first()).toHaveText(/^(NB|FO|UB)$/);
-    await open(page, '/freestyle');
-    await waitForRows(page, 'PurchaseOrders');
     await expect(page.locator('[data-demo-toolbar]')).toContainText('Custom Toolbar');
     await expect(page.locator('[data-sk-table-export]')).toHaveCount(0);
   });

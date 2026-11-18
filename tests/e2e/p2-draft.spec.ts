@@ -85,8 +85,14 @@ test('P2-OP-23 subobjects with fewer than 8 fields are created in a dialog (draf
   expect(Number(n)).toBe(Number(m) + 1);
 });
 
-test('P2-LR-15 create with a dialog on the draft service: draft created and activated', async ({ page }) => {
+test('P2-LR-15 creationMode NewPage (FE default) on the draft service: Create opens a new draft on the object page', async ({ page }) => {
   await open(page, '/po-draft');
+  await page.locator('[data-sk-table="PurchaseOrders"] [data-sk-action="Create"]').click();
+  await expect.poll(() => decodeURIComponent(page.url())).toContain('IsActiveEntity=false)');
+});
+
+test('P2-LR-15 creationMode CreationDialog on the draft service: draft created and activated', async ({ page }) => {
+  await open(page, '/po-draft?creation=CreationDialog');
   await page.locator('[data-sk-table="PurchaseOrders"] [data-sk-action="Create"]').click();
   const dialog = page.getByRole('dialog', { name: 'New Purchase Order' });
   await dialog.locator('[data-sk-create-field="Supplier"] input:not([type="hidden"])').fill('0000100001');

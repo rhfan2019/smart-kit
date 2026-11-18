@@ -14,7 +14,7 @@
  */
 import { ActionIcon, Alert, Anchor, Button, Group, Menu, Modal, Stack, Text, TextInput, Tooltip } from '@mantine/core';
 import {
-  canGroup, canSubtotal, canTotal, capabilitiesFor, hierarchyOf, isAbortError, isSortable, keyPredicate, matches, parseAnnotationPath, resolvePath, sourceInfo,
+  canGroup, canSubtotal, canTotal, capabilitiesFor, hierarchyOf, isAbortError, isSortable, keyPredicate, matches, messagesFromError, parseAnnotationPath, resolvePath, sourceInfo,
   type ActionModel, type EntityTypeModel, type FieldModel, type FilterState, type MetaModel, type Message, type MessageType, type PresentationModel, type QueryRequest, type QuerySource, type Row, type SortItem, type TotalsEntry,
 } from '@rhfan2019/smart-kit-core';
 import { useQueryClient } from '@tanstack/react-query';
@@ -167,8 +167,9 @@ export interface $ActionSettings {
 export interface $TableCreationOptionsSettings {
   /**
    * "CreationDialog" (a dialog with the line item fields; then the object page of a list), "Inline" /
-   * "InlineCreationRows" (a new row in sub-tables). Default: "CreationDialog" for lists, "Inline" for sub-tables;
-   * "NewPage", "External" and "AddViaValueHelp" are not implemented yet (they behave as the default).
+   * "InlineCreationRows" (a new row in sub-tables), "NewPage" (draft lists: a new draft opens on the object page; lists
+   * without draft use the dialog). Default: "CreationDialog" for lists, "Inline" for sub-tables; "External" and
+   * "AddViaValueHelp" are not implemented yet (they behave as the default).
    */
   name?: 'AddViaValueHelp' | 'CreationDialog' | 'External' | 'Inline' | 'InlineCreationRows' | 'NewPage';
   /** false: no "Create" button (smart-kit addition; FE hides it with UI.CreateHidden). */
@@ -1223,6 +1224,14 @@ function TableCore(p: CoreSettings) {
 
   // ------------------------------------------------------------------ create and delete
   const strategy = useEditStrategy(info.entitySet, p.service);
+  // creationMode "NewPage" on a draft list (FE _getCreationBehaviour, EditFlow createDocument): Create makes a new draft
+  // and opens it on the object page. Lists without draft create with the dialog (smart-kit, D42).
+  const newPage = !parent && creationName === 'NewPage' && strategy.kind === 'draft' && Boolean(navigation?.hasObjectPage?.(info.entitySet, service.name));
+  useEffect(() => {
+    if (!creating || !newPage) return;
+    setCreating(false);
+    strategy.create(source, {}).then((s) => navigation!.toObject(s.path, service.name), (e: unknown) => messages?.add(messagesFromError(e)));
+  }, [creating, newPage]); // eslint-disable-line react-hooks/exhaustive-deps
   const onCreated = (path: string, row: Row, ms: Message[]) => {
     messages?.add([...ms, { id: `created-${Date.now()}`, type: 'success', message: typedText(t, 'create.done', ui.headerInfo.typeName), source: 'server' }]);
     setCreating(false);
@@ -1763,7 +1772,7 @@ function TableCore(p: CoreSettings) {
         onCancel={() => setP13n(false)}
       />
       {runner.dialogs}
-      {canCreate && (createMode === 'dialog' || !parent) ? (
+      {canCreate && !newPage && (createMode === 'dialog' || !parent) ? (
         <CreateDialog
           opened={creating}
           onClose={() => setCreating(false)}

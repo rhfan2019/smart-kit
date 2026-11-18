@@ -24,7 +24,6 @@ const ENTRY_BUDGETS = {
   // context, i18n, table, templates +1 to +2: the texts and the code of relative dates and the FCL separator (S6, S23)
   context: 13, i18n: 8, theme: 2, util: 12, // util 1 → 11 with the helpers from /controls (stage 1, ADR-033: messageTypeOf, toDates, viewSettingsFilterString …)
   // stage 2 (D38): the block subpaths are gone, the blocks are measured as modules below
-  templates: 118, // 100 → 118: stage 4 tail single-request analytical table (useAnalytical); list report annotations of stage 4 (FE columns and actions, semantic date operators, value help descriptions, views, KPI tags); 84 → 100: the templates compose the UI5 page controls (DynamicPageTitle, ObjectPageDynamicHeaderTitle, OverflowToolbar title actions, Paginator, FlexibleColumnLayoutActions; stage 2)
 };
 
 /**
@@ -38,6 +37,8 @@ const MODULE_BUDGETS = {
   // stage 2 (D38): the building blocks; Table / TreeTable are the former /table entry (40 KB) plus the sap.fe.macros.Table API
   'v4/fe/macros/Table': 66, 'v4/fe/macros/TreeTable': 66, 'v4/fe/macros/Field': 19, 'v4/fe/macros/Form': 20, // stage 4: FE column types, inline action columns, value display
   'v4/fe/macros/FilterBar': 30, 'kit/ConditionInput': 21, 'kit/ValueHelpDialog': 21, // stage 4: FE semantic date operators (RelativeDateButton), value help descriptions and qualified lists
+  // the page templates (were together the /templates entry, 118 KB; stage 5 splits them into their sap.fe.templates modules)
+  'v4/fe/templates/ListReport': 112, 'v4/fe/templates/ObjectPage': 100,
   'kit/CreateDialog': 20, 'kit/HeaderFacet': 23, 'kit/QuickViewLink': 19,
 };
 
@@ -47,8 +48,8 @@ const SCENARIOS = [
   // sap.suite.ui.microchart controls in stage 6 (D38)
   { name: 'MicroChart only (v4/fe/macros/MicroChart)', code: "import MicroChart from '@rhfan2019/smart-kit/v4/fe/macros/MicroChart'; console.log(MicroChart);", budget: 44 },
   { name: 'Field only (v4/fe/macros/Field)', code: "import Field from '@rhfan2019/smart-kit/v4/fe/macros/Field'; console.log(Field);", budget: 130 },
-  { name: 'List report page', code: "import { SmartListReport } from '@rhfan2019/smart-kit/templates'; console.log(SmartListReport);", budget: 580 }, // 560 → 580: stage 4 list report annotations,
-  { name: 'Object page', code: "import { SmartObjectPage } from '@rhfan2019/smart-kit/templates'; console.log(SmartObjectPage);", budget: 560 },
+  { name: 'List report page', code: "import ListReport from '@rhfan2019/smart-kit/v4/fe/templates/ListReport'; console.log(ListReport);", budget: 580 }, // 560 → 580: stage 4 list report annotations,
+  { name: 'Object page', code: "import ObjectPage from '@rhfan2019/smart-kit/v4/fe/templates/ObjectPage'; console.log(ObjectPage);", budget: 560 },
   // Cards (docs/20, ADR-028): a card with its content, no AG Grid.
   { name: 'Card + Header only (Component card)', code: "import Card from '@rhfan2019/smart-kit/f/Card'; import Header from '@rhfan2019/smart-kit/f/cards/Header'; console.log(Card, Header);", budget: 5 }, // 2 → 5: the sap.f.cards.Header API of 1.154 (avatar settings, dataTimestamp, infoSection, toolbar; stage 1)
   { name: 'List card (Card + Header + ListContent)', code: "import Card from '@rhfan2019/smart-kit/f/Card'; import Header from '@rhfan2019/smart-kit/f/cards/Header'; import ListContent from '@rhfan2019/smart-kit/ui/integration/cards/ListContent'; console.log(Card, Header, ListContent);", budget: 48 }, // 45 → 48: the 1.154 header API (stage 1)

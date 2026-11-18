@@ -1,0 +1,5 @@
+<!-- Custom section "Delivery Timeline" of the object page (manifest content.body.sections Custom::Timeline; smart-kit
+     demo: the same section with a React template, apps/demo/src/pages/ObjectRoute.tsx). -->
+<core:FragmentDefinition xmlns:core="sap.ui.core" xmlns="sap.m">
+  <Text text="{i18n>timelineText}"/>
+</core:FragmentDefinition>

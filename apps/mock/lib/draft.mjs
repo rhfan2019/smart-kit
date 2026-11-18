@@ -50,7 +50,8 @@ ${ADMIN_PROPS.map(([n, t, f]) => `        <Property Name="${n}" Type="${t}"${f ?
 
 `;
 
-const action = (name, params) => `      <Action Name="${name}" IsBound="true">
+// EntitySetPath: the result is the bound entity (draft); UI5 needs it for $$inheritExpandSelect (FE starts drafts with it).
+const action = (name, params) => `      <Action Name="${name}" IsBound="true" EntitySetPath="_it">
         <Parameter Name="_it" Type="Purchasing.PurchaseOrder" Nullable="false"/>
 ${params.map(([n, t]) => `        <Parameter Name="${n}" Type="${t}"/>\n`).join('')}        <ReturnType Type="Purchasing.PurchaseOrder" Nullable="false"/>
       </Action>

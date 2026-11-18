@@ -523,92 +523,6 @@ validate(model: MetaModel, typeName: string, fields: FieldModel[], values: Row, 
 viewSettingsFilterString(filterItems: ViewSettingsFilterItem[], filters: Record<string, string[]>, t: TextFn): string
 ```
 
-## `@rhfan2019/smart-kit/templates`
-
-`ListContentItem` (interface) · `SmartListReport` (component) · `SmartListReportProps` (interface) · `SmartObjectPage` (component) · `SmartObjectPageProps` (interface)
-
-### `ListContentItem` — interface
-
-| Member | Required | Type | Description |
-| --- | --- | --- | --- |
-| `key` | **yes** | `string` |  |
-| `entitySet` |  | `string` | Entity set of the table (multiple content); defaults to the page's entity set. |
-| `title` |  | `string` |  |
-| `tableExtend` |  | `TableExtendEntry[]` |  |
-
-### `SmartListReport` — component
-
-`import { SmartListReport } from '@rhfan2019/smart-kit/templates';`
-
-| Prop | Required | Type | Description |
-| --- | --- | --- | --- |
-| `entitySet` | **yes** | `string` | Entity set of the list, e.g. "Orders". Required. Columns come from `UI.LineItem`, filters from `UI.SelectionFields`, the title from `UI.HeaderInfo/TypeNamePlural`. |
-| `service` |  | `string` | Name of the service in `SmartKitProvider` `services`; default: the provider's `defaultService`. |
-| `pageKey` |  | `string` | Key for variants and state restoration; defaults to the entity set. |
-| `liveMode` |  | `boolean` | Live update mode (default true, recommended by the list report guideline): every change filters immediately. False: manual update mode with "Go", for services where filtering on every change is too slow. |
-| `autoExecute` |  | `boolean` | Execute the standard variant on load (default true). |
-| `title` |  | `string` | Page title; default `UI.HeaderInfo/TypeNamePlural` of the entity type. |
-| `headerActions` |  | `ReactNode` | Extra buttons in the page header toolbar. |
-| `filterExtend` |  | `ExtendEntry&lt;FilterFieldItem>[]` | Insert, replace or remove filter fields (ids are the property paths). |
-| `tableExtend` |  | `TableExtendEntry[]` | Insert, replace or remove columns and toolbar actions (`TableExtendEntry`, ids as in the model). |
-| `onRowNavigate` |  | `(row: Row, path: string) => void` | Row press; receives the row and its entity path. Default: `NavigationAdapter.toObject` when the adapter has an object page for the set. |
-| `beforeTable` |  | `ReactNode` | Content between header and table (e.g. KPI cards). |
-| `filterToggle` |  | `boolean` | "Show Filters / Hide Filters" in the title bar instead of the expand/collapse and pin buttons on the header border (the variant the list report guideline describes for grid tables). Default false: the header features as in the SAP reference app; the header collapses while the table is scrolled down and expands at the top, unless pinned. |
-| `className` |  | `string` | Extra CSS class on the root element. |
-| `views` |  | `{ mode: 'switch' \| 'tabs'; ids?: string[] }` | Multiple views (LR Multiple Views) from the qualified UI.SelectionPresentationVariant annotations: "switch" replaces the table title area with a segmented button (≤ 3 views) or a select (> 3); "tabs" shows a tab per view. |
-| `contents` |  | `ListContentItem[]` | Multiple content (LR Multiple Content): a text-only tab per table, all filtered by the same filter bar. |
-| `tableType` |  | `'grid' \| 'responsive' \| 'auto' \| 'AnalyticalTable' \| 'ResponsiveTable' \| 'Table' \| 'TreeTable'` | Table type: grid (desktop), responsive, or auto = responsive below 600px (LR Responsiveness, docs/12 U-17). The UI5 names (sap.ui.comp.smarttable.TableType) are accepted too: "Table" = grid, "AnalyticalTable" = grid with grouping, subtotals and totals (the only type with totals, D39), "ResponsiveTable" = responsive, "TreeTable" = grid tree table of the recursive hierarchy (docs/26 §3.10). Not set: chosen from the annotations as FE `getTableType` does — "AnalyticalTable" when Aggregation.ApplySupported lists all of filter, identity, orderby, skip, top, groupby, aggregate and concat, "TreeTable" when the type has a qualified Aggregation.RecursiveHierarchy / Hierarchy.RecursiveHierarchy pair, else grid. |
-| `hierarchyQualifier` |  | `string` | Tree tables: qualifier of Aggregation.RecursiveHierarchy (default: the type's first hierarchy). |
-| `chart` |  | `boolean \| string` | Offer a table/chart switch with this UI.Chart (qualifier; true = the first chart; smart-kit, LR Simple Content). Without it the list shows what its presentation shows (FE): the chart only when the first LineItem or Chart of the default presentation variant is a chart, a chart view when a view's is. |
-| `workingMode` |  | `'worklist' \| 'continuous'` | Working mode after actions (LR Working Modes; default worklist). |
-| `actionGroups` |  | `ActionGroup[]` | Menu buttons for similar table actions. |
-| `share` |  | `boolean` | Share button in the header toolbar (default true when the navigation adapter can build links). |
-| `onRowsChange` |  | `(rows: Row[]) => void` | Loaded rows of the main table (e.g. paging buttons in a flexible column layout). |
-| `refreshToken` |  | `number \| string` | Change this value to reload the tables, tab counts and chart (after the host changed data elsewhere, e.g. in a drawer or dialog). The first value does not reload. |
-| `exportable` |  | `boolean` | Offer "Export to Spreadsheet" in the table toolbars (default true). |
-| `onBeforeExport` |  | `(e: Table$BeforeExportEvent) => boolean \| void \| Promise&lt;boolean \| void>` | Before an export is written; return false to cancel (see `Table` `onBeforeExport`). |
-| `onExported` |  | `(e: Table$ExportedEvent) => void` | After an export was written. |
-| `canSaveVariants` |  | `boolean` | Whether views may be saved (default: the service's `VariantStore.canSave`, else true). False: the view menu only selects views (no Save, Save As, Manage). |
-| `keyPerformanceIndicators` |  | `Record&lt;string, KPIConfiguration>` | KPI tags in the title (FE manifest `keyPerformanceIndicators`): name → the qualifier of a UI.KPI (and its entity set). Each tag shows the KPI's data point aggregated on the server (docs/29 §5). |
-
-### `SmartListReportProps` — interface
-
-Props of `SmartListReport` (see above).
-
-### `SmartObjectPage` — component
-
-`import { SmartObjectPage } from '@rhfan2019/smart-kit/templates';`
-
-| Prop | Required | Type | Description |
-| --- | --- | --- | --- |
-| `path` | **yes** | `string` | Entity path, e.g. "Orders('1')". Ignored in create mode. |
-| `service` |  | `string` | Name of the service in `SmartKitProvider` `services`; default: the provider's `defaultService`. |
-| `navigation` |  | `'anchor' \| 'tabs'` | "anchor" (default): sections in one scrolling page with an anchor bar; "tabs": one section at a time. |
-| `headerActions` |  | `ReactNode` | Extra buttons in the header toolbar, before the model actions (`UI.Identification` DataFieldForAction). |
-| `headerMessage` |  | `ReactNode \| ((row: Row \| undefined) => ReactNode)` | Message strip under the title (OP-17). |
-| `sectionExtend` |  | `ExtendEntry&lt;SectionItem>[]` | Insert or replace sections. |
-| `tableExtend` |  | `Record&lt;string, TableExtendEntry[]>` | Extensions for the sub-table of a navigation. |
-| `extraSelect` |  | `string[]` | Extra paths to read (for custom content such as headerMessage). |
-| `onRowNavigate` |  | `(row: Row, path: string) => void` | Navigation of a sub-table row; default: NavigationAdapter.toObject when the adapter has an object page. |
-| `className` |  | `string` | Extra CSS class on the root element. |
-| `create` |  | `{ entitySet: string; initial?: Row }` | Create mode (OP Create): a new object of this entity set. |
-| `onCreated` |  | `(path: string) => void` | After a new object was saved; default NavigationAdapter.toObject. |
-| `onDeleted` |  | `() => void` | After the object was deleted; default NavigationAdapter.toList. |
-| `editable` |  | `boolean` | Offer "Edit" (default: when the entity set is updatable and the data provider can write). |
-| `subObjectCreate` |  | `Record&lt;string, 'inline' \| 'dialog' \| 'none'>` | How sub-objects of a navigation are created while editing (OP Create and edit subobjects). |
-| `keyInfo` |  | `ReactNode \| ((row: Row \| undefined) => ReactNode)` | Key information in the title bar (DP Header Title (4)), e.g. a GenericTag. |
-| `sideContent` |  | `ReactNode \| ((row: Row \| undefined) => ReactNode)` | Dynamic side content (OP Dynamic Side Content). |
-| `sideContentTitle` |  | `string` | Title of the side content panel. |
-| `paging` |  | `boolean` | Paging buttons for sub-object pages (OP Representation of Child Pages; default true). |
-| `showAllThreshold` |  | `number` | Limit for sub-table previews with "Show All (x)" (default 200). |
-| `letterboxing` |  | `boolean` | Letterboxing of the page (DP Responsiveness). |
-| `partialHeaderEdit` |  | `boolean` | "Edit Header" for the header fields in a dialog (OP partial edit; default true). Turn it off when the host's `editStrategy` saves the whole page at once; "Edit" still changes the header fields. |
-| `share` |  | `boolean` | "Share" in the header actions (default true). |
-
-### `SmartObjectPageProps` — interface
-
-Props of `SmartObjectPage` (see above).
-
 ## `@rhfan2019/smart-kit/base/i18n/date/CalendarWeekNumbering`
 
 `default` (const)
@@ -1807,6 +1721,7 @@ default(pageKey: string, o: UseVariantsOptions): VariantsApi
 | `standard` | **yes** | `VariantContent` | Content of the built-in "Standard" variant. |
 | `service` |  | `string` |  |
 | `onDefaultLoaded` |  | `(v: Variant) => void` | Called once when a default variant is selected on first load (no stored selection); apply it. |
+| `enabled` |  | `boolean` | false: the variants are not read (a list report with `variantManagement` "None"). Default true. |
 
 ### `VariantsApi` — interface
 
@@ -11768,7 +11683,7 @@ Creation options (sap.fe.macros.table.TableCreationOptions) of the `creationMode
 
 | Member | Required | Type | Description |
 | --- | --- | --- | --- |
-| `name` |  | `'AddViaValueHelp' \| 'CreationDialog' \| 'External' \| 'Inline' \| 'InlineCreationRows' \| 'NewPage'` | "CreationDialog" (a dialog with the line item fields; then the object page of a list), "Inline" / "InlineCreationRows" (a new row in sub-tables). Default: "CreationDialog" for lists, "Inline" for sub-tables; "NewPage", "External" and "AddViaValueHelp" are not implemented yet (they behave as the default). |
+| `name` |  | `'AddViaValueHelp' \| 'CreationDialog' \| 'External' \| 'Inline' \| 'InlineCreationRows' \| 'NewPage'` | "CreationDialog" (a dialog with the line item fields; then the object page of a list), "Inline" / "InlineCreationRows" (a new row in sub-tables), "NewPage" (draft lists: a new draft opens on the object page; lists without draft use the dialog). Default: "CreationDialog" for lists, "Inline" for sub-tables; "External" and "AddViaValueHelp" are not implemented yet (they behave as the default). |
 | `enabled` |  | `boolean` | false: no "Create" button (smart-kit addition; FE hides it with UI.CreateHidden). |
 
 ### `$TableSettings` — interface
@@ -12285,3 +12200,530 @@ sap.fe.macros.FlexibleColumnLayoutActions: full screen / exit full screen and cl
 `import { default } from '@rhfan2019/smart-kit/v4/fe/macros/fcl/FlexibleColumnLayoutActions.block';`
 
 _no props_
+
+## `@rhfan2019/smart-kit/v4/fe/templates/ListReport`
+
+`$KPIConfiguration` (interface) · `$ListReportSettings` (interface) · `$ManifestActionSettings` (interface) · `$ManifestColumnSettings` (interface) · `$ManifestCreationModeSettings` (interface) · `$ManifestFilterConfiguration` (interface) · `$ManifestFilterFieldSettings` (interface) · `$ManifestTableConfiguration` (interface) · `$ManifestTableSettings` (interface) · `$PositionSettings` (interface) · `$QuickVariantSelectionSettings` (interface) · `$ViewPathSettings` (interface) · `default` (component) · `InitialLoadMode` (type)
+
+### `$KPIConfiguration` — interface
+
+A KPI tag of `keyPerformanceIndicators` (FE AnalyticalKPIConfiguration / CustomKPIConfiguration).
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `qualifier` |  | `string` | Qualifier of the UI.KPI annotation. |
+| `entitySet` |  | `string` | Entity set of the KPI; default the page's. |
+| `contextPath` |  | `string` | Context path of the KPI ("/Set"); wins over `entitySet`. |
+| `template` |  | `() => ReactNode` | A custom KPI (FE: a fragment name; react-idiom). |
+
+### `$ListReportSettings` — interface
+
+Settings of the list report: the FE manifest settings (docs/26c §3–§7) plus the registered smart-kit extensions.
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `entitySet` |  | `string` | Entity set of the list, e.g. "Orders" (or `contextPath`). |
+| `contextPath` |  | `string` | Context path of the list, e.g. "/Orders" (a parameterized set: "/P/Set"); wins over `entitySet`. |
+| `navigation` |  | `Record&lt;string, { detail?: { route?: string } }>` | Row navigation per entity set: `detail.route` makes rows navigate to the object page (NavigationAdapter.toObject). |
+| `controlConfiguration` |  | `{ '@com.sap.vocabularies.UI.v1.LineItem'?: $ManifestTableConfiguration; '@com.sap.vocabularies.UI.v1.SelectionFields'?: $ManifestFilterCo…` | Settings of the controls by annotation path (table, filter bar). |
+| `content` |  | `{ header?: { actions?: Record&lt;string, $ManifestActionSettings> } }` |  |
+| `variantManagement` |  | `'None' \| 'Page'` | "Page": one variant management in the title for the filter bar and the table; "None": no variants. |
+| `initialLoad` |  | `InitialLoadMode \| boolean` | "Enabled": load on start; "Disabled": only after "Go"; "Auto": load when the start variant has filter values (FE: the standard variant applies automatically when filter values are set). |
+| `liveMode` |  | `boolean` | Every filter change applies at once (no "Go"). |
+| `views` |  | `{ paths: $ViewPathSettings[]; showCounts?: boolean }` | Views: a tab per path (an IconTabBar), `showCounts` adds the number of items (default: with several entity sets). |
+| `stickyMultiTabHeader` |  | `boolean` | The view tabs stay at the top while the table scrolls. |
+| `keyPerformanceIndicators` |  | `Record&lt;string, $KPIConfiguration>` | KPI tags in the title by name (docs/29 §5). |
+| `hideFilterBar` |  | `boolean` | No filter bar (and no filter conditions). |
+| `useHiddenFilterBar` |  | `boolean` | The filter bar is not shown, its conditions apply. |
+| `service` |  | `string` | Name of the service in `SmartKitProvider` `services`; default: the provider's `defaultService`. |
+| `pageKey` |  | `string` | Key for variants and state restoration; defaults to the entity set. |
+| `title` |  | `string` | Page title (standard variant text, e-mail subject); default UI.HeaderInfo/TypeNamePlural. |
+| `onRowsChange` |  | `(rows: Row[]) => void` | Loaded rows of the main table (e.g. paging buttons in a flexible column layout). |
+| `refreshToken` |  | `number \| string` | Change this value to reload the tables, tab counts and chart. The first value does not reload. |
+| `onBeforeExport` |  | `(e: Table$BeforeExportEvent) => boolean \| void \| Promise&lt;boolean \| void>` | Before an export is written; return false to cancel (FE: controller extension onBeforeExport). |
+| `onExported` |  | `(e: Table$ExportedEvent) => void` | After an export was written. |
+| `canSaveVariants` |  | `boolean` | Whether views may be saved (default: the service's `VariantStore.canSave`, else true). |
+| `className` |  | `string` | Extra CSS class on the root element. |
+
+### `$ManifestActionSettings` — interface
+
+A manifest action (FE `ManifestAction`) of the page header or of the table toolbar. FE names an extension handler in `press`; here it is the handler itself (react-idiom).
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `text` |  | `string` | Button text. |
+| `press` |  | `(e: { selectedContexts: Context[] }) => void` | The button was pressed; table actions receive the selected rows. |
+| `visible` |  | `boolean` |  |
+| `enabled` |  | `boolean` |  |
+| `requiresSelection` |  | `boolean` | Table actions: enabled only with selected rows. |
+| `enableOnSelect` |  | `'multi' \| 'single'` | Table actions: enabled with exactly one ("single") or at least one ("multi") selected row. |
+| `menu` |  | `string[]` | Table actions: a menu button with these actions (keys such as "DataFieldForAction::Namespace.action"). |
+| `position` |  | `$PositionSettings` |  |
+
+### `$ManifestColumnSettings` — interface
+
+A custom column (FE `CustomDefinedTableColumn`); FE names a fragment in `template`, here it renders the cell (react-idiom).
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `header` |  | `string` | Column header. |
+| `template` |  | `(row: Row) => ReactNode` | Cell content. |
+| `properties` |  | `string[]` | Properties the column shows: they are selected from the service (and exported). |
+| `position` |  | `$PositionSettings` |  |
+| `width` |  | `string` | Column width (CSS length). |
+| `importance` |  | `'High' \| 'Low' \| 'Medium' \| 'None'` | Importance for the pop-in of responsive tables. |
+| `horizontalAlign` |  | `'Begin' \| 'Center' \| 'End'` |  |
+| `disableExport` |  | `boolean` | The column is not exported. |
+
+### `$ManifestCreationModeSettings` — interface
+
+`tableSettings › creationMode` (FE TableManifestSettingsConfiguration).
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `name` |  | `'AddViaValueHelp' \| 'Async' \| 'CreationDialog' \| 'CreationRow' \| 'Deferred' \| 'External' \| 'Inline' \| 'InlineCreationRows' \| 'NewPage' \| …` | The list report allows "NewPage" (draft: a new draft opens on the object page), "CreationDialog" and "External"; the other values fall back to "NewPage" as in FE. Services without draft create with a dialog (kit-extension, D42). |
+
+### `$ManifestFilterConfiguration` — interface
+
+`controlConfiguration ›
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `filterFields` |  | `Record&lt;string, $ManifestFilterFieldSettings>` |  |
+| `showClearButton` |  | `boolean` |  |
+| `navigationPropertiesForPersonalization` |  | `string[]` | Navigation properties offered in "Adapt Filters". |
+
+### `$ManifestFilterFieldSettings` — interface
+
+A filter field of `controlConfiguration ›
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `label` |  | `string` |  |
+| `property` |  | `string` | The property the field filters; default the key. |
+| `template` |  | `(ctx: FilterFieldTemplateContext) => ReactNode` | Editor of a custom filter field (FE: a fragment name; react-idiom). |
+| `availability` |  | `'Adaptation' \| 'Default' \| 'Hidden'` |  |
+| `required` |  | `boolean` |  |
+| `position` |  | `$PositionSettings` |  |
+
+### `$ManifestTableConfiguration` — interface
+
+`controlConfiguration ›
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `tableSettings` |  | `$ManifestTableSettings` |  |
+| `actions` |  | `Record&lt;string, $ManifestActionSettings>` | Custom toolbar actions and menus, by key. |
+| `columns` |  | `Record&lt;string, $ManifestColumnSettings>` | Custom columns, by key. |
+
+### `$ManifestTableSettings` — interface
+
+`controlConfiguration ›
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `type` |  | `'AnalyticalTable' \| 'GridTable' \| 'ResponsiveTable' \| 'TreeTable'` | Not set: "AnalyticalTable" when Aggregation.ApplySupported allows filter, identity, orderby, skip, top, groupby, aggregate and concat, "TreeTable" with a qualified Aggregation / Hierarchy RecursiveHierarchy pair, else "ResponsiveTable" (FE getTableType). |
+| `selectionMode` |  | `'Auto' \| 'ForceMulti' \| 'ForceSingle' \| 'Multi' \| 'None' \| 'Single'` |  |
+| `disableLeafSelection` |  | `boolean` | Tree tables: leaves cannot be selected. |
+| `creationMode` |  | `$ManifestCreationModeSettings` |  |
+| `enableExport` |  | `boolean` |  |
+| `exportFileName` |  | `string` |  |
+| `exportSheetName` |  | `string` |  |
+| `exportRequestSize` |  | `number` |  |
+| `disableCopyToClipboard` |  | `boolean` |  |
+| `enableFullScreen` |  | `boolean` | Default: false on the list report (FE: true only on phones). |
+| `personalization` |  | `boolean \| { sort?: boolean; column?: boolean; filter?: boolean; group?: boolean; aggregate?: boolean }` | true / false, or the panels: Sort and Column by default, Group for responsive tables, Group and Aggregate for analytical tables. |
+| `quickVariantSelection` |  | `$QuickVariantSelectionSettings` |  |
+| `header` |  | `string` | Table title; default UI.HeaderInfo/TypeNamePlural. |
+| `headerVisible` |  | `boolean` |  |
+| `rowCountMode` |  | `'Auto' \| 'Fixed' \| 'Interactive'` | Grid tables. Default "Auto". |
+| `selectAll` |  | `boolean` | Responsive tables: the "select all" check box. |
+| `selectionLimit` |  | `number` |  |
+| `frozenColumnCount` |  | `number` |  |
+| `disableColumnFreeze` |  | `boolean` |  |
+| `widthIncludingColumnHeader` |  | `boolean` |  |
+| `condensedTableLayout` |  | `boolean` |  |
+| `popinLayout` |  | `'Block' \| 'GridLarge' \| 'GridSmall'` |  |
+| `threshold` |  | `number` | Rows per request: UI.PresentationVariant/MaxItems, else 200 (TreeTable), 100 (GridTable, AnalyticalTable), 30 (FE getThreshold). |
+| `isSearchable` |  | `boolean` | Default: Capabilities.SearchRestrictions/Searchable; analytical tables: ApplySupported with "search". |
+| `readOnly` |  | `boolean` |  |
+| `ignoredFields` |  | `string` | Comma-separated properties whose columns are left out. |
+| `hierarchyQualifier` |  | `string` | Tree tables: qualifier of Aggregation.RecursiveHierarchy (default: the type's first hierarchy pair). |
+| `rowPress` |  | `(e: Table$RowPressEvent) => void` | A row was pressed (FE names an extension function; react-idiom). Default: navigation to the object page. |
+| `selectionChange` |  | `(e: Table$SelectionChangeEvent) => void` | The selection changed (FE names an extension function; react-idiom). |
+
+### `$PositionSettings` — interface
+
+sap.fe.core.converters.helpers.ConfigurableObject Position.
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `anchor` |  | `string` | Key of the item the new one is placed next to. |
+| `placement` |  | `'After' \| 'Before' \| 'End'` | "End" (or no anchor): after the last item. |
+
+### `$QuickVariantSelectionSettings` — interface
+
+`tableSettings › quickVariantSelection`: a segmented button (≤ 3) or a select (> 3) in the table toolbar.
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `paths` | **yes** | `{ annotationPath: string }[]` | Annotation paths of UI.SelectionVariant (or UI.SelectionPresentationVariant) annotations. |
+| `showCounts` |  | `boolean` | Counts in the texts. |
+| `hideTableTitle` |  | `boolean` | Hides the table title. |
+
+### `$ViewPathSettings` — interface
+
+`views › paths[]` (FE SingleViewPathConfiguration; a custom view with a React `template`).
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `key` |  | `string` |  |
+| `annotationPath` |  | `string` | UI.SelectionPresentationVariant, UI.PresentationVariant or UI.LineItem path ("com.sap.vocabularies.UI.v1.SelectionPresentationVariant#Open"). |
+| `entitySet` |  | `string` | Another entity set: a table per entity set (multiple content). |
+| `contextPath` |  | `string` |  |
+| `label` |  | `string` | Tab text of a custom view. |
+| `template` |  | `() => ReactNode` | Content of a custom view (FE: a fragment name; react-idiom). |
+
+### `default` — component
+
+`import { default } from '@rhfan2019/smart-kit/v4/fe/templates/ListReport';`
+
+| Prop | Required | Type | Description |
+| --- | --- | --- | --- |
+| `entitySet` |  | `string` | Entity set of the list, e.g. "Orders" (or `contextPath`). |
+| `contextPath` |  | `string` | Context path of the list, e.g. "/Orders" (a parameterized set: "/P/Set"); wins over `entitySet`. |
+| `navigation` |  | `Record&lt;string, { detail?: { route?: string } }>` | Row navigation per entity set: `detail.route` makes rows navigate to the object page (NavigationAdapter.toObject). |
+| `controlConfiguration` |  | `{ '@com.sap.vocabularies.UI.v1.LineItem'?: $ManifestTableConfiguration; '@com.sap.vocabularies.UI.v1.SelectionFields'?: $ManifestFilterCo…` | Settings of the controls by annotation path (table, filter bar). |
+| `content` |  | `{ header?: { actions?: Record&lt;string, $ManifestActionSettings> } }` |  |
+| `variantManagement` |  | `'None' \| 'Page'` | "Page": one variant management in the title for the filter bar and the table; "None": no variants. |
+| `initialLoad` |  | `InitialLoadMode \| boolean` | "Enabled": load on start; "Disabled": only after "Go"; "Auto": load when the start variant has filter values (FE: the standard variant applies automatically when filter values are set). |
+| `liveMode` |  | `boolean` | Every filter change applies at once (no "Go"). |
+| `views` |  | `{ paths: $ViewPathSettings[]; showCounts?: boolean }` | Views: a tab per path (an IconTabBar), `showCounts` adds the number of items (default: with several entity sets). |
+| `stickyMultiTabHeader` |  | `boolean` | The view tabs stay at the top while the table scrolls. |
+| `keyPerformanceIndicators` |  | `Record&lt;string, $KPIConfiguration>` | KPI tags in the title by name (docs/29 §5). |
+| `hideFilterBar` |  | `boolean` | No filter bar (and no filter conditions). |
+| `useHiddenFilterBar` |  | `boolean` | The filter bar is not shown, its conditions apply. |
+| `service` |  | `string` | Name of the service in `SmartKitProvider` `services`; default: the provider's `defaultService`. |
+| `pageKey` |  | `string` | Key for variants and state restoration; defaults to the entity set. |
+| `title` |  | `string` | Page title (standard variant text, e-mail subject); default UI.HeaderInfo/TypeNamePlural. |
+| `onRowsChange` |  | `(rows: Row[]) => void` | Loaded rows of the main table (e.g. paging buttons in a flexible column layout). |
+| `refreshToken` |  | `number \| string` | Change this value to reload the tables, tab counts and chart. The first value does not reload. |
+| `onBeforeExport` |  | `(e: Table$BeforeExportEvent) => boolean \| void \| Promise&lt;boolean \| void>` | Before an export is written; return false to cancel (FE: controller extension onBeforeExport). |
+| `onExported` |  | `(e: Table$ExportedEvent) => void` | After an export was written. |
+| `canSaveVariants` |  | `boolean` | Whether views may be saved (default: the service's `VariantStore.canSave`, else true). |
+| `className` |  | `string` | Extra CSS class on the root element. |
+
+### `InitialLoadMode` — type
+
+sap.fe.core.InitialLoadMode; `true` / `false` are accepted as "Enabled" / "Disabled" (sap.fe.core.library InitialLoadType).
+
+```ts
+export type InitialLoadMode = 'Auto' | 'Enabled' | 'Disabled';
+```
+
+## `@rhfan2019/smart-kit/v4/fe/templates/ObjectPage`
+
+`$ObjectPageSettings` (interface) · `Context` (interface) · `default` (component) · `ManifestAction` (interface) · `ManifestHeaderFacet` (interface) · `ManifestSection` (interface) · `ManifestSideContent` (interface) · `ManifestSubSection` (interface) · `NavigationSettingsConfiguration` (interface) · `NavigationTargetConfiguration` (interface) · `ObjectPage$ActionPressEvent` (interface) · `ObjectPage$TableActionPressEvent` (interface) · `ObjectPageContent` (interface) · `ObjectPageHeaderContent` (interface) · `ObjectPageManifestSettings` (interface) · `Position` (interface) · `TableCreationModeConfiguration` (interface) · `TableManifestAction` (interface) · `TableManifestColumn` (interface) · `TableManifestConfiguration` (interface) · `TableManifestSettingsConfiguration` (interface)
+
+### `$ObjectPageSettings` — interface
+
+Props of the object page: the manifest settings (ObjectPageManifestSettings) plus what smart-kit needs without the FE runtime (registered as kit-extension in tools/ui5-alignment/deviations.op5.json).
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `path` | **yes** | `string` | Entity path, e.g. "Orders('1')" (FE: the route's binding context). Ignored in create mode. |
+| `service` |  | `string` | Name of the service in `SmartKitProvider` `services`; default: the provider's `defaultService`. |
+| `create` |  | `{ entitySet?: string; initial?: Row }` | Create mode: a new object of `entitySet` (default the `entitySet` / `contextPath` setting). |
+| `onCreated` |  | `(path: string) => void` | After a new object was saved; default NavigationAdapter.toObject. |
+| `onDeleted` |  | `() => void` | After the object was deleted; default NavigationAdapter.toList. |
+| `editable` |  | `boolean` | Offer "Edit" (default: when the entity set is updatable and the data provider can write). |
+| `headerMessage` |  | `ReactNode \| ((row: Row \| undefined) => ReactNode)` | Message strip under the title (OP-17). |
+| `keyInfo` |  | `ReactNode \| ((row: Row \| undefined) => ReactNode)` | Key information in the title bar (DP Header Title (4)), e.g. a GenericTag. |
+| `onRowNavigate` |  | `(row: Row, path: string) => void` | Row press of a sub-object table instead of NavigationAdapter.toObject (hosts without a NavigationAdapter, e.g. a flexible column layout). |
+| `paging` |  | `boolean` | Paging buttons for sub-object pages (OP Representation of Child Pages). |
+| `showAllThreshold` |  | `number` | Limit for sub-table previews with "Show All (x)". |
+| `letterboxing` |  | `boolean` | Letterboxing of the page (DP Responsiveness). |
+| `className` |  | `string` | Extra CSS class on the root element. |
+| `ref` |  | `Ref&lt;ObjectPage>` | Instance methods (sap.fe.templates.ObjectPage.ExtensionAPI). |
+| `entitySet` |  | `string` | Entity set of the page (FE: `settings › entitySet`). |
+| `contextPath` |  | `string` | Entity set path, "/Set" or "/Set/_Nav" (default `/${entitySet}`). |
+| `sectionLayout` |  | `'Page' \| 'Tabs'` | "Page": all sections on one page with an anchor bar; "Tabs": one section per tab. |
+| `editableHeaderContent` |  | `boolean` | While editing, the header facets are edited in a "Header" section and the header content is hidden. |
+| `content` |  | `ObjectPageContent` |  |
+| `controlConfiguration` |  | `Record&lt;string, TableManifestConfiguration>` | Configuration of the sub-object tables by annotation path, e.g. "_Item/@com.sap.vocabularies.UI.v1.LineItem". |
+| `navigation` |  | `Record&lt;string, NavigationSettingsConfiguration>` | Navigation of the sub-object tables by navigation property. |
+| `openInEditMode` |  | `boolean` | Opens the page in edit mode. |
+| `enableLazyLoading` |  | `boolean` | Sub-sections render their content only when scrolled near. |
+| `useTextForNoDataMessages` |  | `boolean` | Tables without data show a text instead of an illustrated message. |
+| `variantManagement` |  | `'None' \| 'Control'` | "Control": variant management per table; "None": none ("Page" is not allowed on object pages). |
+| `additionalProperties` |  | `string[]` | Further properties read with the object (e.g. for custom content). |
+
+### `Context` — interface
+
+A row of the table, as sap.ui.model.odata.v4.Context: its entity path and its data.
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `getPath` | **yes** | `() => string` | Entity path, e.g. "/Orders('1')". |
+| `getObject` | **yes** | `() => Row` | The row data. |
+
+### `default` — component
+
+sap.fe.templates.ObjectPage. Instance methods of the object page (sap.fe.templates.ObjectPage.ExtensionAPI).
+
+`import { default } from '@rhfan2019/smart-kit/v4/fe/templates/ObjectPage';`
+
+| Prop | Required | Type | Description |
+| --- | --- | --- | --- |
+| `path` | **yes** | `string` | Entity path, e.g. "Orders('1')" (FE: the route's binding context). Ignored in create mode. |
+| `service` |  | `string` | Name of the service in `SmartKitProvider` `services`; default: the provider's `defaultService`. |
+| `create` |  | `{ entitySet?: string; initial?: Row }` | Create mode: a new object of `entitySet` (default the `entitySet` / `contextPath` setting). |
+| `onCreated` |  | `(path: string) => void` | After a new object was saved; default NavigationAdapter.toObject. |
+| `onDeleted` |  | `() => void` | After the object was deleted; default NavigationAdapter.toList. |
+| `editable` |  | `boolean` | Offer "Edit" (default: when the entity set is updatable and the data provider can write). |
+| `headerMessage` |  | `ReactNode \| ((row: Row \| undefined) => ReactNode)` | Message strip under the title (OP-17). |
+| `keyInfo` |  | `ReactNode \| ((row: Row \| undefined) => ReactNode)` | Key information in the title bar (DP Header Title (4)), e.g. a GenericTag. |
+| `onRowNavigate` |  | `(row: Row, path: string) => void` | Row press of a sub-object table instead of NavigationAdapter.toObject (hosts without a NavigationAdapter, e.g. a flexible column layout). |
+| `paging` |  | `boolean` | Paging buttons for sub-object pages (OP Representation of Child Pages). |
+| `showAllThreshold` |  | `number` | Limit for sub-table previews with "Show All (x)". |
+| `letterboxing` |  | `boolean` | Letterboxing of the page (DP Responsiveness). |
+| `className` |  | `string` | Extra CSS class on the root element. |
+| `ref` |  | `Ref&lt;ObjectPage>` | Instance methods (sap.fe.templates.ObjectPage.ExtensionAPI). |
+| `entitySet` |  | `string` | Entity set of the page (FE: `settings › entitySet`). |
+| `contextPath` |  | `string` | Entity set path, "/Set" or "/Set/_Nav" (default `/${entitySet}`). |
+| `sectionLayout` |  | `'Page' \| 'Tabs'` | "Page": all sections on one page with an anchor bar; "Tabs": one section per tab. |
+| `editableHeaderContent` |  | `boolean` | While editing, the header facets are edited in a "Header" section and the header content is hidden. |
+| `content` |  | `ObjectPageContent` |  |
+| `controlConfiguration` |  | `Record&lt;string, TableManifestConfiguration>` | Configuration of the sub-object tables by annotation path, e.g. "_Item/@com.sap.vocabularies.UI.v1.LineItem". |
+| `navigation` |  | `Record&lt;string, NavigationSettingsConfiguration>` | Navigation of the sub-object tables by navigation property. |
+| `openInEditMode` |  | `boolean` | Opens the page in edit mode. |
+| `enableLazyLoading` |  | `boolean` | Sub-sections render their content only when scrolled near. |
+| `useTextForNoDataMessages` |  | `boolean` | Tables without data show a text instead of an illustrated message. |
+| `variantManagement` |  | `'None' \| 'Control'` | "Control": variant management per table; "None": none ("Page" is not allowed on object pages). |
+| `additionalProperties` |  | `string[]` | Further properties read with the object (e.g. for custom content). |
+
+### `ManifestAction` — interface
+
+A header, footer or sub-section action (ManifestAction).
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `text` |  | `string` | Button text. |
+| `press` |  | `(e: ObjectPage$ActionPressEvent) => void` | Handler (FE: the name of an extension function). |
+| `visible` |  | `boolean \| ((row: Row \| undefined) => boolean)` | Shown; a function of the object stands for a binding expression. |
+| `enabled` |  | `boolean \| ((row: Row \| undefined) => boolean)` | Enabled; a function of the object stands for a binding expression. |
+| `position` |  | `Position` | Position among the actions (keys such as "EditAction", "DeleteAction", "DataFieldForAction::Namespace.action"). |
+| `menu` |  | `string[]` | Keys of the actions shown in a menu button (the action becomes a menu). |
+
+### `ManifestHeaderFacet` — interface
+
+A custom header facet (ManifestHeaderFacet).
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `template` | **yes** | `(row: Row \| undefined) => ReactNode` | Content (FE: the fragment name). |
+| `title` |  | `string` | Facet title. |
+| `subTitle` |  | `string` |  |
+| `templateEdit` |  | `(row: Row \| undefined) => ReactNode` | Content in the editable header section while editing (FE: the fragment name of templateEdit). |
+| `position` |  | `Position` | Position among the header facets (keys: the facet ids). |
+| `visible` |  | `boolean \| ((row: Row \| undefined) => boolean)` |  |
+
+### `ManifestSection` — interface
+
+A custom section, or the override of an annotation section (ManifestSection).
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `title` |  | `string` |  |
+| `template` |  | `(row: Row \| undefined) => ReactNode` | Content of a section without sub-sections (FE: the fragment name). |
+| `position` |  | `Position` |  |
+| `visible` |  | `boolean \| ((row: Row \| undefined) => boolean)` |  |
+| `subSections` |  | `Record&lt;string, ManifestSubSection>` |  |
+| `actions` |  | `Record&lt;string, ManifestAction>` | Actions of a section without sub-sections. |
+| `isPartOfPreview` |  | `boolean` | false: behind "Show More". |
+| `messageStrip` |  | `ReactNode` | Message strip at the top of the section (OP-17); smart-kit addition. |
+
+### `ManifestSideContent` — interface
+
+Side content of a sub-section (ManifestSideContent); shown with the instance method `showSideContent`.
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `template` | **yes** | `(row: Row \| undefined) => ReactNode` | Content (FE: the fragment name). |
+| `equalSplit` |  | `boolean` | Main and side content take half of the width each. |
+
+### `ManifestSubSection` — interface
+
+A custom sub-section, or the override of an annotation sub-section (ManifestSubSection).
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `title` |  | `string` |  |
+| `template` |  | `(row: Row \| undefined) => ReactNode` | Content (FE: the fragment name). |
+| `position` |  | `Position` |  |
+| `visible` |  | `boolean \| ((row: Row \| undefined) => boolean)` |  |
+| `actions` |  | `Record&lt;string, ManifestAction>` | Toolbar actions of the sub-section. |
+| `sideContent` |  | `ManifestSideContent` |  |
+| `enableLazyLoading` |  | `boolean` | The content is rendered only when scrolled near. |
+| `isPartOfPreview` |  | `boolean` | false: behind "Show More". |
+| `blocks` |  | `{ id: string; columns: 1 \| 2 \| 3; more?: boolean; content: ReactNode }[]` | Layout blocks (sap.uxap blocks with 1–3 columns, `more`: behind "Show More"); smart-kit addition — in FE they are part of the fragment. |
+
+### `NavigationSettingsConfiguration` — interface
+
+`navigation › <navigation property>` (NavigationSettingsConfiguration).
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `detail` |  | `NavigationTargetConfiguration` | Row press of the sub-object table. |
+
+### `NavigationTargetConfiguration` — interface
+
+Navigation target (NavigationTargetConfiguration).
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `route` |  | `string` | Route of the target page. smart-kit has no router: the rows navigate with NavigationAdapter.toObject, which maps the entity path to the host's route; the name is kept for the correspondence with the manifest. |
+
+### `ObjectPage$ActionPressEvent` — interface
+
+Event of a header, footer or sub-section action (FE: the extension function gets the page context).
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `bindingContext` | **yes** | `Context` | The object of the page. |
+
+### `ObjectPage$TableActionPressEvent` — interface
+
+Event of a table action (the selected rows).
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `selectedContexts` | **yes** | `Context[]` |  |
+
+### `ObjectPageContent` — interface
+
+`content` of the object page.
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `header` |  | `ObjectPageHeaderContent` |  |
+| `body` |  | `{ /** Custom sections and overrides of annotation sections by key (the UI.Facets ID). */ sections?: Record&lt;string, ManifestSection>; }` |  |
+| `footer` |  | `{ /** Custom footer actions by key ("SaveAction", "CancelAction" and the determining actions are anchors). */ actions?: Record&lt;string, Ma…` |  |
+
+### `ObjectPageHeaderContent` — interface
+
+`content › header`.
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `visible` |  | `boolean` | Shows the header (title and content). |
+| `anchorBarVisible` |  | `boolean` | Shows the anchor bar (with sectionLayout "Tabs": the tab bar); also the title click and the pin. |
+| `facets` |  | `Record&lt;string, ManifestHeaderFacet>` | Custom header facets by key. |
+| `actions` |  | `Record&lt;string, ManifestAction>` | Custom header actions by key. |
+
+### `ObjectPageManifestSettings` — interface
+
+Manifest settings of the object page (ObjectPageManifestSettings + BaseManifestSettings).
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `entitySet` |  | `string` | Entity set of the page (FE: `settings › entitySet`). |
+| `contextPath` |  | `string` | Entity set path, "/Set" or "/Set/_Nav" (default `/${entitySet}`). |
+| `sectionLayout` |  | `'Page' \| 'Tabs'` | "Page": all sections on one page with an anchor bar; "Tabs": one section per tab. |
+| `editableHeaderContent` |  | `boolean` | While editing, the header facets are edited in a "Header" section and the header content is hidden. |
+| `content` |  | `ObjectPageContent` |  |
+| `controlConfiguration` |  | `Record&lt;string, TableManifestConfiguration>` | Configuration of the sub-object tables by annotation path, e.g. "_Item/@com.sap.vocabularies.UI.v1.LineItem". |
+| `navigation` |  | `Record&lt;string, NavigationSettingsConfiguration>` | Navigation of the sub-object tables by navigation property. |
+| `openInEditMode` |  | `boolean` | Opens the page in edit mode. |
+| `enableLazyLoading` |  | `boolean` | Sub-sections render their content only when scrolled near. |
+| `useTextForNoDataMessages` |  | `boolean` | Tables without data show a text instead of an illustrated message. |
+| `variantManagement` |  | `'None' \| 'Control'` | "Control": variant management per table; "None": none ("Page" is not allowed on object pages). |
+| `additionalProperties` |  | `string[]` | Further properties read with the object (e.g. for custom content). |
+
+### `Position` — interface
+
+Position of a custom element (sap.fe.core.converters.helpers.ConfigurableObject Position).
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `placement` | **yes** | `'After' \| 'Before' \| 'End'` |  |
+| `anchor` |  | `string` | Key of the element the custom element is placed next to; without it: before the first ("Before") or after the last element. |
+
+### `TableCreationModeConfiguration` — interface
+
+Creation of sub-objects (`tableSettings › creationMode`).
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `name` |  | `'NewPage' \| 'Inline' \| 'InlineCreationRows' \| 'CreationDialog' \| 'External' \| 'AddViaValueHelp' \| 'Sync' \| 'Async' \| 'Deferred' \| 'Creati…` | NewPage: create and open the sub-object page; Inline / InlineCreationRows: a new row in the table; CreationDialog: a dialog. FE default NewPage; without a route to the sub-object page (smart-kit: no `navigation` entry and NavigationAdapter.hasObjectPage false) Inline. |
+
+### `TableManifestAction` — interface
+
+An action of a sub-object table (`controlConfiguration › <nav>/@UI.LineItem › actions`).
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `text` |  | `string` |  |
+| `press` |  | `(e: ObjectPage$TableActionPressEvent) => void` | Handler (FE: the name of an extension function, called with the selected contexts). |
+| `visible` |  | `boolean` |  |
+| `enabled` |  | `boolean` |  |
+| `position` |  | `Position` |  |
+| `requiresSelection` |  | `boolean` | Enabled only with selected rows. |
+| `enableOnSelect` |  | `'single' \| 'multi'` | Enabled with one ("single") or at least one ("multi") selected row. |
+| `menu` |  | `string[]` | Keys of the actions shown in a menu button. |
+
+### `TableManifestColumn` — interface
+
+A custom column, or the override of an annotation column (key "DataField::Path").
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `header` |  | `string` | Column header. |
+| `template` |  | `(row: Row) => ReactNode` | Cell content (FE: the fragment name of the template). |
+| `properties` |  | `string[]` | Properties the column shows: they are selected and exported. |
+| `position` |  | `Position` |  |
+| `width` |  | `string` | CSS width. |
+| `importance` |  | `'High' \| 'Medium' \| 'Low' \| 'None'` |  |
+| `horizontalAlign` |  | `'Begin' \| 'Center' \| 'End'` |  |
+| `disableExport` |  | `boolean` | Not exported. |
+
+### `TableManifestConfiguration` — interface
+
+`controlConfiguration › <nav>/@com.sap.vocabularies.UI.v1.LineItem` (TableManifestConfiguration).
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `tableSettings` |  | `TableManifestSettingsConfiguration` |  |
+| `columns` |  | `Record&lt;string, TableManifestColumn>` | Custom and overridden columns by key. |
+| `actions` |  | `Record&lt;string, TableManifestAction>` | Custom and overridden actions by key. |
+
+### `TableManifestSettingsConfiguration` — interface
+
+`tableSettings` of a sub-object table (TableManifestSettingsConfiguration).
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `type` |  | `'ResponsiveTable' \| 'GridTable' \| 'AnalyticalTable' \| 'TreeTable'` | Table type; default by the annotations (analytical, tree), else ResponsiveTable. |
+| `selectionMode` |  | `'Auto' \| 'None' \| 'Single' \| 'Multi' \| 'ForceSingle' \| 'ForceMulti'` | Auto: Multi when an action needs a selection (object page: only while editing), else None. |
+| `creationMode` |  | `TableCreationModeConfiguration` |  |
+| `enableExport` |  | `boolean` | Object page: equals `enablePaste` (true). |
+| `exportFileName` |  | `string` |  |
+| `exportSheetName` |  | `string` |  |
+| `exportRequestSize` |  | `number` |  |
+| `disableCopyToClipboard` |  | `boolean` |  |
+| `enableFullScreen` |  | `boolean` | Only on phones. |
+| `personalization` |  | `boolean \| { sort?: boolean; column?: boolean; filter?: boolean; group?: boolean; aggregate?: boolean }` | false: no personalization; or which panels. Default Sort, Column, Filter (+ Group, Aggregate by type). |
+| `header` |  | `string` | Default `UI.HeaderInfo/TypeNamePlural` of the target (smart-kit: the facet label). |
+| `headerVisible` |  | `boolean` |  |
+| `rowCountMode` |  | `'Auto' \| 'Fixed' \| 'Interactive'` | Non-responsive tables. Object page: Fixed. |
+| `selectionLimit` |  | `number` |  |
+| `frozenColumnCount` |  | `number` |  |
+| `disableColumnFreeze` |  | `boolean` |  |
+| `widthIncludingColumnHeader` |  | `boolean` |  |
+| `condensedTableLayout` |  | `boolean` |  |
+| `popinLayout` |  | `PopinLayout` | Responsive tables. |
+| `threshold` |  | `number` | Rows per request (object page navigation tables: 10). |
+| `scrollThreshold` |  | `number` | Non-responsive tables. |
+| `isSearchable` |  | `boolean` | Search field (default by SearchRestrictions). |
+| `readOnly` |  | `boolean` | Read only also while editing. |
+| `ignoredFields` |  | `string` | Comma-separated properties whose columns are left out. |

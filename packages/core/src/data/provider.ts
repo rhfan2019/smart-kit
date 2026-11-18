@@ -13,6 +13,12 @@ export interface ReadDataProvider {
   query(req: QueryRequest, opts?: RequestOptions): Promise<QueryResult>;
   read(path: EntityPath, req: ReadRequest, opts?: RequestOptions): Promise<Row>;
   /**
+   * Number of entities matching `req` (`<set>/$count?$filter=…&$search=…`; select, expand, order and paging are
+   * ignored), as the FE list report counts its view tabs (sap.fe.templates.ListReport MultipleModeControl). Providers
+   * without it count with `query({ …, top: 0, count: true })`.
+   */
+  count?(req: QueryRequest, opts?: RequestOptions): Promise<number>;
+  /**
    * Loads the value help service of a Common.ValueListReferences entry (`reference`: URL of its `$metadata`, relative to
    * this service's `$metadata`): its model, its Common.ValueListMapping annotations and a provider for its data
    * (SAPUI5 ODataMetaModel `getOrCreateSharedModel`). Loaded once per URL. Providers without it have no referenced

@@ -2,7 +2,7 @@
  * Fiori elements comparison of the list report chart and of aggregation (docs/30 §7.2, AL-10 – AL-12; docs/29 §4
  * P1-2 Aggregation.CustomAggregate, P1-3 list report chart). FE: apps/fe-reference `?app=purchasing-chart` (views:
  * the LineItem and the chart view PresentationVariant#ByStatusChart = UI.Chart#ByStatus); smart-kit: the demo's
- * `/po?chart=1` (table with the chart switch, chart "ByStatus"). Compared: the requests sent when the chart is
+ * `/po?chart=1` (the same `views.paths`: a table view and the chart view). Compared: the requests sent when the chart is
  * shown (without and with a filter condition), the chart type, its dimensions and measures, and what the chart draws.
  */
 import { expect, test, type Browser, type Page } from '@playwright/test';
@@ -111,7 +111,8 @@ async function openSkChart(page: Page) {
 }
 
 async function showSkChart(page: Page) {
-  await page.locator('[data-sk-chart-toggle]').getByLabel('Chart').click();
+  // the chart view of `views.paths` (key "chart" in the purchasing-chart manifest, as FE's IconTabBar entry)
+  await page.locator('[data-sk-list-tab="chart"]').click();
   await waitSkChart(page);
 }
 

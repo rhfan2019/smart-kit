@@ -120,10 +120,13 @@ export function useFilterState(entitySet: string, o: UseFilterStateOptions = {})
     return ok;
   }, [missing, setState]);
 
-  // Live mode: apply after a short delay.
+  // Live mode: apply after a short delay — changes only: the start values are applied by `autoExecute` / `go()`
+  // (FE: liveMode does not load a list whose initialLoad is "Disabled").
   const live = Boolean(o.liveMode);
+  const start = useRef({ filters: state.filters, search: state.search });
   useEffect(() => {
     if (!live) return;
+    if (state.applied === null && sameFilter(start.current, state.filters, state.search)) return;
     if (sameFilter(state.applied, state.filters, state.search) || missing(state.filters).length) return;
     const h = setTimeout(() => go(), o.liveDelay ?? 300);
     return () => clearTimeout(h);

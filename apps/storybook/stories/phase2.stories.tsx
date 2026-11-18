@@ -5,7 +5,7 @@ import { MICRO_COMPARISON_MAX } from '@rhfan2019/smart-kit';
 import CreateDialog from '@rhfan2019/smart-kit/kit/CreateDialog';
 import FieldEditor from '@rhfan2019/smart-kit/kit/FieldEditor';
 import QuickViewLink from '@rhfan2019/smart-kit/kit/QuickViewLink';
-import { SmartObjectPage } from '@rhfan2019/smart-kit/templates';
+import ObjectPage from '@rhfan2019/smart-kit/v4/fe/templates/ObjectPage';
 import TableMacro from '@rhfan2019/smart-kit/v4/fe/macros/Table';
 import MTable from '@rhfan2019/smart-kit/m/Table';
 import DynamicPage from '@rhfan2019/smart-kit/f/DynamicPage';
@@ -139,7 +139,7 @@ function FclDemo() {
     <div style={{ height: '100vh' }}>
       <FlexibleColumnLayout
         layout={layout} onStateChange={(e) => setLayout(e.layout)} beginColumnPages={<TableMacro contextPath="/Products" />}
-        midColumnPages={<DynamicPage title={<DynamicPageTitle heading="Product" navigationActions={<FlexibleColumnLayoutActions />} />} content={<SmartObjectPage path="Products(1)" />} />}
+        midColumnPages={<DynamicPage title={<DynamicPageTitle heading="Product" navigationActions={<FlexibleColumnLayoutActions />} />} content={<ObjectPage path="Products(1)" />} />}
       />
     </div>
   );

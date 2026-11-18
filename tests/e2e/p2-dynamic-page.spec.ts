@@ -185,7 +185,8 @@ test('P2-DP-09 P2-OPC-06 global actions move into the overflow from right to lef
   await expect(actions.locator('[data-sk-action="Edit"]')).toBeVisible();
   await expect(actions.locator('[data-sk-action="Delete"]')).toBeVisible();
   await expect(actions.locator('[data-sk-toolbar-more]')).toHaveCount(0);
-  await page.setViewportSize({ width: 760, height: 900 });
+  // stage 5: the side content toggle left the title (it is a sub-section action now), so one action less: narrower
+  await page.setViewportSize({ width: 640, height: 900 });
   await expect(actions.locator('[data-sk-toolbar-more]')).toBeVisible();
   await expect(actions.locator('[data-sk-action="Edit"]')).toBeVisible();
   await actions.locator('[data-sk-toolbar-more]').click();

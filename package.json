@@ -28,7 +28,7 @@
     "size": "node scripts/check-size.mjs",
     "trace": "node scripts/trace.mjs",
     "check:trademark": "node scripts/check-trademark.mjs",
-    "check:ui5": "node scripts/check-ui5-api.mjs",
+    "check:ui5": "node scripts/check-ui5-api.mjs && node scripts/check-manifest-settings.mjs",
     "lint:tokens": "node scripts/check-tokens.mjs",
     "samples": "node scripts/export-samples.mjs",
     "storybook": "npm run storybook -w storybook",

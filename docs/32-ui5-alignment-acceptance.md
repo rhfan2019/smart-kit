@@ -79,3 +79,4 @@
 | AL-12 | 3、4 | F、D | 各场景前 5 行单元格文本；`29` 第 4 节 P1 八项和第 5 节 P2 全部有场景（新列类型和动作在阶段 4 收尾补了场景 `cols5-*`）；`02` 按 FE 源码重写，每条写明 FE 模块（核对：Claude，2026-11-18） |
 | AL-08 | 3 | S、D | `fe-behavior` 32 → 28（`fe:*` 每种原因一条），`not-implemented` 119（阶段 3 不涉及 API）（核对：Claude，2026-11-18） |
 
+| AL-13 | 5 | F、S、U | `tests/e2e-fe/lr5.spec.ts`、`op5.spec.ts`（manifest 设置一一对应，示例页导入 FE manifest）；`npm run check:ui5` 里的 `check-manifest-settings.mjs`（ListReport 333 项、ObjectPage 382 项，0 未登记）；`tests/unit/check-manifest-settings.test.ts`、`al-lr5`、`al-op5` 里 `AL-13` 开头的测试 |

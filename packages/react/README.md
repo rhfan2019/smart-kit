@@ -12,7 +12,7 @@ them where you need to. Built on Mantine 9, TanStack Query 5 and (optionally) AG
 ```bash
 npm install @rhfan2019/smart-kit @rhfan2019/smart-kit-core \
   react react-dom @mantine/core @mantine/hooks @mantine/dates dayjs @tanstack/react-query
-# optional, for the grid table, SmartListReport and SmartObjectPage:
+# optional, for the grid table, ListReport (v4/fe/templates/ListReport) and ObjectPage (v4/fe/templates/ObjectPage):
 npm install ag-grid-community ag-grid-react
 ```
 
@@ -39,7 +39,8 @@ import { MantineProvider } from '@mantine/core';
 import { loadService, type NavigationAdapter } from '@rhfan2019/smart-kit-core';
 import { SmartKitProvider, type ServiceConfig } from '@rhfan2019/smart-kit/context';
 import { smartKitCssVariablesResolver, smartKitMantineTheme } from '@rhfan2019/smart-kit/theme';
-import { SmartListReport, SmartObjectPage } from '@rhfan2019/smart-kit/templates';
+import ListReport from '@rhfan2019/smart-kit/v4/fe/templates/ListReport';
+import ObjectPage from '@rhfan2019/smart-kit/v4/fe/templates/ObjectPage';
 import { useEffect, useMemo, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter, Route, Routes, useNavigate, useSearchParams } from 'react-router';
@@ -60,7 +61,7 @@ function App() {
   return (
     <SmartKitProvider services={services} locale="en" namespace="shop" navigation={navigation}>
       <Routes>
-        <Route path="/" element={<SmartListReport entitySet="SalesOrders" />} />
+        <Route path="/" element={<ListReport contextPath="/SalesOrders" />} />
         <Route path="/object" element={<ObjectRoute />} />
       </Routes>
     </SmartKitProvider>
@@ -69,7 +70,7 @@ function App() {
 
 function ObjectRoute() {
   const path = useSearchParams()[0].get('path') ?? '';
-  return <SmartObjectPage key={path} path={path} />;
+  return <ObjectPage key={path} path={path} />;
 }
 
 createRoot(document.getElementById('root')!).render(

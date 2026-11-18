@@ -26,38 +26,47 @@ node apps/fe-reference/server.mjs              # http://localhost:4420
 | `http://localhost:4420/index.html?app=purchasing-analytical` | `fe.ref.purchasinganalytical` (`webapp/purchasing-analytical/`) | `/odata/purchasing/` |
 | `http://localhost:4420/index.html?app=purchasing-display` | `fe.ref.purchasingdisplay` (`webapp/purchasing-display/`) | `/odata/purchasing/` |
 | `http://localhost:4420/index.html?app=purchasing-params` | `fe.ref.purchasingparams` (`webapp/purchasing-params/`) | `/odata/purchasing/` |
+| `http://localhost:4420/index.html?app=purchasing-op` | `fe.ref.purchasingop` (`webapp/purchasing-op/`) | `/odata/purchasing-draft/` |
 
 Both components start through `webapp/ext/start.js`; the shared extensions (custom column, custom action) are in
 `webapp/ext/`. Variants are kept in the session storage flexibility connector (no LREP backend).
 
 ## Correspondence with the smart-kit demo
 
-The FE comparison opens `/po` and `/po-draft` of the smart-kit demo (`apps/demo/src/pages/PurchaseOrdersPage.tsx`,
-`SmartListReport` without query parameters, English). Each manifest setting matches a demo property:
+Since stage 5 the smart-kit list report `ListReport` (`@rhfan2019/smart-kit/v4/fe/templates/ListReport`) takes the FE
+manifest settings as props (docs/26c, docs/30 §5.3), and the demo passes **the very settings object of these
+manifests**: `apps/demo/src/feListReport.ts` reads `sap.ui5 › routing › targets › <ListReport target> › options ›
+settings` from the imported `manifest.json` and only replaces what React cannot take from JSON — `{i18n>key}` texts by
+the demo's texts, the fragment `fe.ref.ext.Overdue` (column `template`) and the handler
+`fe.ref.ext.CustomActions.copy` (action `press`) by their React implementations. So a setting changed here changes
+both apps.
 
-| smart-kit demo (`SmartListReport`) | FE manifest (`ListReport` target `options.settings`) |
-| --- | --- |
-| `entitySet="PurchaseOrders"`, `service="purchasing"` / `"purchasing-draft"` | `contextPath: "/PurchaseOrders"`; `dataSources.mainService.uri` |
-| `liveMode` (default `true`) | `liveMode: true` |
-| `autoExecute` (default `true`) | `initialLoad: "Enabled"` |
-| page variant management (`VariantManagement` in the page title) | `variantManagement: "Page"` |
-| `tableType="grid"` | `controlConfiguration["@com.sap.vocabularies.UI.v1.LineItem"].tableSettings.type: "GridTable"` |
-| multi selection (default of `Table`, `v4/fe/macros/Table`) | `tableSettings.selectionMode: "Multi"` |
-| `exportable` (default `true`) | `tableSettings.enableExport: true` |
-| `tableExtend` `Custom::Overdue` after `DataField::Supplier` | `columns["Custom::Overdue"]` with `position: { anchor: "DataField::Supplier", placement: "After" }`, template `fe.ref.ext.Overdue` |
-| `tableExtend` action `Custom::Copy` (`requiresSelection`, before `Create`) | `actions["Custom::Copy"]` with `requiresSelection: true`, press `fe.ref.ext.CustomActions.copy` |
-| `actionGroups` `decide` = approve, reject | `actions.decide.menu: ["DataFieldForAction::Purchasing.approve", "DataFieldForAction::Purchasing.reject"]` |
-| `workingMode="worklist"` (default) | FE default (no setting) |
-| row press → object page (`NavigationAdapter`) | `navigation.PurchaseOrders.detail.route: "PurchaseOrdersObjectPage"` |
-| `filterToggle` (default `false`), `views`, `contents`, `chart` not set | no `views`, no chart in the manifest |
+| FE app (`?app=…`) | smart-kit demo | settings |
+| --- | --- | --- |
+| `purchasing` | `/po` (`PurchaseOrdersPage.tsx`) | `purchasing/manifest.json` |
+| `purchasing-draft` | `/po-draft` | `purchasing-draft/manifest.json` |
+| `purchasing-views` | `/po?views=tabs` | `purchasing-views/manifest.json` |
+| `purchasing-chart` | `/po?chart=1` | `purchasing-chart/manifest.json` (a table view and the chart view) |
+| `purchasing-analytical` | `/po?table=analytical` | `purchasing-analytical/manifest.json` |
+| `purchasing-display` | `/contacts` (`SupplierContactsPage.tsx`) | `purchasing-display/manifest.json` |
+| `purchasing-params` | `/spend` (`SupplierSpendPage.tsx`) | `purchasing-params/manifest.json` |
+
+smart-kit extensions next to the settings (registered in `tools/ui5-alignment/deviations*.json`): `service`,
+`pageKey`. Further query parameters of `/po` change single settings the same way the FE comparison lays them over the
+manifest in the browser (`tests/e2e-fe/lr5.spec.ts`): `mode=manual` (`liveMode: false`), `table=responsive` /
+`table=annotation` (`tableSettings.type`), `initialLoad=…`, `vm=None` (`variantManagement`), `selection=…`
+(`selectionMode`), `export=0` (`enableExport`), `creation=CreationDialog` (`creationMode.name`), `threshold=…`,
+`views=switch|select` (`quickVariantSelection`), `kpi=1` (`keyPerformanceIndicators`).
+
+Still different (registered): the variants are stored in smart-kit's own variant service (`Variants`, D42); the
+non-draft list keeps its Create button (D42); FE's order of the standard actions.
 
 ### Chart view (`purchasing-chart` ↔ `/po?chart=1`)
 
 `webapp/purchasing-chart/manifest.json` is the `purchasing` manifest plus `views.paths`: `table` =
 `com.sap.vocabularies.UI.v1.PresentationVariant` (the LineItem) and `chart` =
 `com.sap.vocabularies.UI.v1.PresentationVariant#ByStatusChart` (its `Visualizations` is `@UI.Chart#ByStatus`, added
-to the test service for this comparison). It corresponds to the demo's `/po?chart=1` (`chart="ByStatus"`: the table
-with the table/chart switch). FE shows the two as view tabs, smart-kit as the switch in the table toolbar, so the
+to the test service for this comparison). It corresponds to the demo's `/po?chart=1` (the same `views`: two tabs). The
 FE comparison `tests/e2e-fe/aggr.spec.ts` compares only the chart: the requests sent when the chart is shown (and
 after a filter), the chart type, its dimensions and measures, and what it draws.
 
@@ -72,7 +81,7 @@ Not reproducible in the manifest (and therefore registered as differences, regis
 
 `webapp/purchasing-analytical/` is the `purchasing` component with `tableSettings.type: "AnalyticalTable"` (the
 only FE table type with totals, group subtotals and grouping in a grid, D39). It corresponds to the demo's
-`/po?table=analytical` (`tableType="AnalyticalTable"`). The test service declares `Aggregation.CustomAggregate#NetAmount`
+`/po?table=analytical` (the settings of this manifest). The test service declares `Aggregation.CustomAggregate#NetAmount`
 and `UI.PresentationVariant/Total` = NetAmount, so both total the net amount. Used by `tests/e2e-fe/totals.spec.ts`
 (scenario `po-analytical-totals`): the collection requests of `PurchaseOrders`, the totalled columns, the
 personalization panels, the text of the totals row (several currencies: "Show Details") and the lines and request
@@ -85,7 +94,7 @@ ungrouped analytical table, and the grouped one. The remaining differences are i
 
 `webapp/purchasing-views/` is the `purchasing` component with `views.paths` = the SelectionPresentationVariants
 `#Open`, `#InDelivery`, `#Closed` and `showCounts: true` (a table per view in an IconTabBar). It corresponds to the
-demo's `/po?views=tabs` (`views={{ mode: 'tabs', ids: ['Open', 'InDelivery', 'Closed'] }}`); used by
+demo's `/po?views=tabs` (the settings of this manifest); used by
 `tests/e2e-fe/draft.spec.ts` (scenario `po-views-tabs`). The draft scenarios of that spec (`po-draft-list-locked`,
 `-unchanged`, `-own-draft`) use `?app=purchasing-draft` and `/po-draft`, choosing the editing status in both.
 
@@ -127,7 +136,7 @@ are unchanged:
 | `views4-pv-not-compliant` | default PV without `Visualizations` | `purchasing` | `/po` |
 | `views4-view-no-sort`, `views4-chart-view` | SPV#Open without SortOrder, RequestAtLeast CompanyCode; SPV#InDelivery shows only `@UI.Chart#ByStatus` | `purchasing-views` | `/po?views=tabs` |
 | `views4-kpi-tag` | `UI.KPI#OpenAmount`; manifest `keyPerformanceIndicators.openAmount` | `purchasing` | `/po?kpi=1` (`keyPerformanceIndicators={{ openAmount: { qualifier: 'OpenAmount' } }}`) |
-| `views4-table-type` | `ApplySupported/Transformations` with all eight; manifest without `tableSettings.type` | `purchasing` | `/po?table=annotation` (no `tableType`) |
+| `views4-table-type` | `ApplySupported/Transformations` with all eight; manifest without `tableSettings.type` | `purchasing` | `/po?table=annotation` (no `tableSettings.type`) |
 
 The remaining differences are in `tools/ui5-alignment/deviations.views4.json`.
 
@@ -138,7 +147,7 @@ service: e-mail and phone, `Communication.Contact`, `DataFieldWithUrl` with and 
 `Common.ExternalID`, `Common.Masked`, `Common.Timezone` / `IsTimezone`, data point `ValueFormat` and progress with
 criticality, amounts and quantities) with the same settings as `purchasing` (grid table, multi selection, export, page
 variants, live mode, initial load) and no extensions. It corresponds to the demo's `/contacts`
-(`apps/demo/src/pages/SupplierContactsPage.tsx`: `SmartListReport` `entitySet="SupplierContacts"` `tableType="grid"`).
+(`apps/demo/src/pages/SupplierContactsPage.tsx`, the settings of this manifest).
 The FE comparison `tests/e2e-fe/display4.spec.ts` compares requests, structure, cell text and the cell links.
 
 ## Stage 4 tail: column and action types (`tests/e2e-fe/colsfe.spec.ts`)
@@ -165,4 +174,26 @@ request the list again.
   `contextPath: "/SpendParameters/Set"` (the result set contained in the parameter set `SpendParameters`,
   `Common.ResultContext`), `variantManagement: "Page"`, `initialLoad: "Enabled"`, `liveMode: true`, a grid table with
   multi selection and export, no object page. It corresponds to the demo's `/spend`
-  (`apps/demo/src/pages/SupplierSpendPage.tsx`: `SmartListReport entitySet="SpendParameters/Set" tableType="grid"`).
+  (`apps/demo/src/pages/SupplierSpendPage.tsx`, the settings of this manifest).
+
+## Object page settings (stage 5, `tests/e2e-fe/op5.spec.ts`)
+
+The object page targets of the manifests are the settings of the demo's object pages: `apps/demo/src/pages/objectPageSettings.tsx`
+imports the manifest JSON and passes the `options.settings` of the `sap.fe.templates.ObjectPage` target to
+`v4/fe/templates/ObjectPage` unchanged; it only resolves what FE names by string (fragment names in `template` → React
+render functions, extension functions in `press` → handlers, `{i18n>key}` → the demo's texts).
+
+| FE app (object page target) | smart-kit demo | settings |
+| --- | --- | --- |
+| `purchasing`, `purchasing-chart`, `purchasing-views`, `purchasing-analytical` | `/purchasing/object?path=PurchaseOrders(…)` | `sectionLayout: "Tabs"`; custom section `Custom::Timeline` after `GeneralInformation` (fragment `ext/Timeline`) with side content (`ext/SupplierInfo`) and the sub-section action `Custom::SupplierInfo` (`CustomActions.toggleSupplierInfo` → `showSideContent`) |
+| `purchasing-draft` | `/purchasing-draft/object?path=…` | the same, plus `controlConfiguration["_Item/@com.sap.vocabularies.UI.v1.LineItem#InOrder"].tableSettings.creationMode.name: "CreationDialog"` |
+| `purchasing-op` | `/purchasing-draft/object?path=…&fe=purchasing-op` | defaults (`sectionLayout: "Page"`), `editableHeaderContent: false`, `useTextForNoDataMessages: true`, custom header facet `Custom::Contact` after `HeaderGeneral` (`ext/ContactFacet`), header action `Custom::Remind`, footer action `Custom::Check` |
+| `purchasing-display` (`SupplierContacts`) | `/purchasing/object?path=SupplierContacts(…)` | defaults (the former `editableHeaderContent: false` was removed: the demo uses the FE default) |
+
+The demo additions without a manifest setting are the message strip under the title, the status tag in the title, a
+message strip and layout blocks in `Custom::Timeline` (registered as `kit-extension` in
+`tools/ui5-alignment/deviations.op5.json`). The FE comparison opens order 4500000001 in both apps and compares the
+sections, header facets, header and footer actions (keys and texts), the section layout, the anchor bar, the header
+content and the side content, in display mode, after Edit and after the sub-section action. (FE starts the draft
+with `$$inheritExpandSelect`, which UI5 allows only for actions with `EntitySetPath`: the draft actions of
+`apps/mock/data/purchasing-draft.xml` declare `EntitySetPath="_it"` since stage 5.)

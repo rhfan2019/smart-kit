@@ -8,10 +8,10 @@
 ## 1. List page (filter bar, variants, table)
 
 ```tsx
-import { SmartListReport } from '@rhfan2019/smart-kit/templates';
+import ListReport from '@rhfan2019/smart-kit/v4/fe/templates/ListReport';
 
 export function PurchaseOrderList() {
-  return <SmartListReport entitySet="PurchaseOrders" />;
+  return <ListReport contextPath="/PurchaseOrders" />;
 }
 ```
 
@@ -39,11 +39,11 @@ Common props: `pageKey` (variants and back-navigation state; set it when one ent
 ## 2. Object page (header, sections, sub-tables, edit)
 
 ```tsx
-import { SmartObjectPage } from '@rhfan2019/smart-kit/templates';
+import ObjectPage from '@rhfan2019/smart-kit/v4/fe/templates/ObjectPage';
 
 /** `path` is an entity path such as "PurchaseOrders('4500000001')" (usually from the route). */
 export function PurchaseOrderObject({ path }: { path: string }) {
-  return <SmartObjectPage key={path} path={path} navigation="tabs" />;
+  return <ObjectPage key={path} path={path} sectionLayout="Tabs" />;
 }
 ```
 
@@ -57,8 +57,13 @@ export function PurchaseOrderObject({ path }: { path: string }) {
 | Edit, Delete | `Capabilities.UpdateRestrictions` / `DeleteRestrictions`; field-level `Core.Computed`, `Core.Immutable`, `Common.FieldControl` |
 | Draft vs. direct save | automatic: `Common.DraftRoot` on the set = draft, else direct save (PATCH with ETag) |
 
-`navigation="anchor"` (default) shows all sections in one scrolling page; `"tabs"` one section at a time (better for
-long sub-tables). New object: `<SmartObjectPage path="" create={{ entitySet: 'PurchaseOrders' }} />`. Sub-object pages
+The props are the manifest settings of the FE object page (`sap.ui5 › routing › targets › <target> › options ›
+settings`, docs/26c): `sectionLayout="Page"` (default) shows all sections in one scrolling page; `"Tabs"` one section
+at a time (better for long sub-tables); `editableHeaderContent` (default `true`: while editing, the header fields are
+edited in a "Header" section), `content.header` / `content.body.sections` / `content.footer.actions` (custom facets,
+sections and actions; FE fragment names and extension functions become render functions and handlers),
+`controlConfiguration["_Item/@com.sap.vocabularies.UI.v1.LineItem"].tableSettings` for sub-tables. New object:
+`<ObjectPage path="" create={{ entitySet: 'PurchaseOrders' }} />`. Sub-object pages
 (an item of an order) are the same component with the longer path, e.g. `PurchaseOrders('1')/_Items(PurchaseOrder='1',ItemNo=10)`.
 
 ## 3. Freestyle page from building blocks
@@ -165,8 +170,9 @@ export function SupplierPanel({ path }: { path: string }) {
 
 ## 6. Charts
 
-- In a list page: `<SmartListReport entitySet="PurchaseOrders" chart />` adds a table / chart toggle; the chart is
-  `UI.Chart` (Column, Bar, Line, Donut, Pie) aggregated on the server with `$apply` (smart-kit-server supports it).
+- In a list page: a view whose `UI.PresentationVariant` / `UI.SelectionPresentationVariant` shows a chart
+  (`<ListReport contextPath="/PurchaseOrders" views={{ paths: [{ key: 'table', annotationPath: 'com.sap.vocabularies.UI.v1.PresentationVariant' }, { key: 'chart', annotationPath: 'com.sap.vocabularies.UI.v1.PresentationVariant#ByStatus' }] }} />`),
+  or a default presentation variant that names a chart first; the chart is `UI.Chart` (Column, Bar, Line, Donut, Pie) aggregated on the server with `$apply` (smart-kit-server supports it).
 - In a table column, a header facet or a card: a `DataFieldForAnnotation` pointing to a `UI.Chart` with
   `ChartType` Bullet, Radial, HarveyBall, Delta(Bullet), Column, Line, Comparison, Area, StackedBar — drawn as a
   micro chart, no code.
@@ -315,7 +321,7 @@ export function ApproveButton({ path }: { path: string }) {
 
 ## 11. Messages
 
-`SmartListReport` and `SmartObjectPage` already contain a `MessageProvider` and a message button. In a freestyle
+`ListReport` and `ObjectPage` already contain a `MessageProvider` and a message button. In a freestyle
 page, wrap it yourself:
 
 ```tsx
@@ -338,21 +344,30 @@ export function PageWithMessages({ children }: { children: ReactNode }) {
 ## 12. Extend a template
 
 ```tsx
-import { SmartListReport } from '@rhfan2019/smart-kit/templates';
-import type { TableExtendEntry } from '@rhfan2019/smart-kit/v4/fe/macros/Table';
+import ListReport, { type $ListReportSettings } from '@rhfan2019/smart-kit/v4/fe/templates/ListReport';
 
-// Defined outside the component (or in useMemo): a new array on every render re-creates the columns.
-const tableExtend: TableExtendEntry[] = [
-  // a custom column after the supplier column
-  { id: 'Custom::Late', position: 'after', anchor: 'DataField::Supplier', item: { id: 'Custom::Late', label: 'Late', select: ['StatusCriticality'], render: (row) => (row.StatusCriticality === 1 ? 'late' : '') } },
-  // a different cell for a model column
-  { id: 'DataField::PurchaseOrderType', position: 'replace', item: (col) => ({ ...col, render: (row) => <code>{String(row.PurchaseOrderType ?? '')}</code> }) },
-  // a toolbar action that needs a selection
-  { kind: 'action', id: 'Custom::Print', position: 'start', item: { id: 'Custom::Print', label: 'Print', requiresSelection: true, onPress: (ctx) => window.print() } },
-];
+// The settings of a Fiori elements manifest (sap.ui5 › routing › targets › <list> › options › settings); where FE names a
+// fragment or an extension handler (template, press, rowPress), React takes the function. Defined outside the component
+// (or in useMemo): a new object on every render re-creates the columns.
+const settings: $ListReportSettings = {
+  contextPath: '/PurchaseOrders',
+  initialLoad: 'Enabled',
+  controlConfiguration: {
+    '@com.sap.vocabularies.UI.v1.LineItem': {
+      tableSettings: { type: 'GridTable', selectionMode: 'Multi' },
+      // a custom column after the supplier column
+      columns: { 'Custom::Late': { header: 'Late', properties: ['StatusCriticality'], template: (row) => (row.StatusCriticality === 1 ? 'late' : ''), position: { anchor: 'DataField::Supplier', placement: 'After' } } },
+      // a toolbar action that needs a selection, and a menu of two annotation actions
+      actions: {
+        'Custom::Print': { text: 'Print', requiresSelection: true, press: () => window.print() },
+        decide: { text: 'Decide', menu: ['DataFieldForAction::Purchasing.approve', 'DataFieldForAction::Purchasing.reject'] },
+      },
+    },
+  },
+};
 
 export function OrdersWithExtras() {
-  return <SmartListReport entitySet="PurchaseOrders" tableExtend={tableExtend} />;
+  return <ListReport {...settings} />;
 }
 ```
 
@@ -361,7 +376,7 @@ export function OrdersWithExtras() {
 ```tsx
 import { MemoryProvider, ODataVariantStore, type MetaModel, type ODataV4Provider, type Row } from '@rhfan2019/smart-kit-core';
 import type { ServiceConfig } from '@rhfan2019/smart-kit/context';
-import { SmartListReport } from '@rhfan2019/smart-kit/templates';
+import ListReport from '@rhfan2019/smart-kit/v4/fe/templates/ListReport';
 import type { Table$BeforeExportEvent } from '@rhfan2019/smart-kit/v4/fe/macros/Table';
 
 // Views: users without the permission only select views (no Save, Save As, Manage).
@@ -375,12 +390,13 @@ export function worklistService(model: MetaModel, rows: Row[]): { service: Servi
 
 export function Worklist(p: { revision: number; log(e: Table$BeforeExportEvent): Promise<boolean> }) {
   return (
-    <SmartListReport
-      entitySet="Worklist"
+    <ListReport
+      contextPath="/Worklist"
       refreshToken={p.revision} // change it after provider.setRows(...) or after the host changed data elsewhere
-      exportable // false removes "Export to Spreadsheet"
+      // enableExport: false removes "Export to Spreadsheet"
+      controlConfiguration={{ '@com.sap.vocabularies.UI.v1.LineItem': { tableSettings: { enableExport: true } } }}
       onBeforeExport={(e) => p.log(e)} // rows, filters and count of the file; false cancels (no file)
-      // grouping with row counts, subtotals and totals: tableType="AnalyticalTable" (custom aggregates only, D39);
+      // grouping with row counts, subtotals and totals: tableSettings.type "AnalyticalTable" (custom aggregates only, D39);
       // responsive tables group without subtotals (view settings → Group, or `UI.PresentationVariant/GroupBy`)
     />
   );
@@ -388,9 +404,9 @@ export function Worklist(p: { revision: number; log(e: Table$BeforeExportEvent):
 ```
 
 - A failed save in the view dialogs (the `VariantStore` throws) shows the thrown message in the dialog, which stays open.
-- `SmartObjectPage`: `partialHeaderEdit={false}` removes "Edit Header" (when the host's `editStrategy` saves the whole
-  page at once), `share={false}` removes "Share". A failed partial edit always calls `session.cancel()`.
-- Custom columns (`tableExtend`) take `importance: 'High' | 'Medium' | 'Low'` for the pop-in of responsive tables.
+- `ObjectPage`: `editableHeaderContent={false}` keeps the header read-only while editing (no "Header" section); there
+  is no "Edit Header" dialog and no switch for "Share" (as in Fiori elements V4).
+- Custom columns (`controlConfiguration › @UI.LineItem › columns`) take `importance: 'High' | 'Medium' | 'Low'` for the pop-in of responsive tables.
 - Host sticky bars above a page that scrolls with the window: set `--sk-sticky-top` to their height.
 - Object page header without an image: `UI.HeaderInfo/Initials` (or, for types with `Communication.Contact`, the
   title's initials) in an avatar; round for persons, a rounded square otherwise.
@@ -402,10 +418,10 @@ reference, not a hooks error. Keep smart-kit in client components:
 
 ```tsx
 'use client';
-import { SmartListReport } from '@rhfan2019/smart-kit/templates';
+import ListReport from '@rhfan2019/smart-kit/v4/fe/templates/ListReport';
 
 export function OrdersList() {
-  return <SmartListReport entitySet="Orders" />;
+  return <ListReport contextPath="/Orders" />;
 }
 ```
 

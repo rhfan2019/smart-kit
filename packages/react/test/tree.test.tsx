@@ -7,7 +7,7 @@ import { join } from 'node:path';
 import { createRef, type ReactNode } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { SmartKitProvider, smartKitMantineTheme } from '../src';
-import { SmartListReport } from '@rhfan2019/smart-kit/templates';
+import ListReport from '@rhfan2019/smart-kit/v4/fe/templates/ListReport';
 import Table from '../src/v4/fe/macros/Table';
 import TreeTable from '../src/v4/fe/macros/TreeTable';
 
@@ -173,13 +173,13 @@ describe('table types (UE-88)', () => {
     await waitFor(() => expect(document.querySelector('.sk-table--grid')).not.toBeNull());
   });
 
-  it('UE-88 SmartListReport tableType "TreeTable" (and the UI5 alias "ResponsiveTable")', async () => {
-    const a = host(<SmartListReport service="org" entitySet="Units" tableType="TreeTable" liveMode />);
+  it('UE-88 ListReport tableSettings.type "TreeTable" (and "ResponsiveTable")', async () => {
+    const a = host(<ListReport service="org" contextPath="/Units" initialLoad="Enabled" controlConfiguration={{ '@com.sap.vocabularies.UI.v1.LineItem': { tableSettings: { type: 'TreeTable' } } }} liveMode />);
     const { unmount } = render(a.ui);
     await waitFor(() => expect(document.querySelectorAll('[data-sk-tree-toggle]').length).toBeGreaterThan(0));
     expect(a.requests.some((r) => r.hierarchy?.qualifier === 'Org')).toBe(true);
     unmount();
-    const b = host(<SmartListReport service="org" entitySet="Units" tableType="ResponsiveTable" liveMode />);
+    const b = host(<ListReport service="org" contextPath="/Units" initialLoad="Enabled" controlConfiguration={{ '@com.sap.vocabularies.UI.v1.LineItem': { tableSettings: { type: 'ResponsiveTable' } } }} liveMode />);
     render(b.ui);
     await waitFor(() => expect(document.querySelector('.sk-table--responsive')).not.toBeNull());
   });

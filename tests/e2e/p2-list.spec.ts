@@ -34,9 +34,6 @@ test('P2-LRC-04 P2-LRA-01 share opens an action sheet with e-mail and copy link;
   await page.locator('[data-sk-share-copy]').click();
   await expect(page.locator('[data-sk-share-copy]')).toHaveText('The link was copied to the clipboard.');
   expect(await page.evaluate(() => navigator.clipboard.readText())).toMatch(/\/po$/);
-  // with a grid table the "Show Filters" variant is also a global action of the header toolbar
-  await open(page, '/po?filterToggle=1');
-  await expect(page.locator('[data-sk-global-actions] [data-sk-filter-toggle]')).toBeVisible();
   // finalizing actions are never in the header toolbar
   await expect(page.locator('[data-sk-global-actions] [data-sk-save], [data-sk-global-actions] [data-sk-action="Create"]')).toHaveCount(0);
 });
@@ -170,7 +167,8 @@ test('P2-LR-15 create with a dialog (fewer than 8 mandatory fields), direct save
   await expect(page.locator('.sk-dynamic-page__heading')).toHaveText('4500010001');
 });
 
-test('P2-LR-16 working modes: worklist removes items that no longer match; continuous keeps and marks them with a message', async ({ page }) => {
+// The continuous working mode is no FE list report setting (stage 5): the list report works as a worklist.
+test('P2-LR-16 working modes: worklist removes items that no longer match', async ({ page }) => {
   // worklist (default): a closed order vanishes from the "Status != Closed" list
   await open(page, '/po?table=responsive');
   await expect(rows(page).first()).toBeVisible();
@@ -178,18 +176,6 @@ test('P2-LR-16 working modes: worklist removes items that no longer match; conti
   const key = await first.getAttribute('data-sk-row');
   await first.locator('[data-sk-inline-action="DataFieldForAction::Purchasing.close"]').click();
   await expect(rows(page).and(page.locator(`[data-sk-row="${key}"]`))).toHaveCount(0);
-  // continuous: it stays, is marked and a message explains
-  await resetServer(page);
-  await open(page, '/po?table=responsive&working=continuous');
-  await expect(rows(page).first()).toBeVisible();
-  const row = rows(page).filter({ has: page.locator('[data-sk-inline-action]:not([disabled])') }).first();
-  const k2 = await row.getAttribute('data-sk-row');
-  await row.locator('[data-sk-inline-action="DataFieldForAction::Purchasing.close"]').click();
-  const kept = page.locator(`tr[data-sk-row="${k2}"]`);
-  await expect(kept).toHaveAttribute('data-changed', 'true');
-  await expect(kept.locator('[data-sk-changed-marker]')).toBeVisible();
-  await page.locator('[data-sk-message-button]').click();
-  await expect(page.locator('[data-sk-message="info"]')).toContainText('no longer matches');
 });
 
 test('P2-LR-01 P2-LRC-08 multiple views with a segmented button (≤ 3) after the title; view properties that are selection fields stay in the filter bar (FE)', async ({ page }) => {
@@ -262,11 +248,11 @@ test('P2-LRC-03 the page variant stores the selected tab', async ({ page }) => {
   await expect(page.locator('[data-sk-list-tab="Closed"]')).toHaveAttribute('aria-selected', 'true');
 });
 
-test('P2-LRC-10 P2-LR-04 chart view: switch between table and chart; selecting a bar drills down to the table', async ({ page }) => {
+test('P2-LRC-10 P2-LR-04 chart view: a table view and a chart view (FE views.paths); selecting a bar filters by it', async ({ page }) => {
   const rec = recordOData(page);
   await open(page, '/po?chart=1');
   await waitForRows(page, 'PurchaseOrders');
-  await page.locator('[data-sk-chart-toggle]').getByLabel('Chart').click();
+  await page.locator('[data-sk-list-tab="chart"]').click();
   const chart = page.locator('[data-sk-chart]');
   // as in FE (docs/29 §4 P1-3, fe:po-chart): grouped by the currency too; orders in EUR and USD are not drawn
   await expect(page.locator('[data-sk-chart-invalid]')).toContainText('Some measures have different units.');
@@ -281,20 +267,19 @@ test('P2-LRC-10 P2-LR-04 chart view: switch between table and chart; selecting a
   // the dimension's Common.Text is on a navigation (_Status/Name): FE does not group by it, the code is shown
   await expect(page.locator('[data-sk-chart-popover]')).toContainText('APPR');
   await page.locator('[data-sk-chart-drilldown]').click();
-  await waitForRows(page, 'PurchaseOrders');
-  await expect(page.locator('[data-sk-chart]')).toHaveCount(0);
-  await expect.poll(() => rec.urls.some((u) => u.includes("Status eq 'APPR'") && !u.includes('$apply'))).toBe(true);
+  await expect.poll(() => rec.urls.some((u) => u.includes("Status eq 'APPR'") && u.includes('$apply'))).toBe(true);
 });
 
 test('P2-LR-05 P2-LR-18 responsive table: scroll to load; busy while loading', async ({ page }) => {
   const rec = recordOData(page);
   await open(page, '/po?table=responsive');
   await expect(rows(page).first()).toBeVisible();
+  // FE getThreshold: 30 rows per request in a responsive table
   const before = await rows(page).count();
-  expect(before).toBeGreaterThanOrEqual(20);
+  expect(before).toBeGreaterThanOrEqual(30);
   await mainScroll(page, 100000);
   await expect.poll(() => rows(page).count()).toBeGreaterThan(before);
-  expect(rec.urls.some((u) => /\$skip=20/.test(u))).toBe(true);
+  expect(rec.urls.some((u) => /\$skip=30/.test(u))).toBe(true);
 });
 
 test('P2-LR-06 P2-LR-07 sticky toolbar and column headers; the header snaps on page scroll and can be pinned', async ({ page }) => {

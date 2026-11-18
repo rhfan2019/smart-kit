@@ -1,9 +1,12 @@
-/** Freestyle page from building blocks: own toolbar replaces the default one (AC-EXT-01). */
+/**
+ * Freestyle page from building blocks: own toolbar replaces the default one and the order type cell is rendered by the
+ * app (`Table` `extend`, a smart-kit extension of the building block; AC-EXT-01).
+ */
 import { Button, Group } from '@mantine/core';
 import { useMetaModel } from '@rhfan2019/smart-kit';
 import FilterSummary from '@rhfan2019/smart-kit/kit/FilterSummary';
 import useFilterState from '@rhfan2019/smart-kit/kit/useFilterState';
-import Table from '@rhfan2019/smart-kit/v4/fe/macros/Table';
+import Table, { type TableExtendEntry } from '@rhfan2019/smart-kit/v4/fe/macros/Table';
 import useTableContext from '@rhfan2019/smart-kit/kit/useTableContext';
 import FilterBar from '@rhfan2019/smart-kit/v4/fe/macros/FilterBar';
 import DynamicPage from '@rhfan2019/smart-kit/f/DynamicPage';
@@ -27,6 +30,11 @@ function MyToolbar() {
   );
 }
 
+// Replace how the order type column is rendered (the raw code).
+const EXTEND: TableExtendEntry[] = [
+  { id: 'DataField::PurchaseOrderType', position: 'replace', item: (col) => ({ ...col, render: (row) => <code data-demo-type>{String(row.PurchaseOrderType ?? '')}</code> }) },
+];
+
 export function FreestylePage() {
   const filter = useFilterState('PurchaseOrders', { pageKey: 'freestyle', liveMode: true });
   const { ui } = useMetaModel('PurchaseOrders');
@@ -37,7 +45,7 @@ export function FreestylePage() {
       header={<DynamicPageHeader><FilterBar state={filter} /></DynamicPageHeader>}
       data-testid="freestyle"
       content={(
-        <Table contextPath="/PurchaseOrders" query={filter.applied} pageKey="freestyle">
+        <Table contextPath="/PurchaseOrders" query={filter.applied} pageKey="freestyle" extend={EXTEND}>
           <MyToolbar />
         </Table>
       )}

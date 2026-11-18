@@ -68,6 +68,8 @@ describe('check:ui5 self-test (AL-20)', () => {
       { id: 'DV-1', module: 'm/A', kind: 'property', member: 'x' },
       { id: 'DV-2', module: 'm/A', kind: 'event', member: 'gone' },
       { id: 'DV-G', module: '*', kind: 'extra-property', member: 'className' },
+      // manifest settings entries are matched by scripts/check-manifest-settings.mjs, never stale here
+      { id: 'DV-M', module: 'v4/fe/templates/ListReport', kind: 'manifest-missing', member: 'inlineEdit' },
     ]);
     expect(r.registered.map((x) => x.member)).toEqual(['x', 'className']);
     expect(r.unregistered.map((x) => x.member)).toEqual(['y']);

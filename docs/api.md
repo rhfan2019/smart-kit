@@ -366,6 +366,8 @@
 | `@rhfan2019/smart-kit/v4/fe/macros/TreeTable` | sap.fe.macros.TreeTable |
 | `@rhfan2019/smart-kit/v4/fe/macros/VariantManagement` | sap.fe.macros.VariantManagement |
 | `@rhfan2019/smart-kit/v4/fe/macros/fcl/FlexibleColumnLayoutActions.block` | sap.fe.macros.FlexibleColumnLayoutActions |
+| `@rhfan2019/smart-kit/v4/fe/templates/ListReport` | manifest sap.fe.templates.ListReport |
+| `@rhfan2019/smart-kit/v4/fe/templates/ObjectPage` | manifest sap.fe.templates.ObjectPage |
 <!-- ui5-modules:end -->
 
 ## 子路径入口（`@rhfan2019/smart-kit`）
@@ -378,7 +380,8 @@
 | `/i18n` | `createText`、`MESSAGES` | 否 |
 | `/theme` | `smartKitMantineTheme`、`smartKitCssVariablesResolver`、`readToken`、`useThemeTokens` | 否 |
 | `/util` | `applyExtensions`、`usePageState` | 否 |
-| `/templates` | `SmartListReport`、`SmartObjectPage` | 是 |
+| `/v4/fe/templates/ListReport` | `ListReport`（属性 = sap.fe.templates.ListReport 的 manifest 设置，`26c`） | 是 |
+| `/v4/fe/templates/ObjectPage` | `ObjectPage`（属性 = sap.fe.templates.ObjectPage 的 manifest 设置，`26c`） | 是 |
 | `/styles.css` | 样式（所有组件共用一个文件） | — |
 
 AG Grid（`ag-grid-community`、`ag-grid-react`）是可选的 peer 依赖：不用表格时可以不装，但这时要从不需要 AG Grid 的子路径引入；从根入口引入时，打包工具仍会去解析 AG Grid。

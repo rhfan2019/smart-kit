@@ -1,0 +1,6 @@
+{
+  "deviations": [
+    {"id": "DV-fx-001", "module": "fixture/Page", "kind": "manifest-extra", "member": "pageKey", "category": "kit-extension", "reason": "测试"},
+    {"id": "DV-fx-002", "module": "fixture/Page", "kind": "manifest-missing", "member": "useHiddenFilterBar", "category": "not-implemented", "reason": "测试：过时"}
+  ]
+}

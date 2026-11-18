@@ -1233,10 +1233,11 @@ const qualifierOf = (key: string, term: string): string | undefined =>
   key === term ? '' : key.startsWith(`${term}#`) ? key.slice(term.length + 1) : undefined;
 
 /** Annotations that cards select by qualifier (docs/20): line items, presentation and selection variants, data points, field groups, events. */
-function cardAnnotations(fullName: string, ui: Any, ann: Any, lineItem: ColumnModel[], ctx: UiContext, semanticKey: string[]): Pick<EntityUi, 'lineItems' | 'presentationVariants' | 'selectionVariants' | 'dataPoints' | 'fieldGroups' | 'identification' | 'event'> {
+function cardAnnotations(fullName: string, ui: Any, ann: Any, lineItem: ColumnModel[], ctx: UiContext, semanticKey: string[]): Pick<EntityUi, 'lineItems' | 'presentationVariants' | 'selectionVariants' | 'selectionVariantTexts' | 'dataPoints' | 'fieldGroups' | 'identification' | 'event'> {
   const lineItems: Record<string, ColumnModel[]> = { '': lineItem };
   const presentationVariants: Record<string, PresentationVariantModel> = {};
   const selectionVariants: Record<string, InitialCondition[]> = {};
+  const selectionVariantTexts: Record<string, string> = {};
   const dataPoints: Record<string, DataPointModel> = {};
   const fieldGroups: Record<string, FormGroupModel> = {};
   for (const key of Object.keys(ui)) {
@@ -1252,9 +1253,11 @@ function cardAnnotations(fullName: string, ui: Any, ann: Any, lineItem: ColumnMo
         return v === undefined ? undefined : v.includes('#') ? v.split('#')[1]! : '';
       };
       const max = Number(pv?.MaxItems?.valueOf?.() ?? pv?.MaxItems);
-      presentationVariants[q] = { presentation, maxItems: Number.isFinite(max) && max > 0 ? max : undefined, lineItemQualifier: qual('LineItem'), chartQualifier: qual('Chart'), groupBy: presentation.groupBy };
+      presentationVariants[q] = { ...(str(pv?.Text) ? { text: str(pv?.Text) } : {}), presentation, maxItems: Number.isFinite(max) && max > 0 ? max : undefined, lineItemQualifier: qual('LineItem'), chartQualifier: qual('Chart'), groupBy: presentation.groupBy };
     } else if ((q = qualifierOf(key, 'SelectionVariant')) !== undefined) {
       selectionVariants[q] = selectionVariantFrom(ui[key]);
+      const text = str((ui[key] as Any)?.Text);
+      if (text) selectionVariantTexts[q] = text;
     } else if ((q = qualifierOf(key, 'DataPoint')) !== undefined) {
       const dp = buildDataPoint(ui[key], q || 'DataPoint', '', fullName, ctx);
       if (dp) dataPoints[q] = dp;
@@ -1268,7 +1271,7 @@ function cardAnnotations(fullName: string, ui: Any, ann: Any, lineItem: ColumnMo
   const event: EventModel | undefined = ev
     ? { dtstart: pathOf(ev.dtstart), dtend: pathOf(ev.dtend), summary: pathOf(ev.summary), description: pathOf(ev.description), location: pathOf(ev.location), categories: pathOf(ev.categories) }
     : undefined;
-  return { lineItems, presentationVariants, selectionVariants, dataPoints, fieldGroups, identification, event };
+  return { lineItems, presentationVariants, selectionVariants, ...(Object.keys(selectionVariantTexts).length ? { selectionVariantTexts } : {}), dataPoints, fieldGroups, identification, event };
 }
 
 /**

@@ -722,6 +722,7 @@ entityPathOf(model: MetaModel, entitySet: string, row: Record<string, unknown>):
 | `defaultChart` |  | `string` | Qualifier of the UI.Chart the default presentation shows instead of a table: the first LineItem or Chart of the visualizations of the compliant default SPV / PV is a chart (FE ListReportConverter SingleChart). |
 | `kpis` |  | `Record&lt;string, KpiModel>` | UI.KPI by qualifier (list report KPI tags, FE controls/Common/KPI); absent when the type has none. |
 | `quickView` |  | `FormGroupModel[]` | UI.QuickViewFacets as form groups. |
+| `selectionVariantTexts` |  | `Record&lt;string, string>` | UI.SelectionVariant/Text by qualifier, where annotated (quick variant selection of the list report, FE QuickFilter). |
 | `event` |  | `EventModel` | Communication.Event of the entity type. |
 
 ### `errorFromResponse` — function
@@ -845,7 +846,7 @@ export type FilterState = Record<string, Condition[]>;
 Builds the $filter string of a request (filters and anyOf).
 
 ```ts
-filterString(model: MetaModel, typeName: string, req: Pick<QueryRequest, "filters" | "anyOf" | "anyOfOnly" | "timeZone" | "caseInsensitive">): string | undefined
+filterString(model: MetaModel, typeName: string, req: Pick<QueryRequest, "filters" | "anyOf" | "anyOfOnly" | "timeZone" | "caseInsensitive" | "hiddenFiltersFirst">, o?: { wrapHidden?: boolean; }): string | undefined
 ```
 
 ### `FIXED_DAY_OPERATORS` — const
@@ -1225,7 +1226,7 @@ new MemoryPageStateStore()
 
 ### `MemoryProvider` — class
 
-In-memory data provider. Also the supported "host gives the rows" source (worklists the host computes): it evaluates every filter operator, search, sort, paging, `$count`, grouping and `$apply` totals and subtotals in the browser. After the host's rows change, call `setRows` and reload the page (`SmartListReport` `refreshToken`).
+In-memory data provider. Also the supported "host gives the rows" source (worklists the host computes): it evaluates every filter operator, search, sort, paging, `$count`, grouping and `$apply` totals and subtotals in the browser. After the host's rows change, call `setRows` and reload the page (`ListReport` `refreshToken`).
 
 ```ts
 new MemoryProvider(o: MemoryProviderOptions)
@@ -1484,6 +1485,7 @@ UI.PresentationVariant with its qualifier (cards, docs/20).
 | --- | --- | --- | --- |
 | `presentation` | **yes** | `PresentationModel` |  |
 | `groupBy` | **yes** | `string[]` | UI.PresentationVariant/GroupBy: property paths the items are grouped by (group headers in cards). |
+| `text` |  | `string` | UI.PresentationVariant/Text (the tab text of a list report view, FE MultipleModeControl). |
 | `maxItems` |  | `number` | UI.PresentationVariant/MaxItems. |
 | `lineItemQualifier` |  | `string` | Qualifier of the UI.LineItem in Visualizations ("" for the unqualified one). |
 | `chartQualifier` |  | `string` | Qualifier of the UI.Chart in Visualizations ("" for the unqualified one). |
@@ -1558,6 +1560,7 @@ propertyFilter(path: string, conditions: Condition[], type: EdmType, opts?: Filt
 | `top` |  | `number` |  |
 | `caseInsensitive` |  | `boolean` | String conditions are case-insensitive (Capabilities.FilterFunctions tolower). |
 | `timeZone` |  | `string` |  |
+| `hiddenFiltersFirst` |  | `boolean` | The hidden filters (a view's selection variant) come before the filter bar conditions, as FE writes the `$count` requests of the list report's view tabs (MultipleModeControl); default after them. |
 | `aggregate` |  | `{ groupBy: string[]; measures: AggregateMeasure[] }` | Server-side aggregation ($apply, OData Data Aggregation): group by `groupBy` and aggregate the measures (ADR-021). |
 | `hierarchy` |  | `HierarchyRequest` | Recursive hierarchy (docs/26 §3.10): the visible nodes as `$apply=…/com.sap.vocabularies.Hierarchy.v1.TopLevels(…)`. |
 | `analytical` |  | `AnalyticalApply` | First page of an analytical table (AL-10, ./analytical.ts): grand total, number of leaves (`count`) and the leaves from `skip` / `top`, sorted by `orderBy`, in one `$apply` with `concat`; `select` and `expand` are not sent. |
@@ -1584,6 +1587,7 @@ Read capability: implemented in phase 1.
 | --- | --- | --- | --- |
 | `query` | **yes** | `(req: QueryRequest, opts?: RequestOptions) => Promise&lt;QueryResult>` |  |
 | `read` | **yes** | `(path: EntityPath, req: ReadRequest, opts?: RequestOptions) => Promise&lt;Row>` |  |
+| `count` |  | `(req: QueryRequest, opts?: RequestOptions) => Promise&lt;number>` | Number of entities matching `req` (`&lt;set>/$count?$filter=…&$search=…`; select, expand, order and paging are ignored), as the FE list report counts its view tabs (sap.fe.templates.ListReport MultipleModeControl). Providers without it count with `query({ …, top: 0, count: true })`. |
 | `valueListService` |  | `(reference: string, opts?: RequestOptions) => Promise&lt;ValueListService>` | Loads the value help service of a Common.ValueListReferences entry (`reference`: URL of its `$metadata`, relative to this service's `$metadata`): its model, its Common.ValueListMapping annotations and a provider for its data (SAPUI5 ODataMetaModel `getOrCreateSharedModel`). Loaded once per URL. Providers without it have no referenced value lists. |
 
 ### `readQueryString` — function

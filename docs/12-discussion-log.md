@@ -888,3 +888,18 @@ ADR-027 定的范围是"只实现 smart-kit 会发的请求"，用户也定过�
 4. **列和动作**：9 个 FE 场景核对。真 FE 对常量 `UI.Criticality` 的行**不高亮**（枚举名交给 `TableFormatter.rowHighlighting`，值不合法），smart-kit 跟着改（源码读起来是错误 / 成功，实测为准）；删除确认分单复数；工具栏放得下时不溢出；日期时间带秒（medium）；个性化的列、排序、分组选项按 FE 的属性列表。`/contacts` 页头"重新挂载"不存在（是测试自己打开了两次页面）。
 
 **偏差登记**：删掉 DV-FE-apply、DV-FE-requestPurch。这两条是 `fe:*`，原来顺带放过了四个与分析表无关的差异（页签计数 `/$count`、切换视图时 FE 发两次请求、图表 `filter()` 的括号、`$apply` 里的页大小），现在单独登记。新登记：分组的分析表按 FE 的可折叠层级（阶段 5）、编辑态的引用值帮助和参数化集的对象页（阶段 6）、启动台的用户默认值（D42，长期）。`fe-behavior` 13 → 20：不是倒退，多出的 4 条原来被宽泛的条目遮住，3 条是新功能的剩余部分。
+
+## D46 对齐阶段 5：页面模板对齐 sap.fe.templates（2026-11-18）
+
+**问题**：按 `31` 阶段 5，`SmartListReport` / `SmartObjectPage` 改成 sap.fe.templates 的模板，属性就是 FE 的 manifest 设置（`26c`），并删除 `/templates` 子路径。
+
+**做法**：两个子代理并行（ListReport、ObjectPage），各用一套端口。新增 manifest 核对 `scripts/check-manifest-settings.mjs`（AL-13，接进 `npm run check:ui5`）：按 `tools/ui5-alignment/manifest.<模板>.json`（取自 FE 的 `ManifestSettings` 类型和 `26c`）逐项比较 `$ListReportSettings` / `$ObjectPageSettings`。示例页直接导入 FE 参考应用的 manifest 作为设置，一一对应。FE 对比新增 15 个场景（`lr5` 10 个、`op5` 5 个）。
+
+**结果**：
+1. **模块**：`v4/fe/templates/ListReport`、`v4/fe/templates/ObjectPage`（默认导出）；`/templates` 删除。旧属性名不保留（迁移清单见 `25` 阶段 5）。
+2. **属性**：manifest 设置同名、同结构、同默认值。FE 用扩展控制器 / 片段的地方（自定义列、动作、区块、页头 Facet、按下事件），React 写法是同一个键下放渲染函数 / 处理函数（`react-idiom`）。没有 FE 设置的保留属性（`service`、`pageKey`、`path`、`create` 等）登记为 `kit-extension`。
+3. **按 FE 改的默认值和行为（按建议，D44）**：`liveMode` 默认 false（显示"Go"）；`initialLoad` 默认 `Auto`（只有默认筛选值时打开就查）；没写 `tableSettings.type` 时是响应式表（有分析能力时分析表、成对层级时树表），不再有 `auto` / 按宽度切换；页大小按 FE `getThreshold`（响应式 30、网格 / 分析表 100、树表 200），网格表首块 `$top` = threshold + 可见行数；草稿列表的新建是 NewPage（直接建草稿并打开对象页）；视图页签计数用 `/$count`，计数单独显示；对象页**没有"编辑页头"对话框**（FE V4 没有部分编辑），编辑态页头内容放在最前面的"Header"区块；侧边内容挂在子区块上；子表无数据时显示插图。
+4. **长期偏差（D42）**：变式存在 smart-kit 自己的服务里（不用 flexibility）；FLP 相关设置（outbound、`showRelatedApps`、语义对象参数）、flex、AI、Insights 等依赖 SAP 运行时的设置登记为 `no-binding` / `different-value`；FE 切换视图时多发一次请求，不照抄。
+5. **留给阶段 6**：分组的分析表改成可折叠层级（FE `$$aggregation` groupLevels）、变式管理 `Control`、表格的快速变式、组合视图、自定义页眉、后续块的 `$top`、草稿新建时问非计算键的对话框、显示态页脚的确定性动作、编辑态页头的草稿切换，以及两模板没实现的其余 manifest 设置（共约 300 条 `manifest-missing`，`not-implemented`）。
+
+**偏差登记**：删掉已修的 16 条（含模块路径、页签计数、页大小、图表括号、示例列、FE 的变式和 Overdue 两条由长期条目取代）；表格宏的变式管理和快速变式 10 条从阶段 5 改到阶段 6。`fe-behavior` 20 → 19。

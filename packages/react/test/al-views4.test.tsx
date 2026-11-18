@@ -11,7 +11,7 @@ import type { ReactNode } from 'react';
 import { describe, expect, it } from 'vitest';
 import { drawnChart, feChartType } from '../src/chart/chartType';
 import { SmartKitProvider } from '../src/context/SmartKitProvider';
-import { autoTableType, kpiLabel, SmartListReport } from '../src/templates/SmartListReport';
+import { autoTableType, kpiLabel, ListReport } from '../src/templates/ListReport';
 import { smartKitMantineTheme } from '../src/theme/mantine';
 import Chart from '../src/v4/fe/macros/Chart';
 
@@ -127,7 +127,7 @@ describe('AL-12 P2 list report: chart-first presentation, chart views, automatic
 
   it('AL-12 P2 the default PV names a chart first: only the chart, sorted by the PV SortOrder', async () => {
     const model = buildModel(xml(pvChartFirst));
-    const { ui, urls } = host(model, <SmartListReport service="s" entitySet="Sales" />);
+    const { ui, urls } = host(model, <ListReport service="s" contextPath="/Sales" initialLoad="Enabled" />);
     render(ui);
     await waitFor(() => expect(document.querySelector('[data-sk-chart-bar="2025"]')).not.toBeNull());
     expect(document.querySelector('[data-sk-table="Sales"]')).toBeNull();
@@ -140,7 +140,7 @@ describe('AL-12 P2 list report: chart-first presentation, chart views, automatic
       <PropertyValue Property="SelectionVariant"><Record><PropertyValue Property="SelectOptions"><Collection/></PropertyValue></Record></PropertyValue>
       <PropertyValue Property="PresentationVariant"><Record><PropertyValue Property="Visualizations"><Collection>${viz}</Collection></PropertyValue></Record></PropertyValue></Record></Annotation>`;
     const model = buildModel(xml(`${spv('Rows', '<AnnotationPath>@UI.LineItem</AnnotationPath><AnnotationPath>@UI.Chart#ByYear</AnnotationPath>')}${spv('Graph', '<AnnotationPath>@UI.Chart#ByYear</AnnotationPath>')}`));
-    const { ui } = host(model, <SmartListReport service="s" entitySet="Sales" tableType="ResponsiveTable" views={{ mode: 'tabs' }} />);
+    const { ui } = host(model, <ListReport service="s" contextPath="/Sales" initialLoad="Enabled" controlConfiguration={{ '@com.sap.vocabularies.UI.v1.LineItem': { tableSettings: { type: 'ResponsiveTable' } } }} views={{ paths: [{ key: 'Rows', annotationPath: 'com.sap.vocabularies.UI.v1.SelectionPresentationVariant#Rows' }, { key: 'Graph', annotationPath: 'com.sap.vocabularies.UI.v1.SelectionPresentationVariant#Graph' }] }} />);
     render(ui);
     await waitFor(() => expect(document.querySelectorAll('tr[data-sk-row]').length).toBe(3));
     expect(document.querySelector('[data-sk-chart-toggle]')).toBeNull();
@@ -152,13 +152,13 @@ describe('AL-12 P2 list report: chart-first presentation, chart views, automatic
   it('AL-12 P2 automatic table type: all eight transformations give the analytical table (FE getTableType)', () => {
     const all = ['filter', 'identity', 'orderby', 'skip', 'top', 'groupby', 'aggregate', 'concat'].map((x) => `<String>${x}</String>`).join('');
     expect(autoTableType(buildModel(xml('', all)), 'Sales')).toBe('AnalyticalTable');
-    expect(autoTableType(buildModel(xml('')), 'Sales')).toBe('grid');
+    expect(autoTableType(buildModel(xml('')), 'Sales')).toBe('ResponsiveTable');
   });
 
   it('AL-12 P2 an analytical list report shows the basic search only with the search transformation (FE Table converter)', async () => {
     const all = (extra: string) => ['filter', 'identity', 'orderby', 'skip', 'top', 'groupby', 'aggregate', 'concat', extra].filter(Boolean).map((x) => `<String>${x}</String>`).join('');
     for (const [extra, shown] of [['', false], ['search', true]] as const) {
-      const { ui } = host(buildModel(xml('', all(extra))), <SmartListReport service="s" entitySet="Sales" />);
+      const { ui } = host(buildModel(xml('', all(extra))), <ListReport service="s" contextPath="/Sales" initialLoad="Enabled" />);
       const view = render(ui);
       await waitFor(() => expect(document.querySelector('[data-sk-filterbar], [data-sk-filter]')).not.toBeNull());
       expect(Boolean(document.querySelector('[data-sk-filter="$search"]'))).toBe(shown);
@@ -179,7 +179,7 @@ describe('AL-12 P2 list report: chart-first presentation, chart views, automatic
       <PropertyValue Property="Detail"><Record><PropertyValue Property="DefaultPresentationVariant"><Record><PropertyValue Property="Visualizations"><Collection><AnnotationPath>@UI.Chart#ByYear</AnnotationPath></Collection></PropertyValue></Record></PropertyValue></Record></PropertyValue>
     </Record></Annotation>`;
     const model = buildModel(xml(kpi));
-    const { ui, urls } = host(model, <SmartListReport service="s" entitySet="Sales" tableType="ResponsiveTable" keyPerformanceIndicators={{ amount: { qualifier: 'Amount' } }} />);
+    const { ui, urls } = host(model, <ListReport service="s" contextPath="/Sales" initialLoad="Enabled" controlConfiguration={{ '@com.sap.vocabularies.UI.v1.LineItem': { tableSettings: { type: 'ResponsiveTable' } } }} keyPerformanceIndicators={{ amount: { qualifier: 'Amount' } }} />);
     render(ui);
     await waitFor(() => expect(document.querySelector('[data-sk-kpi-tag="amount"] [data-sk-generic-tag]')).not.toBeNull());
     expect(urls()).toContain("$apply=filter(Year eq '2025')/aggregate(Amount,Currency)&$top=1");

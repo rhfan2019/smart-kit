@@ -46,7 +46,7 @@
 | `settings › preloadConfigurationProperties` | string[] | — | `controls/Common/Table`、`controls/ListReport/FilterBar` |
 | `settings › allowDeepLinking`、`refreshStrategyOnAppRestore`、`enhanceI18n`、`breadcrumbsHierarchyMode` | 组件属性 | OP `breadcrumbsHierarchyMode` = `objectNavigation` | 运行时（controller、路由），不在转换器里 |
 | `settings › shareOverflowPriority` | `sap.m.OverflowToolbarPriority` | `High` | view XML（`viewData>/shareOverflowPriority`） |
-| `settings › share` | object（LR：`ShareOptions`；OP：`Record<string, Record<string, boolean>>`） | — | 运行时（`controllerextensions/Share`，未下载核对） |
+| `settings › share` | object（LR：`ShareOptions`；OP：`Record<string, Record<string, boolean>>`） | — | 运行时（`controllerextensions/Share`；结构阶段 5 核实，见第 11 节） |
 | `viewLevel` / `level`、`fclEnabled`、`converterType`、`isDesktop`、`isPhone`、`contentDensities`、`shellContentDensity`、`sapFeManifestConfiguration` | 框架填写 | — | 不是应用设置：由路由、FCL、Shell 和 `sap.fe` 段填进 viewData |
 
 ### 3.2 列表页（`templates/ListComponent`、`templates/ListReport/Component`、`ListReportManifestSettings`）
@@ -207,73 +207,111 @@
 | `sap.app › crossNavigation › outbounds` | object | — | `controls/Common/Table`（外部导航、`creationMode.outbound`） |
 | `sap.ui5 › routing › config › flexibleColumnLayout`（FCL） | — | — | 框架据此填 `fclEnabled`，影响页脚和导航（`HeaderAndFooterAction`） |
 
-## 10. smart-kit 现在的对应属性
+## 10. smart-kit 的对应属性（阶段 5 完成，D46）
 
-阶段 5 的输入。读的是 `packages/react/src/templates/SmartListReport.tsx` 和 `SmartObjectPage.tsx` 现在的属性；"差别"一列只记默认值或取值不同的地方。
+模板 `v4/fe/templates/ListReport`（`$ListReportSettings`，`packages/react/src/templates/ListReport.tsx`）和 `v4/fe/templates/ObjectPage`（`$ObjectPageSettings`，`templates/ObjectPageSettings.ts`）的属性就是第 3～8 节的 manifest 设置：同名、同嵌套、同取值和默认值。下表"有"表示有同名属性；没有的写登记它的偏差（`tools/ui5-alignment/deviations.json`，`DV-lr5-*` / `DV-op5-*`，种类 `manifest-missing` / `manifest-values` / `manifest-extra`），格式是"编号 类别 阶段"，"长期"表示没有计划阶段。
 
-### 10.1 `SmartListReport`
+- 核对：`scripts/check-manifest-settings.mjs`（AL-13，在 `npm run check:ui5` 里）按 `tools/ui5-alignment/manifest.ListReport.json`（333 项）、`manifest.ObjectPage.json`（382 项）逐项比较，0 未登记。标 `unread` 的项（类型里有、FE 不读，例如 LR 的 `content › header › aiNotice`、`avatar`）不比较。
+- FE 写片段名或扩展函数名的地方（`template`、`templateEdit`、`press`、`rowPress`、`selectionChange`），smart-kit 在同一个键下放渲染函数或处理函数（`react-idiom`，D46）。
 
-| smart-kit 属性 | manifest 设置 | 差别 |
+### 10.1 `ListReport`
+
+| manifest 设置 | smart-kit | 未做的部分 |
 | --- | --- | --- |
-| `entitySet` | `settings › entitySet`（或 `contextPath`） | |
-| `service` | 无对应（FE 用 `sap.app › dataSources` 和路由的模型） | |
-| `pageKey` | 无对应（FE 用视图 id 和 flex 持久化） | |
-| `liveMode` | `settings › liveMode` | smart-kit 默认 `true`，FE 默认 `false` |
-| `autoExecute` | `settings › initialLoad` | smart-kit 是 boolean，默认 `true`；FE 是 `Auto` / `Enabled` / `Disabled`，默认 `Auto` |
-| `title` | 无对应（FE 取 `sap.app › title` / `UI.HeaderInfo`） | |
-| `headerActions` | `settings › content › header › actions` | smart-kit 传 React 节点，FE 是 `ManifestAction` 记录 |
-| `filterExtend` | `controlConfiguration › @UI.SelectionFields › filterFields` | |
-| `tableExtend` | `controlConfiguration › @UI.LineItem › columns` 和 `actions` | |
-| `onRowNavigate` | `settings › navigation › <set> › detail`、`tableSettings › rowPress` | |
-| `beforeTable` | 无对应（近似 `content › header › customHeader` 或 `keyPerformanceIndicators`） | |
-| `filterToggle` | 无对应 | |
-| `className` | 无对应 | |
-| `views` | `settings › views › paths[]` | smart-kit 自动收集带限定符的 SPV，用 `mode: switch / tabs` 选样式；FE 由 `paths` 列出视图，没有样式开关 |
-| `contents` | `settings › views › paths[]`（带 `entitySet` / `contextPath` 的视图） | |
-| `tableType` | `controlConfiguration › @UI.LineItem › tableSettings › type` | smart-kit 取值 `grid` / `responsive` / `auto` 和 UI5 名；FE 未设时按注解自动判断（分析表、树表），没有 `auto`（按宽度） |
-| `hierarchyQualifier` | `tableSettings › hierarchyQualifier` | |
-| `chart` | `settings › views › paths[]` 的组合视图（`primary` / `secondary`） | |
-| `workingMode` | 无对应 | |
-| `actionGroups` | `controlConfiguration › @UI.LineItem › actions › <key> › menu` | |
-| `share` | `settings › share` | |
-| `onRowsChange` | 无对应 | |
-| `refreshToken` | 无对应 | |
-| `exportable` | `tableSettings › enableExport` | 默认都是 `true` |
-| `onBeforeExport`、`onExported` | 无对应（FE 是控制器扩展 `onBeforeExport`） | |
-| `canSaveVariants` | 无对应（近似 `variantManagement`） | |
-| 无 | `settings › variantManagement`（LR 默认 `Page`） | smart-kit 没有这个开关 |
-| 无 | `tableSettings › selectionMode`、`creationMode`、`personalization`、`quickVariantSelection`、`hideFilterBar`、`defaultTemplateAnnotationPath`、筛选栏 `layout` / `useSemanticDateRange` / `showClearButton` 等 | smart-kit 没有对应属性 |
+| `entitySet`、`contextPath` | 有 | |
+| `navigation › <set> › detail › route` | 有（行导航走 `NavigationAdapter.toObject`） | `detail › outbound`、`outboundDetail`：lr5-001、003 different-value 长期；`detail › targetControlId`、`availability`：lr5-002、004 no-binding 长期；`create`、`display`：lr5-005、006 different-value 长期 |
+| `content › header › actions › <key>` | 有：`text`、`press`、`visible`、`enabled`、`requiresSelection`、`enableOnSelect`、`menu`、`position` | 其余 `ManifestAction` 字段（`defaultAction`、`command`、`determining`、`inline`、`defaultValuesFunction`、`priority`、`group`、`overflowGroup`、`isAIOperation`、`isPrimaryAction`、`disableStrictHandling`、`facetName`、`template`、`afterExecution`）：lr5-007～020 not-implemented 6 |
+| `content › header › overflowGroups`、`customHeader` | 无 | lr5-021、022 not-implemented 6 |
+| `variantManagement` | 有：`Page`（默认）、`None` | `Control`：lr5-023（`manifest-values`）not-implemented 6，要表格级变式管理（DV-table-005） |
+| `inlineEdit`、`additionalProperties`、`shareOverflowPriority`、`defaultTemplateAnnotationPath` | 无 | lr5-024、025、031、033 not-implemented 6 |
+| `preloadConfigurationProperties` | 无 | lr5-026 no-binding 长期 |
+| `allowDeepLinking`、`refreshStrategyOnAppRestore`、`enhanceI18n`、`breadcrumbsHierarchyMode` | 无 | lr5-027～030 different-value 长期（运行时设置） |
+| `share` | 无（Share 总是显示，FE 也没有关闭开关） | lr5-032 different-value 长期（SAP 平台的分享选项） |
+| `initialLoad` | 有：`Auto`（默认）/ `Enabled` / `Disabled`，也收布尔值 | |
+| `liveMode` | 有，默认 `false` | |
+| `views › paths[]`（单视图、自定义视图） | 有：`key`、`annotationPath`、`entitySet`、`contextPath`、`label`、`template` | `visible`：lr5-034 no-binding 长期；`keepPreviousPersonalization`：lr5-035 not-implemented 6 |
+| `views › paths[]`（组合视图） | 无 | `defaultPath`、`primary`、`secondary`：lr5-036～038 not-implemented 6 |
+| `views › showCounts` | 有（计数用 `<set>/$count`） | |
+| `stickyMultiTabHeader`、`hideFilterBar`、`useHiddenFilterBar` | 有 | |
+| `keyPerformanceIndicators › <名字>` | 有：`qualifier`、`entitySet`、`contextPath`、`template` | `model`：lr5-039 no-binding 长期；`detailNavigation`：lr5-040 different-value 长期 |
+| `@UI.LineItem › tableSettings` | 有：`type`、`selectionMode`、`disableLeafSelection`、`creationMode › name`、`enableExport`、`exportFileName`、`exportSheetName`、`exportRequestSize`、`disableCopyToClipboard`、`enableFullScreen`、`personalization`、`quickVariantSelection`（`paths`、`showCounts`、`hideTableTitle`）、`header`、`headerVisible`、`rowCountMode`、`selectAll`、`selectionLimit`、`frozenColumnCount`、`disableColumnFreeze`、`widthIncludingColumnHeader`、`condensedTableLayout`、`popinLayout`、`threshold`、`isSearchable`、`readOnly`、`ignoredFields`、`hierarchyQualifier`、`rowPress`、`selectionChange` | `creationMode` 的其余字段：lr5-041～051 not-implemented 6（`outbound` 是 lr5-048 different-value 长期）；`enablePaste`、`enablePastingOfComputedProperties`、`enableMassEdit`、`rowCount`、`scrollThreshold`、`analyticalConfiguration`、`isNodeMovable` 等四个树表函数、`beforeRebindTable`、`additionalProperties`、`usePropertyKeysMode`：lr5-052～062、066、067 not-implemented 6；`enableAddCardToInsights`：lr5-063 different-value 长期；`disableRequestCache`、`disableOwnRequestOnMVF`：lr5-064、065 no-binding 长期 |
+| `@UI.LineItem › tableSettings › creationMode › name` 的取值 | 列表页认 `NewPage`（默认；草稿服务直接建草稿并打开对象页）、`CreationDialog`、`External`，其他值按 FE 回退 `NewPage` | 非草稿服务用对话框新建：DV-FE-04 kit-extension |
+| `@UI.LineItem › actions › <key>` | 有：同页头动作，`menu` 生成菜单按钮 | 其余字段：lr5-068～081 not-implemented 6；`overflowGroups`：lr5-082 not-implemented 6 |
+| `@UI.LineItem › columns › <key>` | 有：`header`、`template`、`properties`、`position`、`width`、`importance`、`horizontalAlign`、`disableExport` | `type`、`availability`、`tooltip`、`required`、`widthIncludingColumnHeader`、`showDataFieldsLabel`、`mergeCells`、`mergeComparisonProperties`、`exportSettings`、`formatOptions`、`aiNotice`、`afterExecution`、`settings`：lr5-083～095 not-implemented 6 |
+| `@UI.SelectionFields › filterFields › <key>` | 有：`label`、`property`、`template`、`availability`、`required`、`position` | `type`、`settings`、`visualFilter`、`intervalFilterField`：lr5-101、103～105 not-implemented 6；`slotName`：lr5-102 no-binding 长期 |
+| `@UI.SelectionFields` 其余 | 有：`showClearButton`、`navigationPropertiesForPersonalization` | `layout`、`initialLayout`、`useSemanticDateRange`、`usePropertyKeysMode`：lr5-096～098、100 not-implemented 6；旧名 `navigationProperties`：lr5-099 different-value 长期 |
+| `@UI.Chart`（第 6 节） | 无 | lr5-106 not-implemented 6 |
 
-### 10.2 `SmartObjectPage`
+smart-kit 多出来的属性：
 
-| smart-kit 属性 | manifest 设置 | 差别 |
+| 属性 | 偏差 | 为什么 |
 | --- | --- | --- |
-| `path` | 无对应（FE 从路由得到上下文） | |
-| `service` | 无对应 | |
-| `navigation` | `settings › sectionLayout` | smart-kit `anchor` / `tabs`，默认 `anchor`；FE `Page` / `Tabs`，默认 `Page`（默认一致，取值名不同） |
-| `headerActions` | `settings › content › header › actions` | 节点 vs `ManifestAction` |
-| `headerMessage` | 无对应 | |
-| `sectionExtend` | `settings › content › body › sections`（及 `subSections`） | |
-| `tableExtend` | `controlConfiguration › <nav>/@UI.LineItem › columns` 和 `actions` | |
-| `extraSelect` | `settings › additionalProperties` | |
-| `onRowNavigate` | `settings › navigation › <nav> › detail` | |
-| `className` | 无对应 | |
-| `create` | 无对应（FE 由路由和 `creationMode` 决定） | |
-| `onCreated`、`onDeleted` | 无对应（FE 是控制器扩展 / editFlow） | |
-| `editable` | 无对应（FE 按 `UpdateRestrictions`；`openInEditMode` 是打开即编辑，不是一回事） | |
-| `subObjectCreate` | `controlConfiguration › <nav>/@UI.LineItem › tableSettings › creationMode › name` | smart-kit `inline` / `dialog` / `none`；FE `Inline` / `CreationDialog` / `NewPage` …，默认 `NewPage`（没有路由时 `Inline`） |
-| `keyInfo` | 无对应（近似页眉 facets） | |
-| `sideContent`、`sideContentTitle` | `… › subSections › <key> › sideContent` | FE 挂在子区块上，smart-kit 挂在页面上 |
-| `paging` | 无对应（FE 用 `sap.fe.macros.Paginator`） | |
-| `showAllThreshold` | 无对应（近似 `tableSettings › threshold`） | |
-| `letterboxing` | 无对应（FE 由 Shell 决定） | |
-| `partialHeaderEdit` | `settings › editableHeaderContent` | 默认都是 `true`；FE 是编辑态在页眉区块里直接编辑，smart-kit 是对话框 |
-| `share` | `settings › share` | |
-| 无 | `content › header › anchorBarVisible`、`content › header › visible`、`enableLazyLoading`、`openInEditMode`、`showRelatedApps`、`useTextForNoDataMessages`、`variantManagement`、`content › footer › actions` | smart-kit 没有对应属性 |
+| `service` | lr5-107 kit-extension | 多服务时选服务；FE 由 `sap.app › dataSources` 和路由的模型决定 |
+| `pageKey` | lr5-108 kit-extension | 变式和页面状态的存储键；FE 用视图 id 和 flexibility（D42） |
+| `title` | lr5-109 kit-extension | 页面标题（标准变式名、`variantManagement: 'None'` 时的标题、邮件主题）；FE 取 `sap.app › title`，smart-kit 没有应用描述符 |
+| `onRowsChange` | lr5-110 kit-extension | 主表格已读的行（宿主做分栏翻页）；FE 由 Paginator 读列表绑定 |
+| `refreshToken` | lr5-111 kit-extension | 宿主改了数据后刷新表格、页签计数和图表；FE 用 `ExtensionAPI.refresh()` |
+| `onBeforeExport`、`onExported` | lr5-112、113 kit-extension | 导出前后的回调；FE 是控制器扩展 |
+| `canSaveVariants` | lr5-114 kit-extension | 能否保存变式，由宿主的 VariantStore 决定（D38、D42） |
+| `className` | lr5-115 react-idiom | 根元素的 CSS 类（ADR-032 规则 7） |
+
+### 10.2 `ObjectPage`
+
+| manifest 设置 | smart-kit | 未做的部分 |
+| --- | --- | --- |
+| `entitySet`、`contextPath` | 有 | |
+| `navigation › <nav> › detail › route` | 有（子表的行可以导航） | `detail › outbound`、`outboundDetail`：op5-001、003 no-binding 长期；`detail › targetControlId`、`availability`、`create`、`display`：op5-002、004～006 not-implemented 6 |
+| `sectionLayout` | 有：`Page`（默认）/ `Tabs` | |
+| `editableHeaderContent` | 有，默认 `true`：编辑态隐藏页头内容，在最前面放"Header"区块；没有"编辑页头"对话框 | |
+| `openInEditMode`、`enableLazyLoading`、`useTextForNoDataMessages` | 有，默认都是 `false` | |
+| `variantManagement` | 有：`None`（默认）/ `Control` | 没有单独登记；子表还没有表格级变式管理（DV-table-005 阶段 6），`ObjectPage.tsx` 不读这个属性 |
+| `additionalProperties` | 有 | |
+| `content › header › visible`、`anchorBarVisible` | 有，默认 `true`；`anchorBarVisible && sectionLayout === 'Tabs'` 时用页签 | |
+| `content › header › facets › <key>` | 有：`title`、`subTitle`、`template`、`templateEdit`、`position`、`visible` | `type`、`name`：op5-084、085 not-implemented 6；`stashed`、`requestGroupId`、`flexSettings`：op5-086～088 no-binding 长期 |
+| `content › header › aiNotice` | 无 | op5-089 no-binding 长期 |
+| `content › header › actions`、`content › footer › actions` | 有：`text`、`press`、`visible`、`enabled`、`position`、`menu` | `requiresSelection`、`enableOnSelect` 和其余 `ManifestAction` 字段：op5-067～082、139～154 not-implemented 6（`isAIOperation` 是 op5-077、149 no-binding 长期）；`overflowGroups`：op5-083、155 not-implemented 6 |
+| `content › body › sections › <key>` | 有：`title`、`template`、`position`、`visible`、`subSections`、`actions`、`isPartOfPreview` | `id`、`name`、`useSingleTextAreaFieldAsNotes`、`onSectionLoaded`、`applyState`、`retrieveState`：op5-090～095 not-implemented 6；动作的其余字段：op5-096～111；`overflowGroups`：op5-112 not-implemented 6；`flexSettings`：op5-113 no-binding 长期 |
+| `… › subSections › <key>` | 有：`title`、`template`、`position`、`visible`、`actions`、`sideContent{template, equalSplit}`、`enableLazyLoading`、`isPartOfPreview`；侧边内容由子区块动作或 `ref.showSideContent` 显示 | `id`、`name`、`subSectionCreated`、`applyState`、`retrieveState`、`horizontalLayout`：op5-114～119 not-implemented 6；动作的其余字段：op5-120～135；`overflowGroups`：op5-136 not-implemented 6；`embeddedComponent`、`flexSettings`：op5-137、138 no-binding 长期 |
+| `content › transportSelection`、`inlineEdit`、`breadcrumbsHierarchyMode`、`shareOverflowPriority` | 无 | op5-156、157、162、163 not-implemented 6 |
+| `preloadConfigurationProperties`、`allowDeepLinking`、`refreshStrategyOnAppRestore`、`enhanceI18n`、`disableObjectPageRequestOptimization` | 无 | op5-158～161、165 no-binding 长期 |
+| `share` | 无（Share 总是显示） | op5-164 no-binding 长期（只用于 MS Teams 卡片） |
+| `showRelatedApps`、`additionalSemanticObjects`、`inboundParameters` | 无 | op5-166～168 no-binding 长期（依赖 FLP） |
+| `<nav>/@UI.LineItem › tableSettings` | 有：`type`、`selectionMode`、`creationMode › name`（默认 `NewPage`，没有路由时 `Inline`；"路由"是 `navigation` 条目或 `NavigationAdapter.hasObjectPage`）、`enableExport`、`exportFileName`、`exportSheetName`、`exportRequestSize`、`disableCopyToClipboard`、`enableFullScreen`、`personalization`、`header`、`headerVisible`、`rowCountMode`、`selectionLimit`、`frozenColumnCount`、`disableColumnFreeze`、`widthIncludingColumnHeader`、`condensedTableLayout`、`popinLayout`、`threshold`、`scrollThreshold`、`isSearchable`、`readOnly`、`ignoredFields` | `disableLeafSelection`、`creationMode` 的其余字段、`enablePaste`、`enablePastingOfComputedProperties`、`enableMassEdit`、`quickVariantSelection`、`rowCount`、`selectAll`、`analyticalConfiguration`、`hierarchyQualifier`、树表函数、`rowPress`、`selectionChange`、`beforeRebindTable`、`additionalProperties`、`usePropertyKeysMode`：op5-007～033、037、038 not-implemented 6；`enableAddCardToInsights`、`disableRequestCache`、`disableOwnRequestOnMVF`：op5-034～036 no-binding 长期 |
+| `<nav>/@UI.LineItem › actions › <key>` | 有：`text`、`press`、`visible`、`enabled`、`position`、`requiresSelection`、`enableOnSelect`、`menu` | 其余字段：op5-039～052 not-implemented 6（`isAIOperation` 是 op5-047 no-binding 长期）；`overflowGroups`：op5-053 not-implemented 6 |
+| `<nav>/@UI.LineItem › columns › <key>` | 有：同列表页 | 同列表页的 13 项：op5-054～066 not-implemented 6 |
+
+smart-kit 多出来的属性：
+
+| 属性 | 偏差 | 为什么 |
+| --- | --- | --- |
+| `path` | op5-169 kit-extension | 对象的实体路径；FE 从路由得到绑定上下文，smart-kit 没有路由 |
+| `service` | op5-170 kit-extension | `SmartKitProvider` 里的服务名；FE 用 `sap.app › dataSources` |
+| `create` | op5-171 kit-extension | 新建模式（实体集默认取 `entitySet` / `contextPath`，初始值）；FE 由新建路由和 `creationMode` 决定 |
+| `onCreated`、`onDeleted` | op5-172、173 kit-extension | 保存新对象、删除对象后的去处；FE 由 editFlow 和路由处理，默认同 FE |
+| `editable` | op5-174 kit-extension | 宿主按权限关闭"编辑"；FE 只看 `UpdateRestrictions` |
+| `headerMessage` | op5-175 kit-extension | 标题下的消息条（OP-17） |
+| `keyInfo` | op5-176 kit-extension | 标题栏的关键信息；FE 只能用自定义页头 Facet |
+| `onRowNavigate` | op5-177 kit-extension | 子表行按下的处理，给没有 NavigationAdapter 的宿主（例如分栏） |
+| `paging` | op5-178 kit-extension | 子对象页的翻页按钮；FE 由 FCL 配置决定 |
+| `showAllThreshold` | op5-179 kit-extension | 子表预览的"显示全部 (x)"阈值（设计指南）；FE 没有这个链接 |
+| `letterboxing` | op5-180 kit-extension | 页面限宽；FE 由 Shell 的 `appWidthLimited` 决定 |
+| `className` | op5-181 kit-extension | 根元素的 CSS 类（ADR-032 规则 7） |
+| `… › subSections › <key> › blocks`、`… › sections › <key> › messageStrip` | op5-183、184 kit-extension | 自定义子区块的布局块、区块顶部的消息条；FE 写在片段里 |
+| `ref.showSideContent(key, show?)` | op5-182 react-idiom | FE `ExtensionAPI.showSideContent` 的实例方法 |
 
 ## 11. 未核实
 
-- `views › paths[]` 组合视图 `defaultPath` 的默认值（只读到类型 `both` / `primary` / `secondary`）。
-- `settings › share` 两种结构的具体字段（读取方在 `controllerextensions/Share`，没下载）。
+阶段 5 已核实（源码，缓存在 `.cache/ui5/1.154.0/src/`）：
+
+- `settings › share` 的结构：LR 是 `Share.ts` 的 `ShareOptions`（`teams`、`showSendEmail`、`showCollaborationManager`、`showSaveAsTile`、`showShareInWorkzone`、`print`、`exportToCSV`、`exportToSpreadsheet`、`exportToPDF`）；OP 是 `Record<string, Record<string, boolean>>`，只给 MS Teams"作为卡片"用。
+- `initialLoad: 'Auto'`：标准变式的 `executeOnSelect` 为 `true`（`ListReport.view.xml` 的 `executeOnSelectionForStandardDefault`、controller 的 `_shouldAutoTriggerSearch`），所以只有默认筛选值时打开就查；`variantManagement: 'None'` 时 `Auto` 不加载。
+- 网格类表格首块 `$top` = `threshold` + ⌈窗口高度 / 25⌉（`sap.ui.table` rowmodes `Auto` 的 `getMinRequestLength`；1100px 窗口是 144）。后续块 FE 按实际行数加 `threshold` 读，见 DV-lr5-122。
+- 列表页 `creationMode › name` 只认 `NewPage`、`External`、`CreationDialog`、`AddViaValueHelp`，其他值回退 `NewPage`。
+- `openInEditMode`：未设时按 `false`。
+- `enableLazyLoading`：前 3 个之外的子区块按需显示（或由 `ObjectPageLazyLoader` 控制）。
+
+还没核实：
+
+- `views › paths[]` 组合视图 `defaultPath` 的默认值（只读到类型 `both` / `primary` / `secondary`；组合视图阶段 6 做，DV-lr5-036）。
 - 第 9 节最后几行字段级 `sap.fe` 设置的默认值。
 - 表格 `initialLoad`（积木属性）：源码里没找到读取点，见 `26b`。

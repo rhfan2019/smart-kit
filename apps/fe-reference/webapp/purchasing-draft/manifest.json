@@ -137,7 +137,44 @@
           "options": {
             "settings": {
               "contextPath": "/PurchaseOrders",
-              "editableHeaderContent": false
+              "sectionLayout": "Tabs",
+              "controlConfiguration": {
+                "_Item/@com.sap.vocabularies.UI.v1.LineItem#InOrder": {
+                  "tableSettings": {
+                    "creationMode": {
+                      "name": "CreationDialog"
+                    }
+                  }
+                }
+              },
+              "content": {
+                "body": {
+                  "sections": {
+                    "Custom::Timeline": {
+                      "title": "{i18n>timeline}",
+                      "position": {
+                        "anchor": "GeneralInformation",
+                        "placement": "After"
+                      },
+                      "subSections": {
+                        "Custom::Timeline": {
+                          "title": "{i18n>timeline}",
+                          "template": "fe.ref.ext.Timeline",
+                          "sideContent": {
+                            "template": "fe.ref.ext.SupplierInfo"
+                          },
+                          "actions": {
+                            "Custom::SupplierInfo": {
+                              "text": "{i18n>supplierInfo}",
+                              "press": "fe.ref.ext.CustomActions.toggleSupplierInfo"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
             }
           }
         }

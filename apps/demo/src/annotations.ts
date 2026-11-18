@@ -1,7 +1,7 @@
 /**
  * Local annotations of the demo (the overlay layer of docs/04 §3, like the annotation.xml that SAP Fiori tools
  * generate in an app): views of the purchase order list by order type. The service is not changed — the views are
- * configured here and shown with `<SmartListReport views={{ mode, ids }} />`.
+ * configured here and shown with `<ListReport views={{ paths }} />` (PurchaseOrdersPage `?views=type`).
  */
 import type { Locale } from '@rhfan2019/smart-kit';
 
