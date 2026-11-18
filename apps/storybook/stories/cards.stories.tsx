@@ -2,9 +2,16 @@
 import { MantineProvider } from '@mantine/core';
 import { buildModel, MemoryProvider, type NavigationAdapter, type Row } from '@rhfan2019/smart-kit-core';
 import { smartKitCssVariablesResolver, smartKitMantineTheme, SmartKitProvider } from '@rhfan2019/smart-kit';
-import {
-  AnalyticalContent, CalendarContent, Card, Header, ListContent, NumericHeader, NumericSideIndicator, ObjectContent, TableContent, TimelineContent,
-} from '@rhfan2019/smart-kit/cards';
+import AnalyticalContent from '@rhfan2019/smart-kit/ui/integration/cards/AnalyticalContent';
+import CalendarContent from '@rhfan2019/smart-kit/ui/integration/cards/CalendarContent';
+import Card from '@rhfan2019/smart-kit/f/Card';
+import Header from '@rhfan2019/smart-kit/f/cards/Header';
+import ListContent from '@rhfan2019/smart-kit/ui/integration/cards/ListContent';
+import NumericHeader from '@rhfan2019/smart-kit/f/cards/NumericHeader';
+import NumericSideIndicator from '@rhfan2019/smart-kit/f/cards/NumericSideIndicator';
+import ObjectContent from '@rhfan2019/smart-kit/ui/integration/cards/ObjectContent';
+import TableContent from '@rhfan2019/smart-kit/ui/integration/cards/TableContent';
+import TimelineContent from '@rhfan2019/smart-kit/ui/integration/cards/TimelineContent';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useMemo, type ReactNode } from 'react';
 import xml from '../../../packages/core/test/samples/purchasing.en.xml?raw';

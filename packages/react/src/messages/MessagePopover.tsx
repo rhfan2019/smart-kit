@@ -4,14 +4,14 @@
 import { CloseButton, Popover, type PopoverProps } from '@mantine/core';
 import { useCallback, useEffect, useImperativeHandle, useRef, useState, type CSSProperties, type Ref } from 'react';
 import { useControlText } from '../controls/context';
-import { MessageViewBody, useViewItems, type MessageViewProps, type MessageViewRef } from './MessageView';
+import { MessageViewBody, useViewItems, type $MessageViewSettings, type MessageView } from './MessageView';
 import { TEXTS } from './texts';
 
 /** sap.m.VerticalPlacementType */
 export type VerticalPlacementType = 'Vertical' | 'Top' | 'Bottom';
 export const VerticalPlacementType = { Vertical: 'Vertical', Top: 'Top', Bottom: 'Bottom' } as const;
 
-export interface MessagePopoverRef extends MessageViewRef {
+export interface MessagePopover extends MessageView {
   /** Opens the popover at `control` (sap.m.MessagePopover#openBy). */
   openBy(control: Element): void;
   close(): void;
@@ -20,7 +20,7 @@ export interface MessagePopoverRef extends MessageViewRef {
   toggle(control: Element): void;
 }
 
-export interface MessagePopoverProps extends Omit<MessageViewProps, 'ref' | 'showDetailsPageHeader'> {
+export interface $MessagePopoverSettings extends Omit<$MessageViewSettings, 'ref' | 'showDetailsPageHeader'> {
   /** UI5 default 'Vertical' (below, or above when there is no room). */
   placement?: VerticalPlacementType;
   /** Opens with the message list shown (UI5 default true); false opens with only the header and filter. */
@@ -31,18 +31,18 @@ export interface MessagePopoverProps extends Omit<MessageViewProps, 'ref' | 'sho
   onAfterClose?: (e: { openBy: Element }) => void;
   /** Accessible name of the popover (default "Messages"). */
   'aria-label'?: string;
-  ref?: Ref<MessagePopoverRef>;
+  ref?: Ref<MessagePopover>;
 }
 
 const POSITION: Record<VerticalPlacementType, PopoverProps['position']> = { Vertical: 'bottom', Bottom: 'bottom', Top: 'top' };
 
 /** sap.m.MessagePopover */
-export function MessagePopover(p: MessagePopoverProps) {
+export function MessagePopover(p: $MessagePopoverSettings) {
   const t = useControlText(TEXTS);
   const list = useViewItems(p.children, p.items);
   const [anchor, setAnchor] = useState<Element | null>(null);
   const [rect, setRect] = useState<DOMRect | null>(null);
-  const view = useRef<MessageViewRef>(null);
+  const view = useRef<MessageView>(null);
   const [expanded, setExpanded] = useState(true);
   const { onBeforeOpen, onAfterOpen, onBeforeClose, onAfterClose, initiallyExpanded } = p;
   const openBy = useCallback((control: Element) => {

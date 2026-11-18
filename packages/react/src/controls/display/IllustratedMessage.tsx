@@ -22,7 +22,7 @@ export type IllustratedMessageType = (typeof IllustratedMessageType)[keyof typeo
 export type IllustratedMessageSize = 'Auto' | 'Base' | 'ExtraSmall' | 'Small' | 'Medium' | 'Large';
 export const IllustratedMessageSize = { Auto: 'Auto', Base: 'Base', ExtraSmall: 'ExtraSmall', Small: 'Small', Medium: 'Medium', Large: 'Large' } as const;
 
-export interface IllustratedMessageProps extends Omit<HTMLAttributes<HTMLDivElement>, 'title'> {
+export interface $IllustratedMessageSettings extends Omit<HTMLAttributes<HTMLDivElement>, 'title'> {
   /** Description; defaults to the type's text when enableDefaultTitleAndDescription is on. */
   description?: string;
   /** Uses the default title and description of the type for the missing ones (default true). */
@@ -51,7 +51,7 @@ export interface IllustratedMessageProps extends Omit<HTMLAttributes<HTMLDivElem
 export function IllustratedMessage({
   description, enableDefaultTitleAndDescription = true, enableFormattedText: _formatted, enableVerticalResponsiveness = false, illustrationSize = 'Auto',
   illustrationType = 'NoSearchResults', title, ariaTitleLevel = 'Auto', decorative = false, additionalContent, className, ...rest
-}: IllustratedMessageProps) {
+}: $IllustratedMessageSettings) {
   const t = useControlText(TEXTS);
   const text = (part: 'title' | 'description') => t(`ctl.illustratedMessage.${illustrationType}.${part}` as MessageKey);
   const shownTitle = title || (enableDefaultTitleAndDescription ? text('title') : undefined);

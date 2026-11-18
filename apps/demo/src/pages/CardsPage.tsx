@@ -4,9 +4,15 @@
  * UI.QuickViewFacets, Communication.Event). Cards are 340 px wide like the SAPUI5 reference (docs/21-evidence).
  * The calendar and timeline are frozen at 2026-11-16 09:00 (Berlin) so that the page always looks the same.
  */
-import {
-  AnalyticalContent, CalendarContent, Card, Header, ListContent, NumericHeader, ObjectContent, TableContent, TimelineContent,
-} from '@rhfan2019/smart-kit/cards';
+import AnalyticalContent from '@rhfan2019/smart-kit/ui/integration/cards/AnalyticalContent';
+import CalendarContent from '@rhfan2019/smart-kit/ui/integration/cards/CalendarContent';
+import Card from '@rhfan2019/smart-kit/f/Card';
+import Header from '@rhfan2019/smart-kit/f/cards/Header';
+import ListContent from '@rhfan2019/smart-kit/ui/integration/cards/ListContent';
+import NumericHeader from '@rhfan2019/smart-kit/f/cards/NumericHeader';
+import ObjectContent from '@rhfan2019/smart-kit/ui/integration/cards/ObjectContent';
+import TableContent from '@rhfan2019/smart-kit/ui/integration/cards/TableContent';
+import TimelineContent from '@rhfan2019/smart-kit/ui/integration/cards/TimelineContent';
 import { SmartKitProvider, useSmartKit } from '@rhfan2019/smart-kit/context';
 import type { ReactNode } from 'react';
 import { useShell } from '../App';

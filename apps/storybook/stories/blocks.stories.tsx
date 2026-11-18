@@ -1,9 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import type { Condition } from '@rhfan2019/smart-kit-core';
-import {
-  AdaptFiltersDialog, CriticalityIcon, AnchorBar, ConditionInput, DynamicPage, FilterSummary, HeaderFacet, ObjectPageLayout, SmartField, SmartFilterBar, SmartForm,
-  SmartListReport, SmartObjectPage, SmartTable, SmartVariantManagement, TableP13nDialog, useFilterState, useVariants, ValueHelpDialog,
-} from '@rhfan2019/smart-kit';
+import { AdaptFiltersDialog, CriticalityIcon, AnchorBar, ConditionInput, DynamicPage, FilterSummary, HeaderFacet, ObjectPageLayout, SmartField, SmartFilterBar, SmartForm, SmartListReport, SmartObjectPage, SmartTable, SmartVariantManagement, TableP13nDialog, useFilterState, useVariants, ValueHelpDialog } from '@rhfan2019/smart-kit';
 import { useState } from 'react';
 import { data, model } from './providers';
 

@@ -62,7 +62,8 @@ for (const [key, dir] of Object.entries(PACKAGES)) {
   check(missing.length === 0, `${info.name}: every exports target is in the tarball`, missing.join(', '));
   if (key === 'react') {
     // S9: each React entry keeps its 'use client' directive at the very top of the built file.
-    const entries = Object.entries(manifest.exports).filter(([k]) => !k.endsWith('.css') && k !== './i18n').map(([, v]) => v.import.slice(2));
+    // library modules (enums only, ADR-033) have no React and no directive, like /i18n
+    const entries = Object.entries(manifest.exports).filter(([k]) => !k.endsWith('.css') && k !== './i18n' && !k.endsWith('/library')).map(([, v]) => v.import.slice(2));
     const without = entries.filter((f) => !/^["']use client["'];/.test(run('tar', ['-xOzf', tgz[key], `package/${f}`], work)));
     check(without.length === 0, `${info.name}: ${entries.length} entries start with 'use client'`, without.join(', '));
   }

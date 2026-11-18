@@ -11,7 +11,7 @@ import { elementsOf, MESSAGE_TYPE_ORDER, messageTypeOf, type MessageType } from 
 import { MessageTypeIcon } from './MessageTypeIcon';
 import { TEXTS } from './texts';
 
-export interface MessageItemProps {
+export interface $MessageItemSettings {
   /** UI5 default 'Error'. */
   type?: MessageType;
   title?: string;
@@ -32,19 +32,19 @@ export interface MessageItemProps {
 }
 
 /** An item as passed to event handlers: its properties, its React key, and (extension) the core message it came from. */
-export type MessageViewItem = MessageItemProps & { key?: string; message?: Message };
+export type MessageViewItem = $MessageItemSettings & { key?: string; message?: Message };
 
 /** sap.m.MessageItem: declares one message of a MessageView / MessagePopover (renders nothing on its own). */
-export function MessageItem(_: MessageItemProps): null {
+export function MessageItem(_: $MessageItemSettings): null {
   return null;
 }
 
-export interface MessageViewRef {
+export interface MessageView {
   /** Returns from the details page to the list (sap.m.MessageView#navigateBack). */
   navigateBack(): void;
 }
 
-export interface MessageViewProps {
+export interface $MessageViewSettings {
   /** `MessageItem` elements. */
   children?: ReactNode;
   /** Extension: core messages (ADR-023), shown like MessageItems: text as title, target as subtitle and active title. */
@@ -60,13 +60,13 @@ export interface MessageViewProps {
   onListSelect?: (e: { messageTypeFilter: MessageType | 'All' }) => void;
   /** Fired after the long text of an item (`longtextUrl`) has been loaded. */
   onLongtextLoaded?: () => void;
-  ref?: Ref<MessageViewRef>;
+  ref?: Ref<MessageView>;
 }
 
 /** Items of the view: the MessageItem children, then the core messages. */
 export function useViewItems(children: ReactNode, items: Message[] | undefined): MessageViewItem[] {
   return useMemo(() => [
-    ...elementsOf<MessageItemProps>(children, MessageItem).map(({ key, props }) => ({ type: 'Error' as MessageType, ...props, key })),
+    ...elementsOf<$MessageItemSettings>(children, MessageItem).map(({ key, props }) => ({ type: 'Error' as MessageType, ...props, key })),
     ...(items ?? []).map((m) => ({ key: m.id, type: messageTypeOf(m.type), title: m.message, subtitle: m.target, activeTitle: Boolean(m.target), message: m })),
   ], [children, items]);
 }
@@ -76,7 +76,7 @@ const navigable = (i: MessageViewItem) => Boolean(i.description || i.longtextUrl
 const dataOf = (i: MessageViewItem) => ({ 'data-sk-message': i.message?.type ?? i.type, 'data-sk-message-target': i.message?.target });
 
 /** The message list and details page, without a container. Used by MessageView and MessagePopover. */
-export function MessageViewBody(p: MessageViewProps & { list: MessageViewItem[]; onBack?: () => void; collapsed?: boolean }) {
+export function MessageViewBody(p: $MessageViewSettings & { list: MessageViewItem[]; onBack?: () => void; collapsed?: boolean }) {
   const t = useControlText(TEXTS);
   const { list } = p;
   const [filter, setFilter] = useState<MessageType | 'All'>('All');
@@ -183,7 +183,7 @@ export function MessageViewBody(p: MessageViewProps & { list: MessageViewItem[];
 }
 
 /** sap.m.MessageView */
-export function MessageView(p: MessageViewProps) {
+export function MessageView(p: $MessageViewSettings) {
   const list = useViewItems(p.children, p.items);
   return <div className="sk-message-view" data-sk-message-view><MessageViewBody {...p} list={list} /></div>;
 }

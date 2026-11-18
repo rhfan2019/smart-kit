@@ -1,9 +1,15 @@
 /** Demo section of the Process controls (docs/26 §3.6, §3.7): purchase requisition → order → goods receipt → invoice. */
 import { Button, Group, SimpleGrid, Stack, Text } from '@mantine/core';
-import {
-  ActionsPlaceholder, FeedInput, FeedListItem, MicroProcessFlow, MicroProcessFlowItem, ProcessFlow, Timeline, TimelineItem, UploadSetwithTable,
-  type ProcessFlowLaneHeader, type ProcessFlowNode, type ProcessFlowRef, type TimelineGroupType, type UploadItem,
-} from '@rhfan2019/smart-kit/controls';
+import ActionsPlaceholder from '@rhfan2019/smart-kit/m/upload/ActionsPlaceholder';
+import FeedInput from '@rhfan2019/smart-kit/m/FeedInput';
+import FeedListItem from '@rhfan2019/smart-kit/m/FeedListItem';
+import MicroProcessFlow from '@rhfan2019/smart-kit/suite/ui/commons/MicroProcessFlow';
+import MicroProcessFlowItem from '@rhfan2019/smart-kit/suite/ui/commons/MicroProcessFlowItem';
+import ProcessFlow, { type ProcessFlowLaneHeader, type ProcessFlowNode } from '@rhfan2019/smart-kit/suite/ui/commons/ProcessFlow';
+import Timeline from '@rhfan2019/smart-kit/suite/ui/commons/Timeline';
+import TimelineItem from '@rhfan2019/smart-kit/suite/ui/commons/TimelineItem';
+import UploadSetwithTable, { type UploadItem } from '@rhfan2019/smart-kit/m/plugins/UploadSetwithTable';
+import type { TimelineGroupType } from '@rhfan2019/smart-kit/suite/ui/commons/library';
 import { ClipboardList, FileText, PackageCheck, Receipt, ThumbsUp } from 'lucide-react';
 import { useRef, useState, type ReactNode } from 'react';
 
@@ -72,7 +78,7 @@ function Box({ label, children }: { label: string; children: ReactNode }) {
 }
 
 export function ProcessSection() {
-  const flow = useRef<ProcessFlowRef>(null);
+  const flow = useRef<ProcessFlow>(null);
   const [zoom, setZoom] = useState('');
   const [event, setEvent] = useState('');
   const [group, setGroup] = useState<TimelineGroupType>('Month');
@@ -80,7 +86,7 @@ export function ProcessSection() {
     { id: 1, sender: 'Marc Weber', initials: 'MW', text: 'Can we accept the partial delivery? Sales needs 10 laptops by Monday.', timestamp: '2026-11-15T16:20:00Z' },
     { id: 2, sender: 'Acme Corp', initials: 'AC', text: 'The remaining 2 laptops ship on December 4. Tracking: https://example.com/track/88120', timestamp: '2026-11-16T08:05:00Z' },
   ]);
-  const zoomBy = (fn: (r: ProcessFlowRef) => unknown) => {
+  const zoomBy = (fn: (r: ProcessFlow) => unknown) => {
     if (!flow.current) return;
     fn(flow.current);
     setZoom(String(flow.current.getZoomLevel()));

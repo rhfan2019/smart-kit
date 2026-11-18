@@ -29,7 +29,8 @@ export const boundaryRules = {
   templates: {
     patterns: [
       { group: [...APPS, ...ROUTERS], message: 'templates must not depend on apps/* or routers' },
-      { group: ['../*/**', '!../index'], message: 'templates may only import the public entry ("../index") (AC-BOOT-01)' },
+      // the public API: the root entry and the UI5-aligned modules (ADR-033)
+      { group: ['../*/**', '!../index', ...['m', 'f', 'ui', 'suite', 'base', 'kit', 'v4'].map((d) => `!../${d}/**`)], message: 'templates may only import the public API ("../index" or a public module such as "../m/MessageBox") (AC-BOOT-01)' },
     ],
   },
 };

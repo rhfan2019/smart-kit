@@ -33,7 +33,7 @@ export interface CalendarLegendItem {
   type: string;
 }
 
-export interface CalendarContentProps {
+export interface $CalendarContentSettings {
   /** Entity set name as in `$metadata`, e.g. "Orders". */
   entitySet: string;
   /** Name of the service in `SmartKitProvider` `services`; default: the provider's `defaultService`. */
@@ -115,7 +115,7 @@ export function monthGrid(year: number, month: number, firstDay: number): string
 type Level = 'day' | 'month' | 'year' | 'range';
 const YEARS = 20;
 
-export function CalendarContent(p: CalendarContentProps) {
+export function CalendarContent(p: $CalendarContentSettings) {
   const meta = useMetaModel(p.entitySet, { service: p.service });
   const { intlLocale, timeZone, navigation } = useSmartKit();
   const t = useText();

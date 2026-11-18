@@ -5,7 +5,7 @@
 import { useCallback, useId, useMemo, useState, type CSSProperties, type ReactNode } from 'react';
 import { CardContext, type CardContextValue, type CardCounter, type CardHeaderDefaults } from './CardContext';
 
-export interface CardProps {
+export interface $CardSettings {
   /** Header (`Header` or `NumericHeader`). */
   header?: ReactNode;
   /** Position of the header (sap.f.cards.HeaderPosition); default "Top". */
@@ -26,7 +26,7 @@ export interface CardProps {
   'aria-roledescription'?: string;
 }
 
-export function Card(p: CardProps) {
+export function Card(p: $CardSettings) {
   const titleId = useId();
   const [counter, setCounterState] = useState<CardCounter | undefined>();
   const [headerPress, setPress] = useState<(() => void) | undefined>();

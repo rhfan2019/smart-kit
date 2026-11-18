@@ -12,7 +12,7 @@ import { relativeDateTime } from './format';
 import { itemKeyDown } from './ListContent';
 import { useCardList, type CardDataProps } from './useCardList';
 
-export interface TimelineContentProps extends CardDataProps {
+export interface $TimelineContentSettings extends CardDataProps {
   /** Property paths of the items; default Communication.Event. */
   item?: Pick<EventItemPaths, 'startDate' | 'title' | 'text'>;
   /** Icon of every item; default a calendar icon. */
@@ -32,13 +32,13 @@ export function CalendarIcon() {
   );
 }
 
-export function TimelineContent(p: TimelineContentProps) {
+export function TimelineContent(p: $TimelineContentSettings) {
   const meta = useMetaModel(p.entitySet, { service: p.service });
   const paths = eventPaths(meta.ui, p.item);
   return <TimelineList {...p} paths={paths} />;
 }
 
-function TimelineList(p: TimelineContentProps & { paths: EventItemPaths }) {
+function TimelineList(p: $TimelineContentSettings & { paths: EventItemPaths }) {
   const cols = useMemo(() => eventColumns(p.paths), [p.paths.startDate, p.paths.title, p.paths.text]); // eslint-disable-line react-hooks/exhaustive-deps
   const { meta, rows, query, onItemPress } = useCardList(p, { defaultMax: 5, columns: () => cols });
   const { intlLocale, timeZone } = useSmartKit();

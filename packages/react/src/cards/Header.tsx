@@ -12,7 +12,7 @@ import { useKpi } from './useKpi';
 export type ValueColor = 'Good' | 'Critical' | 'Error' | 'Neutral' | 'None';
 export type DeviationIndicator = 'Up' | 'Down' | 'None';
 
-export interface HeaderProps {
+export interface $HeaderSettings {
   /** Title; default: from the content's annotations (UI.HeaderInfo). */
   title?: string;
   /** Subtitle text. */
@@ -76,7 +76,7 @@ function useStatus(statusText: string | undefined) {
 
 const clampStyle = (lines: number | undefined, dflt: number) => ({ WebkitLineClamp: lines ?? dflt });
 
-export function Header(props: HeaderProps) {
+export function Header(props: $HeaderSettings) {
   const ctx = useCardContext();
   const d = ctx?.headerDefaults;
   const p = { ...props, title: props.title ?? d?.title, subtitle: props.subtitle ?? d?.subtitle, iconSrc: props.iconSrc ?? d?.iconSrc, iconInitials: props.iconInitials ?? d?.iconInitials };
@@ -97,7 +97,7 @@ export function Header(props: HeaderProps) {
   );
 }
 
-export interface NumericSideIndicatorProps {
+export interface $NumericSideIndicatorSettings {
   /** Title text. */
   title: string;
   /** The number to show. */
@@ -109,7 +109,7 @@ export interface NumericSideIndicatorProps {
 }
 
 /** Side indicator of a numeric header (e.g. target, deviation). */
-export function NumericSideIndicator(p: NumericSideIndicatorProps) {
+export function NumericSideIndicator(p: $NumericSideIndicatorSettings) {
   return (
     <div className="sk-card__side">
       <div className="sk-card__side-title">{p.title}</div>
@@ -118,7 +118,7 @@ export function NumericSideIndicator(p: NumericSideIndicatorProps) {
   );
 }
 
-export interface NumericHeaderProps extends Omit<HeaderProps, 'iconSrc' | 'iconInitials' | 'iconDisplayShape' | 'iconAlt' | 'icon'> {
+export interface $NumericHeaderSettings extends Omit<$HeaderSettings, 'iconSrc' | 'iconInitials' | 'iconDisplayShape' | 'iconAlt' | 'icon'> {
   /** Unit of the number, shown in the subtitle row: "<subtitle> | <unit>" (CD-04). */
   unitOfMeasurement?: string;
   /** The main indicator (KPI) value, already formatted. */
@@ -135,7 +135,7 @@ export interface NumericHeaderProps extends Omit<HeaderProps, 'iconSrc' | 'iconI
   details?: string;
   detailsState?: ValueColor;
   /** Up to two side indicators (CD-04). */
-  sideIndicators?: NumericSideIndicatorProps[];
+  sideIndicators?: $NumericSideIndicatorSettings[];
   /**
    * Annotation-driven KPI (OVP KPI header, docs/20): the entity set and the UI.DataPoint whose value is summed on the
    * server. Number, scale, unit, state, trend and the target / deviation side indicators come from the data point
@@ -155,18 +155,18 @@ export interface NumericHeaderProps extends Omit<HeaderProps, 'iconSrc' | 'iconI
 const STATE: Record<ValueColor, string> = { Good: 'good', Critical: 'critical', Error: 'error', Neutral: 'neutral', None: '' };
 export const stateClass = (s: ValueColor | undefined) => (s && STATE[s] ? ` sk-card--state-${STATE[s]}` : '');
 
-export function NumericHeader(props: NumericHeaderProps) {
+export function NumericHeader(props: $NumericHeaderSettings) {
   return props.entitySet && props.dataPointAnnotationPath ? <KpiHeader {...props} entitySet={props.entitySet} dataPointAnnotationPath={props.dataPointAnnotationPath} /> : <NumericHeaderView {...props} />;
 }
 
-function KpiHeader(p: NumericHeaderProps & { entitySet: string; dataPointAnnotationPath: string }) {
+function KpiHeader(p: $NumericHeaderSettings & { entitySet: string; dataPointAnnotationPath: string }) {
   const kpi = useKpi(p);
   return <NumericHeaderView {...kpi} {...definedProps(p)} />;
 }
 
 const definedProps = <T extends object>(o: T): Partial<T> => Object.fromEntries(Object.entries(o).filter(([, v]) => v !== undefined)) as Partial<T>;
 
-function NumericHeaderView(props: NumericHeaderProps) {
+function NumericHeaderView(props: $NumericHeaderSettings) {
   const ctx = useCardContext();
   const p = { ...props, title: props.title ?? ctx?.headerDefaults?.title };
   const t = useText();

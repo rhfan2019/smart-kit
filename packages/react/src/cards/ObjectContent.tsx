@@ -15,7 +15,7 @@ import { withUnit } from './format';
 import { qualifierOf } from './annotations';
 import { criticalityState } from './ListContent';
 
-export interface ObjectContentProps {
+export interface $ObjectContentSettings {
   /** Entity set name as in `$metadata`, e.g. "Orders". */
   entitySet: string;
   /** Name of the service in `SmartKitProvider` `services`; default: the provider's `defaultService`. */
@@ -45,7 +45,7 @@ function groupsOf(ui: ReturnType<typeof useService>['model']['ui'][string], anno
   return ui.quickView?.length ? ui.quickView : sectionGroups();
 }
 
-export function ObjectContent(p: ObjectContentProps) {
+export function ObjectContent(p: $ObjectContentSettings) {
   const service = useService(p.service);
   const { namespace, locale, timeZone, navigation } = useSmartKit();
   const t = useText();

@@ -39,17 +39,17 @@ export interface OverflowToolbarLayoutData {
 /** True inside the overflow popover of an OverflowToolbar (OverflowToolbarButton shows its text there). */
 const InOverflow = createContext(false);
 
-export interface ToolbarSpacerProps {
+export interface $ToolbarSpacerSettings {
   /** Fixed width (CSS length); without it the spacer takes the remaining space. */
   width?: string;
 }
 
 /** Pushes the following toolbar content to the end, or adds a fixed gap with `width`. */
-export function ToolbarSpacer({ width }: ToolbarSpacerProps) {
+export function ToolbarSpacer({ width }: $ToolbarSpacerSettings) {
   return <span className={cx('sk-toolbar-spacer', !width && 'sk-toolbar-spacer--flex')} style={width ? { width } : undefined} aria-hidden data-sk-toolbar-spacer />;
 }
 
-export interface OverflowToolbarButtonProps {
+export interface $OverflowToolbarButtonSettings {
   /** Text: the tooltip and accessible name in the toolbar, shown next to the icon in the overflow. */
   text: string;
   /** Icon (a React node). */
@@ -69,7 +69,7 @@ export interface OverflowToolbarButtonProps {
 }
 
 /** sap.m.OverflowToolbarButton: icon only in the toolbar, icon and text in the overflow. */
-export function OverflowToolbarButton({ text, icon, type = 'Transparent', enabled = true, width, layoutData: _layoutData, onPress, title, ...rest }: OverflowToolbarButtonProps) {
+export function OverflowToolbarButton({ text, icon, type = 'Transparent', enabled = true, width, layoutData: _layoutData, onPress, title, ...rest }: $OverflowToolbarButtonSettings) {
   const inOverflow = useContext(InOverflow);
   const variant = type === 'Emphasized' ? 'filled' : type === 'Default' ? 'default' : 'subtle';
   const common = { ...rest, variant, disabled: !enabled, onClick: () => onPress?.({}), style: width ? { width } : undefined, 'data-sk-overflow-toolbar-button': inOverflow ? 'overflow' : 'toolbar' };
@@ -78,7 +78,7 @@ export function OverflowToolbarButton({ text, icon, type = 'Transparent', enable
   ) : <ActionIcon {...common} aria-label={text} title={title ?? text}>{icon}</ActionIcon>;
 }
 
-export interface OverflowToolbarProps extends Omit<HTMLAttributes<HTMLDivElement>, 'style'> {
+export interface $OverflowToolbarSettings extends Omit<HTMLAttributes<HTMLDivElement>, 'style'> {
   /** Width (CSS length; default 100%). */
   width?: string;
   /** The whole toolbar is clickable and fires onPress (default false). */
@@ -99,11 +99,11 @@ export interface OverflowToolbarProps extends Omit<HTMLAttributes<HTMLDivElement
   onPress?(e: { srcControl: HTMLElement }): void;
   /** Toolbar content: buttons, texts, ToolbarSpacer; `layoutData` on a child sets its overflow priority. */
   children?: ReactNode;
-  ref?: Ref<OverflowToolbarRef>;
+  ref?: Ref<OverflowToolbar>;
 }
 
 /** Instance methods of OverflowToolbar. */
-export interface OverflowToolbarRef {
+export interface OverflowToolbar {
   /** Closes the overflow popover. */
   closeOverflow(): void;
   /** The toolbar element. */
@@ -160,7 +160,7 @@ function bare(el: ReactElement): ReactElement {
 
 export function OverflowToolbar({
   width, active = false, enabled = true, height, design = 'Auto', style = 'Standard', ariaHasPopup, asyncMode: _asyncMode, onPress, children, className, ref, ...rest
-}: OverflowToolbarProps) {
+}: $OverflowToolbarSettings) {
   const t = useControlText(TEXTS);
   const boxRef = useRef<HTMLDivElement>(null);
   const widths = useRef<number[]>([]);
@@ -222,7 +222,7 @@ export function OverflowToolbar({
       data-sk-overflow-toolbar
     >
       {items.map((it, i) => (hidden.has(i) ? null : (
-        <div key={it.el.key ?? i} className={cx('sk-overflow-toolbar__item', it.spacer && !(it.el.props as ToolbarSpacerProps).width && 'sk-overflow-toolbar__item--grow')} data-sk-toolbar-item={i}>{bare(it.el)}</div>
+        <div key={it.el.key ?? i} className={cx('sk-overflow-toolbar__item', it.spacer && !(it.el.props as $ToolbarSpacerSettings).width && 'sk-overflow-toolbar__item--grow')} data-sk-toolbar-item={i}>{bare(it.el)}</div>
       )))}
       {overflow.length ? (
         <Popover opened={open} onChange={setOpen} position="bottom-end" shadow="md">

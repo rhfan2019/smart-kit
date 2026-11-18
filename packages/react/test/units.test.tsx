@@ -1,8 +1,6 @@
 import { act, render, renderHook, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import {
-  applyExtensions, conditionText, createText, FilterSummary, filterSummaryText, parseConditionText, SmartField, SmartTable, useFilterState,
-} from '../src';
+import { applyExtensions, conditionText, createText, FilterSummary, filterSummaryText, parseConditionText, SmartField, SmartTable, useFilterState } from '../src';
 import { shopData, shopModel, wrap } from './helpers';
 
 const product = shopModel.entityTypes['Shop.Product']!;

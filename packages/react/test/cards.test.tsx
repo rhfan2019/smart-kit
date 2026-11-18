@@ -6,9 +6,16 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { ReactNode } from 'react';
 import { describe, expect, it, vi } from 'vitest';
-import {
-  AnalyticalContent, CalendarContent, Card, Header, ListContent, NumericHeader, ObjectContent, SmartKitProvider, smartKitMantineTheme, TableContent, TimelineContent,
-} from '../src';
+import { SmartKitProvider, smartKitMantineTheme } from '../src';
+import AnalyticalContent from '@rhfan2019/smart-kit/ui/integration/cards/AnalyticalContent';
+import CalendarContent from '@rhfan2019/smart-kit/ui/integration/cards/CalendarContent';
+import Card from '@rhfan2019/smart-kit/f/Card';
+import Header from '@rhfan2019/smart-kit/f/cards/Header';
+import ListContent from '@rhfan2019/smart-kit/ui/integration/cards/ListContent';
+import NumericHeader from '@rhfan2019/smart-kit/f/cards/NumericHeader';
+import ObjectContent from '@rhfan2019/smart-kit/ui/integration/cards/ObjectContent';
+import TableContent from '@rhfan2019/smart-kit/ui/integration/cards/TableContent';
+import TimelineContent from '@rhfan2019/smart-kit/ui/integration/cards/TimelineContent';
 import { firstDayOf, monthGrid, weekNumber } from '../src/cards/CalendarContent';
 import { compactParts, counterText, durationText, relativeDateTime, withUnit } from '../src/cards/format';
 import { createText } from '../src/i18n/text';

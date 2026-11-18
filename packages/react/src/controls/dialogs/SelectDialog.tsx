@@ -148,23 +148,23 @@ interface CommonProps<I> {
   onUpdateFinished?(e: ListUpdateEvent): void;
 }
 
-export interface SelectDialogProps extends CommonProps<StandardListItem> {
+export interface $SelectDialogSettings extends CommonProps<StandardListItem> {
   items: StandardListItem[];
-  ref?: Ref<SelectDialogRef>;
+  ref?: Ref<SelectDialog>;
 }
 
-export interface TableSelectDialogProps extends CommonProps<ColumnListItem> {
+export interface $TableSelectDialogSettings extends CommonProps<ColumnListItem> {
   columns: Column[];
   items: ColumnListItem[];
-  ref?: Ref<TableSelectDialogRef>;
+  ref?: Ref<TableSelectDialog>;
 }
 
-export interface SelectDialogRef {
+export interface SelectDialog {
   open(searchValue?: string): void;
   /** Deselects all items. */
   clearSelection(): void;
 }
-export interface TableSelectDialogRef {
+export interface TableSelectDialog {
   open(searchValue?: string): void;
 }
 
@@ -294,7 +294,7 @@ const typeIcon = (type: ListType | undefined) => (type === 'Navigation' ? <Chevr
   : type === 'Detail' || type === 'DetailAndActive' ? <Pencil className="sk-icon" aria-hidden /> : null);
 
 /** SelectDialog (sap.m.SelectDialog) with StandardListItem data. */
-export function SelectDialog(p: SelectDialogProps) {
+export function SelectDialog(p: $SelectDialogSettings) {
   const s = useSelectDialog(p, (i, q) => (i.title ?? '').toLowerCase().includes(q) || (i.description ?? '').toLowerCase().includes(q));
   useImperativeHandle(p.ref, () => ({ open: s.open, clearSelection() { s.setSelected(new Set()); } }));
   return (
@@ -361,7 +361,7 @@ function useScreenFit(columns: Column[]): boolean[] {
 }
 
 /** TableSelectDialog (sap.m.TableSelectDialog) with columns and ColumnListItem rows. */
-export function TableSelectDialog(p: TableSelectDialogProps) {
+export function TableSelectDialog(p: $TableSelectDialogSettings) {
   const s = useSelectDialog(p, (i, q) => i.cells.some((c) => textOf(c).toLowerCase().includes(q)));
   useImperativeHandle(p.ref, () => ({ open: s.open }));
   const fit = useScreenFit(p.columns);

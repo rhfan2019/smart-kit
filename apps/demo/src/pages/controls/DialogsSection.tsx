@@ -1,9 +1,14 @@
 /** Demo section of the dialogs controls (docs/26 §3.8–3.9): date ranges, select and settings dialogs, a wizard, tabs. */
 import { Button, Code, Group, SimpleGrid, Stack, Text, TextInput } from '@mantine/core';
-import {
-  DynamicDateRange, IconTabBar, IconTabFilter, IconTabSeparator, SelectDialog, TableSelectDialog, ViewSettingsDialog, Wizard, WizardStep,
-  type DynamicDateRangeValue, type SelectDialogRef, type StandardListItem, type TableSelectDialogRef, type ViewSettingsDialogRef, type WizardRef,
-} from '@rhfan2019/smart-kit/controls';
+import DynamicDateRange, { type DynamicDateRangeValue } from '@rhfan2019/smart-kit/m/DynamicDateRange';
+import IconTabBar from '@rhfan2019/smart-kit/m/IconTabBar';
+import IconTabFilter from '@rhfan2019/smart-kit/m/IconTabFilter';
+import IconTabSeparator from '@rhfan2019/smart-kit/m/IconTabSeparator';
+import SelectDialog, { type StandardListItem } from '@rhfan2019/smart-kit/m/SelectDialog';
+import TableSelectDialog from '@rhfan2019/smart-kit/m/TableSelectDialog';
+import ViewSettingsDialog from '@rhfan2019/smart-kit/m/ViewSettingsDialog';
+import Wizard from '@rhfan2019/smart-kit/m/Wizard';
+import WizardStep from '@rhfan2019/smart-kit/m/WizardStep';
 import { CheckCircle2, Clock, Inbox, Landmark, XCircle } from 'lucide-react';
 import { useRef, useState, type ReactNode } from 'react';
 
@@ -30,10 +35,10 @@ export function DialogsSection() {
   const [view, setView] = useState<string>('Sorted by Order Date');
   const [done, setDone] = useState(false);
   const [name, setName] = useState('');
-  const selectRef = useRef<SelectDialogRef>(null);
-  const tableRef = useRef<TableSelectDialogRef>(null);
-  const viewRef = useRef<ViewSettingsDialogRef>(null);
-  const wizardRef = useRef<WizardRef>(null);
+  const selectRef = useRef<SelectDialog>(null);
+  const tableRef = useRef<TableSelectDialog>(null);
+  const viewRef = useRef<ViewSettingsDialog>(null);
+  const wizardRef = useRef<Wizard>(null);
   const dates = range && valid ? DynamicDateRange.toDates(range).map((d) => d.toLocaleDateString()).join(' – ') : '';
 
   return (

@@ -20,7 +20,7 @@ export const PageBackgroundDesign = { List: 'List', Solid: 'Solid', Standard: 'S
 /** sap.ui.core.TitleLevel (for `stepTitleLevel`). */
 export type WizardTitleLevel = 'Auto' | 'H1' | 'H2' | 'H3' | 'H4' | 'H5' | 'H6';
 
-export interface WizardStepProps {
+export interface $WizardStepSettings {
   /** Step id (used by `nextStep`, `subsequentSteps`, `goToStep`); default: the React key, then the position. */
   id?: string;
   title?: string;
@@ -41,7 +41,7 @@ export interface WizardStepProps {
 }
 
 /** A step of a Wizard; rendered by the Wizard (alone it renders nothing). */
-export function WizardStep(_p: WizardStepProps): null {
+export function WizardStep(_p: $WizardStepSettings): null {
   return null;
 }
 
@@ -53,7 +53,7 @@ export interface WizardStepInfo {
   index: number;
 }
 
-export interface WizardProps {
+export interface $WizardSettings {
   children?: ReactNode;
   /** ('Scroll') */
   renderMode?: WizardRenderMode;
@@ -79,11 +79,11 @@ export interface WizardProps {
   onComplete?(): void;
   /** Fired when the user goes to another reached step in the progress navigator. */
   onNavigationChange?(e: { step: WizardStepInfo }): void;
-  ref?: Ref<WizardRef>;
+  ref?: Ref<Wizard>;
   'aria-label'?: string;
 }
 
-export interface WizardRef {
+export interface Wizard {
   nextStep(): void;
   previousStep(): void;
   goToStep(stepId: string, focusFirstElement?: boolean): void;
@@ -101,11 +101,11 @@ export interface WizardRef {
   getCurrentStep(): string | undefined;
 }
 
-interface Step extends WizardStepProps { id: string }
+interface Step extends $WizardStepSettings { id: string }
 
-export function Wizard(p: WizardProps) {
+export function Wizard(p: $WizardSettings) {
   const t = useControlText(TEXTS);
-  const steps: Step[] = elementsOf<WizardStepProps>(p.children, WizardStep).map((e, i) => ({ ...e.props, id: e.props.id ?? e.key ?? String(i) }));
+  const steps: Step[] = elementsOf<$WizardStepSettings>(p.children, WizardStep).map((e, i) => ({ ...e.props, id: e.props.id ?? e.key ?? String(i) }));
   const byId = new Map(steps.map((s) => [s.id, s]));
   const mode = p.renderMode ?? 'Scroll';
   const uid = useId();

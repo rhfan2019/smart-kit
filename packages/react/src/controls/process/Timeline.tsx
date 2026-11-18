@@ -41,7 +41,7 @@ export interface TimelineCustomAction {
   value: string;
 }
 
-export interface TimelineItemProps {
+export interface $TimelineItemSettings {
   /** Date or ISO string. */
   dateTime?: DateLike;
   title?: string;
@@ -85,12 +85,12 @@ export interface TimelineItemProps {
 }
 
 /** An entry of Timeline; rendered by its parent. */
-export function TimelineItem(_: TimelineItemProps): null {
+export function TimelineItem(_: $TimelineItemSettings): null {
   return null;
 }
 
 /** A Timeline item in event objects: its props and React key. */
-export type TimelineSelectedItem = TimelineItemProps & { key?: string };
+export type TimelineSelectedItem = $TimelineItemSettings & { key?: string };
 
 /** Why an item is filtered out (event `itemFiltering`). */
 export interface TimelineFilterReasons { search?: boolean; data?: boolean; time?: boolean }
@@ -114,7 +114,7 @@ export interface TimelineItemFilteringEvent {
   searchTerm: string;
 }
 
-export interface TimelineProps {
+export interface $TimelineSettings {
   children?: ReactNode;
   /** Default 'Right'. */
   alignment?: TimelineAlignment;
@@ -174,12 +174,12 @@ export interface TimelineProps {
   /** Fired for each item a filter would hide; `preventDefault()` keeps it. */
   onItemFiltering?: (e: PreventableEvent<TimelineItemFilteringEvent>) => void;
   onCustomMessageClosed?: () => void;
-  ref?: Ref<TimelineRef>;
+  ref?: Ref<Timeline>;
   'aria-label'?: string;
 }
 
 /** Instance methods of Timeline (via `ref`). */
-export interface TimelineRef {
+export interface Timeline {
   /** Clears search, filters and growing. */
   reset(): void;
   /** Clears the time filter. */
@@ -239,7 +239,7 @@ function failing(e: Entry, c: Criteria): TimelineFilterReasons {
 const dayInput = (d?: Date) => (d ? `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}` : '');
 const EMPTY: Criteria = { query: '', keys: [], time: {} };
 
-export function Timeline(p: TimelineProps) {
+export function Timeline(p: $TimelineSettings) {
   const t = useControlText(TEXTS);
   const { intlLocale, timeZone } = useControlLocale();
   const [now] = useState(() => new Date());
@@ -258,7 +258,7 @@ export function Timeline(p: TimelineProps) {
   const horizontal = p.axisOrientation === 'Horizontal';
   const groupBy = p.groupByType ?? 'None';
 
-  const all: Entry[] = elementsOf<TimelineItemProps>(p.children, TimelineItem)
+  const all: Entry[] = elementsOf<$TimelineItemSettings>(p.children, TimelineItem)
     .map(({ key, props }, index) => ({ id: key ?? `i${index}`, item: { ...props, key }, date: toDate(props.dateTime), index }));
   const options: TimelineFilterListItem[] = p.filterList
     ?? [...new Set(all.map((e) => e.item.filterValue).filter((v): v is string => !!v))].map((key) => ({ key, text: key }));

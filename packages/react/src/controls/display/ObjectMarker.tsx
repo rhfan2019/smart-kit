@@ -16,7 +16,7 @@ export const ObjectMarkerType = {
 export type ObjectMarkerVisibility = 'IconOnly' | 'TextOnly' | 'IconAndText';
 export const ObjectMarkerVisibility = { IconOnly: 'IconOnly', TextOnly: 'TextOnly', IconAndText: 'IconAndText' } as const;
 
-export interface ObjectMarkerProps extends Omit<HTMLAttributes<HTMLElement>, 'type'> {
+export interface $ObjectMarkerSettings extends Omit<HTMLAttributes<HTMLElement>, 'type'> {
   /** The marker (no default: without a type nothing is rendered). */
   type?: ObjectMarkerType;
   /** Overlay enlarges the clickable area (default Inline). */
@@ -38,7 +38,7 @@ const DEFAULT: Record<ObjectMarkerType, Shown> = {
   Flagged: 'IconOnly', Favorite: 'IconOnly', Draft: 'TextOnly', Locked: 'Responsive', Unsaved: 'Responsive', LockedBy: 'Responsive', UnsavedBy: 'Responsive',
 };
 
-export function ObjectMarker({ type, reactiveAreaMode = 'Inline', visibility, additionalInfo, onPress, className, ...rest }: ObjectMarkerProps) {
+export function ObjectMarker({ type, reactiveAreaMode = 'Inline', visibility, additionalInfo, onPress, className, ...rest }: $ObjectMarkerSettings) {
   const t = useControlText(TEXTS);
   if (!type) return null;
   const by = type === 'LockedBy' || type === 'UnsavedBy';

@@ -187,7 +187,12 @@ specific `UI.LineItem#X`, `UI.PresentationVariant#X` (sort, `MaxItems`), `UI.Sel
 `UI.Chart#X`, `UI.DataPoint#X`. Paths may be written `@UI.LineItem#Card` or `com.sap.vocabularies.UI.v1.LineItem#Card`.
 
 ```tsx
-import { AnalyticalContent, Card, Header, ListContent, NumericHeader, TableContent } from '@rhfan2019/smart-kit/cards';
+import AnalyticalContent from '@rhfan2019/smart-kit/ui/integration/cards/AnalyticalContent';
+import Card from '@rhfan2019/smart-kit/f/Card';
+import Header from '@rhfan2019/smart-kit/f/cards/Header';
+import ListContent from '@rhfan2019/smart-kit/ui/integration/cards/ListContent';
+import NumericHeader from '@rhfan2019/smart-kit/f/cards/NumericHeader';
+import TableContent from '@rhfan2019/smart-kit/ui/integration/cards/TableContent';
 
 export function Overview() {
   return (
@@ -293,7 +298,8 @@ page, wrap it yourself:
 
 ```tsx
 import type { ReactNode } from 'react';
-import { MessageButton, MessageProvider } from '@rhfan2019/smart-kit/messages';
+import MessageButton from '@rhfan2019/smart-kit/v4/fe/macros/MessageButton';
+import MessageProvider from '@rhfan2019/smart-kit/kit/MessageProvider';
 
 export function PageWithMessages({ children }: { children: ReactNode }) {
   return (

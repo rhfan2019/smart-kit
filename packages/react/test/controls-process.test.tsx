@@ -5,10 +5,17 @@ import { Truck } from 'lucide-react';
 import { createRef, type ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { SmartKitProvider, smartKitMantineTheme } from '../src';
-import {
-  ActionsPlaceholder, FeedInput, FeedListItem, MicroProcessFlow, MicroProcessFlowItem, ProcessFlow, Timeline, TimelineItem, UploaderTableItem, UploadSetwithTable,
-  UploadSetwithTableActionPlaceHolder, type ProcessFlowLaneHeader, type ProcessFlowNode, type ProcessFlowRef, type TimelineRef, type UploadItem, type UploadSetwithTableRef,
-} from '../src/entries/controls';
+import ActionsPlaceholder from '@rhfan2019/smart-kit/m/upload/ActionsPlaceholder';
+import FeedInput from '@rhfan2019/smart-kit/m/FeedInput';
+import FeedListItem from '@rhfan2019/smart-kit/m/FeedListItem';
+import MicroProcessFlow from '@rhfan2019/smart-kit/suite/ui/commons/MicroProcessFlow';
+import MicroProcessFlowItem from '@rhfan2019/smart-kit/suite/ui/commons/MicroProcessFlowItem';
+import ProcessFlow, { type ProcessFlowLaneHeader, type ProcessFlowNode } from '@rhfan2019/smart-kit/suite/ui/commons/ProcessFlow';
+import Timeline from '@rhfan2019/smart-kit/suite/ui/commons/Timeline';
+import TimelineItem from '@rhfan2019/smart-kit/suite/ui/commons/TimelineItem';
+import UploaderTableItem from '@rhfan2019/smart-kit/m/upload/UploaderTableItem';
+import UploadSetwithTable, { type UploadItem } from '@rhfan2019/smart-kit/m/plugins/UploadSetwithTable';
+import { UploadSetwithTableActionPlaceHolder } from '@rhfan2019/smart-kit/m/library';
 import { isoWeek, timelineGroup } from '../src/controls/process/Timeline';
 import { layoutProcessFlow, pathBetween, zoomForWidth } from '../src/controls/process/ProcessFlow';
 import { linkify } from '../src/controls/process/Feed';
@@ -80,7 +87,7 @@ describe('ProcessFlow', () => {
 
   it('UE-43 no zoomLevel property: zoomIn / zoomOut / getZoomLevel / setZoomLevel; level Four shows titleAbbreviation; zoomLevel*Content replaces the content', () => {
     expect([zoomForWidth(80), zoomForWidth(50), zoomForWidth(20)]).toEqual(['Two', 'Three', 'Four']);
-    const ref = createRef<ProcessFlowRef>();
+    const ref = createRef<ProcessFlow>();
     const custom = nodes.map((n) => (n.nodeId === 'gr1' ? { ...n, zoomLevelOneContent: <b>custom GR</b> } : n));
     const { container } = view(<ProcessFlow ref={ref} lanes={lanes} nodes={custom} />);
     expect(ref.current!.getZoomLevel()).toBe('Two');
@@ -98,7 +105,7 @@ describe('ProcessFlow', () => {
 
   it('UE-44 setSelectedPath highlights the path and dims the rest; getFocusedNode; onError for an unknown lane or node', () => {
     expect(pathBetween(layoutProcessFlow(lanes, nodes).edges, 'pr1', 'inv1')).toEqual(['pr1', 'po1', 'gr1', 'inv1']);
-    const ref = createRef<ProcessFlowRef>();
+    const ref = createRef<ProcessFlow>();
     const onError = vi.fn();
     const { container } = view(<ProcessFlow ref={ref} lanes={lanes} nodes={[...nodes, { nodeId: 'x', laneId: 'nope', children: ['ghost'] }]} onNodePress={() => {}} onError={onError} />);
     expect(onError).toHaveBeenCalledWith({ text: expect.stringContaining('unknown lane nope') });
@@ -227,7 +234,7 @@ describe('Timeline', () => {
   });
 
   it('UE-53 the filter popover filters by filterValue (filterList) and time; filterOpen fires; reset() clears everything', async () => {
-    const ref = createRef<TimelineRef>();
+    const ref = createRef<Timeline>();
     const onFilterOpen = vi.fn();
     const onFilterSelectionChange = vi.fn();
     view(
@@ -280,7 +287,7 @@ describe('Timeline', () => {
   });
 
   it('UE-55 axisOrientation, alignment, enableDoubleSided, maxCharacters, noDataText and setCustomMessage', () => {
-    const ref = createRef<TimelineRef>();
+    const ref = createRef<Timeline>();
     const closed = vi.fn();
     const { container, rerender } = view(<Timeline ref={ref} axisOrientation="Horizontal" alignment="Top" onCustomMessageClosed={closed}>{items({ maxCharacters: 8 })}</Timeline>);
     const root = container.querySelector('.sk-timeline')!;
@@ -554,7 +561,7 @@ describe('UploadSetwithTable', () => {
   });
 
   it('UE-97 renameItem (and the row button) edits the name without its extension: Enter fires itemRenamed, Escape itemRenameCanceled', () => {
-    const ref = createRef<UploadSetwithTableRef>();
+    const ref = createRef<UploadSetwithTable>();
     const onItemRenamed = vi.fn();
     const onItemRenameCanceled = vi.fn();
     view(<UploadSetwithTable ref={ref} items={existing} onItemRenamed={onItemRenamed} onItemRenameCanceled={onItemRenameCanceled} />);
@@ -572,7 +579,7 @@ describe('UploadSetwithTable', () => {
   it('UE-98 terminateUpload aborts a running upload (uploadTerminated, row removed); download opens the URL; isRestricted checks the rules', async () => {
     const onUploadTerminated = vi.fn();
     const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
-    const ref = createRef<UploadSetwithTableRef>();
+    const ref = createRef<UploadSetwithTable>();
     const { container } = view(<UploadSetwithTable ref={ref} uploadUrl="/u" items={existing} fileTypes={['pdf', 'png']} uploader={{ onUploadTerminated }} />);
     choose(container, file('big-scan.pdf'));
     await waitFor(() => expect(MockXHR.all).toHaveLength(1));
@@ -591,7 +598,7 @@ describe('UploadSetwithTable', () => {
   });
 
   it('UE-99 openFilePreview shows images in a dialog with carousel arrows and maxFileSizeforPreview; uploadItemViaUrl / uploadItemWithoutFile / UploaderTableItem.uploadFile; Chinese texts', async () => {
-    const ref = createRef<UploadSetwithTableRef>();
+    const ref = createRef<UploadSetwithTable>();
     view(<UploadSetwithTable ref={ref} uploadUrl="/u" items={existing} previewDialog={{ maxFileSizeforPreview: 1 }} />);
     fireEvent.click(screen.getByRole('button', { name: 'Quotation-4711.pdf' }));
     const dialog = await screen.findByRole('dialog');

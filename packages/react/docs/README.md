@@ -139,7 +139,23 @@ Notes:
 - Several services: put several entries in `services`, name one with `service="name"` on any component
   (default: `defaultService`, else the first).
 
-## Import paths (subpaths)
+## Import paths (UI5 modules and subpaths)
+
+Classes that exist in SAPUI5 are imported by their UI5 module path with the prefix replaced (ADR-033): one module per
+class, default export, as in UI5's TypeScript; `sap.fe.*` modules get an extra `v4`:
+
+```tsx
+import MessageBox from '@rhfan2019/smart-kit/m/MessageBox'; // sap/m/MessageBox
+import MessageStrip, { type $MessageStripSettings } from '@rhfan2019/smart-kit/m/MessageStrip';
+import Card from '@rhfan2019/smart-kit/f/Card'; // sap/f/Card
+import { ValueState } from '@rhfan2019/smart-kit/ui/core/library'; // sap/ui/core/library
+import MessageButton from '@rhfan2019/smart-kit/v4/fe/macros/MessageButton'; // sap/fe/macros/MessageButton
+```
+
+Settings types are `$<Class>Settings`, the instance type is the class itself (`useRef<MessageStrip>(null)`). What has
+no UI5 counterpart is in `@rhfan2019/smart-kit/kit/<name>` (for example `kit/MessageProvider`, `kit/useMessages`).
+`docs/reference.md` lists every module. The parts not yet moved to UI5 paths are still imported from the subpaths
+below.
 
 Import from the subpath of the domain. The root entry `@rhfan2019/smart-kit` exports the same names, but then the
 bundler also resolves AG Grid; importing only what you use keeps the app small (an app with only `MicroChart`
@@ -160,10 +176,7 @@ ships about 5 KB gzip of smart-kit).
 | `@rhfan2019/smart-kit/page` | `DynamicPage`, `FlexibleColumnLayout`, `OverflowActions`, `ShareMenu` | no |
 | `@rhfan2019/smart-kit/actions` | `useActionRunner`, `isActionAvailable` | no |
 | `@rhfan2019/smart-kit/edit` | `CreateDialog`, `useEditStrategy`, `validate` | no |
-| `@rhfan2019/smart-kit/messages` | `MessageProvider`, `MessageButton`, `MessageIcon`, `useMessages`; SAPUI5-named `MessageToast`, `MessageBox`, `MessageStrip`, `MessageView`, `MessageItem`, `MessagePopover`, `MessageHost` | no |
 | `@rhfan2019/smart-kit/templates` | `SmartListReport`, `SmartObjectPage` | **yes** |
-| `@rhfan2019/smart-kit/cards` | `Card`, `Header`, `NumericHeader`, `NumericSideIndicator`, `ListContent`, `TableContent`, `ObjectContent`, `AnalyticalContent`, `TimelineContent`, `CalendarContent` | no |
-| `@rhfan2019/smart-kit/controls` | General controls with SAPUI5 names, properties, events and methods (docs/26): `ObjectStatus`, `ObjectIdentifier`, `ObjectNumber`, `ObjectMarker`, `ToggleButton`, `IllustratedMessage`, `BusyIndicator`, `BusyDialog`, `Currency`, `ExpandableText`, `OverflowToolbar`, `ToolbarSpacer`, `ProcessFlow`, `MicroProcessFlow`, `Timeline`, `FeedInput`, `FeedListItem`, `DynamicDateRange`, `SelectDialog`, `TableSelectDialog`, `ViewSettingsDialog`, `Wizard`, `IconTabBar` and their enums | no |
 | `@rhfan2019/smart-kit/styles.css` | the one stylesheet of all components | — |
 | `@rhfan2019/smart-kit/styles.layered.css` | the same stylesheet inside `@layer smart-kit` | — |
 

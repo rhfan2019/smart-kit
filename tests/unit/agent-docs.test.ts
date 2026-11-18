@@ -81,7 +81,8 @@ describe('docs for coding agents (ADR-030)', () => {
     const pkg = JSON.parse(readFileSync(join(ROOT, 'packages/react/package.json'), 'utf8')) as { exports: Record<string, unknown> };
     const rows = [...guide.matchAll(/^\| `@rhfan2019\/smart-kit\/([\w.]+)` \| (.*?) \|/gm)];
     const listed = rows.map((r) => `./${r[1]}`).sort();
-    expect(listed).toEqual(Object.keys(pkg.exports).filter((k) => k !== '.').sort());
+    // UI5-aligned modules (ADR-033) are listed in docs/reference.md and docs/api.md, not in this table
+    expect(listed).toEqual(Object.keys(pkg.exports).filter((k) => k !== '.' && !/^\.\/(base|f|kit|m|suite|ui|v4)\//.test(k)).sort());
     for (const [, sub, names] of rows) {
       if (sub.endsWith('.css')) continue;
       const mod = (await import(join(ROOT, `packages/react/src/entries/${sub}.ts`))) as Record<string, unknown>;

@@ -1,10 +1,22 @@
 /** Display controls (docs/26 §3.2–3.5, ADR-032): SAPUI5 names, properties and events. */
 import { MantineProvider } from '@mantine/core';
 import { smartKitCssVariablesResolver, smartKitMantineTheme, SmartKitProvider } from '@rhfan2019/smart-kit';
-import {
-  BusyDialog, BusyIndicator, Currency, ExpandableText, IllustratedMessage, IllustratedMessageType, IndicationColor, ObjectIdentifier, ObjectMarker, ObjectNumber,
-  ObjectStatus, OverflowToolbar, OverflowToolbarButton, ToggleButton, ToolbarSpacer, type BusyDialogRef, type IllustratedMessageSize,
-} from '@rhfan2019/smart-kit/controls';
+import BusyDialog from '@rhfan2019/smart-kit/m/BusyDialog';
+import BusyIndicator from '@rhfan2019/smart-kit/m/BusyIndicator';
+import Currency from '@rhfan2019/smart-kit/ui/unified/Currency';
+import ExpandableText from '@rhfan2019/smart-kit/m/ExpandableText';
+import IllustratedMessage from '@rhfan2019/smart-kit/m/IllustratedMessage';
+import IllustratedMessageType from '@rhfan2019/smart-kit/m/IllustratedMessageType';
+import { IndicationColor } from '@rhfan2019/smart-kit/ui/core/library';
+import ObjectIdentifier from '@rhfan2019/smart-kit/m/ObjectIdentifier';
+import ObjectMarker from '@rhfan2019/smart-kit/m/ObjectMarker';
+import ObjectNumber from '@rhfan2019/smart-kit/m/ObjectNumber';
+import ObjectStatus from '@rhfan2019/smart-kit/m/ObjectStatus';
+import OverflowToolbar from '@rhfan2019/smart-kit/m/OverflowToolbar';
+import OverflowToolbarButton from '@rhfan2019/smart-kit/m/OverflowToolbarButton';
+import ToggleButton from '@rhfan2019/smart-kit/m/ToggleButton';
+import ToolbarSpacer from '@rhfan2019/smart-kit/m/ToolbarSpacer';
+import type IllustratedMessageSize from '@rhfan2019/smart-kit/m/IllustratedMessageSize';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Copy, Flag, Share2, Star, Trash2 } from 'lucide-react';
 import { useRef, type ReactNode } from 'react';
@@ -69,7 +81,7 @@ export const IllustratedMessages: Story = {
 };
 
 function BusyDemo() {
-  const ref = useRef<BusyDialogRef>(null);
+  const ref = useRef<BusyDialog>(null);
   return (
     <div style={row}>
       <BusyIndicator text="Loading…" />

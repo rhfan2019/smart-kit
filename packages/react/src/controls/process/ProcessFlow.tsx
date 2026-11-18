@@ -102,7 +102,7 @@ export interface ProcessFlowLabelPressInfo {
   targetNode: ProcessFlowNode;
 }
 
-export interface ProcessFlowProps {
+export interface $ProcessFlowSettings {
   lanes?: ProcessFlowLaneHeader[];
   nodes?: ProcessFlowNode[];
   /** Nodes with a folded top-right corner (default false). */
@@ -118,12 +118,12 @@ export interface ProcessFlowProps {
   onHeaderPress?: (lane: ProcessFlowLaneHeader) => void;
   /** Inconsistent data: a node in an unknown lane, or a child or parent id that does not exist. */
   onError?: (e: { text: string }) => void;
-  ref?: Ref<ProcessFlowRef>;
+  ref?: Ref<ProcessFlow>;
   'aria-label'?: string;
 }
 
 /** Instance methods of ProcessFlow (via `ref`). */
-export interface ProcessFlowRef {
+export interface ProcessFlow {
   zoomIn(): ProcessFlowZoomLevel;
   zoomOut(): ProcessFlowZoomLevel;
   getZoomLevel(): ProcessFlowZoomLevel;
@@ -289,7 +289,7 @@ function LaneDonut({ states, label }: { states: ProcessFlowLaneState[]; label?: 
 
 const pct = (v: number, of: number) => `${(v / of) * 100}%`;
 
-export function ProcessFlow(p: ProcessFlowProps) {
+export function ProcessFlow(p: $ProcessFlowSettings) {
   const t = useControlText(TEXTS);
   const root = useRef<HTMLDivElement>(null);
   const [zoom, setZoom] = useState<ProcessFlowZoomLevel>('Two');
@@ -443,7 +443,7 @@ export function ProcessFlow(p: ProcessFlowProps) {
 
 function ProcessFlowNodeBox(p: {
   node: ProcessFlowNode; col: number; row: number; zoom: ProcessFlowZoomLevel; folded: boolean; highlighted: boolean; dimmed: boolean;
-  onPress?: ProcessFlowProps['onNodePress']; onFocus: () => void;
+  onPress?: $ProcessFlowSettings['onNodePress']; onFocus: () => void;
 }) {
   const { node } = p;
   const state = node.state ?? 'Neutral';

@@ -22,7 +22,7 @@ export {
 } from './dateOptions';
 import { TEXTS } from './texts';
 
-export interface DynamicDateRangeProps {
+export interface $DynamicDateRangeSettings {
   /** The value (controlled); undefined: empty. */
   value?: DynamicDateRangeValue;
   /** CSS width of the field. */
@@ -59,10 +59,10 @@ export interface DynamicDateRangeProps {
   label?: ReactNode;
   id?: string;
   'aria-label'?: string;
-  ref?: Ref<DynamicDateRangeRef>;
+  ref?: Ref<DynamicDateRange>;
 }
 
-export interface DynamicDateRangeRef {
+export interface DynamicDateRange {
   /** Opens the popover at `domRef` (default: the field). */
   open(domRef?: HTMLElement | null): void;
   /** Opens the popover at `domRef` (default: the field). */
@@ -100,7 +100,7 @@ export function toDates(value: DynamicDateRangeValue, calendarWeekNumbering?: Ca
 }
 
 /** The DynamicDateRange control; `DynamicDateRange.toDates(value, calendarWeekNumbering)` is the UI5 static method. */
-export function DynamicDateRange(p: DynamicDateRangeProps) {
+export function DynamicDateRange(p: $DynamicDateRangeSettings) {
   const t = useControlText(TEXTS);
   const { intlLocale } = useControlLocale();
   const ctx: FormatContext = { t, intlLocale, formatter: p.formatter };

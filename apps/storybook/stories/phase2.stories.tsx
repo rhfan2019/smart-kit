@@ -1,10 +1,11 @@
 /** Phase 2 building blocks (docs/13): charts, messages, editing, drafts, responsive table, layouts. */
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Button } from '@mantine/core';
-import {
-  ChartView, ColumnContext, CreateDialog, DraftMarker, DynamicPage, FieldEditor, FlexibleColumnLayout, GenericTag, MessageButton, MessageIcon, MessageProvider,
-  MICRO_COMPARISON_MAX, MicroChart, OverflowActions, QuickViewLink, ResponsiveTable, ShareMenu, SimpleChart, SmartObjectPage, SmartTable, useMessages, type FclLayout,
-} from '@rhfan2019/smart-kit';
+import { ChartView, ColumnContext, CreateDialog, DraftMarker, DynamicPage, FieldEditor, FlexibleColumnLayout, GenericTag, MICRO_COMPARISON_MAX, MicroChart, OverflowActions, QuickViewLink, ResponsiveTable, ShareMenu, SimpleChart, SmartObjectPage, SmartTable, type FclLayout } from '@rhfan2019/smart-kit';
+import MessageButton from '@rhfan2019/smart-kit/v4/fe/macros/MessageButton';
+import MessageIcon from '@rhfan2019/smart-kit/kit/MessageIcon';
+import MessageProvider from '@rhfan2019/smart-kit/kit/MessageProvider';
+import useMessages from '@rhfan2019/smart-kit/kit/useMessages';
 import { createMessage } from '@rhfan2019/smart-kit-core';
 import { useState } from 'react';
 import { data, model } from './providers';

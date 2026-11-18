@@ -3,7 +3,7 @@ import type { HTMLAttributes } from 'react';
 import type { EmptyIndicatorMode } from '../types';
 import { cx, EmptyIndicator, isEmpty, type ReactiveAreaMode } from './shared';
 
-export interface ObjectIdentifierProps extends Omit<HTMLAttributes<HTMLDivElement>, 'title'> {
+export interface $ObjectIdentifierSettings extends Omit<HTMLAttributes<HTMLDivElement>, 'title'> {
   /** Object title (bold). */
   title?: string;
   /** Secondary text below the title. */
@@ -18,7 +18,7 @@ export interface ObjectIdentifierProps extends Omit<HTMLAttributes<HTMLDivElemen
   onTitlePress?(e: { domRef: HTMLElement }): void;
 }
 
-export function ObjectIdentifier({ title, text, titleActive = false, reactiveAreaMode = 'Inline', emptyIndicatorMode = 'Off', onTitlePress, className, ...rest }: ObjectIdentifierProps) {
+export function ObjectIdentifier({ title, text, titleActive = false, reactiveAreaMode = 'Inline', emptyIndicatorMode = 'Off', onTitlePress, className, ...rest }: $ObjectIdentifierSettings) {
   const empty = isEmpty(title) && isEmpty(text);
   return (
     <div {...rest} className={cx('sk-object-identifier', className)} data-sk-object-identifier>

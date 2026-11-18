@@ -9,7 +9,7 @@ import { TEXTS } from './texts';
 /** sap.m.TitleAlignment (inline union; see the final report on shared enums). */
 export type TitleAlignmentValue = 'Auto' | 'Center' | 'None' | 'Start';
 
-export interface BusyDialogProps extends BusyCustomIconProps {
+export interface $BusyDialogSettings extends BusyCustomIconProps {
   /** Text below the busy indicator. */
   text?: string;
   /** Dialog title. */
@@ -22,17 +22,17 @@ export interface BusyDialogProps extends BusyCustomIconProps {
   showCancelButton?: boolean;
   /** Fired when the dialog closes. */
   onClose?(e: { cancelPressed: boolean }): void;
-  ref?: Ref<BusyDialogRef>;
+  ref?: Ref<BusyDialog>;
 }
 
 /** Instance methods of BusyDialog. */
-export interface BusyDialogRef {
+export interface BusyDialog {
   open(): void;
   /** Closes the dialog; `isClosedFromUserInteraction` becomes the event's `cancelPressed`. */
   close(isClosedFromUserInteraction?: boolean): void;
 }
 
-export function BusyDialog({ text, title, titleAlignment = 'Auto', cancelButtonText, showCancelButton = false, onClose, ref, ...icon }: BusyDialogProps) {
+export function BusyDialog({ text, title, titleAlignment = 'Auto', cancelButtonText, showCancelButton = false, onClose, ref, ...icon }: $BusyDialogSettings) {
   const t = useControlText(TEXTS);
   const [opened, setOpened] = useState(false);
   const openRef = useRef(false);

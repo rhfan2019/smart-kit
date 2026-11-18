@@ -1,6 +1,7 @@
 'use client';
 
 /**
+ * Root entry (not yet aligned subpaths only; the UI5-aligned modules are imported by their own paths, ADR-033).
  * Public API of @rhfan2019/smart-kit. Everything exported here is listed in docs/api.md (AC-Q-03).
  * The root entry only re-exports the subpath entries in ./entries (ADR-026); add new exports there.
  */
@@ -17,7 +18,4 @@ export * from './entries/object';
 export * from './entries/page';
 export * from './entries/actions';
 export * from './entries/edit';
-export * from './entries/messages';
 export * from './entries/templates';
-export * from './entries/cards';
-export * from './entries/controls';

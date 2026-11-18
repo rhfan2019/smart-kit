@@ -4,16 +4,17 @@
  */
 import { MantineProvider, Table, Title } from '@mantine/core';
 import { smartKitCssVariablesResolver, smartKitMantineTheme } from '@rhfan2019/smart-kit';
-import {
-  AvatarShape, AvatarSize, BackgroundDesign, BadgeStyle, ButtonAccessibleRole, ButtonType, CalendarWeekNumbering, DEFAULT_STANDARD_OPTIONS,
-  EmptyIndicatorMode, ExpandableTextOverflowMode, IconColor, IconTabDensityMode, IconTabFilterDesign, IconTabFilterInteractionMode, IconTabHeaderMode,
-  IllustratedMessageSize, IllustratedMessageType, IndicationColor, LinkConversion, ListType, MessageType, MicroProcessFlowRenderType, ObjectMarkerType,
-  ObjectMarkerVisibility, ObjectNumberDisplayMode, OverflowToolbarPriority, PageBackgroundDesign, ProcessFlowConnectionLabelState, ProcessFlowNodeState,
-  ProcessFlowNodeType, ProcessFlowZoomLevel, ReactiveAreaMode, SelectDialogInitialFocus, StandardDynamicDateRangeKeys, StringFilterOperator,
-  TabsOverflowMode, TimelineAlignment, TimelineAxisOrientation, TimelineFilterType, TimelineGroupType, TitleAlignment, TitleLevel, ToolbarDesign,
-  ToolbarStyle, ValueState, WizardRenderMode, WrappingType,
-} from '@rhfan2019/smart-kit/controls';
-import { VerticalPlacementType } from '@rhfan2019/smart-kit/messages';
+import AvatarShape from '@rhfan2019/smart-kit/m/AvatarShape';
+import AvatarSize from '@rhfan2019/smart-kit/m/AvatarSize';
+import { BackgroundDesign, BadgeStyle, ButtonAccessibleRole, ButtonType, EmptyIndicatorMode, ExpandableTextOverflowMode, IconTabDensityMode, IconTabFilterDesign, IconTabFilterInteractionMode, IconTabHeaderMode, LinkConversion, ListType, ObjectMarkerType, ObjectMarkerVisibility, ObjectNumberDisplayMode, OverflowToolbarPriority, PageBackgroundDesign, ReactiveAreaMode, SelectDialogInitialFocus, StandardDynamicDateRangeKeys, StringFilterOperator, TabsOverflowMode, TitleAlignment, ToolbarDesign, ToolbarStyle, WizardRenderMode, WrappingType } from '@rhfan2019/smart-kit/m/library';
+import CalendarWeekNumbering from '@rhfan2019/smart-kit/base/i18n/date/CalendarWeekNumbering';
+import { DEFAULT_STANDARD_OPTIONS } from '@rhfan2019/smart-kit/util';
+import { IconColor, IndicationColor, TitleLevel, ValueState } from '@rhfan2019/smart-kit/ui/core/library';
+import IllustratedMessageSize from '@rhfan2019/smart-kit/m/IllustratedMessageSize';
+import IllustratedMessageType from '@rhfan2019/smart-kit/m/IllustratedMessageType';
+import MessageType from '@rhfan2019/smart-kit/ui/core/message/MessageType';
+import { MicroProcessFlowRenderType, ProcessFlowConnectionLabelState, ProcessFlowNodeState, ProcessFlowNodeType, ProcessFlowZoomLevel, TimelineAlignment, TimelineAxisOrientation, TimelineFilterType, TimelineGroupType } from '@rhfan2019/smart-kit/suite/ui/commons/library';
+import { VerticalPlacementType } from '@rhfan2019/smart-kit/m/library';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
 const ENUMS: Record<string, object> = {

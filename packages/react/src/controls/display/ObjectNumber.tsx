@@ -11,7 +11,7 @@ import { TEXTS } from './texts';
 export type ObjectNumberDisplayMode = 'Default' | 'Currency' | 'Unit';
 export const ObjectNumberDisplayMode = { Default: 'Default', Currency: 'Currency', Unit: 'Unit' } as const;
 
-export interface ObjectNumberProps extends HTMLAttributes<HTMLSpanElement> {
+export interface $ObjectNumberSettings extends HTMLAttributes<HTMLSpanElement> {
   /** The number. In Default mode it is shown as given; Currency and Unit modes format it with the locale. */
   number?: string | number;
   /** Bold number (default true). */
@@ -43,7 +43,7 @@ export interface ObjectNumberProps extends HTMLAttributes<HTMLSpanElement> {
 export function ObjectNumber({
   number, emphasized = true, state = 'None', unit, textAlign = 'Begin', active = false, reactiveAreaMode = 'Inline', inverted = false,
   displayMode = 'Default', maxPrecision, useSymbol = true, emptyIndicatorMode = 'Off', onPress, className, style, ...rest
-}: ObjectNumberProps) {
+}: $ObjectNumberSettings) {
   const t = useControlText(TEXTS);
   const { intlLocale } = useControlLocale();
   const cls = cx(

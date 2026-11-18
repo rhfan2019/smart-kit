@@ -16,7 +16,7 @@ import { useCardList, type CardDataProps } from './useCardList';
 /** Loaded only when a list draws bullets (ADR-026 P4: an application without bullets does not ship the micro charts). */
 const ItemBullet = lazy(() => import('./ItemBullet'));
 
-export interface ListContentProps extends CardDataProps {
+export interface $ListContentSettings extends CardDataProps {
   /** OVP `listType`: "condensed" (standard item, 3 values; default) or "extended" (up to 6 values). */
   listType?: 'condensed' | 'extended';
   /**
@@ -66,7 +66,7 @@ export function listRoles(ctx: ValueContext, columns: FieldModel[], max: number)
   return { image, title: texts[0], description: texts[1], info, attributes: texts.slice(2, 2 + max), highlight: rest.find((f) => f.criticality || f.dataPoint?.criticality) };
 }
 
-export function ListContent(p: ListContentProps) {
+export function ListContent(p: $ListContentSettings) {
   const extended = p.listType === 'extended';
   const { meta, columns, rows, query, onItemPress, groupBy } = useCardList(p, { defaultMax: extended ? 3 : 5 });
   const { locale, timeZone } = useSmartKit();

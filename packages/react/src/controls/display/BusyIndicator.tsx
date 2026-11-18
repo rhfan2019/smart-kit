@@ -16,14 +16,14 @@ export interface BusyCustomIconProps {
   customIconHeight?: string;
 }
 
-export interface BusyIndicatorProps extends BusyCustomIconProps, HTMLAttributes<HTMLDivElement> {
+export interface $BusyIndicatorSettings extends BusyCustomIconProps, HTMLAttributes<HTMLDivElement> {
   /** Text below the indicator. */
   text?: string;
   /** Size of the dots (CSS length; default 1rem). */
   size?: string;
 }
 
-export function BusyIndicator({ text, size, customIcon, customIconRotationSpeed = 1000, customIconWidth, customIconHeight, className, style, ...rest }: BusyIndicatorProps) {
+export function BusyIndicator({ text, size, customIcon, customIconRotationSpeed = 1000, customIconWidth, customIconHeight, className, style, ...rest }: $BusyIndicatorSettings) {
   const t = useControlText(TEXTS);
   const css = {
     ...(size ? { '--sk-busy-size': size } : {}),

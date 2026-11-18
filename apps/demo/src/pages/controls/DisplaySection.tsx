@@ -1,9 +1,19 @@
 /** Demo section of the Display controls (docs/26 §3.2–3.5): object display, empty and busy states, amounts, toolbar. */
 import { Button, Group, SimpleGrid, Stack, Text } from '@mantine/core';
-import {
-  BusyDialog, BusyIndicator, Currency, ExpandableText, IllustratedMessage, ObjectIdentifier, ObjectMarker, ObjectNumber, ObjectStatus,
-  OverflowToolbar, OverflowToolbarButton, ToggleButton, ToolbarSpacer, type BusyDialogRef, type IllustratedMessageType,
-} from '@rhfan2019/smart-kit/controls';
+import BusyDialog from '@rhfan2019/smart-kit/m/BusyDialog';
+import BusyIndicator from '@rhfan2019/smart-kit/m/BusyIndicator';
+import Currency from '@rhfan2019/smart-kit/ui/unified/Currency';
+import ExpandableText from '@rhfan2019/smart-kit/m/ExpandableText';
+import IllustratedMessage from '@rhfan2019/smart-kit/m/IllustratedMessage';
+import ObjectIdentifier from '@rhfan2019/smart-kit/m/ObjectIdentifier';
+import ObjectMarker from '@rhfan2019/smart-kit/m/ObjectMarker';
+import ObjectNumber from '@rhfan2019/smart-kit/m/ObjectNumber';
+import ObjectStatus from '@rhfan2019/smart-kit/m/ObjectStatus';
+import OverflowToolbar from '@rhfan2019/smart-kit/m/OverflowToolbar';
+import OverflowToolbarButton from '@rhfan2019/smart-kit/m/OverflowToolbarButton';
+import ToggleButton from '@rhfan2019/smart-kit/m/ToggleButton';
+import ToolbarSpacer from '@rhfan2019/smart-kit/m/ToolbarSpacer';
+import type IllustratedMessageType from '@rhfan2019/smart-kit/m/IllustratedMessageType';
 import { Copy, Flag, Share2, Star, Trash2 } from 'lucide-react';
 import { useRef, useState, type ReactNode } from 'react';
 
@@ -21,7 +31,7 @@ function Box({ label, children }: { label: string; children: ReactNode }) {
 }
 
 export function DisplaySection() {
-  const busy = useRef<BusyDialogRef>(null);
+  const busy = useRef<BusyDialog>(null);
   const [type, setType] = useState<IllustratedMessageType>('NoSearchResults');
   const [flagged, setFlagged] = useState(false);
   const openBusy = () => {

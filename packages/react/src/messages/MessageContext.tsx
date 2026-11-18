@@ -7,7 +7,7 @@ import { highestSeverity, type Message } from '@rhfan2019/smart-kit-core';
 import { AlertTriangle, CheckCircle2, Info, XCircle } from 'lucide-react';
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useText } from '../context/SmartKitProvider';
-import { MessagePopover, type MessagePopoverRef } from './MessagePopover';
+import { MessagePopover } from './MessagePopover';
 
 export interface MessagesApi {
   messages: Message[];
@@ -50,7 +50,7 @@ export function MessageButton({ defaultOpened = false }: { defaultOpened?: boole
   const api = useMessages();
   const t = useText();
   const button = useRef<HTMLButtonElement>(null);
-  const popover = useRef<MessagePopoverRef>(null);
+  const popover = useRef<MessagePopover>(null);
   const count = api?.messages.length ?? 0;
   useEffect(() => { if (defaultOpened && count && button.current) popover.current?.openBy(button.current); }, [defaultOpened, count]);
   if (!api || !count) return null;

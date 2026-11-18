@@ -38,7 +38,7 @@ function FeedAvatar(p: AvatarInput) {
   );
 }
 
-export interface FeedInputProps {
+export interface $FeedInputSettings {
   value?: string;
   /** Default true. */
   enabled?: boolean;
@@ -71,7 +71,7 @@ export interface FeedInputProps {
   'aria-label'?: string;
 }
 
-export function FeedInput(p: FeedInputProps) {
+export function FeedInput(p: $FeedInputSettings) {
   const t = useControlText(TEXTS);
   const [value, setValue] = useState(p.value ?? '');
   const [propValue, setPropValue] = useState(p.value);
@@ -137,7 +137,7 @@ export interface FeedListItemAction {
 /** Event of `onSenderPress` / `onIconPress`: the id and element pressed. */
 export interface FeedListItemPressEvent { domRef: string; getDomRef: () => HTMLElement }
 
-export interface FeedListItemProps {
+export interface $FeedListItemSettings {
   sender?: string;
   text?: string;
   info?: string;
@@ -214,7 +214,7 @@ export function linkify(text: string, mode: LinkConversion | undefined, target: 
 const ISO = /^\d{4}-\d{2}-\d{2}/;
 
 /** One feed entry; renders an `<li>`, so place it in a `<ul>` (like sap.m.List). */
-export function FeedListItem(p: FeedListItemProps) {
+export function FeedListItem(p: $FeedListItemSettings) {
   const t = useControlText(TEXTS);
   const { intlLocale, timeZone } = useControlLocale();
   const phone = useMediaQuery('(max-width: 37.5em)');

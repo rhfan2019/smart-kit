@@ -12,10 +12,13 @@ import { useQueries } from '@tanstack/react-query';
 import { BarChart3, Table2 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import {
-  ChartView, DynamicPage, FilterSummary, MessageButton, MessageProvider, ShareMenu, SmartFilterBar, SmartTable, SmartVariantManagement, useFilterState, useMessages,
+  ChartView, DynamicPage, FilterSummary, ShareMenu, SmartFilterBar, SmartTable, SmartVariantManagement, useFilterState,
   useMetaModel, usePageState, useService, useSmartKit, useText, useVariants,
   type ActionGroup, type ExportEvent, type ExtendEntry, type FilterFieldItem, type TableExtendEntry, type TableType,
 } from '../index';
+import MessageButton from '../v4/fe/macros/MessageButton';
+import MessageProvider from '../kit/MessageProvider';
+import useMessages from '../kit/useMessages';
 
 export interface ListContentItem {
   key: string;

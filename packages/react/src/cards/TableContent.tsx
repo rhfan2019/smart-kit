@@ -12,7 +12,7 @@ import { withUnit } from './format';
 import { criticalityState, itemKeyDown } from './ListContent';
 import { useCardList, type CardDataProps } from './useCardList';
 
-export interface TableContentProps extends CardDataProps {
+export interface $TableContentSettings extends CardDataProps {
   /** Maximum number of columns (default 3, OVP table card). */
   maxColumns?: number;
 }
@@ -27,7 +27,7 @@ export function cardColumns(columns: FieldModel[], max: number): FieldModel[] {
   return usable.filter((c) => chosen.has(c));
 }
 
-export function TableContent(p: TableContentProps) {
+export function TableContent(p: $TableContentSettings) {
   const maxColumns = p.maxColumns ?? 3;
   const meta = useMetaModel(p.entitySet, { service: p.service });
   const hi = meta.ui.headerInfo;

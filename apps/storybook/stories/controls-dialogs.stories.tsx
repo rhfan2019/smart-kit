@@ -1,10 +1,15 @@
 /** Dialogs controls (docs/26 §3.8–3.9, ADR-032): DynamicDateRange, SelectDialog, TableSelectDialog, ViewSettingsDialog, Wizard, IconTabBar. */
 import { Button, MantineProvider, Stack, Text, TextInput } from '@mantine/core';
 import { smartKitCssVariablesResolver, smartKitMantineTheme, SmartKitProvider } from '@rhfan2019/smart-kit';
-import {
-  DynamicDateRange, IconTabBar, IconTabFilter, IconTabSeparator, SelectDialog, TableSelectDialog, ViewSettingsDialog, Wizard, WizardStep,
-  type DynamicDateRangeValue, type SelectDialogRef, type StandardListItem, type TableSelectDialogRef, type ViewSettingsDialogRef,
-} from '@rhfan2019/smart-kit/controls';
+import DynamicDateRange, { type DynamicDateRangeValue } from '@rhfan2019/smart-kit/m/DynamicDateRange';
+import IconTabBar from '@rhfan2019/smart-kit/m/IconTabBar';
+import IconTabFilter from '@rhfan2019/smart-kit/m/IconTabFilter';
+import IconTabSeparator from '@rhfan2019/smart-kit/m/IconTabSeparator';
+import SelectDialog, { type StandardListItem } from '@rhfan2019/smart-kit/m/SelectDialog';
+import TableSelectDialog from '@rhfan2019/smart-kit/m/TableSelectDialog';
+import ViewSettingsDialog from '@rhfan2019/smart-kit/m/ViewSettingsDialog';
+import Wizard from '@rhfan2019/smart-kit/m/Wizard';
+import WizardStep from '@rhfan2019/smart-kit/m/WizardStep';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { CheckCircle2, Clock, XCircle } from 'lucide-react';
 import { useRef, useState, type ReactNode } from 'react';
@@ -39,9 +44,9 @@ function DateRangeDemo() {
 export const DynamicDateRangeStory: Story = { name: 'DynamicDateRange', render: () => <DateRangeDemo /> };
 
 function SelectDemo() {
-  const single = useRef<SelectDialogRef>(null);
-  const multi = useRef<SelectDialogRef>(null);
-  const table = useRef<TableSelectDialogRef>(null);
+  const single = useRef<SelectDialog>(null);
+  const multi = useRef<SelectDialog>(null);
+  const table = useRef<TableSelectDialog>(null);
   const [out, setOut] = useState('');
   return (
     <Stack align="flex-start">
@@ -61,7 +66,7 @@ function SelectDemo() {
 export const SelectDialogs: Story = { render: () => <SelectDemo /> };
 
 function ViewSettingsDemo() {
-  const ref = useRef<ViewSettingsDialogRef>(null);
+  const ref = useRef<ViewSettingsDialog>(null);
   const [out, setOut] = useState('');
   return (
     <Stack align="flex-start">

@@ -15,7 +15,7 @@ import { CardMessage, CardPlaceholder } from './CardStates';
 
 const KINDS: Record<string, 'column' | 'bar' | 'line' | 'donut'> = { Column: 'column', Bar: 'bar', Line: 'line', Donut: 'donut' };
 
-export interface AnalyticalContentProps {
+export interface $AnalyticalContentSettings {
   /** Entity set name as in `$metadata`, e.g. "Orders". */
   entitySet: string;
   /** Name of the service in `SmartKitProvider` `services`; default: the provider's `defaultService`. */
@@ -40,7 +40,7 @@ export interface AnalyticalContentProps {
   renderChart?(chart: ChartModel, data: ChartDatum[]): ReactNode;
 }
 
-export function AnalyticalContent(p: AnalyticalContentProps) {
+export function AnalyticalContent(p: $AnalyticalContentSettings) {
   const service = useService(p.service);
   const { namespace, locale, intlLocale, timeZone, navigation } = useSmartKit();
   const t = useText();

@@ -9,7 +9,7 @@ import { useControlLocale } from '../context';
 import type { EmptyIndicatorMode } from '../types';
 import { cx, EmptyIndicator } from './shared';
 
-export interface CurrencyProps extends HTMLAttributes<HTMLSpanElement> {
+export interface $CurrencySettings extends HTMLAttributes<HTMLSpanElement> {
   /** The amount (default 0). `null` counts as empty (see emptyIndicatorMode). */
   value?: number | null;
   /** The exact amount as a decimal string (Edm.Decimal); used instead of `value`, avoiding float rounding. */
@@ -51,7 +51,7 @@ export function currencyAmount(intlLocale: string, amount: number | string, curr
   return text + (digits === 0 ? PUNCTUATION_SPACE : '') + FIGURE_SPACE.repeat(pad);
 }
 
-export function Currency({ value = 0, stringValue, currency, maxPrecision, useSymbol = true, emptyIndicatorMode = 'Off', className, ...rest }: CurrencyProps) {
+export function Currency({ value = 0, stringValue, currency, maxPrecision, useSymbol = true, emptyIndicatorMode = 'Off', className, ...rest }: $CurrencySettings) {
   const { intlLocale } = useControlLocale();
   const amount = stringValue ?? value;
   const empty = amount === null || amount === '' || Number.isNaN(Number(amount));

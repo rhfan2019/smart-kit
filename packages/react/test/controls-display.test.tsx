@@ -5,10 +5,21 @@ import { Star } from 'lucide-react';
 import { createRef, type ReactNode } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { SmartKitProvider, smartKitMantineTheme } from '../src';
-import {
-  BusyDialog, BusyIndicator, Currency, ExpandableText, IllustratedMessage, IllustratedMessageType, IndicationColor, ObjectIdentifier, ObjectMarker,
-  ObjectNumber, ObjectStatus, OverflowToolbar, OverflowToolbarButton, ToggleButton, ToolbarSpacer, type BusyDialogRef, type OverflowToolbarRef,
-} from '../src/entries/controls';
+import BusyDialog from '@rhfan2019/smart-kit/m/BusyDialog';
+import BusyIndicator from '@rhfan2019/smart-kit/m/BusyIndicator';
+import Currency from '@rhfan2019/smart-kit/ui/unified/Currency';
+import ExpandableText from '@rhfan2019/smart-kit/m/ExpandableText';
+import IllustratedMessage from '@rhfan2019/smart-kit/m/IllustratedMessage';
+import IllustratedMessageType from '@rhfan2019/smart-kit/m/IllustratedMessageType';
+import { IndicationColor } from '@rhfan2019/smart-kit/ui/core/library';
+import ObjectIdentifier from '@rhfan2019/smart-kit/m/ObjectIdentifier';
+import ObjectMarker from '@rhfan2019/smart-kit/m/ObjectMarker';
+import ObjectNumber from '@rhfan2019/smart-kit/m/ObjectNumber';
+import ObjectStatus from '@rhfan2019/smart-kit/m/ObjectStatus';
+import OverflowToolbar from '@rhfan2019/smart-kit/m/OverflowToolbar';
+import OverflowToolbarButton from '@rhfan2019/smart-kit/m/OverflowToolbarButton';
+import ToggleButton from '@rhfan2019/smart-kit/m/ToggleButton';
+import ToolbarSpacer from '@rhfan2019/smart-kit/m/ToolbarSpacer';
 import { overflowIndices } from '../src/controls/display/OverflowToolbar';
 import { displayEn as en } from '../src/i18n/controls/display.en';
 import { displayZh as zh } from '../src/i18n/controls/display.zh';
@@ -184,7 +195,7 @@ describe('IllustratedMessage, BusyIndicator, BusyDialog', () => {
   });
 
   it('UE-34 BusyDialog: open() / close() through the ref; Cancel closes with cancelPressed true; close(true) likewise', async () => {
-    const ref = createRef<BusyDialogRef>();
+    const ref = createRef<BusyDialog>();
     const onClose = vi.fn();
     view(<BusyDialog ref={ref} title="Posting" text="Posting the invoice" showCancelButton onClose={onClose} />);
     expect(screen.queryByText('Posting the invoice')).toBeNull();
@@ -268,7 +279,7 @@ describe('OverflowToolbar, OverflowToolbarLayoutData, ToolbarSpacer', () => {
 
   it('UE-38 OverflowToolbar moves children that do not fit into "More"; OverflowToolbarButton shows its text there; closeOverflow()', async () => {
     mockWidths(250);
-    const ref = createRef<OverflowToolbarRef>();
+    const ref = createRef<OverflowToolbar>();
     const onCopy = vi.fn();
     view(
       <OverflowToolbar ref={ref} aria-label="Actions">

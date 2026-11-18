@@ -209,12 +209,36 @@ useThemeTokens<const T extends readonly string[]>(names: T): Record<T[number], s
 
 ## `@rhfan2019/smart-kit/util`
 
-`applyExtensions` (function) · `ExtendEntry` (interface) · `ExtendPosition` (type) · `usePageState` (hook)
+`applyExtensions` (function) · `DateLike` (type) · `DEFAULT_STANDARD_OPTIONS` (const) · `dynamicDateValueTypes` (function) · `ExtendEntry` (interface) · `ExtendPosition` (type) · `messageTypeOf` (function) · `PreventableEvent` (type) · `RESTRICTED_FILE_NAME_CHARACTERS` (const) · `toDates` (function) · `usePageState` (hook) · `viewSettingsFilterString` (function)
 
 ### `applyExtensions` — function
 
 ```ts
 applyExtensions<T extends { id: string; }>(items: T[], entries: ExtendEntry<T>[] | undefined, scope: string): T[]
+```
+
+### `DateLike` — type
+
+A date property of the controls: a Date or an ISO string (UI5 accepts a string or a Date).
+
+```ts
+export type DateLike = Date | string;
+```
+
+### `DEFAULT_STANDARD_OPTIONS` — const
+
+The default `standardOptions` of 1.154 (all 68 keys, in the UI5 order).
+
+```ts
+const DEFAULT_STANDARD_OPTIONS: readonly ("DATE" | "TODAY" | "YESTERDAY" | "TOMORROW" | "FIRSTDAYWEEK" | "LASTDAYWEEK" | "FIRSTDAYMONTH" | "LASTDAYMONTH" | "FIRSTDAYQUAR…
+```
+
+### `dynamicDateValueTypes` — function
+
+The value types of an option key (UI5 `DynamicDateOption.getValueTypes` of the standard options).
+
+```ts
+dynamicDateValueTypes(key: string): string[]
 ```
 
 ### `ExtendEntry` — interface
@@ -234,10 +258,50 @@ Id-based replace / insert for model-generated items. See docs/06-extension-and-t
 export type ExtendPosition = 'before' | 'after' | 'replace' | 'start' | 'end';
 ```
 
+### `messageTypeOf` — function
+
+core `Message.type` (lower case, ADR-023) → MessageType.
+
+```ts
+messageTypeOf(type: Message["type"]): MessageType
+```
+
+### `PreventableEvent` — type
+
+An event object for handlers whose UI5 event can be prevented (`oEvent.preventDefault()`).
+
+```ts
+export type PreventableEvent<T> = T & { preventDefault(): void };
+```
+
+### `RESTRICTED_FILE_NAME_CHARACTERS` — const
+
+Characters not allowed in file names by default (UI5).
+
+```ts
+const RESTRICTED_FILE_NAME_CHARACTERS: "\\:/*?\"<>|[]{}@#$"
+```
+
+### `toDates` — function
+
+The dates of a value (sap.m.DynamicDateRange.toDates): start of the first day and end of the last day in local time; FROM / TO give one date, as in UI5. `now` is an internal hook for tests.
+
+```ts
+toDates(value: DynamicDateRangeValue, calendarWeekNumbering?: CalendarWeekNumbering, now?: Date): Date[]
+```
+
 ### `usePageState` — hook
 
 ```ts
 usePageState<T>(key: string | undefined, initial: T | (() => T)): [T, (next: T | ((prev: T) => T)) => void]
+```
+
+### `viewSettingsFilterString` — function
+
+"Filtered by: Status (New, Approved), Region (North)".
+
+```ts
+viewSettingsFilterString(filterItems: ViewSettingsFilterItem[], filters: Record<string, string[]>, t: TextFn): string
 ```
 
 ## `@rhfan2019/smart-kit/field`
@@ -1619,272 +1683,6 @@ Client validation (OP In Edit Mode): mandatory fields and number formats; messag
 validate(model: MetaModel, typeName: string, fields: FieldModel[], values: Row, t: TextFn, creating?: boolean): Message[]
 ```
 
-## `@rhfan2019/smart-kit/messages`
-
-`MessageBox` (const) · `MessageBoxAction` (type) · `MessageBoxIcon` (type) · `MessageBoxOptions` (interface) · `MessageButton` (component) · `MessageHost` (component) · `MessageIcon` (component) · `MessageItem` (component) · `MessageItemProps` (interface) · `MessagePopover` (component) · `MessagePopoverProps` (interface) · `MessagePopoverRef` (interface) · `MessageProvider` (component) · `MessagesApi` (interface) · `MessageStrip` (component) · `MessageStripProps` (interface) · `MessageStripRef` (interface) · `MessageToast` (const) · `MessageToastOptions` (interface) · `MessageView` (component) · `MessageViewItem` (type) · `MessageViewProps` (interface) · `MessageViewRef` (interface) · `useMessages` (hook) · `VerticalPlacementType` (const)
-
-### `MessageBox` — const
-
-sap.m.MessageBox. Every method returns a promise of the pressed action (extension: UI5 returns nothing and only calls `onClose`).
-
-```ts
-const MessageBox: { Action: { readonly OK: "OK"; readonly CANCEL: "CANCEL"; readonly YES: "YES"; readonly NO: "NO"; readonly ABORT: "ABORT"; readonly RETRY…
-```
-
-### `MessageBoxAction` — type
-
-sap.m.MessageBox.Action; a custom action is any other string (shown as the button text).
-
-```ts
-export type MessageBoxAction = 'OK' | 'CANCEL' | 'YES' | 'NO' | 'ABORT' | 'RETRY' | 'IGNORE' | 'CLOSE' | 'DELETE';
-```
-
-### `MessageBoxIcon` — type
-
-sap.m.MessageBox.Icon
-
-```ts
-export type MessageBoxIcon = 'NONE' | 'INFORMATION' | 'WARNING' | 'ERROR' | 'SUCCESS' | 'QUESTION';
-```
-
-### `MessageBoxOptions` — interface
-
-Options of `MessageBox.show` and the shortcuts (sap.m.MessageBox mOptions, 1.154).
-
-| Member | Required | Type | Description |
-| --- | --- | --- | --- |
-| `icon` |  | `MessageBoxIcon` | Only `show`: the icon (default NONE; INFORMATION when `details` is set). |
-| `title` |  | `string` | Dialog title; the shortcuts default to a title per type ("Alert", "Confirmation", "Error" …). |
-| `actions` |  | `Array&lt;MessageBoxAction \| (string & {})> \| MessageBoxAction \| (string & {})` | One action or an array: MessageBox.Action values or custom texts. A single (non-array) action is emphasized. |
-| `emphasizedAction` |  | `MessageBoxAction \| (string & {}) \| null` | The emphasized action; the shortcuts emphasize OK only when `actions` is not given. null for none. |
-| `onClose` |  | `(action: MessageBoxAction \| (string & {}) \| null) => void` | Called with the pressed action, or null when the box was closed with Escape. |
-| `id` |  | `string` | Id of the dialog element. |
-| `initialFocus` |  | `MessageBoxAction \| (string & {}) \| null` | The action (or button text) whose button gets the initial focus. |
-| `details` |  | `string \| object \| (() => Promise&lt;string \| object>)` | Shown after "View Details": a string, an object (as JSON) or a function returning a promise of one. |
-| `contentWidth` |  | `string` | CSS width of the dialog content. |
-| `verticalScrolling` |  | `boolean` | Scrolling of the content (UI5 default true for both). |
-| `horizontalScrolling` |  | `boolean` |  |
-| `closeOnNavigation` |  | `boolean` | Accepted and ignored: smart-kit has no router (ADR-010) and no dependent-control lifecycle. |
-| `dependentOn` |  | `unknown` |  |
-| `styleClass` |  | `string` | Accepted and ignored (ADR-032 rule 7). |
-| `textDirection` |  | `string` |  |
-
-### `MessageButton` — component
-
-Footer message button with the message popover (MessagePopover, docs/26). Renders nothing without messages.
-
-`import { MessageButton } from '@rhfan2019/smart-kit/messages';`
-
-| Prop | Required | Type | Description |
-| --- | --- | --- | --- |
-| `defaultOpened` |  | `boolean` |  |
-
-### `MessageHost` — component
-
-Host of MessageToast and MessageBox. Only the first mounted host renders.
-
-`import { MessageHost } from '@rhfan2019/smart-kit/messages';`
-
-_no props_
-
-### `MessageIcon` — component
-
-`import { MessageIcon } from '@rhfan2019/smart-kit/messages';`
-
-| Prop | Required | Type | Description |
-| --- | --- | --- | --- |
-| `type` | **yes** | `Message['type']` |  |
-
-### `MessageItem` — component
-
-sap.m.MessageItem: declares one message of a MessageView / MessagePopover (renders nothing on its own).
-
-`import { MessageItem } from '@rhfan2019/smart-kit/messages';`
-
-| Prop | Required | Type | Description |
-| --- | --- | --- | --- |
-| `type` |  | `MessageType` | UI5 default 'Error'. |
-| `title` |  | `string` |  |
-| `subtitle` |  | `string` |  |
-| `description` |  | `string` |  |
-| `counter` |  | `number` | A number shown at the end of the item (how often the message occurs). |
-| `groupName` |  | `string` | The group of the item when the view has `groupItems`. |
-| `activeTitle` |  | `boolean` | The title is a link (fires onActiveTitlePress). UI5 default false. |
-| `markupDescription` |  | `boolean` | UI5 renders the description as HTML; smart-kit renders it as plain text. |
-| `longtextUrl` |  | `string` | A URL with a long text, loaded when the details page opens (shown as plain text; fires onLongtextLoaded). |
-| `link` |  | `ReactNode` | A link shown on the details page (`link` aggregation). |
-
-### `MessageItemProps` — interface
-
-Props of `MessageItem` (see above).
-
-### `MessagePopover` — component
-
-sap.m.MessagePopover
-
-`import { MessagePopover } from '@rhfan2019/smart-kit/messages';`
-
-| Prop | Required | Type | Description |
-| --- | --- | --- | --- |
-| `placement` |  | `VerticalPlacementType` | UI5 default 'Vertical' (below, or above when there is no room). |
-| `initiallyExpanded` |  | `boolean` | Opens with the message list shown (UI5 default true); false opens with only the header and filter. |
-| `onBeforeOpen` |  | `(e: { openBy: Element }) => void` |  |
-| `onAfterOpen` |  | `(e: { openBy: Element }) => void` |  |
-| `onBeforeClose` |  | `(e: { openBy: Element }) => void` |  |
-| `onAfterClose` |  | `(e: { openBy: Element }) => void` |  |
-| `aria-label` |  | `string` | Accessible name of the popover (default "Messages"). |
-| `ref` |  | `Ref&lt;MessagePopoverRef>` |  |
-| `children` |  | `ReactNode` | `MessageItem` elements. |
-| `items` |  | `Message[]` | Extension: core messages (ADR-023), shown like MessageItems: text as title, target as subtitle and active title. |
-| `groupItems` |  | `boolean` | Groups the items by `groupName`. UI5 default false. |
-| `headerButton` |  | `ReactNode` | A button at the end of the list header (MessagePopover `headerButton`). |
-| `onItemSelect` |  | `(e: { item: MessageViewItem; messageTypeFilter: MessageType \| 'All' }) => void` |  |
-| `onActiveTitlePress` |  | `(e: { item: MessageViewItem }) => void` |  |
-| `onListSelect` |  | `(e: { messageTypeFilter: MessageType \| 'All' }) => void` |  |
-| `onLongtextLoaded` |  | `() => void` | Fired after the long text of an item (`longtextUrl`) has been loaded. |
-
-### `MessagePopoverProps` — interface
-
-Props of `MessagePopover` (see above).
-
-### `MessagePopoverRef` — interface
-
-| Member | Required | Type | Description |
-| --- | --- | --- | --- |
-| `openBy` | **yes** | `(control: Element) => void` | Opens the popover at `control` (sap.m.MessagePopover#openBy). |
-| `close` | **yes** | `() => void` |  |
-| `isOpen` | **yes** | `() => boolean` |  |
-| `toggle` | **yes** | `(control: Element) => void` | Opens at `control`, or closes when open. |
-| `navigateBack` | **yes** | `() => void` | Returns from the details page to the list (sap.m.MessageView#navigateBack). |
-
-### `MessageProvider` — component
-
-`import { MessageProvider } from '@rhfan2019/smart-kit/messages';`
-
-| Prop | Required | Type | Description |
-| --- | --- | --- | --- |
-| `children` |  | `ReactNode` |  |
-| `onNavigate` |  | `(m: Message) => void` |  |
-
-### `MessagesApi` — interface
-
-| Member | Required | Type | Description |
-| --- | --- | --- | --- |
-| `messages` | **yes** | `Message[]` |  |
-| `add` | **yes** | `(list: Message[]) => void` | Adds server or custom messages. |
-| `setClient` | **yes** | `(list: Message[]) => void` | Replaces the client validation messages. |
-| `remove` | **yes** | `(id: string) => void` |  |
-| `clear` | **yes** | `() => void` |  |
-| `onNavigate` |  | `(m: Message) => void` | Called when a message with a target is pressed (focus the field). |
-
-### `MessageStrip` — component
-
-`import { MessageStrip } from '@rhfan2019/smart-kit/messages';`
-
-| Prop | Required | Type | Description |
-| --- | --- | --- | --- |
-| `text` |  | `string` |  |
-| `type` |  | `MessageType` | UI5 default 'Information'. |
-| `showIcon` |  | `boolean` | UI5 default false. |
-| `colorSet` |  | `'Default' \| 'ColorSet1' \| 'ColorSet2'` | sap.m.MessageStripColorSet (1.143): 'Default' uses the colours of `type`; ColorSet1 / ColorSet2 use `colorScheme`. |
-| `colorScheme` |  | `number` | 1–10, only with ColorSet1 / ColorSet2 (UI5 default 1). |
-| `customIcon` |  | `ReactNode` | Replaces the icon of the type (only with showIcon). UI5 takes an icon URI; smart-kit takes an element (ADR-032). |
-| `showCloseButton` |  | `boolean` | UI5 default false. |
-| `link` |  | `ReactNode` | A link after the text (`link` aggregation). |
-| `controls` |  | `ReactNode[]` | Links referenced from a formatted text (`controls` aggregation); shown after the text. |
-| `enableFormattedText` |  | `boolean` | UI5 parses `text` as limited HTML; smart-kit never parses HTML, so the text stays plain. Use `children` instead. |
-| `children` |  | `ReactNode` | Extension: rich content instead of `text`. |
-| `onClose` |  | `() => void` |  |
-| `ref` |  | `Ref&lt;MessageStripRef>` |  |
-
-### `MessageStripProps` — interface
-
-Props of `MessageStrip` (see above).
-
-### `MessageStripRef` — interface
-
-| Member | Required | Type | Description |
-| --- | --- | --- | --- |
-| `close` | **yes** | `() => void` | Closes the strip (sap.m.MessageStrip#close); fires onClose. |
-
-### `MessageToast` — const
-
-```ts
-const MessageToast: { show(message: ReactNode, o?: MessageToastOptions): void; }
-```
-
-### `MessageToastOptions` — interface
-
-sap.m.MessageToast `show` options (1.154).
-
-| Member | Required | Type | Description |
-| --- | --- | --- | --- |
-| `duration` |  | `number` | Milliseconds before the close animation starts (UI5 default 3000). |
-| `width` |  | `string` | CSS width (UI5 default 15em; the default comes from the token --sk-toast-width). |
-| `my` |  | `Dock` | The point of the toast that is aligned (UI5 default 'CenterBottom'). |
-| `at` |  | `Dock` | The point of the reference (`of`) the toast is aligned to (UI5 default 'CenterBottom'). |
-| `of` |  | `Element` | The reference element (default: the window). |
-| `offset` |  | `string` | Offset 'x y' in pixels (UI5 default '0 0'). |
-| `collision` |  | `string` | 'fit', 'flip' or 'none', per axis (UI5 default 'fit fit'); smart-kit always keeps the toast inside the window. |
-| `onClose` |  | `() => void` | Called after the toast has closed. |
-| `autoClose` |  | `boolean` | Closes as soon as the user touches or clicks the screen (UI5 default true). |
-| `animationTimingFunction` |  | `string` | CSS timing function of the close animation (UI5 default 'ease'). |
-| `animationDuration` |  | `number` | Duration of the close animation in milliseconds (UI5 default 1000). |
-| `closeOnBrowserNavigation` |  | `boolean` | Accepted and ignored: smart-kit has no router (ADR-010). |
-
-### `MessageView` — component
-
-sap.m.MessageView
-
-`import { MessageView } from '@rhfan2019/smart-kit/messages';`
-
-| Prop | Required | Type | Description |
-| --- | --- | --- | --- |
-| `children` |  | `ReactNode` | `MessageItem` elements. |
-| `items` |  | `Message[]` | Extension: core messages (ADR-023), shown like MessageItems: text as title, target as subtitle and active title. |
-| `groupItems` |  | `boolean` | Groups the items by `groupName`. UI5 default false. |
-| `showDetailsPageHeader` |  | `boolean` | Shows the header with the back button on the details page. UI5 default true. |
-| `headerButton` |  | `ReactNode` | A button at the end of the list header (MessagePopover `headerButton`). |
-| `onItemSelect` |  | `(e: { item: MessageViewItem; messageTypeFilter: MessageType \| 'All' }) => void` |  |
-| `onActiveTitlePress` |  | `(e: { item: MessageViewItem }) => void` |  |
-| `onListSelect` |  | `(e: { messageTypeFilter: MessageType \| 'All' }) => void` |  |
-| `onLongtextLoaded` |  | `() => void` | Fired after the long text of an item (`longtextUrl`) has been loaded. |
-| `ref` |  | `Ref&lt;MessageViewRef>` |  |
-
-### `MessageViewItem` — type
-
-An item as passed to event handlers: its properties, its React key, and (extension) the core message it came from.
-
-```ts
-export type MessageViewItem = MessageItemProps & { key?: string; message?: Message };
-```
-
-### `MessageViewProps` — interface
-
-Props of `MessageView` (see above).
-
-### `MessageViewRef` — interface
-
-| Member | Required | Type | Description |
-| --- | --- | --- | --- |
-| `navigateBack` | **yes** | `() => void` | Returns from the details page to the list (sap.m.MessageView#navigateBack). |
-
-### `useMessages` — hook
-
-The nearest page message collection, or null outside a MessageProvider.
-
-```ts
-useMessages(): MessagesApi | null
-```
-
-### `VerticalPlacementType` — const
-
-sap.m.VerticalPlacementType
-
-```ts
-const VerticalPlacementType: { readonly Vertical: "Vertical"; readonly Top: "Top"; readonly Bottom: "Bottom"; }
-```
-
 ## `@rhfan2019/smart-kit/templates`
 
 `ListContentItem` (interface) · `SmartListReport` (component) · `SmartListReportProps` (interface) · `SmartObjectPage` (component) · `SmartObjectPageProps` (interface)
@@ -1970,78 +1768,39 @@ Props of `SmartListReport` (see above).
 
 Props of `SmartObjectPage` (see above).
 
-## `@rhfan2019/smart-kit/cards`
+## `@rhfan2019/smart-kit/base/i18n/date/CalendarWeekNumbering`
 
-`AnalyticalContent` (component) · `AnalyticalContentProps` (interface) · `CalendarContent` (component) · `CalendarContentProps` (interface) · `CalendarLegendItem` (interface) · `CalendarSpecialDate` (interface) · `Card` (component) · `CardAnnotationSettings` (interface) · `CardDataProps` (interface) · `CardProps` (interface) · `DeviationIndicator` (type) · `EventItemPaths` (interface) · `Header` (component) · `HeaderProps` (interface) · `ListContent` (component) · `ListContentProps` (interface) · `NumericHeader` (component) · `NumericHeaderProps` (interface) · `NumericSideIndicator` (component) · `NumericSideIndicatorProps` (interface) · `ObjectContent` (component) · `ObjectContentProps` (interface) · `TableContent` (component) · `TableContentProps` (interface) · `TimelineContent` (component) · `TimelineContentProps` (interface) · `ValueColor` (type)
+`default` (const)
 
-### `AnalyticalContent` — component
+### `default` — const
 
-`import { AnalyticalContent } from '@rhfan2019/smart-kit/cards';`
+sap/base/i18n/date/CalendarWeekNumbering
 
-| Prop | Required | Type | Description |
-| --- | --- | --- | --- |
-| `entitySet` | **yes** | `string` | Entity set name as in `$metadata`, e.g. "Orders". |
-| `service` |  | `string` | Name of the service in `SmartKitProvider` `services`; default: the provider's `defaultService`. |
-| `chartAnnotationPath` |  | `string` | UI.Chart, e.g. "com.sap.vocabularies.UI.v1.Chart#ByStatus"; default: from the presentation variant, else the unqualified chart. |
-| `presentationAnnotationPath` |  | `string` | Qualified `UI.PresentationVariant` term, e.g. "@UI.PresentationVariant#Top5" (sort, MaxItems, chart). |
-| `selectionAnnotationPath` |  | `string` | Qualified `UI.SelectionVariant` term, e.g. "@UI.SelectionVariant#Open" (fixed filters). |
-| `filters` |  | `FilterState` | Filter state (from `useFilterState` / `SmartFilterBar`), applied to the request. |
-| `maxItems` |  | `number` | Maximum number of data points (default 4 for column, bar and donut; OVP fixed card layout). |
-| `navigation` |  | `'dataPointNav' \| 'headerNav' \| 'noHeaderNav'` | OVP `navigation`: "dataPointNav" (default: header and data points), "headerNav" (header only), "noHeaderNav" (data points only). |
-| `onDataPointPress` |  | `(dimension: string, value: string) => void` | Data point press: the dimension value of the selected point. |
-| `height` |  | `number` | Height of the chart area (CSS length; default the card token). |
-| `renderChart` |  | `(chart: ChartModel, data: ChartDatum[]) => ReactNode` | Replaces the drawing (e.g. with a chart library), for chart types SimpleChart does not draw. |
+```ts
+const default: { readonly Default: "Default"; readonly ISO_8601: "ISO_8601"; readonly MiddleEastern: "MiddleEastern"; readonly WesternTraditional: "West…
+```
 
-### `AnalyticalContentProps` — interface
+## `@rhfan2019/smart-kit/f/Card`
 
-Props of `AnalyticalContent` (see above).
+`$CardSettings` (interface) · `default` (component)
 
-### `CalendarContent` — component
-
-`import { CalendarContent } from '@rhfan2019/smart-kit/cards';`
-
-| Prop | Required | Type | Description |
-| --- | --- | --- | --- |
-| `entitySet` | **yes** | `string` | Entity set name as in `$metadata`, e.g. "Orders". |
-| `service` |  | `string` | Name of the service in `SmartKitProvider` `services`; default: the provider's `defaultService`. |
-| `item` |  | `EventItemPaths` | Property paths of the appointments; default Communication.Event. |
-| `selectionAnnotationPath` |  | `string` | UI.SelectionVariant that filters the appointments. |
-| `filters` |  | `FilterState` | Filter state (from `useFilterState` / `SmartFilterBar`), applied to the request. |
-| `date` |  | `string` | Initially selected day, "YYYY-MM-DD" (default today). |
-| `maxItems` |  | `number` | Visible appointments of the selected day (default 2). |
-| `maxLegendItems` |  | `number` | Visible legend items (default 2); the rest are counted in "More (x)". |
-| `noItemsText` |  | `string` | Text when there are no items. |
-| `specialDates` |  | `CalendarSpecialDate[]` |  |
-| `legendItems` |  | `CalendarLegendItem[]` | Legend items (texts of special day types, for example); the appointment types found are added (one circle each). |
-| `onAppointmentPress` |  | `(row: Row) => void` |  |
-| `onMorePress` |  | `(date: string) => void` | Press of "More"; default: the list page of the entity set. |
-| `onSelect` |  | `(date: string) => void` | Called when the user selects a day. |
-| `firstDayOfWeek` |  | `number` | First day of the week, 0 = Sunday … 6 = Saturday; default from the locale. |
-| `now` |  | `Date` | Reference time for "today" (default now). |
-
-### `CalendarContentProps` — interface
-
-Props of `CalendarContent` (see above).
-
-### `CalendarLegendItem` — interface
+### `$CardSettings` — interface
 
 | Member | Required | Type | Description |
 | --- | --- | --- | --- |
-| `category` | **yes** | `'calendar' \| 'appointment'` | "calendar": special days (square); "appointment": appointment types (circle). |
-| `text` | **yes** | `string` |  |
-| `type` | **yes** | `string` |  |
+| `header` |  | `ReactNode` | Header (`Header` or `NumericHeader`). |
+| `headerPosition` |  | `'Top' \| 'Bottom'` | Position of the header (sap.f.cards.HeaderPosition); default "Top". |
+| `children` |  | `ReactNode` | Content (`ListContent`, `TableContent`, …, or any React content: the Component card). |
+| `footer` |  | `ReactNode` | Footer, e.g. buttons (the integration card's actions strip). |
+| `width` |  | `string` | CSS width; default: the width of the container (CD-08). |
+| `height` |  | `string` | CSS height; default: the height of the content. |
+| `className` |  | `string` | Extra CSS class on the root element. |
+| `style` |  | `CSSProperties` | Inline style, e.g. `{ width: 400 }` (cards fill their container otherwise). |
+| `aria-roledescription` |  | `string` | Accessible description of the card type, e.g. "List card". |
 
-### `CalendarSpecialDate` — interface
+### `default` — component
 
-| Member | Required | Type | Description |
-| --- | --- | --- | --- |
-| `startDate` | **yes** | `string` | Day, "YYYY-MM-DD". |
-| `type` | **yes** | `string` | Legend type (matches `CalendarLegendItem.type`). |
-| `endDate` |  | `string` | Last day of a range, "YYYY-MM-DD". |
-
-### `Card` — component
-
-`import { Card } from '@rhfan2019/smart-kit/cards';`
+`import { default } from '@rhfan2019/smart-kit/f/Card';`
 
 | Prop | Required | Type | Description |
 | --- | --- | --- | --- |
@@ -2055,43 +1814,29 @@ Props of `CalendarContent` (see above).
 | `style` |  | `CSSProperties` | Inline style, e.g. `{ width: 400 }` (cards fill their container otherwise). |
 | `aria-roledescription` |  | `string` | Accessible description of the card type, e.g. "List card". |
 
-### `CardAnnotationSettings` — interface
+## `@rhfan2019/smart-kit/f/cards/Header`
+
+`$HeaderSettings` (interface) · `default` (component)
+
+### `$HeaderSettings` — interface
 
 | Member | Required | Type | Description |
 | --- | --- | --- | --- |
-| `annotationPath` |  | `string` | UI.LineItem (or another collection) of the content, e.g. "com.sap.vocabularies.UI.v1.LineItem#Card". |
-| `presentationAnnotationPath` |  | `string` | UI.PresentationVariant: sort order, MaxItems and the line item to use. |
-| `selectionAnnotationPath` |  | `string` | UI.SelectionVariant: the filter of the card. |
+| `title` |  | `string` | Title; default: from the content's annotations (UI.HeaderInfo). |
+| `subtitle` |  | `string` | Subtitle text. |
+| `statusText` |  | `string` | Counter text, e.g. "5 of 40"; default: from the content (CD-03). |
+| `iconSrc` |  | `string` | Image URL of the avatar. |
+| `iconInitials` |  | `string` | Initials shown in the avatar. |
+| `iconDisplayShape` |  | `'Circle' \| 'Square'` | Avatar shape (sap.m.AvatarShape); default "Circle". |
+| `iconAlt` |  | `string` |  |
+| `icon` |  | `ReactNode` | An icon element (for example from lucide-react) instead of an image or initials. |
+| `titleMaxLines` |  | `number` | Lines before the title is truncated (default 3, CD-02). |
+| `subtitleMaxLines` |  | `number` | Lines before the subtitle is truncated (default 2, CD-02). |
+| `onPress` |  | `() => void` | Press of the header (event `press`). |
 
-### `CardDataProps` — interface
+### `default` — component
 
-Props of `CardData` (see above).
-
-### `CardProps` — interface
-
-Props of `Card` (see above).
-
-### `DeviationIndicator` — type
-
-```ts
-export type DeviationIndicator = 'Up' | 'Down' | 'None';
-```
-
-### `EventItemPaths` — interface
-
-Property paths of an event (the manifest item template of the integration card, with property paths).
-
-| Member | Required | Type | Description |
-| --- | --- | --- | --- |
-| `startDate` |  | `string` | Start (calendar `startDate`, timeline `dateTime`); default Communication.Event/dtstart. |
-| `endDate` |  | `string` | End; default Communication.Event/dtend. |
-| `title` |  | `string` | Title; default Communication.Event/summary. |
-| `text` |  | `string` | Second line; default Communication.Event/description. |
-| `type` |  | `string` | Category (legend and colour); default Communication.Event/categories. |
-
-### `Header` — component
-
-`import { Header } from '@rhfan2019/smart-kit/cards';`
+`import { default } from '@rhfan2019/smart-kit/f/cards/Header';`
 
 | Prop | Required | Type | Description |
 | --- | --- | --- | --- |
@@ -2107,39 +1852,13 @@ Property paths of an event (the manifest item template of the integration card, 
 | `subtitleMaxLines` |  | `number` | Lines before the subtitle is truncated (default 2, CD-02). |
 | `onPress` |  | `() => void` | Press of the header (event `press`). |
 
-### `HeaderProps` — interface
+## `@rhfan2019/smart-kit/f/cards/NumericHeader`
 
-Props of `Header` (see above).
+`$NumericHeaderSettings` (interface) · `default` (component) · `DeviationIndicator` (type) · `ValueColor` (type)
 
-### `ListContent` — component
+### `$NumericHeaderSettings` — interface
 
-`import { ListContent } from '@rhfan2019/smart-kit/cards';`
-
-| Prop | Required | Type | Description |
-| --- | --- | --- | --- |
-| `entitySet` | **yes** | `string` | Entity set name as in `$metadata`, e.g. "Orders". |
-| `listType` |  | `'condensed' \| 'extended'` | OVP `listType`: "condensed" (standard item, 3 values; default) or "extended" (up to 6 values). |
-| `listFlavor` |  | `'standard' \| 'bar'` | OVP `listFlavor`: "standard" (default) or "bar" (bar chart list card). With "bar", a data point with a target value is drawn as a bullet micro chart (the integration card's list item chart), otherwise as a bar. |
-| `highlight` |  | `boolean` | Coloured line at the start of each item from the criticality of the item (integration card `highlight`). |
-| `showStateIcon` |  | `boolean` | Icon in front of the info value when it has a state (integration card `info.showStateIcon`). |
-| `service` |  | `string` | Name of the service in `SmartKitProvider` `services`; default: the provider's `defaultService`. |
-| `maxItems` |  | `number` | Maximum number of items (manifest `maxItems`); default from UI.PresentationVariant/MaxItems, else per card type. |
-| `filters` |  | `FilterState` | Additional filters, e.g. from a filter bar above the cards (the OVP global filter). |
-| `onItemPress` |  | `(row: Row) => void` | Item press; default: the object page of the row when the navigation adapter has one (CD-05). |
-| `headerNavigation` |  | `boolean` | Header press default; false: the header does not navigate. |
-| `annotationPath` |  | `string` | UI.LineItem (or another collection) of the content, e.g. "com.sap.vocabularies.UI.v1.LineItem#Card". |
-| `presentationAnnotationPath` |  | `string` | UI.PresentationVariant: sort order, MaxItems and the line item to use. |
-| `selectionAnnotationPath` |  | `string` | UI.SelectionVariant: the filter of the card. |
-
-### `ListContentProps` — interface
-
-Props of `ListContent` (see above).
-
-### `NumericHeader` — component
-
-`import { NumericHeader } from '@rhfan2019/smart-kit/cards';`
-
-| Prop | Required | Type | Description |
+| Member | Required | Type | Description |
 | --- | --- | --- | --- |
 | `unitOfMeasurement` |  | `string` | Unit of the number, shown in the subtitle row: "&lt;subtitle> \| &lt;unit>" (CD-04). |
 | `number` |  | `string` | The main indicator (KPI) value, already formatted. |
@@ -2149,7 +1868,7 @@ Props of `ListContent` (see above).
 | `numberSize` |  | `'S' \| 'L'` | Size of the number (default "L"). |
 | `details` |  | `string` | Text below the number, e.g. the period of the KPI. |
 | `detailsState` |  | `ValueColor` |  |
-| `sideIndicators` |  | `NumericSideIndicatorProps[]` | Up to two side indicators (CD-04). |
+| `sideIndicators` |  | `$NumericSideIndicatorSettings[]` | Up to two side indicators (CD-04). |
 | `entitySet` |  | `string` | Annotation-driven KPI (OVP KPI header, docs/20): the entity set and the UI.DataPoint whose value is summed on the server. Number, scale, unit, state, trend and the target / deviation side indicators come from the data point unless given as props. |
 | `service` |  | `string` | Name of the service in `SmartKitProvider` `services`; default: the provider's `defaultService`. |
 | `dataPointAnnotationPath` |  | `string` | e.g. "com.sap.vocabularies.UI.v1.DataPoint#Spend" or "@UI.DataPoint#Spend". |
@@ -2162,15 +1881,63 @@ Props of `ListContent` (see above).
 | `subtitleMaxLines` |  | `number` | Lines before the subtitle is truncated (default 2, CD-02). |
 | `onPress` |  | `() => void` | Press of the header (event `press`). |
 
-### `NumericHeaderProps` — interface
+### `default` — component
 
-Props of `NumericHeader` (see above).
+`import { default } from '@rhfan2019/smart-kit/f/cards/NumericHeader';`
 
-### `NumericSideIndicator` — component
+| Prop | Required | Type | Description |
+| --- | --- | --- | --- |
+| `unitOfMeasurement` |  | `string` | Unit of the number, shown in the subtitle row: "&lt;subtitle> \| &lt;unit>" (CD-04). |
+| `number` |  | `string` | The main indicator (KPI) value, already formatted. |
+| `scale` |  | `string` | Scaling factor shown next to the number, e.g. "K". |
+| `trend` |  | `DeviationIndicator` | Trend arrow: "Up" \| "Down" \| "None". |
+| `state` |  | `ValueColor` | Value state colour: "Good" \| "Error" \| "Critical" \| "Neutral" \| "None". |
+| `numberSize` |  | `'S' \| 'L'` | Size of the number (default "L"). |
+| `details` |  | `string` | Text below the number, e.g. the period of the KPI. |
+| `detailsState` |  | `ValueColor` |  |
+| `sideIndicators` |  | `$NumericSideIndicatorSettings[]` | Up to two side indicators (CD-04). |
+| `entitySet` |  | `string` | Annotation-driven KPI (OVP KPI header, docs/20): the entity set and the UI.DataPoint whose value is summed on the server. Number, scale, unit, state, trend and the target / deviation side indicators come from the data point unless given as props. |
+| `service` |  | `string` | Name of the service in `SmartKitProvider` `services`; default: the provider's `defaultService`. |
+| `dataPointAnnotationPath` |  | `string` | e.g. "com.sap.vocabularies.UI.v1.DataPoint#Spend" or "@UI.DataPoint#Spend". |
+| `selectionAnnotationPath` |  | `string` | UI.SelectionVariant that filters the KPI. |
+| `filters` |  | `FilterState` | Additional filters (e.g. from a filter bar). |
+| `title` |  | `string` | Title; default: from the content's annotations (UI.HeaderInfo). |
+| `subtitle` |  | `string` | Subtitle text. |
+| `statusText` |  | `string` | Counter text, e.g. "5 of 40"; default: from the content (CD-03). |
+| `titleMaxLines` |  | `number` | Lines before the title is truncated (default 3, CD-02). |
+| `subtitleMaxLines` |  | `number` | Lines before the subtitle is truncated (default 2, CD-02). |
+| `onPress` |  | `() => void` | Press of the header (event `press`). |
+
+### `DeviationIndicator` — type
+
+```ts
+export type DeviationIndicator = 'Up' | 'Down' | 'None';
+```
+
+### `ValueColor` — type
+
+```ts
+export type ValueColor = 'Good' | 'Critical' | 'Error' | 'Neutral' | 'None';
+```
+
+## `@rhfan2019/smart-kit/f/cards/NumericSideIndicator`
+
+`$NumericSideIndicatorSettings` (interface) · `default` (component)
+
+### `$NumericSideIndicatorSettings` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `title` | **yes** | `string` | Title text. |
+| `number` |  | `string` | The number to show. |
+| `unit` |  | `string` | Unit or currency code shown with the value. |
+| `state` |  | `ValueColor` | Colour of the number (sap.m.ValueColor). |
+
+### `default` — component
 
 Side indicator of a numeric header (e.g. target, deviation).
 
-`import { NumericSideIndicator } from '@rhfan2019/smart-kit/cards';`
+`import { default } from '@rhfan2019/smart-kit/f/cards/NumericSideIndicator';`
 
 | Prop | Required | Type | Description |
 | --- | --- | --- | --- |
@@ -2179,129 +1946,115 @@ Side indicator of a numeric header (e.g. target, deviation).
 | `unit` |  | `string` | Unit or currency code shown with the value. |
 | `state` |  | `ValueColor` | Colour of the number (sap.m.ValueColor). |
 
-### `NumericSideIndicatorProps` — interface
+## `@rhfan2019/smart-kit/kit/MessageHost`
 
-Props of `NumericSideIndicator` (see above).
+`default` (component)
 
-### `ObjectContent` — component
+### `default` — component
 
-`import { ObjectContent } from '@rhfan2019/smart-kit/cards';`
+Host of MessageToast and MessageBox. Only the first mounted host renders.
 
-| Prop | Required | Type | Description |
-| --- | --- | --- | --- |
-| `entitySet` | **yes** | `string` | Entity set name as in `$metadata`, e.g. "Orders". |
-| `service` |  | `string` | Name of the service in `SmartKitProvider` `services`; default: the provider's `defaultService`. |
-| `keys` |  | `Row` | Key values of the object, e.g. { ID: '42' }. |
-| `path` |  | `EntityPath` | Entity path of the object instead of `keys`, e.g. "Orders('42')". |
-| `annotationPath` |  | `string` | Groups: "UI.QuickViewFacets" (default when present), "UI.Facets" or "UI.FieldGroup#Q". |
-| `identificationAnnotationPath` |  | `string \| false` | Footer actions: UI.Identification (default "com.sap.vocabularies.UI.v1.Identification"); false: no actions. |
-| `onAction` |  | `(action: ActionModel, row: Row, path: EntityPath) => void \| Promise&lt;void>` | Runs an action; default: the bound action is invoked without parameters and the card reloads. |
-| `headerNavigation` |  | `boolean` | Header press default: the object page of the object; false: none. |
+`import { default } from '@rhfan2019/smart-kit/kit/MessageHost';`
 
-### `ObjectContentProps` — interface
+_no props_
 
-Props of `ObjectContent` (see above).
+## `@rhfan2019/smart-kit/kit/MessageIcon`
 
-### `TableContent` — component
+`default` (component)
 
-`import { TableContent } from '@rhfan2019/smart-kit/cards';`
+### `default` — component
+
+`import { default } from '@rhfan2019/smart-kit/kit/MessageIcon';`
 
 | Prop | Required | Type | Description |
 | --- | --- | --- | --- |
-| `entitySet` | **yes** | `string` | Entity set name as in `$metadata`, e.g. "Orders". |
-| `maxColumns` |  | `number` | Maximum number of columns (default 3, OVP table card). |
-| `service` |  | `string` | Name of the service in `SmartKitProvider` `services`; default: the provider's `defaultService`. |
-| `maxItems` |  | `number` | Maximum number of items (manifest `maxItems`); default from UI.PresentationVariant/MaxItems, else per card type. |
-| `filters` |  | `FilterState` | Additional filters, e.g. from a filter bar above the cards (the OVP global filter). |
-| `onItemPress` |  | `(row: Row) => void` | Item press; default: the object page of the row when the navigation adapter has one (CD-05). |
-| `headerNavigation` |  | `boolean` | Header press default; false: the header does not navigate. |
-| `annotationPath` |  | `string` | UI.LineItem (or another collection) of the content, e.g. "com.sap.vocabularies.UI.v1.LineItem#Card". |
-| `presentationAnnotationPath` |  | `string` | UI.PresentationVariant: sort order, MaxItems and the line item to use. |
-| `selectionAnnotationPath` |  | `string` | UI.SelectionVariant: the filter of the card. |
+| `type` | **yes** | `Message['type']` |  |
 
-### `TableContentProps` — interface
+## `@rhfan2019/smart-kit/kit/MessageProvider`
 
-Props of `TableContent` (see above).
+`default` (component)
 
-### `TimelineContent` — component
+### `default` — component
 
-`import { TimelineContent } from '@rhfan2019/smart-kit/cards';`
+`import { default } from '@rhfan2019/smart-kit/kit/MessageProvider';`
 
 | Prop | Required | Type | Description |
 | --- | --- | --- | --- |
-| `entitySet` | **yes** | `string` | Entity set name as in `$metadata`, e.g. "Orders". |
-| `item` |  | `Pick&lt;EventItemPaths, 'startDate' \| 'title' \| 'text'>` | Property paths of the items; default Communication.Event. |
-| `icon` |  | `ReactNode` | Icon of every item; default a calendar icon. |
-| `sortOldestFirst` |  | `boolean` | Oldest item first instead of newest first. |
-| `now` |  | `Date` | Reference time for "Today" (default now). |
-| `service` |  | `string` | Name of the service in `SmartKitProvider` `services`; default: the provider's `defaultService`. |
-| `maxItems` |  | `number` | Maximum number of items (manifest `maxItems`); default from UI.PresentationVariant/MaxItems, else per card type. |
-| `filters` |  | `FilterState` | Additional filters, e.g. from a filter bar above the cards (the OVP global filter). |
-| `onItemPress` |  | `(row: Row) => void` | Item press; default: the object page of the row when the navigation adapter has one (CD-05). |
-| `headerNavigation` |  | `boolean` | Header press default; false: the header does not navigate. |
-| `annotationPath` |  | `string` | UI.LineItem (or another collection) of the content, e.g. "com.sap.vocabularies.UI.v1.LineItem#Card". |
-| `presentationAnnotationPath` |  | `string` | UI.PresentationVariant: sort order, MaxItems and the line item to use. |
-| `selectionAnnotationPath` |  | `string` | UI.SelectionVariant: the filter of the card. |
+| `children` |  | `ReactNode` |  |
+| `onNavigate` |  | `(m: Message) => void` |  |
 
-### `TimelineContentProps` — interface
+## `@rhfan2019/smart-kit/kit/useMessages`
 
-Props of `TimelineContent` (see above).
+`default` (hook) · `MessagesApi` (interface)
 
-### `ValueColor` — type
+### `default` — hook
+
+The nearest page message collection, or null outside a MessageProvider.
 
 ```ts
-export type ValueColor = 'Good' | 'Critical' | 'Error' | 'Neutral' | 'None';
+default(): MessagesApi | null
 ```
 
-## `@rhfan2019/smart-kit/controls`
+### `MessagesApi` — interface
 
-`ActionsPlaceholder` (component) · `AvatarShape` (const) · `AvatarSize` (const) · `BackgroundDesign` (const) · `BadgeStyle` (const) · `BusyDialog` (component) · `BusyDialogProps` (interface) · `BusyDialogRef` (interface) · `BusyIndicator` (component) · `BusyIndicatorProps` (interface) · `ButtonAccessibleRole` (const) · `ButtonType` (const) · `CalendarWeekNumbering` (const) · `Column` (interface) · `ColumnListItem` (interface) · `Currency` (component) · `CurrencyProps` (interface) · `DateLike` (type) · `DEFAULT_STANDARD_OPTIONS` (const) · `DynamicDateFormatter` (interface) · `DynamicDateOption` (interface) · `DynamicDateRange` (component) · `DynamicDateRangeProps` (interface) · `DynamicDateRangeRef` (interface) · `DynamicDateRangeValue` (interface) · `dynamicDateValueTypes` (function) · `EmptyIndicatorMode` (const) · `ExpandableText` (component) · `ExpandableTextOverflowMode` (const) · `ExpandableTextProps` (interface) · `FeedInput` (component) · `FeedInputProps` (interface) · `FeedListItem` (component) · `FeedListItemAction` (interface) · `FeedListItemPressEvent` (interface) · `FeedListItemProps` (interface) · `FilenameValidationConfig` (interface) · `FilePreviewDialog` (interface) · `IconColor` (const) · `IconTabBar` (component) · `IconTabBarProps` (interface) · `IconTabDensityMode` (const) · `IconTabFilter` (component) · `IconTabFilterDesign` (const) · `IconTabFilterInteractionMode` (const) · `IconTabFilterItem` (interface) · `IconTabFilterProps` (interface) · `IconTabHeaderMode` (const) · `IconTabItem` (type) · `IconTabSeparator` (component) · `IconTabSeparatorProps` (interface) · `IllustratedMessage` (component) · `IllustratedMessageProps` (interface) · `IllustratedMessageSize` (const) · `IllustratedMessageType` (const) · `IndicationColor` (const) · `LinkConversion` (const) · `ListItemBase` (interface) · `ListType` (const) · `ListUpdateEvent` (interface) · `MessageType` (const) · `messageTypeOf` (function) · `MicroProcessFlow` (component) · `MicroProcessFlowItem` (component) · `MicroProcessFlowItemProps` (interface) · `MicroProcessFlowPressedItem` (type) · `MicroProcessFlowProps` (interface) · `MicroProcessFlowRenderType` (const) · `ObjectIdentifier` (component) · `ObjectIdentifierProps` (interface) · `ObjectMarker` (component) · `ObjectMarkerProps` (interface) · `ObjectMarkerType` (const) · `ObjectMarkerVisibility` (const) · `ObjectNumber` (component) · `ObjectNumberDisplayMode` (const) · `ObjectNumberProps` (interface) · `ObjectStatus` (component) · `ObjectStatusProps` (interface) · `OverflowToolbar` (component) · `OverflowToolbarButton` (component) · `OverflowToolbarButtonProps` (interface) · `OverflowToolbarLayoutData` (interface) · `OverflowToolbarPriority` (const) · `OverflowToolbarProps` (interface) · `OverflowToolbarRef` (interface) · `PageBackgroundDesign` (const) · `PopinDisplay` (type) · `PreventableEvent` (type) · `Priority` (type) · `ProcessFlow` (component) · `ProcessFlowChild` (interface) · `ProcessFlowConnectionLabel` (interface) · `ProcessFlowConnectionLabelState` (const) · `ProcessFlowLabelPressInfo` (interface) · `ProcessFlowLaneHeader` (interface) · `ProcessFlowLaneState` (interface) · `ProcessFlowNode` (interface) · `ProcessFlowNodeState` (const) · `ProcessFlowNodeType` (const) · `ProcessFlowProps` (interface) · `ProcessFlowRef` (interface) · `ProcessFlowZoomLevel` (const) · `ReactiveAreaMode` (const) · `RESTRICTED_FILE_NAME_CHARACTERS` (const) · `SelectDialog` (component) · `SelectDialogInitialFocus` (const) · `SelectDialogProps` (interface) · `SelectDialogRef` (interface) · `SortOrder` (type) · `StandardDynamicDateRangeKeys` (const) · `StandardListItem` (interface) · `StringFilterOperator` (const) · `TableSelectDialog` (component) · `TableSelectDialogProps` (interface) · `TableSelectDialogRef` (interface) · `TabsOverflowMode` (const) · `TextAlign` (type) · `Timeline` (component) · `TimelineAlignment` (const) · `TimelineAxisOrientation` (const) · `TimelineCustomAction` (interface) · `TimelineFilterListItem` (interface) · `TimelineFilterReasons` (interface) · `TimelineFilterSelectionChangeEvent` (interface) · `TimelineFilterType` (const) · `TimelineGroupType` (const) · `TimelineItem` (component) · `TimelineItemFilteringEvent` (interface) · `TimelineItemProps` (interface) · `TimelineProps` (interface) · `TimelineRef` (interface) · `TimelineSelectedItem` (type) · `TimelineTimeKeys` (interface) · `TitleAlignment` (const) · `TitleLevel` (const) · `toDates` (function) · `ToggleButton` (component) · `ToggleButtonProps` (interface) · `ToolbarDesign` (const) · `ToolbarSpacer` (component) · `ToolbarSpacerProps` (interface) · `ToolbarStyle` (const) · `UploadCompletedEvent` (interface) · `UploaderHttpRequestMethod` (const) · `UploaderTableItem` (const) · `UploadHeaderField` (interface) · `UploadItem` (interface) · `UploadItemInstance` (type) · `UploadSetwithTable` (component) · `UploadSetwithTableActionPlaceHolder` (const) · `UploadSetwithTableColumn` (interface) · `UploadSetwithTableItemInfo` (interface) · `UploadSetwithTableProps` (interface) · `UploadSetwithTableRef` (interface) · `UploadState` (const) · `ValueState` (const) · `VerticalAlign` (type) · `ViewSettingsCustomTab` (interface) · `ViewSettingsDialog` (component) · `ViewSettingsDialogConfirmEvent` (interface) · `ViewSettingsDialogPage` (type) · `ViewSettingsDialogProps` (interface) · `ViewSettingsDialogRef` (interface) · `ViewSettingsFilterItem` (interface) · `viewSettingsFilterString` (function) · `ViewSettingsItem` (interface) · `Wizard` (component) · `WizardProps` (interface) · `WizardRef` (interface) · `WizardRenderMode` (const) · `WizardStep` (component) · `WizardStepInfo` (interface) · `WizardStepProps` (interface) · `WizardTitleLevel` (type) · `WrappingType` (const)
-
-### `ActionsPlaceholder` — component
-
-sap.m.upload.ActionsPlaceholder: where the upload button goes inside `actions`.
-
-`import { ActionsPlaceholder } from '@rhfan2019/smart-kit/controls';`
-
-| Prop | Required | Type | Description |
+| Member | Required | Type | Description |
 | --- | --- | --- | --- |
-| `placeholderFor` |  | `UploadSetwithTableActionPlaceHolder` |  |
+| `messages` | **yes** | `Message[]` |  |
+| `add` | **yes** | `(list: Message[]) => void` | Adds server or custom messages. |
+| `setClient` | **yes** | `(list: Message[]) => void` | Replaces the client validation messages. |
+| `remove` | **yes** | `(id: string) => void` |  |
+| `clear` | **yes** | `() => void` |  |
+| `onNavigate` |  | `(m: Message) => void` | Called when a message with a target is pressed (focus the field). |
 
-### `AvatarShape` — const
+## `@rhfan2019/smart-kit/m/AvatarShape`
+
+`default` (const)
+
+### `default` — const
 
 sap.m.AvatarShape
 
 ```ts
-const AvatarShape: { readonly Circle: "Circle"; readonly Square: "Square"; }
+const default: { readonly Circle: "Circle"; readonly Square: "Square"; }
 ```
 
-### `AvatarSize` — const
+## `@rhfan2019/smart-kit/m/AvatarSize`
+
+`default` (const)
+
+### `default` — const
 
 sap.m.AvatarSize
 
 ```ts
-const AvatarSize: { readonly XS: "XS"; readonly S: "S"; readonly M: "M"; readonly L: "L"; readonly XL: "XL"; readonly Custom: "Custom"; }
+const default: { readonly XS: "XS"; readonly S: "S"; readonly M: "M"; readonly L: "L"; readonly XL: "XL"; readonly Custom: "Custom"; }
 ```
 
-### `BackgroundDesign` — const
+## `@rhfan2019/smart-kit/m/BusyDialog`
 
-sap.m.BackgroundDesign
+`$BusyDialogSettings` (interface) · `default` (component)
 
-```ts
-const BackgroundDesign: { readonly Solid: "Solid"; readonly Translucent: "Translucent"; readonly Transparent: "Transparent"; }
-```
+### `$BusyDialogSettings` — interface
 
-### `BadgeStyle` — const
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `text` |  | `string` | Text below the busy indicator. |
+| `title` |  | `string` | Dialog title. |
+| `titleAlignment` |  | `TitleAlignmentValue` | Alignment of the title (default Auto: start, as in the Horizon theme). |
+| `cancelButtonText` |  | `string` | Text of the Cancel button (default "Cancel"). |
+| `showCancelButton` |  | `boolean` | Shows a Cancel button (default false); it, and Esc, close the dialog with `cancelPressed: true`. |
+| `onClose` |  | `(e: { cancelPressed: boolean }) => void` | Fired when the dialog closes. |
+| `ref` |  | `Ref&lt;BusyDialog>` |  |
+| `customIcon` |  | `ReactNode` | Icon rotated instead of the dots (a React node). |
+| `customIconRotationSpeed` |  | `number` | Milliseconds per rotation of the custom icon (default 1000). |
+| `customIconWidth` |  | `string` | Width of the custom icon (CSS length; default 44px). |
+| `customIconHeight` |  | `string` | Height of the custom icon (CSS length; default 44px). |
 
-sap.m.BadgeStyle
+### `default` — component
 
-```ts
-const BadgeStyle: { readonly Default: "Default"; readonly Attention: "Attention"; }
-```
+Instance methods of BusyDialog.
 
-### `BusyDialog` — component
-
-`import { BusyDialog } from '@rhfan2019/smart-kit/controls';`
+`import { default } from '@rhfan2019/smart-kit/m/BusyDialog';`
 
 | Prop | Required | Type | Description |
 | --- | --- | --- | --- |
@@ -2311,28 +2064,314 @@ const BadgeStyle: { readonly Default: "Default"; readonly Attention: "Attention"
 | `cancelButtonText` |  | `string` | Text of the Cancel button (default "Cancel"). |
 | `showCancelButton` |  | `boolean` | Shows a Cancel button (default false); it, and Esc, close the dialog with `cancelPressed: true`. |
 | `onClose` |  | `(e: { cancelPressed: boolean }) => void` | Fired when the dialog closes. |
-| `ref` |  | `Ref&lt;BusyDialogRef>` |  |
+| `ref` |  | `Ref&lt;BusyDialog>` |  |
 | `customIcon` |  | `ReactNode` | Icon rotated instead of the dots (a React node). |
 | `customIconRotationSpeed` |  | `number` | Milliseconds per rotation of the custom icon (default 1000). |
 | `customIconWidth` |  | `string` | Width of the custom icon (CSS length; default 44px). |
 | `customIconHeight` |  | `string` | Height of the custom icon (CSS length; default 44px). |
 
-### `BusyDialogProps` — interface
+## `@rhfan2019/smart-kit/m/BusyIndicator`
 
-Props of `BusyDialog` (see above).
+`$BusyIndicatorSettings` (interface) · `BusyCustomIconProps` (interface) · `default` (component)
 
-### `BusyDialogRef` — interface
-
-Instance methods of BusyDialog.
+### `$BusyIndicatorSettings` — interface
 
 | Member | Required | Type | Description |
 | --- | --- | --- | --- |
-| `open` | **yes** | `() => void` |  |
-| `close` | **yes** | `(isClosedFromUserInteraction?: boolean) => void` | Closes the dialog; `isClosedFromUserInteraction` becomes the event's `cancelPressed`. |
+| `text` |  | `string` | Text below the indicator. |
+| `size` |  | `string` | Size of the dots (CSS length; default 1rem). |
+| `customIcon` |  | `ReactNode` | Icon rotated instead of the dots (a React node). |
+| `customIconRotationSpeed` |  | `number` | Milliseconds per rotation of the custom icon (default 1000). |
+| `customIconWidth` |  | `string` | Width of the custom icon (CSS length; default 44px). |
+| `customIconHeight` |  | `string` | Height of the custom icon (CSS length; default 44px). |
+| `defaultChecked` |  | `boolean \| undefined` |  |
+| `defaultValue` |  | `string \| number \| readonly string[] \| undefined` |  |
+| `suppressContentEditableWarning` |  | `boolean \| undefined` |  |
+| `suppressHydrationWarning` |  | `boolean \| undefined` |  |
+| `accessKey` |  | `string \| undefined` |  |
+| `autoCapitalize` |  | `"off" \| "none" \| "on" \| "sentences" \| "words" \| "characters" \| undefined \| (string & {})` |  |
+| `autoFocus` |  | `boolean \| undefined` |  |
+| `className` |  | `string \| undefined` |  |
+| `contentEditable` |  | `Booleanish \| "inherit" \| "plaintext-only" \| undefined` |  |
+| `contextMenu` |  | `string \| undefined` |  |
+| `dir` |  | `string \| undefined` |  |
+| `draggable` |  | `Booleanish \| undefined` |  |
+| `enterKeyHint` |  | `"enter" \| "done" \| "go" \| "next" \| "previous" \| "search" \| "send" \| undefined` |  |
+| `hidden` |  | `boolean \| undefined` |  |
+| `id` |  | `string \| undefined` |  |
+| `lang` |  | `string \| undefined` |  |
+| `nonce` |  | `string \| undefined` |  |
+| `slot` |  | `string \| undefined` |  |
+| `spellCheck` |  | `Booleanish \| undefined` |  |
+| `style` |  | `CSSProperties \| undefined` |  |
+| `tabIndex` |  | `number \| undefined` |  |
+| `title` |  | `string \| undefined` |  |
+| `translate` |  | `"yes" \| "no" \| undefined` |  |
+| `radioGroup` |  | `string \| undefined` |  |
+| `role` |  | `AriaRole \| undefined` |  |
+| `about` |  | `string \| undefined` |  |
+| `content` |  | `string \| undefined` |  |
+| `datatype` |  | `string \| undefined` |  |
+| `inlist` |  | `any` |  |
+| `prefix` |  | `string \| undefined` |  |
+| `property` |  | `string \| undefined` |  |
+| `rel` |  | `string \| undefined` |  |
+| `resource` |  | `string \| undefined` |  |
+| `rev` |  | `string \| undefined` |  |
+| `typeof` |  | `string \| undefined` |  |
+| `vocab` |  | `string \| undefined` |  |
+| `autoCorrect` |  | `string \| undefined` |  |
+| `autoSave` |  | `string \| undefined` |  |
+| `color` |  | `string \| undefined` |  |
+| `itemProp` |  | `string \| undefined` |  |
+| `itemScope` |  | `boolean \| undefined` |  |
+| `itemType` |  | `string \| undefined` |  |
+| `itemID` |  | `string \| undefined` |  |
+| `itemRef` |  | `string \| undefined` |  |
+| `results` |  | `number \| undefined` |  |
+| `security` |  | `string \| undefined` |  |
+| `unselectable` |  | `"on" \| "off" \| undefined` |  |
+| `popover` |  | `"" \| "auto" \| "manual" \| "hint" \| undefined` |  |
+| `popoverTargetAction` |  | `"toggle" \| "show" \| "hide" \| undefined` |  |
+| `popoverTarget` |  | `string \| undefined` |  |
+| `inert` |  | `boolean \| undefined` |  |
+| `inputMode` |  | `"none" \| "text" \| "tel" \| "url" \| "email" \| "numeric" \| "decimal" \| "search" \| undefined` | Hints at the type of data that might be entered by the user while editing the element or its contents |
+| `is` |  | `string \| undefined` | Specify that a standard HTML element should behave like a defined custom built-in element |
+| `exportparts` |  | `string \| undefined` |  |
+| `part` |  | `string \| undefined` |  |
+| `aria-activedescendant` |  | `string \| undefined` | Identifies the currently active element when DOM focus is on a composite widget, textbox, group, or application. |
+| `aria-atomic` |  | `Booleanish \| undefined` | Indicates whether assistive technologies will present all, or only parts of, the changed region based on the change notifications defined by the aria-relevant attribute. |
+| `aria-autocomplete` |  | `"none" \| "inline" \| "list" \| "both" \| undefined` | Indicates whether inputting text could trigger display of one or more predictions of the user's intended value for an input and specifies how predictions would be presented if they are made. |
+| `aria-braillelabel` |  | `string \| undefined` | Defines a string value that labels the current element, which is intended to be converted into Braille. |
+| `aria-brailleroledescription` |  | `string \| undefined` | Defines a human-readable, author-localized abbreviated description for the role of an element, which is intended to be converted into Braille. |
+| `aria-busy` |  | `Booleanish \| undefined` |  |
+| `aria-checked` |  | `boolean \| "false" \| "mixed" \| "true" \| undefined` | Indicates the current "checked" state of checkboxes, radio buttons, and other widgets. |
+| `aria-colcount` |  | `number \| undefined` | Defines the total number of columns in a table, grid, or treegrid. |
+| `aria-colindex` |  | `number \| undefined` | Defines an element's column index or position with respect to the total number of columns within a table, grid, or treegrid. |
+| `aria-colindextext` |  | `string \| undefined` | Defines a human readable text alternative of aria-colindex. |
+| `aria-colspan` |  | `number \| undefined` | Defines the number of columns spanned by a cell or gridcell within a table, grid, or treegrid. |
+| `aria-controls` |  | `string \| undefined` | Identifies the element (or elements) whose contents or presence are controlled by the current element. |
+| `aria-current` |  | `boolean \| "false" \| "true" \| "page" \| "step" \| "location" \| "date" \| "time" \| undefined` | Indicates the element that represents the current item within a container or set of related elements. |
+| `aria-describedby` |  | `string \| undefined` | Identifies the element (or elements) that describes the object. |
+| `aria-description` |  | `string \| undefined` | Defines a string value that describes or annotates the current element. |
+| `aria-details` |  | `string \| undefined` | Identifies the element that provides a detailed, extended description for the object. |
+| `aria-disabled` |  | `Booleanish \| undefined` | Indicates that the element is perceivable but disabled, so it is not editable or otherwise operable. |
+| `aria-dropeffect` |  | `"none" \| "copy" \| "execute" \| "link" \| "move" \| "popup" \| undefined` | Indicates what functions can be performed when a dragged object is released on the drop target. **Deprecated**: in ARIA 1.1 |
+| `aria-errormessage` |  | `string \| undefined` | Identifies the element that provides an error message for the object. |
+| `aria-expanded` |  | `Booleanish \| undefined` | Indicates whether the element, or another grouping element it controls, is currently expanded or collapsed. |
+| `aria-flowto` |  | `string \| undefined` | Identifies the next element (or elements) in an alternate reading order of content which, at the user's discretion, allows assistive technology to override the general default of reading in document source order. |
+| `aria-grabbed` |  | `Booleanish \| undefined` | Indicates an element's "grabbed" state in a drag-and-drop operation. **Deprecated**: in ARIA 1.1 |
+| `aria-haspopup` |  | `boolean \| "false" \| "true" \| "menu" \| "listbox" \| "tree" \| "grid" \| "dialog" \| undefined` | Indicates the availability and type of interactive popup element, such as menu or dialog, that can be triggered by an element. |
+| `aria-hidden` |  | `Booleanish \| undefined` | Indicates whether the element is exposed to an accessibility API. |
+| `aria-invalid` |  | `boolean \| "false" \| "true" \| "grammar" \| "spelling" \| undefined` | Indicates the entered value does not conform to the format expected by the application. |
+| `aria-keyshortcuts` |  | `string \| undefined` | Indicates keyboard shortcuts that an author has implemented to activate or give focus to an element. |
+| `aria-label` |  | `string \| undefined` | Defines a string value that labels the current element. |
+| `aria-labelledby` |  | `string \| undefined` | Identifies the element (or elements) that labels the current element. |
+| `aria-level` |  | `number \| undefined` | Defines the hierarchical level of an element within a structure. |
+| `aria-live` |  | `"off" \| "assertive" \| "polite" \| undefined` | Indicates that an element will be updated, and describes the types of updates the user agents, assistive technologies, and user can expect from the live region. |
+| `aria-modal` |  | `Booleanish \| undefined` | Indicates whether an element is modal when displayed. |
+| `aria-multiline` |  | `Booleanish \| undefined` | Indicates whether a text box accepts multiple lines of input or only a single line. |
+| `aria-multiselectable` |  | `Booleanish \| undefined` | Indicates that the user may select more than one item from the current selectable descendants. |
+| `aria-orientation` |  | `"horizontal" \| "vertical" \| undefined` | Indicates whether the element's orientation is horizontal, vertical, or unknown/ambiguous. |
+| `aria-owns` |  | `string \| undefined` | Identifies an element (or elements) in order to define a visual, functional, or contextual parent/child relationship between DOM elements where the DOM hierarchy cannot be used to represent the relationship. |
+| `aria-placeholder` |  | `string \| undefined` | Defines a short hint (a word or short phrase) intended to aid the user with data entry when the control has no value. A hint could be a sample value or a brief description of the expected format. |
+| `aria-posinset` |  | `number \| undefined` | Defines an element's number or position in the current set of listitems or treeitems. Not required if all elements in the set are present in the DOM. |
+| `aria-pressed` |  | `boolean \| "false" \| "mixed" \| "true" \| undefined` | Indicates the current "pressed" state of toggle buttons. |
+| `aria-readonly` |  | `Booleanish \| undefined` | Indicates that the element is not editable, but is otherwise operable. |
+| `aria-relevant` |  | `\| "additions" \| "additions removals" \| "additions text" \| "all" \| "removals" \| "removals additions" \| "removals text" \| "text" \| "text ad…` | Indicates what notifications the user agent will trigger when the accessibility tree within a live region is modified. |
+| `aria-required` |  | `Booleanish \| undefined` | Indicates that user input is required on the element before a form may be submitted. |
+| `aria-roledescription` |  | `string \| undefined` | Defines a human-readable, author-localized description for the role of an element. |
+| `aria-rowcount` |  | `number \| undefined` | Defines the total number of rows in a table, grid, or treegrid. |
+| `aria-rowindex` |  | `number \| undefined` | Defines an element's row index or position with respect to the total number of rows within a table, grid, or treegrid. |
+| `aria-rowindextext` |  | `string \| undefined` | Defines a human readable text alternative of aria-rowindex. |
+| `aria-rowspan` |  | `number \| undefined` | Defines the number of rows spanned by a cell or gridcell within a table, grid, or treegrid. |
+| `aria-selected` |  | `Booleanish \| undefined` | Indicates the current "selected" state of various widgets. |
+| `aria-setsize` |  | `number \| undefined` | Defines the number of items in the current set of listitems or treeitems. Not required if all elements in the set are present in the DOM. |
+| `aria-sort` |  | `"none" \| "ascending" \| "descending" \| "other" \| undefined` | Indicates if items in a table or grid are sorted in ascending or descending order. |
+| `aria-valuemax` |  | `number \| undefined` | Defines the maximum allowed value for a range widget. |
+| `aria-valuemin` |  | `number \| undefined` | Defines the minimum allowed value for a range widget. |
+| `aria-valuenow` |  | `number \| undefined` | Defines the current value for a range widget. |
+| `aria-valuetext` |  | `string \| undefined` | Defines the human readable text alternative of aria-valuenow for a range widget. |
+| `children` |  | `ReactNode \| undefined` |  |
+| `dangerouslySetInnerHTML` |  | `{ // Should be InnerHTML['innerHTML']. // But unfortunately we're mixing renderer-specific type declarations. __html: string \| TrustedHTM…` |  |
+| `onCopy` |  | `ClipboardEventHandler&lt;T> \| undefined` |  |
+| `onCopyCapture` |  | `ClipboardEventHandler&lt;T> \| undefined` |  |
+| `onCut` |  | `ClipboardEventHandler&lt;T> \| undefined` |  |
+| `onCutCapture` |  | `ClipboardEventHandler&lt;T> \| undefined` |  |
+| `onPaste` |  | `ClipboardEventHandler&lt;T> \| undefined` |  |
+| `onPasteCapture` |  | `ClipboardEventHandler&lt;T> \| undefined` |  |
+| `onCompositionEnd` |  | `CompositionEventHandler&lt;T> \| undefined` |  |
+| `onCompositionEndCapture` |  | `CompositionEventHandler&lt;T> \| undefined` |  |
+| `onCompositionStart` |  | `CompositionEventHandler&lt;T> \| undefined` |  |
+| `onCompositionStartCapture` |  | `CompositionEventHandler&lt;T> \| undefined` |  |
+| `onCompositionUpdate` |  | `CompositionEventHandler&lt;T> \| undefined` |  |
+| `onCompositionUpdateCapture` |  | `CompositionEventHandler&lt;T> \| undefined` |  |
+| `onFocus` |  | `FocusEventHandler&lt;T> \| undefined` |  |
+| `onFocusCapture` |  | `FocusEventHandler&lt;T> \| undefined` |  |
+| `onBlur` |  | `FocusEventHandler&lt;T> \| undefined` |  |
+| `onBlurCapture` |  | `FocusEventHandler&lt;T> \| undefined` |  |
+| `onChange` |  | `ChangeEventHandler&lt;T> \| undefined` |  |
+| `onChangeCapture` |  | `ChangeEventHandler&lt;T> \| undefined` |  |
+| `onBeforeInput` |  | `InputEventHandler&lt;T> \| undefined` |  |
+| `onBeforeInputCapture` |  | `InputEventHandler&lt;T> \| undefined` |  |
+| `onInput` |  | `InputEventHandler&lt;T> \| undefined` |  |
+| `onInputCapture` |  | `InputEventHandler&lt;T> \| undefined` |  |
+| `onReset` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onResetCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onSubmit` |  | `SubmitEventHandler&lt;T> \| undefined` |  |
+| `onSubmitCapture` |  | `SubmitEventHandler&lt;T> \| undefined` |  |
+| `onInvalid` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onInvalidCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onLoad` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onLoadCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onError` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onErrorCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onKeyDown` |  | `KeyboardEventHandler&lt;T> \| undefined` |  |
+| `onKeyDownCapture` |  | `KeyboardEventHandler&lt;T> \| undefined` |  |
+| `onKeyPress` |  | `KeyboardEventHandler&lt;T> \| undefined` |  **Deprecated**: Use `onKeyUp` or `onKeyDown` instead |
+| `onKeyPressCapture` |  | `KeyboardEventHandler&lt;T> \| undefined` |  **Deprecated**: Use `onKeyUpCapture` or `onKeyDownCapture` instead |
+| `onKeyUp` |  | `KeyboardEventHandler&lt;T> \| undefined` |  |
+| `onKeyUpCapture` |  | `KeyboardEventHandler&lt;T> \| undefined` |  |
+| `onAbort` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onAbortCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onCanPlay` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onCanPlayCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onCanPlayThrough` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onCanPlayThroughCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onDurationChange` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onDurationChangeCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onEmptied` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onEmptiedCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onEncrypted` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onEncryptedCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onEnded` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onEndedCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onLoadedData` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onLoadedDataCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onLoadedMetadata` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onLoadedMetadataCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onLoadStart` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onLoadStartCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onPause` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onPauseCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onPlay` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onPlayCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onPlaying` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onPlayingCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onProgress` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onProgressCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onRateChange` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onRateChangeCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onSeeked` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onSeekedCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onSeeking` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onSeekingCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onStalled` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onStalledCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onSuspend` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onSuspendCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onTimeUpdate` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onTimeUpdateCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onVolumeChange` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onVolumeChangeCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onWaiting` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onWaitingCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onAuxClick` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onAuxClickCapture` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onClick` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onClickCapture` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onContextMenu` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onContextMenuCapture` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onDoubleClick` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onDoubleClickCapture` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onDrag` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onDragCapture` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onDragEnd` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onDragEndCapture` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onDragEnter` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onDragEnterCapture` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onDragExit` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onDragExitCapture` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onDragLeave` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onDragLeaveCapture` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onDragOver` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onDragOverCapture` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onDragStart` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onDragStartCapture` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onDrop` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onDropCapture` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onMouseDown` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onMouseDownCapture` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onMouseEnter` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onMouseLeave` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onMouseMove` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onMouseMoveCapture` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onMouseOut` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onMouseOutCapture` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onMouseOver` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onMouseOverCapture` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onMouseUp` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onMouseUpCapture` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onSelect` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onSelectCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onTouchCancel` |  | `TouchEventHandler&lt;T> \| undefined` |  |
+| `onTouchCancelCapture` |  | `TouchEventHandler&lt;T> \| undefined` |  |
+| `onTouchEnd` |  | `TouchEventHandler&lt;T> \| undefined` |  |
+| `onTouchEndCapture` |  | `TouchEventHandler&lt;T> \| undefined` |  |
+| `onTouchMove` |  | `TouchEventHandler&lt;T> \| undefined` |  |
+| `onTouchMoveCapture` |  | `TouchEventHandler&lt;T> \| undefined` |  |
+| `onTouchStart` |  | `TouchEventHandler&lt;T> \| undefined` |  |
+| `onTouchStartCapture` |  | `TouchEventHandler&lt;T> \| undefined` |  |
+| `onPointerDown` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onPointerDownCapture` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onPointerMove` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onPointerMoveCapture` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onPointerUp` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onPointerUpCapture` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onPointerCancel` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onPointerCancelCapture` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onPointerEnter` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onPointerLeave` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onPointerOver` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onPointerOverCapture` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onPointerOut` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onPointerOutCapture` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onGotPointerCapture` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onGotPointerCaptureCapture` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onLostPointerCapture` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onLostPointerCaptureCapture` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onScroll` |  | `UIEventHandler&lt;T> \| undefined` |  |
+| `onScrollCapture` |  | `UIEventHandler&lt;T> \| undefined` |  |
+| `onScrollEnd` |  | `UIEventHandler&lt;T> \| undefined` |  |
+| `onScrollEndCapture` |  | `UIEventHandler&lt;T> \| undefined` |  |
+| `onWheel` |  | `WheelEventHandler&lt;T> \| undefined` |  |
+| `onWheelCapture` |  | `WheelEventHandler&lt;T> \| undefined` |  |
+| `onAnimationStart` |  | `AnimationEventHandler&lt;T> \| undefined` |  |
+| `onAnimationStartCapture` |  | `AnimationEventHandler&lt;T> \| undefined` |  |
+| `onAnimationEnd` |  | `AnimationEventHandler&lt;T> \| undefined` |  |
+| `onAnimationEndCapture` |  | `AnimationEventHandler&lt;T> \| undefined` |  |
+| `onAnimationIteration` |  | `AnimationEventHandler&lt;T> \| undefined` |  |
+| `onAnimationIterationCapture` |  | `AnimationEventHandler&lt;T> \| undefined` |  |
+| `onToggle` |  | `ToggleEventHandler&lt;T> \| undefined` |  |
+| `onBeforeToggle` |  | `ToggleEventHandler&lt;T> \| undefined` |  |
+| `onTransitionCancel` |  | `TransitionEventHandler&lt;T> \| undefined` |  |
+| `onTransitionCancelCapture` |  | `TransitionEventHandler&lt;T> \| undefined` |  |
+| `onTransitionEnd` |  | `TransitionEventHandler&lt;T> \| undefined` |  |
+| `onTransitionEndCapture` |  | `TransitionEventHandler&lt;T> \| undefined` |  |
+| `onTransitionRun` |  | `TransitionEventHandler&lt;T> \| undefined` |  |
+| `onTransitionRunCapture` |  | `TransitionEventHandler&lt;T> \| undefined` |  |
+| `onTransitionStart` |  | `TransitionEventHandler&lt;T> \| undefined` |  |
+| `onTransitionStartCapture` |  | `TransitionEventHandler&lt;T> \| undefined` |  |
 
-### `BusyIndicator` — component
+### `BusyCustomIconProps` — interface
 
-`import { BusyIndicator } from '@rhfan2019/smart-kit/controls';`
+The custom icon properties shared by BusyIndicator and BusyDialog.
+
+Props of `BusyCustomIcon` (see above).
+
+### `default` — component
+
+`import { default } from '@rhfan2019/smart-kit/m/BusyIndicator';`
 
 | Prop | Required | Type | Description |
 | --- | --- | --- | --- |
@@ -2621,84 +2660,117 @@ Instance methods of BusyDialog.
 | `onTransitionStart` |  | `TransitionEventHandler&lt;T> \| undefined` |  |
 | `onTransitionStartCapture` |  | `TransitionEventHandler&lt;T> \| undefined` |  |
 
-### `BusyIndicatorProps` — interface
+## `@rhfan2019/smart-kit/m/DynamicDateRange`
 
-Props of `BusyIndicator` (see above).
+`$DynamicDateRangeSettings` (interface) · `default` (component) · `DynamicDateFormatter` (interface) · `DynamicDateOption` (interface) · `DynamicDateRangeValue` (interface)
 
-### `ButtonAccessibleRole` — const
-
-sap.m.ButtonAccessibleRole
-
-```ts
-const ButtonAccessibleRole: { readonly Default: "Default"; readonly Link: "Link"; }
-```
-
-### `ButtonType` — const
-
-sap.m.ButtonType
-
-```ts
-const ButtonType: { readonly Default: "Default"; readonly Back: "Back"; readonly Accept: "Accept"; readonly Reject: "Reject"; readonly Transparent: "Transp…
-```
-
-### `CalendarWeekNumbering` — const
-
-sap/base/i18n/date/CalendarWeekNumbering
-
-```ts
-const CalendarWeekNumbering: { readonly Default: "Default"; readonly ISO_8601: "ISO_8601"; readonly MiddleEastern: "MiddleEastern"; readonly WesternTraditional: "West…
-```
-
-### `Column` — interface
-
-sap.m.Column
+### `$DynamicDateRangeSettings` — interface
 
 | Member | Required | Type | Description |
 | --- | --- | --- | --- |
-| `header` |  | `ReactNode` |  |
-| `footer` |  | `ReactNode` |  |
-| `width` |  | `string` |  |
-| `hAlign` |  | `TextAlign` | ('Begin') |
-| `vAlign` |  | `VerticalAlign` | ('Inherit') |
-| `visible` |  | `boolean` | (true) |
-| `minScreenWidth` |  | `string` | CSS width or 'Phone' \| 'Tablet' \| 'Desktop' \| 'Small' \| 'Medium' \| 'Large' \| 'XLarge' \| 'XXLarge': below it the column is hidden or popped in. |
-| `demandPopin` |  | `boolean` | (false) |
-| `popinDisplay` |  | `PopinDisplay` | ('Block') |
-| `mergeDuplicates` |  | `boolean` | (false) Leaves a cell empty when it repeats the cell above. |
-| `sortIndicator` |  | `SortOrder` | ('None') |
-| `importance` |  | `Priority` | ('None') Kept for UI5 compatibility; the dialog's table has no automatic pop-in. |
-| `autoPopinWidth` |  | `number` | (8) Kept for UI5 compatibility (automatic pop-in only). |
+| `value` |  | `DynamicDateRangeValue` | The value (controlled); undefined: empty. |
+| `width` |  | `string` | CSS width of the field. |
+| `enabled` |  | `boolean` | (true) |
+| `valueState` |  | `ValueState` | ('None') |
+| `name` |  | `string` | Name of the input (forms). |
+| `placeholder` |  | `string` |  |
+| `editable` |  | `boolean` | (true) |
+| `valueStateText` |  | `string` |  |
+| `required` |  | `boolean` | (false) |
+| `enableGroupHeaders` |  | `boolean` | (true) Shows the group headers (single dates, date ranges, weeks …) in the option list. |
+| `formatter` |  | `DynamicDateFormatter` | Formats and parses the dates in the field (UI5: a DateFormat instance). |
+| `standardOptions` |  | `readonly StandardDynamicDateRangeKeys[]` | (all 68 keys) The standard options offered; the list keeps the UI5 grouping and this order inside each group. |
+| `hideInput` |  | `boolean` | (false) Renders no field; the popover is opened with `open(domRef)` / `openBy(domRef)`. |
+| `calendarWeekNumbering` |  | `CalendarWeekNumbering` | Week numbering for week options (default: the locale). |
+| `showClearIcon` |  | `boolean` | (false) |
+| `customOptions` |  | `DynamicDateOption[]` | Own options (sap.m.DynamicDateOption). |
+| `onChange` |  | `(e: { value: DynamicDateRangeValue \| undefined; valid: boolean }) => void` | Fired when the user picks, types or clears a value; `valid` is false when typed text could not be read. |
+| `label` |  | `ReactNode` | Extension: field label (Mantine input label). |
+| `id` |  | `string` |  |
+| `aria-label` |  | `string` |  |
+| `ref` |  | `Ref&lt;DynamicDateRange>` |  |
 
-### `ColumnListItem` — interface
+### `default` — component
 
-sap.m.ColumnListItem
+The DynamicDateRange control; `DynamicDateRange.toDates(value, calendarWeekNumbering)` is the UI5 static method.
 
-| Member | Required | Type | Description |
-| --- | --- | --- | --- |
-| `cells` | **yes** | `ReactNode[]` |  |
-| `key` | **yes** | `string` |  |
-| `vAlign` |  | `VerticalAlign` | ('Inherit') |
-| `type` |  | `ListType` | ('Inactive') |
-| `visible` |  | `boolean` | (true) |
-| `unread` |  | `boolean` | (false) Shows the title in bold. |
-| `selected` |  | `boolean` | (false) |
-| `counter` |  | `number` |  |
-| `highlight` |  | `string` | ('None') A ValueState or 'Indication01'…'Indication20': the coloured line at the start. |
-| `highlightText` |  | `string` |  |
-| `navigated` |  | `boolean` | (false) |
-
-### `Currency` — component
-
-`import { Currency } from '@rhfan2019/smart-kit/controls';`
+`import { default } from '@rhfan2019/smart-kit/m/DynamicDateRange';`
 
 | Prop | Required | Type | Description |
 | --- | --- | --- | --- |
-| `value` |  | `number \| null` | The amount (default 0). `null` counts as empty (see emptyIndicatorMode). |
-| `stringValue` |  | `string` | The exact amount as a decimal string (Edm.Decimal); used instead of `value`, avoiding float rounding. |
-| `currency` |  | `string` | ISO 4217 currency code. |
-| `maxPrecision` |  | `number` | Fraction digits the amount is padded to, so amounts in different currencies align (default: the currency's digits). |
-| `useSymbol` |  | `boolean` | Shows the currency symbol (€, $) instead of the code where one exists (default true). |
-| `emptyIndicatorMode` |  | `EmptyIndicatorMode` | Shows "–" when there is no amount (default Off). |
+| `value` |  | `DynamicDateRangeValue` | The value (controlled); undefined: empty. |
+| `width` |  | `string` | CSS width of the field. |
+| `enabled` |  | `boolean` | (true) |
+| `valueState` |  | `ValueState` | ('None') |
+| `name` |  | `string` | Name of the input (forms). |
+| `placeholder` |  | `string` |  |
+| `editable` |  | `boolean` | (true) |
+| `valueStateText` |  | `string` |  |
+| `required` |  | `boolean` | (false) |
+| `enableGroupHeaders` |  | `boolean` | (true) Shows the group headers (single dates, date ranges, weeks …) in the option list. |
+| `formatter` |  | `DynamicDateFormatter` | Formats and parses the dates in the field (UI5: a DateFormat instance). |
+| `standardOptions` |  | `readonly StandardDynamicDateRangeKeys[]` | (all 68 keys) The standard options offered; the list keeps the UI5 grouping and this order inside each group. |
+| `hideInput` |  | `boolean` | (false) Renders no field; the popover is opened with `open(domRef)` / `openBy(domRef)`. |
+| `calendarWeekNumbering` |  | `CalendarWeekNumbering` | Week numbering for week options (default: the locale). |
+| `showClearIcon` |  | `boolean` | (false) |
+| `customOptions` |  | `DynamicDateOption[]` | Own options (sap.m.DynamicDateOption). |
+| `onChange` |  | `(e: { value: DynamicDateRangeValue \| undefined; valid: boolean }) => void` | Fired when the user picks, types or clears a value; `valid` is false when typed text could not be read. |
+| `label` |  | `ReactNode` | Extension: field label (Mantine input label). |
+| `id` |  | `string` |  |
+| `aria-label` |  | `string` |  |
+| `ref` |  | `Ref&lt;DynamicDateRange>` |  |
+
+### `DynamicDateFormatter` — interface
+
+The date formatter of the `formatter` property (UI5: a sap.ui.core.format.DateFormat instance).
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `format` | **yes** | `(date: Date) => string` |  |
+| `parse` |  | `(text: string) => Date \| null` |  |
+
+### `DynamicDateOption` — interface
+
+A custom option (sap.m.DynamicDateOption); methods are optional except where the option needs them.
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `key` | **yes** | `string` |  |
+| `valueTypes` |  | `string[]` | The value types, e.g. `['int']`, `['date']`; empty: the option is picked without a detail page. |
+| `getText` |  | `() => string` | The option text in the list (UI5 `getText`). |
+| `getGroupHeader` |  | `() => string` | The group header shown above the option (UI5 `getGroupHeader`); default "Other Options". |
+| `format` |  | `(value: DynamicDateRangeValue) => string` |  |
+| `parse` |  | `(text: string) => DynamicDateRangeValue \| null \| undefined` |  |
+| `toDates` |  | `(value: DynamicDateRangeValue, calendarWeekNumbering?: CalendarWeekNumbering) => Date[]` |  |
+| `createValueHelpUI` |  | `(ctx: { value: DynamicDateRangeValue \| undefined; update(value: DynamicDateRangeValue \| undefined): void }) => ReactNode` | The detail page content. `update` takes the value the page stands for (undefined while it is incomplete); React's answer to UI5's `createValueHelpUI(oControl, fnControlsUpdated)`. |
+| `validateValueHelpUI` |  | `(value: DynamicDateRangeValue \| undefined) => boolean` | Whether the detail page is complete (default: a value was given to `update`). |
+| `enhanceFormattedValue` |  | `() => boolean` | Whether the field also shows the resolved dates, e.g. "Today (Nov 17, 2026)". |
+
+### `DynamicDateRangeValue` — interface
+
+The value of a DynamicDateRange, as in UI5: `{ operator: 'LASTDAYS', values: [7] }`, `{ operator: 'DATE', values: [Date] }`, `{ operator: 'DATERANGE', values: [Date, Date] }`, `{ operator: 'SPECIFICMONTH', values: [monthIndex] }`, `{ operator: 'SPECIFICMONTHINYEAR', values: [monthIndex, year] }`, `{ operator: 'TODAYFROMTO', values: [daysBefore, daysAfter] }`. Custom options use their own key and values.
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `operator` | **yes** | `StandardDynamicDateRangeKeys \| (string & {})` |  |
+| `values` | **yes** | `Array&lt;Date \| number \| string>` |  |
+
+## `@rhfan2019/smart-kit/m/ExpandableText`
+
+`$ExpandableTextSettings` (interface) · `default` (component)
+
+### `$ExpandableTextSettings` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `text` |  | `string` | The text. |
+| `wrappingType` |  | `'Normal' \| 'Hyphenated'` | sap.m.WrappingType: Normal or Hyphenated (default Normal). |
+| `textAlign` |  | `TextAlignValue` | sap.ui.core.TextAlign (default Begin). |
+| `renderWhitespace` |  | `boolean` | Keeps line breaks and spaces (default false). |
+| `overflowMode` |  | `ExpandableTextOverflowMode` | InPlace expands the text, Popover shows the full text in a popover (default InPlace). |
+| `maxCharacters` |  | `number` | Characters shown before "More" (default 100). |
+| `expanded` |  | `boolean` | InPlace mode: the full text is shown (default false). The control also toggles it itself; a changed prop wins. |
+| `emptyIndicatorMode` |  | `EmptyIndicatorMode` | Shows "–" when text is empty (default Off). |
 | `defaultChecked` |  | `boolean \| undefined` |  |
 | `defaultValue` |  | `string \| number \| readonly string[] \| undefined` |  |
 | `suppressContentEditableWarning` |  | `boolean \| undefined` |  |
@@ -2978,122 +3050,9 @@ sap.m.ColumnListItem
 | `onTransitionStart` |  | `TransitionEventHandler&lt;T> \| undefined` |  |
 | `onTransitionStartCapture` |  | `TransitionEventHandler&lt;T> \| undefined` |  |
 
-### `CurrencyProps` — interface
+### `default` — component
 
-Props of `Currency` (see above).
-
-### `DateLike` — type
-
-A date property of the controls: a Date or an ISO string (UI5 accepts a string or a Date).
-
-```ts
-export type DateLike = Date | string;
-```
-
-### `DEFAULT_STANDARD_OPTIONS` — const
-
-The default `standardOptions` of 1.154 (all 68 keys, in the UI5 order).
-
-```ts
-const DEFAULT_STANDARD_OPTIONS: readonly ("DATE" | "TODAY" | "YESTERDAY" | "TOMORROW" | "FIRSTDAYWEEK" | "LASTDAYWEEK" | "FIRSTDAYMONTH" | "LASTDAYMONTH" | "FIRSTDAYQUAR…
-```
-
-### `DynamicDateFormatter` — interface
-
-The date formatter of the `formatter` property (UI5: a sap.ui.core.format.DateFormat instance).
-
-| Member | Required | Type | Description |
-| --- | --- | --- | --- |
-| `format` | **yes** | `(date: Date) => string` |  |
-| `parse` |  | `(text: string) => Date \| null` |  |
-
-### `DynamicDateOption` — interface
-
-A custom option (sap.m.DynamicDateOption); methods are optional except where the option needs them.
-
-| Member | Required | Type | Description |
-| --- | --- | --- | --- |
-| `key` | **yes** | `string` |  |
-| `valueTypes` |  | `string[]` | The value types, e.g. `['int']`, `['date']`; empty: the option is picked without a detail page. |
-| `getText` |  | `() => string` | The option text in the list (UI5 `getText`). |
-| `getGroupHeader` |  | `() => string` | The group header shown above the option (UI5 `getGroupHeader`); default "Other Options". |
-| `format` |  | `(value: DynamicDateRangeValue) => string` |  |
-| `parse` |  | `(text: string) => DynamicDateRangeValue \| null \| undefined` |  |
-| `toDates` |  | `(value: DynamicDateRangeValue, calendarWeekNumbering?: CalendarWeekNumbering) => Date[]` |  |
-| `createValueHelpUI` |  | `(ctx: { value: DynamicDateRangeValue \| undefined; update(value: DynamicDateRangeValue \| undefined): void }) => ReactNode` | The detail page content. `update` takes the value the page stands for (undefined while it is incomplete); React's answer to UI5's `createValueHelpUI(oControl, fnControlsUpdated)`. |
-| `validateValueHelpUI` |  | `(value: DynamicDateRangeValue \| undefined) => boolean` | Whether the detail page is complete (default: a value was given to `update`). |
-| `enhanceFormattedValue` |  | `() => boolean` | Whether the field also shows the resolved dates, e.g. "Today (Nov 17, 2026)". |
-
-### `DynamicDateRange` — component
-
-The DynamicDateRange control; `DynamicDateRange.toDates(value, calendarWeekNumbering)` is the UI5 static method.
-
-`import { DynamicDateRange } from '@rhfan2019/smart-kit/controls';`
-
-| Prop | Required | Type | Description |
-| --- | --- | --- | --- |
-| `value` |  | `DynamicDateRangeValue` | The value (controlled); undefined: empty. |
-| `width` |  | `string` | CSS width of the field. |
-| `enabled` |  | `boolean` | (true) |
-| `valueState` |  | `ValueState` | ('None') |
-| `name` |  | `string` | Name of the input (forms). |
-| `placeholder` |  | `string` |  |
-| `editable` |  | `boolean` | (true) |
-| `valueStateText` |  | `string` |  |
-| `required` |  | `boolean` | (false) |
-| `enableGroupHeaders` |  | `boolean` | (true) Shows the group headers (single dates, date ranges, weeks …) in the option list. |
-| `formatter` |  | `DynamicDateFormatter` | Formats and parses the dates in the field (UI5: a DateFormat instance). |
-| `standardOptions` |  | `readonly StandardDynamicDateRangeKeys[]` | (all 68 keys) The standard options offered; the list keeps the UI5 grouping and this order inside each group. |
-| `hideInput` |  | `boolean` | (false) Renders no field; the popover is opened with `open(domRef)` / `openBy(domRef)`. |
-| `calendarWeekNumbering` |  | `CalendarWeekNumbering` | Week numbering for week options (default: the locale). |
-| `showClearIcon` |  | `boolean` | (false) |
-| `customOptions` |  | `DynamicDateOption[]` | Own options (sap.m.DynamicDateOption). |
-| `onChange` |  | `(e: { value: DynamicDateRangeValue \| undefined; valid: boolean }) => void` | Fired when the user picks, types or clears a value; `valid` is false when typed text could not be read. |
-| `label` |  | `ReactNode` | Extension: field label (Mantine input label). |
-| `id` |  | `string` |  |
-| `aria-label` |  | `string` |  |
-| `ref` |  | `Ref&lt;DynamicDateRangeRef>` |  |
-
-### `DynamicDateRangeProps` — interface
-
-Props of `DynamicDateRange` (see above).
-
-### `DynamicDateRangeRef` — interface
-
-| Member | Required | Type | Description |
-| --- | --- | --- | --- |
-| `open` | **yes** | `(domRef?: HTMLElement \| null) => void` | Opens the popover at `domRef` (default: the field). |
-| `openBy` | **yes** | `(domRef?: HTMLElement \| null) => void` | Opens the popover at `domRef` (default: the field). |
-| `toDates` | **yes** | `(value: DynamicDateRangeValue) => Date[]` | The dates of a value, with the control's week numbering and custom options. |
-
-### `DynamicDateRangeValue` — interface
-
-The value of a DynamicDateRange, as in UI5: `{ operator: 'LASTDAYS', values: [7] }`, `{ operator: 'DATE', values: [Date] }`, `{ operator: 'DATERANGE', values: [Date, Date] }`, `{ operator: 'SPECIFICMONTH', values: [monthIndex] }`, `{ operator: 'SPECIFICMONTHINYEAR', values: [monthIndex, year] }`, `{ operator: 'TODAYFROMTO', values: [daysBefore, daysAfter] }`. Custom options use their own key and values.
-
-| Member | Required | Type | Description |
-| --- | --- | --- | --- |
-| `operator` | **yes** | `StandardDynamicDateRangeKeys \| (string & {})` |  |
-| `values` | **yes** | `Array&lt;Date \| number \| string>` |  |
-
-### `dynamicDateValueTypes` — function
-
-The value types of an option key (UI5 `DynamicDateOption.getValueTypes` of the standard options).
-
-```ts
-dynamicDateValueTypes(key: string): string[]
-```
-
-### `EmptyIndicatorMode` — const
-
-sap.m.EmptyIndicatorMode
-
-```ts
-const EmptyIndicatorMode: { readonly Auto: "Auto"; readonly On: "On"; readonly Off: "Off"; }
-```
-
-### `ExpandableText` — component
-
-`import { ExpandableText } from '@rhfan2019/smart-kit/controls';`
+`import { default } from '@rhfan2019/smart-kit/m/ExpandableText';`
 
 | Prop | Required | Type | Description |
 | --- | --- | --- | --- |
@@ -3384,21 +3343,35 @@ const EmptyIndicatorMode: { readonly Auto: "Auto"; readonly On: "On"; readonly O
 | `onTransitionStart` |  | `TransitionEventHandler&lt;T> \| undefined` |  |
 | `onTransitionStartCapture` |  | `TransitionEventHandler&lt;T> \| undefined` |  |
 
-### `ExpandableTextOverflowMode` — const
+## `@rhfan2019/smart-kit/m/FeedInput`
 
-sap.m.ExpandableTextOverflowMode
+`$FeedInputSettings` (interface) · `default` (component)
 
-```ts
-const ExpandableTextOverflowMode: { readonly InPlace: "InPlace"; readonly Popover: "Popover"; }
-```
+### `$FeedInputSettings` — interface
 
-### `ExpandableTextProps` — interface
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `value` |  | `string` |  |
+| `enabled` |  | `boolean` | Default true. |
+| `rows` |  | `number` | Visible rows (default 2). |
+| `showExceededText` |  | `boolean` | Lets the text exceed `maxLength` and shows how far it is over (default false). |
+| `maxLength` |  | `number` | Maximum characters (default 0 = no limit). |
+| `growing` |  | `boolean` | Grows with the text (default false). |
+| `growingMaxLines` |  | `number` | Maximum rows when growing (default 0 = no limit). |
+| `placeholder` |  | `string` | Default "Post something here". |
+| `icon` |  | `ReactNode` | Image URL or React node of the avatar. |
+| `iconDisplayShape` |  | `AvatarShape` | Default 'Circle'. |
+| `iconInitials` |  | `string` |  |
+| `iconSize` |  | `AvatarSize` | Default 'M'. |
+| `showIcon` |  | `boolean` | Default true. |
+| `buttonTooltip` |  | `string` | Tooltip and accessible name of the post button (default "Submit"). |
+| `actions` |  | `ReactNode` | Further controls next to the post button. |
+| `onPost` |  | `(e: { value: string }) => void` |  |
+| `aria-label` |  | `string` |  |
 
-Props of `ExpandableText` (see above).
+### `default` — component
 
-### `FeedInput` — component
-
-`import { FeedInput } from '@rhfan2019/smart-kit/controls';`
+`import { default } from '@rhfan2019/smart-kit/m/FeedInput';`
 
 | Prop | Required | Type | Description |
 | --- | --- | --- | --- |
@@ -3420,15 +3393,50 @@ Props of `ExpandableText` (see above).
 | `onPost` |  | `(e: { value: string }) => void` |  |
 | `aria-label` |  | `string` |  |
 
-### `FeedInputProps` — interface
+## `@rhfan2019/smart-kit/m/FeedListItem`
 
-Props of `FeedInput` (see above).
+`$FeedListItemSettings` (interface) · `default` (component) · `FeedListItemAction` (interface) · `FeedListItemPressEvent` (interface)
 
-### `FeedListItem` — component
+### `$FeedListItemSettings` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `sender` |  | `string` |  |
+| `text` |  | `string` |  |
+| `info` |  | `string` |  |
+| `timestamp` |  | `DateLike` | Date, ISO string (formatted in the smart-kit locale) or display text. |
+| `maxCharacters` |  | `number` | Characters before "More" (default 500 on desktop, 300 on phones). |
+| `moreLabel` |  | `string` | Text of the "More" link. |
+| `lessLabel` |  | `string` | Text of the "Less" link. |
+| `icon` |  | `ReactNode` | Image URL or React node of the avatar. |
+| `activeIcon` |  | `ReactNode` | Avatar while the pointer is on it (with `iconActive`). |
+| `iconDisplayShape` |  | `AvatarShape` | Default 'Circle'. |
+| `iconInitials` |  | `string` |  |
+| `iconSize` |  | `AvatarSize` | Default 'S'. |
+| `showIcon` |  | `boolean` | Default true. |
+| `senderActive` |  | `boolean` | Sender as a link (default true; needs `onSenderPress`). |
+| `iconActive` |  | `boolean` | Avatar as a button (default true; needs `onIconPress`). |
+| `convertLinksToAnchorTags` |  | `LinkConversion` | Turns URLs in the text into links (default 'None'). |
+| `convertedLinksDefaultTarget` |  | `string` | Target of the converted links (default '_blank'). |
+| `type` |  | `ListType` | ListItemBase: default 'Inactive'. |
+| `visible` |  | `boolean` | Default true. |
+| `unread` |  | `boolean` |  |
+| `selected` |  | `boolean` |  |
+| `counter` |  | `number` |  |
+| `highlight` |  | `ValueState \| IndicationColor` | ValueState or IndicationColor: a coloured bar at the start (default 'None'). |
+| `highlightText` |  | `string` | Accessible text of the highlight. |
+| `navigated` |  | `boolean` | Marks the item as the one last navigated to. |
+| `actions` |  | `FeedListItemAction[]` |  |
+| `onSenderPress` |  | `(e: FeedListItemPressEvent) => void` |  |
+| `onIconPress` |  | `(e: FeedListItemPressEvent) => void` |  |
+| `onPress` |  | `() => void` | With type Active, Navigation or DetailAndActive. |
+| `onDetailPress` |  | `() => void` | With type Detail or DetailAndActive. |
+
+### `default` — component
 
 One feed entry; renders an `<li>`, so place it in a `<ul>` (like sap.m.List).
 
-`import { FeedListItem } from '@rhfan2019/smart-kit/controls';`
+`import { default } from '@rhfan2019/smart-kit/m/FeedListItem';`
 
 | Prop | Required | Type | Description |
 | --- | --- | --- | --- |
@@ -3485,41 +3493,36 @@ Event of `onSenderPress` / `onIconPress`: the id and element pressed.
 | `domRef` | **yes** | `string` |  |
 | `getDomRef` | **yes** | `() => HTMLElement` |  |
 
-### `FeedListItemProps` — interface
+## `@rhfan2019/smart-kit/m/IconTabBar`
 
-Props of `FeedListItem` (see above).
+`$IconTabBarSettings` (interface) · `default` (component) · `IconTabFilterItem` (interface) · `IconTabItem` (type)
 
-### `FilenameValidationConfig` — interface
-
-sap.m.plugins.UploadSetwithTable.FilenameValidationConfig
+### `$IconTabBarSettings` — interface
 
 | Member | Required | Type | Description |
 | --- | --- | --- | --- |
-| `mode` | **yes** | `'include' \| 'exclude' \| 'override'` | include: add `characters` to the default set; exclude: allow them; override: replace the set. |
-| `characters` |  | `string` |  |
+| `children` |  | `ReactNode` | IconTabFilter and IconTabSeparator elements (UI5 `items`). |
+| `content` |  | `ReactNode` | Content shown for filters that have none of their own (UI5 `content`). |
+| `expandable` |  | `boolean` | (true) Pressing the selected tab collapses and expands the content. |
+| `expanded` |  | `boolean` | (true) |
+| `selectedKey` |  | `string` | Key of the selected filter; without it the first filter. The bar keeps the user's choice until this prop changes. |
+| `upperCase` |  | `boolean` | (false) |
+| `stretchContentHeight` |  | `boolean` | (false) The bar fills the parent's height and the content scrolls. |
+| `applyContentPadding` |  | `boolean` | (true) |
+| `backgroundDesign` |  | `BackgroundDesign` | ('Solid') Background of the content. |
+| `headerMode` |  | `IconTabHeaderMode` | ('Standard') Inline: text and count on one line. |
+| `headerBackgroundDesign` |  | `BackgroundDesign` | ('Solid') |
+| `enableTabReordering` |  | `boolean` | (false) Tabs can be moved by drag and drop and with Ctrl + arrow keys. |
+| `maxNestingLevel` |  | `number` | (0) Kept for UI5 compatibility: drag and drop reorders on the top level only. |
+| `tabDensityMode` |  | `IconTabDensityMode` | ('Cozy') |
+| `ariaTexts` |  | `{ headerLabel?: string; headerDescription?: string }` | Accessible texts of the header (UI5 `ariaTexts`). |
+| `tabsOverflowMode` |  | `TabsOverflowMode` | ('End') Where the overflow buttons go when the tabs do not fit. |
+| `onSelect` |  | `(e: { item: IconTabFilterItem; key: string; previousKey: string \| undefined; selectedItem: IconTabFilterItem; selectedKey: string }) => void` |  |
+| `onExpand` |  | `(e: { expand: boolean; collapse: boolean }) => void` |  |
 
-### `FilePreviewDialog` — interface
+### `default` — component
 
-sap.m.upload.FilePreviewDialog settings (association `previewDialog`).
-
-| Member | Required | Type | Description |
-| --- | --- | --- | --- |
-| `showCarouselArrows` |  | `boolean` | Arrows to the previous / next previewable item (default true). |
-| `maxFileSizeforPreview` |  | `number` | Larger files (MB) are not previewed. |
-| `customPageContentHandler` |  | `(item: UploadItemInstance) => ReactNode` | Own content for an item; return undefined for the standard preview. |
-| `additionalFooterButtons` |  | `ReactNode` |  |
-
-### `IconColor` — const
-
-sap.ui.core.IconColor
-
-```ts
-const IconColor: { readonly Default: "Default"; readonly Positive: "Positive"; readonly Critical: "Critical"; readonly Negative: "Negative"; readonly Neut…
-```
-
-### `IconTabBar` — component
-
-`import { IconTabBar } from '@rhfan2019/smart-kit/controls';`
+`import { default } from '@rhfan2019/smart-kit/m/IconTabBar';`
 
 | Prop | Required | Type | Description |
 | --- | --- | --- | --- |
@@ -3542,53 +3545,6 @@ const IconColor: { readonly Default: "Default"; readonly Positive: "Positive"; r
 | `onSelect` |  | `(e: { item: IconTabFilterItem; key: string; previousKey: string \| undefined; selectedItem: IconTabFilterItem; selectedKey: string }) => void` |  |
 | `onExpand` |  | `(e: { expand: boolean; collapse: boolean }) => void` |  |
 
-### `IconTabBarProps` — interface
-
-Props of `IconTabBar` (see above).
-
-### `IconTabDensityMode` — const
-
-sap.m.IconTabDensityMode
-
-```ts
-const IconTabDensityMode: { readonly Compact: "Compact"; readonly Cozy: "Cozy"; readonly Inherit: "Inherit"; }
-```
-
-### `IconTabFilter` — component
-
-A tab of an IconTabBar; rendered by the IconTabBar (alone it renders nothing).
-
-`import { IconTabFilter } from '@rhfan2019/smart-kit/controls';`
-
-| Prop | Required | Type | Description |
-| --- | --- | --- | --- |
-| `text` |  | `string` |  |
-| `enabled` |  | `boolean` | (true) |
-| `count` |  | `string` | ('') |
-| `showAll` |  | `boolean` | (false) The "all" tab: the count large, the text under it, no icon. |
-| `icon` |  | `ReactNode` |  |
-| `iconColor` |  | `IconColor` | ('Default') |
-| `visible` |  | `boolean` | (true) |
-| `design` |  | `IconTabFilterDesign` | ('Vertical') |
-| `interactionMode` |  | `IconTabFilterInteractionMode` | ('Auto') Auto: a filter with child filters and no content opens its menu; Select: it is selected; SelectLeavesOnly: only leaves are selected. |
-| `children` |  | `ReactNode` | The content (shown when the filter is selected) and child IconTabFilter / IconTabSeparator elements (UI5 `items`). |
-
-### `IconTabFilterDesign` — const
-
-sap.m.IconTabFilterDesign
-
-```ts
-const IconTabFilterDesign: { readonly Horizontal: "Horizontal"; readonly Vertical: "Vertical"; }
-```
-
-### `IconTabFilterInteractionMode` — const
-
-sap.m.IconTabFilterInteractionMode
-
-```ts
-const IconTabFilterInteractionMode: { readonly Auto: "Auto"; readonly Select: "Select"; readonly SelectLeavesOnly: "SelectLeavesOnly"; }
-```
-
 ### `IconTabFilterItem` — interface
 
 A filter as passed to `onSelect`: its props, its key and the keys of its child filters.
@@ -3609,42 +3565,371 @@ A filter as passed to `onSelect`: its props, its key and the keys of its child f
 | `design` |  | `IconTabFilterDesign` | ('Vertical') |
 | `interactionMode` |  | `IconTabFilterInteractionMode` | ('Auto') Auto: a filter with child filters and no content opens its menu; Select: it is selected; SelectLeavesOnly: only leaves are selected. |
 
-### `IconTabFilterProps` — interface
-
-Props of `IconTabFilter` (see above).
-
-### `IconTabHeaderMode` — const
-
-sap.m.IconTabHeaderMode
-
-```ts
-const IconTabHeaderMode: { readonly Inline: "Inline"; readonly Standard: "Standard"; }
-```
-
 ### `IconTabItem` — type
 
 ```ts
-export type IconTabItem = ({ kind: 'filter' } & IconTabFilterItem) | ({ kind: 'separator'; key: string } & IconTabSeparatorProps);
+export type IconTabItem = ({ kind: 'filter' } & IconTabFilterItem) | ({ kind: 'separator'; key: string } & $IconTabSeparatorSettings);
 ```
 
-### `IconTabSeparator` — component
+## `@rhfan2019/smart-kit/m/IconTabFilter`
+
+`$IconTabFilterSettings` (interface) · `default` (component)
+
+### `$IconTabFilterSettings` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `text` |  | `string` |  |
+| `enabled` |  | `boolean` | (true) |
+| `count` |  | `string` | ('') |
+| `showAll` |  | `boolean` | (false) The "all" tab: the count large, the text under it, no icon. |
+| `icon` |  | `ReactNode` |  |
+| `iconColor` |  | `IconColor` | ('Default') |
+| `visible` |  | `boolean` | (true) |
+| `design` |  | `IconTabFilterDesign` | ('Vertical') |
+| `interactionMode` |  | `IconTabFilterInteractionMode` | ('Auto') Auto: a filter with child filters and no content opens its menu; Select: it is selected; SelectLeavesOnly: only leaves are selected. |
+| `children` |  | `ReactNode` | The content (shown when the filter is selected) and child IconTabFilter / IconTabSeparator elements (UI5 `items`). |
+
+### `default` — component
+
+A tab of an IconTabBar; rendered by the IconTabBar (alone it renders nothing).
+
+`import { default } from '@rhfan2019/smart-kit/m/IconTabFilter';`
+
+| Prop | Required | Type | Description |
+| --- | --- | --- | --- |
+| `text` |  | `string` |  |
+| `enabled` |  | `boolean` | (true) |
+| `count` |  | `string` | ('') |
+| `showAll` |  | `boolean` | (false) The "all" tab: the count large, the text under it, no icon. |
+| `icon` |  | `ReactNode` |  |
+| `iconColor` |  | `IconColor` | ('Default') |
+| `visible` |  | `boolean` | (true) |
+| `design` |  | `IconTabFilterDesign` | ('Vertical') |
+| `interactionMode` |  | `IconTabFilterInteractionMode` | ('Auto') Auto: a filter with child filters and no content opens its menu; Select: it is selected; SelectLeavesOnly: only leaves are selected. |
+| `children` |  | `ReactNode` | The content (shown when the filter is selected) and child IconTabFilter / IconTabSeparator elements (UI5 `items`). |
+
+## `@rhfan2019/smart-kit/m/IconTabSeparator`
+
+`$IconTabSeparatorSettings` (interface) · `default` (component)
+
+### `$IconTabSeparatorSettings` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `icon` |  | `ReactNode` |  |
+| `visible` |  | `boolean` | (true) |
+
+### `default` — component
 
 A separator between tabs of an IconTabBar.
 
-`import { IconTabSeparator } from '@rhfan2019/smart-kit/controls';`
+`import { default } from '@rhfan2019/smart-kit/m/IconTabSeparator';`
 
 | Prop | Required | Type | Description |
 | --- | --- | --- | --- |
 | `icon` |  | `ReactNode` |  |
 | `visible` |  | `boolean` | (true) |
 
-### `IconTabSeparatorProps` — interface
+## `@rhfan2019/smart-kit/m/IllustratedMessage`
 
-Props of `IconTabSeparator` (see above).
+`$IllustratedMessageSettings` (interface) · `default` (component)
 
-### `IllustratedMessage` — component
+### `$IllustratedMessageSettings` — interface
 
-`import { IllustratedMessage } from '@rhfan2019/smart-kit/controls';`
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `description` |  | `string` | Description; defaults to the type's text when enableDefaultTitleAndDescription is on. |
+| `enableDefaultTitleAndDescription` |  | `boolean` | Uses the default title and description of the type for the missing ones (default true). |
+| `enableFormattedText` |  | `boolean` | Accepted for compatibility: the description stays plain text, HTML is not parsed (default false). |
+| `enableVerticalResponsiveness` |  | `boolean` | Auto size also follows the container height (default false); the container then needs a height. |
+| `illustrationSize` |  | `IllustratedMessageSize` | Size (default Auto: chosen by the container width — below 160px Base without illustration, then ExtraSmall, Small, Medium, and from 680px Large). |
+| `illustrationType` |  | `IllustratedMessageType` | Illustration (default NoSearchResults). |
+| `title` |  | `string` | Title; defaults to the type's text when enableDefaultTitleAndDescription is on. |
+| `ariaTitleLevel` |  | `'Auto' \| 'H1' \| 'H2' \| 'H3' \| 'H4' \| 'H5' \| 'H6'` | sap.ui.core.TitleLevel of the title (default Auto, rendered as a level-2 heading). |
+| `decorative` |  | `boolean` | The illustration is decorative: hidden from screen readers (default false: an image labelled with the title). |
+| `additionalContent` |  | `ReactNode` | Actions below the description, usually buttons. |
+| `children` |  | `ReactNode \| undefined` |  |
+| `defaultChecked` |  | `boolean \| undefined` |  |
+| `defaultValue` |  | `string \| number \| readonly string[] \| undefined` |  |
+| `suppressContentEditableWarning` |  | `boolean \| undefined` |  |
+| `suppressHydrationWarning` |  | `boolean \| undefined` |  |
+| `accessKey` |  | `string \| undefined` |  |
+| `autoCapitalize` |  | `"off" \| "none" \| "on" \| "sentences" \| "words" \| "characters" \| undefined \| (string & {})` |  |
+| `autoFocus` |  | `boolean \| undefined` |  |
+| `className` |  | `string \| undefined` |  |
+| `contentEditable` |  | `Booleanish \| "inherit" \| "plaintext-only" \| undefined` |  |
+| `contextMenu` |  | `string \| undefined` |  |
+| `dir` |  | `string \| undefined` |  |
+| `draggable` |  | `Booleanish \| undefined` |  |
+| `enterKeyHint` |  | `"enter" \| "done" \| "go" \| "next" \| "previous" \| "search" \| "send" \| undefined` |  |
+| `hidden` |  | `boolean \| undefined` |  |
+| `id` |  | `string \| undefined` |  |
+| `lang` |  | `string \| undefined` |  |
+| `nonce` |  | `string \| undefined` |  |
+| `slot` |  | `string \| undefined` |  |
+| `spellCheck` |  | `Booleanish \| undefined` |  |
+| `style` |  | `CSSProperties \| undefined` |  |
+| `tabIndex` |  | `number \| undefined` |  |
+| `translate` |  | `"yes" \| "no" \| undefined` |  |
+| `radioGroup` |  | `string \| undefined` |  |
+| `role` |  | `AriaRole \| undefined` |  |
+| `about` |  | `string \| undefined` |  |
+| `content` |  | `string \| undefined` |  |
+| `datatype` |  | `string \| undefined` |  |
+| `inlist` |  | `any` |  |
+| `prefix` |  | `string \| undefined` |  |
+| `property` |  | `string \| undefined` |  |
+| `rel` |  | `string \| undefined` |  |
+| `resource` |  | `string \| undefined` |  |
+| `rev` |  | `string \| undefined` |  |
+| `typeof` |  | `string \| undefined` |  |
+| `vocab` |  | `string \| undefined` |  |
+| `autoCorrect` |  | `string \| undefined` |  |
+| `autoSave` |  | `string \| undefined` |  |
+| `color` |  | `string \| undefined` |  |
+| `itemProp` |  | `string \| undefined` |  |
+| `itemScope` |  | `boolean \| undefined` |  |
+| `itemType` |  | `string \| undefined` |  |
+| `itemID` |  | `string \| undefined` |  |
+| `itemRef` |  | `string \| undefined` |  |
+| `results` |  | `number \| undefined` |  |
+| `security` |  | `string \| undefined` |  |
+| `unselectable` |  | `"on" \| "off" \| undefined` |  |
+| `popover` |  | `"" \| "auto" \| "manual" \| "hint" \| undefined` |  |
+| `popoverTargetAction` |  | `"toggle" \| "show" \| "hide" \| undefined` |  |
+| `popoverTarget` |  | `string \| undefined` |  |
+| `inert` |  | `boolean \| undefined` |  |
+| `inputMode` |  | `"none" \| "text" \| "tel" \| "url" \| "email" \| "numeric" \| "decimal" \| "search" \| undefined` | Hints at the type of data that might be entered by the user while editing the element or its contents |
+| `is` |  | `string \| undefined` | Specify that a standard HTML element should behave like a defined custom built-in element |
+| `exportparts` |  | `string \| undefined` |  |
+| `part` |  | `string \| undefined` |  |
+| `aria-activedescendant` |  | `string \| undefined` | Identifies the currently active element when DOM focus is on a composite widget, textbox, group, or application. |
+| `aria-atomic` |  | `Booleanish \| undefined` | Indicates whether assistive technologies will present all, or only parts of, the changed region based on the change notifications defined by the aria-relevant attribute. |
+| `aria-autocomplete` |  | `"none" \| "inline" \| "list" \| "both" \| undefined` | Indicates whether inputting text could trigger display of one or more predictions of the user's intended value for an input and specifies how predictions would be presented if they are made. |
+| `aria-braillelabel` |  | `string \| undefined` | Defines a string value that labels the current element, which is intended to be converted into Braille. |
+| `aria-brailleroledescription` |  | `string \| undefined` | Defines a human-readable, author-localized abbreviated description for the role of an element, which is intended to be converted into Braille. |
+| `aria-busy` |  | `Booleanish \| undefined` |  |
+| `aria-checked` |  | `boolean \| "false" \| "mixed" \| "true" \| undefined` | Indicates the current "checked" state of checkboxes, radio buttons, and other widgets. |
+| `aria-colcount` |  | `number \| undefined` | Defines the total number of columns in a table, grid, or treegrid. |
+| `aria-colindex` |  | `number \| undefined` | Defines an element's column index or position with respect to the total number of columns within a table, grid, or treegrid. |
+| `aria-colindextext` |  | `string \| undefined` | Defines a human readable text alternative of aria-colindex. |
+| `aria-colspan` |  | `number \| undefined` | Defines the number of columns spanned by a cell or gridcell within a table, grid, or treegrid. |
+| `aria-controls` |  | `string \| undefined` | Identifies the element (or elements) whose contents or presence are controlled by the current element. |
+| `aria-current` |  | `boolean \| "false" \| "true" \| "page" \| "step" \| "location" \| "date" \| "time" \| undefined` | Indicates the element that represents the current item within a container or set of related elements. |
+| `aria-describedby` |  | `string \| undefined` | Identifies the element (or elements) that describes the object. |
+| `aria-description` |  | `string \| undefined` | Defines a string value that describes or annotates the current element. |
+| `aria-details` |  | `string \| undefined` | Identifies the element that provides a detailed, extended description for the object. |
+| `aria-disabled` |  | `Booleanish \| undefined` | Indicates that the element is perceivable but disabled, so it is not editable or otherwise operable. |
+| `aria-dropeffect` |  | `"none" \| "copy" \| "execute" \| "link" \| "move" \| "popup" \| undefined` | Indicates what functions can be performed when a dragged object is released on the drop target. **Deprecated**: in ARIA 1.1 |
+| `aria-errormessage` |  | `string \| undefined` | Identifies the element that provides an error message for the object. |
+| `aria-expanded` |  | `Booleanish \| undefined` | Indicates whether the element, or another grouping element it controls, is currently expanded or collapsed. |
+| `aria-flowto` |  | `string \| undefined` | Identifies the next element (or elements) in an alternate reading order of content which, at the user's discretion, allows assistive technology to override the general default of reading in document source order. |
+| `aria-grabbed` |  | `Booleanish \| undefined` | Indicates an element's "grabbed" state in a drag-and-drop operation. **Deprecated**: in ARIA 1.1 |
+| `aria-haspopup` |  | `boolean \| "false" \| "true" \| "menu" \| "listbox" \| "tree" \| "grid" \| "dialog" \| undefined` | Indicates the availability and type of interactive popup element, such as menu or dialog, that can be triggered by an element. |
+| `aria-hidden` |  | `Booleanish \| undefined` | Indicates whether the element is exposed to an accessibility API. |
+| `aria-invalid` |  | `boolean \| "false" \| "true" \| "grammar" \| "spelling" \| undefined` | Indicates the entered value does not conform to the format expected by the application. |
+| `aria-keyshortcuts` |  | `string \| undefined` | Indicates keyboard shortcuts that an author has implemented to activate or give focus to an element. |
+| `aria-label` |  | `string \| undefined` | Defines a string value that labels the current element. |
+| `aria-labelledby` |  | `string \| undefined` | Identifies the element (or elements) that labels the current element. |
+| `aria-level` |  | `number \| undefined` | Defines the hierarchical level of an element within a structure. |
+| `aria-live` |  | `"off" \| "assertive" \| "polite" \| undefined` | Indicates that an element will be updated, and describes the types of updates the user agents, assistive technologies, and user can expect from the live region. |
+| `aria-modal` |  | `Booleanish \| undefined` | Indicates whether an element is modal when displayed. |
+| `aria-multiline` |  | `Booleanish \| undefined` | Indicates whether a text box accepts multiple lines of input or only a single line. |
+| `aria-multiselectable` |  | `Booleanish \| undefined` | Indicates that the user may select more than one item from the current selectable descendants. |
+| `aria-orientation` |  | `"horizontal" \| "vertical" \| undefined` | Indicates whether the element's orientation is horizontal, vertical, or unknown/ambiguous. |
+| `aria-owns` |  | `string \| undefined` | Identifies an element (or elements) in order to define a visual, functional, or contextual parent/child relationship between DOM elements where the DOM hierarchy cannot be used to represent the relationship. |
+| `aria-placeholder` |  | `string \| undefined` | Defines a short hint (a word or short phrase) intended to aid the user with data entry when the control has no value. A hint could be a sample value or a brief description of the expected format. |
+| `aria-posinset` |  | `number \| undefined` | Defines an element's number or position in the current set of listitems or treeitems. Not required if all elements in the set are present in the DOM. |
+| `aria-pressed` |  | `boolean \| "false" \| "mixed" \| "true" \| undefined` | Indicates the current "pressed" state of toggle buttons. |
+| `aria-readonly` |  | `Booleanish \| undefined` | Indicates that the element is not editable, but is otherwise operable. |
+| `aria-relevant` |  | `\| "additions" \| "additions removals" \| "additions text" \| "all" \| "removals" \| "removals additions" \| "removals text" \| "text" \| "text ad…` | Indicates what notifications the user agent will trigger when the accessibility tree within a live region is modified. |
+| `aria-required` |  | `Booleanish \| undefined` | Indicates that user input is required on the element before a form may be submitted. |
+| `aria-roledescription` |  | `string \| undefined` | Defines a human-readable, author-localized description for the role of an element. |
+| `aria-rowcount` |  | `number \| undefined` | Defines the total number of rows in a table, grid, or treegrid. |
+| `aria-rowindex` |  | `number \| undefined` | Defines an element's row index or position with respect to the total number of rows within a table, grid, or treegrid. |
+| `aria-rowindextext` |  | `string \| undefined` | Defines a human readable text alternative of aria-rowindex. |
+| `aria-rowspan` |  | `number \| undefined` | Defines the number of rows spanned by a cell or gridcell within a table, grid, or treegrid. |
+| `aria-selected` |  | `Booleanish \| undefined` | Indicates the current "selected" state of various widgets. |
+| `aria-setsize` |  | `number \| undefined` | Defines the number of items in the current set of listitems or treeitems. Not required if all elements in the set are present in the DOM. |
+| `aria-sort` |  | `"none" \| "ascending" \| "descending" \| "other" \| undefined` | Indicates if items in a table or grid are sorted in ascending or descending order. |
+| `aria-valuemax` |  | `number \| undefined` | Defines the maximum allowed value for a range widget. |
+| `aria-valuemin` |  | `number \| undefined` | Defines the minimum allowed value for a range widget. |
+| `aria-valuenow` |  | `number \| undefined` | Defines the current value for a range widget. |
+| `aria-valuetext` |  | `string \| undefined` | Defines the human readable text alternative of aria-valuenow for a range widget. |
+| `dangerouslySetInnerHTML` |  | `{ // Should be InnerHTML['innerHTML']. // But unfortunately we're mixing renderer-specific type declarations. __html: string \| TrustedHTM…` |  |
+| `onCopy` |  | `ClipboardEventHandler&lt;T> \| undefined` |  |
+| `onCopyCapture` |  | `ClipboardEventHandler&lt;T> \| undefined` |  |
+| `onCut` |  | `ClipboardEventHandler&lt;T> \| undefined` |  |
+| `onCutCapture` |  | `ClipboardEventHandler&lt;T> \| undefined` |  |
+| `onPaste` |  | `ClipboardEventHandler&lt;T> \| undefined` |  |
+| `onPasteCapture` |  | `ClipboardEventHandler&lt;T> \| undefined` |  |
+| `onCompositionEnd` |  | `CompositionEventHandler&lt;T> \| undefined` |  |
+| `onCompositionEndCapture` |  | `CompositionEventHandler&lt;T> \| undefined` |  |
+| `onCompositionStart` |  | `CompositionEventHandler&lt;T> \| undefined` |  |
+| `onCompositionStartCapture` |  | `CompositionEventHandler&lt;T> \| undefined` |  |
+| `onCompositionUpdate` |  | `CompositionEventHandler&lt;T> \| undefined` |  |
+| `onCompositionUpdateCapture` |  | `CompositionEventHandler&lt;T> \| undefined` |  |
+| `onFocus` |  | `FocusEventHandler&lt;T> \| undefined` |  |
+| `onFocusCapture` |  | `FocusEventHandler&lt;T> \| undefined` |  |
+| `onBlur` |  | `FocusEventHandler&lt;T> \| undefined` |  |
+| `onBlurCapture` |  | `FocusEventHandler&lt;T> \| undefined` |  |
+| `onChange` |  | `ChangeEventHandler&lt;T> \| undefined` |  |
+| `onChangeCapture` |  | `ChangeEventHandler&lt;T> \| undefined` |  |
+| `onBeforeInput` |  | `InputEventHandler&lt;T> \| undefined` |  |
+| `onBeforeInputCapture` |  | `InputEventHandler&lt;T> \| undefined` |  |
+| `onInput` |  | `InputEventHandler&lt;T> \| undefined` |  |
+| `onInputCapture` |  | `InputEventHandler&lt;T> \| undefined` |  |
+| `onReset` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onResetCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onSubmit` |  | `SubmitEventHandler&lt;T> \| undefined` |  |
+| `onSubmitCapture` |  | `SubmitEventHandler&lt;T> \| undefined` |  |
+| `onInvalid` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onInvalidCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onLoad` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onLoadCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onError` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onErrorCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onKeyDown` |  | `KeyboardEventHandler&lt;T> \| undefined` |  |
+| `onKeyDownCapture` |  | `KeyboardEventHandler&lt;T> \| undefined` |  |
+| `onKeyPress` |  | `KeyboardEventHandler&lt;T> \| undefined` |  **Deprecated**: Use `onKeyUp` or `onKeyDown` instead |
+| `onKeyPressCapture` |  | `KeyboardEventHandler&lt;T> \| undefined` |  **Deprecated**: Use `onKeyUpCapture` or `onKeyDownCapture` instead |
+| `onKeyUp` |  | `KeyboardEventHandler&lt;T> \| undefined` |  |
+| `onKeyUpCapture` |  | `KeyboardEventHandler&lt;T> \| undefined` |  |
+| `onAbort` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onAbortCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onCanPlay` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onCanPlayCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onCanPlayThrough` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onCanPlayThroughCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onDurationChange` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onDurationChangeCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onEmptied` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onEmptiedCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onEncrypted` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onEncryptedCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onEnded` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onEndedCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onLoadedData` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onLoadedDataCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onLoadedMetadata` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onLoadedMetadataCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onLoadStart` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onLoadStartCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onPause` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onPauseCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onPlay` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onPlayCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onPlaying` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onPlayingCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onProgress` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onProgressCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onRateChange` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onRateChangeCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onSeeked` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onSeekedCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onSeeking` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onSeekingCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onStalled` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onStalledCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onSuspend` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onSuspendCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onTimeUpdate` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onTimeUpdateCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onVolumeChange` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onVolumeChangeCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onWaiting` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onWaitingCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onAuxClick` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onAuxClickCapture` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onClick` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onClickCapture` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onContextMenu` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onContextMenuCapture` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onDoubleClick` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onDoubleClickCapture` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onDrag` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onDragCapture` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onDragEnd` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onDragEndCapture` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onDragEnter` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onDragEnterCapture` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onDragExit` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onDragExitCapture` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onDragLeave` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onDragLeaveCapture` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onDragOver` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onDragOverCapture` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onDragStart` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onDragStartCapture` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onDrop` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onDropCapture` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onMouseDown` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onMouseDownCapture` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onMouseEnter` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onMouseLeave` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onMouseMove` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onMouseMoveCapture` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onMouseOut` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onMouseOutCapture` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onMouseOver` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onMouseOverCapture` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onMouseUp` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onMouseUpCapture` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onSelect` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onSelectCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onTouchCancel` |  | `TouchEventHandler&lt;T> \| undefined` |  |
+| `onTouchCancelCapture` |  | `TouchEventHandler&lt;T> \| undefined` |  |
+| `onTouchEnd` |  | `TouchEventHandler&lt;T> \| undefined` |  |
+| `onTouchEndCapture` |  | `TouchEventHandler&lt;T> \| undefined` |  |
+| `onTouchMove` |  | `TouchEventHandler&lt;T> \| undefined` |  |
+| `onTouchMoveCapture` |  | `TouchEventHandler&lt;T> \| undefined` |  |
+| `onTouchStart` |  | `TouchEventHandler&lt;T> \| undefined` |  |
+| `onTouchStartCapture` |  | `TouchEventHandler&lt;T> \| undefined` |  |
+| `onPointerDown` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onPointerDownCapture` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onPointerMove` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onPointerMoveCapture` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onPointerUp` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onPointerUpCapture` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onPointerCancel` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onPointerCancelCapture` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onPointerEnter` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onPointerLeave` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onPointerOver` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onPointerOverCapture` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onPointerOut` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onPointerOutCapture` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onGotPointerCapture` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onGotPointerCaptureCapture` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onLostPointerCapture` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onLostPointerCaptureCapture` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onScroll` |  | `UIEventHandler&lt;T> \| undefined` |  |
+| `onScrollCapture` |  | `UIEventHandler&lt;T> \| undefined` |  |
+| `onScrollEnd` |  | `UIEventHandler&lt;T> \| undefined` |  |
+| `onScrollEndCapture` |  | `UIEventHandler&lt;T> \| undefined` |  |
+| `onWheel` |  | `WheelEventHandler&lt;T> \| undefined` |  |
+| `onWheelCapture` |  | `WheelEventHandler&lt;T> \| undefined` |  |
+| `onAnimationStart` |  | `AnimationEventHandler&lt;T> \| undefined` |  |
+| `onAnimationStartCapture` |  | `AnimationEventHandler&lt;T> \| undefined` |  |
+| `onAnimationEnd` |  | `AnimationEventHandler&lt;T> \| undefined` |  |
+| `onAnimationEndCapture` |  | `AnimationEventHandler&lt;T> \| undefined` |  |
+| `onAnimationIteration` |  | `AnimationEventHandler&lt;T> \| undefined` |  |
+| `onAnimationIterationCapture` |  | `AnimationEventHandler&lt;T> \| undefined` |  |
+| `onToggle` |  | `ToggleEventHandler&lt;T> \| undefined` |  |
+| `onBeforeToggle` |  | `ToggleEventHandler&lt;T> \| undefined` |  |
+| `onTransitionCancel` |  | `TransitionEventHandler&lt;T> \| undefined` |  |
+| `onTransitionCancelCapture` |  | `TransitionEventHandler&lt;T> \| undefined` |  |
+| `onTransitionEnd` |  | `TransitionEventHandler&lt;T> \| undefined` |  |
+| `onTransitionEndCapture` |  | `TransitionEventHandler&lt;T> \| undefined` |  |
+| `onTransitionRun` |  | `TransitionEventHandler&lt;T> \| undefined` |  |
+| `onTransitionRunCapture` |  | `TransitionEventHandler&lt;T> \| undefined` |  |
+| `onTransitionStart` |  | `TransitionEventHandler&lt;T> \| undefined` |  |
+| `onTransitionStartCapture` |  | `TransitionEventHandler&lt;T> \| undefined` |  |
+
+### `default` — component
+
+`import { default } from '@rhfan2019/smart-kit/m/IllustratedMessage';`
 
 | Prop | Required | Type | Description |
 | --- | --- | --- | --- |
@@ -3936,148 +4221,580 @@ Props of `IconTabSeparator` (see above).
 | `onTransitionStart` |  | `TransitionEventHandler&lt;T> \| undefined` |  |
 | `onTransitionStartCapture` |  | `TransitionEventHandler&lt;T> \| undefined` |  |
 
-### `IllustratedMessageProps` — interface
+## `@rhfan2019/smart-kit/m/IllustratedMessageSize`
 
-Props of `IllustratedMessage` (see above).
+`default` (const)
 
-### `IllustratedMessageSize` — const
+### `default` — const
 
 sap.m.IllustratedMessageSize (without the deprecated Dot, Spot, Dialog and Scene).
 
 ```ts
-const IllustratedMessageSize: { readonly Auto: "Auto"; readonly Base: "Base"; readonly ExtraSmall: "ExtraSmall"; readonly Small: "Small"; readonly Medium: "Medium"; re…
+const default: { readonly Auto: "Auto"; readonly Base: "Base"; readonly ExtraSmall: "ExtraSmall"; readonly Small: "Small"; readonly Medium: "Medium"; re…
 ```
 
-### `IllustratedMessageType` — const
+## `@rhfan2019/smart-kit/m/IllustratedMessageType`
+
+`default` (const)
+
+### `default` — const
 
 sap.m.IllustratedMessageType: the non-deprecated types of SAPUI5 1.154, drawn by this library.
 
 ```ts
-const IllustratedMessageType: { readonly Achievement: "Achievement"; readonly AddDimensions: "AddDimensions"; readonly AddingColumns: "AddingColumns"; readonly AddPeop…
+const default: { readonly Achievement: "Achievement"; readonly AddDimensions: "AddDimensions"; readonly AddingColumns: "AddingColumns"; readonly AddPeop…
 ```
 
-### `IndicationColor` — const
+## `@rhfan2019/smart-kit/m/MessageBox`
 
-sap.ui.core.IndicationColor (Indication01–Indication20 in 1.154).
+`default` (const) · `MessageBoxAction` (type) · `MessageBoxIcon` (type) · `MessageBoxOptions` (interface)
+
+### `default` — const
+
+sap.m.MessageBox. Every method returns a promise of the pressed action (extension: UI5 returns nothing and only calls `onClose`).
 
 ```ts
-const IndicationColor: { readonly Indication01: "Indication01"; readonly Indication02: "Indication02"; readonly Indication03: "Indication03"; readonly Indicatio…
+const default: { Action: { readonly OK: "OK"; readonly CANCEL: "CANCEL"; readonly YES: "YES"; readonly NO: "NO"; readonly ABORT: "ABORT"; readonly RETRY…
 ```
 
-### `LinkConversion` — const
+### `MessageBoxAction` — type
 
-sap.m.LinkConversion
+sap.m.MessageBox.Action; a custom action is any other string (shown as the button text).
 
 ```ts
-const LinkConversion: { readonly None: "None"; readonly All: "All"; readonly ProtocolOnly: "ProtocolOnly"; }
+export type MessageBoxAction = 'OK' | 'CANCEL' | 'YES' | 'NO' | 'ABORT' | 'RETRY' | 'IGNORE' | 'CLOSE' | 'DELETE';
 ```
 
-### `ListItemBase` — interface
+### `MessageBoxIcon` — type
 
-The ListItemBase properties shared by StandardListItem and ColumnListItem.
+sap.m.MessageBox.Icon
+
+```ts
+export type MessageBoxIcon = 'NONE' | 'INFORMATION' | 'WARNING' | 'ERROR' | 'SUCCESS' | 'QUESTION';
+```
+
+### `MessageBoxOptions` — interface
+
+Options of `MessageBox.show` and the shortcuts (sap.m.MessageBox mOptions, 1.154).
 
 | Member | Required | Type | Description |
 | --- | --- | --- | --- |
-| `key` | **yes** | `string` |  |
-| `type` |  | `ListType` | ('Inactive') |
-| `visible` |  | `boolean` | (true) |
-| `unread` |  | `boolean` | (false) Shows the title in bold. |
-| `selected` |  | `boolean` | (false) |
-| `counter` |  | `number` |  |
-| `highlight` |  | `string` | ('None') A ValueState or 'Indication01'…'Indication20': the coloured line at the start. |
-| `highlightText` |  | `string` |  |
-| `navigated` |  | `boolean` | (false) |
+| `icon` |  | `MessageBoxIcon` | Only `show`: the icon (default NONE; INFORMATION when `details` is set). |
+| `title` |  | `string` | Dialog title; the shortcuts default to a title per type ("Alert", "Confirmation", "Error" …). |
+| `actions` |  | `Array&lt;MessageBoxAction \| (string & {})> \| MessageBoxAction \| (string & {})` | One action or an array: MessageBox.Action values or custom texts. A single (non-array) action is emphasized. |
+| `emphasizedAction` |  | `MessageBoxAction \| (string & {}) \| null` | The emphasized action; the shortcuts emphasize OK only when `actions` is not given. null for none. |
+| `onClose` |  | `(action: MessageBoxAction \| (string & {}) \| null) => void` | Called with the pressed action, or null when the box was closed with Escape. |
+| `id` |  | `string` | Id of the dialog element. |
+| `initialFocus` |  | `MessageBoxAction \| (string & {}) \| null` | The action (or button text) whose button gets the initial focus. |
+| `details` |  | `string \| object \| (() => Promise&lt;string \| object>)` | Shown after "View Details": a string, an object (as JSON) or a function returning a promise of one. |
+| `contentWidth` |  | `string` | CSS width of the dialog content. |
+| `verticalScrolling` |  | `boolean` | Scrolling of the content (UI5 default true for both). |
+| `horizontalScrolling` |  | `boolean` |  |
+| `closeOnNavigation` |  | `boolean` | Accepted and ignored: smart-kit has no router (ADR-010) and no dependent-control lifecycle. |
+| `dependentOn` |  | `unknown` |  |
+| `styleClass` |  | `string` | Accepted and ignored (ADR-032 rule 7). |
+| `textDirection` |  | `string` |  |
 
-### `ListType` — const
+## `@rhfan2019/smart-kit/m/MessageItem`
 
-sap.m.ListType
+`$MessageItemSettings` (interface) · `default` (component)
 
-```ts
-const ListType: { readonly Active: "Active"; readonly Detail: "Detail"; readonly DetailAndActive: "DetailAndActive"; readonly Inactive: "Inactive"; reado…
-```
-
-### `ListUpdateEvent` — interface
-
-Parameters of `updateStarted` / `updateFinished` (sap.m.SelectDialogBase).
+### `$MessageItemSettings` — interface
 
 | Member | Required | Type | Description |
 | --- | --- | --- | --- |
-| `reason` | **yes** | `'Refresh' \| 'Filter' \| 'Growing'` |  |
-| `actual` | **yes** | `number` |  |
-| `total` | **yes** | `number` |  |
+| `type` |  | `MessageType` | UI5 default 'Error'. |
+| `title` |  | `string` |  |
+| `subtitle` |  | `string` |  |
+| `description` |  | `string` |  |
+| `counter` |  | `number` | A number shown at the end of the item (how often the message occurs). |
+| `groupName` |  | `string` | The group of the item when the view has `groupItems`. |
+| `activeTitle` |  | `boolean` | The title is a link (fires onActiveTitlePress). UI5 default false. |
+| `markupDescription` |  | `boolean` | UI5 renders the description as HTML; smart-kit renders it as plain text. |
+| `longtextUrl` |  | `string` | A URL with a long text, loaded when the details page opens (shown as plain text; fires onLongtextLoaded). |
+| `link` |  | `ReactNode` | A link shown on the details page (`link` aggregation). |
 
-### `MessageType` — const
+### `default` — component
 
-sap.ui.core.message.MessageType (sap.ui.core.MessageType is deprecated; same values).
+sap.m.MessageItem: declares one message of a MessageView / MessagePopover (renders nothing on its own).
 
-```ts
-const MessageType: { readonly None: "None"; readonly Error: "Error"; readonly Warning: "Warning"; readonly Success: "Success"; readonly Information: "Inform…
-```
-
-### `messageTypeOf` — function
-
-core `Message.type` (lower case, ADR-023) → MessageType.
-
-```ts
-messageTypeOf(type: Message["type"]): MessageType
-```
-
-### `MicroProcessFlow` — component
-
-`import { MicroProcessFlow } from '@rhfan2019/smart-kit/controls';`
+`import { default } from '@rhfan2019/smart-kit/m/MessageItem';`
 
 | Prop | Required | Type | Description |
 | --- | --- | --- | --- |
-| `children` |  | `ReactNode` |  |
-| `renderType` |  | `MicroProcessFlowRenderType` | Default 'Wrap'. |
-| `width` |  | `string` | CSS width. |
-| `ariaLabel` |  | `string` | Accessible name of the list. |
+| `type` |  | `MessageType` | UI5 default 'Error'. |
+| `title` |  | `string` |  |
+| `subtitle` |  | `string` |  |
+| `description` |  | `string` |  |
+| `counter` |  | `number` | A number shown at the end of the item (how often the message occurs). |
+| `groupName` |  | `string` | The group of the item when the view has `groupItems`. |
+| `activeTitle` |  | `boolean` | The title is a link (fires onActiveTitlePress). UI5 default false. |
+| `markupDescription` |  | `boolean` | UI5 renders the description as HTML; smart-kit renders it as plain text. |
+| `longtextUrl` |  | `string` | A URL with a long text, loaded when the details page opens (shown as plain text; fires onLongtextLoaded). |
+| `link` |  | `ReactNode` | A link shown on the details page (`link` aggregation). |
 
-### `MicroProcessFlowItem` — component
+## `@rhfan2019/smart-kit/m/MessagePopover`
 
-A step of MicroProcessFlow; rendered by its parent.
+`$MessagePopoverSettings` (interface) · `default` (component)
 
-`import { MicroProcessFlowItem } from '@rhfan2019/smart-kit/controls';`
+### `$MessagePopoverSettings` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `placement` |  | `VerticalPlacementType` | UI5 default 'Vertical' (below, or above when there is no room). |
+| `initiallyExpanded` |  | `boolean` | Opens with the message list shown (UI5 default true); false opens with only the header and filter. |
+| `onBeforeOpen` |  | `(e: { openBy: Element }) => void` |  |
+| `onAfterOpen` |  | `(e: { openBy: Element }) => void` |  |
+| `onBeforeClose` |  | `(e: { openBy: Element }) => void` |  |
+| `onAfterClose` |  | `(e: { openBy: Element }) => void` |  |
+| `aria-label` |  | `string` | Accessible name of the popover (default "Messages"). |
+| `ref` |  | `Ref&lt;MessagePopover>` |  |
+| `children` |  | `ReactNode` | `MessageItem` elements. |
+| `items` |  | `Message[]` | Extension: core messages (ADR-023), shown like MessageItems: text as title, target as subtitle and active title. |
+| `groupItems` |  | `boolean` | Groups the items by `groupName`. UI5 default false. |
+| `headerButton` |  | `ReactNode` | A button at the end of the list header (MessagePopover `headerButton`). |
+| `onItemSelect` |  | `(e: { item: MessageViewItem; messageTypeFilter: MessageType \| 'All' }) => void` |  |
+| `onActiveTitlePress` |  | `(e: { item: MessageViewItem }) => void` |  |
+| `onListSelect` |  | `(e: { messageTypeFilter: MessageType \| 'All' }) => void` |  |
+| `onLongtextLoaded` |  | `() => void` | Fired after the long text of an item (`longtextUrl`) has been loaded. |
+
+### `default` — component
+
+sap.m.MessagePopover
+
+`import { default } from '@rhfan2019/smart-kit/m/MessagePopover';`
 
 | Prop | Required | Type | Description |
 | --- | --- | --- | --- |
-| `icon` |  | `ReactNode` | Replaces the state icon. |
-| `title` |  | `string` | Accessible name and tooltip of the step. |
-| `state` |  | `ValueState` | Default 'None' (a plain dot). |
-| `showIntermediary` |  | `boolean` | Shows `intermediary` (or a small dot) on the separator after the item (default false). |
-| `stepWidth` |  | `string` | CSS width of the step including its separator. |
-| `showSeparator` |  | `boolean` | Line to the next item (default true). |
-| `customControl` |  | `ReactNode` | Replaces the whole step (icon). |
-| `intermediary` |  | `ReactNode` | Content on the separator when `showIntermediary`. |
-| `onPress` |  | `(e: PreventableEvent&lt;{ item: MicroProcessFlowPressedItem }>) => void` | Preventable, as in UI5. |
+| `placement` |  | `VerticalPlacementType` | UI5 default 'Vertical' (below, or above when there is no room). |
+| `initiallyExpanded` |  | `boolean` | Opens with the message list shown (UI5 default true); false opens with only the header and filter. |
+| `onBeforeOpen` |  | `(e: { openBy: Element }) => void` |  |
+| `onAfterOpen` |  | `(e: { openBy: Element }) => void` |  |
+| `onBeforeClose` |  | `(e: { openBy: Element }) => void` |  |
+| `onAfterClose` |  | `(e: { openBy: Element }) => void` |  |
+| `aria-label` |  | `string` | Accessible name of the popover (default "Messages"). |
+| `ref` |  | `Ref&lt;MessagePopover>` |  |
+| `children` |  | `ReactNode` | `MessageItem` elements. |
+| `items` |  | `Message[]` | Extension: core messages (ADR-023), shown like MessageItems: text as title, target as subtitle and active title. |
+| `groupItems` |  | `boolean` | Groups the items by `groupName`. UI5 default false. |
+| `headerButton` |  | `ReactNode` | A button at the end of the list header (MessagePopover `headerButton`). |
+| `onItemSelect` |  | `(e: { item: MessageViewItem; messageTypeFilter: MessageType \| 'All' }) => void` |  |
+| `onActiveTitlePress` |  | `(e: { item: MessageViewItem }) => void` |  |
+| `onListSelect` |  | `(e: { messageTypeFilter: MessageType \| 'All' }) => void` |  |
+| `onLongtextLoaded` |  | `() => void` | Fired after the long text of an item (`longtextUrl`) has been loaded. |
 
-### `MicroProcessFlowItemProps` — interface
+## `@rhfan2019/smart-kit/m/MessageStrip`
 
-Props of `MicroProcessFlowItem` (see above).
+`$MessageStripSettings` (interface) · `default` (component)
 
-### `MicroProcessFlowPressedItem` — type
+### `$MessageStripSettings` — interface
 
-A MicroProcessFlowItem in event objects: its props and React key.
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `text` |  | `string` |  |
+| `type` |  | `MessageType` | UI5 default 'Information'. |
+| `showIcon` |  | `boolean` | UI5 default false. |
+| `colorSet` |  | `'Default' \| 'ColorSet1' \| 'ColorSet2'` | sap.m.MessageStripColorSet (1.143): 'Default' uses the colours of `type`; ColorSet1 / ColorSet2 use `colorScheme`. |
+| `colorScheme` |  | `number` | 1–10, only with ColorSet1 / ColorSet2 (UI5 default 1). |
+| `customIcon` |  | `ReactNode` | Replaces the icon of the type (only with showIcon). UI5 takes an icon URI; smart-kit takes an element (ADR-032). |
+| `showCloseButton` |  | `boolean` | UI5 default false. |
+| `link` |  | `ReactNode` | A link after the text (`link` aggregation). |
+| `controls` |  | `ReactNode[]` | Links referenced from a formatted text (`controls` aggregation); shown after the text. |
+| `enableFormattedText` |  | `boolean` | UI5 parses `text` as limited HTML; smart-kit never parses HTML, so the text stays plain. Use `children` instead. |
+| `children` |  | `ReactNode` | Extension: rich content instead of `text`. |
+| `onClose` |  | `() => void` |  |
+| `ref` |  | `Ref&lt;MessageStrip>` |  |
+
+### `default` — component
+
+`import { default } from '@rhfan2019/smart-kit/m/MessageStrip';`
+
+| Prop | Required | Type | Description |
+| --- | --- | --- | --- |
+| `text` |  | `string` |  |
+| `type` |  | `MessageType` | UI5 default 'Information'. |
+| `showIcon` |  | `boolean` | UI5 default false. |
+| `colorSet` |  | `'Default' \| 'ColorSet1' \| 'ColorSet2'` | sap.m.MessageStripColorSet (1.143): 'Default' uses the colours of `type`; ColorSet1 / ColorSet2 use `colorScheme`. |
+| `colorScheme` |  | `number` | 1–10, only with ColorSet1 / ColorSet2 (UI5 default 1). |
+| `customIcon` |  | `ReactNode` | Replaces the icon of the type (only with showIcon). UI5 takes an icon URI; smart-kit takes an element (ADR-032). |
+| `showCloseButton` |  | `boolean` | UI5 default false. |
+| `link` |  | `ReactNode` | A link after the text (`link` aggregation). |
+| `controls` |  | `ReactNode[]` | Links referenced from a formatted text (`controls` aggregation); shown after the text. |
+| `enableFormattedText` |  | `boolean` | UI5 parses `text` as limited HTML; smart-kit never parses HTML, so the text stays plain. Use `children` instead. |
+| `children` |  | `ReactNode` | Extension: rich content instead of `text`. |
+| `onClose` |  | `() => void` |  |
+| `ref` |  | `Ref&lt;MessageStrip>` |  |
+
+## `@rhfan2019/smart-kit/m/MessageToast`
+
+`default` (const) · `MessageToastOptions` (interface)
+
+### `default` — const
 
 ```ts
-export type MicroProcessFlowPressedItem = Omit<MicroProcessFlowItemProps, 'onPress'> & { key?: string };
+const default: { show(message: ReactNode, o?: MessageToastOptions): void; }
 ```
 
-### `MicroProcessFlowProps` — interface
+### `MessageToastOptions` — interface
 
-Props of `MicroProcessFlow` (see above).
+sap.m.MessageToast `show` options (1.154).
 
-### `MicroProcessFlowRenderType` — const
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `duration` |  | `number` | Milliseconds before the close animation starts (UI5 default 3000). |
+| `width` |  | `string` | CSS width (UI5 default 15em; the default comes from the token --sk-toast-width). |
+| `my` |  | `Dock` | The point of the toast that is aligned (UI5 default 'CenterBottom'). |
+| `at` |  | `Dock` | The point of the reference (`of`) the toast is aligned to (UI5 default 'CenterBottom'). |
+| `of` |  | `Element` | The reference element (default: the window). |
+| `offset` |  | `string` | Offset 'x y' in pixels (UI5 default '0 0'). |
+| `collision` |  | `string` | 'fit', 'flip' or 'none', per axis (UI5 default 'fit fit'); smart-kit always keeps the toast inside the window. |
+| `onClose` |  | `() => void` | Called after the toast has closed. |
+| `autoClose` |  | `boolean` | Closes as soon as the user touches or clicks the screen (UI5 default true). |
+| `animationTimingFunction` |  | `string` | CSS timing function of the close animation (UI5 default 'ease'). |
+| `animationDuration` |  | `number` | Duration of the close animation in milliseconds (UI5 default 1000). |
+| `closeOnBrowserNavigation` |  | `boolean` | Accepted and ignored: smart-kit has no router (ADR-010). |
 
-sap.suite.ui.commons.MicroProcessFlowRenderType
+## `@rhfan2019/smart-kit/m/MessageView`
+
+`$MessageViewSettings` (interface) · `default` (component) · `MessageViewItem` (type)
+
+### `$MessageViewSettings` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `children` |  | `ReactNode` | `MessageItem` elements. |
+| `items` |  | `Message[]` | Extension: core messages (ADR-023), shown like MessageItems: text as title, target as subtitle and active title. |
+| `groupItems` |  | `boolean` | Groups the items by `groupName`. UI5 default false. |
+| `showDetailsPageHeader` |  | `boolean` | Shows the header with the back button on the details page. UI5 default true. |
+| `headerButton` |  | `ReactNode` | A button at the end of the list header (MessagePopover `headerButton`). |
+| `onItemSelect` |  | `(e: { item: MessageViewItem; messageTypeFilter: MessageType \| 'All' }) => void` |  |
+| `onActiveTitlePress` |  | `(e: { item: MessageViewItem }) => void` |  |
+| `onListSelect` |  | `(e: { messageTypeFilter: MessageType \| 'All' }) => void` |  |
+| `onLongtextLoaded` |  | `() => void` | Fired after the long text of an item (`longtextUrl`) has been loaded. |
+| `ref` |  | `Ref&lt;MessageView>` |  |
+
+### `default` — component
+
+sap.m.MessageView
+
+`import { default } from '@rhfan2019/smart-kit/m/MessageView';`
+
+| Prop | Required | Type | Description |
+| --- | --- | --- | --- |
+| `children` |  | `ReactNode` | `MessageItem` elements. |
+| `items` |  | `Message[]` | Extension: core messages (ADR-023), shown like MessageItems: text as title, target as subtitle and active title. |
+| `groupItems` |  | `boolean` | Groups the items by `groupName`. UI5 default false. |
+| `showDetailsPageHeader` |  | `boolean` | Shows the header with the back button on the details page. UI5 default true. |
+| `headerButton` |  | `ReactNode` | A button at the end of the list header (MessagePopover `headerButton`). |
+| `onItemSelect` |  | `(e: { item: MessageViewItem; messageTypeFilter: MessageType \| 'All' }) => void` |  |
+| `onActiveTitlePress` |  | `(e: { item: MessageViewItem }) => void` |  |
+| `onListSelect` |  | `(e: { messageTypeFilter: MessageType \| 'All' }) => void` |  |
+| `onLongtextLoaded` |  | `() => void` | Fired after the long text of an item (`longtextUrl`) has been loaded. |
+| `ref` |  | `Ref&lt;MessageView>` |  |
+
+### `MessageViewItem` — type
+
+An item as passed to event handlers: its properties, its React key, and (extension) the core message it came from.
 
 ```ts
-const MicroProcessFlowRenderType: { readonly Wrap: "Wrap"; readonly NoWrap: "NoWrap"; readonly Scrolling: "Scrolling"; readonly ScrollingWithResizer: "ScrollingWithResizer…
+export type MessageViewItem = $MessageItemSettings & { key?: string; message?: Message };
 ```
 
-### `ObjectIdentifier` — component
+## `@rhfan2019/smart-kit/m/ObjectIdentifier`
 
-`import { ObjectIdentifier } from '@rhfan2019/smart-kit/controls';`
+`$ObjectIdentifierSettings` (interface) · `default` (component)
+
+### `$ObjectIdentifierSettings` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `title` |  | `string` | Object title (bold). |
+| `text` |  | `string` | Secondary text below the title. |
+| `titleActive` |  | `boolean` | The title is a link that fires onTitlePress (default false). |
+| `reactiveAreaMode` |  | `ReactiveAreaMode` | Overlay enlarges the clickable area of an active title (default Inline). |
+| `emptyIndicatorMode` |  | `EmptyIndicatorMode` | Shows "–" when title and text are empty (default Off). |
+| `onTitlePress` |  | `(e: { domRef: HTMLElement }) => void` | Fired when an active title is pressed; `domRef` is the title element. |
+| `children` |  | `ReactNode \| undefined` |  |
+| `defaultChecked` |  | `boolean \| undefined` |  |
+| `defaultValue` |  | `string \| number \| readonly string[] \| undefined` |  |
+| `suppressContentEditableWarning` |  | `boolean \| undefined` |  |
+| `suppressHydrationWarning` |  | `boolean \| undefined` |  |
+| `accessKey` |  | `string \| undefined` |  |
+| `autoCapitalize` |  | `"off" \| "none" \| "on" \| "sentences" \| "words" \| "characters" \| undefined \| (string & {})` |  |
+| `autoFocus` |  | `boolean \| undefined` |  |
+| `className` |  | `string \| undefined` |  |
+| `contentEditable` |  | `Booleanish \| "inherit" \| "plaintext-only" \| undefined` |  |
+| `contextMenu` |  | `string \| undefined` |  |
+| `dir` |  | `string \| undefined` |  |
+| `draggable` |  | `Booleanish \| undefined` |  |
+| `enterKeyHint` |  | `"enter" \| "done" \| "go" \| "next" \| "previous" \| "search" \| "send" \| undefined` |  |
+| `hidden` |  | `boolean \| undefined` |  |
+| `id` |  | `string \| undefined` |  |
+| `lang` |  | `string \| undefined` |  |
+| `nonce` |  | `string \| undefined` |  |
+| `slot` |  | `string \| undefined` |  |
+| `spellCheck` |  | `Booleanish \| undefined` |  |
+| `style` |  | `CSSProperties \| undefined` |  |
+| `tabIndex` |  | `number \| undefined` |  |
+| `translate` |  | `"yes" \| "no" \| undefined` |  |
+| `radioGroup` |  | `string \| undefined` |  |
+| `role` |  | `AriaRole \| undefined` |  |
+| `about` |  | `string \| undefined` |  |
+| `content` |  | `string \| undefined` |  |
+| `datatype` |  | `string \| undefined` |  |
+| `inlist` |  | `any` |  |
+| `prefix` |  | `string \| undefined` |  |
+| `property` |  | `string \| undefined` |  |
+| `rel` |  | `string \| undefined` |  |
+| `resource` |  | `string \| undefined` |  |
+| `rev` |  | `string \| undefined` |  |
+| `typeof` |  | `string \| undefined` |  |
+| `vocab` |  | `string \| undefined` |  |
+| `autoCorrect` |  | `string \| undefined` |  |
+| `autoSave` |  | `string \| undefined` |  |
+| `color` |  | `string \| undefined` |  |
+| `itemProp` |  | `string \| undefined` |  |
+| `itemScope` |  | `boolean \| undefined` |  |
+| `itemType` |  | `string \| undefined` |  |
+| `itemID` |  | `string \| undefined` |  |
+| `itemRef` |  | `string \| undefined` |  |
+| `results` |  | `number \| undefined` |  |
+| `security` |  | `string \| undefined` |  |
+| `unselectable` |  | `"on" \| "off" \| undefined` |  |
+| `popover` |  | `"" \| "auto" \| "manual" \| "hint" \| undefined` |  |
+| `popoverTargetAction` |  | `"toggle" \| "show" \| "hide" \| undefined` |  |
+| `popoverTarget` |  | `string \| undefined` |  |
+| `inert` |  | `boolean \| undefined` |  |
+| `inputMode` |  | `"none" \| "text" \| "tel" \| "url" \| "email" \| "numeric" \| "decimal" \| "search" \| undefined` | Hints at the type of data that might be entered by the user while editing the element or its contents |
+| `is` |  | `string \| undefined` | Specify that a standard HTML element should behave like a defined custom built-in element |
+| `exportparts` |  | `string \| undefined` |  |
+| `part` |  | `string \| undefined` |  |
+| `aria-activedescendant` |  | `string \| undefined` | Identifies the currently active element when DOM focus is on a composite widget, textbox, group, or application. |
+| `aria-atomic` |  | `Booleanish \| undefined` | Indicates whether assistive technologies will present all, or only parts of, the changed region based on the change notifications defined by the aria-relevant attribute. |
+| `aria-autocomplete` |  | `"none" \| "inline" \| "list" \| "both" \| undefined` | Indicates whether inputting text could trigger display of one or more predictions of the user's intended value for an input and specifies how predictions would be presented if they are made. |
+| `aria-braillelabel` |  | `string \| undefined` | Defines a string value that labels the current element, which is intended to be converted into Braille. |
+| `aria-brailleroledescription` |  | `string \| undefined` | Defines a human-readable, author-localized abbreviated description for the role of an element, which is intended to be converted into Braille. |
+| `aria-busy` |  | `Booleanish \| undefined` |  |
+| `aria-checked` |  | `boolean \| "false" \| "mixed" \| "true" \| undefined` | Indicates the current "checked" state of checkboxes, radio buttons, and other widgets. |
+| `aria-colcount` |  | `number \| undefined` | Defines the total number of columns in a table, grid, or treegrid. |
+| `aria-colindex` |  | `number \| undefined` | Defines an element's column index or position with respect to the total number of columns within a table, grid, or treegrid. |
+| `aria-colindextext` |  | `string \| undefined` | Defines a human readable text alternative of aria-colindex. |
+| `aria-colspan` |  | `number \| undefined` | Defines the number of columns spanned by a cell or gridcell within a table, grid, or treegrid. |
+| `aria-controls` |  | `string \| undefined` | Identifies the element (or elements) whose contents or presence are controlled by the current element. |
+| `aria-current` |  | `boolean \| "false" \| "true" \| "page" \| "step" \| "location" \| "date" \| "time" \| undefined` | Indicates the element that represents the current item within a container or set of related elements. |
+| `aria-describedby` |  | `string \| undefined` | Identifies the element (or elements) that describes the object. |
+| `aria-description` |  | `string \| undefined` | Defines a string value that describes or annotates the current element. |
+| `aria-details` |  | `string \| undefined` | Identifies the element that provides a detailed, extended description for the object. |
+| `aria-disabled` |  | `Booleanish \| undefined` | Indicates that the element is perceivable but disabled, so it is not editable or otherwise operable. |
+| `aria-dropeffect` |  | `"none" \| "copy" \| "execute" \| "link" \| "move" \| "popup" \| undefined` | Indicates what functions can be performed when a dragged object is released on the drop target. **Deprecated**: in ARIA 1.1 |
+| `aria-errormessage` |  | `string \| undefined` | Identifies the element that provides an error message for the object. |
+| `aria-expanded` |  | `Booleanish \| undefined` | Indicates whether the element, or another grouping element it controls, is currently expanded or collapsed. |
+| `aria-flowto` |  | `string \| undefined` | Identifies the next element (or elements) in an alternate reading order of content which, at the user's discretion, allows assistive technology to override the general default of reading in document source order. |
+| `aria-grabbed` |  | `Booleanish \| undefined` | Indicates an element's "grabbed" state in a drag-and-drop operation. **Deprecated**: in ARIA 1.1 |
+| `aria-haspopup` |  | `boolean \| "false" \| "true" \| "menu" \| "listbox" \| "tree" \| "grid" \| "dialog" \| undefined` | Indicates the availability and type of interactive popup element, such as menu or dialog, that can be triggered by an element. |
+| `aria-hidden` |  | `Booleanish \| undefined` | Indicates whether the element is exposed to an accessibility API. |
+| `aria-invalid` |  | `boolean \| "false" \| "true" \| "grammar" \| "spelling" \| undefined` | Indicates the entered value does not conform to the format expected by the application. |
+| `aria-keyshortcuts` |  | `string \| undefined` | Indicates keyboard shortcuts that an author has implemented to activate or give focus to an element. |
+| `aria-label` |  | `string \| undefined` | Defines a string value that labels the current element. |
+| `aria-labelledby` |  | `string \| undefined` | Identifies the element (or elements) that labels the current element. |
+| `aria-level` |  | `number \| undefined` | Defines the hierarchical level of an element within a structure. |
+| `aria-live` |  | `"off" \| "assertive" \| "polite" \| undefined` | Indicates that an element will be updated, and describes the types of updates the user agents, assistive technologies, and user can expect from the live region. |
+| `aria-modal` |  | `Booleanish \| undefined` | Indicates whether an element is modal when displayed. |
+| `aria-multiline` |  | `Booleanish \| undefined` | Indicates whether a text box accepts multiple lines of input or only a single line. |
+| `aria-multiselectable` |  | `Booleanish \| undefined` | Indicates that the user may select more than one item from the current selectable descendants. |
+| `aria-orientation` |  | `"horizontal" \| "vertical" \| undefined` | Indicates whether the element's orientation is horizontal, vertical, or unknown/ambiguous. |
+| `aria-owns` |  | `string \| undefined` | Identifies an element (or elements) in order to define a visual, functional, or contextual parent/child relationship between DOM elements where the DOM hierarchy cannot be used to represent the relationship. |
+| `aria-placeholder` |  | `string \| undefined` | Defines a short hint (a word or short phrase) intended to aid the user with data entry when the control has no value. A hint could be a sample value or a brief description of the expected format. |
+| `aria-posinset` |  | `number \| undefined` | Defines an element's number or position in the current set of listitems or treeitems. Not required if all elements in the set are present in the DOM. |
+| `aria-pressed` |  | `boolean \| "false" \| "mixed" \| "true" \| undefined` | Indicates the current "pressed" state of toggle buttons. |
+| `aria-readonly` |  | `Booleanish \| undefined` | Indicates that the element is not editable, but is otherwise operable. |
+| `aria-relevant` |  | `\| "additions" \| "additions removals" \| "additions text" \| "all" \| "removals" \| "removals additions" \| "removals text" \| "text" \| "text ad…` | Indicates what notifications the user agent will trigger when the accessibility tree within a live region is modified. |
+| `aria-required` |  | `Booleanish \| undefined` | Indicates that user input is required on the element before a form may be submitted. |
+| `aria-roledescription` |  | `string \| undefined` | Defines a human-readable, author-localized description for the role of an element. |
+| `aria-rowcount` |  | `number \| undefined` | Defines the total number of rows in a table, grid, or treegrid. |
+| `aria-rowindex` |  | `number \| undefined` | Defines an element's row index or position with respect to the total number of rows within a table, grid, or treegrid. |
+| `aria-rowindextext` |  | `string \| undefined` | Defines a human readable text alternative of aria-rowindex. |
+| `aria-rowspan` |  | `number \| undefined` | Defines the number of rows spanned by a cell or gridcell within a table, grid, or treegrid. |
+| `aria-selected` |  | `Booleanish \| undefined` | Indicates the current "selected" state of various widgets. |
+| `aria-setsize` |  | `number \| undefined` | Defines the number of items in the current set of listitems or treeitems. Not required if all elements in the set are present in the DOM. |
+| `aria-sort` |  | `"none" \| "ascending" \| "descending" \| "other" \| undefined` | Indicates if items in a table or grid are sorted in ascending or descending order. |
+| `aria-valuemax` |  | `number \| undefined` | Defines the maximum allowed value for a range widget. |
+| `aria-valuemin` |  | `number \| undefined` | Defines the minimum allowed value for a range widget. |
+| `aria-valuenow` |  | `number \| undefined` | Defines the current value for a range widget. |
+| `aria-valuetext` |  | `string \| undefined` | Defines the human readable text alternative of aria-valuenow for a range widget. |
+| `dangerouslySetInnerHTML` |  | `{ // Should be InnerHTML['innerHTML']. // But unfortunately we're mixing renderer-specific type declarations. __html: string \| TrustedHTM…` |  |
+| `onCopy` |  | `ClipboardEventHandler&lt;T> \| undefined` |  |
+| `onCopyCapture` |  | `ClipboardEventHandler&lt;T> \| undefined` |  |
+| `onCut` |  | `ClipboardEventHandler&lt;T> \| undefined` |  |
+| `onCutCapture` |  | `ClipboardEventHandler&lt;T> \| undefined` |  |
+| `onPaste` |  | `ClipboardEventHandler&lt;T> \| undefined` |  |
+| `onPasteCapture` |  | `ClipboardEventHandler&lt;T> \| undefined` |  |
+| `onCompositionEnd` |  | `CompositionEventHandler&lt;T> \| undefined` |  |
+| `onCompositionEndCapture` |  | `CompositionEventHandler&lt;T> \| undefined` |  |
+| `onCompositionStart` |  | `CompositionEventHandler&lt;T> \| undefined` |  |
+| `onCompositionStartCapture` |  | `CompositionEventHandler&lt;T> \| undefined` |  |
+| `onCompositionUpdate` |  | `CompositionEventHandler&lt;T> \| undefined` |  |
+| `onCompositionUpdateCapture` |  | `CompositionEventHandler&lt;T> \| undefined` |  |
+| `onFocus` |  | `FocusEventHandler&lt;T> \| undefined` |  |
+| `onFocusCapture` |  | `FocusEventHandler&lt;T> \| undefined` |  |
+| `onBlur` |  | `FocusEventHandler&lt;T> \| undefined` |  |
+| `onBlurCapture` |  | `FocusEventHandler&lt;T> \| undefined` |  |
+| `onChange` |  | `ChangeEventHandler&lt;T> \| undefined` |  |
+| `onChangeCapture` |  | `ChangeEventHandler&lt;T> \| undefined` |  |
+| `onBeforeInput` |  | `InputEventHandler&lt;T> \| undefined` |  |
+| `onBeforeInputCapture` |  | `InputEventHandler&lt;T> \| undefined` |  |
+| `onInput` |  | `InputEventHandler&lt;T> \| undefined` |  |
+| `onInputCapture` |  | `InputEventHandler&lt;T> \| undefined` |  |
+| `onReset` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onResetCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onSubmit` |  | `SubmitEventHandler&lt;T> \| undefined` |  |
+| `onSubmitCapture` |  | `SubmitEventHandler&lt;T> \| undefined` |  |
+| `onInvalid` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onInvalidCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onLoad` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onLoadCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onError` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onErrorCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onKeyDown` |  | `KeyboardEventHandler&lt;T> \| undefined` |  |
+| `onKeyDownCapture` |  | `KeyboardEventHandler&lt;T> \| undefined` |  |
+| `onKeyPress` |  | `KeyboardEventHandler&lt;T> \| undefined` |  **Deprecated**: Use `onKeyUp` or `onKeyDown` instead |
+| `onKeyPressCapture` |  | `KeyboardEventHandler&lt;T> \| undefined` |  **Deprecated**: Use `onKeyUpCapture` or `onKeyDownCapture` instead |
+| `onKeyUp` |  | `KeyboardEventHandler&lt;T> \| undefined` |  |
+| `onKeyUpCapture` |  | `KeyboardEventHandler&lt;T> \| undefined` |  |
+| `onAbort` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onAbortCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onCanPlay` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onCanPlayCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onCanPlayThrough` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onCanPlayThroughCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onDurationChange` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onDurationChangeCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onEmptied` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onEmptiedCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onEncrypted` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onEncryptedCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onEnded` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onEndedCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onLoadedData` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onLoadedDataCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onLoadedMetadata` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onLoadedMetadataCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onLoadStart` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onLoadStartCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onPause` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onPauseCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onPlay` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onPlayCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onPlaying` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onPlayingCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onProgress` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onProgressCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onRateChange` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onRateChangeCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onSeeked` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onSeekedCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onSeeking` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onSeekingCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onStalled` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onStalledCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onSuspend` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onSuspendCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onTimeUpdate` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onTimeUpdateCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onVolumeChange` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onVolumeChangeCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onWaiting` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onWaitingCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onAuxClick` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onAuxClickCapture` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onClick` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onClickCapture` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onContextMenu` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onContextMenuCapture` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onDoubleClick` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onDoubleClickCapture` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onDrag` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onDragCapture` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onDragEnd` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onDragEndCapture` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onDragEnter` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onDragEnterCapture` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onDragExit` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onDragExitCapture` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onDragLeave` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onDragLeaveCapture` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onDragOver` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onDragOverCapture` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onDragStart` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onDragStartCapture` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onDrop` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onDropCapture` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onMouseDown` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onMouseDownCapture` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onMouseEnter` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onMouseLeave` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onMouseMove` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onMouseMoveCapture` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onMouseOut` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onMouseOutCapture` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onMouseOver` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onMouseOverCapture` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onMouseUp` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onMouseUpCapture` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onSelect` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onSelectCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onTouchCancel` |  | `TouchEventHandler&lt;T> \| undefined` |  |
+| `onTouchCancelCapture` |  | `TouchEventHandler&lt;T> \| undefined` |  |
+| `onTouchEnd` |  | `TouchEventHandler&lt;T> \| undefined` |  |
+| `onTouchEndCapture` |  | `TouchEventHandler&lt;T> \| undefined` |  |
+| `onTouchMove` |  | `TouchEventHandler&lt;T> \| undefined` |  |
+| `onTouchMoveCapture` |  | `TouchEventHandler&lt;T> \| undefined` |  |
+| `onTouchStart` |  | `TouchEventHandler&lt;T> \| undefined` |  |
+| `onTouchStartCapture` |  | `TouchEventHandler&lt;T> \| undefined` |  |
+| `onPointerDown` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onPointerDownCapture` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onPointerMove` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onPointerMoveCapture` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onPointerUp` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onPointerUpCapture` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onPointerCancel` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onPointerCancelCapture` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onPointerEnter` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onPointerLeave` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onPointerOver` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onPointerOverCapture` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onPointerOut` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onPointerOutCapture` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onGotPointerCapture` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onGotPointerCaptureCapture` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onLostPointerCapture` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onLostPointerCaptureCapture` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onScroll` |  | `UIEventHandler&lt;T> \| undefined` |  |
+| `onScrollCapture` |  | `UIEventHandler&lt;T> \| undefined` |  |
+| `onScrollEnd` |  | `UIEventHandler&lt;T> \| undefined` |  |
+| `onScrollEndCapture` |  | `UIEventHandler&lt;T> \| undefined` |  |
+| `onWheel` |  | `WheelEventHandler&lt;T> \| undefined` |  |
+| `onWheelCapture` |  | `WheelEventHandler&lt;T> \| undefined` |  |
+| `onAnimationStart` |  | `AnimationEventHandler&lt;T> \| undefined` |  |
+| `onAnimationStartCapture` |  | `AnimationEventHandler&lt;T> \| undefined` |  |
+| `onAnimationEnd` |  | `AnimationEventHandler&lt;T> \| undefined` |  |
+| `onAnimationEndCapture` |  | `AnimationEventHandler&lt;T> \| undefined` |  |
+| `onAnimationIteration` |  | `AnimationEventHandler&lt;T> \| undefined` |  |
+| `onAnimationIterationCapture` |  | `AnimationEventHandler&lt;T> \| undefined` |  |
+| `onToggle` |  | `ToggleEventHandler&lt;T> \| undefined` |  |
+| `onBeforeToggle` |  | `ToggleEventHandler&lt;T> \| undefined` |  |
+| `onTransitionCancel` |  | `TransitionEventHandler&lt;T> \| undefined` |  |
+| `onTransitionCancelCapture` |  | `TransitionEventHandler&lt;T> \| undefined` |  |
+| `onTransitionEnd` |  | `TransitionEventHandler&lt;T> \| undefined` |  |
+| `onTransitionEndCapture` |  | `TransitionEventHandler&lt;T> \| undefined` |  |
+| `onTransitionRun` |  | `TransitionEventHandler&lt;T> \| undefined` |  |
+| `onTransitionRunCapture` |  | `TransitionEventHandler&lt;T> \| undefined` |  |
+| `onTransitionStart` |  | `TransitionEventHandler&lt;T> \| undefined` |  |
+| `onTransitionStartCapture` |  | `TransitionEventHandler&lt;T> \| undefined` |  |
+
+### `default` — component
+
+`import { default } from '@rhfan2019/smart-kit/m/ObjectIdentifier';`
 
 | Prop | Required | Type | Description |
 | --- | --- | --- | --- |
@@ -4365,13 +5082,301 @@ const MicroProcessFlowRenderType: { readonly Wrap: "Wrap"; readonly NoWrap: "NoW
 | `onTransitionStart` |  | `TransitionEventHandler&lt;T> \| undefined` |  |
 | `onTransitionStartCapture` |  | `TransitionEventHandler&lt;T> \| undefined` |  |
 
-### `ObjectIdentifierProps` — interface
+## `@rhfan2019/smart-kit/m/ObjectMarker`
 
-Props of `ObjectIdentifier` (see above).
+`$ObjectMarkerSettings` (interface) · `default` (component)
 
-### `ObjectMarker` — component
+### `$ObjectMarkerSettings` — interface
 
-`import { ObjectMarker } from '@rhfan2019/smart-kit/controls';`
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `type` |  | `ObjectMarkerType` | The marker (no default: without a type nothing is rendered). |
+| `reactiveAreaMode` |  | `ReactiveAreaMode` | Overlay enlarges the clickable area (default Inline). |
+| `visibility` |  | `ObjectMarkerVisibility` | Icon, text or both. Without it, as in SAPUI5: Flagged and Favorite icon only; Draft text only; Locked, Unsaved, LockedBy and UnsavedBy icon only on small screens (below 600px) and icon and text on larger ones. |
+| `additionalInfo` |  | `string` | The user name of LockedBy / UnsavedBy ("Locked by {name}"). |
+| `onPress` |  | `(e: { type: ObjectMarkerType }) => void` | Makes the marker clickable. |
+| `children` |  | `ReactNode \| undefined` |  |
+| `title` |  | `string \| undefined` |  |
+| `defaultChecked` |  | `boolean \| undefined` |  |
+| `defaultValue` |  | `string \| number \| readonly string[] \| undefined` |  |
+| `suppressContentEditableWarning` |  | `boolean \| undefined` |  |
+| `suppressHydrationWarning` |  | `boolean \| undefined` |  |
+| `accessKey` |  | `string \| undefined` |  |
+| `autoCapitalize` |  | `"off" \| "none" \| "on" \| "sentences" \| "words" \| "characters" \| undefined \| (string & {})` |  |
+| `autoFocus` |  | `boolean \| undefined` |  |
+| `className` |  | `string \| undefined` |  |
+| `contentEditable` |  | `Booleanish \| "inherit" \| "plaintext-only" \| undefined` |  |
+| `contextMenu` |  | `string \| undefined` |  |
+| `dir` |  | `string \| undefined` |  |
+| `draggable` |  | `Booleanish \| undefined` |  |
+| `enterKeyHint` |  | `"enter" \| "done" \| "go" \| "next" \| "previous" \| "search" \| "send" \| undefined` |  |
+| `hidden` |  | `boolean \| undefined` |  |
+| `id` |  | `string \| undefined` |  |
+| `lang` |  | `string \| undefined` |  |
+| `nonce` |  | `string \| undefined` |  |
+| `slot` |  | `string \| undefined` |  |
+| `spellCheck` |  | `Booleanish \| undefined` |  |
+| `style` |  | `CSSProperties \| undefined` |  |
+| `tabIndex` |  | `number \| undefined` |  |
+| `translate` |  | `"yes" \| "no" \| undefined` |  |
+| `radioGroup` |  | `string \| undefined` |  |
+| `role` |  | `AriaRole \| undefined` |  |
+| `about` |  | `string \| undefined` |  |
+| `content` |  | `string \| undefined` |  |
+| `datatype` |  | `string \| undefined` |  |
+| `inlist` |  | `any` |  |
+| `prefix` |  | `string \| undefined` |  |
+| `property` |  | `string \| undefined` |  |
+| `rel` |  | `string \| undefined` |  |
+| `resource` |  | `string \| undefined` |  |
+| `rev` |  | `string \| undefined` |  |
+| `typeof` |  | `string \| undefined` |  |
+| `vocab` |  | `string \| undefined` |  |
+| `autoCorrect` |  | `string \| undefined` |  |
+| `autoSave` |  | `string \| undefined` |  |
+| `color` |  | `string \| undefined` |  |
+| `itemProp` |  | `string \| undefined` |  |
+| `itemScope` |  | `boolean \| undefined` |  |
+| `itemType` |  | `string \| undefined` |  |
+| `itemID` |  | `string \| undefined` |  |
+| `itemRef` |  | `string \| undefined` |  |
+| `results` |  | `number \| undefined` |  |
+| `security` |  | `string \| undefined` |  |
+| `unselectable` |  | `"on" \| "off" \| undefined` |  |
+| `popover` |  | `"" \| "auto" \| "manual" \| "hint" \| undefined` |  |
+| `popoverTargetAction` |  | `"toggle" \| "show" \| "hide" \| undefined` |  |
+| `popoverTarget` |  | `string \| undefined` |  |
+| `inert` |  | `boolean \| undefined` |  |
+| `inputMode` |  | `"none" \| "text" \| "tel" \| "url" \| "email" \| "numeric" \| "decimal" \| "search" \| undefined` | Hints at the type of data that might be entered by the user while editing the element or its contents |
+| `is` |  | `string \| undefined` | Specify that a standard HTML element should behave like a defined custom built-in element |
+| `exportparts` |  | `string \| undefined` |  |
+| `part` |  | `string \| undefined` |  |
+| `aria-activedescendant` |  | `string \| undefined` | Identifies the currently active element when DOM focus is on a composite widget, textbox, group, or application. |
+| `aria-atomic` |  | `Booleanish \| undefined` | Indicates whether assistive technologies will present all, or only parts of, the changed region based on the change notifications defined by the aria-relevant attribute. |
+| `aria-autocomplete` |  | `"none" \| "inline" \| "list" \| "both" \| undefined` | Indicates whether inputting text could trigger display of one or more predictions of the user's intended value for an input and specifies how predictions would be presented if they are made. |
+| `aria-braillelabel` |  | `string \| undefined` | Defines a string value that labels the current element, which is intended to be converted into Braille. |
+| `aria-brailleroledescription` |  | `string \| undefined` | Defines a human-readable, author-localized abbreviated description for the role of an element, which is intended to be converted into Braille. |
+| `aria-busy` |  | `Booleanish \| undefined` |  |
+| `aria-checked` |  | `boolean \| "false" \| "mixed" \| "true" \| undefined` | Indicates the current "checked" state of checkboxes, radio buttons, and other widgets. |
+| `aria-colcount` |  | `number \| undefined` | Defines the total number of columns in a table, grid, or treegrid. |
+| `aria-colindex` |  | `number \| undefined` | Defines an element's column index or position with respect to the total number of columns within a table, grid, or treegrid. |
+| `aria-colindextext` |  | `string \| undefined` | Defines a human readable text alternative of aria-colindex. |
+| `aria-colspan` |  | `number \| undefined` | Defines the number of columns spanned by a cell or gridcell within a table, grid, or treegrid. |
+| `aria-controls` |  | `string \| undefined` | Identifies the element (or elements) whose contents or presence are controlled by the current element. |
+| `aria-current` |  | `boolean \| "false" \| "true" \| "page" \| "step" \| "location" \| "date" \| "time" \| undefined` | Indicates the element that represents the current item within a container or set of related elements. |
+| `aria-describedby` |  | `string \| undefined` | Identifies the element (or elements) that describes the object. |
+| `aria-description` |  | `string \| undefined` | Defines a string value that describes or annotates the current element. |
+| `aria-details` |  | `string \| undefined` | Identifies the element that provides a detailed, extended description for the object. |
+| `aria-disabled` |  | `Booleanish \| undefined` | Indicates that the element is perceivable but disabled, so it is not editable or otherwise operable. |
+| `aria-dropeffect` |  | `"none" \| "copy" \| "execute" \| "link" \| "move" \| "popup" \| undefined` | Indicates what functions can be performed when a dragged object is released on the drop target. **Deprecated**: in ARIA 1.1 |
+| `aria-errormessage` |  | `string \| undefined` | Identifies the element that provides an error message for the object. |
+| `aria-expanded` |  | `Booleanish \| undefined` | Indicates whether the element, or another grouping element it controls, is currently expanded or collapsed. |
+| `aria-flowto` |  | `string \| undefined` | Identifies the next element (or elements) in an alternate reading order of content which, at the user's discretion, allows assistive technology to override the general default of reading in document source order. |
+| `aria-grabbed` |  | `Booleanish \| undefined` | Indicates an element's "grabbed" state in a drag-and-drop operation. **Deprecated**: in ARIA 1.1 |
+| `aria-haspopup` |  | `boolean \| "false" \| "true" \| "menu" \| "listbox" \| "tree" \| "grid" \| "dialog" \| undefined` | Indicates the availability and type of interactive popup element, such as menu or dialog, that can be triggered by an element. |
+| `aria-hidden` |  | `Booleanish \| undefined` | Indicates whether the element is exposed to an accessibility API. |
+| `aria-invalid` |  | `boolean \| "false" \| "true" \| "grammar" \| "spelling" \| undefined` | Indicates the entered value does not conform to the format expected by the application. |
+| `aria-keyshortcuts` |  | `string \| undefined` | Indicates keyboard shortcuts that an author has implemented to activate or give focus to an element. |
+| `aria-label` |  | `string \| undefined` | Defines a string value that labels the current element. |
+| `aria-labelledby` |  | `string \| undefined` | Identifies the element (or elements) that labels the current element. |
+| `aria-level` |  | `number \| undefined` | Defines the hierarchical level of an element within a structure. |
+| `aria-live` |  | `"off" \| "assertive" \| "polite" \| undefined` | Indicates that an element will be updated, and describes the types of updates the user agents, assistive technologies, and user can expect from the live region. |
+| `aria-modal` |  | `Booleanish \| undefined` | Indicates whether an element is modal when displayed. |
+| `aria-multiline` |  | `Booleanish \| undefined` | Indicates whether a text box accepts multiple lines of input or only a single line. |
+| `aria-multiselectable` |  | `Booleanish \| undefined` | Indicates that the user may select more than one item from the current selectable descendants. |
+| `aria-orientation` |  | `"horizontal" \| "vertical" \| undefined` | Indicates whether the element's orientation is horizontal, vertical, or unknown/ambiguous. |
+| `aria-owns` |  | `string \| undefined` | Identifies an element (or elements) in order to define a visual, functional, or contextual parent/child relationship between DOM elements where the DOM hierarchy cannot be used to represent the relationship. |
+| `aria-placeholder` |  | `string \| undefined` | Defines a short hint (a word or short phrase) intended to aid the user with data entry when the control has no value. A hint could be a sample value or a brief description of the expected format. |
+| `aria-posinset` |  | `number \| undefined` | Defines an element's number or position in the current set of listitems or treeitems. Not required if all elements in the set are present in the DOM. |
+| `aria-pressed` |  | `boolean \| "false" \| "mixed" \| "true" \| undefined` | Indicates the current "pressed" state of toggle buttons. |
+| `aria-readonly` |  | `Booleanish \| undefined` | Indicates that the element is not editable, but is otherwise operable. |
+| `aria-relevant` |  | `\| "additions" \| "additions removals" \| "additions text" \| "all" \| "removals" \| "removals additions" \| "removals text" \| "text" \| "text ad…` | Indicates what notifications the user agent will trigger when the accessibility tree within a live region is modified. |
+| `aria-required` |  | `Booleanish \| undefined` | Indicates that user input is required on the element before a form may be submitted. |
+| `aria-roledescription` |  | `string \| undefined` | Defines a human-readable, author-localized description for the role of an element. |
+| `aria-rowcount` |  | `number \| undefined` | Defines the total number of rows in a table, grid, or treegrid. |
+| `aria-rowindex` |  | `number \| undefined` | Defines an element's row index or position with respect to the total number of rows within a table, grid, or treegrid. |
+| `aria-rowindextext` |  | `string \| undefined` | Defines a human readable text alternative of aria-rowindex. |
+| `aria-rowspan` |  | `number \| undefined` | Defines the number of rows spanned by a cell or gridcell within a table, grid, or treegrid. |
+| `aria-selected` |  | `Booleanish \| undefined` | Indicates the current "selected" state of various widgets. |
+| `aria-setsize` |  | `number \| undefined` | Defines the number of items in the current set of listitems or treeitems. Not required if all elements in the set are present in the DOM. |
+| `aria-sort` |  | `"none" \| "ascending" \| "descending" \| "other" \| undefined` | Indicates if items in a table or grid are sorted in ascending or descending order. |
+| `aria-valuemax` |  | `number \| undefined` | Defines the maximum allowed value for a range widget. |
+| `aria-valuemin` |  | `number \| undefined` | Defines the minimum allowed value for a range widget. |
+| `aria-valuenow` |  | `number \| undefined` | Defines the current value for a range widget. |
+| `aria-valuetext` |  | `string \| undefined` | Defines the human readable text alternative of aria-valuenow for a range widget. |
+| `dangerouslySetInnerHTML` |  | `{ // Should be InnerHTML['innerHTML']. // But unfortunately we're mixing renderer-specific type declarations. __html: string \| TrustedHTM…` |  |
+| `onCopy` |  | `ClipboardEventHandler&lt;T> \| undefined` |  |
+| `onCopyCapture` |  | `ClipboardEventHandler&lt;T> \| undefined` |  |
+| `onCut` |  | `ClipboardEventHandler&lt;T> \| undefined` |  |
+| `onCutCapture` |  | `ClipboardEventHandler&lt;T> \| undefined` |  |
+| `onPaste` |  | `ClipboardEventHandler&lt;T> \| undefined` |  |
+| `onPasteCapture` |  | `ClipboardEventHandler&lt;T> \| undefined` |  |
+| `onCompositionEnd` |  | `CompositionEventHandler&lt;T> \| undefined` |  |
+| `onCompositionEndCapture` |  | `CompositionEventHandler&lt;T> \| undefined` |  |
+| `onCompositionStart` |  | `CompositionEventHandler&lt;T> \| undefined` |  |
+| `onCompositionStartCapture` |  | `CompositionEventHandler&lt;T> \| undefined` |  |
+| `onCompositionUpdate` |  | `CompositionEventHandler&lt;T> \| undefined` |  |
+| `onCompositionUpdateCapture` |  | `CompositionEventHandler&lt;T> \| undefined` |  |
+| `onFocus` |  | `FocusEventHandler&lt;T> \| undefined` |  |
+| `onFocusCapture` |  | `FocusEventHandler&lt;T> \| undefined` |  |
+| `onBlur` |  | `FocusEventHandler&lt;T> \| undefined` |  |
+| `onBlurCapture` |  | `FocusEventHandler&lt;T> \| undefined` |  |
+| `onChange` |  | `ChangeEventHandler&lt;T> \| undefined` |  |
+| `onChangeCapture` |  | `ChangeEventHandler&lt;T> \| undefined` |  |
+| `onBeforeInput` |  | `InputEventHandler&lt;T> \| undefined` |  |
+| `onBeforeInputCapture` |  | `InputEventHandler&lt;T> \| undefined` |  |
+| `onInput` |  | `InputEventHandler&lt;T> \| undefined` |  |
+| `onInputCapture` |  | `InputEventHandler&lt;T> \| undefined` |  |
+| `onReset` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onResetCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onSubmit` |  | `SubmitEventHandler&lt;T> \| undefined` |  |
+| `onSubmitCapture` |  | `SubmitEventHandler&lt;T> \| undefined` |  |
+| `onInvalid` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onInvalidCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onLoad` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onLoadCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onError` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onErrorCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onKeyDown` |  | `KeyboardEventHandler&lt;T> \| undefined` |  |
+| `onKeyDownCapture` |  | `KeyboardEventHandler&lt;T> \| undefined` |  |
+| `onKeyPress` |  | `KeyboardEventHandler&lt;T> \| undefined` |  **Deprecated**: Use `onKeyUp` or `onKeyDown` instead |
+| `onKeyPressCapture` |  | `KeyboardEventHandler&lt;T> \| undefined` |  **Deprecated**: Use `onKeyUpCapture` or `onKeyDownCapture` instead |
+| `onKeyUp` |  | `KeyboardEventHandler&lt;T> \| undefined` |  |
+| `onKeyUpCapture` |  | `KeyboardEventHandler&lt;T> \| undefined` |  |
+| `onAbort` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onAbortCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onCanPlay` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onCanPlayCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onCanPlayThrough` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onCanPlayThroughCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onDurationChange` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onDurationChangeCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onEmptied` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onEmptiedCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onEncrypted` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onEncryptedCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onEnded` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onEndedCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onLoadedData` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onLoadedDataCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onLoadedMetadata` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onLoadedMetadataCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onLoadStart` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onLoadStartCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onPause` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onPauseCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onPlay` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onPlayCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onPlaying` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onPlayingCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onProgress` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onProgressCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onRateChange` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onRateChangeCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onSeeked` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onSeekedCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onSeeking` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onSeekingCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onStalled` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onStalledCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onSuspend` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onSuspendCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onTimeUpdate` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onTimeUpdateCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onVolumeChange` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onVolumeChangeCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onWaiting` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onWaitingCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onAuxClick` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onAuxClickCapture` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onClick` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onClickCapture` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onContextMenu` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onContextMenuCapture` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onDoubleClick` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onDoubleClickCapture` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onDrag` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onDragCapture` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onDragEnd` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onDragEndCapture` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onDragEnter` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onDragEnterCapture` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onDragExit` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onDragExitCapture` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onDragLeave` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onDragLeaveCapture` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onDragOver` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onDragOverCapture` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onDragStart` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onDragStartCapture` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onDrop` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onDropCapture` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onMouseDown` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onMouseDownCapture` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onMouseEnter` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onMouseLeave` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onMouseMove` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onMouseMoveCapture` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onMouseOut` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onMouseOutCapture` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onMouseOver` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onMouseOverCapture` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onMouseUp` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onMouseUpCapture` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onSelect` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onSelectCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onTouchCancel` |  | `TouchEventHandler&lt;T> \| undefined` |  |
+| `onTouchCancelCapture` |  | `TouchEventHandler&lt;T> \| undefined` |  |
+| `onTouchEnd` |  | `TouchEventHandler&lt;T> \| undefined` |  |
+| `onTouchEndCapture` |  | `TouchEventHandler&lt;T> \| undefined` |  |
+| `onTouchMove` |  | `TouchEventHandler&lt;T> \| undefined` |  |
+| `onTouchMoveCapture` |  | `TouchEventHandler&lt;T> \| undefined` |  |
+| `onTouchStart` |  | `TouchEventHandler&lt;T> \| undefined` |  |
+| `onTouchStartCapture` |  | `TouchEventHandler&lt;T> \| undefined` |  |
+| `onPointerDown` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onPointerDownCapture` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onPointerMove` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onPointerMoveCapture` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onPointerUp` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onPointerUpCapture` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onPointerCancel` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onPointerCancelCapture` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onPointerEnter` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onPointerLeave` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onPointerOver` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onPointerOverCapture` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onPointerOut` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onPointerOutCapture` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onGotPointerCapture` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onGotPointerCaptureCapture` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onLostPointerCapture` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onLostPointerCaptureCapture` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onScroll` |  | `UIEventHandler&lt;T> \| undefined` |  |
+| `onScrollCapture` |  | `UIEventHandler&lt;T> \| undefined` |  |
+| `onScrollEnd` |  | `UIEventHandler&lt;T> \| undefined` |  |
+| `onScrollEndCapture` |  | `UIEventHandler&lt;T> \| undefined` |  |
+| `onWheel` |  | `WheelEventHandler&lt;T> \| undefined` |  |
+| `onWheelCapture` |  | `WheelEventHandler&lt;T> \| undefined` |  |
+| `onAnimationStart` |  | `AnimationEventHandler&lt;T> \| undefined` |  |
+| `onAnimationStartCapture` |  | `AnimationEventHandler&lt;T> \| undefined` |  |
+| `onAnimationEnd` |  | `AnimationEventHandler&lt;T> \| undefined` |  |
+| `onAnimationEndCapture` |  | `AnimationEventHandler&lt;T> \| undefined` |  |
+| `onAnimationIteration` |  | `AnimationEventHandler&lt;T> \| undefined` |  |
+| `onAnimationIterationCapture` |  | `AnimationEventHandler&lt;T> \| undefined` |  |
+| `onToggle` |  | `ToggleEventHandler&lt;T> \| undefined` |  |
+| `onBeforeToggle` |  | `ToggleEventHandler&lt;T> \| undefined` |  |
+| `onTransitionCancel` |  | `TransitionEventHandler&lt;T> \| undefined` |  |
+| `onTransitionCancelCapture` |  | `TransitionEventHandler&lt;T> \| undefined` |  |
+| `onTransitionEnd` |  | `TransitionEventHandler&lt;T> \| undefined` |  |
+| `onTransitionEndCapture` |  | `TransitionEventHandler&lt;T> \| undefined` |  |
+| `onTransitionRun` |  | `TransitionEventHandler&lt;T> \| undefined` |  |
+| `onTransitionRunCapture` |  | `TransitionEventHandler&lt;T> \| undefined` |  |
+| `onTransitionStart` |  | `TransitionEventHandler&lt;T> \| undefined` |  |
+| `onTransitionStartCapture` |  | `TransitionEventHandler&lt;T> \| undefined` |  |
+
+### `default` — component
+
+`import { default } from '@rhfan2019/smart-kit/m/ObjectMarker';`
 
 | Prop | Required | Type | Description |
 | --- | --- | --- | --- |
@@ -4659,29 +5664,309 @@ Props of `ObjectIdentifier` (see above).
 | `onTransitionStart` |  | `TransitionEventHandler&lt;T> \| undefined` |  |
 | `onTransitionStartCapture` |  | `TransitionEventHandler&lt;T> \| undefined` |  |
 
-### `ObjectMarkerProps` — interface
+## `@rhfan2019/smart-kit/m/ObjectNumber`
 
-Props of `ObjectMarker` (see above).
+`$ObjectNumberSettings` (interface) · `default` (component)
 
-### `ObjectMarkerType` — const
+### `$ObjectNumberSettings` — interface
 
-sap.m.ObjectMarkerType
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `number` |  | `string \| number` | The number. In Default mode it is shown as given; Currency and Unit modes format it with the locale. |
+| `emphasized` |  | `boolean` | Bold number (default true). |
+| `state` |  | `ValueState` | Colour (default None). |
+| `unit` |  | `string` | Unit after the number; the ISO currency code in Currency mode. |
+| `textAlign` |  | `TextAlignValue` | sap.ui.core.TextAlign (default Begin). |
+| `active` |  | `boolean` | The number is clickable (default false); fires onPress. |
+| `reactiveAreaMode` |  | `ReactiveAreaMode` | Overlay enlarges the clickable area of an active number (default Inline). |
+| `inverted` |  | `boolean` | Filled background in the state colour (default false). |
+| `displayMode` |  | `ObjectNumberDisplayMode` | Default shows the number as given; Currency formats it like Currency with `unit` as the currency; Unit formats it as a decimal. |
+| `maxPrecision` |  | `number` | Fraction digits in Currency and Unit modes (Currency: padded like Currency; default the currency's digits). |
+| `useSymbol` |  | `boolean` | Currency mode: shows the currency symbol instead of the code (default true). |
+| `emptyIndicatorMode` |  | `EmptyIndicatorMode` | Shows "–" when number is empty (default Off). |
+| `onPress` |  | `(e: Record&lt;string, never>) => void` | Fired when an active number is pressed. |
+| `defaultChecked` |  | `boolean \| undefined` |  |
+| `defaultValue` |  | `string \| number \| readonly string[] \| undefined` |  |
+| `suppressContentEditableWarning` |  | `boolean \| undefined` |  |
+| `suppressHydrationWarning` |  | `boolean \| undefined` |  |
+| `accessKey` |  | `string \| undefined` |  |
+| `autoCapitalize` |  | `"off" \| "none" \| "on" \| "sentences" \| "words" \| "characters" \| undefined \| (string & {})` |  |
+| `autoFocus` |  | `boolean \| undefined` |  |
+| `className` |  | `string \| undefined` |  |
+| `contentEditable` |  | `Booleanish \| "inherit" \| "plaintext-only" \| undefined` |  |
+| `contextMenu` |  | `string \| undefined` |  |
+| `dir` |  | `string \| undefined` |  |
+| `draggable` |  | `Booleanish \| undefined` |  |
+| `enterKeyHint` |  | `"enter" \| "done" \| "go" \| "next" \| "previous" \| "search" \| "send" \| undefined` |  |
+| `hidden` |  | `boolean \| undefined` |  |
+| `id` |  | `string \| undefined` |  |
+| `lang` |  | `string \| undefined` |  |
+| `nonce` |  | `string \| undefined` |  |
+| `slot` |  | `string \| undefined` |  |
+| `spellCheck` |  | `Booleanish \| undefined` |  |
+| `style` |  | `CSSProperties \| undefined` |  |
+| `tabIndex` |  | `number \| undefined` |  |
+| `title` |  | `string \| undefined` |  |
+| `translate` |  | `"yes" \| "no" \| undefined` |  |
+| `radioGroup` |  | `string \| undefined` |  |
+| `role` |  | `AriaRole \| undefined` |  |
+| `about` |  | `string \| undefined` |  |
+| `content` |  | `string \| undefined` |  |
+| `datatype` |  | `string \| undefined` |  |
+| `inlist` |  | `any` |  |
+| `prefix` |  | `string \| undefined` |  |
+| `property` |  | `string \| undefined` |  |
+| `rel` |  | `string \| undefined` |  |
+| `resource` |  | `string \| undefined` |  |
+| `rev` |  | `string \| undefined` |  |
+| `typeof` |  | `string \| undefined` |  |
+| `vocab` |  | `string \| undefined` |  |
+| `autoCorrect` |  | `string \| undefined` |  |
+| `autoSave` |  | `string \| undefined` |  |
+| `color` |  | `string \| undefined` |  |
+| `itemProp` |  | `string \| undefined` |  |
+| `itemScope` |  | `boolean \| undefined` |  |
+| `itemType` |  | `string \| undefined` |  |
+| `itemID` |  | `string \| undefined` |  |
+| `itemRef` |  | `string \| undefined` |  |
+| `results` |  | `number \| undefined` |  |
+| `security` |  | `string \| undefined` |  |
+| `unselectable` |  | `"on" \| "off" \| undefined` |  |
+| `popover` |  | `"" \| "auto" \| "manual" \| "hint" \| undefined` |  |
+| `popoverTargetAction` |  | `"toggle" \| "show" \| "hide" \| undefined` |  |
+| `popoverTarget` |  | `string \| undefined` |  |
+| `inert` |  | `boolean \| undefined` |  |
+| `inputMode` |  | `"none" \| "text" \| "tel" \| "url" \| "email" \| "numeric" \| "decimal" \| "search" \| undefined` | Hints at the type of data that might be entered by the user while editing the element or its contents |
+| `is` |  | `string \| undefined` | Specify that a standard HTML element should behave like a defined custom built-in element |
+| `exportparts` |  | `string \| undefined` |  |
+| `part` |  | `string \| undefined` |  |
+| `aria-activedescendant` |  | `string \| undefined` | Identifies the currently active element when DOM focus is on a composite widget, textbox, group, or application. |
+| `aria-atomic` |  | `Booleanish \| undefined` | Indicates whether assistive technologies will present all, or only parts of, the changed region based on the change notifications defined by the aria-relevant attribute. |
+| `aria-autocomplete` |  | `"none" \| "inline" \| "list" \| "both" \| undefined` | Indicates whether inputting text could trigger display of one or more predictions of the user's intended value for an input and specifies how predictions would be presented if they are made. |
+| `aria-braillelabel` |  | `string \| undefined` | Defines a string value that labels the current element, which is intended to be converted into Braille. |
+| `aria-brailleroledescription` |  | `string \| undefined` | Defines a human-readable, author-localized abbreviated description for the role of an element, which is intended to be converted into Braille. |
+| `aria-busy` |  | `Booleanish \| undefined` |  |
+| `aria-checked` |  | `boolean \| "false" \| "mixed" \| "true" \| undefined` | Indicates the current "checked" state of checkboxes, radio buttons, and other widgets. |
+| `aria-colcount` |  | `number \| undefined` | Defines the total number of columns in a table, grid, or treegrid. |
+| `aria-colindex` |  | `number \| undefined` | Defines an element's column index or position with respect to the total number of columns within a table, grid, or treegrid. |
+| `aria-colindextext` |  | `string \| undefined` | Defines a human readable text alternative of aria-colindex. |
+| `aria-colspan` |  | `number \| undefined` | Defines the number of columns spanned by a cell or gridcell within a table, grid, or treegrid. |
+| `aria-controls` |  | `string \| undefined` | Identifies the element (or elements) whose contents or presence are controlled by the current element. |
+| `aria-current` |  | `boolean \| "false" \| "true" \| "page" \| "step" \| "location" \| "date" \| "time" \| undefined` | Indicates the element that represents the current item within a container or set of related elements. |
+| `aria-describedby` |  | `string \| undefined` | Identifies the element (or elements) that describes the object. |
+| `aria-description` |  | `string \| undefined` | Defines a string value that describes or annotates the current element. |
+| `aria-details` |  | `string \| undefined` | Identifies the element that provides a detailed, extended description for the object. |
+| `aria-disabled` |  | `Booleanish \| undefined` | Indicates that the element is perceivable but disabled, so it is not editable or otherwise operable. |
+| `aria-dropeffect` |  | `"none" \| "copy" \| "execute" \| "link" \| "move" \| "popup" \| undefined` | Indicates what functions can be performed when a dragged object is released on the drop target. **Deprecated**: in ARIA 1.1 |
+| `aria-errormessage` |  | `string \| undefined` | Identifies the element that provides an error message for the object. |
+| `aria-expanded` |  | `Booleanish \| undefined` | Indicates whether the element, or another grouping element it controls, is currently expanded or collapsed. |
+| `aria-flowto` |  | `string \| undefined` | Identifies the next element (or elements) in an alternate reading order of content which, at the user's discretion, allows assistive technology to override the general default of reading in document source order. |
+| `aria-grabbed` |  | `Booleanish \| undefined` | Indicates an element's "grabbed" state in a drag-and-drop operation. **Deprecated**: in ARIA 1.1 |
+| `aria-haspopup` |  | `boolean \| "false" \| "true" \| "menu" \| "listbox" \| "tree" \| "grid" \| "dialog" \| undefined` | Indicates the availability and type of interactive popup element, such as menu or dialog, that can be triggered by an element. |
+| `aria-hidden` |  | `Booleanish \| undefined` | Indicates whether the element is exposed to an accessibility API. |
+| `aria-invalid` |  | `boolean \| "false" \| "true" \| "grammar" \| "spelling" \| undefined` | Indicates the entered value does not conform to the format expected by the application. |
+| `aria-keyshortcuts` |  | `string \| undefined` | Indicates keyboard shortcuts that an author has implemented to activate or give focus to an element. |
+| `aria-label` |  | `string \| undefined` | Defines a string value that labels the current element. |
+| `aria-labelledby` |  | `string \| undefined` | Identifies the element (or elements) that labels the current element. |
+| `aria-level` |  | `number \| undefined` | Defines the hierarchical level of an element within a structure. |
+| `aria-live` |  | `"off" \| "assertive" \| "polite" \| undefined` | Indicates that an element will be updated, and describes the types of updates the user agents, assistive technologies, and user can expect from the live region. |
+| `aria-modal` |  | `Booleanish \| undefined` | Indicates whether an element is modal when displayed. |
+| `aria-multiline` |  | `Booleanish \| undefined` | Indicates whether a text box accepts multiple lines of input or only a single line. |
+| `aria-multiselectable` |  | `Booleanish \| undefined` | Indicates that the user may select more than one item from the current selectable descendants. |
+| `aria-orientation` |  | `"horizontal" \| "vertical" \| undefined` | Indicates whether the element's orientation is horizontal, vertical, or unknown/ambiguous. |
+| `aria-owns` |  | `string \| undefined` | Identifies an element (or elements) in order to define a visual, functional, or contextual parent/child relationship between DOM elements where the DOM hierarchy cannot be used to represent the relationship. |
+| `aria-placeholder` |  | `string \| undefined` | Defines a short hint (a word or short phrase) intended to aid the user with data entry when the control has no value. A hint could be a sample value or a brief description of the expected format. |
+| `aria-posinset` |  | `number \| undefined` | Defines an element's number or position in the current set of listitems or treeitems. Not required if all elements in the set are present in the DOM. |
+| `aria-pressed` |  | `boolean \| "false" \| "mixed" \| "true" \| undefined` | Indicates the current "pressed" state of toggle buttons. |
+| `aria-readonly` |  | `Booleanish \| undefined` | Indicates that the element is not editable, but is otherwise operable. |
+| `aria-relevant` |  | `\| "additions" \| "additions removals" \| "additions text" \| "all" \| "removals" \| "removals additions" \| "removals text" \| "text" \| "text ad…` | Indicates what notifications the user agent will trigger when the accessibility tree within a live region is modified. |
+| `aria-required` |  | `Booleanish \| undefined` | Indicates that user input is required on the element before a form may be submitted. |
+| `aria-roledescription` |  | `string \| undefined` | Defines a human-readable, author-localized description for the role of an element. |
+| `aria-rowcount` |  | `number \| undefined` | Defines the total number of rows in a table, grid, or treegrid. |
+| `aria-rowindex` |  | `number \| undefined` | Defines an element's row index or position with respect to the total number of rows within a table, grid, or treegrid. |
+| `aria-rowindextext` |  | `string \| undefined` | Defines a human readable text alternative of aria-rowindex. |
+| `aria-rowspan` |  | `number \| undefined` | Defines the number of rows spanned by a cell or gridcell within a table, grid, or treegrid. |
+| `aria-selected` |  | `Booleanish \| undefined` | Indicates the current "selected" state of various widgets. |
+| `aria-setsize` |  | `number \| undefined` | Defines the number of items in the current set of listitems or treeitems. Not required if all elements in the set are present in the DOM. |
+| `aria-sort` |  | `"none" \| "ascending" \| "descending" \| "other" \| undefined` | Indicates if items in a table or grid are sorted in ascending or descending order. |
+| `aria-valuemax` |  | `number \| undefined` | Defines the maximum allowed value for a range widget. |
+| `aria-valuemin` |  | `number \| undefined` | Defines the minimum allowed value for a range widget. |
+| `aria-valuenow` |  | `number \| undefined` | Defines the current value for a range widget. |
+| `aria-valuetext` |  | `string \| undefined` | Defines the human readable text alternative of aria-valuenow for a range widget. |
+| `children` |  | `ReactNode \| undefined` |  |
+| `dangerouslySetInnerHTML` |  | `{ // Should be InnerHTML['innerHTML']. // But unfortunately we're mixing renderer-specific type declarations. __html: string \| TrustedHTM…` |  |
+| `onCopy` |  | `ClipboardEventHandler&lt;T> \| undefined` |  |
+| `onCopyCapture` |  | `ClipboardEventHandler&lt;T> \| undefined` |  |
+| `onCut` |  | `ClipboardEventHandler&lt;T> \| undefined` |  |
+| `onCutCapture` |  | `ClipboardEventHandler&lt;T> \| undefined` |  |
+| `onPaste` |  | `ClipboardEventHandler&lt;T> \| undefined` |  |
+| `onPasteCapture` |  | `ClipboardEventHandler&lt;T> \| undefined` |  |
+| `onCompositionEnd` |  | `CompositionEventHandler&lt;T> \| undefined` |  |
+| `onCompositionEndCapture` |  | `CompositionEventHandler&lt;T> \| undefined` |  |
+| `onCompositionStart` |  | `CompositionEventHandler&lt;T> \| undefined` |  |
+| `onCompositionStartCapture` |  | `CompositionEventHandler&lt;T> \| undefined` |  |
+| `onCompositionUpdate` |  | `CompositionEventHandler&lt;T> \| undefined` |  |
+| `onCompositionUpdateCapture` |  | `CompositionEventHandler&lt;T> \| undefined` |  |
+| `onFocus` |  | `FocusEventHandler&lt;T> \| undefined` |  |
+| `onFocusCapture` |  | `FocusEventHandler&lt;T> \| undefined` |  |
+| `onBlur` |  | `FocusEventHandler&lt;T> \| undefined` |  |
+| `onBlurCapture` |  | `FocusEventHandler&lt;T> \| undefined` |  |
+| `onChange` |  | `ChangeEventHandler&lt;T> \| undefined` |  |
+| `onChangeCapture` |  | `ChangeEventHandler&lt;T> \| undefined` |  |
+| `onBeforeInput` |  | `InputEventHandler&lt;T> \| undefined` |  |
+| `onBeforeInputCapture` |  | `InputEventHandler&lt;T> \| undefined` |  |
+| `onInput` |  | `InputEventHandler&lt;T> \| undefined` |  |
+| `onInputCapture` |  | `InputEventHandler&lt;T> \| undefined` |  |
+| `onReset` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onResetCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onSubmit` |  | `SubmitEventHandler&lt;T> \| undefined` |  |
+| `onSubmitCapture` |  | `SubmitEventHandler&lt;T> \| undefined` |  |
+| `onInvalid` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onInvalidCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onLoad` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onLoadCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onError` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onErrorCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onKeyDown` |  | `KeyboardEventHandler&lt;T> \| undefined` |  |
+| `onKeyDownCapture` |  | `KeyboardEventHandler&lt;T> \| undefined` |  |
+| `onKeyPress` |  | `KeyboardEventHandler&lt;T> \| undefined` |  **Deprecated**: Use `onKeyUp` or `onKeyDown` instead |
+| `onKeyPressCapture` |  | `KeyboardEventHandler&lt;T> \| undefined` |  **Deprecated**: Use `onKeyUpCapture` or `onKeyDownCapture` instead |
+| `onKeyUp` |  | `KeyboardEventHandler&lt;T> \| undefined` |  |
+| `onKeyUpCapture` |  | `KeyboardEventHandler&lt;T> \| undefined` |  |
+| `onAbort` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onAbortCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onCanPlay` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onCanPlayCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onCanPlayThrough` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onCanPlayThroughCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onDurationChange` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onDurationChangeCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onEmptied` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onEmptiedCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onEncrypted` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onEncryptedCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onEnded` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onEndedCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onLoadedData` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onLoadedDataCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onLoadedMetadata` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onLoadedMetadataCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onLoadStart` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onLoadStartCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onPause` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onPauseCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onPlay` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onPlayCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onPlaying` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onPlayingCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onProgress` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onProgressCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onRateChange` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onRateChangeCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onSeeked` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onSeekedCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onSeeking` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onSeekingCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onStalled` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onStalledCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onSuspend` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onSuspendCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onTimeUpdate` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onTimeUpdateCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onVolumeChange` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onVolumeChangeCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onWaiting` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onWaitingCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onAuxClick` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onAuxClickCapture` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onClick` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onClickCapture` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onContextMenu` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onContextMenuCapture` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onDoubleClick` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onDoubleClickCapture` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onDrag` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onDragCapture` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onDragEnd` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onDragEndCapture` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onDragEnter` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onDragEnterCapture` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onDragExit` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onDragExitCapture` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onDragLeave` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onDragLeaveCapture` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onDragOver` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onDragOverCapture` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onDragStart` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onDragStartCapture` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onDrop` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onDropCapture` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onMouseDown` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onMouseDownCapture` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onMouseEnter` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onMouseLeave` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onMouseMove` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onMouseMoveCapture` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onMouseOut` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onMouseOutCapture` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onMouseOver` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onMouseOverCapture` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onMouseUp` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onMouseUpCapture` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onSelect` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onSelectCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onTouchCancel` |  | `TouchEventHandler&lt;T> \| undefined` |  |
+| `onTouchCancelCapture` |  | `TouchEventHandler&lt;T> \| undefined` |  |
+| `onTouchEnd` |  | `TouchEventHandler&lt;T> \| undefined` |  |
+| `onTouchEndCapture` |  | `TouchEventHandler&lt;T> \| undefined` |  |
+| `onTouchMove` |  | `TouchEventHandler&lt;T> \| undefined` |  |
+| `onTouchMoveCapture` |  | `TouchEventHandler&lt;T> \| undefined` |  |
+| `onTouchStart` |  | `TouchEventHandler&lt;T> \| undefined` |  |
+| `onTouchStartCapture` |  | `TouchEventHandler&lt;T> \| undefined` |  |
+| `onPointerDown` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onPointerDownCapture` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onPointerMove` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onPointerMoveCapture` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onPointerUp` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onPointerUpCapture` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onPointerCancel` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onPointerCancelCapture` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onPointerEnter` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onPointerLeave` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onPointerOver` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onPointerOverCapture` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onPointerOut` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onPointerOutCapture` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onGotPointerCapture` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onGotPointerCaptureCapture` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onLostPointerCapture` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onLostPointerCaptureCapture` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onScroll` |  | `UIEventHandler&lt;T> \| undefined` |  |
+| `onScrollCapture` |  | `UIEventHandler&lt;T> \| undefined` |  |
+| `onScrollEnd` |  | `UIEventHandler&lt;T> \| undefined` |  |
+| `onScrollEndCapture` |  | `UIEventHandler&lt;T> \| undefined` |  |
+| `onWheel` |  | `WheelEventHandler&lt;T> \| undefined` |  |
+| `onWheelCapture` |  | `WheelEventHandler&lt;T> \| undefined` |  |
+| `onAnimationStart` |  | `AnimationEventHandler&lt;T> \| undefined` |  |
+| `onAnimationStartCapture` |  | `AnimationEventHandler&lt;T> \| undefined` |  |
+| `onAnimationEnd` |  | `AnimationEventHandler&lt;T> \| undefined` |  |
+| `onAnimationEndCapture` |  | `AnimationEventHandler&lt;T> \| undefined` |  |
+| `onAnimationIteration` |  | `AnimationEventHandler&lt;T> \| undefined` |  |
+| `onAnimationIterationCapture` |  | `AnimationEventHandler&lt;T> \| undefined` |  |
+| `onToggle` |  | `ToggleEventHandler&lt;T> \| undefined` |  |
+| `onBeforeToggle` |  | `ToggleEventHandler&lt;T> \| undefined` |  |
+| `onTransitionCancel` |  | `TransitionEventHandler&lt;T> \| undefined` |  |
+| `onTransitionCancelCapture` |  | `TransitionEventHandler&lt;T> \| undefined` |  |
+| `onTransitionEnd` |  | `TransitionEventHandler&lt;T> \| undefined` |  |
+| `onTransitionEndCapture` |  | `TransitionEventHandler&lt;T> \| undefined` |  |
+| `onTransitionRun` |  | `TransitionEventHandler&lt;T> \| undefined` |  |
+| `onTransitionRunCapture` |  | `TransitionEventHandler&lt;T> \| undefined` |  |
+| `onTransitionStart` |  | `TransitionEventHandler&lt;T> \| undefined` |  |
+| `onTransitionStartCapture` |  | `TransitionEventHandler&lt;T> \| undefined` |  |
 
-```ts
-const ObjectMarkerType: { readonly Flagged: "Flagged"; readonly Favorite: "Favorite"; readonly Draft: "Draft"; readonly Locked: "Locked"; readonly Unsaved: "Unsa…
-```
+### `default` — component
 
-### `ObjectMarkerVisibility` — const
-
-sap.m.ObjectMarkerVisibility
-
-```ts
-const ObjectMarkerVisibility: { readonly IconOnly: "IconOnly"; readonly TextOnly: "TextOnly"; readonly IconAndText: "IconAndText"; }
-```
-
-### `ObjectNumber` — component
-
-`import { ObjectNumber } from '@rhfan2019/smart-kit/controls';`
+`import { default } from '@rhfan2019/smart-kit/m/ObjectNumber';`
 
 | Prop | Required | Type | Description |
 | --- | --- | --- | --- |
@@ -4977,21 +6262,305 @@ const ObjectMarkerVisibility: { readonly IconOnly: "IconOnly"; readonly TextOnly
 | `onTransitionStart` |  | `TransitionEventHandler&lt;T> \| undefined` |  |
 | `onTransitionStartCapture` |  | `TransitionEventHandler&lt;T> \| undefined` |  |
 
-### `ObjectNumberDisplayMode` — const
+## `@rhfan2019/smart-kit/m/ObjectStatus`
 
-sap.m.ObjectNumberDisplayMode
+`$ObjectStatusSettings` (interface) · `default` (component)
 
-```ts
-const ObjectNumberDisplayMode: { readonly Default: "Default"; readonly Currency: "Currency"; readonly Unit: "Unit"; }
-```
+### `$ObjectStatusSettings` — interface
 
-### `ObjectNumberProps` — interface
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `title` |  | `string` | Label shown before the text as "title:". |
+| `text` |  | `string` | Status text. |
+| `active` |  | `boolean` | Text and icon are clickable (default false); fires onPress. |
+| `reactiveAreaMode` |  | `ReactiveAreaMode` | Overlay enlarges the clickable area of an active status (default Inline). |
+| `state` |  | `ValueState \| IndicationColor` | Colour: a ValueState or an IndicationColor (default None). |
+| `inverted` |  | `boolean` | Filled background in the state colour (default false). |
+| `icon` |  | `ReactNode` | Icon before the text (a React node, e.g. a lucide icon). |
+| `emptyIndicatorMode` |  | `EmptyIndicatorMode` | Shows "–" when text is empty (default Off). |
+| `stateAnnouncementText` |  | `string` | Text read by screen readers for the state, instead of the default ("Error", "Warning", …). |
+| `onPress` |  | `(e: Record&lt;string, never>) => void` | Fired when an active status is pressed. |
+| `children` |  | `ReactNode \| undefined` |  |
+| `defaultChecked` |  | `boolean \| undefined` |  |
+| `defaultValue` |  | `string \| number \| readonly string[] \| undefined` |  |
+| `suppressContentEditableWarning` |  | `boolean \| undefined` |  |
+| `suppressHydrationWarning` |  | `boolean \| undefined` |  |
+| `accessKey` |  | `string \| undefined` |  |
+| `autoCapitalize` |  | `"off" \| "none" \| "on" \| "sentences" \| "words" \| "characters" \| undefined \| (string & {})` |  |
+| `autoFocus` |  | `boolean \| undefined` |  |
+| `className` |  | `string \| undefined` |  |
+| `contentEditable` |  | `Booleanish \| "inherit" \| "plaintext-only" \| undefined` |  |
+| `contextMenu` |  | `string \| undefined` |  |
+| `dir` |  | `string \| undefined` |  |
+| `draggable` |  | `Booleanish \| undefined` |  |
+| `enterKeyHint` |  | `"enter" \| "done" \| "go" \| "next" \| "previous" \| "search" \| "send" \| undefined` |  |
+| `hidden` |  | `boolean \| undefined` |  |
+| `id` |  | `string \| undefined` |  |
+| `lang` |  | `string \| undefined` |  |
+| `nonce` |  | `string \| undefined` |  |
+| `slot` |  | `string \| undefined` |  |
+| `spellCheck` |  | `Booleanish \| undefined` |  |
+| `style` |  | `CSSProperties \| undefined` |  |
+| `tabIndex` |  | `number \| undefined` |  |
+| `translate` |  | `"yes" \| "no" \| undefined` |  |
+| `radioGroup` |  | `string \| undefined` |  |
+| `role` |  | `AriaRole \| undefined` |  |
+| `about` |  | `string \| undefined` |  |
+| `content` |  | `string \| undefined` |  |
+| `datatype` |  | `string \| undefined` |  |
+| `inlist` |  | `any` |  |
+| `prefix` |  | `string \| undefined` |  |
+| `property` |  | `string \| undefined` |  |
+| `rel` |  | `string \| undefined` |  |
+| `resource` |  | `string \| undefined` |  |
+| `rev` |  | `string \| undefined` |  |
+| `typeof` |  | `string \| undefined` |  |
+| `vocab` |  | `string \| undefined` |  |
+| `autoCorrect` |  | `string \| undefined` |  |
+| `autoSave` |  | `string \| undefined` |  |
+| `color` |  | `string \| undefined` |  |
+| `itemProp` |  | `string \| undefined` |  |
+| `itemScope` |  | `boolean \| undefined` |  |
+| `itemType` |  | `string \| undefined` |  |
+| `itemID` |  | `string \| undefined` |  |
+| `itemRef` |  | `string \| undefined` |  |
+| `results` |  | `number \| undefined` |  |
+| `security` |  | `string \| undefined` |  |
+| `unselectable` |  | `"on" \| "off" \| undefined` |  |
+| `popover` |  | `"" \| "auto" \| "manual" \| "hint" \| undefined` |  |
+| `popoverTargetAction` |  | `"toggle" \| "show" \| "hide" \| undefined` |  |
+| `popoverTarget` |  | `string \| undefined` |  |
+| `inert` |  | `boolean \| undefined` |  |
+| `inputMode` |  | `"none" \| "text" \| "tel" \| "url" \| "email" \| "numeric" \| "decimal" \| "search" \| undefined` | Hints at the type of data that might be entered by the user while editing the element or its contents |
+| `is` |  | `string \| undefined` | Specify that a standard HTML element should behave like a defined custom built-in element |
+| `exportparts` |  | `string \| undefined` |  |
+| `part` |  | `string \| undefined` |  |
+| `aria-activedescendant` |  | `string \| undefined` | Identifies the currently active element when DOM focus is on a composite widget, textbox, group, or application. |
+| `aria-atomic` |  | `Booleanish \| undefined` | Indicates whether assistive technologies will present all, or only parts of, the changed region based on the change notifications defined by the aria-relevant attribute. |
+| `aria-autocomplete` |  | `"none" \| "inline" \| "list" \| "both" \| undefined` | Indicates whether inputting text could trigger display of one or more predictions of the user's intended value for an input and specifies how predictions would be presented if they are made. |
+| `aria-braillelabel` |  | `string \| undefined` | Defines a string value that labels the current element, which is intended to be converted into Braille. |
+| `aria-brailleroledescription` |  | `string \| undefined` | Defines a human-readable, author-localized abbreviated description for the role of an element, which is intended to be converted into Braille. |
+| `aria-busy` |  | `Booleanish \| undefined` |  |
+| `aria-checked` |  | `boolean \| "false" \| "mixed" \| "true" \| undefined` | Indicates the current "checked" state of checkboxes, radio buttons, and other widgets. |
+| `aria-colcount` |  | `number \| undefined` | Defines the total number of columns in a table, grid, or treegrid. |
+| `aria-colindex` |  | `number \| undefined` | Defines an element's column index or position with respect to the total number of columns within a table, grid, or treegrid. |
+| `aria-colindextext` |  | `string \| undefined` | Defines a human readable text alternative of aria-colindex. |
+| `aria-colspan` |  | `number \| undefined` | Defines the number of columns spanned by a cell or gridcell within a table, grid, or treegrid. |
+| `aria-controls` |  | `string \| undefined` | Identifies the element (or elements) whose contents or presence are controlled by the current element. |
+| `aria-current` |  | `boolean \| "false" \| "true" \| "page" \| "step" \| "location" \| "date" \| "time" \| undefined` | Indicates the element that represents the current item within a container or set of related elements. |
+| `aria-describedby` |  | `string \| undefined` | Identifies the element (or elements) that describes the object. |
+| `aria-description` |  | `string \| undefined` | Defines a string value that describes or annotates the current element. |
+| `aria-details` |  | `string \| undefined` | Identifies the element that provides a detailed, extended description for the object. |
+| `aria-disabled` |  | `Booleanish \| undefined` | Indicates that the element is perceivable but disabled, so it is not editable or otherwise operable. |
+| `aria-dropeffect` |  | `"none" \| "copy" \| "execute" \| "link" \| "move" \| "popup" \| undefined` | Indicates what functions can be performed when a dragged object is released on the drop target. **Deprecated**: in ARIA 1.1 |
+| `aria-errormessage` |  | `string \| undefined` | Identifies the element that provides an error message for the object. |
+| `aria-expanded` |  | `Booleanish \| undefined` | Indicates whether the element, or another grouping element it controls, is currently expanded or collapsed. |
+| `aria-flowto` |  | `string \| undefined` | Identifies the next element (or elements) in an alternate reading order of content which, at the user's discretion, allows assistive technology to override the general default of reading in document source order. |
+| `aria-grabbed` |  | `Booleanish \| undefined` | Indicates an element's "grabbed" state in a drag-and-drop operation. **Deprecated**: in ARIA 1.1 |
+| `aria-haspopup` |  | `boolean \| "false" \| "true" \| "menu" \| "listbox" \| "tree" \| "grid" \| "dialog" \| undefined` | Indicates the availability and type of interactive popup element, such as menu or dialog, that can be triggered by an element. |
+| `aria-hidden` |  | `Booleanish \| undefined` | Indicates whether the element is exposed to an accessibility API. |
+| `aria-invalid` |  | `boolean \| "false" \| "true" \| "grammar" \| "spelling" \| undefined` | Indicates the entered value does not conform to the format expected by the application. |
+| `aria-keyshortcuts` |  | `string \| undefined` | Indicates keyboard shortcuts that an author has implemented to activate or give focus to an element. |
+| `aria-label` |  | `string \| undefined` | Defines a string value that labels the current element. |
+| `aria-labelledby` |  | `string \| undefined` | Identifies the element (or elements) that labels the current element. |
+| `aria-level` |  | `number \| undefined` | Defines the hierarchical level of an element within a structure. |
+| `aria-live` |  | `"off" \| "assertive" \| "polite" \| undefined` | Indicates that an element will be updated, and describes the types of updates the user agents, assistive technologies, and user can expect from the live region. |
+| `aria-modal` |  | `Booleanish \| undefined` | Indicates whether an element is modal when displayed. |
+| `aria-multiline` |  | `Booleanish \| undefined` | Indicates whether a text box accepts multiple lines of input or only a single line. |
+| `aria-multiselectable` |  | `Booleanish \| undefined` | Indicates that the user may select more than one item from the current selectable descendants. |
+| `aria-orientation` |  | `"horizontal" \| "vertical" \| undefined` | Indicates whether the element's orientation is horizontal, vertical, or unknown/ambiguous. |
+| `aria-owns` |  | `string \| undefined` | Identifies an element (or elements) in order to define a visual, functional, or contextual parent/child relationship between DOM elements where the DOM hierarchy cannot be used to represent the relationship. |
+| `aria-placeholder` |  | `string \| undefined` | Defines a short hint (a word or short phrase) intended to aid the user with data entry when the control has no value. A hint could be a sample value or a brief description of the expected format. |
+| `aria-posinset` |  | `number \| undefined` | Defines an element's number or position in the current set of listitems or treeitems. Not required if all elements in the set are present in the DOM. |
+| `aria-pressed` |  | `boolean \| "false" \| "mixed" \| "true" \| undefined` | Indicates the current "pressed" state of toggle buttons. |
+| `aria-readonly` |  | `Booleanish \| undefined` | Indicates that the element is not editable, but is otherwise operable. |
+| `aria-relevant` |  | `\| "additions" \| "additions removals" \| "additions text" \| "all" \| "removals" \| "removals additions" \| "removals text" \| "text" \| "text ad…` | Indicates what notifications the user agent will trigger when the accessibility tree within a live region is modified. |
+| `aria-required` |  | `Booleanish \| undefined` | Indicates that user input is required on the element before a form may be submitted. |
+| `aria-roledescription` |  | `string \| undefined` | Defines a human-readable, author-localized description for the role of an element. |
+| `aria-rowcount` |  | `number \| undefined` | Defines the total number of rows in a table, grid, or treegrid. |
+| `aria-rowindex` |  | `number \| undefined` | Defines an element's row index or position with respect to the total number of rows within a table, grid, or treegrid. |
+| `aria-rowindextext` |  | `string \| undefined` | Defines a human readable text alternative of aria-rowindex. |
+| `aria-rowspan` |  | `number \| undefined` | Defines the number of rows spanned by a cell or gridcell within a table, grid, or treegrid. |
+| `aria-selected` |  | `Booleanish \| undefined` | Indicates the current "selected" state of various widgets. |
+| `aria-setsize` |  | `number \| undefined` | Defines the number of items in the current set of listitems or treeitems. Not required if all elements in the set are present in the DOM. |
+| `aria-sort` |  | `"none" \| "ascending" \| "descending" \| "other" \| undefined` | Indicates if items in a table or grid are sorted in ascending or descending order. |
+| `aria-valuemax` |  | `number \| undefined` | Defines the maximum allowed value for a range widget. |
+| `aria-valuemin` |  | `number \| undefined` | Defines the minimum allowed value for a range widget. |
+| `aria-valuenow` |  | `number \| undefined` | Defines the current value for a range widget. |
+| `aria-valuetext` |  | `string \| undefined` | Defines the human readable text alternative of aria-valuenow for a range widget. |
+| `dangerouslySetInnerHTML` |  | `{ // Should be InnerHTML['innerHTML']. // But unfortunately we're mixing renderer-specific type declarations. __html: string \| TrustedHTM…` |  |
+| `onCopy` |  | `ClipboardEventHandler&lt;T> \| undefined` |  |
+| `onCopyCapture` |  | `ClipboardEventHandler&lt;T> \| undefined` |  |
+| `onCut` |  | `ClipboardEventHandler&lt;T> \| undefined` |  |
+| `onCutCapture` |  | `ClipboardEventHandler&lt;T> \| undefined` |  |
+| `onPaste` |  | `ClipboardEventHandler&lt;T> \| undefined` |  |
+| `onPasteCapture` |  | `ClipboardEventHandler&lt;T> \| undefined` |  |
+| `onCompositionEnd` |  | `CompositionEventHandler&lt;T> \| undefined` |  |
+| `onCompositionEndCapture` |  | `CompositionEventHandler&lt;T> \| undefined` |  |
+| `onCompositionStart` |  | `CompositionEventHandler&lt;T> \| undefined` |  |
+| `onCompositionStartCapture` |  | `CompositionEventHandler&lt;T> \| undefined` |  |
+| `onCompositionUpdate` |  | `CompositionEventHandler&lt;T> \| undefined` |  |
+| `onCompositionUpdateCapture` |  | `CompositionEventHandler&lt;T> \| undefined` |  |
+| `onFocus` |  | `FocusEventHandler&lt;T> \| undefined` |  |
+| `onFocusCapture` |  | `FocusEventHandler&lt;T> \| undefined` |  |
+| `onBlur` |  | `FocusEventHandler&lt;T> \| undefined` |  |
+| `onBlurCapture` |  | `FocusEventHandler&lt;T> \| undefined` |  |
+| `onChange` |  | `ChangeEventHandler&lt;T> \| undefined` |  |
+| `onChangeCapture` |  | `ChangeEventHandler&lt;T> \| undefined` |  |
+| `onBeforeInput` |  | `InputEventHandler&lt;T> \| undefined` |  |
+| `onBeforeInputCapture` |  | `InputEventHandler&lt;T> \| undefined` |  |
+| `onInput` |  | `InputEventHandler&lt;T> \| undefined` |  |
+| `onInputCapture` |  | `InputEventHandler&lt;T> \| undefined` |  |
+| `onReset` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onResetCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onSubmit` |  | `SubmitEventHandler&lt;T> \| undefined` |  |
+| `onSubmitCapture` |  | `SubmitEventHandler&lt;T> \| undefined` |  |
+| `onInvalid` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onInvalidCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onLoad` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onLoadCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onError` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onErrorCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onKeyDown` |  | `KeyboardEventHandler&lt;T> \| undefined` |  |
+| `onKeyDownCapture` |  | `KeyboardEventHandler&lt;T> \| undefined` |  |
+| `onKeyPress` |  | `KeyboardEventHandler&lt;T> \| undefined` |  **Deprecated**: Use `onKeyUp` or `onKeyDown` instead |
+| `onKeyPressCapture` |  | `KeyboardEventHandler&lt;T> \| undefined` |  **Deprecated**: Use `onKeyUpCapture` or `onKeyDownCapture` instead |
+| `onKeyUp` |  | `KeyboardEventHandler&lt;T> \| undefined` |  |
+| `onKeyUpCapture` |  | `KeyboardEventHandler&lt;T> \| undefined` |  |
+| `onAbort` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onAbortCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onCanPlay` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onCanPlayCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onCanPlayThrough` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onCanPlayThroughCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onDurationChange` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onDurationChangeCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onEmptied` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onEmptiedCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onEncrypted` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onEncryptedCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onEnded` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onEndedCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onLoadedData` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onLoadedDataCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onLoadedMetadata` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onLoadedMetadataCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onLoadStart` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onLoadStartCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onPause` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onPauseCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onPlay` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onPlayCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onPlaying` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onPlayingCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onProgress` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onProgressCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onRateChange` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onRateChangeCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onSeeked` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onSeekedCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onSeeking` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onSeekingCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onStalled` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onStalledCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onSuspend` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onSuspendCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onTimeUpdate` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onTimeUpdateCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onVolumeChange` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onVolumeChangeCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onWaiting` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onWaitingCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onAuxClick` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onAuxClickCapture` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onClick` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onClickCapture` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onContextMenu` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onContextMenuCapture` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onDoubleClick` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onDoubleClickCapture` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onDrag` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onDragCapture` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onDragEnd` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onDragEndCapture` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onDragEnter` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onDragEnterCapture` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onDragExit` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onDragExitCapture` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onDragLeave` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onDragLeaveCapture` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onDragOver` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onDragOverCapture` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onDragStart` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onDragStartCapture` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onDrop` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onDropCapture` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onMouseDown` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onMouseDownCapture` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onMouseEnter` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onMouseLeave` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onMouseMove` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onMouseMoveCapture` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onMouseOut` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onMouseOutCapture` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onMouseOver` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onMouseOverCapture` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onMouseUp` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onMouseUpCapture` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onSelect` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onSelectCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onTouchCancel` |  | `TouchEventHandler&lt;T> \| undefined` |  |
+| `onTouchCancelCapture` |  | `TouchEventHandler&lt;T> \| undefined` |  |
+| `onTouchEnd` |  | `TouchEventHandler&lt;T> \| undefined` |  |
+| `onTouchEndCapture` |  | `TouchEventHandler&lt;T> \| undefined` |  |
+| `onTouchMove` |  | `TouchEventHandler&lt;T> \| undefined` |  |
+| `onTouchMoveCapture` |  | `TouchEventHandler&lt;T> \| undefined` |  |
+| `onTouchStart` |  | `TouchEventHandler&lt;T> \| undefined` |  |
+| `onTouchStartCapture` |  | `TouchEventHandler&lt;T> \| undefined` |  |
+| `onPointerDown` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onPointerDownCapture` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onPointerMove` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onPointerMoveCapture` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onPointerUp` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onPointerUpCapture` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onPointerCancel` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onPointerCancelCapture` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onPointerEnter` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onPointerLeave` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onPointerOver` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onPointerOverCapture` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onPointerOut` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onPointerOutCapture` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onGotPointerCapture` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onGotPointerCaptureCapture` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onLostPointerCapture` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onLostPointerCaptureCapture` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onScroll` |  | `UIEventHandler&lt;T> \| undefined` |  |
+| `onScrollCapture` |  | `UIEventHandler&lt;T> \| undefined` |  |
+| `onScrollEnd` |  | `UIEventHandler&lt;T> \| undefined` |  |
+| `onScrollEndCapture` |  | `UIEventHandler&lt;T> \| undefined` |  |
+| `onWheel` |  | `WheelEventHandler&lt;T> \| undefined` |  |
+| `onWheelCapture` |  | `WheelEventHandler&lt;T> \| undefined` |  |
+| `onAnimationStart` |  | `AnimationEventHandler&lt;T> \| undefined` |  |
+| `onAnimationStartCapture` |  | `AnimationEventHandler&lt;T> \| undefined` |  |
+| `onAnimationEnd` |  | `AnimationEventHandler&lt;T> \| undefined` |  |
+| `onAnimationEndCapture` |  | `AnimationEventHandler&lt;T> \| undefined` |  |
+| `onAnimationIteration` |  | `AnimationEventHandler&lt;T> \| undefined` |  |
+| `onAnimationIterationCapture` |  | `AnimationEventHandler&lt;T> \| undefined` |  |
+| `onToggle` |  | `ToggleEventHandler&lt;T> \| undefined` |  |
+| `onBeforeToggle` |  | `ToggleEventHandler&lt;T> \| undefined` |  |
+| `onTransitionCancel` |  | `TransitionEventHandler&lt;T> \| undefined` |  |
+| `onTransitionCancelCapture` |  | `TransitionEventHandler&lt;T> \| undefined` |  |
+| `onTransitionEnd` |  | `TransitionEventHandler&lt;T> \| undefined` |  |
+| `onTransitionEndCapture` |  | `TransitionEventHandler&lt;T> \| undefined` |  |
+| `onTransitionRun` |  | `TransitionEventHandler&lt;T> \| undefined` |  |
+| `onTransitionRunCapture` |  | `TransitionEventHandler&lt;T> \| undefined` |  |
+| `onTransitionStart` |  | `TransitionEventHandler&lt;T> \| undefined` |  |
+| `onTransitionStartCapture` |  | `TransitionEventHandler&lt;T> \| undefined` |  |
 
-Props of `ObjectNumber` (see above).
+### `default` — component
 
-### `ObjectStatus` — component
-
-`import { ObjectStatus } from '@rhfan2019/smart-kit/controls';`
+`import { default } from '@rhfan2019/smart-kit/m/ObjectStatus';`
 
 | Prop | Required | Type | Description |
 | --- | --- | --- | --- |
@@ -5283,15 +6852,13 @@ Props of `ObjectNumber` (see above).
 | `onTransitionStart` |  | `TransitionEventHandler&lt;T> \| undefined` |  |
 | `onTransitionStartCapture` |  | `TransitionEventHandler&lt;T> \| undefined` |  |
 
-### `ObjectStatusProps` — interface
+## `@rhfan2019/smart-kit/m/OverflowToolbar`
 
-Props of `ObjectStatus` (see above).
+`$OverflowToolbarSettings` (interface) · `default` (component) · `OverflowToolbarLayoutData` (interface)
 
-### `OverflowToolbar` — component
+### `$OverflowToolbarSettings` — interface
 
-`import { OverflowToolbar } from '@rhfan2019/smart-kit/controls';`
-
-| Prop | Required | Type | Description |
+| Member | Required | Type | Description |
 | --- | --- | --- | --- |
 | `width` |  | `string` | Width (CSS length; default 100%). |
 | `active` |  | `boolean` | The whole toolbar is clickable and fires onPress (default false). |
@@ -5303,7 +6870,7 @@ Props of `ObjectStatus` (see above).
 | `asyncMode` |  | `boolean` | Accepted for compatibility; the layout is always computed synchronously (default false). |
 | `onPress` |  | `(e: { srcControl: HTMLElement }) => void` | Fired when an active toolbar is pressed outside its interactive content; `srcControl` is the clicked element. |
 | `children` |  | `ReactNode` | Toolbar content: buttons, texts, ToolbarSpacer; `layoutData` on a child sets its overflow priority. |
-| `ref` |  | `Ref&lt;OverflowToolbarRef>` |  |
+| `ref` |  | `Ref&lt;OverflowToolbar>` |  |
 | `title` |  | `string \| undefined` |  |
 | `defaultChecked` |  | `boolean \| undefined` |  |
 | `defaultValue` |  | `string \| number \| readonly string[] \| undefined` |  |
@@ -5581,11 +7148,335 @@ Props of `ObjectStatus` (see above).
 | `onTransitionStart` |  | `TransitionEventHandler&lt;T> \| undefined` |  |
 | `onTransitionStartCapture` |  | `TransitionEventHandler&lt;T> \| undefined` |  |
 
-### `OverflowToolbarButton` — component
+### `default` — component
+
+Instance methods of OverflowToolbar.
+
+`import { default } from '@rhfan2019/smart-kit/m/OverflowToolbar';`
+
+| Prop | Required | Type | Description |
+| --- | --- | --- | --- |
+| `width` |  | `string` | Width (CSS length; default 100%). |
+| `active` |  | `boolean` | The whole toolbar is clickable and fires onPress (default false). |
+| `enabled` |  | `boolean` | Enabled (default true); a disabled toolbar disables its content. |
+| `height` |  | `string` | Height (CSS length; default: the control height). |
+| `design` |  | `ToolbarDesign` | Background design (default Auto: transparent). |
+| `style` |  | `ToolbarStyle` | Clear removes the border (default Standard). |
+| `ariaHasPopup` |  | `AriaHasPopup` | aria-haspopup of an active toolbar. |
+| `asyncMode` |  | `boolean` | Accepted for compatibility; the layout is always computed synchronously (default false). |
+| `onPress` |  | `(e: { srcControl: HTMLElement }) => void` | Fired when an active toolbar is pressed outside its interactive content; `srcControl` is the clicked element. |
+| `children` |  | `ReactNode` | Toolbar content: buttons, texts, ToolbarSpacer; `layoutData` on a child sets its overflow priority. |
+| `ref` |  | `Ref&lt;OverflowToolbar>` |  |
+| `title` |  | `string \| undefined` |  |
+| `defaultChecked` |  | `boolean \| undefined` |  |
+| `defaultValue` |  | `string \| number \| readonly string[] \| undefined` |  |
+| `suppressContentEditableWarning` |  | `boolean \| undefined` |  |
+| `suppressHydrationWarning` |  | `boolean \| undefined` |  |
+| `accessKey` |  | `string \| undefined` |  |
+| `autoCapitalize` |  | `"off" \| "none" \| "on" \| "sentences" \| "words" \| "characters" \| undefined \| (string & {})` |  |
+| `autoFocus` |  | `boolean \| undefined` |  |
+| `className` |  | `string \| undefined` |  |
+| `contentEditable` |  | `Booleanish \| "inherit" \| "plaintext-only" \| undefined` |  |
+| `contextMenu` |  | `string \| undefined` |  |
+| `dir` |  | `string \| undefined` |  |
+| `draggable` |  | `Booleanish \| undefined` |  |
+| `enterKeyHint` |  | `"enter" \| "done" \| "go" \| "next" \| "previous" \| "search" \| "send" \| undefined` |  |
+| `hidden` |  | `boolean \| undefined` |  |
+| `id` |  | `string \| undefined` |  |
+| `lang` |  | `string \| undefined` |  |
+| `nonce` |  | `string \| undefined` |  |
+| `slot` |  | `string \| undefined` |  |
+| `spellCheck` |  | `Booleanish \| undefined` |  |
+| `tabIndex` |  | `number \| undefined` |  |
+| `translate` |  | `"yes" \| "no" \| undefined` |  |
+| `radioGroup` |  | `string \| undefined` |  |
+| `role` |  | `AriaRole \| undefined` |  |
+| `about` |  | `string \| undefined` |  |
+| `content` |  | `string \| undefined` |  |
+| `datatype` |  | `string \| undefined` |  |
+| `inlist` |  | `any` |  |
+| `prefix` |  | `string \| undefined` |  |
+| `property` |  | `string \| undefined` |  |
+| `rel` |  | `string \| undefined` |  |
+| `resource` |  | `string \| undefined` |  |
+| `rev` |  | `string \| undefined` |  |
+| `typeof` |  | `string \| undefined` |  |
+| `vocab` |  | `string \| undefined` |  |
+| `autoCorrect` |  | `string \| undefined` |  |
+| `autoSave` |  | `string \| undefined` |  |
+| `color` |  | `string \| undefined` |  |
+| `itemProp` |  | `string \| undefined` |  |
+| `itemScope` |  | `boolean \| undefined` |  |
+| `itemType` |  | `string \| undefined` |  |
+| `itemID` |  | `string \| undefined` |  |
+| `itemRef` |  | `string \| undefined` |  |
+| `results` |  | `number \| undefined` |  |
+| `security` |  | `string \| undefined` |  |
+| `unselectable` |  | `"on" \| "off" \| undefined` |  |
+| `popover` |  | `"" \| "auto" \| "manual" \| "hint" \| undefined` |  |
+| `popoverTargetAction` |  | `"toggle" \| "show" \| "hide" \| undefined` |  |
+| `popoverTarget` |  | `string \| undefined` |  |
+| `inert` |  | `boolean \| undefined` |  |
+| `inputMode` |  | `"none" \| "text" \| "tel" \| "url" \| "email" \| "numeric" \| "decimal" \| "search" \| undefined` | Hints at the type of data that might be entered by the user while editing the element or its contents |
+| `is` |  | `string \| undefined` | Specify that a standard HTML element should behave like a defined custom built-in element |
+| `exportparts` |  | `string \| undefined` |  |
+| `part` |  | `string \| undefined` |  |
+| `aria-activedescendant` |  | `string \| undefined` | Identifies the currently active element when DOM focus is on a composite widget, textbox, group, or application. |
+| `aria-atomic` |  | `Booleanish \| undefined` | Indicates whether assistive technologies will present all, or only parts of, the changed region based on the change notifications defined by the aria-relevant attribute. |
+| `aria-autocomplete` |  | `"none" \| "inline" \| "list" \| "both" \| undefined` | Indicates whether inputting text could trigger display of one or more predictions of the user's intended value for an input and specifies how predictions would be presented if they are made. |
+| `aria-braillelabel` |  | `string \| undefined` | Defines a string value that labels the current element, which is intended to be converted into Braille. |
+| `aria-brailleroledescription` |  | `string \| undefined` | Defines a human-readable, author-localized abbreviated description for the role of an element, which is intended to be converted into Braille. |
+| `aria-busy` |  | `Booleanish \| undefined` |  |
+| `aria-checked` |  | `boolean \| "false" \| "mixed" \| "true" \| undefined` | Indicates the current "checked" state of checkboxes, radio buttons, and other widgets. |
+| `aria-colcount` |  | `number \| undefined` | Defines the total number of columns in a table, grid, or treegrid. |
+| `aria-colindex` |  | `number \| undefined` | Defines an element's column index or position with respect to the total number of columns within a table, grid, or treegrid. |
+| `aria-colindextext` |  | `string \| undefined` | Defines a human readable text alternative of aria-colindex. |
+| `aria-colspan` |  | `number \| undefined` | Defines the number of columns spanned by a cell or gridcell within a table, grid, or treegrid. |
+| `aria-controls` |  | `string \| undefined` | Identifies the element (or elements) whose contents or presence are controlled by the current element. |
+| `aria-current` |  | `boolean \| "false" \| "true" \| "page" \| "step" \| "location" \| "date" \| "time" \| undefined` | Indicates the element that represents the current item within a container or set of related elements. |
+| `aria-describedby` |  | `string \| undefined` | Identifies the element (or elements) that describes the object. |
+| `aria-description` |  | `string \| undefined` | Defines a string value that describes or annotates the current element. |
+| `aria-details` |  | `string \| undefined` | Identifies the element that provides a detailed, extended description for the object. |
+| `aria-disabled` |  | `Booleanish \| undefined` | Indicates that the element is perceivable but disabled, so it is not editable or otherwise operable. |
+| `aria-dropeffect` |  | `"none" \| "copy" \| "execute" \| "link" \| "move" \| "popup" \| undefined` | Indicates what functions can be performed when a dragged object is released on the drop target. **Deprecated**: in ARIA 1.1 |
+| `aria-errormessage` |  | `string \| undefined` | Identifies the element that provides an error message for the object. |
+| `aria-expanded` |  | `Booleanish \| undefined` | Indicates whether the element, or another grouping element it controls, is currently expanded or collapsed. |
+| `aria-flowto` |  | `string \| undefined` | Identifies the next element (or elements) in an alternate reading order of content which, at the user's discretion, allows assistive technology to override the general default of reading in document source order. |
+| `aria-grabbed` |  | `Booleanish \| undefined` | Indicates an element's "grabbed" state in a drag-and-drop operation. **Deprecated**: in ARIA 1.1 |
+| `aria-haspopup` |  | `boolean \| "false" \| "true" \| "menu" \| "listbox" \| "tree" \| "grid" \| "dialog" \| undefined` | Indicates the availability and type of interactive popup element, such as menu or dialog, that can be triggered by an element. |
+| `aria-hidden` |  | `Booleanish \| undefined` | Indicates whether the element is exposed to an accessibility API. |
+| `aria-invalid` |  | `boolean \| "false" \| "true" \| "grammar" \| "spelling" \| undefined` | Indicates the entered value does not conform to the format expected by the application. |
+| `aria-keyshortcuts` |  | `string \| undefined` | Indicates keyboard shortcuts that an author has implemented to activate or give focus to an element. |
+| `aria-label` |  | `string \| undefined` | Defines a string value that labels the current element. |
+| `aria-labelledby` |  | `string \| undefined` | Identifies the element (or elements) that labels the current element. |
+| `aria-level` |  | `number \| undefined` | Defines the hierarchical level of an element within a structure. |
+| `aria-live` |  | `"off" \| "assertive" \| "polite" \| undefined` | Indicates that an element will be updated, and describes the types of updates the user agents, assistive technologies, and user can expect from the live region. |
+| `aria-modal` |  | `Booleanish \| undefined` | Indicates whether an element is modal when displayed. |
+| `aria-multiline` |  | `Booleanish \| undefined` | Indicates whether a text box accepts multiple lines of input or only a single line. |
+| `aria-multiselectable` |  | `Booleanish \| undefined` | Indicates that the user may select more than one item from the current selectable descendants. |
+| `aria-orientation` |  | `"horizontal" \| "vertical" \| undefined` | Indicates whether the element's orientation is horizontal, vertical, or unknown/ambiguous. |
+| `aria-owns` |  | `string \| undefined` | Identifies an element (or elements) in order to define a visual, functional, or contextual parent/child relationship between DOM elements where the DOM hierarchy cannot be used to represent the relationship. |
+| `aria-placeholder` |  | `string \| undefined` | Defines a short hint (a word or short phrase) intended to aid the user with data entry when the control has no value. A hint could be a sample value or a brief description of the expected format. |
+| `aria-posinset` |  | `number \| undefined` | Defines an element's number or position in the current set of listitems or treeitems. Not required if all elements in the set are present in the DOM. |
+| `aria-pressed` |  | `boolean \| "false" \| "mixed" \| "true" \| undefined` | Indicates the current "pressed" state of toggle buttons. |
+| `aria-readonly` |  | `Booleanish \| undefined` | Indicates that the element is not editable, but is otherwise operable. |
+| `aria-relevant` |  | `\| "additions" \| "additions removals" \| "additions text" \| "all" \| "removals" \| "removals additions" \| "removals text" \| "text" \| "text ad…` | Indicates what notifications the user agent will trigger when the accessibility tree within a live region is modified. |
+| `aria-required` |  | `Booleanish \| undefined` | Indicates that user input is required on the element before a form may be submitted. |
+| `aria-roledescription` |  | `string \| undefined` | Defines a human-readable, author-localized description for the role of an element. |
+| `aria-rowcount` |  | `number \| undefined` | Defines the total number of rows in a table, grid, or treegrid. |
+| `aria-rowindex` |  | `number \| undefined` | Defines an element's row index or position with respect to the total number of rows within a table, grid, or treegrid. |
+| `aria-rowindextext` |  | `string \| undefined` | Defines a human readable text alternative of aria-rowindex. |
+| `aria-rowspan` |  | `number \| undefined` | Defines the number of rows spanned by a cell or gridcell within a table, grid, or treegrid. |
+| `aria-selected` |  | `Booleanish \| undefined` | Indicates the current "selected" state of various widgets. |
+| `aria-setsize` |  | `number \| undefined` | Defines the number of items in the current set of listitems or treeitems. Not required if all elements in the set are present in the DOM. |
+| `aria-sort` |  | `"none" \| "ascending" \| "descending" \| "other" \| undefined` | Indicates if items in a table or grid are sorted in ascending or descending order. |
+| `aria-valuemax` |  | `number \| undefined` | Defines the maximum allowed value for a range widget. |
+| `aria-valuemin` |  | `number \| undefined` | Defines the minimum allowed value for a range widget. |
+| `aria-valuenow` |  | `number \| undefined` | Defines the current value for a range widget. |
+| `aria-valuetext` |  | `string \| undefined` | Defines the human readable text alternative of aria-valuenow for a range widget. |
+| `dangerouslySetInnerHTML` |  | `{ // Should be InnerHTML['innerHTML']. // But unfortunately we're mixing renderer-specific type declarations. __html: string \| TrustedHTM…` |  |
+| `onCopy` |  | `ClipboardEventHandler&lt;T> \| undefined` |  |
+| `onCopyCapture` |  | `ClipboardEventHandler&lt;T> \| undefined` |  |
+| `onCut` |  | `ClipboardEventHandler&lt;T> \| undefined` |  |
+| `onCutCapture` |  | `ClipboardEventHandler&lt;T> \| undefined` |  |
+| `onPaste` |  | `ClipboardEventHandler&lt;T> \| undefined` |  |
+| `onPasteCapture` |  | `ClipboardEventHandler&lt;T> \| undefined` |  |
+| `onCompositionEnd` |  | `CompositionEventHandler&lt;T> \| undefined` |  |
+| `onCompositionEndCapture` |  | `CompositionEventHandler&lt;T> \| undefined` |  |
+| `onCompositionStart` |  | `CompositionEventHandler&lt;T> \| undefined` |  |
+| `onCompositionStartCapture` |  | `CompositionEventHandler&lt;T> \| undefined` |  |
+| `onCompositionUpdate` |  | `CompositionEventHandler&lt;T> \| undefined` |  |
+| `onCompositionUpdateCapture` |  | `CompositionEventHandler&lt;T> \| undefined` |  |
+| `onFocus` |  | `FocusEventHandler&lt;T> \| undefined` |  |
+| `onFocusCapture` |  | `FocusEventHandler&lt;T> \| undefined` |  |
+| `onBlur` |  | `FocusEventHandler&lt;T> \| undefined` |  |
+| `onBlurCapture` |  | `FocusEventHandler&lt;T> \| undefined` |  |
+| `onChange` |  | `ChangeEventHandler&lt;T> \| undefined` |  |
+| `onChangeCapture` |  | `ChangeEventHandler&lt;T> \| undefined` |  |
+| `onBeforeInput` |  | `InputEventHandler&lt;T> \| undefined` |  |
+| `onBeforeInputCapture` |  | `InputEventHandler&lt;T> \| undefined` |  |
+| `onInput` |  | `InputEventHandler&lt;T> \| undefined` |  |
+| `onInputCapture` |  | `InputEventHandler&lt;T> \| undefined` |  |
+| `onReset` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onResetCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onSubmit` |  | `SubmitEventHandler&lt;T> \| undefined` |  |
+| `onSubmitCapture` |  | `SubmitEventHandler&lt;T> \| undefined` |  |
+| `onInvalid` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onInvalidCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onLoad` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onLoadCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onError` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onErrorCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onKeyDown` |  | `KeyboardEventHandler&lt;T> \| undefined` |  |
+| `onKeyDownCapture` |  | `KeyboardEventHandler&lt;T> \| undefined` |  |
+| `onKeyPress` |  | `KeyboardEventHandler&lt;T> \| undefined` |  **Deprecated**: Use `onKeyUp` or `onKeyDown` instead |
+| `onKeyPressCapture` |  | `KeyboardEventHandler&lt;T> \| undefined` |  **Deprecated**: Use `onKeyUpCapture` or `onKeyDownCapture` instead |
+| `onKeyUp` |  | `KeyboardEventHandler&lt;T> \| undefined` |  |
+| `onKeyUpCapture` |  | `KeyboardEventHandler&lt;T> \| undefined` |  |
+| `onAbort` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onAbortCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onCanPlay` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onCanPlayCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onCanPlayThrough` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onCanPlayThroughCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onDurationChange` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onDurationChangeCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onEmptied` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onEmptiedCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onEncrypted` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onEncryptedCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onEnded` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onEndedCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onLoadedData` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onLoadedDataCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onLoadedMetadata` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onLoadedMetadataCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onLoadStart` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onLoadStartCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onPause` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onPauseCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onPlay` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onPlayCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onPlaying` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onPlayingCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onProgress` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onProgressCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onRateChange` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onRateChangeCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onSeeked` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onSeekedCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onSeeking` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onSeekingCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onStalled` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onStalledCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onSuspend` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onSuspendCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onTimeUpdate` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onTimeUpdateCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onVolumeChange` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onVolumeChangeCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onWaiting` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onWaitingCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onAuxClick` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onAuxClickCapture` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onClick` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onClickCapture` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onContextMenu` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onContextMenuCapture` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onDoubleClick` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onDoubleClickCapture` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onDrag` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onDragCapture` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onDragEnd` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onDragEndCapture` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onDragEnter` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onDragEnterCapture` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onDragExit` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onDragExitCapture` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onDragLeave` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onDragLeaveCapture` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onDragOver` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onDragOverCapture` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onDragStart` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onDragStartCapture` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onDrop` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onDropCapture` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onMouseDown` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onMouseDownCapture` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onMouseEnter` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onMouseLeave` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onMouseMove` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onMouseMoveCapture` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onMouseOut` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onMouseOutCapture` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onMouseOver` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onMouseOverCapture` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onMouseUp` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onMouseUpCapture` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onSelect` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onSelectCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onTouchCancel` |  | `TouchEventHandler&lt;T> \| undefined` |  |
+| `onTouchCancelCapture` |  | `TouchEventHandler&lt;T> \| undefined` |  |
+| `onTouchEnd` |  | `TouchEventHandler&lt;T> \| undefined` |  |
+| `onTouchEndCapture` |  | `TouchEventHandler&lt;T> \| undefined` |  |
+| `onTouchMove` |  | `TouchEventHandler&lt;T> \| undefined` |  |
+| `onTouchMoveCapture` |  | `TouchEventHandler&lt;T> \| undefined` |  |
+| `onTouchStart` |  | `TouchEventHandler&lt;T> \| undefined` |  |
+| `onTouchStartCapture` |  | `TouchEventHandler&lt;T> \| undefined` |  |
+| `onPointerDown` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onPointerDownCapture` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onPointerMove` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onPointerMoveCapture` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onPointerUp` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onPointerUpCapture` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onPointerCancel` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onPointerCancelCapture` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onPointerEnter` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onPointerLeave` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onPointerOver` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onPointerOverCapture` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onPointerOut` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onPointerOutCapture` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onGotPointerCapture` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onGotPointerCaptureCapture` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onLostPointerCapture` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onLostPointerCaptureCapture` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onScroll` |  | `UIEventHandler&lt;T> \| undefined` |  |
+| `onScrollCapture` |  | `UIEventHandler&lt;T> \| undefined` |  |
+| `onScrollEnd` |  | `UIEventHandler&lt;T> \| undefined` |  |
+| `onScrollEndCapture` |  | `UIEventHandler&lt;T> \| undefined` |  |
+| `onWheel` |  | `WheelEventHandler&lt;T> \| undefined` |  |
+| `onWheelCapture` |  | `WheelEventHandler&lt;T> \| undefined` |  |
+| `onAnimationStart` |  | `AnimationEventHandler&lt;T> \| undefined` |  |
+| `onAnimationStartCapture` |  | `AnimationEventHandler&lt;T> \| undefined` |  |
+| `onAnimationEnd` |  | `AnimationEventHandler&lt;T> \| undefined` |  |
+| `onAnimationEndCapture` |  | `AnimationEventHandler&lt;T> \| undefined` |  |
+| `onAnimationIteration` |  | `AnimationEventHandler&lt;T> \| undefined` |  |
+| `onAnimationIterationCapture` |  | `AnimationEventHandler&lt;T> \| undefined` |  |
+| `onToggle` |  | `ToggleEventHandler&lt;T> \| undefined` |  |
+| `onBeforeToggle` |  | `ToggleEventHandler&lt;T> \| undefined` |  |
+| `onTransitionCancel` |  | `TransitionEventHandler&lt;T> \| undefined` |  |
+| `onTransitionCancelCapture` |  | `TransitionEventHandler&lt;T> \| undefined` |  |
+| `onTransitionEnd` |  | `TransitionEventHandler&lt;T> \| undefined` |  |
+| `onTransitionEndCapture` |  | `TransitionEventHandler&lt;T> \| undefined` |  |
+| `onTransitionRun` |  | `TransitionEventHandler&lt;T> \| undefined` |  |
+| `onTransitionRunCapture` |  | `TransitionEventHandler&lt;T> \| undefined` |  |
+| `onTransitionStart` |  | `TransitionEventHandler&lt;T> \| undefined` |  |
+| `onTransitionStartCapture` |  | `TransitionEventHandler&lt;T> \| undefined` |  |
+
+### `OverflowToolbarLayoutData` — interface
+
+sap.m.OverflowToolbarLayoutData: set it on a toolbar child as the `layoutData` prop.
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `priority` |  | `OverflowToolbarPriority` | When the child moves into the overflow (default High). |
+| `group` |  | `number` | Children with the same non-zero group move into the overflow together (default 0). |
+| `closeOverflowOnInteraction` |  | `boolean` | Pressing the child in the overflow closes the overflow (default true). |
+
+## `@rhfan2019/smart-kit/m/OverflowToolbarButton`
+
+`$OverflowToolbarButtonSettings` (interface) · `default` (component)
+
+### `$OverflowToolbarButtonSettings` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `text` | **yes** | `string` | Text: the tooltip and accessible name in the toolbar, shown next to the icon in the overflow. |
+| `icon` |  | `ReactNode` | Icon (a React node). |
+| `type` |  | `ButtonType` | Visual type (default Transparent in the toolbar). |
+| `enabled` |  | `boolean` | Enabled (default true). |
+| `width` |  | `string` | Width (CSS length). |
+| `layoutData` |  | `OverflowToolbarLayoutData` | Layout data in the OverflowToolbar. |
+| `onPress` |  | `(e: Record&lt;string, never>) => void` | Fired when the button is pressed. |
+| `title` |  | `string` |  |
+| `data-testid` |  | `string` |  |
+
+### `default` — component
 
 sap.m.OverflowToolbarButton: icon only in the toolbar, icon and text in the overflow.
 
-`import { OverflowToolbarButton } from '@rhfan2019/smart-kit/controls';`
+`import { default } from '@rhfan2019/smart-kit/m/OverflowToolbarButton';`
 
 | Prop | Required | Type | Description |
 | --- | --- | --- | --- |
@@ -5599,48 +7490,97 @@ sap.m.OverflowToolbarButton: icon only in the toolbar, icon and text in the over
 | `title` |  | `string` |  |
 | `data-testid` |  | `string` |  |
 
-### `OverflowToolbarButtonProps` — interface
+## `@rhfan2019/smart-kit/m/SelectDialog`
 
-Props of `OverflowToolbarButton` (see above).
+`$SelectDialogSettings` (interface) · `default` (component) · `ListItemBase` (interface) · `ListUpdateEvent` (interface) · `PopinDisplay` (type) · `Priority` (type) · `SortOrder` (type) · `StandardListItem` (interface) · `TextAlign` (type) · `VerticalAlign` (type)
 
-### `OverflowToolbarLayoutData` — interface
-
-sap.m.OverflowToolbarLayoutData: set it on a toolbar child as the `layoutData` prop.
+### `$SelectDialogSettings` — interface
 
 | Member | Required | Type | Description |
 | --- | --- | --- | --- |
-| `priority` |  | `OverflowToolbarPriority` | When the child moves into the overflow (default High). |
-| `group` |  | `number` | Children with the same non-zero group move into the overflow together (default 0). |
-| `closeOverflowOnInteraction` |  | `boolean` | Pressing the child in the overflow closes the overflow (default true). |
+| `items` | **yes** | `StandardListItem[]` |  |
+| `ref` |  | `Ref&lt;SelectDialog>` |  |
+| `title` |  | `string` |  |
+| `noDataText` |  | `string` |  |
+| `multiSelect` |  | `boolean` | (false) |
+| `growing` |  | `boolean` | (true) Shows `growingThreshold` items and a "More" trigger. |
+| `growingThreshold` |  | `number` | (null → 20, the list default) |
+| `contentWidth` |  | `string` |  |
+| `rememberSelections` |  | `boolean` | (false) Keeps the confirmed selection for the next opening; otherwise the items' `selected` is the start. |
+| `contentHeight` |  | `string` |  |
+| `showClearButton` |  | `boolean` | (false) |
+| `confirmButtonText` |  | `string` | ('OK') |
+| `draggable` |  | `boolean` | (false) |
+| `resizable` |  | `boolean` | (false) |
+| `titleAlignment` |  | `TitleAlignment` | ('Auto') |
+| `searchPlaceholder` |  | `string` |  |
+| `initialFocus` |  | `SelectDialogInitialFocus` | ('List') |
+| `onSearch` |  | `(e: { value: string; clearButtonPressed: boolean }) => void` | Fired on Enter in the search field and when it is cleared. Extension: without `onSearch` and `onLiveChange` the dialog filters the items itself (title and description, or the text of the cells). |
+| `onLiveChange` |  | `(e: { value: string }) => void` |  |
+| `onConfirm` |  | `(e: { selectedItem: I \| undefined; selectedItems: I[] }) => void` |  |
+| `onCancel` |  | `() => void` |  |
+| `onSelectionChange` |  | `(e: { listItem: I; listItems: I[]; selected: boolean; selectAll: boolean }) => void` |  |
+| `onUpdateStarted` |  | `(e: ListUpdateEvent) => void` |  |
+| `onUpdateFinished` |  | `(e: ListUpdateEvent) => void` |  |
 
-### `OverflowToolbarPriority` — const
+### `default` — component
 
-sap.m.OverflowToolbarPriority
+SelectDialog (sap.m.SelectDialog) with StandardListItem data.
 
-```ts
-const OverflowToolbarPriority: { readonly NeverOverflow: "NeverOverflow"; readonly High: "High"; readonly Low: "Low"; readonly Disappear: "Disappear"; readonly AlwaysOv…
-```
+`import { default } from '@rhfan2019/smart-kit/m/SelectDialog';`
 
-### `OverflowToolbarProps` — interface
+| Prop | Required | Type | Description |
+| --- | --- | --- | --- |
+| `items` | **yes** | `StandardListItem[]` |  |
+| `ref` |  | `Ref&lt;SelectDialog>` |  |
+| `title` |  | `string` |  |
+| `noDataText` |  | `string` |  |
+| `multiSelect` |  | `boolean` | (false) |
+| `growing` |  | `boolean` | (true) Shows `growingThreshold` items and a "More" trigger. |
+| `growingThreshold` |  | `number` | (null → 20, the list default) |
+| `contentWidth` |  | `string` |  |
+| `rememberSelections` |  | `boolean` | (false) Keeps the confirmed selection for the next opening; otherwise the items' `selected` is the start. |
+| `contentHeight` |  | `string` |  |
+| `showClearButton` |  | `boolean` | (false) |
+| `confirmButtonText` |  | `string` | ('OK') |
+| `draggable` |  | `boolean` | (false) |
+| `resizable` |  | `boolean` | (false) |
+| `titleAlignment` |  | `TitleAlignment` | ('Auto') |
+| `searchPlaceholder` |  | `string` |  |
+| `initialFocus` |  | `SelectDialogInitialFocus` | ('List') |
+| `onSearch` |  | `(e: { value: string; clearButtonPressed: boolean }) => void` | Fired on Enter in the search field and when it is cleared. Extension: without `onSearch` and `onLiveChange` the dialog filters the items itself (title and description, or the text of the cells). |
+| `onLiveChange` |  | `(e: { value: string }) => void` |  |
+| `onConfirm` |  | `(e: { selectedItem: I \| undefined; selectedItems: I[] }) => void` |  |
+| `onCancel` |  | `() => void` |  |
+| `onSelectionChange` |  | `(e: { listItem: I; listItems: I[]; selected: boolean; selectAll: boolean }) => void` |  |
+| `onUpdateStarted` |  | `(e: ListUpdateEvent) => void` |  |
+| `onUpdateFinished` |  | `(e: ListUpdateEvent) => void` |  |
 
-Props of `OverflowToolbar` (see above).
+### `ListItemBase` — interface
 
-### `OverflowToolbarRef` — interface
-
-Instance methods of OverflowToolbar.
+The ListItemBase properties shared by StandardListItem and ColumnListItem.
 
 | Member | Required | Type | Description |
 | --- | --- | --- | --- |
-| `closeOverflow` | **yes** | `() => void` | Closes the overflow popover. |
-| `element` | **yes** | `HTMLDivElement \| null` | The toolbar element. |
+| `key` | **yes** | `string` |  |
+| `type` |  | `ListType` | ('Inactive') |
+| `visible` |  | `boolean` | (true) |
+| `unread` |  | `boolean` | (false) Shows the title in bold. |
+| `selected` |  | `boolean` | (false) |
+| `counter` |  | `number` |  |
+| `highlight` |  | `string` | ('None') A ValueState or 'Indication01'…'Indication20': the coloured line at the start. |
+| `highlightText` |  | `string` |  |
+| `navigated` |  | `boolean` | (false) |
 
-### `PageBackgroundDesign` — const
+### `ListUpdateEvent` — interface
 
-sap.m.PageBackgroundDesign
+Parameters of `updateStarted` / `updateFinished` (sap.m.SelectDialogBase).
 
-```ts
-const PageBackgroundDesign: { readonly List: "List"; readonly Solid: "Solid"; readonly Standard: "Standard"; readonly Transparent: "Transparent"; }
-```
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `reason` | **yes** | `'Refresh' \| 'Filter' \| 'Growing'` |  |
+| `actual` | **yes** | `number` |  |
+| `total` | **yes** | `number` |  |
 
 ### `PopinDisplay` — type
 
@@ -5648,14 +7588,6 @@ sap.m.PopinDisplay
 
 ```ts
 export type PopinDisplay = 'Block' | 'Inline' | 'WithoutHeader';
-```
-
-### `PreventableEvent` — type
-
-An event object for handlers whose UI5 event can be prevented (`oEvent.preventDefault()`).
-
-```ts
-export type PreventableEvent<T> = T & { preventDefault(): void };
 ```
 
 ### `Priority` — type
@@ -5666,9 +7598,1021 @@ sap.ui.core.Priority
 export type Priority = 'High' | 'Low' | 'Medium' | 'None';
 ```
 
-### `ProcessFlow` — component
+### `SortOrder` — type
 
-`import { ProcessFlow } from '@rhfan2019/smart-kit/controls';`
+sap.ui.core.SortOrder
+
+```ts
+export type SortOrder = 'Ascending' | 'Descending' | 'None';
+```
+
+### `StandardListItem` — interface
+
+sap.m.StandardListItem
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `key` | **yes** | `string` |  |
+| `title` |  | `string` |  |
+| `description` |  | `string` |  |
+| `icon` |  | `ReactNode` |  |
+| `iconInset` |  | `boolean` | (true) |
+| `activeIcon` |  | `ReactNode` | Icon shown while the item is selected. |
+| `info` |  | `string` |  |
+| `infoState` |  | `ValueState` | ('None') |
+| `infoIcon` |  | `ReactNode` |  |
+| `adaptTitleSize` |  | `boolean` | (true) |
+| `wrapping` |  | `boolean` | (false) |
+| `infoStateInverted` |  | `boolean` | (false) Shows the info as a filled badge. |
+| `wrapCharLimit` |  | `number` | (0) With `wrapping`: characters shown before the text is cut (0: the UI5 default, 300 on desktop). |
+| `type` |  | `ListType` | ('Inactive') |
+| `visible` |  | `boolean` | (true) |
+| `unread` |  | `boolean` | (false) Shows the title in bold. |
+| `selected` |  | `boolean` | (false) |
+| `counter` |  | `number` |  |
+| `highlight` |  | `string` | ('None') A ValueState or 'Indication01'…'Indication20': the coloured line at the start. |
+| `highlightText` |  | `string` |  |
+| `navigated` |  | `boolean` | (false) |
+
+### `TextAlign` — type
+
+sap.ui.core.TextAlign
+
+```ts
+export type TextAlign = 'Begin' | 'End' | 'Left' | 'Right' | 'Center' | 'Initial';
+```
+
+### `VerticalAlign` — type
+
+sap.ui.core.VerticalAlign
+
+```ts
+export type VerticalAlign = 'Bottom' | 'Inherit' | 'Middle' | 'Top';
+```
+
+## `@rhfan2019/smart-kit/m/TableSelectDialog`
+
+`$TableSelectDialogSettings` (interface) · `Column` (interface) · `ColumnListItem` (interface) · `default` (component) · `ListUpdateEvent` (interface)
+
+### `$TableSelectDialogSettings` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `columns` | **yes** | `Column[]` |  |
+| `items` | **yes** | `ColumnListItem[]` |  |
+| `ref` |  | `Ref&lt;TableSelectDialog>` |  |
+| `title` |  | `string` |  |
+| `noDataText` |  | `string` |  |
+| `multiSelect` |  | `boolean` | (false) |
+| `growing` |  | `boolean` | (true) Shows `growingThreshold` items and a "More" trigger. |
+| `growingThreshold` |  | `number` | (null → 20, the list default) |
+| `contentWidth` |  | `string` |  |
+| `rememberSelections` |  | `boolean` | (false) Keeps the confirmed selection for the next opening; otherwise the items' `selected` is the start. |
+| `contentHeight` |  | `string` |  |
+| `showClearButton` |  | `boolean` | (false) |
+| `confirmButtonText` |  | `string` | ('OK') |
+| `draggable` |  | `boolean` | (false) |
+| `resizable` |  | `boolean` | (false) |
+| `titleAlignment` |  | `TitleAlignment` | ('Auto') |
+| `searchPlaceholder` |  | `string` |  |
+| `initialFocus` |  | `SelectDialogInitialFocus` | ('List') |
+| `onSearch` |  | `(e: { value: string; clearButtonPressed: boolean }) => void` | Fired on Enter in the search field and when it is cleared. Extension: without `onSearch` and `onLiveChange` the dialog filters the items itself (title and description, or the text of the cells). |
+| `onLiveChange` |  | `(e: { value: string }) => void` |  |
+| `onConfirm` |  | `(e: { selectedItem: I \| undefined; selectedItems: I[] }) => void` |  |
+| `onCancel` |  | `() => void` |  |
+| `onSelectionChange` |  | `(e: { listItem: I; listItems: I[]; selected: boolean; selectAll: boolean }) => void` |  |
+| `onUpdateStarted` |  | `(e: ListUpdateEvent) => void` |  |
+| `onUpdateFinished` |  | `(e: ListUpdateEvent) => void` |  |
+
+### `Column` — interface
+
+sap.m.Column
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `header` |  | `ReactNode` |  |
+| `footer` |  | `ReactNode` |  |
+| `width` |  | `string` |  |
+| `hAlign` |  | `TextAlign` | ('Begin') |
+| `vAlign` |  | `VerticalAlign` | ('Inherit') |
+| `visible` |  | `boolean` | (true) |
+| `minScreenWidth` |  | `string` | CSS width or 'Phone' \| 'Tablet' \| 'Desktop' \| 'Small' \| 'Medium' \| 'Large' \| 'XLarge' \| 'XXLarge': below it the column is hidden or popped in. |
+| `demandPopin` |  | `boolean` | (false) |
+| `popinDisplay` |  | `PopinDisplay` | ('Block') |
+| `mergeDuplicates` |  | `boolean` | (false) Leaves a cell empty when it repeats the cell above. |
+| `sortIndicator` |  | `SortOrder` | ('None') |
+| `importance` |  | `Priority` | ('None') Kept for UI5 compatibility; the dialog's table has no automatic pop-in. |
+| `autoPopinWidth` |  | `number` | (8) Kept for UI5 compatibility (automatic pop-in only). |
+
+### `ColumnListItem` — interface
+
+sap.m.ColumnListItem
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `cells` | **yes** | `ReactNode[]` |  |
+| `key` | **yes** | `string` |  |
+| `vAlign` |  | `VerticalAlign` | ('Inherit') |
+| `type` |  | `ListType` | ('Inactive') |
+| `visible` |  | `boolean` | (true) |
+| `unread` |  | `boolean` | (false) Shows the title in bold. |
+| `selected` |  | `boolean` | (false) |
+| `counter` |  | `number` |  |
+| `highlight` |  | `string` | ('None') A ValueState or 'Indication01'…'Indication20': the coloured line at the start. |
+| `highlightText` |  | `string` |  |
+| `navigated` |  | `boolean` | (false) |
+
+### `default` — component
+
+TableSelectDialog (sap.m.TableSelectDialog) with columns and ColumnListItem rows.
+
+`import { default } from '@rhfan2019/smart-kit/m/TableSelectDialog';`
+
+| Prop | Required | Type | Description |
+| --- | --- | --- | --- |
+| `columns` | **yes** | `Column[]` |  |
+| `items` | **yes** | `ColumnListItem[]` |  |
+| `ref` |  | `Ref&lt;TableSelectDialog>` |  |
+| `title` |  | `string` |  |
+| `noDataText` |  | `string` |  |
+| `multiSelect` |  | `boolean` | (false) |
+| `growing` |  | `boolean` | (true) Shows `growingThreshold` items and a "More" trigger. |
+| `growingThreshold` |  | `number` | (null → 20, the list default) |
+| `contentWidth` |  | `string` |  |
+| `rememberSelections` |  | `boolean` | (false) Keeps the confirmed selection for the next opening; otherwise the items' `selected` is the start. |
+| `contentHeight` |  | `string` |  |
+| `showClearButton` |  | `boolean` | (false) |
+| `confirmButtonText` |  | `string` | ('OK') |
+| `draggable` |  | `boolean` | (false) |
+| `resizable` |  | `boolean` | (false) |
+| `titleAlignment` |  | `TitleAlignment` | ('Auto') |
+| `searchPlaceholder` |  | `string` |  |
+| `initialFocus` |  | `SelectDialogInitialFocus` | ('List') |
+| `onSearch` |  | `(e: { value: string; clearButtonPressed: boolean }) => void` | Fired on Enter in the search field and when it is cleared. Extension: without `onSearch` and `onLiveChange` the dialog filters the items itself (title and description, or the text of the cells). |
+| `onLiveChange` |  | `(e: { value: string }) => void` |  |
+| `onConfirm` |  | `(e: { selectedItem: I \| undefined; selectedItems: I[] }) => void` |  |
+| `onCancel` |  | `() => void` |  |
+| `onSelectionChange` |  | `(e: { listItem: I; listItems: I[]; selected: boolean; selectAll: boolean }) => void` |  |
+| `onUpdateStarted` |  | `(e: ListUpdateEvent) => void` |  |
+| `onUpdateFinished` |  | `(e: ListUpdateEvent) => void` |  |
+
+### `ListUpdateEvent` — interface
+
+Parameters of `updateStarted` / `updateFinished` (sap.m.SelectDialogBase).
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `reason` | **yes** | `'Refresh' \| 'Filter' \| 'Growing'` |  |
+| `actual` | **yes** | `number` |  |
+| `total` | **yes** | `number` |  |
+
+## `@rhfan2019/smart-kit/m/ToggleButton`
+
+`$ToggleButtonSettings` (interface) · `AriaHasPopup` (type) · `default` (component)
+
+### `$ToggleButtonSettings` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `pressed` |  | `boolean` | Pressed state (default false). The button also toggles itself, as in SAPUI5; a changed prop wins. |
+| `text` |  | `string` | Button text; without it the button shows only the icon (then set `aria-label` or `title`). |
+| `type` |  | `ButtonType` | Visual type (default Default). |
+| `width` |  | `string` | Width (CSS length). |
+| `enabled` |  | `boolean` | Enabled (default true). |
+| `icon` |  | `ReactNode` | Icon (a React node). |
+| `iconFirst` |  | `boolean` | Icon before the text (default true); false puts it after. |
+| `activeIcon` |  | `ReactNode` | Icon shown while the button is pressed. |
+| `ariaHasPopup` |  | `AriaHasPopup` | aria-haspopup (default None). |
+| `accessibleRole` |  | `ButtonAccessibleRole` | Link makes screen readers announce a link (default Default). |
+| `badgeStyle` |  | `BadgeStyle` | Style of the badge (default Default). |
+| `badge` |  | `string \| number` | Extension: badge value shown on the button (SAPUI5 sets it through BadgeCustomData). |
+| `layoutData` |  | `OverflowToolbarLayoutData` | Layout data when the button is in an OverflowToolbar. |
+| `onPress` |  | `(e: { pressed: boolean }) => void` | Fired after a press with the new state. |
+| `title` |  | `string` |  |
+| `aria-label` |  | `string` |  |
+| `className` |  | `string` |  |
+| `data-testid` |  | `string` |  |
+
+### `AriaHasPopup` — type
+
+sap.ui.core.aria.HasPopup
+
+```ts
+export type AriaHasPopup = 'None' | 'Menu' | 'ListBox' | 'Tree' | 'Grid' | 'Dialog';
+```
+
+### `default` — component
+
+`import { default } from '@rhfan2019/smart-kit/m/ToggleButton';`
+
+| Prop | Required | Type | Description |
+| --- | --- | --- | --- |
+| `pressed` |  | `boolean` | Pressed state (default false). The button also toggles itself, as in SAPUI5; a changed prop wins. |
+| `text` |  | `string` | Button text; without it the button shows only the icon (then set `aria-label` or `title`). |
+| `type` |  | `ButtonType` | Visual type (default Default). |
+| `width` |  | `string` | Width (CSS length). |
+| `enabled` |  | `boolean` | Enabled (default true). |
+| `icon` |  | `ReactNode` | Icon (a React node). |
+| `iconFirst` |  | `boolean` | Icon before the text (default true); false puts it after. |
+| `activeIcon` |  | `ReactNode` | Icon shown while the button is pressed. |
+| `ariaHasPopup` |  | `AriaHasPopup` | aria-haspopup (default None). |
+| `accessibleRole` |  | `ButtonAccessibleRole` | Link makes screen readers announce a link (default Default). |
+| `badgeStyle` |  | `BadgeStyle` | Style of the badge (default Default). |
+| `badge` |  | `string \| number` | Extension: badge value shown on the button (SAPUI5 sets it through BadgeCustomData). |
+| `layoutData` |  | `OverflowToolbarLayoutData` | Layout data when the button is in an OverflowToolbar. |
+| `onPress` |  | `(e: { pressed: boolean }) => void` | Fired after a press with the new state. |
+| `title` |  | `string` |  |
+| `aria-label` |  | `string` |  |
+| `className` |  | `string` |  |
+| `data-testid` |  | `string` |  |
+
+## `@rhfan2019/smart-kit/m/ToolbarSpacer`
+
+`$ToolbarSpacerSettings` (interface) · `default` (component)
+
+### `$ToolbarSpacerSettings` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `width` |  | `string` | Fixed width (CSS length); without it the spacer takes the remaining space. |
+
+### `default` — component
+
+Pushes the following toolbar content to the end, or adds a fixed gap with `width`.
+
+`import { default } from '@rhfan2019/smart-kit/m/ToolbarSpacer';`
+
+| Prop | Required | Type | Description |
+| --- | --- | --- | --- |
+| `width` |  | `string` | Fixed width (CSS length); without it the spacer takes the remaining space. |
+
+## `@rhfan2019/smart-kit/m/ViewSettingsDialog`
+
+`$ViewSettingsDialogSettings` (interface) · `default` (component) · `ViewSettingsCustomTab` (interface) · `ViewSettingsDialogConfirmEvent` (interface) · `ViewSettingsDialogPage` (type) · `ViewSettingsFilterItem` (interface) · `ViewSettingsItem` (interface)
+
+### `$ViewSettingsDialogSettings` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `title` |  | `string` | ('View Settings') |
+| `sortItems` |  | `ViewSettingsItem[]` |  |
+| `groupItems` |  | `ViewSettingsItem[]` |  |
+| `filterItems` |  | `ViewSettingsFilterItem[]` |  |
+| `presetFilterItems` |  | `ViewSettingsItem[]` | Predefined filters; picking one clears the other filters (and the other way round). |
+| `customTabs` |  | `ViewSettingsCustomTab[]` |  |
+| `sortDescending` |  | `boolean` | (false) |
+| `groupDescending` |  | `boolean` | (false) |
+| `filterSearchOperator` |  | `StringFilterOperator` | ('StartsWith') |
+| `titleAlignment` |  | `TitleAlignment` | ('Auto') |
+| `selectedPresetFilterItem` |  | `string` | Key of the selected preset filter (otherwise the preset with `selected`). |
+| `selectedSortItem` |  | `string` | Key of the selected sort item (otherwise the item with `selected`). |
+| `selectedGroupItem` |  | `string` | Key of the selected group item (otherwise the item with `selected`). |
+| `selectedFilterKeys` |  | `Record&lt;string, string[]>` | Extension: the selected values per filter, `{ [filterKey]: valueKeys }` (otherwise the values with `selected`). |
+| `onConfirm` |  | `(e: ViewSettingsDialogConfirmEvent) => void` |  |
+| `onCancel` |  | `() => void` |  |
+| `onReset` |  | `() => void` | Fired when the reset button is pressed. |
+| `onResetFilters` |  | `() => void` | Fired when the filters are reset (reset button or `clearFilters`). |
+| `onFilterDetailPageOpened` |  | `(e: { parentFilterItem: ViewSettingsFilterItem }) => void` |  |
+| `onBeforeClose` |  | `(e: PreventableEvent&lt;object>) => void` | Fired before the dialog closes (OK, Cancel, Escape); `preventDefault()` keeps it open. |
+| `ref` |  | `Ref&lt;ViewSettingsDialog>` |  |
+
+### `default` — component
+
+`import { default } from '@rhfan2019/smart-kit/m/ViewSettingsDialog';`
+
+| Prop | Required | Type | Description |
+| --- | --- | --- | --- |
+| `title` |  | `string` | ('View Settings') |
+| `sortItems` |  | `ViewSettingsItem[]` |  |
+| `groupItems` |  | `ViewSettingsItem[]` |  |
+| `filterItems` |  | `ViewSettingsFilterItem[]` |  |
+| `presetFilterItems` |  | `ViewSettingsItem[]` | Predefined filters; picking one clears the other filters (and the other way round). |
+| `customTabs` |  | `ViewSettingsCustomTab[]` |  |
+| `sortDescending` |  | `boolean` | (false) |
+| `groupDescending` |  | `boolean` | (false) |
+| `filterSearchOperator` |  | `StringFilterOperator` | ('StartsWith') |
+| `titleAlignment` |  | `TitleAlignment` | ('Auto') |
+| `selectedPresetFilterItem` |  | `string` | Key of the selected preset filter (otherwise the preset with `selected`). |
+| `selectedSortItem` |  | `string` | Key of the selected sort item (otherwise the item with `selected`). |
+| `selectedGroupItem` |  | `string` | Key of the selected group item (otherwise the item with `selected`). |
+| `selectedFilterKeys` |  | `Record&lt;string, string[]>` | Extension: the selected values per filter, `{ [filterKey]: valueKeys }` (otherwise the values with `selected`). |
+| `onConfirm` |  | `(e: ViewSettingsDialogConfirmEvent) => void` |  |
+| `onCancel` |  | `() => void` |  |
+| `onReset` |  | `() => void` | Fired when the reset button is pressed. |
+| `onResetFilters` |  | `() => void` | Fired when the filters are reset (reset button or `clearFilters`). |
+| `onFilterDetailPageOpened` |  | `(e: { parentFilterItem: ViewSettingsFilterItem }) => void` |  |
+| `onBeforeClose` |  | `(e: PreventableEvent&lt;object>) => void` | Fired before the dialog closes (OK, Cancel, Escape); `preventDefault()` keeps it open. |
+| `ref` |  | `Ref&lt;ViewSettingsDialog>` |  |
+
+### `ViewSettingsCustomTab` — interface
+
+sap.m.ViewSettingsCustomTab: an own page with its own button in the header.
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `key` | **yes** | `string` |  |
+| `title` | **yes** | `string` |  |
+| `content` | **yes** | `ReactNode` |  |
+| `icon` |  | `ReactNode` |  |
+
+### `ViewSettingsDialogConfirmEvent` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `sortItem` | **yes** | `ViewSettingsItem \| undefined` |  |
+| `sortDescending` | **yes** | `boolean` |  |
+| `groupItem` | **yes** | `ViewSettingsItem \| undefined` |  |
+| `groupDescending` | **yes** | `boolean` |  |
+| `presetFilterItem` | **yes** | `ViewSettingsItem \| undefined` |  |
+| `filterItems` | **yes** | `ViewSettingsItem[]` | The selected values of all filters. |
+| `filterKeys` | **yes** | `Record&lt;string, boolean>` | `{ valueKey: true }` of the selected values (UI5 `filterKeys`). |
+| `filterCompoundKeys` | **yes** | `Record&lt;string, Record&lt;string, boolean>>` | `{ filterKey: { valueKey: true } }` (UI5 `filterCompoundKeys`). |
+| `filterString` | **yes** | `string` | "Filtered by: Status (New, Approved)", or "Filtered by: &lt;preset>"; empty without filters. |
+
+### `ViewSettingsDialogPage` — type
+
+The pages of the dialog (UI5 page ids; custom tabs use their key).
+
+```ts
+export type ViewSettingsDialogPage = 'sort' | 'group' | 'filter' | (string & {});
+```
+
+### `ViewSettingsFilterItem` — interface
+
+sap.m.ViewSettingsFilterItem
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `items` | **yes** | `ViewSettingsItem[]` |  |
+| `key` | **yes** | `string` |  |
+| `text` | **yes** | `string` |  |
+| `multiSelect` |  | `boolean` | (true) |
+| `enabled` |  | `boolean` | (true) |
+| `selected` |  | `boolean` | (false) |
+| `wrapping` |  | `boolean` | (false) |
+
+### `ViewSettingsItem` — interface
+
+sap.m.ViewSettingsItem
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `key` | **yes** | `string` |  |
+| `text` | **yes** | `string` |  |
+| `enabled` |  | `boolean` | (true) |
+| `selected` |  | `boolean` | (false) |
+| `wrapping` |  | `boolean` | (false) |
+
+## `@rhfan2019/smart-kit/m/Wizard`
+
+`$WizardSettings` (interface) · `default` (component) · `WizardStepInfo` (interface) · `WizardTitleLevel` (type)
+
+### `$WizardSettings` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `children` |  | `ReactNode` |  |
+| `renderMode` |  | `WizardRenderMode` | ('Scroll') |
+| `showNextButton` |  | `boolean` | (true) |
+| `finishButtonText` |  | `string` | ('Review') Text of the next button on the last step. |
+| `enableBranching` |  | `boolean` | (false) |
+| `currentStep` |  | `string` | The id of the step to show; steps up to it are reached when they are validated. |
+| `width` |  | `string` | ('auto') CSS width. |
+| `height` |  | `string` | ('100%') CSS height (the steps scroll inside). |
+| `backgroundDesign` |  | `PageBackgroundDesign` | ('Standard') |
+| `stepTitleLevel` |  | `WizardTitleLevel` | ('H3') Heading level of the step titles. |
+| `onStepActivate` |  | `(e: { index: number }) => void` | Fired when a step becomes the progress step; `index` is one-based. |
+| `onComplete` |  | `() => void` | Fired when the next button of the last step is pressed. |
+| `onNavigationChange` |  | `(e: { step: WizardStepInfo }) => void` | Fired when the user goes to another reached step in the progress navigator. |
+| `ref` |  | `Ref&lt;Wizard>` |  |
+| `aria-label` |  | `string` |  |
+
+### `default` — component
+
+`import { default } from '@rhfan2019/smart-kit/m/Wizard';`
+
+| Prop | Required | Type | Description |
+| --- | --- | --- | --- |
+| `children` |  | `ReactNode` |  |
+| `renderMode` |  | `WizardRenderMode` | ('Scroll') |
+| `showNextButton` |  | `boolean` | (true) |
+| `finishButtonText` |  | `string` | ('Review') Text of the next button on the last step. |
+| `enableBranching` |  | `boolean` | (false) |
+| `currentStep` |  | `string` | The id of the step to show; steps up to it are reached when they are validated. |
+| `width` |  | `string` | ('auto') CSS width. |
+| `height` |  | `string` | ('100%') CSS height (the steps scroll inside). |
+| `backgroundDesign` |  | `PageBackgroundDesign` | ('Standard') |
+| `stepTitleLevel` |  | `WizardTitleLevel` | ('H3') Heading level of the step titles. |
+| `onStepActivate` |  | `(e: { index: number }) => void` | Fired when a step becomes the progress step; `index` is one-based. |
+| `onComplete` |  | `() => void` | Fired when the next button of the last step is pressed. |
+| `onNavigationChange` |  | `(e: { step: WizardStepInfo }) => void` | Fired when the user goes to another reached step in the progress navigator. |
+| `ref` |  | `Ref&lt;Wizard>` |  |
+| `aria-label` |  | `string` |  |
+
+### `WizardStepInfo` — interface
+
+What `getProgressStep()` returns.
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `id` | **yes** | `string` |  |
+| `title` | **yes** | `string \| undefined` |  |
+| `index` | **yes** | `number` | One-based position in the progress. |
+
+### `WizardTitleLevel` — type
+
+sap.ui.core.TitleLevel (for `stepTitleLevel`).
+
+```ts
+export type WizardTitleLevel = 'Auto' | 'H1' | 'H2' | 'H3' | 'H4' | 'H5' | 'H6';
+```
+
+## `@rhfan2019/smart-kit/m/WizardStep`
+
+`$WizardStepSettings` (interface) · `default` (component)
+
+### `$WizardStepSettings` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `id` |  | `string` | Step id (used by `nextStep`, `subsequentSteps`, `goToStep`); default: the React key, then the position. |
+| `title` |  | `string` |  |
+| `icon` |  | `ReactNode` |  |
+| `validated` |  | `boolean` | (true) Whether the user may go on to the next step. |
+| `optional` |  | `boolean` | (false) Adds "(Optional)" to the title. |
+| `nextStep` |  | `string` | With `enableBranching`: the id of the next step (one of `subsequentSteps`). |
+| `subsequentSteps` |  | `string[]` | With `enableBranching`: the ids of the steps that can follow. |
+| `onActivate` |  | `() => void` | Fired when the step becomes the progress step. |
+| `onComplete` |  | `() => void` | Fired when the user goes on from this step. |
+| `children` |  | `ReactNode` |  |
+
+### `default` — component
+
+A step of a Wizard; rendered by the Wizard (alone it renders nothing).
+
+`import { default } from '@rhfan2019/smart-kit/m/WizardStep';`
+
+| Prop | Required | Type | Description |
+| --- | --- | --- | --- |
+| `id` |  | `string` | Step id (used by `nextStep`, `subsequentSteps`, `goToStep`); default: the React key, then the position. |
+| `title` |  | `string` |  |
+| `icon` |  | `ReactNode` |  |
+| `validated` |  | `boolean` | (true) Whether the user may go on to the next step. |
+| `optional` |  | `boolean` | (false) Adds "(Optional)" to the title. |
+| `nextStep` |  | `string` | With `enableBranching`: the id of the next step (one of `subsequentSteps`). |
+| `subsequentSteps` |  | `string[]` | With `enableBranching`: the ids of the steps that can follow. |
+| `onActivate` |  | `() => void` | Fired when the step becomes the progress step. |
+| `onComplete` |  | `() => void` | Fired when the user goes on from this step. |
+| `children` |  | `ReactNode` |  |
+
+## `@rhfan2019/smart-kit/m/library`
+
+`BackgroundDesign` (const) · `BadgeStyle` (const) · `ButtonAccessibleRole` (const) · `ButtonType` (const) · `EmptyIndicatorMode` (const) · `ExpandableTextOverflowMode` (const) · `IconTabDensityMode` (const) · `IconTabFilterDesign` (const) · `IconTabFilterInteractionMode` (const) · `IconTabHeaderMode` (const) · `LinkConversion` (const) · `ListType` (const) · `ObjectMarkerType` (const) · `ObjectMarkerVisibility` (const) · `ObjectNumberDisplayMode` (const) · `OverflowToolbarPriority` (const) · `PageBackgroundDesign` (const) · `ReactiveAreaMode` (const) · `SelectDialogInitialFocus` (const) · `StandardDynamicDateRangeKeys` (const) · `StringFilterOperator` (const) · `TabsOverflowMode` (const) · `TitleAlignment` (const) · `ToolbarDesign` (const) · `ToolbarStyle` (const) · `UploadSetwithTableActionPlaceHolder` (const) · `UploadState` (const) · `VerticalPlacementType` (const) · `WizardRenderMode` (const) · `WrappingType` (const)
+
+### `BackgroundDesign` — const
+
+sap.m.BackgroundDesign
+
+```ts
+const BackgroundDesign: { readonly Solid: "Solid"; readonly Translucent: "Translucent"; readonly Transparent: "Transparent"; }
+```
+
+### `BadgeStyle` — const
+
+sap.m.BadgeStyle
+
+```ts
+const BadgeStyle: { readonly Default: "Default"; readonly Attention: "Attention"; }
+```
+
+### `ButtonAccessibleRole` — const
+
+sap.m.ButtonAccessibleRole
+
+```ts
+const ButtonAccessibleRole: { readonly Default: "Default"; readonly Link: "Link"; }
+```
+
+### `ButtonType` — const
+
+sap.m.ButtonType
+
+```ts
+const ButtonType: { readonly Default: "Default"; readonly Back: "Back"; readonly Accept: "Accept"; readonly Reject: "Reject"; readonly Transparent: "Transp…
+```
+
+### `EmptyIndicatorMode` — const
+
+sap.m.EmptyIndicatorMode
+
+```ts
+const EmptyIndicatorMode: { readonly Auto: "Auto"; readonly On: "On"; readonly Off: "Off"; }
+```
+
+### `ExpandableTextOverflowMode` — const
+
+sap.m.ExpandableTextOverflowMode
+
+```ts
+const ExpandableTextOverflowMode: { readonly InPlace: "InPlace"; readonly Popover: "Popover"; }
+```
+
+### `IconTabDensityMode` — const
+
+sap.m.IconTabDensityMode
+
+```ts
+const IconTabDensityMode: { readonly Compact: "Compact"; readonly Cozy: "Cozy"; readonly Inherit: "Inherit"; }
+```
+
+### `IconTabFilterDesign` — const
+
+sap.m.IconTabFilterDesign
+
+```ts
+const IconTabFilterDesign: { readonly Horizontal: "Horizontal"; readonly Vertical: "Vertical"; }
+```
+
+### `IconTabFilterInteractionMode` — const
+
+sap.m.IconTabFilterInteractionMode
+
+```ts
+const IconTabFilterInteractionMode: { readonly Auto: "Auto"; readonly Select: "Select"; readonly SelectLeavesOnly: "SelectLeavesOnly"; }
+```
+
+### `IconTabHeaderMode` — const
+
+sap.m.IconTabHeaderMode
+
+```ts
+const IconTabHeaderMode: { readonly Inline: "Inline"; readonly Standard: "Standard"; }
+```
+
+### `LinkConversion` — const
+
+sap.m.LinkConversion
+
+```ts
+const LinkConversion: { readonly None: "None"; readonly All: "All"; readonly ProtocolOnly: "ProtocolOnly"; }
+```
+
+### `ListType` — const
+
+sap.m.ListType
+
+```ts
+const ListType: { readonly Active: "Active"; readonly Detail: "Detail"; readonly DetailAndActive: "DetailAndActive"; readonly Inactive: "Inactive"; reado…
+```
+
+### `ObjectMarkerType` — const
+
+sap.m.ObjectMarkerType
+
+```ts
+const ObjectMarkerType: { readonly Flagged: "Flagged"; readonly Favorite: "Favorite"; readonly Draft: "Draft"; readonly Locked: "Locked"; readonly Unsaved: "Unsa…
+```
+
+### `ObjectMarkerVisibility` — const
+
+sap.m.ObjectMarkerVisibility
+
+```ts
+const ObjectMarkerVisibility: { readonly IconOnly: "IconOnly"; readonly TextOnly: "TextOnly"; readonly IconAndText: "IconAndText"; }
+```
+
+### `ObjectNumberDisplayMode` — const
+
+sap.m.ObjectNumberDisplayMode
+
+```ts
+const ObjectNumberDisplayMode: { readonly Default: "Default"; readonly Currency: "Currency"; readonly Unit: "Unit"; }
+```
+
+### `OverflowToolbarPriority` — const
+
+sap.m.OverflowToolbarPriority
+
+```ts
+const OverflowToolbarPriority: { readonly NeverOverflow: "NeverOverflow"; readonly High: "High"; readonly Low: "Low"; readonly Disappear: "Disappear"; readonly AlwaysOv…
+```
+
+### `PageBackgroundDesign` — const
+
+sap.m.PageBackgroundDesign
+
+```ts
+const PageBackgroundDesign: { readonly List: "List"; readonly Solid: "Solid"; readonly Standard: "Standard"; readonly Transparent: "Transparent"; }
+```
+
+### `ReactiveAreaMode` — const
+
+sap.m.ReactiveAreaMode: Overlay enlarges the clickable area of a small active control to the touch target size.
+
+```ts
+const ReactiveAreaMode: { readonly Inline: "Inline"; readonly Overlay: "Overlay"; }
+```
+
+### `SelectDialogInitialFocus` — const
+
+sap.m.SelectDialogInitialFocus
+
+```ts
+const SelectDialogInitialFocus: { readonly List: "List"; readonly SearchField: "SearchField"; }
+```
+
+### `StandardDynamicDateRangeKeys` — const
+
+sap.m.StandardDynamicDateRangeKeys
+
+```ts
+const StandardDynamicDateRangeKeys: { readonly DATE: "DATE"; readonly TODAY: "TODAY"; readonly YESTERDAY: "YESTERDAY"; readonly TOMORROW: "TOMORROW"; readonly FIRSTDAYWEEK: …
+```
+
+### `StringFilterOperator` — const
+
+sap.m.StringFilterOperator (how the search field of a filter detail page matches the values).
+
+```ts
+const StringFilterOperator: { readonly AnyWordStartsWith: "AnyWordStartsWith"; readonly Contains: "Contains"; readonly Equals: "Equals"; readonly StartsWith: "Starts…
+```
+
+### `TabsOverflowMode` — const
+
+sap.m.TabsOverflowMode
+
+```ts
+const TabsOverflowMode: { readonly End: "End"; readonly StartAndEnd: "StartAndEnd"; }
+```
+
+### `TitleAlignment` — const
+
+sap.m.TitleAlignment
+
+```ts
+const TitleAlignment: { readonly Auto: "Auto"; readonly Center: "Center"; readonly None: "None"; readonly Start: "Start"; }
+```
+
+### `ToolbarDesign` — const
+
+sap.m.ToolbarDesign
+
+```ts
+const ToolbarDesign: { readonly Auto: "Auto"; readonly Transparent: "Transparent"; readonly Solid: "Solid"; readonly Info: "Info"; }
+```
+
+### `ToolbarStyle` — const
+
+sap.m.ToolbarStyle
+
+```ts
+const ToolbarStyle: { readonly Standard: "Standard"; readonly Clear: "Clear"; }
+```
+
+### `UploadSetwithTableActionPlaceHolder` — const
+
+sap.m.UploadSetwithTableActionPlaceHolder (the deprecated variant / personalization placeholders are left out).
+
+```ts
+const UploadSetwithTableActionPlaceHolder: { readonly UploadButtonPlaceholder: "UploadButtonPlaceholder"; readonly CloudFilePickerButtonPlaceholder: "CloudFilePickerButtonPlacehold…
+```
+
+### `UploadState` — const
+
+sap.m.UploadState
+
+```ts
+const UploadState: { readonly Ready: "Ready"; readonly Uploading: "Uploading"; readonly Complete: "Complete"; readonly Error: "Error"; }
+```
+
+### `VerticalPlacementType` — const
+
+sap.m.VerticalPlacementType
+
+```ts
+const VerticalPlacementType: { readonly Vertical: "Vertical"; readonly Top: "Top"; readonly Bottom: "Bottom"; }
+```
+
+### `WizardRenderMode` — const
+
+sap.m.WizardRenderMode
+
+```ts
+const WizardRenderMode: { readonly Scroll: "Scroll"; readonly Page: "Page"; }
+```
+
+### `WrappingType` — const
+
+sap.m.WrappingType
+
+```ts
+const WrappingType: { readonly Normal: "Normal"; readonly Hyphenated: "Hyphenated"; }
+```
+
+## `@rhfan2019/smart-kit/m/plugins/UploadSetwithTable`
+
+`$UploadSetwithTableSettings` (interface) · `default` (component) · `FilenameValidationConfig` (interface) · `FilePreviewDialog` (interface) · `UploadCompletedEvent` (interface) · `UploadHeaderField` (interface) · `UploadItem` (interface) · `UploadItemInstance` (type) · `UploadSetwithTableColumn` (interface) · `UploadSetwithTableItemInfo` (interface)
+
+### `$UploadSetwithTableSettings` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `items` |  | `UploadItem[]` |  |
+| `fileTypes` |  | `string[]` | Allowed extensions without dot, case-insensitive. |
+| `maxFileNameLength` |  | `number` |  |
+| `maxFileSize` |  | `number` | Maximum file size in MB. |
+| `mediaTypes` |  | `string[]` | Allowed media types ("image/png", also "image/*"). |
+| `uploadUrl` |  | `string` |  |
+| `httpRequestMethod` |  | `UploaderHttpRequestMethod` | Default 'Post'. |
+| `multiple` |  | `boolean` | Several files at once (default false). |
+| `uploadButtonInvisible` |  | `boolean` | Hides the upload button (default false); drag and drop still works. |
+| `uploadEnabled` |  | `boolean` | Default true. |
+| `itemValidationHandler` |  | `(info: UploadSetwithTableItemInfo) => Promise&lt;UploadItem>` | Called for each new item before its upload; resolve (with the item to upload) to go on, reject to skip it. |
+| `directory` |  | `boolean` | Selects folders instead of files (default false). |
+| `fileNameValidationConfig` |  | `FilenameValidationConfig` |  |
+| `uploader` |  | `UploaderTableItem` |  |
+| `headerFields` |  | `UploadHeaderField[]` |  |
+| `noDataIllustration` |  | `ReactNode` | Empty state; default an IllustratedMessage "UploadToCloud". |
+| `actions` |  | `ReactNode` | Toolbar content; an `&lt;ActionsPlaceholder placeholderFor="UploadButtonPlaceholder" />` places the upload button (default: at the end). |
+| `previewDialog` |  | `FilePreviewDialog` |  |
+| `title` |  | `string` | Extension: title of the toolbar and the table. |
+| `columns` |  | `UploadSetwithTableColumn[]` | Extension: columns after the file name, size and status. |
+| `onRemove` |  | `(e: ItemEvent) => void` | Extension: shows a remove button per row. |
+| `onItemRenamed` |  | `(e: ItemEvent) => void` |  |
+| `onItemRenameCanceled` |  | `(e: ItemEvent) => void` |  |
+| `onBeforeUploadStarts` |  | `(e: PreventableEvent&lt;ItemEvent>) => void` |  |
+| `onUploadCompleted` |  | `(e: UploadCompletedEvent) => void` |  |
+| `onFileTypeMismatch` |  | `(e: ItemEvent) => void` |  |
+| `onFileNameLengthExceeded` |  | `(e: ItemEvent) => void` |  |
+| `onFileSizeExceeded` |  | `(e: ItemEvent) => void` |  |
+| `onMediaTypeMismatch` |  | `(e: ItemEvent) => void` |  |
+| `onBeforeInitiatingItemUpload` |  | `(e: ItemEvent) => void` |  |
+| `ref` |  | `Ref&lt;UploadSetwithTable>` |  |
+
+### `default` — component
+
+Instance methods of UploadSetwithTable (via `ref`).
+
+`import { default } from '@rhfan2019/smart-kit/m/plugins/UploadSetwithTable';`
+
+| Prop | Required | Type | Description |
+| --- | --- | --- | --- |
+| `items` |  | `UploadItem[]` |  |
+| `fileTypes` |  | `string[]` | Allowed extensions without dot, case-insensitive. |
+| `maxFileNameLength` |  | `number` |  |
+| `maxFileSize` |  | `number` | Maximum file size in MB. |
+| `mediaTypes` |  | `string[]` | Allowed media types ("image/png", also "image/*"). |
+| `uploadUrl` |  | `string` |  |
+| `httpRequestMethod` |  | `UploaderHttpRequestMethod` | Default 'Post'. |
+| `multiple` |  | `boolean` | Several files at once (default false). |
+| `uploadButtonInvisible` |  | `boolean` | Hides the upload button (default false); drag and drop still works. |
+| `uploadEnabled` |  | `boolean` | Default true. |
+| `itemValidationHandler` |  | `(info: UploadSetwithTableItemInfo) => Promise&lt;UploadItem>` | Called for each new item before its upload; resolve (with the item to upload) to go on, reject to skip it. |
+| `directory` |  | `boolean` | Selects folders instead of files (default false). |
+| `fileNameValidationConfig` |  | `FilenameValidationConfig` |  |
+| `uploader` |  | `UploaderTableItem` |  |
+| `headerFields` |  | `UploadHeaderField[]` |  |
+| `noDataIllustration` |  | `ReactNode` | Empty state; default an IllustratedMessage "UploadToCloud". |
+| `actions` |  | `ReactNode` | Toolbar content; an `&lt;ActionsPlaceholder placeholderFor="UploadButtonPlaceholder" />` places the upload button (default: at the end). |
+| `previewDialog` |  | `FilePreviewDialog` |  |
+| `title` |  | `string` | Extension: title of the toolbar and the table. |
+| `columns` |  | `UploadSetwithTableColumn[]` | Extension: columns after the file name, size and status. |
+| `onRemove` |  | `(e: ItemEvent) => void` | Extension: shows a remove button per row. |
+| `onItemRenamed` |  | `(e: ItemEvent) => void` |  |
+| `onItemRenameCanceled` |  | `(e: ItemEvent) => void` |  |
+| `onBeforeUploadStarts` |  | `(e: PreventableEvent&lt;ItemEvent>) => void` |  |
+| `onUploadCompleted` |  | `(e: UploadCompletedEvent) => void` |  |
+| `onFileTypeMismatch` |  | `(e: ItemEvent) => void` |  |
+| `onFileNameLengthExceeded` |  | `(e: ItemEvent) => void` |  |
+| `onFileSizeExceeded` |  | `(e: ItemEvent) => void` |  |
+| `onMediaTypeMismatch` |  | `(e: ItemEvent) => void` |  |
+| `onBeforeInitiatingItemUpload` |  | `(e: ItemEvent) => void` |  |
+| `ref` |  | `Ref&lt;UploadSetwithTable>` |  |
+
+### `FilenameValidationConfig` — interface
+
+sap.m.plugins.UploadSetwithTable.FilenameValidationConfig
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `mode` | **yes** | `'include' \| 'exclude' \| 'override'` | include: add `characters` to the default set; exclude: allow them; override: replace the set. |
+| `characters` |  | `string` |  |
+
+### `FilePreviewDialog` — interface
+
+sap.m.upload.FilePreviewDialog settings (association `previewDialog`).
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `showCarouselArrows` |  | `boolean` | Arrows to the previous / next previewable item (default true). |
+| `maxFileSizeforPreview` |  | `number` | Larger files (MB) are not previewed. |
+| `customPageContentHandler` |  | `(item: UploadItemInstance) => ReactNode` | Own content for an item; return undefined for the standard preview. |
+| `additionalFooterButtons` |  | `ReactNode` |  |
+
+### `UploadCompletedEvent` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `item` | **yes** | `UploadItemInstance` |  |
+| `response` | **yes** | `string` |  |
+| `readyState` | **yes** | `number` |  |
+| `status` | **yes** | `number` |  |
+| `responseXML` | **yes** | `Document \| null` |  |
+| `responseText` | **yes** | `string` |  |
+| `headers` | **yes** | `Record&lt;string, string>` |  |
+
+### `UploadHeaderField` — interface
+
+sap.ui.core.Item as used by `headerFields`: one request header.
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `name` | **yes** | `string` |  |
+| `value` | **yes** | `string` |  |
+
+### `UploadItem` — interface
+
+sap.m.upload.UploadItem
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `id` |  | `string` | Extension: identity of the row; default the index and file name. |
+| `fileName` |  | `string` |  |
+| `mediaType` |  | `string` |  |
+| `url` |  | `string` | Download and preview URL. |
+| `uploadUrl` |  | `string` | Upload URL of this item (before the uploader's and the control's). |
+| `uploadState` |  | `UploadState` |  |
+| `previewable` |  | `boolean` | Default true. |
+| `fileSize` |  | `number` | Size in bytes (default 0). |
+| `isTrustedSource` |  | `boolean` | The URL may be shown in the preview without sandboxing (default false). |
+| `isDirectory` |  | `boolean` |  |
+| `headerFields` |  | `UploadHeaderField[]` |  |
+| `file` |  | `File` | Extension: the selected file of a new item. |
+| `progress` |  | `number` | Extension: upload progress 0–100 while uploading. |
+| `onUploadProgress` |  | `(e: { loaded: number; total: number }) => void` |  |
+| `onUploadTerminated` |  | `(e: { item: UploadItemInstance }) => void` |  |
+
+### `UploadItemInstance` — type
+
+An UploadItem in event objects and ref methods, with the UploadItem methods.
+
+```ts
+export type UploadItemInstance = UploadItem & { id: string; /** Downloads the file (`askForLocation`: a save dialog where the browser has one). */ download(askForLocation?: boolean): void; /** The item fails `fileTypes`, `mediaTypes`, `maxFileNameLength` or `maxFileSize`. */ isRestricted(): boolean; /** Aborts a running upload. */ terminateUpload(): void; };
+```
+
+### `UploadSetwithTableColumn` — interface
+
+Extension: an additional column of the file table.
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `key` | **yes** | `string` |  |
+| `header` | **yes** | `ReactNode` |  |
+| `cell` | **yes** | `(item: UploadItemInstance) => ReactNode` |  |
+| `width` |  | `string` | CSS width. |
+
+### `UploadSetwithTableItemInfo` — interface
+
+sap.m.plugins.UploadSetwithTable.ItemInfo: argument of `itemValidationHandler`.
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `oItem` | **yes** | `UploadItemInstance` |  |
+| `iTotalItemsForUpload` | **yes** | `number` |  |
+| `oSource` | **yes** | `UploadSetwithTable \| null` |  |
+
+## `@rhfan2019/smart-kit/m/upload/ActionsPlaceholder`
+
+`default` (component)
+
+### `default` — component
+
+sap.m.upload.ActionsPlaceholder: where the upload button goes inside `actions`.
+
+`import { default } from '@rhfan2019/smart-kit/m/upload/ActionsPlaceholder';`
+
+| Prop | Required | Type | Description |
+| --- | --- | --- | --- |
+| `placeholderFor` |  | `UploadSetwithTableActionPlaceHolder` |  |
+
+## `@rhfan2019/smart-kit/m/upload/UploaderHttpRequestMethod`
+
+`default` (const)
+
+### `default` — const
+
+sap.m.upload.UploaderHttpRequestMethod
+
+```ts
+const default: { readonly Post: "Post"; readonly Put: "Put"; }
+```
+
+## `@rhfan2019/smart-kit/m/upload/UploaderTableItem`
+
+`default` (const)
+
+### `default` — const
+
+sap.m.upload.UploaderTableItem: how the control uploads and downloads. Static methods of sap.m.upload.UploaderTableItem.
+
+```ts
+const default: { uploadFile: (file: Blob, url: string, headerFields?: UploadHeaderField[]) => Promise<XMLHttpRequest>; }
+```
+
+## `@rhfan2019/smart-kit/suite/ui/commons/MicroProcessFlow`
+
+`$MicroProcessFlowSettings` (interface) · `default` (component) · `MicroProcessFlowPressedItem` (type)
+
+### `$MicroProcessFlowSettings` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `children` |  | `ReactNode` |  |
+| `renderType` |  | `MicroProcessFlowRenderType` | Default 'Wrap'. |
+| `width` |  | `string` | CSS width. |
+| `ariaLabel` |  | `string` | Accessible name of the list. |
+
+### `default` — component
+
+`import { default } from '@rhfan2019/smart-kit/suite/ui/commons/MicroProcessFlow';`
+
+| Prop | Required | Type | Description |
+| --- | --- | --- | --- |
+| `children` |  | `ReactNode` |  |
+| `renderType` |  | `MicroProcessFlowRenderType` | Default 'Wrap'. |
+| `width` |  | `string` | CSS width. |
+| `ariaLabel` |  | `string` | Accessible name of the list. |
+
+### `MicroProcessFlowPressedItem` — type
+
+A MicroProcessFlowItem in event objects: its props and React key.
+
+```ts
+export type MicroProcessFlowPressedItem = Omit<$MicroProcessFlowItemSettings, 'onPress'> & { key?: string };
+```
+
+## `@rhfan2019/smart-kit/suite/ui/commons/MicroProcessFlowItem`
+
+`$MicroProcessFlowItemSettings` (interface) · `default` (component)
+
+### `$MicroProcessFlowItemSettings` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `icon` |  | `ReactNode` | Replaces the state icon. |
+| `title` |  | `string` | Accessible name and tooltip of the step. |
+| `state` |  | `ValueState` | Default 'None' (a plain dot). |
+| `showIntermediary` |  | `boolean` | Shows `intermediary` (or a small dot) on the separator after the item (default false). |
+| `stepWidth` |  | `string` | CSS width of the step including its separator. |
+| `showSeparator` |  | `boolean` | Line to the next item (default true). |
+| `customControl` |  | `ReactNode` | Replaces the whole step (icon). |
+| `intermediary` |  | `ReactNode` | Content on the separator when `showIntermediary`. |
+| `onPress` |  | `(e: PreventableEvent&lt;{ item: MicroProcessFlowPressedItem }>) => void` | Preventable, as in UI5. |
+
+### `default` — component
+
+A step of MicroProcessFlow; rendered by its parent.
+
+`import { default } from '@rhfan2019/smart-kit/suite/ui/commons/MicroProcessFlowItem';`
+
+| Prop | Required | Type | Description |
+| --- | --- | --- | --- |
+| `icon` |  | `ReactNode` | Replaces the state icon. |
+| `title` |  | `string` | Accessible name and tooltip of the step. |
+| `state` |  | `ValueState` | Default 'None' (a plain dot). |
+| `showIntermediary` |  | `boolean` | Shows `intermediary` (or a small dot) on the separator after the item (default false). |
+| `stepWidth` |  | `string` | CSS width of the step including its separator. |
+| `showSeparator` |  | `boolean` | Line to the next item (default true). |
+| `customControl` |  | `ReactNode` | Replaces the whole step (icon). |
+| `intermediary` |  | `ReactNode` | Content on the separator when `showIntermediary`. |
+| `onPress` |  | `(e: PreventableEvent&lt;{ item: MicroProcessFlowPressedItem }>) => void` | Preventable, as in UI5. |
+
+## `@rhfan2019/smart-kit/suite/ui/commons/ProcessFlow`
+
+`$ProcessFlowSettings` (interface) · `default` (component) · `ProcessFlowChild` (interface) · `ProcessFlowConnectionLabel` (interface) · `ProcessFlowLabelPressInfo` (interface) · `ProcessFlowLaneHeader` (interface) · `ProcessFlowLaneState` (interface) · `ProcessFlowNode` (interface)
+
+### `$ProcessFlowSettings` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `lanes` |  | `ProcessFlowLaneHeader[]` |  |
+| `nodes` |  | `ProcessFlowNode[]` |  |
+| `foldedCorners` |  | `boolean` | Nodes with a folded top-right corner (default false). |
+| `scrollable` |  | `boolean` | Scrolls inside its own box (default true); false lets the content overflow. |
+| `wheelZoomable` |  | `boolean` | Ctrl + mouse wheel zooms (default true). |
+| `showLabels` |  | `boolean` | Shows the connection labels (default false). |
+| `onNodePress` |  | `(node: ProcessFlowNode) => void` |  |
+| `onLabelPress` |  | `(label: ProcessFlowConnectionLabel, info: ProcessFlowLabelPressInfo) => void` |  |
+| `onHeaderPress` |  | `(lane: ProcessFlowLaneHeader) => void` |  |
+| `onError` |  | `(e: { text: string }) => void` | Inconsistent data: a node in an unknown lane, or a child or parent id that does not exist. |
+| `ref` |  | `Ref&lt;ProcessFlow>` |  |
+| `aria-label` |  | `string` |  |
+
+### `default` — component
+
+Instance methods of ProcessFlow (via `ref`).
+
+`import { default } from '@rhfan2019/smart-kit/suite/ui/commons/ProcessFlow';`
 
 | Prop | Required | Type | Description |
 | --- | --- | --- | --- |
@@ -5682,7 +8626,7 @@ export type Priority = 'High' | 'Low' | 'Medium' | 'None';
 | `onLabelPress` |  | `(label: ProcessFlowConnectionLabel, info: ProcessFlowLabelPressInfo) => void` |  |
 | `onHeaderPress` |  | `(lane: ProcessFlowLaneHeader) => void` |  |
 | `onError` |  | `(e: { text: string }) => void` | Inconsistent data: a node in an unknown lane, or a child or parent id that does not exist. |
-| `ref` |  | `Ref&lt;ProcessFlowRef>` |  |
+| `ref` |  | `Ref&lt;ProcessFlow>` |  |
 | `aria-label` |  | `string` |  |
 
 ### `ProcessFlowChild` — interface
@@ -5705,14 +8649,6 @@ sap.suite.ui.commons.ProcessFlowConnectionLabel: a label on a connector (shown w
 | `priority` |  | `number` | Where several labels meet, the one with the highest priority is shown (default 0). |
 | `state` |  | `ProcessFlowConnectionLabelState` | Default 'Neutral'. |
 | `enabled` |  | `boolean` | Default true. |
-
-### `ProcessFlowConnectionLabelState` — const
-
-sap.suite.ui.commons.ProcessFlowConnectionLabelState
-
-```ts
-const ProcessFlowConnectionLabelState: { readonly Positive: "Positive"; readonly Negative: "Negative"; readonly Critical: "Critical"; readonly Neutral: "Neutral"; }
-```
 
 ### `ProcessFlowLabelPressInfo` — interface
 
@@ -5771,234 +8707,57 @@ sap.suite.ui.commons.ProcessFlowNode
 | `zoomLevelThreeContent` |  | `ReactNode` |  |
 | `zoomLevelFourContent` |  | `ReactNode` |  |
 
-### `ProcessFlowNodeState` — const
+## `@rhfan2019/smart-kit/suite/ui/commons/Timeline`
 
-sap.suite.ui.commons.ProcessFlowNodeState
+`$TimelineSettings` (interface) · `default` (component) · `TimelineCustomAction` (interface) · `TimelineFilterListItem` (interface) · `TimelineFilterReasons` (interface) · `TimelineFilterSelectionChangeEvent` (interface) · `TimelineItemFilteringEvent` (interface) · `TimelineSelectedItem` (type) · `TimelineTimeKeys` (interface)
 
-```ts
-const ProcessFlowNodeState: { readonly Positive: "Positive"; readonly Negative: "Negative"; readonly Critical: "Critical"; readonly Neutral: "Neutral"; readonly Plan…
-```
-
-### `ProcessFlowNodeType` — const
-
-sap.suite.ui.commons.ProcessFlowNodeType: Aggregated nodes are drawn as a stack.
-
-```ts
-const ProcessFlowNodeType: { readonly Single: "Single"; readonly Aggregated: "Aggregated"; }
-```
-
-### `ProcessFlowProps` — interface
-
-Props of `ProcessFlow` (see above).
-
-### `ProcessFlowRef` — interface
-
-Instance methods of ProcessFlow (via `ref`).
+### `$TimelineSettings` — interface
 
 | Member | Required | Type | Description |
 | --- | --- | --- | --- |
-| `zoomIn` | **yes** | `() => ProcessFlowZoomLevel` |  |
-| `zoomOut` | **yes** | `() => ProcessFlowZoomLevel` |  |
-| `getZoomLevel` | **yes** | `() => ProcessFlowZoomLevel` |  |
-| `setZoomLevel` | **yes** | `(level: ProcessFlowZoomLevel) => void` |  |
-| `getFocusedNode` | **yes** | `() => string \| number \| undefined` | Id of the node that has the keyboard focus (or the `focused` node). |
-| `setSelectedPath` | **yes** | `(sourceNodeId: string \| number \| null, targetNodeId: string \| number \| null) => boolean` | Highlights the path from one node to another and dims the rest; `(null, null)` clears it. |
-| `optimizeLayout` | **yes** | `(isOptimized: boolean) => void` | true: each root starts on the first free row of its lane (compact); false (default): below the previous tree. |
-| `updateModel` | **yes** | `() => void` | Redraws (the data is already reactive; kept for UI5 code). |
-| `updateNodesOnly` | **yes** | `() => void` |  |
-| `applyNodeDisplayState` | **yes** | `() => void` |  |
-
-### `ProcessFlowZoomLevel` — const
-
-sap.suite.ui.commons.ProcessFlowZoomLevel: One is the most detailed, Four the smallest.
-
-```ts
-const ProcessFlowZoomLevel: { readonly One: "One"; readonly Two: "Two"; readonly Three: "Three"; readonly Four: "Four"; }
-```
-
-### `ReactiveAreaMode` — const
-
-sap.m.ReactiveAreaMode: Overlay enlarges the clickable area of a small active control to the touch target size.
-
-```ts
-const ReactiveAreaMode: { readonly Inline: "Inline"; readonly Overlay: "Overlay"; }
-```
-
-### `RESTRICTED_FILE_NAME_CHARACTERS` — const
-
-Characters not allowed in file names by default (UI5).
-
-```ts
-const RESTRICTED_FILE_NAME_CHARACTERS: "\\:/*?\"<>|[]{}@#$"
-```
-
-### `SelectDialog` — component
-
-SelectDialog (sap.m.SelectDialog) with StandardListItem data.
-
-`import { SelectDialog } from '@rhfan2019/smart-kit/controls';`
-
-| Prop | Required | Type | Description |
-| --- | --- | --- | --- |
-| `items` | **yes** | `StandardListItem[]` |  |
-| `ref` |  | `Ref&lt;SelectDialogRef>` |  |
-| `title` |  | `string` |  |
+| `children` |  | `ReactNode` |  |
+| `alignment` |  | `TimelineAlignment` | Default 'Right'. |
+| `axisOrientation` |  | `TimelineAxisOrientation` | Default 'Vertical'. |
+| `enableDoubleSided` |  | `boolean` | Vertical axis with items alternating on both sides (default false). |
+| `showIcons` |  | `boolean` | Default true; false shows dots instead of the item icons. |
+| `width` |  | `string` | CSS width (default '100%'). |
+| `height` |  | `string` | CSS height; with `enableScroll` the list scrolls inside it. |
+| `textHeight` |  | `string` | CSS maximum height of item texts (they scroll beyond it). |
 | `noDataText` |  | `string` |  |
-| `multiSelect` |  | `boolean` | (false) |
-| `growing` |  | `boolean` | (true) Shows `growingThreshold` items and a "More" trigger. |
-| `growingThreshold` |  | `number` | (null → 20, the list default) |
-| `contentWidth` |  | `string` |  |
-| `rememberSelections` |  | `boolean` | (false) Keeps the confirmed selection for the next opening; otherwise the items' `selected` is the start. |
-| `contentHeight` |  | `string` |  |
-| `showClearButton` |  | `boolean` | (false) |
-| `confirmButtonText` |  | `string` | ('OK') |
-| `draggable` |  | `boolean` | (false) |
-| `resizable` |  | `boolean` | (false) |
-| `titleAlignment` |  | `TitleAlignment` | ('Auto') |
-| `searchPlaceholder` |  | `string` |  |
-| `initialFocus` |  | `SelectDialogInitialFocus` | ('List') |
-| `onSearch` |  | `(e: { value: string; clearButtonPressed: boolean }) => void` | Fired on Enter in the search field and when it is cleared. Extension: without `onSearch` and `onLiveChange` the dialog filters the items itself (title and description, or the text of the cells). |
-| `onLiveChange` |  | `(e: { value: string }) => void` |  |
-| `onConfirm` |  | `(e: { selectedItem: I \| undefined; selectedItems: I[] }) => void` |  |
-| `onCancel` |  | `() => void` |  |
-| `onSelectionChange` |  | `(e: { listItem: I; listItems: I[]; selected: boolean; selectAll: boolean }) => void` |  |
-| `onUpdateStarted` |  | `(e: ListUpdateEvent) => void` |  |
-| `onUpdateFinished` |  | `(e: ListUpdateEvent) => void` |  |
+| `enableBusyIndicator` |  | `boolean` | Accepted for UI5 code; no effect (no data binding, ADR-032 rule 7). |
+| `enableModelFilter` |  | `boolean` |  |
+| `groupBy` |  | `string` |  |
+| `dateTimePath` |  | `string` |  |
+| `lazyLoading` |  | `boolean` |  |
+| `enableScroll` |  | `boolean` | Default true. |
+| `enableSocial` |  | `boolean` | Reply link and reply count on the items (default false). |
+| `forceGrowing` |  | `boolean` | Growing even without paging data (default false; items always grow on the client here). |
+| `growingThreshold` |  | `number` | Items shown before "More" (default 5; 0 shows all). |
+| `sort` |  | `boolean` | Sorts by date (default true). |
+| `sortOldestFirst` |  | `boolean` | Default false (newest first). |
+| `groupByType` |  | `TimelineGroupType` | Default 'None'. |
+| `showHeaderBar` |  | `boolean` | Default true. |
+| `showSearch` |  | `boolean` | Default true. |
+| `showSort` |  | `boolean` | Default true. |
+| `showItemFilter` |  | `boolean` | Filter by the items' `filterValue` (default true). |
+| `showTimeFilter` |  | `boolean` | Filter by a date range (default true). |
+| `filterTitle` |  | `string` | Title of the filter popover. |
+| `customFilter` |  | `ReactNode` | Replaces the content of the filter popover. |
+| `filterList` |  | `TimelineFilterListItem[]` | Options of the item filter; default the distinct `filterValue`s. |
+| `onSelect` |  | `(e: { selectedItem: TimelineSelectedItem; userAction: boolean }) => void` |  |
+| `onGrow` |  | `() => void` |  |
+| `onFilterOpen` |  | `() => void` |  |
+| `onFilterSelectionChange` |  | `(e: TimelineFilterSelectionChangeEvent) => void` |  |
+| `onItemFiltering` |  | `(e: PreventableEvent&lt;TimelineItemFilteringEvent>) => void` | Fired for each item a filter would hide; `preventDefault()` keeps it. |
+| `onCustomMessageClosed` |  | `() => void` |  |
+| `ref` |  | `Ref&lt;Timeline>` |  |
+| `aria-label` |  | `string` |  |
 
-### `SelectDialogInitialFocus` — const
+### `default` — component
 
-sap.m.SelectDialogInitialFocus
+Instance methods of Timeline (via `ref`).
 
-```ts
-const SelectDialogInitialFocus: { readonly List: "List"; readonly SearchField: "SearchField"; }
-```
-
-### `SelectDialogProps` — interface
-
-Props of `SelectDialog` (see above).
-
-### `SelectDialogRef` — interface
-
-| Member | Required | Type | Description |
-| --- | --- | --- | --- |
-| `open` | **yes** | `(searchValue?: string) => void` |  |
-| `clearSelection` | **yes** | `() => void` | Deselects all items. |
-
-### `SortOrder` — type
-
-sap.ui.core.SortOrder
-
-```ts
-export type SortOrder = 'Ascending' | 'Descending' | 'None';
-```
-
-### `StandardDynamicDateRangeKeys` — const
-
-sap.m.StandardDynamicDateRangeKeys
-
-```ts
-const StandardDynamicDateRangeKeys: { readonly DATE: "DATE"; readonly TODAY: "TODAY"; readonly YESTERDAY: "YESTERDAY"; readonly TOMORROW: "TOMORROW"; readonly FIRSTDAYWEEK: …
-```
-
-### `StandardListItem` — interface
-
-sap.m.StandardListItem
-
-| Member | Required | Type | Description |
-| --- | --- | --- | --- |
-| `key` | **yes** | `string` |  |
-| `title` |  | `string` |  |
-| `description` |  | `string` |  |
-| `icon` |  | `ReactNode` |  |
-| `iconInset` |  | `boolean` | (true) |
-| `activeIcon` |  | `ReactNode` | Icon shown while the item is selected. |
-| `info` |  | `string` |  |
-| `infoState` |  | `ValueState` | ('None') |
-| `infoIcon` |  | `ReactNode` |  |
-| `adaptTitleSize` |  | `boolean` | (true) |
-| `wrapping` |  | `boolean` | (false) |
-| `infoStateInverted` |  | `boolean` | (false) Shows the info as a filled badge. |
-| `wrapCharLimit` |  | `number` | (0) With `wrapping`: characters shown before the text is cut (0: the UI5 default, 300 on desktop). |
-| `type` |  | `ListType` | ('Inactive') |
-| `visible` |  | `boolean` | (true) |
-| `unread` |  | `boolean` | (false) Shows the title in bold. |
-| `selected` |  | `boolean` | (false) |
-| `counter` |  | `number` |  |
-| `highlight` |  | `string` | ('None') A ValueState or 'Indication01'…'Indication20': the coloured line at the start. |
-| `highlightText` |  | `string` |  |
-| `navigated` |  | `boolean` | (false) |
-
-### `StringFilterOperator` — const
-
-sap.m.StringFilterOperator (how the search field of a filter detail page matches the values).
-
-```ts
-const StringFilterOperator: { readonly AnyWordStartsWith: "AnyWordStartsWith"; readonly Contains: "Contains"; readonly Equals: "Equals"; readonly StartsWith: "Starts…
-```
-
-### `TableSelectDialog` — component
-
-TableSelectDialog (sap.m.TableSelectDialog) with columns and ColumnListItem rows.
-
-`import { TableSelectDialog } from '@rhfan2019/smart-kit/controls';`
-
-| Prop | Required | Type | Description |
-| --- | --- | --- | --- |
-| `columns` | **yes** | `Column[]` |  |
-| `items` | **yes** | `ColumnListItem[]` |  |
-| `ref` |  | `Ref&lt;TableSelectDialogRef>` |  |
-| `title` |  | `string` |  |
-| `noDataText` |  | `string` |  |
-| `multiSelect` |  | `boolean` | (false) |
-| `growing` |  | `boolean` | (true) Shows `growingThreshold` items and a "More" trigger. |
-| `growingThreshold` |  | `number` | (null → 20, the list default) |
-| `contentWidth` |  | `string` |  |
-| `rememberSelections` |  | `boolean` | (false) Keeps the confirmed selection for the next opening; otherwise the items' `selected` is the start. |
-| `contentHeight` |  | `string` |  |
-| `showClearButton` |  | `boolean` | (false) |
-| `confirmButtonText` |  | `string` | ('OK') |
-| `draggable` |  | `boolean` | (false) |
-| `resizable` |  | `boolean` | (false) |
-| `titleAlignment` |  | `TitleAlignment` | ('Auto') |
-| `searchPlaceholder` |  | `string` |  |
-| `initialFocus` |  | `SelectDialogInitialFocus` | ('List') |
-| `onSearch` |  | `(e: { value: string; clearButtonPressed: boolean }) => void` | Fired on Enter in the search field and when it is cleared. Extension: without `onSearch` and `onLiveChange` the dialog filters the items itself (title and description, or the text of the cells). |
-| `onLiveChange` |  | `(e: { value: string }) => void` |  |
-| `onConfirm` |  | `(e: { selectedItem: I \| undefined; selectedItems: I[] }) => void` |  |
-| `onCancel` |  | `() => void` |  |
-| `onSelectionChange` |  | `(e: { listItem: I; listItems: I[]; selected: boolean; selectAll: boolean }) => void` |  |
-| `onUpdateStarted` |  | `(e: ListUpdateEvent) => void` |  |
-| `onUpdateFinished` |  | `(e: ListUpdateEvent) => void` |  |
-
-### `TableSelectDialogProps` — interface
-
-Props of `TableSelectDialog` (see above).
-
-### `TableSelectDialogRef` — interface
-
-| Member | Required | Type | Description |
-| --- | --- | --- | --- |
-| `open` | **yes** | `(searchValue?: string) => void` |  |
-
-### `TabsOverflowMode` — const
-
-sap.m.TabsOverflowMode
-
-```ts
-const TabsOverflowMode: { readonly End: "End"; readonly StartAndEnd: "StartAndEnd"; }
-```
-
-### `TextAlign` — type
-
-sap.ui.core.TextAlign
-
-```ts
-export type TextAlign = 'Begin' | 'End' | 'Left' | 'Right' | 'Center' | 'Initial';
-```
-
-### `Timeline` — component
-
-`import { Timeline } from '@rhfan2019/smart-kit/controls';`
+`import { default } from '@rhfan2019/smart-kit/suite/ui/commons/Timeline';`
 
 | Prop | Required | Type | Description |
 | --- | --- | --- | --- |
@@ -6037,24 +8796,8 @@ export type TextAlign = 'Begin' | 'End' | 'Left' | 'Right' | 'Center' | 'Initial
 | `onFilterSelectionChange` |  | `(e: TimelineFilterSelectionChangeEvent) => void` |  |
 | `onItemFiltering` |  | `(e: PreventableEvent&lt;TimelineItemFilteringEvent>) => void` | Fired for each item a filter would hide; `preventDefault()` keeps it. |
 | `onCustomMessageClosed` |  | `() => void` |  |
-| `ref` |  | `Ref&lt;TimelineRef>` |  |
+| `ref` |  | `Ref&lt;Timeline>` |  |
 | `aria-label` |  | `string` |  |
-
-### `TimelineAlignment` — const
-
-sap.suite.ui.commons.TimelineAlignment: side of the items (Left / Right on the vertical axis, Top / Bottom on the horizontal).
-
-```ts
-const TimelineAlignment: { readonly Left: "Left"; readonly Right: "Right"; readonly Top: "Top"; readonly Bottom: "Bottom"; }
-```
-
-### `TimelineAxisOrientation` — const
-
-sap.suite.ui.commons.TimelineAxisOrientation
-
-```ts
-const TimelineAxisOrientation: { readonly Vertical: "Vertical"; readonly Horizontal: "Horizontal"; }
-```
 
 ### `TimelineCustomAction` — interface
 
@@ -6095,27 +8838,70 @@ Why an item is filtered out (event `itemFiltering`).
 | `timeKeys` |  | `TimelineTimeKeys` |  |
 | `clear` |  | `boolean` |  |
 
-### `TimelineFilterType` — const
+### `TimelineItemFilteringEvent` — interface
 
-sap.suite.ui.commons.TimelineFilterType
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `item` | **yes** | `TimelineSelectedItem` |  |
+| `reasons` | **yes** | `TimelineFilterReasons` |  |
+| `dataKeys` | **yes** | `string[]` |  |
+| `timeKeys` | **yes** | `TimelineTimeKeys` |  |
+| `searchTerm` | **yes** | `string` |  |
+
+### `TimelineSelectedItem` — type
+
+A Timeline item in event objects: its props and React key.
 
 ```ts
-const TimelineFilterType: { readonly Data: "Data"; readonly Time: "Time"; readonly Search: "Search"; }
+export type TimelineSelectedItem = $TimelineItemSettings & { key?: string };
 ```
 
-### `TimelineGroupType` — const
+### `TimelineTimeKeys` — interface
 
-sap.suite.ui.commons.TimelineGroupType
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `from` |  | `Date` |  |
+| `to` |  | `Date` |  |
 
-```ts
-const TimelineGroupType: { readonly None: "None"; readonly Year: "Year"; readonly Quarter: "Quarter"; readonly Month: "Month"; readonly Week: "Week"; readonly Day…
-```
+## `@rhfan2019/smart-kit/suite/ui/commons/TimelineItem`
 
-### `TimelineItem` — component
+`$TimelineItemSettings` (interface) · `default` (component)
+
+### `$TimelineItemSettings` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `dateTime` |  | `DateLike` | Date or ISO string. |
+| `title` |  | `string` |  |
+| `text` |  | `string` |  |
+| `status` |  | `ValueState` | Colours the icon (ValueState). |
+| `filterValue` |  | `string` | Value matched by the item filter (and the search). |
+| `maxCharacters` |  | `number` | Characters of `text` before "More". |
+| `replyCount` |  | `number` | Number of replies (with `enableSocial`). |
+| `userName` |  | `string` |  |
+| `userNameClickable` |  | `boolean` | Default false. |
+| `userPicture` |  | `string` | Image URL of the user, shown next to the name. |
+| `icon` |  | `ReactNode` | Icon on the axis (React node). |
+| `iconDisplayShape` |  | `AvatarShape` | Default 'Circle'. |
+| `iconInitials` |  | `string` | Initials on the axis when there is no icon. |
+| `iconSize` |  | `AvatarSize` | Default 'XS'. |
+| `iconTooltip` |  | `string` |  |
+| `useIconTooltip` |  | `boolean` | Uses the title as tooltip of the icon when `iconTooltip` is not set (default true). |
+| `customAction` |  | `TimelineCustomAction[]` | Links in the item footer. |
+| `customReply` |  | `ReactNode` | Replaces the reply box (with `enableSocial`). |
+| `children` |  | `ReactNode` | Embedded content (UI5 default aggregation `embeddedControl`). |
+| `onUserNameClicked` |  | `(e: { uiElement: HTMLElement }) => void` |  |
+| `onSelect` |  | `() => void` |  |
+| `onPress` |  | `() => void` |  |
+| `onReplyPost` |  | `(e: { value: string }) => void` |  |
+| `onReplyListOpen` |  | `() => void` |  |
+| `onCustomActionClicked` |  | `(e: { value: string; key: string; linkObj: HTMLElement }) => void` |  |
+
+### `default` — component
 
 An entry of Timeline; rendered by its parent.
 
-`import { TimelineItem } from '@rhfan2019/smart-kit/controls';`
+`import { default } from '@rhfan2019/smart-kit/suite/ui/commons/TimelineItem';`
 
 | Prop | Required | Type | Description |
 | --- | --- | --- | --- |
@@ -6145,56 +8931,100 @@ An entry of Timeline; rendered by its parent.
 | `onReplyListOpen` |  | `() => void` |  |
 | `onCustomActionClicked` |  | `(e: { value: string; key: string; linkObj: HTMLElement }) => void` |  |
 
-### `TimelineItemFilteringEvent` — interface
+## `@rhfan2019/smart-kit/suite/ui/commons/library`
 
-| Member | Required | Type | Description |
-| --- | --- | --- | --- |
-| `item` | **yes** | `TimelineSelectedItem` |  |
-| `reasons` | **yes** | `TimelineFilterReasons` |  |
-| `dataKeys` | **yes** | `string[]` |  |
-| `timeKeys` | **yes** | `TimelineTimeKeys` |  |
-| `searchTerm` | **yes** | `string` |  |
+`MicroProcessFlowRenderType` (const) · `ProcessFlowConnectionLabelState` (const) · `ProcessFlowNodeState` (const) · `ProcessFlowNodeType` (const) · `ProcessFlowZoomLevel` (const) · `TimelineAlignment` (const) · `TimelineAxisOrientation` (const) · `TimelineFilterType` (const) · `TimelineGroupType` (const)
 
-### `TimelineItemProps` — interface
+### `MicroProcessFlowRenderType` — const
 
-Props of `TimelineItem` (see above).
-
-### `TimelineProps` — interface
-
-Props of `Timeline` (see above).
-
-### `TimelineRef` — interface
-
-Instance methods of Timeline (via `ref`).
-
-| Member | Required | Type | Description |
-| --- | --- | --- | --- |
-| `reset` | **yes** | `() => void` | Clears search, filters and growing. |
-| `resetTimeLimits` | **yes** | `() => void` | Clears the time filter. |
-| `adjustUI` | **yes** | `() => void` | Recalculates the layout (nothing to do in React; kept for UI5 code). |
-| `setCustomMessage` | **yes** | `(message: string \| null) => void` | Shows a message strip above the items; closing it fires `onCustomMessageClosed`. |
-
-### `TimelineSelectedItem` — type
-
-A Timeline item in event objects: its props and React key.
+sap.suite.ui.commons.MicroProcessFlowRenderType
 
 ```ts
-export type TimelineSelectedItem = TimelineItemProps & { key?: string };
+const MicroProcessFlowRenderType: { readonly Wrap: "Wrap"; readonly NoWrap: "NoWrap"; readonly Scrolling: "Scrolling"; readonly ScrollingWithResizer: "ScrollingWithResizer…
 ```
 
-### `TimelineTimeKeys` — interface
+### `ProcessFlowConnectionLabelState` — const
 
-| Member | Required | Type | Description |
-| --- | --- | --- | --- |
-| `from` |  | `Date` |  |
-| `to` |  | `Date` |  |
-
-### `TitleAlignment` — const
-
-sap.m.TitleAlignment
+sap.suite.ui.commons.ProcessFlowConnectionLabelState
 
 ```ts
-const TitleAlignment: { readonly Auto: "Auto"; readonly Center: "Center"; readonly None: "None"; readonly Start: "Start"; }
+const ProcessFlowConnectionLabelState: { readonly Positive: "Positive"; readonly Negative: "Negative"; readonly Critical: "Critical"; readonly Neutral: "Neutral"; }
+```
+
+### `ProcessFlowNodeState` — const
+
+sap.suite.ui.commons.ProcessFlowNodeState
+
+```ts
+const ProcessFlowNodeState: { readonly Positive: "Positive"; readonly Negative: "Negative"; readonly Critical: "Critical"; readonly Neutral: "Neutral"; readonly Plan…
+```
+
+### `ProcessFlowNodeType` — const
+
+sap.suite.ui.commons.ProcessFlowNodeType: Aggregated nodes are drawn as a stack.
+
+```ts
+const ProcessFlowNodeType: { readonly Single: "Single"; readonly Aggregated: "Aggregated"; }
+```
+
+### `ProcessFlowZoomLevel` — const
+
+sap.suite.ui.commons.ProcessFlowZoomLevel: One is the most detailed, Four the smallest.
+
+```ts
+const ProcessFlowZoomLevel: { readonly One: "One"; readonly Two: "Two"; readonly Three: "Three"; readonly Four: "Four"; }
+```
+
+### `TimelineAlignment` — const
+
+sap.suite.ui.commons.TimelineAlignment: side of the items (Left / Right on the vertical axis, Top / Bottom on the horizontal).
+
+```ts
+const TimelineAlignment: { readonly Left: "Left"; readonly Right: "Right"; readonly Top: "Top"; readonly Bottom: "Bottom"; }
+```
+
+### `TimelineAxisOrientation` — const
+
+sap.suite.ui.commons.TimelineAxisOrientation
+
+```ts
+const TimelineAxisOrientation: { readonly Vertical: "Vertical"; readonly Horizontal: "Horizontal"; }
+```
+
+### `TimelineFilterType` — const
+
+sap.suite.ui.commons.TimelineFilterType
+
+```ts
+const TimelineFilterType: { readonly Data: "Data"; readonly Time: "Time"; readonly Search: "Search"; }
+```
+
+### `TimelineGroupType` — const
+
+sap.suite.ui.commons.TimelineGroupType
+
+```ts
+const TimelineGroupType: { readonly None: "None"; readonly Year: "Year"; readonly Quarter: "Quarter"; readonly Month: "Month"; readonly Week: "Week"; readonly Day…
+```
+
+## `@rhfan2019/smart-kit/ui/core/library`
+
+`IconColor` (const) · `IndicationColor` (const) · `TitleLevel` (const) · `ValueState` (const)
+
+### `IconColor` — const
+
+sap.ui.core.IconColor
+
+```ts
+const IconColor: { readonly Default: "Default"; readonly Positive: "Positive"; readonly Critical: "Critical"; readonly Negative: "Negative"; readonly Neut…
+```
+
+### `IndicationColor` — const
+
+sap.ui.core.IndicationColor (Indication01–Indication20 in 1.154).
+
+```ts
+const IndicationColor: { readonly Indication01: "Indication01"; readonly Indication02: "Indication02"; readonly Indication03: "Indication03"; readonly Indicatio…
 ```
 
 ### `TitleLevel` — const
@@ -6205,232 +9035,6 @@ sap.ui.core.TitleLevel
 const TitleLevel: { readonly Auto: "Auto"; readonly H1: "H1"; readonly H2: "H2"; readonly H3: "H3"; readonly H4: "H4"; readonly H5: "H5"; readonly H6: "H6"; }
 ```
 
-### `toDates` — function
-
-The dates of a value (sap.m.DynamicDateRange.toDates): start of the first day and end of the last day in local time; FROM / TO give one date, as in UI5. `now` is an internal hook for tests.
-
-```ts
-toDates(value: DynamicDateRangeValue, calendarWeekNumbering?: CalendarWeekNumbering, now?: Date): Date[]
-```
-
-### `ToggleButton` — component
-
-`import { ToggleButton } from '@rhfan2019/smart-kit/controls';`
-
-| Prop | Required | Type | Description |
-| --- | --- | --- | --- |
-| `pressed` |  | `boolean` | Pressed state (default false). The button also toggles itself, as in SAPUI5; a changed prop wins. |
-| `text` |  | `string` | Button text; without it the button shows only the icon (then set `aria-label` or `title`). |
-| `type` |  | `ButtonType` | Visual type (default Default). |
-| `width` |  | `string` | Width (CSS length). |
-| `enabled` |  | `boolean` | Enabled (default true). |
-| `icon` |  | `ReactNode` | Icon (a React node). |
-| `iconFirst` |  | `boolean` | Icon before the text (default true); false puts it after. |
-| `activeIcon` |  | `ReactNode` | Icon shown while the button is pressed. |
-| `ariaHasPopup` |  | `AriaHasPopup` | aria-haspopup (default None). |
-| `accessibleRole` |  | `ButtonAccessibleRole` | Link makes screen readers announce a link (default Default). |
-| `badgeStyle` |  | `BadgeStyle` | Style of the badge (default Default). |
-| `badge` |  | `string \| number` | Extension: badge value shown on the button (SAPUI5 sets it through BadgeCustomData). |
-| `layoutData` |  | `OverflowToolbarLayoutData` | Layout data when the button is in an OverflowToolbar. |
-| `onPress` |  | `(e: { pressed: boolean }) => void` | Fired after a press with the new state. |
-| `title` |  | `string` |  |
-| `aria-label` |  | `string` |  |
-| `className` |  | `string` |  |
-| `data-testid` |  | `string` |  |
-
-### `ToggleButtonProps` — interface
-
-Props of `ToggleButton` (see above).
-
-### `ToolbarDesign` — const
-
-sap.m.ToolbarDesign
-
-```ts
-const ToolbarDesign: { readonly Auto: "Auto"; readonly Transparent: "Transparent"; readonly Solid: "Solid"; readonly Info: "Info"; }
-```
-
-### `ToolbarSpacer` — component
-
-Pushes the following toolbar content to the end, or adds a fixed gap with `width`.
-
-`import { ToolbarSpacer } from '@rhfan2019/smart-kit/controls';`
-
-| Prop | Required | Type | Description |
-| --- | --- | --- | --- |
-| `width` |  | `string` | Fixed width (CSS length); without it the spacer takes the remaining space. |
-
-### `ToolbarSpacerProps` — interface
-
-Props of `ToolbarSpacer` (see above).
-
-### `ToolbarStyle` — const
-
-sap.m.ToolbarStyle
-
-```ts
-const ToolbarStyle: { readonly Standard: "Standard"; readonly Clear: "Clear"; }
-```
-
-### `UploadCompletedEvent` — interface
-
-| Member | Required | Type | Description |
-| --- | --- | --- | --- |
-| `item` | **yes** | `UploadItemInstance` |  |
-| `response` | **yes** | `string` |  |
-| `readyState` | **yes** | `number` |  |
-| `status` | **yes** | `number` |  |
-| `responseXML` | **yes** | `Document \| null` |  |
-| `responseText` | **yes** | `string` |  |
-| `headers` | **yes** | `Record&lt;string, string>` |  |
-
-### `UploaderHttpRequestMethod` — const
-
-sap.m.upload.UploaderHttpRequestMethod
-
-```ts
-const UploaderHttpRequestMethod: { readonly Post: "Post"; readonly Put: "Put"; }
-```
-
-### `UploaderTableItem` — const
-
-sap.m.upload.UploaderTableItem: how the control uploads and downloads. Static methods of sap.m.upload.UploaderTableItem.
-
-```ts
-const UploaderTableItem: { uploadFile: (file: Blob, url: string, headerFields?: UploadHeaderField[]) => Promise<XMLHttpRequest>; }
-```
-
-### `UploadHeaderField` — interface
-
-sap.ui.core.Item as used by `headerFields`: one request header.
-
-| Member | Required | Type | Description |
-| --- | --- | --- | --- |
-| `name` | **yes** | `string` |  |
-| `value` | **yes** | `string` |  |
-
-### `UploadItem` — interface
-
-sap.m.upload.UploadItem
-
-| Member | Required | Type | Description |
-| --- | --- | --- | --- |
-| `id` |  | `string` | Extension: identity of the row; default the index and file name. |
-| `fileName` |  | `string` |  |
-| `mediaType` |  | `string` |  |
-| `url` |  | `string` | Download and preview URL. |
-| `uploadUrl` |  | `string` | Upload URL of this item (before the uploader's and the control's). |
-| `uploadState` |  | `UploadState` |  |
-| `previewable` |  | `boolean` | Default true. |
-| `fileSize` |  | `number` | Size in bytes (default 0). |
-| `isTrustedSource` |  | `boolean` | The URL may be shown in the preview without sandboxing (default false). |
-| `isDirectory` |  | `boolean` |  |
-| `headerFields` |  | `UploadHeaderField[]` |  |
-| `file` |  | `File` | Extension: the selected file of a new item. |
-| `progress` |  | `number` | Extension: upload progress 0–100 while uploading. |
-| `onUploadProgress` |  | `(e: { loaded: number; total: number }) => void` |  |
-| `onUploadTerminated` |  | `(e: { item: UploadItemInstance }) => void` |  |
-
-### `UploadItemInstance` — type
-
-An UploadItem in event objects and ref methods, with the UploadItem methods.
-
-```ts
-export type UploadItemInstance = UploadItem & { id: string; /** Downloads the file (`askForLocation`: a save dialog where the browser has one). */ download(askForLocation?: boolean): void; /** The item fails `fileTypes`, `mediaTypes`, `maxFileNameLength` or `maxFileSize`. */ isRestricted(): boolean; /** Aborts a running upload. */ terminateUpload(): void; };
-```
-
-### `UploadSetwithTable` — component
-
-`import { UploadSetwithTable } from '@rhfan2019/smart-kit/controls';`
-
-| Prop | Required | Type | Description |
-| --- | --- | --- | --- |
-| `items` |  | `UploadItem[]` |  |
-| `fileTypes` |  | `string[]` | Allowed extensions without dot, case-insensitive. |
-| `maxFileNameLength` |  | `number` |  |
-| `maxFileSize` |  | `number` | Maximum file size in MB. |
-| `mediaTypes` |  | `string[]` | Allowed media types ("image/png", also "image/*"). |
-| `uploadUrl` |  | `string` |  |
-| `httpRequestMethod` |  | `UploaderHttpRequestMethod` | Default 'Post'. |
-| `multiple` |  | `boolean` | Several files at once (default false). |
-| `uploadButtonInvisible` |  | `boolean` | Hides the upload button (default false); drag and drop still works. |
-| `uploadEnabled` |  | `boolean` | Default true. |
-| `itemValidationHandler` |  | `(info: UploadSetwithTableItemInfo) => Promise&lt;UploadItem>` | Called for each new item before its upload; resolve (with the item to upload) to go on, reject to skip it. |
-| `directory` |  | `boolean` | Selects folders instead of files (default false). |
-| `fileNameValidationConfig` |  | `FilenameValidationConfig` |  |
-| `uploader` |  | `UploaderTableItem` |  |
-| `headerFields` |  | `UploadHeaderField[]` |  |
-| `noDataIllustration` |  | `ReactNode` | Empty state; default an IllustratedMessage "UploadToCloud". |
-| `actions` |  | `ReactNode` | Toolbar content; an `&lt;ActionsPlaceholder placeholderFor="UploadButtonPlaceholder" />` places the upload button (default: at the end). |
-| `previewDialog` |  | `FilePreviewDialog` |  |
-| `title` |  | `string` | Extension: title of the toolbar and the table. |
-| `columns` |  | `UploadSetwithTableColumn[]` | Extension: columns after the file name, size and status. |
-| `onRemove` |  | `(e: ItemEvent) => void` | Extension: shows a remove button per row. |
-| `onItemRenamed` |  | `(e: ItemEvent) => void` |  |
-| `onItemRenameCanceled` |  | `(e: ItemEvent) => void` |  |
-| `onBeforeUploadStarts` |  | `(e: PreventableEvent&lt;ItemEvent>) => void` |  |
-| `onUploadCompleted` |  | `(e: UploadCompletedEvent) => void` |  |
-| `onFileTypeMismatch` |  | `(e: ItemEvent) => void` |  |
-| `onFileNameLengthExceeded` |  | `(e: ItemEvent) => void` |  |
-| `onFileSizeExceeded` |  | `(e: ItemEvent) => void` |  |
-| `onMediaTypeMismatch` |  | `(e: ItemEvent) => void` |  |
-| `onBeforeInitiatingItemUpload` |  | `(e: ItemEvent) => void` |  |
-| `ref` |  | `Ref&lt;UploadSetwithTableRef>` |  |
-
-### `UploadSetwithTableActionPlaceHolder` — const
-
-sap.m.UploadSetwithTableActionPlaceHolder (the deprecated variant / personalization placeholders are left out).
-
-```ts
-const UploadSetwithTableActionPlaceHolder: { readonly UploadButtonPlaceholder: "UploadButtonPlaceholder"; readonly CloudFilePickerButtonPlaceholder: "CloudFilePickerButtonPlacehold…
-```
-
-### `UploadSetwithTableColumn` — interface
-
-Extension: an additional column of the file table.
-
-| Member | Required | Type | Description |
-| --- | --- | --- | --- |
-| `key` | **yes** | `string` |  |
-| `header` | **yes** | `ReactNode` |  |
-| `cell` | **yes** | `(item: UploadItemInstance) => ReactNode` |  |
-| `width` |  | `string` | CSS width. |
-
-### `UploadSetwithTableItemInfo` — interface
-
-sap.m.plugins.UploadSetwithTable.ItemInfo: argument of `itemValidationHandler`.
-
-| Member | Required | Type | Description |
-| --- | --- | --- | --- |
-| `oItem` | **yes** | `UploadItemInstance` |  |
-| `iTotalItemsForUpload` | **yes** | `number` |  |
-| `oSource` | **yes** | `UploadSetwithTableRef \| null` |  |
-
-### `UploadSetwithTableProps` — interface
-
-Props of `UploadSetwithTable` (see above).
-
-### `UploadSetwithTableRef` — interface
-
-Instance methods of UploadSetwithTable (via `ref`).
-
-| Member | Required | Type | Description |
-| --- | --- | --- | --- |
-| `fileSelectionHandler` | **yes** | `() => void` | Opens the file selection dialog. |
-| `download` | **yes** | `(item: UploadItem, askForLocation?: boolean) => void` |  |
-| `openFilePreview` | **yes** | `(item: UploadItem) => void` |  |
-| `renameItem` | **yes** | `(item: UploadItem) => void` | Starts the inline rename of an item. |
-| `uploadItemViaUrl` | **yes** | `(name: string, url: string, promise: Promise&lt;unknown>) => Promise&lt;UploadItemInstance>` | Adds an item for a file at a URL; uploads it when `promise` resolves, drops it when it rejects. |
-| `uploadItemWithoutFile` | **yes** | `(promise: Promise&lt;Partial&lt;UploadItem> \| undefined>) => Promise&lt;UploadItemInstance>` | Adds an item without a file; `promise` resolves to its data (file name, URL…), then it is uploaded. |
-
-### `UploadState` — const
-
-sap.m.UploadState
-
-```ts
-const UploadState: { readonly Ready: "Ready"; readonly Uploading: "Uploading"; readonly Complete: "Complete"; readonly Error: "Error"; }
-```
-
 ### `ValueState` — const
 
 sap.ui.core.ValueState
@@ -6439,213 +9043,950 @@ sap.ui.core.ValueState
 const ValueState: { readonly None: "None"; readonly Error: "Error"; readonly Warning: "Warning"; readonly Success: "Success"; readonly Information: "Inform…
 ```
 
-### `VerticalAlign` — type
+## `@rhfan2019/smart-kit/ui/core/message/MessageType`
 
-sap.ui.core.VerticalAlign
+`default` (const)
+
+### `default` — const
+
+sap.ui.core.message.MessageType (sap.ui.core.MessageType is deprecated; same values).
 
 ```ts
-export type VerticalAlign = 'Bottom' | 'Inherit' | 'Middle' | 'Top';
+const default: { readonly None: "None"; readonly Error: "Error"; readonly Warning: "Warning"; readonly Success: "Success"; readonly Information: "Inform…
 ```
 
-### `ViewSettingsCustomTab` — interface
+## `@rhfan2019/smart-kit/ui/integration/cards/AnalyticalContent`
 
-sap.m.ViewSettingsCustomTab: an own page with its own button in the header.
+`$AnalyticalContentSettings` (interface) · `CardAnnotationSettings` (interface) · `CardDataProps` (interface) · `default` (component)
+
+### `$AnalyticalContentSettings` — interface
 
 | Member | Required | Type | Description |
 | --- | --- | --- | --- |
-| `key` | **yes** | `string` |  |
-| `title` | **yes** | `string` |  |
-| `content` | **yes** | `ReactNode` |  |
-| `icon` |  | `ReactNode` |  |
+| `entitySet` | **yes** | `string` | Entity set name as in `$metadata`, e.g. "Orders". |
+| `service` |  | `string` | Name of the service in `SmartKitProvider` `services`; default: the provider's `defaultService`. |
+| `chartAnnotationPath` |  | `string` | UI.Chart, e.g. "com.sap.vocabularies.UI.v1.Chart#ByStatus"; default: from the presentation variant, else the unqualified chart. |
+| `presentationAnnotationPath` |  | `string` | Qualified `UI.PresentationVariant` term, e.g. "@UI.PresentationVariant#Top5" (sort, MaxItems, chart). |
+| `selectionAnnotationPath` |  | `string` | Qualified `UI.SelectionVariant` term, e.g. "@UI.SelectionVariant#Open" (fixed filters). |
+| `filters` |  | `FilterState` | Filter state (from `useFilterState` / `SmartFilterBar`), applied to the request. |
+| `maxItems` |  | `number` | Maximum number of data points (default 4 for column, bar and donut; OVP fixed card layout). |
+| `navigation` |  | `'dataPointNav' \| 'headerNav' \| 'noHeaderNav'` | OVP `navigation`: "dataPointNav" (default: header and data points), "headerNav" (header only), "noHeaderNav" (data points only). |
+| `onDataPointPress` |  | `(dimension: string, value: string) => void` | Data point press: the dimension value of the selected point. |
+| `height` |  | `number` | Height of the chart area (CSS length; default the card token). |
+| `renderChart` |  | `(chart: ChartModel, data: ChartDatum[]) => ReactNode` | Replaces the drawing (e.g. with a chart library), for chart types SimpleChart does not draw. |
 
-### `ViewSettingsDialog` — component
+### `CardAnnotationSettings` — interface
 
-`import { ViewSettingsDialog } from '@rhfan2019/smart-kit/controls';`
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `annotationPath` |  | `string` | UI.LineItem (or another collection) of the content, e.g. "com.sap.vocabularies.UI.v1.LineItem#Card". |
+| `presentationAnnotationPath` |  | `string` | UI.PresentationVariant: sort order, MaxItems and the line item to use. |
+| `selectionAnnotationPath` |  | `string` | UI.SelectionVariant: the filter of the card. |
+
+### `CardDataProps` — interface
+
+Props of `CardData` (see above).
+
+### `default` — component
+
+`import { default } from '@rhfan2019/smart-kit/ui/integration/cards/AnalyticalContent';`
 
 | Prop | Required | Type | Description |
 | --- | --- | --- | --- |
-| `title` |  | `string` | ('View Settings') |
-| `sortItems` |  | `ViewSettingsItem[]` |  |
-| `groupItems` |  | `ViewSettingsItem[]` |  |
-| `filterItems` |  | `ViewSettingsFilterItem[]` |  |
-| `presetFilterItems` |  | `ViewSettingsItem[]` | Predefined filters; picking one clears the other filters (and the other way round). |
-| `customTabs` |  | `ViewSettingsCustomTab[]` |  |
-| `sortDescending` |  | `boolean` | (false) |
-| `groupDescending` |  | `boolean` | (false) |
-| `filterSearchOperator` |  | `StringFilterOperator` | ('StartsWith') |
-| `titleAlignment` |  | `TitleAlignment` | ('Auto') |
-| `selectedPresetFilterItem` |  | `string` | Key of the selected preset filter (otherwise the preset with `selected`). |
-| `selectedSortItem` |  | `string` | Key of the selected sort item (otherwise the item with `selected`). |
-| `selectedGroupItem` |  | `string` | Key of the selected group item (otherwise the item with `selected`). |
-| `selectedFilterKeys` |  | `Record&lt;string, string[]>` | Extension: the selected values per filter, `{ [filterKey]: valueKeys }` (otherwise the values with `selected`). |
-| `onConfirm` |  | `(e: ViewSettingsDialogConfirmEvent) => void` |  |
-| `onCancel` |  | `() => void` |  |
-| `onReset` |  | `() => void` | Fired when the reset button is pressed. |
-| `onResetFilters` |  | `() => void` | Fired when the filters are reset (reset button or `clearFilters`). |
-| `onFilterDetailPageOpened` |  | `(e: { parentFilterItem: ViewSettingsFilterItem }) => void` |  |
-| `onBeforeClose` |  | `(e: PreventableEvent&lt;object>) => void` | Fired before the dialog closes (OK, Cancel, Escape); `preventDefault()` keeps it open. |
-| `ref` |  | `Ref&lt;ViewSettingsDialogRef>` |  |
+| `entitySet` | **yes** | `string` | Entity set name as in `$metadata`, e.g. "Orders". |
+| `service` |  | `string` | Name of the service in `SmartKitProvider` `services`; default: the provider's `defaultService`. |
+| `chartAnnotationPath` |  | `string` | UI.Chart, e.g. "com.sap.vocabularies.UI.v1.Chart#ByStatus"; default: from the presentation variant, else the unqualified chart. |
+| `presentationAnnotationPath` |  | `string` | Qualified `UI.PresentationVariant` term, e.g. "@UI.PresentationVariant#Top5" (sort, MaxItems, chart). |
+| `selectionAnnotationPath` |  | `string` | Qualified `UI.SelectionVariant` term, e.g. "@UI.SelectionVariant#Open" (fixed filters). |
+| `filters` |  | `FilterState` | Filter state (from `useFilterState` / `SmartFilterBar`), applied to the request. |
+| `maxItems` |  | `number` | Maximum number of data points (default 4 for column, bar and donut; OVP fixed card layout). |
+| `navigation` |  | `'dataPointNav' \| 'headerNav' \| 'noHeaderNav'` | OVP `navigation`: "dataPointNav" (default: header and data points), "headerNav" (header only), "noHeaderNav" (data points only). |
+| `onDataPointPress` |  | `(dimension: string, value: string) => void` | Data point press: the dimension value of the selected point. |
+| `height` |  | `number` | Height of the chart area (CSS length; default the card token). |
+| `renderChart` |  | `(chart: ChartModel, data: ChartDatum[]) => ReactNode` | Replaces the drawing (e.g. with a chart library), for chart types SimpleChart does not draw. |
 
-### `ViewSettingsDialogConfirmEvent` — interface
+## `@rhfan2019/smart-kit/ui/integration/cards/CalendarContent`
+
+`$CalendarContentSettings` (interface) · `CalendarLegendItem` (interface) · `CalendarSpecialDate` (interface) · `CardAnnotationSettings` (interface) · `CardDataProps` (interface) · `default` (component) · `EventItemPaths` (interface)
+
+### `$CalendarContentSettings` — interface
 
 | Member | Required | Type | Description |
 | --- | --- | --- | --- |
-| `sortItem` | **yes** | `ViewSettingsItem \| undefined` |  |
-| `sortDescending` | **yes** | `boolean` |  |
-| `groupItem` | **yes** | `ViewSettingsItem \| undefined` |  |
-| `groupDescending` | **yes** | `boolean` |  |
-| `presetFilterItem` | **yes** | `ViewSettingsItem \| undefined` |  |
-| `filterItems` | **yes** | `ViewSettingsItem[]` | The selected values of all filters. |
-| `filterKeys` | **yes** | `Record&lt;string, boolean>` | `{ valueKey: true }` of the selected values (UI5 `filterKeys`). |
-| `filterCompoundKeys` | **yes** | `Record&lt;string, Record&lt;string, boolean>>` | `{ filterKey: { valueKey: true } }` (UI5 `filterCompoundKeys`). |
-| `filterString` | **yes** | `string` | "Filtered by: Status (New, Approved)", or "Filtered by: &lt;preset>"; empty without filters. |
+| `entitySet` | **yes** | `string` | Entity set name as in `$metadata`, e.g. "Orders". |
+| `service` |  | `string` | Name of the service in `SmartKitProvider` `services`; default: the provider's `defaultService`. |
+| `item` |  | `EventItemPaths` | Property paths of the appointments; default Communication.Event. |
+| `selectionAnnotationPath` |  | `string` | UI.SelectionVariant that filters the appointments. |
+| `filters` |  | `FilterState` | Filter state (from `useFilterState` / `SmartFilterBar`), applied to the request. |
+| `date` |  | `string` | Initially selected day, "YYYY-MM-DD" (default today). |
+| `maxItems` |  | `number` | Visible appointments of the selected day (default 2). |
+| `maxLegendItems` |  | `number` | Visible legend items (default 2); the rest are counted in "More (x)". |
+| `noItemsText` |  | `string` | Text when there are no items. |
+| `specialDates` |  | `CalendarSpecialDate[]` |  |
+| `legendItems` |  | `CalendarLegendItem[]` | Legend items (texts of special day types, for example); the appointment types found are added (one circle each). |
+| `onAppointmentPress` |  | `(row: Row) => void` |  |
+| `onMorePress` |  | `(date: string) => void` | Press of "More"; default: the list page of the entity set. |
+| `onSelect` |  | `(date: string) => void` | Called when the user selects a day. |
+| `firstDayOfWeek` |  | `number` | First day of the week, 0 = Sunday … 6 = Saturday; default from the locale. |
+| `now` |  | `Date` | Reference time for "today" (default now). |
 
-### `ViewSettingsDialogPage` — type
-
-The pages of the dialog (UI5 page ids; custom tabs use their key).
-
-```ts
-export type ViewSettingsDialogPage = 'sort' | 'group' | 'filter' | (string & {});
-```
-
-### `ViewSettingsDialogProps` — interface
-
-Props of `ViewSettingsDialog` (see above).
-
-### `ViewSettingsDialogRef` — interface
+### `CalendarLegendItem` — interface
 
 | Member | Required | Type | Description |
 | --- | --- | --- | --- |
-| `open` | **yes** | `(pageId?: ViewSettingsDialogPage) => void` | Opens the dialog on a page (default: the first page that has items). |
-| `clearFilters` | **yes** | `() => void` | Deselects all filters and the preset filter. |
-
-### `ViewSettingsFilterItem` — interface
-
-sap.m.ViewSettingsFilterItem
-
-| Member | Required | Type | Description |
-| --- | --- | --- | --- |
-| `items` | **yes** | `ViewSettingsItem[]` |  |
-| `key` | **yes** | `string` |  |
+| `category` | **yes** | `'calendar' \| 'appointment'` | "calendar": special days (square); "appointment": appointment types (circle). |
 | `text` | **yes** | `string` |  |
-| `multiSelect` |  | `boolean` | (true) |
-| `enabled` |  | `boolean` | (true) |
-| `selected` |  | `boolean` | (false) |
-| `wrapping` |  | `boolean` | (false) |
+| `type` | **yes** | `string` |  |
 
-### `viewSettingsFilterString` — function
-
-"Filtered by: Status (New, Approved), Region (North)".
-
-```ts
-viewSettingsFilterString(filterItems: ViewSettingsFilterItem[], filters: Record<string, string[]>, t: TextFn): string
-```
-
-### `ViewSettingsItem` — interface
-
-sap.m.ViewSettingsItem
+### `CalendarSpecialDate` — interface
 
 | Member | Required | Type | Description |
 | --- | --- | --- | --- |
-| `key` | **yes** | `string` |  |
-| `text` | **yes** | `string` |  |
-| `enabled` |  | `boolean` | (true) |
-| `selected` |  | `boolean` | (false) |
-| `wrapping` |  | `boolean` | (false) |
+| `startDate` | **yes** | `string` | Day, "YYYY-MM-DD". |
+| `type` | **yes** | `string` | Legend type (matches `CalendarLegendItem.type`). |
+| `endDate` |  | `string` | Last day of a range, "YYYY-MM-DD". |
 
-### `Wizard` — component
+### `CardAnnotationSettings` — interface
 
-`import { Wizard } from '@rhfan2019/smart-kit/controls';`
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `annotationPath` |  | `string` | UI.LineItem (or another collection) of the content, e.g. "com.sap.vocabularies.UI.v1.LineItem#Card". |
+| `presentationAnnotationPath` |  | `string` | UI.PresentationVariant: sort order, MaxItems and the line item to use. |
+| `selectionAnnotationPath` |  | `string` | UI.SelectionVariant: the filter of the card. |
+
+### `CardDataProps` — interface
+
+Props of `CardData` (see above).
+
+### `default` — component
+
+`import { default } from '@rhfan2019/smart-kit/ui/integration/cards/CalendarContent';`
 
 | Prop | Required | Type | Description |
 | --- | --- | --- | --- |
-| `children` |  | `ReactNode` |  |
-| `renderMode` |  | `WizardRenderMode` | ('Scroll') |
-| `showNextButton` |  | `boolean` | (true) |
-| `finishButtonText` |  | `string` | ('Review') Text of the next button on the last step. |
-| `enableBranching` |  | `boolean` | (false) |
-| `currentStep` |  | `string` | The id of the step to show; steps up to it are reached when they are validated. |
-| `width` |  | `string` | ('auto') CSS width. |
-| `height` |  | `string` | ('100%') CSS height (the steps scroll inside). |
-| `backgroundDesign` |  | `PageBackgroundDesign` | ('Standard') |
-| `stepTitleLevel` |  | `WizardTitleLevel` | ('H3') Heading level of the step titles. |
-| `onStepActivate` |  | `(e: { index: number }) => void` | Fired when a step becomes the progress step; `index` is one-based. |
-| `onComplete` |  | `() => void` | Fired when the next button of the last step is pressed. |
-| `onNavigationChange` |  | `(e: { step: WizardStepInfo }) => void` | Fired when the user goes to another reached step in the progress navigator. |
-| `ref` |  | `Ref&lt;WizardRef>` |  |
-| `aria-label` |  | `string` |  |
+| `entitySet` | **yes** | `string` | Entity set name as in `$metadata`, e.g. "Orders". |
+| `service` |  | `string` | Name of the service in `SmartKitProvider` `services`; default: the provider's `defaultService`. |
+| `item` |  | `EventItemPaths` | Property paths of the appointments; default Communication.Event. |
+| `selectionAnnotationPath` |  | `string` | UI.SelectionVariant that filters the appointments. |
+| `filters` |  | `FilterState` | Filter state (from `useFilterState` / `SmartFilterBar`), applied to the request. |
+| `date` |  | `string` | Initially selected day, "YYYY-MM-DD" (default today). |
+| `maxItems` |  | `number` | Visible appointments of the selected day (default 2). |
+| `maxLegendItems` |  | `number` | Visible legend items (default 2); the rest are counted in "More (x)". |
+| `noItemsText` |  | `string` | Text when there are no items. |
+| `specialDates` |  | `CalendarSpecialDate[]` |  |
+| `legendItems` |  | `CalendarLegendItem[]` | Legend items (texts of special day types, for example); the appointment types found are added (one circle each). |
+| `onAppointmentPress` |  | `(row: Row) => void` |  |
+| `onMorePress` |  | `(date: string) => void` | Press of "More"; default: the list page of the entity set. |
+| `onSelect` |  | `(date: string) => void` | Called when the user selects a day. |
+| `firstDayOfWeek` |  | `number` | First day of the week, 0 = Sunday … 6 = Saturday; default from the locale. |
+| `now` |  | `Date` | Reference time for "today" (default now). |
 
-### `WizardProps` — interface
+### `EventItemPaths` — interface
 
-Props of `Wizard` (see above).
-
-### `WizardRef` — interface
+Property paths of an event (the manifest item template of the integration card, with property paths).
 
 | Member | Required | Type | Description |
 | --- | --- | --- | --- |
-| `nextStep` | **yes** | `() => void` |  |
-| `previousStep` | **yes** | `() => void` |  |
-| `goToStep` | **yes** | `(stepId: string, focusFirstElement?: boolean) => void` |  |
-| `validateStep` | **yes** | `(stepId: string) => void` |  |
-| `invalidateStep` | **yes** | `(stepId: string) => void` |  |
-| `discardProgress` | **yes** | `(stepId: string, preserveNextStep?: boolean) => void` | Drops the progress after the step and makes it the progress step. With branching and without `preserveNextStep`, the step's `nextStep` is ignored until the prop changes (the user chooses again). |
-| `getProgress` | **yes** | `() => number` | Number of reached steps. |
-| `getProgressStep` | **yes** | `() => WizardStepInfo \| undefined` |  |
-| `getCurrentStep` | **yes** | `() => string \| undefined` | The id of the step shown (UI5 association `currentStep`). |
+| `startDate` |  | `string` | Start (calendar `startDate`, timeline `dateTime`); default Communication.Event/dtstart. |
+| `endDate` |  | `string` | End; default Communication.Event/dtend. |
+| `title` |  | `string` | Title; default Communication.Event/summary. |
+| `text` |  | `string` | Second line; default Communication.Event/description. |
+| `type` |  | `string` | Category (legend and colour); default Communication.Event/categories. |
 
-### `WizardRenderMode` — const
+## `@rhfan2019/smart-kit/ui/integration/cards/ListContent`
 
-sap.m.WizardRenderMode
+`$ListContentSettings` (interface) · `CardAnnotationSettings` (interface) · `CardDataProps` (interface) · `default` (component)
 
-```ts
-const WizardRenderMode: { readonly Scroll: "Scroll"; readonly Page: "Page"; }
-```
+### `$ListContentSettings` — interface
 
-### `WizardStep` — component
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `entitySet` | **yes** | `string` | Entity set name as in `$metadata`, e.g. "Orders". |
+| `listType` |  | `'condensed' \| 'extended'` | OVP `listType`: "condensed" (standard item, 3 values; default) or "extended" (up to 6 values). |
+| `listFlavor` |  | `'standard' \| 'bar'` | OVP `listFlavor`: "standard" (default) or "bar" (bar chart list card). With "bar", a data point with a target value is drawn as a bullet micro chart (the integration card's list item chart), otherwise as a bar. |
+| `highlight` |  | `boolean` | Coloured line at the start of each item from the criticality of the item (integration card `highlight`). |
+| `showStateIcon` |  | `boolean` | Icon in front of the info value when it has a state (integration card `info.showStateIcon`). |
+| `service` |  | `string` | Name of the service in `SmartKitProvider` `services`; default: the provider's `defaultService`. |
+| `maxItems` |  | `number` | Maximum number of items (manifest `maxItems`); default from UI.PresentationVariant/MaxItems, else per card type. |
+| `filters` |  | `FilterState` | Additional filters, e.g. from a filter bar above the cards (the OVP global filter). |
+| `onItemPress` |  | `(row: Row) => void` | Item press; default: the object page of the row when the navigation adapter has one (CD-05). |
+| `headerNavigation` |  | `boolean` | Header press default; false: the header does not navigate. |
+| `annotationPath` |  | `string` | UI.LineItem (or another collection) of the content, e.g. "com.sap.vocabularies.UI.v1.LineItem#Card". |
+| `presentationAnnotationPath` |  | `string` | UI.PresentationVariant: sort order, MaxItems and the line item to use. |
+| `selectionAnnotationPath` |  | `string` | UI.SelectionVariant: the filter of the card. |
 
-A step of a Wizard; rendered by the Wizard (alone it renders nothing).
+### `CardAnnotationSettings` — interface
 
-`import { WizardStep } from '@rhfan2019/smart-kit/controls';`
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `annotationPath` |  | `string` | UI.LineItem (or another collection) of the content, e.g. "com.sap.vocabularies.UI.v1.LineItem#Card". |
+| `presentationAnnotationPath` |  | `string` | UI.PresentationVariant: sort order, MaxItems and the line item to use. |
+| `selectionAnnotationPath` |  | `string` | UI.SelectionVariant: the filter of the card. |
+
+### `CardDataProps` — interface
+
+Props of `CardData` (see above).
+
+### `default` — component
+
+`import { default } from '@rhfan2019/smart-kit/ui/integration/cards/ListContent';`
 
 | Prop | Required | Type | Description |
 | --- | --- | --- | --- |
-| `id` |  | `string` | Step id (used by `nextStep`, `subsequentSteps`, `goToStep`); default: the React key, then the position. |
-| `title` |  | `string` |  |
-| `icon` |  | `ReactNode` |  |
-| `validated` |  | `boolean` | (true) Whether the user may go on to the next step. |
-| `optional` |  | `boolean` | (false) Adds "(Optional)" to the title. |
-| `nextStep` |  | `string` | With `enableBranching`: the id of the next step (one of `subsequentSteps`). |
-| `subsequentSteps` |  | `string[]` | With `enableBranching`: the ids of the steps that can follow. |
-| `onActivate` |  | `() => void` | Fired when the step becomes the progress step. |
-| `onComplete` |  | `() => void` | Fired when the user goes on from this step. |
-| `children` |  | `ReactNode` |  |
+| `entitySet` | **yes** | `string` | Entity set name as in `$metadata`, e.g. "Orders". |
+| `listType` |  | `'condensed' \| 'extended'` | OVP `listType`: "condensed" (standard item, 3 values; default) or "extended" (up to 6 values). |
+| `listFlavor` |  | `'standard' \| 'bar'` | OVP `listFlavor`: "standard" (default) or "bar" (bar chart list card). With "bar", a data point with a target value is drawn as a bullet micro chart (the integration card's list item chart), otherwise as a bar. |
+| `highlight` |  | `boolean` | Coloured line at the start of each item from the criticality of the item (integration card `highlight`). |
+| `showStateIcon` |  | `boolean` | Icon in front of the info value when it has a state (integration card `info.showStateIcon`). |
+| `service` |  | `string` | Name of the service in `SmartKitProvider` `services`; default: the provider's `defaultService`. |
+| `maxItems` |  | `number` | Maximum number of items (manifest `maxItems`); default from UI.PresentationVariant/MaxItems, else per card type. |
+| `filters` |  | `FilterState` | Additional filters, e.g. from a filter bar above the cards (the OVP global filter). |
+| `onItemPress` |  | `(row: Row) => void` | Item press; default: the object page of the row when the navigation adapter has one (CD-05). |
+| `headerNavigation` |  | `boolean` | Header press default; false: the header does not navigate. |
+| `annotationPath` |  | `string` | UI.LineItem (or another collection) of the content, e.g. "com.sap.vocabularies.UI.v1.LineItem#Card". |
+| `presentationAnnotationPath` |  | `string` | UI.PresentationVariant: sort order, MaxItems and the line item to use. |
+| `selectionAnnotationPath` |  | `string` | UI.SelectionVariant: the filter of the card. |
 
-### `WizardStepInfo` — interface
+## `@rhfan2019/smart-kit/ui/integration/cards/ObjectContent`
 
-What `getProgressStep()` returns.
+`$ObjectContentSettings` (interface) · `default` (component)
+
+### `$ObjectContentSettings` — interface
 
 | Member | Required | Type | Description |
 | --- | --- | --- | --- |
-| `id` | **yes** | `string` |  |
-| `title` | **yes** | `string \| undefined` |  |
-| `index` | **yes** | `number` | One-based position in the progress. |
+| `entitySet` | **yes** | `string` | Entity set name as in `$metadata`, e.g. "Orders". |
+| `service` |  | `string` | Name of the service in `SmartKitProvider` `services`; default: the provider's `defaultService`. |
+| `keys` |  | `Row` | Key values of the object, e.g. { ID: '42' }. |
+| `path` |  | `EntityPath` | Entity path of the object instead of `keys`, e.g. "Orders('42')". |
+| `annotationPath` |  | `string` | Groups: "UI.QuickViewFacets" (default when present), "UI.Facets" or "UI.FieldGroup#Q". |
+| `identificationAnnotationPath` |  | `string \| false` | Footer actions: UI.Identification (default "com.sap.vocabularies.UI.v1.Identification"); false: no actions. |
+| `onAction` |  | `(action: ActionModel, row: Row, path: EntityPath) => void \| Promise&lt;void>` | Runs an action; default: the bound action is invoked without parameters and the card reloads. |
+| `headerNavigation` |  | `boolean` | Header press default: the object page of the object; false: none. |
 
-### `WizardStepProps` — interface
+### `default` — component
 
-Props of `WizardStep` (see above).
+`import { default } from '@rhfan2019/smart-kit/ui/integration/cards/ObjectContent';`
 
-### `WizardTitleLevel` — type
+| Prop | Required | Type | Description |
+| --- | --- | --- | --- |
+| `entitySet` | **yes** | `string` | Entity set name as in `$metadata`, e.g. "Orders". |
+| `service` |  | `string` | Name of the service in `SmartKitProvider` `services`; default: the provider's `defaultService`. |
+| `keys` |  | `Row` | Key values of the object, e.g. { ID: '42' }. |
+| `path` |  | `EntityPath` | Entity path of the object instead of `keys`, e.g. "Orders('42')". |
+| `annotationPath` |  | `string` | Groups: "UI.QuickViewFacets" (default when present), "UI.Facets" or "UI.FieldGroup#Q". |
+| `identificationAnnotationPath` |  | `string \| false` | Footer actions: UI.Identification (default "com.sap.vocabularies.UI.v1.Identification"); false: no actions. |
+| `onAction` |  | `(action: ActionModel, row: Row, path: EntityPath) => void \| Promise&lt;void>` | Runs an action; default: the bound action is invoked without parameters and the card reloads. |
+| `headerNavigation` |  | `boolean` | Header press default: the object page of the object; false: none. |
 
-sap.ui.core.TitleLevel (for `stepTitleLevel`).
+## `@rhfan2019/smart-kit/ui/integration/cards/TableContent`
 
-```ts
-export type WizardTitleLevel = 'Auto' | 'H1' | 'H2' | 'H3' | 'H4' | 'H5' | 'H6';
-```
+`$TableContentSettings` (interface) · `CardAnnotationSettings` (interface) · `CardDataProps` (interface) · `default` (component)
 
-### `WrappingType` — const
+### `$TableContentSettings` — interface
 
-sap.m.WrappingType
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `entitySet` | **yes** | `string` | Entity set name as in `$metadata`, e.g. "Orders". |
+| `maxColumns` |  | `number` | Maximum number of columns (default 3, OVP table card). |
+| `service` |  | `string` | Name of the service in `SmartKitProvider` `services`; default: the provider's `defaultService`. |
+| `maxItems` |  | `number` | Maximum number of items (manifest `maxItems`); default from UI.PresentationVariant/MaxItems, else per card type. |
+| `filters` |  | `FilterState` | Additional filters, e.g. from a filter bar above the cards (the OVP global filter). |
+| `onItemPress` |  | `(row: Row) => void` | Item press; default: the object page of the row when the navigation adapter has one (CD-05). |
+| `headerNavigation` |  | `boolean` | Header press default; false: the header does not navigate. |
+| `annotationPath` |  | `string` | UI.LineItem (or another collection) of the content, e.g. "com.sap.vocabularies.UI.v1.LineItem#Card". |
+| `presentationAnnotationPath` |  | `string` | UI.PresentationVariant: sort order, MaxItems and the line item to use. |
+| `selectionAnnotationPath` |  | `string` | UI.SelectionVariant: the filter of the card. |
 
-```ts
-const WrappingType: { readonly Normal: "Normal"; readonly Hyphenated: "Hyphenated"; }
-```
+### `CardAnnotationSettings` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `annotationPath` |  | `string` | UI.LineItem (or another collection) of the content, e.g. "com.sap.vocabularies.UI.v1.LineItem#Card". |
+| `presentationAnnotationPath` |  | `string` | UI.PresentationVariant: sort order, MaxItems and the line item to use. |
+| `selectionAnnotationPath` |  | `string` | UI.SelectionVariant: the filter of the card. |
+
+### `CardDataProps` — interface
+
+Props of `CardData` (see above).
+
+### `default` — component
+
+`import { default } from '@rhfan2019/smart-kit/ui/integration/cards/TableContent';`
+
+| Prop | Required | Type | Description |
+| --- | --- | --- | --- |
+| `entitySet` | **yes** | `string` | Entity set name as in `$metadata`, e.g. "Orders". |
+| `maxColumns` |  | `number` | Maximum number of columns (default 3, OVP table card). |
+| `service` |  | `string` | Name of the service in `SmartKitProvider` `services`; default: the provider's `defaultService`. |
+| `maxItems` |  | `number` | Maximum number of items (manifest `maxItems`); default from UI.PresentationVariant/MaxItems, else per card type. |
+| `filters` |  | `FilterState` | Additional filters, e.g. from a filter bar above the cards (the OVP global filter). |
+| `onItemPress` |  | `(row: Row) => void` | Item press; default: the object page of the row when the navigation adapter has one (CD-05). |
+| `headerNavigation` |  | `boolean` | Header press default; false: the header does not navigate. |
+| `annotationPath` |  | `string` | UI.LineItem (or another collection) of the content, e.g. "com.sap.vocabularies.UI.v1.LineItem#Card". |
+| `presentationAnnotationPath` |  | `string` | UI.PresentationVariant: sort order, MaxItems and the line item to use. |
+| `selectionAnnotationPath` |  | `string` | UI.SelectionVariant: the filter of the card. |
+
+## `@rhfan2019/smart-kit/ui/integration/cards/TimelineContent`
+
+`$TimelineContentSettings` (interface) · `CardAnnotationSettings` (interface) · `CardDataProps` (interface) · `default` (component) · `EventItemPaths` (interface)
+
+### `$TimelineContentSettings` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `entitySet` | **yes** | `string` | Entity set name as in `$metadata`, e.g. "Orders". |
+| `item` |  | `Pick&lt;EventItemPaths, 'startDate' \| 'title' \| 'text'>` | Property paths of the items; default Communication.Event. |
+| `icon` |  | `ReactNode` | Icon of every item; default a calendar icon. |
+| `sortOldestFirst` |  | `boolean` | Oldest item first instead of newest first. |
+| `now` |  | `Date` | Reference time for "Today" (default now). |
+| `service` |  | `string` | Name of the service in `SmartKitProvider` `services`; default: the provider's `defaultService`. |
+| `maxItems` |  | `number` | Maximum number of items (manifest `maxItems`); default from UI.PresentationVariant/MaxItems, else per card type. |
+| `filters` |  | `FilterState` | Additional filters, e.g. from a filter bar above the cards (the OVP global filter). |
+| `onItemPress` |  | `(row: Row) => void` | Item press; default: the object page of the row when the navigation adapter has one (CD-05). |
+| `headerNavigation` |  | `boolean` | Header press default; false: the header does not navigate. |
+| `annotationPath` |  | `string` | UI.LineItem (or another collection) of the content, e.g. "com.sap.vocabularies.UI.v1.LineItem#Card". |
+| `presentationAnnotationPath` |  | `string` | UI.PresentationVariant: sort order, MaxItems and the line item to use. |
+| `selectionAnnotationPath` |  | `string` | UI.SelectionVariant: the filter of the card. |
+
+### `CardAnnotationSettings` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `annotationPath` |  | `string` | UI.LineItem (or another collection) of the content, e.g. "com.sap.vocabularies.UI.v1.LineItem#Card". |
+| `presentationAnnotationPath` |  | `string` | UI.PresentationVariant: sort order, MaxItems and the line item to use. |
+| `selectionAnnotationPath` |  | `string` | UI.SelectionVariant: the filter of the card. |
+
+### `CardDataProps` — interface
+
+Props of `CardData` (see above).
+
+### `default` — component
+
+`import { default } from '@rhfan2019/smart-kit/ui/integration/cards/TimelineContent';`
+
+| Prop | Required | Type | Description |
+| --- | --- | --- | --- |
+| `entitySet` | **yes** | `string` | Entity set name as in `$metadata`, e.g. "Orders". |
+| `item` |  | `Pick&lt;EventItemPaths, 'startDate' \| 'title' \| 'text'>` | Property paths of the items; default Communication.Event. |
+| `icon` |  | `ReactNode` | Icon of every item; default a calendar icon. |
+| `sortOldestFirst` |  | `boolean` | Oldest item first instead of newest first. |
+| `now` |  | `Date` | Reference time for "Today" (default now). |
+| `service` |  | `string` | Name of the service in `SmartKitProvider` `services`; default: the provider's `defaultService`. |
+| `maxItems` |  | `number` | Maximum number of items (manifest `maxItems`); default from UI.PresentationVariant/MaxItems, else per card type. |
+| `filters` |  | `FilterState` | Additional filters, e.g. from a filter bar above the cards (the OVP global filter). |
+| `onItemPress` |  | `(row: Row) => void` | Item press; default: the object page of the row when the navigation adapter has one (CD-05). |
+| `headerNavigation` |  | `boolean` | Header press default; false: the header does not navigate. |
+| `annotationPath` |  | `string` | UI.LineItem (or another collection) of the content, e.g. "com.sap.vocabularies.UI.v1.LineItem#Card". |
+| `presentationAnnotationPath` |  | `string` | UI.PresentationVariant: sort order, MaxItems and the line item to use. |
+| `selectionAnnotationPath` |  | `string` | UI.SelectionVariant: the filter of the card. |
+
+### `EventItemPaths` — interface
+
+Property paths of an event (the manifest item template of the integration card, with property paths).
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `startDate` |  | `string` | Start (calendar `startDate`, timeline `dateTime`); default Communication.Event/dtstart. |
+| `endDate` |  | `string` | End; default Communication.Event/dtend. |
+| `title` |  | `string` | Title; default Communication.Event/summary. |
+| `text` |  | `string` | Second line; default Communication.Event/description. |
+| `type` |  | `string` | Category (legend and colour); default Communication.Event/categories. |
+
+## `@rhfan2019/smart-kit/ui/unified/Currency`
+
+`$CurrencySettings` (interface) · `default` (component)
+
+### `$CurrencySettings` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `value` |  | `number \| null` | The amount (default 0). `null` counts as empty (see emptyIndicatorMode). |
+| `stringValue` |  | `string` | The exact amount as a decimal string (Edm.Decimal); used instead of `value`, avoiding float rounding. |
+| `currency` |  | `string` | ISO 4217 currency code. |
+| `maxPrecision` |  | `number` | Fraction digits the amount is padded to, so amounts in different currencies align (default: the currency's digits). |
+| `useSymbol` |  | `boolean` | Shows the currency symbol (€, $) instead of the code where one exists (default true). |
+| `emptyIndicatorMode` |  | `EmptyIndicatorMode` | Shows "–" when there is no amount (default Off). |
+| `defaultChecked` |  | `boolean \| undefined` |  |
+| `defaultValue` |  | `string \| number \| readonly string[] \| undefined` |  |
+| `suppressContentEditableWarning` |  | `boolean \| undefined` |  |
+| `suppressHydrationWarning` |  | `boolean \| undefined` |  |
+| `accessKey` |  | `string \| undefined` |  |
+| `autoCapitalize` |  | `"off" \| "none" \| "on" \| "sentences" \| "words" \| "characters" \| undefined \| (string & {})` |  |
+| `autoFocus` |  | `boolean \| undefined` |  |
+| `className` |  | `string \| undefined` |  |
+| `contentEditable` |  | `Booleanish \| "inherit" \| "plaintext-only" \| undefined` |  |
+| `contextMenu` |  | `string \| undefined` |  |
+| `dir` |  | `string \| undefined` |  |
+| `draggable` |  | `Booleanish \| undefined` |  |
+| `enterKeyHint` |  | `"enter" \| "done" \| "go" \| "next" \| "previous" \| "search" \| "send" \| undefined` |  |
+| `hidden` |  | `boolean \| undefined` |  |
+| `id` |  | `string \| undefined` |  |
+| `lang` |  | `string \| undefined` |  |
+| `nonce` |  | `string \| undefined` |  |
+| `slot` |  | `string \| undefined` |  |
+| `spellCheck` |  | `Booleanish \| undefined` |  |
+| `style` |  | `CSSProperties \| undefined` |  |
+| `tabIndex` |  | `number \| undefined` |  |
+| `title` |  | `string \| undefined` |  |
+| `translate` |  | `"yes" \| "no" \| undefined` |  |
+| `radioGroup` |  | `string \| undefined` |  |
+| `role` |  | `AriaRole \| undefined` |  |
+| `about` |  | `string \| undefined` |  |
+| `content` |  | `string \| undefined` |  |
+| `datatype` |  | `string \| undefined` |  |
+| `inlist` |  | `any` |  |
+| `prefix` |  | `string \| undefined` |  |
+| `property` |  | `string \| undefined` |  |
+| `rel` |  | `string \| undefined` |  |
+| `resource` |  | `string \| undefined` |  |
+| `rev` |  | `string \| undefined` |  |
+| `typeof` |  | `string \| undefined` |  |
+| `vocab` |  | `string \| undefined` |  |
+| `autoCorrect` |  | `string \| undefined` |  |
+| `autoSave` |  | `string \| undefined` |  |
+| `color` |  | `string \| undefined` |  |
+| `itemProp` |  | `string \| undefined` |  |
+| `itemScope` |  | `boolean \| undefined` |  |
+| `itemType` |  | `string \| undefined` |  |
+| `itemID` |  | `string \| undefined` |  |
+| `itemRef` |  | `string \| undefined` |  |
+| `results` |  | `number \| undefined` |  |
+| `security` |  | `string \| undefined` |  |
+| `unselectable` |  | `"on" \| "off" \| undefined` |  |
+| `popover` |  | `"" \| "auto" \| "manual" \| "hint" \| undefined` |  |
+| `popoverTargetAction` |  | `"toggle" \| "show" \| "hide" \| undefined` |  |
+| `popoverTarget` |  | `string \| undefined` |  |
+| `inert` |  | `boolean \| undefined` |  |
+| `inputMode` |  | `"none" \| "text" \| "tel" \| "url" \| "email" \| "numeric" \| "decimal" \| "search" \| undefined` | Hints at the type of data that might be entered by the user while editing the element or its contents |
+| `is` |  | `string \| undefined` | Specify that a standard HTML element should behave like a defined custom built-in element |
+| `exportparts` |  | `string \| undefined` |  |
+| `part` |  | `string \| undefined` |  |
+| `aria-activedescendant` |  | `string \| undefined` | Identifies the currently active element when DOM focus is on a composite widget, textbox, group, or application. |
+| `aria-atomic` |  | `Booleanish \| undefined` | Indicates whether assistive technologies will present all, or only parts of, the changed region based on the change notifications defined by the aria-relevant attribute. |
+| `aria-autocomplete` |  | `"none" \| "inline" \| "list" \| "both" \| undefined` | Indicates whether inputting text could trigger display of one or more predictions of the user's intended value for an input and specifies how predictions would be presented if they are made. |
+| `aria-braillelabel` |  | `string \| undefined` | Defines a string value that labels the current element, which is intended to be converted into Braille. |
+| `aria-brailleroledescription` |  | `string \| undefined` | Defines a human-readable, author-localized abbreviated description for the role of an element, which is intended to be converted into Braille. |
+| `aria-busy` |  | `Booleanish \| undefined` |  |
+| `aria-checked` |  | `boolean \| "false" \| "mixed" \| "true" \| undefined` | Indicates the current "checked" state of checkboxes, radio buttons, and other widgets. |
+| `aria-colcount` |  | `number \| undefined` | Defines the total number of columns in a table, grid, or treegrid. |
+| `aria-colindex` |  | `number \| undefined` | Defines an element's column index or position with respect to the total number of columns within a table, grid, or treegrid. |
+| `aria-colindextext` |  | `string \| undefined` | Defines a human readable text alternative of aria-colindex. |
+| `aria-colspan` |  | `number \| undefined` | Defines the number of columns spanned by a cell or gridcell within a table, grid, or treegrid. |
+| `aria-controls` |  | `string \| undefined` | Identifies the element (or elements) whose contents or presence are controlled by the current element. |
+| `aria-current` |  | `boolean \| "false" \| "true" \| "page" \| "step" \| "location" \| "date" \| "time" \| undefined` | Indicates the element that represents the current item within a container or set of related elements. |
+| `aria-describedby` |  | `string \| undefined` | Identifies the element (or elements) that describes the object. |
+| `aria-description` |  | `string \| undefined` | Defines a string value that describes or annotates the current element. |
+| `aria-details` |  | `string \| undefined` | Identifies the element that provides a detailed, extended description for the object. |
+| `aria-disabled` |  | `Booleanish \| undefined` | Indicates that the element is perceivable but disabled, so it is not editable or otherwise operable. |
+| `aria-dropeffect` |  | `"none" \| "copy" \| "execute" \| "link" \| "move" \| "popup" \| undefined` | Indicates what functions can be performed when a dragged object is released on the drop target. **Deprecated**: in ARIA 1.1 |
+| `aria-errormessage` |  | `string \| undefined` | Identifies the element that provides an error message for the object. |
+| `aria-expanded` |  | `Booleanish \| undefined` | Indicates whether the element, or another grouping element it controls, is currently expanded or collapsed. |
+| `aria-flowto` |  | `string \| undefined` | Identifies the next element (or elements) in an alternate reading order of content which, at the user's discretion, allows assistive technology to override the general default of reading in document source order. |
+| `aria-grabbed` |  | `Booleanish \| undefined` | Indicates an element's "grabbed" state in a drag-and-drop operation. **Deprecated**: in ARIA 1.1 |
+| `aria-haspopup` |  | `boolean \| "false" \| "true" \| "menu" \| "listbox" \| "tree" \| "grid" \| "dialog" \| undefined` | Indicates the availability and type of interactive popup element, such as menu or dialog, that can be triggered by an element. |
+| `aria-hidden` |  | `Booleanish \| undefined` | Indicates whether the element is exposed to an accessibility API. |
+| `aria-invalid` |  | `boolean \| "false" \| "true" \| "grammar" \| "spelling" \| undefined` | Indicates the entered value does not conform to the format expected by the application. |
+| `aria-keyshortcuts` |  | `string \| undefined` | Indicates keyboard shortcuts that an author has implemented to activate or give focus to an element. |
+| `aria-label` |  | `string \| undefined` | Defines a string value that labels the current element. |
+| `aria-labelledby` |  | `string \| undefined` | Identifies the element (or elements) that labels the current element. |
+| `aria-level` |  | `number \| undefined` | Defines the hierarchical level of an element within a structure. |
+| `aria-live` |  | `"off" \| "assertive" \| "polite" \| undefined` | Indicates that an element will be updated, and describes the types of updates the user agents, assistive technologies, and user can expect from the live region. |
+| `aria-modal` |  | `Booleanish \| undefined` | Indicates whether an element is modal when displayed. |
+| `aria-multiline` |  | `Booleanish \| undefined` | Indicates whether a text box accepts multiple lines of input or only a single line. |
+| `aria-multiselectable` |  | `Booleanish \| undefined` | Indicates that the user may select more than one item from the current selectable descendants. |
+| `aria-orientation` |  | `"horizontal" \| "vertical" \| undefined` | Indicates whether the element's orientation is horizontal, vertical, or unknown/ambiguous. |
+| `aria-owns` |  | `string \| undefined` | Identifies an element (or elements) in order to define a visual, functional, or contextual parent/child relationship between DOM elements where the DOM hierarchy cannot be used to represent the relationship. |
+| `aria-placeholder` |  | `string \| undefined` | Defines a short hint (a word or short phrase) intended to aid the user with data entry when the control has no value. A hint could be a sample value or a brief description of the expected format. |
+| `aria-posinset` |  | `number \| undefined` | Defines an element's number or position in the current set of listitems or treeitems. Not required if all elements in the set are present in the DOM. |
+| `aria-pressed` |  | `boolean \| "false" \| "mixed" \| "true" \| undefined` | Indicates the current "pressed" state of toggle buttons. |
+| `aria-readonly` |  | `Booleanish \| undefined` | Indicates that the element is not editable, but is otherwise operable. |
+| `aria-relevant` |  | `\| "additions" \| "additions removals" \| "additions text" \| "all" \| "removals" \| "removals additions" \| "removals text" \| "text" \| "text ad…` | Indicates what notifications the user agent will trigger when the accessibility tree within a live region is modified. |
+| `aria-required` |  | `Booleanish \| undefined` | Indicates that user input is required on the element before a form may be submitted. |
+| `aria-roledescription` |  | `string \| undefined` | Defines a human-readable, author-localized description for the role of an element. |
+| `aria-rowcount` |  | `number \| undefined` | Defines the total number of rows in a table, grid, or treegrid. |
+| `aria-rowindex` |  | `number \| undefined` | Defines an element's row index or position with respect to the total number of rows within a table, grid, or treegrid. |
+| `aria-rowindextext` |  | `string \| undefined` | Defines a human readable text alternative of aria-rowindex. |
+| `aria-rowspan` |  | `number \| undefined` | Defines the number of rows spanned by a cell or gridcell within a table, grid, or treegrid. |
+| `aria-selected` |  | `Booleanish \| undefined` | Indicates the current "selected" state of various widgets. |
+| `aria-setsize` |  | `number \| undefined` | Defines the number of items in the current set of listitems or treeitems. Not required if all elements in the set are present in the DOM. |
+| `aria-sort` |  | `"none" \| "ascending" \| "descending" \| "other" \| undefined` | Indicates if items in a table or grid are sorted in ascending or descending order. |
+| `aria-valuemax` |  | `number \| undefined` | Defines the maximum allowed value for a range widget. |
+| `aria-valuemin` |  | `number \| undefined` | Defines the minimum allowed value for a range widget. |
+| `aria-valuenow` |  | `number \| undefined` | Defines the current value for a range widget. |
+| `aria-valuetext` |  | `string \| undefined` | Defines the human readable text alternative of aria-valuenow for a range widget. |
+| `children` |  | `ReactNode \| undefined` |  |
+| `dangerouslySetInnerHTML` |  | `{ // Should be InnerHTML['innerHTML']. // But unfortunately we're mixing renderer-specific type declarations. __html: string \| TrustedHTM…` |  |
+| `onCopy` |  | `ClipboardEventHandler&lt;T> \| undefined` |  |
+| `onCopyCapture` |  | `ClipboardEventHandler&lt;T> \| undefined` |  |
+| `onCut` |  | `ClipboardEventHandler&lt;T> \| undefined` |  |
+| `onCutCapture` |  | `ClipboardEventHandler&lt;T> \| undefined` |  |
+| `onPaste` |  | `ClipboardEventHandler&lt;T> \| undefined` |  |
+| `onPasteCapture` |  | `ClipboardEventHandler&lt;T> \| undefined` |  |
+| `onCompositionEnd` |  | `CompositionEventHandler&lt;T> \| undefined` |  |
+| `onCompositionEndCapture` |  | `CompositionEventHandler&lt;T> \| undefined` |  |
+| `onCompositionStart` |  | `CompositionEventHandler&lt;T> \| undefined` |  |
+| `onCompositionStartCapture` |  | `CompositionEventHandler&lt;T> \| undefined` |  |
+| `onCompositionUpdate` |  | `CompositionEventHandler&lt;T> \| undefined` |  |
+| `onCompositionUpdateCapture` |  | `CompositionEventHandler&lt;T> \| undefined` |  |
+| `onFocus` |  | `FocusEventHandler&lt;T> \| undefined` |  |
+| `onFocusCapture` |  | `FocusEventHandler&lt;T> \| undefined` |  |
+| `onBlur` |  | `FocusEventHandler&lt;T> \| undefined` |  |
+| `onBlurCapture` |  | `FocusEventHandler&lt;T> \| undefined` |  |
+| `onChange` |  | `ChangeEventHandler&lt;T> \| undefined` |  |
+| `onChangeCapture` |  | `ChangeEventHandler&lt;T> \| undefined` |  |
+| `onBeforeInput` |  | `InputEventHandler&lt;T> \| undefined` |  |
+| `onBeforeInputCapture` |  | `InputEventHandler&lt;T> \| undefined` |  |
+| `onInput` |  | `InputEventHandler&lt;T> \| undefined` |  |
+| `onInputCapture` |  | `InputEventHandler&lt;T> \| undefined` |  |
+| `onReset` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onResetCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onSubmit` |  | `SubmitEventHandler&lt;T> \| undefined` |  |
+| `onSubmitCapture` |  | `SubmitEventHandler&lt;T> \| undefined` |  |
+| `onInvalid` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onInvalidCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onLoad` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onLoadCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onError` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onErrorCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onKeyDown` |  | `KeyboardEventHandler&lt;T> \| undefined` |  |
+| `onKeyDownCapture` |  | `KeyboardEventHandler&lt;T> \| undefined` |  |
+| `onKeyPress` |  | `KeyboardEventHandler&lt;T> \| undefined` |  **Deprecated**: Use `onKeyUp` or `onKeyDown` instead |
+| `onKeyPressCapture` |  | `KeyboardEventHandler&lt;T> \| undefined` |  **Deprecated**: Use `onKeyUpCapture` or `onKeyDownCapture` instead |
+| `onKeyUp` |  | `KeyboardEventHandler&lt;T> \| undefined` |  |
+| `onKeyUpCapture` |  | `KeyboardEventHandler&lt;T> \| undefined` |  |
+| `onAbort` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onAbortCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onCanPlay` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onCanPlayCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onCanPlayThrough` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onCanPlayThroughCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onDurationChange` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onDurationChangeCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onEmptied` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onEmptiedCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onEncrypted` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onEncryptedCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onEnded` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onEndedCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onLoadedData` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onLoadedDataCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onLoadedMetadata` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onLoadedMetadataCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onLoadStart` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onLoadStartCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onPause` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onPauseCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onPlay` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onPlayCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onPlaying` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onPlayingCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onProgress` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onProgressCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onRateChange` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onRateChangeCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onSeeked` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onSeekedCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onSeeking` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onSeekingCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onStalled` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onStalledCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onSuspend` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onSuspendCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onTimeUpdate` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onTimeUpdateCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onVolumeChange` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onVolumeChangeCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onWaiting` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onWaitingCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onAuxClick` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onAuxClickCapture` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onClick` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onClickCapture` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onContextMenu` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onContextMenuCapture` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onDoubleClick` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onDoubleClickCapture` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onDrag` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onDragCapture` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onDragEnd` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onDragEndCapture` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onDragEnter` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onDragEnterCapture` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onDragExit` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onDragExitCapture` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onDragLeave` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onDragLeaveCapture` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onDragOver` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onDragOverCapture` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onDragStart` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onDragStartCapture` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onDrop` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onDropCapture` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onMouseDown` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onMouseDownCapture` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onMouseEnter` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onMouseLeave` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onMouseMove` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onMouseMoveCapture` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onMouseOut` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onMouseOutCapture` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onMouseOver` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onMouseOverCapture` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onMouseUp` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onMouseUpCapture` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onSelect` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onSelectCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onTouchCancel` |  | `TouchEventHandler&lt;T> \| undefined` |  |
+| `onTouchCancelCapture` |  | `TouchEventHandler&lt;T> \| undefined` |  |
+| `onTouchEnd` |  | `TouchEventHandler&lt;T> \| undefined` |  |
+| `onTouchEndCapture` |  | `TouchEventHandler&lt;T> \| undefined` |  |
+| `onTouchMove` |  | `TouchEventHandler&lt;T> \| undefined` |  |
+| `onTouchMoveCapture` |  | `TouchEventHandler&lt;T> \| undefined` |  |
+| `onTouchStart` |  | `TouchEventHandler&lt;T> \| undefined` |  |
+| `onTouchStartCapture` |  | `TouchEventHandler&lt;T> \| undefined` |  |
+| `onPointerDown` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onPointerDownCapture` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onPointerMove` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onPointerMoveCapture` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onPointerUp` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onPointerUpCapture` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onPointerCancel` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onPointerCancelCapture` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onPointerEnter` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onPointerLeave` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onPointerOver` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onPointerOverCapture` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onPointerOut` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onPointerOutCapture` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onGotPointerCapture` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onGotPointerCaptureCapture` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onLostPointerCapture` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onLostPointerCaptureCapture` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onScroll` |  | `UIEventHandler&lt;T> \| undefined` |  |
+| `onScrollCapture` |  | `UIEventHandler&lt;T> \| undefined` |  |
+| `onScrollEnd` |  | `UIEventHandler&lt;T> \| undefined` |  |
+| `onScrollEndCapture` |  | `UIEventHandler&lt;T> \| undefined` |  |
+| `onWheel` |  | `WheelEventHandler&lt;T> \| undefined` |  |
+| `onWheelCapture` |  | `WheelEventHandler&lt;T> \| undefined` |  |
+| `onAnimationStart` |  | `AnimationEventHandler&lt;T> \| undefined` |  |
+| `onAnimationStartCapture` |  | `AnimationEventHandler&lt;T> \| undefined` |  |
+| `onAnimationEnd` |  | `AnimationEventHandler&lt;T> \| undefined` |  |
+| `onAnimationEndCapture` |  | `AnimationEventHandler&lt;T> \| undefined` |  |
+| `onAnimationIteration` |  | `AnimationEventHandler&lt;T> \| undefined` |  |
+| `onAnimationIterationCapture` |  | `AnimationEventHandler&lt;T> \| undefined` |  |
+| `onToggle` |  | `ToggleEventHandler&lt;T> \| undefined` |  |
+| `onBeforeToggle` |  | `ToggleEventHandler&lt;T> \| undefined` |  |
+| `onTransitionCancel` |  | `TransitionEventHandler&lt;T> \| undefined` |  |
+| `onTransitionCancelCapture` |  | `TransitionEventHandler&lt;T> \| undefined` |  |
+| `onTransitionEnd` |  | `TransitionEventHandler&lt;T> \| undefined` |  |
+| `onTransitionEndCapture` |  | `TransitionEventHandler&lt;T> \| undefined` |  |
+| `onTransitionRun` |  | `TransitionEventHandler&lt;T> \| undefined` |  |
+| `onTransitionRunCapture` |  | `TransitionEventHandler&lt;T> \| undefined` |  |
+| `onTransitionStart` |  | `TransitionEventHandler&lt;T> \| undefined` |  |
+| `onTransitionStartCapture` |  | `TransitionEventHandler&lt;T> \| undefined` |  |
+
+### `default` — component
+
+`import { default } from '@rhfan2019/smart-kit/ui/unified/Currency';`
+
+| Prop | Required | Type | Description |
+| --- | --- | --- | --- |
+| `value` |  | `number \| null` | The amount (default 0). `null` counts as empty (see emptyIndicatorMode). |
+| `stringValue` |  | `string` | The exact amount as a decimal string (Edm.Decimal); used instead of `value`, avoiding float rounding. |
+| `currency` |  | `string` | ISO 4217 currency code. |
+| `maxPrecision` |  | `number` | Fraction digits the amount is padded to, so amounts in different currencies align (default: the currency's digits). |
+| `useSymbol` |  | `boolean` | Shows the currency symbol (€, $) instead of the code where one exists (default true). |
+| `emptyIndicatorMode` |  | `EmptyIndicatorMode` | Shows "–" when there is no amount (default Off). |
+| `defaultChecked` |  | `boolean \| undefined` |  |
+| `defaultValue` |  | `string \| number \| readonly string[] \| undefined` |  |
+| `suppressContentEditableWarning` |  | `boolean \| undefined` |  |
+| `suppressHydrationWarning` |  | `boolean \| undefined` |  |
+| `accessKey` |  | `string \| undefined` |  |
+| `autoCapitalize` |  | `"off" \| "none" \| "on" \| "sentences" \| "words" \| "characters" \| undefined \| (string & {})` |  |
+| `autoFocus` |  | `boolean \| undefined` |  |
+| `className` |  | `string \| undefined` |  |
+| `contentEditable` |  | `Booleanish \| "inherit" \| "plaintext-only" \| undefined` |  |
+| `contextMenu` |  | `string \| undefined` |  |
+| `dir` |  | `string \| undefined` |  |
+| `draggable` |  | `Booleanish \| undefined` |  |
+| `enterKeyHint` |  | `"enter" \| "done" \| "go" \| "next" \| "previous" \| "search" \| "send" \| undefined` |  |
+| `hidden` |  | `boolean \| undefined` |  |
+| `id` |  | `string \| undefined` |  |
+| `lang` |  | `string \| undefined` |  |
+| `nonce` |  | `string \| undefined` |  |
+| `slot` |  | `string \| undefined` |  |
+| `spellCheck` |  | `Booleanish \| undefined` |  |
+| `style` |  | `CSSProperties \| undefined` |  |
+| `tabIndex` |  | `number \| undefined` |  |
+| `title` |  | `string \| undefined` |  |
+| `translate` |  | `"yes" \| "no" \| undefined` |  |
+| `radioGroup` |  | `string \| undefined` |  |
+| `role` |  | `AriaRole \| undefined` |  |
+| `about` |  | `string \| undefined` |  |
+| `content` |  | `string \| undefined` |  |
+| `datatype` |  | `string \| undefined` |  |
+| `inlist` |  | `any` |  |
+| `prefix` |  | `string \| undefined` |  |
+| `property` |  | `string \| undefined` |  |
+| `rel` |  | `string \| undefined` |  |
+| `resource` |  | `string \| undefined` |  |
+| `rev` |  | `string \| undefined` |  |
+| `typeof` |  | `string \| undefined` |  |
+| `vocab` |  | `string \| undefined` |  |
+| `autoCorrect` |  | `string \| undefined` |  |
+| `autoSave` |  | `string \| undefined` |  |
+| `color` |  | `string \| undefined` |  |
+| `itemProp` |  | `string \| undefined` |  |
+| `itemScope` |  | `boolean \| undefined` |  |
+| `itemType` |  | `string \| undefined` |  |
+| `itemID` |  | `string \| undefined` |  |
+| `itemRef` |  | `string \| undefined` |  |
+| `results` |  | `number \| undefined` |  |
+| `security` |  | `string \| undefined` |  |
+| `unselectable` |  | `"on" \| "off" \| undefined` |  |
+| `popover` |  | `"" \| "auto" \| "manual" \| "hint" \| undefined` |  |
+| `popoverTargetAction` |  | `"toggle" \| "show" \| "hide" \| undefined` |  |
+| `popoverTarget` |  | `string \| undefined` |  |
+| `inert` |  | `boolean \| undefined` |  |
+| `inputMode` |  | `"none" \| "text" \| "tel" \| "url" \| "email" \| "numeric" \| "decimal" \| "search" \| undefined` | Hints at the type of data that might be entered by the user while editing the element or its contents |
+| `is` |  | `string \| undefined` | Specify that a standard HTML element should behave like a defined custom built-in element |
+| `exportparts` |  | `string \| undefined` |  |
+| `part` |  | `string \| undefined` |  |
+| `aria-activedescendant` |  | `string \| undefined` | Identifies the currently active element when DOM focus is on a composite widget, textbox, group, or application. |
+| `aria-atomic` |  | `Booleanish \| undefined` | Indicates whether assistive technologies will present all, or only parts of, the changed region based on the change notifications defined by the aria-relevant attribute. |
+| `aria-autocomplete` |  | `"none" \| "inline" \| "list" \| "both" \| undefined` | Indicates whether inputting text could trigger display of one or more predictions of the user's intended value for an input and specifies how predictions would be presented if they are made. |
+| `aria-braillelabel` |  | `string \| undefined` | Defines a string value that labels the current element, which is intended to be converted into Braille. |
+| `aria-brailleroledescription` |  | `string \| undefined` | Defines a human-readable, author-localized abbreviated description for the role of an element, which is intended to be converted into Braille. |
+| `aria-busy` |  | `Booleanish \| undefined` |  |
+| `aria-checked` |  | `boolean \| "false" \| "mixed" \| "true" \| undefined` | Indicates the current "checked" state of checkboxes, radio buttons, and other widgets. |
+| `aria-colcount` |  | `number \| undefined` | Defines the total number of columns in a table, grid, or treegrid. |
+| `aria-colindex` |  | `number \| undefined` | Defines an element's column index or position with respect to the total number of columns within a table, grid, or treegrid. |
+| `aria-colindextext` |  | `string \| undefined` | Defines a human readable text alternative of aria-colindex. |
+| `aria-colspan` |  | `number \| undefined` | Defines the number of columns spanned by a cell or gridcell within a table, grid, or treegrid. |
+| `aria-controls` |  | `string \| undefined` | Identifies the element (or elements) whose contents or presence are controlled by the current element. |
+| `aria-current` |  | `boolean \| "false" \| "true" \| "page" \| "step" \| "location" \| "date" \| "time" \| undefined` | Indicates the element that represents the current item within a container or set of related elements. |
+| `aria-describedby` |  | `string \| undefined` | Identifies the element (or elements) that describes the object. |
+| `aria-description` |  | `string \| undefined` | Defines a string value that describes or annotates the current element. |
+| `aria-details` |  | `string \| undefined` | Identifies the element that provides a detailed, extended description for the object. |
+| `aria-disabled` |  | `Booleanish \| undefined` | Indicates that the element is perceivable but disabled, so it is not editable or otherwise operable. |
+| `aria-dropeffect` |  | `"none" \| "copy" \| "execute" \| "link" \| "move" \| "popup" \| undefined` | Indicates what functions can be performed when a dragged object is released on the drop target. **Deprecated**: in ARIA 1.1 |
+| `aria-errormessage` |  | `string \| undefined` | Identifies the element that provides an error message for the object. |
+| `aria-expanded` |  | `Booleanish \| undefined` | Indicates whether the element, or another grouping element it controls, is currently expanded or collapsed. |
+| `aria-flowto` |  | `string \| undefined` | Identifies the next element (or elements) in an alternate reading order of content which, at the user's discretion, allows assistive technology to override the general default of reading in document source order. |
+| `aria-grabbed` |  | `Booleanish \| undefined` | Indicates an element's "grabbed" state in a drag-and-drop operation. **Deprecated**: in ARIA 1.1 |
+| `aria-haspopup` |  | `boolean \| "false" \| "true" \| "menu" \| "listbox" \| "tree" \| "grid" \| "dialog" \| undefined` | Indicates the availability and type of interactive popup element, such as menu or dialog, that can be triggered by an element. |
+| `aria-hidden` |  | `Booleanish \| undefined` | Indicates whether the element is exposed to an accessibility API. |
+| `aria-invalid` |  | `boolean \| "false" \| "true" \| "grammar" \| "spelling" \| undefined` | Indicates the entered value does not conform to the format expected by the application. |
+| `aria-keyshortcuts` |  | `string \| undefined` | Indicates keyboard shortcuts that an author has implemented to activate or give focus to an element. |
+| `aria-label` |  | `string \| undefined` | Defines a string value that labels the current element. |
+| `aria-labelledby` |  | `string \| undefined` | Identifies the element (or elements) that labels the current element. |
+| `aria-level` |  | `number \| undefined` | Defines the hierarchical level of an element within a structure. |
+| `aria-live` |  | `"off" \| "assertive" \| "polite" \| undefined` | Indicates that an element will be updated, and describes the types of updates the user agents, assistive technologies, and user can expect from the live region. |
+| `aria-modal` |  | `Booleanish \| undefined` | Indicates whether an element is modal when displayed. |
+| `aria-multiline` |  | `Booleanish \| undefined` | Indicates whether a text box accepts multiple lines of input or only a single line. |
+| `aria-multiselectable` |  | `Booleanish \| undefined` | Indicates that the user may select more than one item from the current selectable descendants. |
+| `aria-orientation` |  | `"horizontal" \| "vertical" \| undefined` | Indicates whether the element's orientation is horizontal, vertical, or unknown/ambiguous. |
+| `aria-owns` |  | `string \| undefined` | Identifies an element (or elements) in order to define a visual, functional, or contextual parent/child relationship between DOM elements where the DOM hierarchy cannot be used to represent the relationship. |
+| `aria-placeholder` |  | `string \| undefined` | Defines a short hint (a word or short phrase) intended to aid the user with data entry when the control has no value. A hint could be a sample value or a brief description of the expected format. |
+| `aria-posinset` |  | `number \| undefined` | Defines an element's number or position in the current set of listitems or treeitems. Not required if all elements in the set are present in the DOM. |
+| `aria-pressed` |  | `boolean \| "false" \| "mixed" \| "true" \| undefined` | Indicates the current "pressed" state of toggle buttons. |
+| `aria-readonly` |  | `Booleanish \| undefined` | Indicates that the element is not editable, but is otherwise operable. |
+| `aria-relevant` |  | `\| "additions" \| "additions removals" \| "additions text" \| "all" \| "removals" \| "removals additions" \| "removals text" \| "text" \| "text ad…` | Indicates what notifications the user agent will trigger when the accessibility tree within a live region is modified. |
+| `aria-required` |  | `Booleanish \| undefined` | Indicates that user input is required on the element before a form may be submitted. |
+| `aria-roledescription` |  | `string \| undefined` | Defines a human-readable, author-localized description for the role of an element. |
+| `aria-rowcount` |  | `number \| undefined` | Defines the total number of rows in a table, grid, or treegrid. |
+| `aria-rowindex` |  | `number \| undefined` | Defines an element's row index or position with respect to the total number of rows within a table, grid, or treegrid. |
+| `aria-rowindextext` |  | `string \| undefined` | Defines a human readable text alternative of aria-rowindex. |
+| `aria-rowspan` |  | `number \| undefined` | Defines the number of rows spanned by a cell or gridcell within a table, grid, or treegrid. |
+| `aria-selected` |  | `Booleanish \| undefined` | Indicates the current "selected" state of various widgets. |
+| `aria-setsize` |  | `number \| undefined` | Defines the number of items in the current set of listitems or treeitems. Not required if all elements in the set are present in the DOM. |
+| `aria-sort` |  | `"none" \| "ascending" \| "descending" \| "other" \| undefined` | Indicates if items in a table or grid are sorted in ascending or descending order. |
+| `aria-valuemax` |  | `number \| undefined` | Defines the maximum allowed value for a range widget. |
+| `aria-valuemin` |  | `number \| undefined` | Defines the minimum allowed value for a range widget. |
+| `aria-valuenow` |  | `number \| undefined` | Defines the current value for a range widget. |
+| `aria-valuetext` |  | `string \| undefined` | Defines the human readable text alternative of aria-valuenow for a range widget. |
+| `children` |  | `ReactNode \| undefined` |  |
+| `dangerouslySetInnerHTML` |  | `{ // Should be InnerHTML['innerHTML']. // But unfortunately we're mixing renderer-specific type declarations. __html: string \| TrustedHTM…` |  |
+| `onCopy` |  | `ClipboardEventHandler&lt;T> \| undefined` |  |
+| `onCopyCapture` |  | `ClipboardEventHandler&lt;T> \| undefined` |  |
+| `onCut` |  | `ClipboardEventHandler&lt;T> \| undefined` |  |
+| `onCutCapture` |  | `ClipboardEventHandler&lt;T> \| undefined` |  |
+| `onPaste` |  | `ClipboardEventHandler&lt;T> \| undefined` |  |
+| `onPasteCapture` |  | `ClipboardEventHandler&lt;T> \| undefined` |  |
+| `onCompositionEnd` |  | `CompositionEventHandler&lt;T> \| undefined` |  |
+| `onCompositionEndCapture` |  | `CompositionEventHandler&lt;T> \| undefined` |  |
+| `onCompositionStart` |  | `CompositionEventHandler&lt;T> \| undefined` |  |
+| `onCompositionStartCapture` |  | `CompositionEventHandler&lt;T> \| undefined` |  |
+| `onCompositionUpdate` |  | `CompositionEventHandler&lt;T> \| undefined` |  |
+| `onCompositionUpdateCapture` |  | `CompositionEventHandler&lt;T> \| undefined` |  |
+| `onFocus` |  | `FocusEventHandler&lt;T> \| undefined` |  |
+| `onFocusCapture` |  | `FocusEventHandler&lt;T> \| undefined` |  |
+| `onBlur` |  | `FocusEventHandler&lt;T> \| undefined` |  |
+| `onBlurCapture` |  | `FocusEventHandler&lt;T> \| undefined` |  |
+| `onChange` |  | `ChangeEventHandler&lt;T> \| undefined` |  |
+| `onChangeCapture` |  | `ChangeEventHandler&lt;T> \| undefined` |  |
+| `onBeforeInput` |  | `InputEventHandler&lt;T> \| undefined` |  |
+| `onBeforeInputCapture` |  | `InputEventHandler&lt;T> \| undefined` |  |
+| `onInput` |  | `InputEventHandler&lt;T> \| undefined` |  |
+| `onInputCapture` |  | `InputEventHandler&lt;T> \| undefined` |  |
+| `onReset` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onResetCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onSubmit` |  | `SubmitEventHandler&lt;T> \| undefined` |  |
+| `onSubmitCapture` |  | `SubmitEventHandler&lt;T> \| undefined` |  |
+| `onInvalid` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onInvalidCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onLoad` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onLoadCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onError` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onErrorCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onKeyDown` |  | `KeyboardEventHandler&lt;T> \| undefined` |  |
+| `onKeyDownCapture` |  | `KeyboardEventHandler&lt;T> \| undefined` |  |
+| `onKeyPress` |  | `KeyboardEventHandler&lt;T> \| undefined` |  **Deprecated**: Use `onKeyUp` or `onKeyDown` instead |
+| `onKeyPressCapture` |  | `KeyboardEventHandler&lt;T> \| undefined` |  **Deprecated**: Use `onKeyUpCapture` or `onKeyDownCapture` instead |
+| `onKeyUp` |  | `KeyboardEventHandler&lt;T> \| undefined` |  |
+| `onKeyUpCapture` |  | `KeyboardEventHandler&lt;T> \| undefined` |  |
+| `onAbort` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onAbortCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onCanPlay` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onCanPlayCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onCanPlayThrough` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onCanPlayThroughCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onDurationChange` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onDurationChangeCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onEmptied` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onEmptiedCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onEncrypted` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onEncryptedCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onEnded` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onEndedCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onLoadedData` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onLoadedDataCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onLoadedMetadata` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onLoadedMetadataCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onLoadStart` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onLoadStartCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onPause` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onPauseCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onPlay` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onPlayCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onPlaying` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onPlayingCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onProgress` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onProgressCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onRateChange` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onRateChangeCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onSeeked` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onSeekedCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onSeeking` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onSeekingCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onStalled` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onStalledCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onSuspend` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onSuspendCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onTimeUpdate` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onTimeUpdateCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onVolumeChange` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onVolumeChangeCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onWaiting` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onWaitingCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onAuxClick` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onAuxClickCapture` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onClick` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onClickCapture` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onContextMenu` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onContextMenuCapture` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onDoubleClick` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onDoubleClickCapture` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onDrag` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onDragCapture` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onDragEnd` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onDragEndCapture` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onDragEnter` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onDragEnterCapture` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onDragExit` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onDragExitCapture` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onDragLeave` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onDragLeaveCapture` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onDragOver` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onDragOverCapture` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onDragStart` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onDragStartCapture` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onDrop` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onDropCapture` |  | `DragEventHandler&lt;T> \| undefined` |  |
+| `onMouseDown` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onMouseDownCapture` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onMouseEnter` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onMouseLeave` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onMouseMove` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onMouseMoveCapture` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onMouseOut` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onMouseOutCapture` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onMouseOver` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onMouseOverCapture` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onMouseUp` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onMouseUpCapture` |  | `MouseEventHandler&lt;T> \| undefined` |  |
+| `onSelect` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onSelectCapture` |  | `ReactEventHandler&lt;T> \| undefined` |  |
+| `onTouchCancel` |  | `TouchEventHandler&lt;T> \| undefined` |  |
+| `onTouchCancelCapture` |  | `TouchEventHandler&lt;T> \| undefined` |  |
+| `onTouchEnd` |  | `TouchEventHandler&lt;T> \| undefined` |  |
+| `onTouchEndCapture` |  | `TouchEventHandler&lt;T> \| undefined` |  |
+| `onTouchMove` |  | `TouchEventHandler&lt;T> \| undefined` |  |
+| `onTouchMoveCapture` |  | `TouchEventHandler&lt;T> \| undefined` |  |
+| `onTouchStart` |  | `TouchEventHandler&lt;T> \| undefined` |  |
+| `onTouchStartCapture` |  | `TouchEventHandler&lt;T> \| undefined` |  |
+| `onPointerDown` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onPointerDownCapture` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onPointerMove` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onPointerMoveCapture` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onPointerUp` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onPointerUpCapture` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onPointerCancel` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onPointerCancelCapture` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onPointerEnter` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onPointerLeave` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onPointerOver` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onPointerOverCapture` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onPointerOut` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onPointerOutCapture` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onGotPointerCapture` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onGotPointerCaptureCapture` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onLostPointerCapture` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onLostPointerCaptureCapture` |  | `PointerEventHandler&lt;T> \| undefined` |  |
+| `onScroll` |  | `UIEventHandler&lt;T> \| undefined` |  |
+| `onScrollCapture` |  | `UIEventHandler&lt;T> \| undefined` |  |
+| `onScrollEnd` |  | `UIEventHandler&lt;T> \| undefined` |  |
+| `onScrollEndCapture` |  | `UIEventHandler&lt;T> \| undefined` |  |
+| `onWheel` |  | `WheelEventHandler&lt;T> \| undefined` |  |
+| `onWheelCapture` |  | `WheelEventHandler&lt;T> \| undefined` |  |
+| `onAnimationStart` |  | `AnimationEventHandler&lt;T> \| undefined` |  |
+| `onAnimationStartCapture` |  | `AnimationEventHandler&lt;T> \| undefined` |  |
+| `onAnimationEnd` |  | `AnimationEventHandler&lt;T> \| undefined` |  |
+| `onAnimationEndCapture` |  | `AnimationEventHandler&lt;T> \| undefined` |  |
+| `onAnimationIteration` |  | `AnimationEventHandler&lt;T> \| undefined` |  |
+| `onAnimationIterationCapture` |  | `AnimationEventHandler&lt;T> \| undefined` |  |
+| `onToggle` |  | `ToggleEventHandler&lt;T> \| undefined` |  |
+| `onBeforeToggle` |  | `ToggleEventHandler&lt;T> \| undefined` |  |
+| `onTransitionCancel` |  | `TransitionEventHandler&lt;T> \| undefined` |  |
+| `onTransitionCancelCapture` |  | `TransitionEventHandler&lt;T> \| undefined` |  |
+| `onTransitionEnd` |  | `TransitionEventHandler&lt;T> \| undefined` |  |
+| `onTransitionEndCapture` |  | `TransitionEventHandler&lt;T> \| undefined` |  |
+| `onTransitionRun` |  | `TransitionEventHandler&lt;T> \| undefined` |  |
+| `onTransitionRunCapture` |  | `TransitionEventHandler&lt;T> \| undefined` |  |
+| `onTransitionStart` |  | `TransitionEventHandler&lt;T> \| undefined` |  |
+| `onTransitionStartCapture` |  | `TransitionEventHandler&lt;T> \| undefined` |  |
+
+## `@rhfan2019/smart-kit/v4/fe/macros/MessageButton`
+
+`default` (component)
+
+### `default` — component
+
+Footer message button with the message popover (MessagePopover, docs/26). Renders nothing without messages.
+
+`import { default } from '@rhfan2019/smart-kit/v4/fe/macros/MessageButton';`
+
+| Prop | Required | Type | Description |
+| --- | --- | --- | --- |
+| `defaultOpened` |  | `boolean` |  |

@@ -6,7 +6,7 @@ import type { EmptyIndicatorMode, IndicationColor, ValueState } from '../types';
 import { cx, EmptyIndicator, isEmpty, stateModifier, type ReactiveAreaMode } from './shared';
 import { TEXTS } from './texts';
 
-export interface ObjectStatusProps extends Omit<HTMLAttributes<HTMLElement>, 'title'> {
+export interface $ObjectStatusSettings extends Omit<HTMLAttributes<HTMLElement>, 'title'> {
   /** Label shown before the text as "title:". */
   title?: string;
   /** Status text. */
@@ -31,7 +31,7 @@ export interface ObjectStatusProps extends Omit<HTMLAttributes<HTMLElement>, 'ti
 
 export function ObjectStatus({
   title, text, active = false, reactiveAreaMode = 'Inline', state = 'None', inverted = false, icon, emptyIndicatorMode = 'Off', stateAnnouncementText, onPress, className, ...rest
-}: ObjectStatusProps) {
+}: $ObjectStatusSettings) {
   const t = useControlText(TEXTS);
   const cls = cx(
     'sk-object-status', `sk-object-status--${stateModifier(state)}`, inverted && 'sk-object-status--inverted', active && 'sk-object-status--active',

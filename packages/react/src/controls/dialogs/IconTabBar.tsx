@@ -36,7 +36,7 @@ export const TabsOverflowMode = { End: 'End', StartAndEnd: 'StartAndEnd' } as co
 export type BackgroundDesign = 'Solid' | 'Translucent' | 'Transparent';
 export const BackgroundDesign = { Solid: 'Solid', Translucent: 'Translucent', Transparent: 'Transparent' } as const;
 
-export interface IconTabFilterProps {
+export interface $IconTabFilterSettings {
   text?: string;
   /** (true) */
   enabled?: boolean;
@@ -57,19 +57,19 @@ export interface IconTabFilterProps {
   children?: ReactNode;
 }
 
-export interface IconTabSeparatorProps {
+export interface $IconTabSeparatorSettings {
   icon?: ReactNode;
   /** (true) */
   visible?: boolean;
 }
 
 /** A tab of an IconTabBar; rendered by the IconTabBar (alone it renders nothing). */
-export function IconTabFilter(_p: IconTabFilterProps): null { return null; }
+export function IconTabFilter(_p: $IconTabFilterSettings): null { return null; }
 /** A separator between tabs of an IconTabBar. */
-export function IconTabSeparator(_p: IconTabSeparatorProps): null { return null; }
+export function IconTabSeparator(_p: $IconTabSeparatorSettings): null { return null; }
 
 /** A filter as passed to `onSelect`: its props, its key and the keys of its child filters. */
-export interface IconTabFilterItem extends Omit<IconTabFilterProps, 'children'> {
+export interface IconTabFilterItem extends Omit<$IconTabFilterSettings, 'children'> {
   key: string;
   /** Child filters (UI5 `items`). */
   items: IconTabItem[];
@@ -78,9 +78,9 @@ export interface IconTabFilterItem extends Omit<IconTabFilterProps, 'children'> 
   /** Key of the top-level filter it belongs to (its own key on the top level). */
   rootKey: string;
 }
-export type IconTabItem = ({ kind: 'filter' } & IconTabFilterItem) | ({ kind: 'separator'; key: string } & IconTabSeparatorProps);
+export type IconTabItem = ({ kind: 'filter' } & IconTabFilterItem) | ({ kind: 'separator'; key: string } & $IconTabSeparatorSettings);
 
-export interface IconTabBarProps {
+export interface $IconTabBarSettings {
   /** IconTabFilter and IconTabSeparator elements (UI5 `items`). */
   children?: ReactNode;
   /** Content shown for filters that have none of their own (UI5 `content`). */
@@ -126,9 +126,9 @@ function itemsOf(children: ReactNode, rootKey?: string, path = ''): IconTabItem[
     if (c.type === Fragment) { walk((c.props as { children?: ReactNode }).children); return; }
     const key = c.key ?? `${path}${n}`;
     n += 1;
-    if (c.type === IconTabSeparator) out.push({ kind: 'separator', key, ...(c.props as IconTabSeparatorProps) });
+    if (c.type === IconTabSeparator) out.push({ kind: 'separator', key, ...(c.props as $IconTabSeparatorSettings) });
     if (c.type === IconTabFilter) {
-      const { children: inner, ...props } = c.props as IconTabFilterProps;
+      const { children: inner, ...props } = c.props as $IconTabFilterSettings;
       const content: ReactNode[] = [];
       Children.forEach(inner, (x) => { if (!(isValidElement(x) && (x.type === IconTabFilter || x.type === IconTabSeparator))) content.push(x); });
       out.push({ kind: 'filter', ...props, key, rootKey: rootKey ?? key, content, items: itemsOf(inner, rootKey ?? key, `${key}.`) });
@@ -152,7 +152,7 @@ const TONE: Record<IconColor, string> = {
   Default: 'default', Positive: 'positive', Critical: 'critical', Negative: 'negative', Neutral: 'neutral', Contrast: 'contrast', Marker: 'marker', NonInteractive: 'noninteractive', Tile: 'tile',
 };
 
-export function IconTabBar(p: IconTabBarProps) {
+export function IconTabBar(p: $IconTabBarSettings) {
   const t = useControlText(TEXTS);
   const uid = useId();
   const all = itemsOf(p.children);

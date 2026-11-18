@@ -122,7 +122,7 @@ export const RESTRICTED_FILE_NAME_CHARACTERS = '\\:/*?"<>|[]{}@#$';
 export interface UploadSetwithTableItemInfo {
   oItem: UploadItemInstance;
   iTotalItemsForUpload: number;
-  oSource: UploadSetwithTableRef | null;
+  oSource: UploadSetwithTable | null;
 }
 
 /** sap.m.upload.FilePreviewDialog settings (association `previewDialog`). */
@@ -157,7 +157,7 @@ export interface UploadCompletedEvent {
 
 type ItemEvent = { item: UploadItemInstance };
 
-export interface UploadSetwithTableProps {
+export interface $UploadSetwithTableSettings {
   items?: UploadItem[];
   /** Allowed extensions without dot, case-insensitive. */
   fileTypes?: string[];
@@ -202,11 +202,11 @@ export interface UploadSetwithTableProps {
   onFileSizeExceeded?: (e: ItemEvent) => void;
   onMediaTypeMismatch?: (e: ItemEvent) => void;
   onBeforeInitiatingItemUpload?: (e: ItemEvent) => void;
-  ref?: Ref<UploadSetwithTableRef>;
+  ref?: Ref<UploadSetwithTable>;
 }
 
 /** Instance methods of UploadSetwithTable (via `ref`). */
-export interface UploadSetwithTableRef {
+export interface UploadSetwithTable {
   /** Opens the file selection dialog. */
   fileSelectionHandler(): void;
   download(item: UploadItem, askForLocation?: boolean): void;
@@ -241,7 +241,7 @@ export function restrictedCharacters(config?: FilenameValidationConfig): string 
 }
 
 /** The first validation the item fails, in the UI5 order. */
-export function validationFailure(item: UploadItem, p: Pick<UploadSetwithTableProps, 'fileTypes' | 'mediaTypes' | 'maxFileNameLength' | 'maxFileSize'>):
+export function validationFailure(item: UploadItem, p: Pick<$UploadSetwithTableSettings, 'fileTypes' | 'mediaTypes' | 'maxFileNameLength' | 'maxFileSize'>):
   'fileType' | 'mediaType' | 'fileNameLength' | 'fileSize' | undefined {
   if (p.fileTypes?.length && !p.fileTypes.map((x) => x.toLowerCase()).includes(extensionOf(item.fileName))) return 'fileType';
   if (p.mediaTypes?.length && !mediaMatches(item.mediaType ?? '', p.mediaTypes)) return 'mediaType';
@@ -271,7 +271,7 @@ function parseHeaders(raw: string): Record<string, string> {
 const signature = (items: UploadItem[] | undefined) => (items ?? []).map((i) => [i.id, i.fileName, i.url, i.uploadState, i.fileSize].join('\u0001')).join('\u0002');
 let seq = 0;
 
-export function UploadSetwithTable(p: UploadSetwithTableProps) {
+export function UploadSetwithTable(p: $UploadSetwithTableSettings) {
   const t = useControlText(TEXTS);
   const { intlLocale } = useControlLocale();
   const input = useRef<HTMLInputElement>(null);
@@ -445,7 +445,7 @@ export function UploadSetwithTable(p: UploadSetwithTableProps) {
     void addItems(list.map((f) => ({ id: `sk-upload-${++seq}`, fileName: f.name, mediaType: f.type, fileSize: f.size, file: f, uploadState: 'Ready' as const })));
   };
 
-  const api: UploadSetwithTableRef = {
+  const api: UploadSetwithTable = {
     fileSelectionHandler: () => input.current?.click(),
     download: (item, ask) => download(find(item) ?? item, ask),
     openFilePreview: (item) => {

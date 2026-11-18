@@ -129,7 +129,7 @@ export function describeExport(ctx, exportSymbol, { name } = {}) {
         const fn = nonNullable(checker, m.type).getCallSignatures()[0];
         const evParam = fn?.parameters[0];
         const evType = evParam ? nonNullable(checker, checker.getTypeOfSymbolAtLocation(evParam, at)) : undefined;
-        const isObject = evType && (evType.flags & ts.TypeFlags.Object) && !evType.getCallSignatures().length;
+        const isObject = evType && (evType.flags & ts.TypeFlags.Object) && !evType.getCallSignatures().length && !checker.isArrayType(evType) && !checker.isTupleType(evType);
         out.events.push({ name: m.name.slice(2, 3).toLowerCase() + m.name.slice(3), prop: m.name, params: isObject ? membersOf(checker, evType, at).map((x) => x.name) : null, paramTypeName: evType && evType.aliasSymbol ? evType.aliasSymbol.name : evType?.symbol?.name });
         continue;
       }

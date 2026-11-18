@@ -13,10 +13,13 @@ import {
 import { ChevronDown, ChevronUp, PanelRight } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import {
-  actionPaths, DraftMarker, fieldErrors, getPath, HeaderFacet, isActionAvailable, isEditable, MessageButton, MessageProvider, ObjectPageLayout, ShareMenu, SmartField,
-  SmartForm, SmartTable, typedText, useActionRunner, useColumn, useEditStrategy, useMessages, useObject, useObjectTitle, usePageState, useService, useSmartKit, useText,
+  actionPaths, DraftMarker, fieldErrors, getPath, HeaderFacet, isActionAvailable, isEditable, ObjectPageLayout, ShareMenu, SmartField,
+  SmartForm, SmartTable, typedText, useActionRunner, useColumn, useEditStrategy, useObject, useObjectTitle, usePageState, useService, useSmartKit, useText,
   validate, type ExtendEntry, type SectionItem, type TableExtendEntry, type ToolbarAction,
 } from '../index';
+import MessageButton from '../v4/fe/macros/MessageButton';
+import MessageProvider from '../kit/MessageProvider';
+import useMessages from '../kit/useMessages';
 
 export interface SmartObjectPageProps {
   /** Entity path, e.g. "Orders('1')". Ignored in create mode. */

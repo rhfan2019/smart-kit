@@ -1,6 +1,11 @@
 /** Demo section of the message controls (docs/26 §3.1): MessageToast, MessageBox, MessageStrip, MessageView, MessagePopover. */
 import { Button, Group, SimpleGrid, Stack, Text } from '@mantine/core';
-import { MessageBox, MessageItem, MessagePopover, MessageStrip, MessageToast, MessageView, type MessagePopoverRef } from '@rhfan2019/smart-kit/messages';
+import MessageBox from '@rhfan2019/smart-kit/m/MessageBox';
+import MessageItem from '@rhfan2019/smart-kit/m/MessageItem';
+import MessagePopover from '@rhfan2019/smart-kit/m/MessagePopover';
+import MessageStrip from '@rhfan2019/smart-kit/m/MessageStrip';
+import MessageToast from '@rhfan2019/smart-kit/m/MessageToast';
+import MessageView from '@rhfan2019/smart-kit/m/MessageView';
 import { useRef } from 'react';
 
 const items = (
@@ -14,7 +19,7 @@ const items = (
 );
 
 export function MessagesSection() {
-  const popover = useRef<MessagePopoverRef>(null);
+  const popover = useRef<MessagePopover>(null);
   return (
     <Stack gap="lg">
       <div>

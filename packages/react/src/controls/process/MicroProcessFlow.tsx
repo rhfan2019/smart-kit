@@ -14,9 +14,9 @@ export type MicroProcessFlowRenderType = 'Wrap' | 'NoWrap' | 'Scrolling' | 'Scro
 export const MicroProcessFlowRenderType = { Wrap: 'Wrap', NoWrap: 'NoWrap', Scrolling: 'Scrolling', ScrollingWithResizer: 'ScrollingWithResizer' } as const;
 
 /** A MicroProcessFlowItem in event objects: its props and React key. */
-export type MicroProcessFlowPressedItem = Omit<MicroProcessFlowItemProps, 'onPress'> & { key?: string };
+export type MicroProcessFlowPressedItem = Omit<$MicroProcessFlowItemSettings, 'onPress'> & { key?: string };
 
-export interface MicroProcessFlowItemProps {
+export interface $MicroProcessFlowItemSettings {
   /** Replaces the state icon. */
   icon?: ReactNode;
   /** Accessible name and tooltip of the step. */
@@ -38,11 +38,11 @@ export interface MicroProcessFlowItemProps {
 }
 
 /** A step of MicroProcessFlow; rendered by its parent. */
-export function MicroProcessFlowItem(_: MicroProcessFlowItemProps): null {
+export function MicroProcessFlowItem(_: $MicroProcessFlowItemSettings): null {
   return null;
 }
 
-export interface MicroProcessFlowProps {
+export interface $MicroProcessFlowSettings {
   children?: ReactNode;
   /** Default 'Wrap'. */
   renderType?: MicroProcessFlowRenderType;
@@ -57,10 +57,10 @@ const ICONS: Partial<Record<ValueState, ReactNode>> = {
   Success: <CircleCheck aria-hidden="true" />, Information: <Info aria-hidden="true" />,
 };
 
-export function MicroProcessFlow(p: MicroProcessFlowProps) {
+export function MicroProcessFlow(p: $MicroProcessFlowSettings) {
   const t = useControlText(TEXTS);
   const list = useRef<HTMLOListElement>(null);
-  const items = elementsOf<MicroProcessFlowItemProps>(p.children, MicroProcessFlowItem);
+  const items = elementsOf<$MicroProcessFlowItemSettings>(p.children, MicroProcessFlowItem);
   const type = p.renderType ?? 'Wrap';
   const scroll = (d: number) => list.current?.scrollBy?.({ left: d * list.current.clientWidth * 0.8, behavior: 'smooth' });
   const ol = (

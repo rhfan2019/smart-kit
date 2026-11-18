@@ -22,7 +22,7 @@ export const BadgeStyle = { Default: 'Default', Attention: 'Attention' } as cons
 /** sap.ui.core.aria.HasPopup */
 export type AriaHasPopup = 'None' | 'Menu' | 'ListBox' | 'Tree' | 'Grid' | 'Dialog';
 
-export interface ToggleButtonProps {
+export interface $ToggleButtonSettings {
   /** Pressed state (default false). The button also toggles itself, as in SAPUI5; a changed prop wins. */
   pressed?: boolean;
   /** Button text; without it the button shows only the icon (then set `aria-label` or `title`). */
@@ -69,7 +69,7 @@ function variantOf(type: ButtonType, pressed: boolean): string {
 export function ToggleButton({
   pressed: pressedProp = false, text, type = 'Default', width, enabled = true, icon, iconFirst = true, activeIcon, ariaHasPopup = 'None', accessibleRole = 'Default',
   badgeStyle = 'Default', badge, layoutData: _layoutData, onPress, className, ...aria
-}: ToggleButtonProps) {
+}: $ToggleButtonSettings) {
   const [pressed, setPressed] = useState(pressedProp);
   useEffect(() => setPressed(pressedProp), [pressedProp]);
   const toggle = () => {

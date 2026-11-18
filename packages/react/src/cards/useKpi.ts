@@ -8,7 +8,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useService, useSmartKit, useText } from '../context/SmartKitProvider';
 import { cardFilters, qualifierOf } from './annotations';
 import { compactParts } from './format';
-import type { NumericHeaderProps, ValueColor } from './Header';
+import type { $NumericHeaderSettings, ValueColor } from './Header';
 
 const COLOR: Record<number, ValueColor> = { 0: 'Neutral', 1: 'Error', 2: 'Critical', 3: 'Good', 5: 'Neutral' };
 const constant = (r: ValueRef | undefined): number | undefined => {
@@ -17,7 +17,7 @@ const constant = (r: ValueRef | undefined): number | undefined => {
   return Number.isFinite(n) ? n : undefined;
 };
 
-export function useKpi(p: { entitySet: string; service?: string; dataPointAnnotationPath: string; selectionAnnotationPath?: string; filters?: FilterState }): Partial<NumericHeaderProps> {
+export function useKpi(p: { entitySet: string; service?: string; dataPointAnnotationPath: string; selectionAnnotationPath?: string; filters?: FilterState }): Partial<$NumericHeaderSettings> {
   const service = useService(p.service);
   const { namespace, locale, intlLocale, timeZone } = useSmartKit();
   const t = useText();
@@ -46,7 +46,7 @@ export function useKpi(p: { entitySet: string; service?: string; dataPointAnnota
   const { number, scale } = compactParts(value, intlLocale, digits);
   const crit = dp.criticality ? constant(dp.criticality) : dp.criticalityCalculation ? calculateCriticality(dp.criticalityCalculation, value, constant) : undefined;
   const target = constant(dp.targetValue);
-  const sideIndicators: NumericHeaderProps['sideIndicators'] = [];
+  const sideIndicators: $NumericHeaderSettings['sideIndicators'] = [];
   if (target !== undefined) {
     const tp = compactParts(target, intlLocale, digits);
     sideIndicators.push({ title: t('card.target'), number: tp.number, unit: tp.scale });

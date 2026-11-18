@@ -100,25 +100,325 @@
       "types": "./dist/entries/edit.d.ts",
       "import": "./dist/entries/edit.js"
     },
-    "./messages": {
-      "smart-kit-source": "./src/entries/messages.ts",
-      "types": "./dist/entries/messages.d.ts",
-      "import": "./dist/entries/messages.js"
-    },
     "./templates": {
       "smart-kit-source": "./src/entries/templates.ts",
       "types": "./dist/entries/templates.d.ts",
       "import": "./dist/entries/templates.js"
     },
-    "./cards": {
-      "smart-kit-source": "./src/entries/cards.ts",
-      "types": "./dist/entries/cards.d.ts",
-      "import": "./dist/entries/cards.js"
+    "./base/i18n/date/CalendarWeekNumbering": {
+      "smart-kit-source": "./src/base/i18n/date/CalendarWeekNumbering.ts",
+      "types": "./dist/base/i18n/date/CalendarWeekNumbering.d.ts",
+      "import": "./dist/base/i18n/date/CalendarWeekNumbering.js"
     },
-    "./controls": {
-      "smart-kit-source": "./src/entries/controls.ts",
-      "types": "./dist/entries/controls.d.ts",
-      "import": "./dist/entries/controls.js"
+    "./f/Card": {
+      "smart-kit-source": "./src/f/Card.ts",
+      "types": "./dist/f/Card.d.ts",
+      "import": "./dist/f/Card.js"
+    },
+    "./f/cards/Header": {
+      "smart-kit-source": "./src/f/cards/Header.ts",
+      "types": "./dist/f/cards/Header.d.ts",
+      "import": "./dist/f/cards/Header.js"
+    },
+    "./f/cards/NumericHeader": {
+      "smart-kit-source": "./src/f/cards/NumericHeader.ts",
+      "types": "./dist/f/cards/NumericHeader.d.ts",
+      "import": "./dist/f/cards/NumericHeader.js"
+    },
+    "./f/cards/NumericSideIndicator": {
+      "smart-kit-source": "./src/f/cards/NumericSideIndicator.ts",
+      "types": "./dist/f/cards/NumericSideIndicator.d.ts",
+      "import": "./dist/f/cards/NumericSideIndicator.js"
+    },
+    "./kit/MessageHost": {
+      "smart-kit-source": "./src/kit/MessageHost.ts",
+      "types": "./dist/kit/MessageHost.d.ts",
+      "import": "./dist/kit/MessageHost.js"
+    },
+    "./kit/MessageIcon": {
+      "smart-kit-source": "./src/kit/MessageIcon.ts",
+      "types": "./dist/kit/MessageIcon.d.ts",
+      "import": "./dist/kit/MessageIcon.js"
+    },
+    "./kit/MessageProvider": {
+      "smart-kit-source": "./src/kit/MessageProvider.ts",
+      "types": "./dist/kit/MessageProvider.d.ts",
+      "import": "./dist/kit/MessageProvider.js"
+    },
+    "./kit/useMessages": {
+      "smart-kit-source": "./src/kit/useMessages.ts",
+      "types": "./dist/kit/useMessages.d.ts",
+      "import": "./dist/kit/useMessages.js"
+    },
+    "./m/AvatarShape": {
+      "smart-kit-source": "./src/m/AvatarShape.ts",
+      "types": "./dist/m/AvatarShape.d.ts",
+      "import": "./dist/m/AvatarShape.js"
+    },
+    "./m/AvatarSize": {
+      "smart-kit-source": "./src/m/AvatarSize.ts",
+      "types": "./dist/m/AvatarSize.d.ts",
+      "import": "./dist/m/AvatarSize.js"
+    },
+    "./m/BusyDialog": {
+      "smart-kit-source": "./src/m/BusyDialog.ts",
+      "types": "./dist/m/BusyDialog.d.ts",
+      "import": "./dist/m/BusyDialog.js"
+    },
+    "./m/BusyIndicator": {
+      "smart-kit-source": "./src/m/BusyIndicator.ts",
+      "types": "./dist/m/BusyIndicator.d.ts",
+      "import": "./dist/m/BusyIndicator.js"
+    },
+    "./m/DynamicDateRange": {
+      "smart-kit-source": "./src/m/DynamicDateRange.ts",
+      "types": "./dist/m/DynamicDateRange.d.ts",
+      "import": "./dist/m/DynamicDateRange.js"
+    },
+    "./m/ExpandableText": {
+      "smart-kit-source": "./src/m/ExpandableText.ts",
+      "types": "./dist/m/ExpandableText.d.ts",
+      "import": "./dist/m/ExpandableText.js"
+    },
+    "./m/FeedInput": {
+      "smart-kit-source": "./src/m/FeedInput.ts",
+      "types": "./dist/m/FeedInput.d.ts",
+      "import": "./dist/m/FeedInput.js"
+    },
+    "./m/FeedListItem": {
+      "smart-kit-source": "./src/m/FeedListItem.ts",
+      "types": "./dist/m/FeedListItem.d.ts",
+      "import": "./dist/m/FeedListItem.js"
+    },
+    "./m/IconTabBar": {
+      "smart-kit-source": "./src/m/IconTabBar.ts",
+      "types": "./dist/m/IconTabBar.d.ts",
+      "import": "./dist/m/IconTabBar.js"
+    },
+    "./m/IconTabFilter": {
+      "smart-kit-source": "./src/m/IconTabFilter.ts",
+      "types": "./dist/m/IconTabFilter.d.ts",
+      "import": "./dist/m/IconTabFilter.js"
+    },
+    "./m/IconTabSeparator": {
+      "smart-kit-source": "./src/m/IconTabSeparator.ts",
+      "types": "./dist/m/IconTabSeparator.d.ts",
+      "import": "./dist/m/IconTabSeparator.js"
+    },
+    "./m/IllustratedMessage": {
+      "smart-kit-source": "./src/m/IllustratedMessage.ts",
+      "types": "./dist/m/IllustratedMessage.d.ts",
+      "import": "./dist/m/IllustratedMessage.js"
+    },
+    "./m/IllustratedMessageSize": {
+      "smart-kit-source": "./src/m/IllustratedMessageSize.ts",
+      "types": "./dist/m/IllustratedMessageSize.d.ts",
+      "import": "./dist/m/IllustratedMessageSize.js"
+    },
+    "./m/IllustratedMessageType": {
+      "smart-kit-source": "./src/m/IllustratedMessageType.ts",
+      "types": "./dist/m/IllustratedMessageType.d.ts",
+      "import": "./dist/m/IllustratedMessageType.js"
+    },
+    "./m/MessageBox": {
+      "smart-kit-source": "./src/m/MessageBox.ts",
+      "types": "./dist/m/MessageBox.d.ts",
+      "import": "./dist/m/MessageBox.js"
+    },
+    "./m/MessageItem": {
+      "smart-kit-source": "./src/m/MessageItem.ts",
+      "types": "./dist/m/MessageItem.d.ts",
+      "import": "./dist/m/MessageItem.js"
+    },
+    "./m/MessagePopover": {
+      "smart-kit-source": "./src/m/MessagePopover.ts",
+      "types": "./dist/m/MessagePopover.d.ts",
+      "import": "./dist/m/MessagePopover.js"
+    },
+    "./m/MessageStrip": {
+      "smart-kit-source": "./src/m/MessageStrip.ts",
+      "types": "./dist/m/MessageStrip.d.ts",
+      "import": "./dist/m/MessageStrip.js"
+    },
+    "./m/MessageToast": {
+      "smart-kit-source": "./src/m/MessageToast.ts",
+      "types": "./dist/m/MessageToast.d.ts",
+      "import": "./dist/m/MessageToast.js"
+    },
+    "./m/MessageView": {
+      "smart-kit-source": "./src/m/MessageView.ts",
+      "types": "./dist/m/MessageView.d.ts",
+      "import": "./dist/m/MessageView.js"
+    },
+    "./m/ObjectIdentifier": {
+      "smart-kit-source": "./src/m/ObjectIdentifier.ts",
+      "types": "./dist/m/ObjectIdentifier.d.ts",
+      "import": "./dist/m/ObjectIdentifier.js"
+    },
+    "./m/ObjectMarker": {
+      "smart-kit-source": "./src/m/ObjectMarker.ts",
+      "types": "./dist/m/ObjectMarker.d.ts",
+      "import": "./dist/m/ObjectMarker.js"
+    },
+    "./m/ObjectNumber": {
+      "smart-kit-source": "./src/m/ObjectNumber.ts",
+      "types": "./dist/m/ObjectNumber.d.ts",
+      "import": "./dist/m/ObjectNumber.js"
+    },
+    "./m/ObjectStatus": {
+      "smart-kit-source": "./src/m/ObjectStatus.ts",
+      "types": "./dist/m/ObjectStatus.d.ts",
+      "import": "./dist/m/ObjectStatus.js"
+    },
+    "./m/OverflowToolbar": {
+      "smart-kit-source": "./src/m/OverflowToolbar.ts",
+      "types": "./dist/m/OverflowToolbar.d.ts",
+      "import": "./dist/m/OverflowToolbar.js"
+    },
+    "./m/OverflowToolbarButton": {
+      "smart-kit-source": "./src/m/OverflowToolbarButton.ts",
+      "types": "./dist/m/OverflowToolbarButton.d.ts",
+      "import": "./dist/m/OverflowToolbarButton.js"
+    },
+    "./m/SelectDialog": {
+      "smart-kit-source": "./src/m/SelectDialog.ts",
+      "types": "./dist/m/SelectDialog.d.ts",
+      "import": "./dist/m/SelectDialog.js"
+    },
+    "./m/TableSelectDialog": {
+      "smart-kit-source": "./src/m/TableSelectDialog.ts",
+      "types": "./dist/m/TableSelectDialog.d.ts",
+      "import": "./dist/m/TableSelectDialog.js"
+    },
+    "./m/ToggleButton": {
+      "smart-kit-source": "./src/m/ToggleButton.ts",
+      "types": "./dist/m/ToggleButton.d.ts",
+      "import": "./dist/m/ToggleButton.js"
+    },
+    "./m/ToolbarSpacer": {
+      "smart-kit-source": "./src/m/ToolbarSpacer.ts",
+      "types": "./dist/m/ToolbarSpacer.d.ts",
+      "import": "./dist/m/ToolbarSpacer.js"
+    },
+    "./m/ViewSettingsDialog": {
+      "smart-kit-source": "./src/m/ViewSettingsDialog.ts",
+      "types": "./dist/m/ViewSettingsDialog.d.ts",
+      "import": "./dist/m/ViewSettingsDialog.js"
+    },
+    "./m/Wizard": {
+      "smart-kit-source": "./src/m/Wizard.ts",
+      "types": "./dist/m/Wizard.d.ts",
+      "import": "./dist/m/Wizard.js"
+    },
+    "./m/WizardStep": {
+      "smart-kit-source": "./src/m/WizardStep.ts",
+      "types": "./dist/m/WizardStep.d.ts",
+      "import": "./dist/m/WizardStep.js"
+    },
+    "./m/library": {
+      "smart-kit-source": "./src/m/library.ts",
+      "types": "./dist/m/library.d.ts",
+      "import": "./dist/m/library.js"
+    },
+    "./m/plugins/UploadSetwithTable": {
+      "smart-kit-source": "./src/m/plugins/UploadSetwithTable.ts",
+      "types": "./dist/m/plugins/UploadSetwithTable.d.ts",
+      "import": "./dist/m/plugins/UploadSetwithTable.js"
+    },
+    "./m/upload/ActionsPlaceholder": {
+      "smart-kit-source": "./src/m/upload/ActionsPlaceholder.ts",
+      "types": "./dist/m/upload/ActionsPlaceholder.d.ts",
+      "import": "./dist/m/upload/ActionsPlaceholder.js"
+    },
+    "./m/upload/UploaderHttpRequestMethod": {
+      "smart-kit-source": "./src/m/upload/UploaderHttpRequestMethod.ts",
+      "types": "./dist/m/upload/UploaderHttpRequestMethod.d.ts",
+      "import": "./dist/m/upload/UploaderHttpRequestMethod.js"
+    },
+    "./m/upload/UploaderTableItem": {
+      "smart-kit-source": "./src/m/upload/UploaderTableItem.ts",
+      "types": "./dist/m/upload/UploaderTableItem.d.ts",
+      "import": "./dist/m/upload/UploaderTableItem.js"
+    },
+    "./suite/ui/commons/MicroProcessFlow": {
+      "smart-kit-source": "./src/suite/ui/commons/MicroProcessFlow.ts",
+      "types": "./dist/suite/ui/commons/MicroProcessFlow.d.ts",
+      "import": "./dist/suite/ui/commons/MicroProcessFlow.js"
+    },
+    "./suite/ui/commons/MicroProcessFlowItem": {
+      "smart-kit-source": "./src/suite/ui/commons/MicroProcessFlowItem.ts",
+      "types": "./dist/suite/ui/commons/MicroProcessFlowItem.d.ts",
+      "import": "./dist/suite/ui/commons/MicroProcessFlowItem.js"
+    },
+    "./suite/ui/commons/ProcessFlow": {
+      "smart-kit-source": "./src/suite/ui/commons/ProcessFlow.ts",
+      "types": "./dist/suite/ui/commons/ProcessFlow.d.ts",
+      "import": "./dist/suite/ui/commons/ProcessFlow.js"
+    },
+    "./suite/ui/commons/Timeline": {
+      "smart-kit-source": "./src/suite/ui/commons/Timeline.ts",
+      "types": "./dist/suite/ui/commons/Timeline.d.ts",
+      "import": "./dist/suite/ui/commons/Timeline.js"
+    },
+    "./suite/ui/commons/TimelineItem": {
+      "smart-kit-source": "./src/suite/ui/commons/TimelineItem.ts",
+      "types": "./dist/suite/ui/commons/TimelineItem.d.ts",
+      "import": "./dist/suite/ui/commons/TimelineItem.js"
+    },
+    "./suite/ui/commons/library": {
+      "smart-kit-source": "./src/suite/ui/commons/library.ts",
+      "types": "./dist/suite/ui/commons/library.d.ts",
+      "import": "./dist/suite/ui/commons/library.js"
+    },
+    "./ui/core/library": {
+      "smart-kit-source": "./src/ui/core/library.ts",
+      "types": "./dist/ui/core/library.d.ts",
+      "import": "./dist/ui/core/library.js"
+    },
+    "./ui/core/message/MessageType": {
+      "smart-kit-source": "./src/ui/core/message/MessageType.ts",
+      "types": "./dist/ui/core/message/MessageType.d.ts",
+      "import": "./dist/ui/core/message/MessageType.js"
+    },
+    "./ui/integration/cards/AnalyticalContent": {
+      "smart-kit-source": "./src/ui/integration/cards/AnalyticalContent.ts",
+      "types": "./dist/ui/integration/cards/AnalyticalContent.d.ts",
+      "import": "./dist/ui/integration/cards/AnalyticalContent.js"
+    },
+    "./ui/integration/cards/CalendarContent": {
+      "smart-kit-source": "./src/ui/integration/cards/CalendarContent.ts",
+      "types": "./dist/ui/integration/cards/CalendarContent.d.ts",
+      "import": "./dist/ui/integration/cards/CalendarContent.js"
+    },
+    "./ui/integration/cards/ListContent": {
+      "smart-kit-source": "./src/ui/integration/cards/ListContent.ts",
+      "types": "./dist/ui/integration/cards/ListContent.d.ts",
+      "import": "./dist/ui/integration/cards/ListContent.js"
+    },
+    "./ui/integration/cards/ObjectContent": {
+      "smart-kit-source": "./src/ui/integration/cards/ObjectContent.ts",
+      "types": "./dist/ui/integration/cards/ObjectContent.d.ts",
+      "import": "./dist/ui/integration/cards/ObjectContent.js"
+    },
+    "./ui/integration/cards/TableContent": {
+      "smart-kit-source": "./src/ui/integration/cards/TableContent.ts",
+      "types": "./dist/ui/integration/cards/TableContent.d.ts",
+      "import": "./dist/ui/integration/cards/TableContent.js"
+    },
+    "./ui/integration/cards/TimelineContent": {
+      "smart-kit-source": "./src/ui/integration/cards/TimelineContent.ts",
+      "types": "./dist/ui/integration/cards/TimelineContent.d.ts",
+      "import": "./dist/ui/integration/cards/TimelineContent.js"
+    },
+    "./ui/unified/Currency": {
+      "smart-kit-source": "./src/ui/unified/Currency.ts",
+      "types": "./dist/ui/unified/Currency.d.ts",
+      "import": "./dist/ui/unified/Currency.js"
+    },
+    "./v4/fe/macros/MessageButton": {
+      "smart-kit-source": "./src/v4/fe/macros/MessageButton.ts",
+      "types": "./dist/v4/fe/macros/MessageButton.d.ts",
+      "import": "./dist/v4/fe/macros/MessageButton.js"
     },
     "./styles.css": {
       "smart-kit-source": "./src/theme/styles.css",

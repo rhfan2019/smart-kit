@@ -3,11 +3,15 @@ import { MantineProvider } from '@mantine/core';
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { createRef, useState, type ReactNode } from 'react';
 import { describe, expect, it, vi } from 'vitest';
-import {
-  DynamicDateRange, IconTabBar, IconTabFilter, IconTabSeparator, SelectDialog, TableSelectDialog, ViewSettingsDialog, Wizard, WizardStep,
-  type DynamicDateRangeRef, type DynamicDateRangeValue, type SelectDialogRef, type StandardListItem, type TableSelectDialogRef, type ViewSettingsDialogRef,
-  type WizardRef,
-} from '../src/entries/controls';
+import DynamicDateRange, { type DynamicDateRangeValue } from '@rhfan2019/smart-kit/m/DynamicDateRange';
+import IconTabBar from '@rhfan2019/smart-kit/m/IconTabBar';
+import IconTabFilter from '@rhfan2019/smart-kit/m/IconTabFilter';
+import IconTabSeparator from '@rhfan2019/smart-kit/m/IconTabSeparator';
+import SelectDialog, { type StandardListItem } from '@rhfan2019/smart-kit/m/SelectDialog';
+import TableSelectDialog from '@rhfan2019/smart-kit/m/TableSelectDialog';
+import ViewSettingsDialog from '@rhfan2019/smart-kit/m/ViewSettingsDialog';
+import Wizard from '@rhfan2019/smart-kit/m/Wizard';
+import WizardStep from '@rhfan2019/smart-kit/m/WizardStep';
 import { dialogsEn } from '../src/i18n/controls/dialogs.en';
 import { dialogsZh } from '../src/i18n/controls/dialogs.zh';
 import { SmartKitProvider } from '../src';
@@ -92,7 +96,7 @@ describe('DynamicDateRange', () => {
   });
 
   it('UE-64 supports custom options, a formatter, hideInput with openBy and the toDates method', async () => {
-    const ref = createRef<DynamicDateRangeRef>();
+    const ref = createRef<DynamicDateRange>();
     const onChange = vi.fn();
     const fiscal = {
       key: 'FISCALYEAR', valueTypes: [], getText: () => 'This fiscal year',
@@ -125,7 +129,7 @@ const suppliers: StandardListItem[] = Array.from({ length: 45 }, (_, i) => ({
 
 describe('SelectDialog', () => {
   it('UE-65 opens through the ref with a search value; single selection confirms right away', async () => {
-    const ref = createRef<SelectDialogRef>();
+    const ref = createRef<SelectDialog>();
     const onConfirm = vi.fn();
     r(<SelectDialog ref={ref} title="Select Supplier" items={suppliers} onConfirm={onConfirm} />);
     expect(ref.current).not.toHaveProperty('close');
@@ -140,7 +144,7 @@ describe('SelectDialog', () => {
   });
 
   it('UE-66 multi-select: checkboxes, "Selected: n", selectionChange, clear button and clearSelection()', async () => {
-    const ref = createRef<SelectDialogRef>();
+    const ref = createRef<SelectDialog>();
     const onConfirm = vi.fn();
     const onSelectionChange = vi.fn();
     const items = suppliers.slice(0, 5).map((s, i) => ({ ...s, selected: i === 0 }));
@@ -162,7 +166,7 @@ describe('SelectDialog', () => {
   });
 
   it('UE-67 search field: liveChange on typing, search on Enter and when cleared (no client filter then)', async () => {
-    const ref = createRef<SelectDialogRef>();
+    const ref = createRef<SelectDialog>();
     const onSearch = vi.fn();
     const onLiveChange = vi.fn();
     r(<SelectDialog ref={ref} items={suppliers.slice(0, 3)} onSearch={onSearch} onLiveChange={onLiveChange} searchPlaceholder="Find supplier" initialFocus="SearchField" />);
@@ -178,7 +182,7 @@ describe('SelectDialog', () => {
   });
 
   it('UE-68 growing: shows growingThreshold items, "More [20/45]", updateStarted / updateFinished', async () => {
-    const ref = createRef<SelectDialogRef>();
+    const ref = createRef<SelectDialog>();
     const started = vi.fn();
     const finished = vi.fn();
     r(<SelectDialog ref={ref} items={suppliers} onUpdateStarted={started} onUpdateFinished={finished} noDataText="Nothing" />);
@@ -195,7 +199,7 @@ describe('SelectDialog', () => {
   });
 
   it('UE-69 rememberSelections keeps the confirmed selection; cancel fires onCancel and drops changes', async () => {
-    const ref = createRef<SelectDialogRef>();
+    const ref = createRef<SelectDialog>();
     const onCancel = vi.fn();
     r(<SelectDialog ref={ref} items={suppliers.slice(0, 4)} multiSelect rememberSelections onCancel={onCancel} confirmButtonText="Choose" />);
     act(() => ref.current!.open());
@@ -213,7 +217,7 @@ describe('SelectDialog', () => {
 
 describe('TableSelectDialog', () => {
   it('UE-70 renders columns and ColumnListItem rows; multi-select, merged duplicates, pop-in, column footer', async () => {
-    const ref = createRef<TableSelectDialogRef>();
+    const ref = createRef<TableSelectDialog>();
     const onConfirm = vi.fn();
     const items = [
       { key: 'P1', cells: ['Laptop', 'IT', '1,200 EUR'] },
@@ -256,7 +260,7 @@ const vsdProps = {
 
 describe('ViewSettingsDialog', () => {
   it('UE-71 sort and group pages behind a segmented button; confirm reports the choices', async () => {
-    const ref = createRef<ViewSettingsDialogRef>();
+    const ref = createRef<ViewSettingsDialog>();
     const onConfirm = vi.fn();
     r(<ViewSettingsDialog ref={ref} {...vsdProps} onConfirm={onConfirm} />);
     expect(ref.current).not.toHaveProperty('close');
@@ -275,7 +279,7 @@ describe('ViewSettingsDialog', () => {
   });
 
   it('UE-72 filter page: detail page with checkboxes and search, filterString and filterCompoundKeys', async () => {
-    const ref = createRef<ViewSettingsDialogRef>();
+    const ref = createRef<ViewSettingsDialog>();
     const onConfirm = vi.fn();
     const onFilterDetailPageOpened = vi.fn();
     r(<ViewSettingsDialog ref={ref} {...vsdProps} onConfirm={onConfirm} onFilterDetailPageOpened={onFilterDetailPageOpened} filterSearchOperator="Contains" />);
@@ -299,7 +303,7 @@ describe('ViewSettingsDialog', () => {
   });
 
   it('UE-73 preset filters, reset, clearFilters(), custom tabs and a preventable beforeClose', async () => {
-    const ref = createRef<ViewSettingsDialogRef>();
+    const ref = createRef<ViewSettingsDialog>();
     const onConfirm = vi.fn();
     const onReset = vi.fn();
     const onResetFilters = vi.fn();
@@ -362,7 +366,7 @@ describe('Wizard', () => {
   });
 
   it('UE-75 ref methods: nextStep, goToStep, previousStep, discardProgress, validate / invalidate, getProgress*', () => {
-    const ref = createRef<WizardRef>();
+    const ref = createRef<Wizard>();
     const onNavigationChange = vi.fn();
     r(<SupplierWizard wizard={{ ref, onNavigationChange }} />);
     act(() => ref.current!.nextStep());
@@ -387,7 +391,7 @@ describe('Wizard', () => {
   });
 
   it('UE-76 branching with nextStep / subsequentSteps; Page mode shows one step; width, height, title level', () => {
-    const ref = createRef<WizardRef>();
+    const ref = createRef<Wizard>();
     function Branching() {
       const [kind, setKind] = useState<string | undefined>();
       return (
@@ -503,7 +507,7 @@ describe('IconTabBar', () => {
     expect(screen.getAllByRole('tab').map((t) => t.textContent)[1]).toBe('120All');
     // Chinese texts through the provider; the key sets of both languages match.
     expect(Object.keys(dialogsZh).sort()).toEqual(Object.keys(dialogsEn).sort());
-    const ref = createRef<WizardRef>();
+    const ref = createRef<Wizard>();
     render(<MantineProvider env="test"><SmartKitProvider services={{}} locale="zh"><SupplierWizard wizard={{ ref }} /></SmartKitProvider></MantineProvider>);
     expect(screen.getByRole('navigation', { name: '向导进度' })).toHaveTextContent('第 1 步，共 3 步');
     expect(screen.getByRole('button', { name: '第 2 步' })).toBeInTheDocument();

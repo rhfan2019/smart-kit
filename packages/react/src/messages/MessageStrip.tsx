@@ -6,12 +6,12 @@ import { toneOf, type MessageType } from '../controls/types';
 import { MessageTypeIcon } from './MessageTypeIcon';
 import { TEXTS } from './texts';
 
-export interface MessageStripRef {
+export interface MessageStrip {
   /** Closes the strip (sap.m.MessageStrip#close); fires onClose. */
   close(): void;
 }
 
-export interface MessageStripProps {
+export interface $MessageStripSettings {
   text?: string;
   /** UI5 default 'Information'. */
   type?: MessageType;
@@ -34,10 +34,10 @@ export interface MessageStripProps {
   /** Extension: rich content instead of `text`. */
   children?: ReactNode;
   onClose?: () => void;
-  ref?: Ref<MessageStripRef>;
+  ref?: Ref<MessageStrip>;
 }
 
-export function MessageStrip(p: MessageStripProps) {
+export function MessageStrip(p: $MessageStripSettings) {
   const t = useControlText(TEXTS);
   const [closed, setClosed] = useState(false);
   // 'None' is shown as Information (sap.m.MessageStrip)

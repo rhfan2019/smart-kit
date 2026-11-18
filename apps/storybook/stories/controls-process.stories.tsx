@@ -1,11 +1,19 @@
 /** Process and collaboration controls (docs/26 §3.6, §3.7, ADR-032): ProcessFlow, MicroProcessFlow, Timeline, FeedInput, FeedListItem. */
 import { MantineProvider } from '@mantine/core';
 import { smartKitCssVariablesResolver, smartKitMantineTheme, SmartKitProvider } from '@rhfan2019/smart-kit';
-import {
-  ActionsPlaceholder, FeedInput, FeedListItem, MicroProcessFlow, MicroProcessFlowItem, ProcessFlow, RESTRICTED_FILE_NAME_CHARACTERS, Timeline, TimelineItem,
-  UploaderHttpRequestMethod, UploaderTableItem, UploadSetwithTable, UploadSetwithTableActionPlaceHolder, UploadState,
-  type ProcessFlowLaneHeader, type ProcessFlowNode, type ProcessFlowRef, type UploadItem, type UploadSetwithTableRef,
-} from '@rhfan2019/smart-kit/controls';
+import ActionsPlaceholder from '@rhfan2019/smart-kit/m/upload/ActionsPlaceholder';
+import FeedInput from '@rhfan2019/smart-kit/m/FeedInput';
+import FeedListItem from '@rhfan2019/smart-kit/m/FeedListItem';
+import MicroProcessFlow from '@rhfan2019/smart-kit/suite/ui/commons/MicroProcessFlow';
+import MicroProcessFlowItem from '@rhfan2019/smart-kit/suite/ui/commons/MicroProcessFlowItem';
+import ProcessFlow, { type ProcessFlowLaneHeader, type ProcessFlowNode } from '@rhfan2019/smart-kit/suite/ui/commons/ProcessFlow';
+import { RESTRICTED_FILE_NAME_CHARACTERS } from '@rhfan2019/smart-kit/util';
+import Timeline from '@rhfan2019/smart-kit/suite/ui/commons/Timeline';
+import TimelineItem from '@rhfan2019/smart-kit/suite/ui/commons/TimelineItem';
+import UploaderHttpRequestMethod from '@rhfan2019/smart-kit/m/upload/UploaderHttpRequestMethod';
+import UploaderTableItem from '@rhfan2019/smart-kit/m/upload/UploaderTableItem';
+import UploadSetwithTable, { type UploadItem } from '@rhfan2019/smart-kit/m/plugins/UploadSetwithTable';
+import { UploadSetwithTableActionPlaceHolder, UploadState } from '@rhfan2019/smart-kit/m/library';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { ClipboardList, FileText, PackageCheck, Receipt } from 'lucide-react';
 import { useRef, useState, type ReactNode } from 'react';
@@ -41,7 +49,7 @@ const nodes: ProcessFlowNode[] = [
 ];
 
 function ProcessFlowDemo() {
-  const ref = useRef<ProcessFlowRef>(null);
+  const ref = useRef<ProcessFlow>(null);
   return (
     <>
       <div style={{ display: 'flex', gap: 8 }}>
@@ -118,7 +126,7 @@ const attachments: UploadItem[] = [
 ];
 
 function UploadDemo() {
-  const ref = useRef<UploadSetwithTableRef>(null);
+  const ref = useRef<UploadSetwithTable>(null);
   const [items, setItems] = useState(attachments);
   return (
     <UploadSetwithTable ref={ref} title="Invoice attachments" items={items} multiple maxFileSize={10} fileTypes={['pdf', 'png', 'jpg', 'xlsx']}

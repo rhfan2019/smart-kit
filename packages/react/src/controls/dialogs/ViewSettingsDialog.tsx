@@ -61,7 +61,7 @@ export interface ViewSettingsDialogConfirmEvent {
   filterString: string;
 }
 
-export interface ViewSettingsDialogProps {
+export interface $ViewSettingsDialogSettings {
   /** ('View Settings') */
   title?: string;
   sortItems?: ViewSettingsItem[];
@@ -95,10 +95,10 @@ export interface ViewSettingsDialogProps {
   onFilterDetailPageOpened?(e: { parentFilterItem: ViewSettingsFilterItem }): void;
   /** Fired before the dialog closes (OK, Cancel, Escape); `preventDefault()` keeps it open. */
   onBeforeClose?(e: PreventableEvent<object>): void;
-  ref?: Ref<ViewSettingsDialogRef>;
+  ref?: Ref<ViewSettingsDialog>;
 }
 
-export interface ViewSettingsDialogRef {
+export interface ViewSettingsDialog {
   /** Opens the dialog on a page (default: the first page that has items). */
   open(pageId?: ViewSettingsDialogPage): void;
   /** Deselects all filters and the preset filter. */
@@ -136,7 +136,7 @@ export function viewSettingsFilterString(filterItems: ViewSettingsFilterItem[], 
   return parts.length ? t('ctl.vsd.filteredBy', { filters: parts.join(', ') }) : '';
 }
 
-function initial(p: ViewSettingsDialogProps): Settings {
+function initial(p: $ViewSettingsDialogSettings): Settings {
   return {
     sort: p.selectedSortItem ?? p.sortItems?.find((i) => i.selected)?.key,
     sortDescending: p.sortDescending ?? false,
@@ -147,9 +147,9 @@ function initial(p: ViewSettingsDialogProps): Settings {
   };
 }
 
-const emptyFilters = (p: ViewSettingsDialogProps) => Object.fromEntries((p.filterItems ?? []).map((f) => [f.key, [] as string[]]));
+const emptyFilters = (p: $ViewSettingsDialogSettings) => Object.fromEntries((p.filterItems ?? []).map((f) => [f.key, [] as string[]]));
 
-export function ViewSettingsDialog(p: ViewSettingsDialogProps) {
+export function ViewSettingsDialog(p: $ViewSettingsDialogSettings) {
   const t = useControlText(TEXTS);
   const custom = p.customTabs ?? [];
   const pages: ViewSettingsDialogPage[] = [

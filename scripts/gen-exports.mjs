@@ -6,7 +6,8 @@
 // The base subpaths (context, i18n, theme, util) and the not yet aligned subpaths stay as they are.
 //
 //   node scripts/gen-exports.mjs           rewrite package.json
-//   node scripts/gen-exports.mjs --check   exit 1 when package.json is out of date
+//   node scripts/gen-exports.mjs --check   exit 1 when package.json (or the module list in docs/api.md) is out of date
+// It also rewrites the module list in docs/api.md between <!-- ui5-modules:start --> and <!-- ui5-modules:end -->.
 import fs from 'node:fs';
 import path from 'node:path';
 
@@ -41,14 +42,36 @@ export function generate(pkg) {
   return { ...pkg, exports: Object.fromEntries([...rest, ...modules, ...css]) };
 }
 
+const API_MD = path.join(ROOT, 'docs/api.md');
+const MAPPING = path.join(ROOT, 'tools/ui5-alignment/mapping.json');
+
+/** The module table of docs/api.md: one row per module file, with its UI5 counterpart from mapping.json. */
+export function apiModuleTable() {
+  const mapping = JSON.parse(fs.readFileSync(MAPPING, 'utf8')).entries;
+  const rows = moduleFiles().map((file) => {
+    const mod = file.replace(/\.tsx?$/, '');
+    const entries = mapping.filter((e) => e.module === mod);
+    const ui5 = entries.map((e) => (e.ui5 === 'none' ? '无（' + e.reason + '）' : e.ui5.replace(/^manifest:/, 'manifest ') + (e.export === 'default' ? '' : ` → \`${e.export}\``))).join('；') || '—';
+    return `| \`@rhfan2019/smart-kit/${mod}\` | ${ui5} |`;
+  });
+  return ['| 模块 | 对应的 SAPUI5（`tools/ui5-alignment/mapping.json`） |', '| --- | --- |', ...rows].join('\n');
+}
+
+function withTable(md) {
+  return md.replace(/(<!-- ui5-modules:start -->\n)[\s\S]*?(\n?<!-- ui5-modules:end -->)/, `$1${apiModuleTable()}\n<!-- ui5-modules:end -->`);
+}
+
 if (import.meta.url === `file://${process.argv[1]}`) {
   const raw = fs.readFileSync(PKG, 'utf8');
   const next = JSON.stringify(generate(JSON.parse(raw)), null, 2) + '\n';
+  const md = fs.readFileSync(API_MD, 'utf8');
+  const nextMd = withTable(md);
   if (process.argv.includes('--check')) {
-    if (next !== raw) { console.error('packages/react/package.json exports are out of date: run node scripts/gen-exports.mjs'); process.exit(1); }
+    if (next !== raw || nextMd !== md) { console.error('packages/react/package.json exports or docs/api.md modules are out of date: run node scripts/gen-exports.mjs'); process.exit(1); }
     console.log('gen-exports: up to date');
   } else {
     fs.writeFileSync(PKG, next);
+    fs.writeFileSync(API_MD, nextMd);
     console.log(`gen-exports: ${moduleFiles().length} modules`);
   }
 }

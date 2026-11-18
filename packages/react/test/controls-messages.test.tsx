@@ -4,10 +4,17 @@ import { createMessage } from '@rhfan2019/smart-kit-core';
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { useRef, type ReactNode } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import {
-  MessageBox, MessageButton, MessageHost, MessageItem, MessagePopover, MessageProvider, MessageStrip, MessageToast, MessageView,
-  SmartKitProvider, smartKitMantineTheme, useMessages, type MessagePopoverRef, type MessageStripRef, type MessageViewRef,
-} from '../src';
+import { SmartKitProvider, smartKitMantineTheme } from '../src';
+import MessageBox from '@rhfan2019/smart-kit/m/MessageBox';
+import MessageButton from '@rhfan2019/smart-kit/v4/fe/macros/MessageButton';
+import MessageHost from '@rhfan2019/smart-kit/kit/MessageHost';
+import MessageItem from '@rhfan2019/smart-kit/m/MessageItem';
+import MessagePopover from '@rhfan2019/smart-kit/m/MessagePopover';
+import MessageProvider from '@rhfan2019/smart-kit/kit/MessageProvider';
+import MessageStrip from '@rhfan2019/smart-kit/m/MessageStrip';
+import MessageToast from '@rhfan2019/smart-kit/m/MessageToast';
+import MessageView from '@rhfan2019/smart-kit/m/MessageView';
+import useMessages from '@rhfan2019/smart-kit/kit/useMessages';
 import { messageStore } from '../src/messages/messageStore';
 
 const wrap = (children: ReactNode, locale?: 'en' | 'zh') => (
@@ -133,7 +140,7 @@ describe('MessageBox (sap.m.MessageBox, defaults from the 1.154 source)', () => 
 describe('MessageStrip (sap.m.MessageStrip)', () => {
   it('UE-09 type and icon; None is shown as Information; the close button and close() fire onClose', () => {
     const onClose = vi.fn();
-    const ref = { current: null as MessageStripRef | null };
+    const ref = { current: null as MessageStrip | null };
     const { rerender } = view(<MessageStrip text="Draft saved" type="Success" showIcon showCloseButton onClose={onClose} />);
     const strip = screen.getByRole('note', { name: 'Success' });
     expect(strip).toHaveClass('sk-message-strip--positive');
@@ -182,7 +189,7 @@ describe('MessageView / MessageItem (sap.m.MessageView)', () => {
 
   it('UE-12 an item with a description opens the details page (itemSelect); navigateBack() and the back button return', () => {
     const onItemSelect = vi.fn();
-    const ref = { current: null as MessageViewRef | null };
+    const ref = { current: null as MessageView | null };
     view(<MessageView ref={(r) => { ref.current = r; }} onItemSelect={onItemSelect}>{items}</MessageView>);
     expect(screen.getByText('Supplier blocked').closest('[role="button"]')).toBeNull();
     fireEvent.click(screen.getByText('Net price missing'));
@@ -225,7 +232,7 @@ describe('MessageView / MessageItem (sap.m.MessageView)', () => {
 
 describe('MessagePopover (sap.m.MessagePopover)', () => {
   function Harness(p: { events: Record<string, ReturnType<typeof vi.fn>>; initiallyExpanded?: boolean }) {
-    const ref = useRef<MessagePopoverRef>(null);
+    const ref = useRef<MessagePopover>(null);
     return (
       <>
         <button type="button" onClick={(e) => ref.current!.toggle(e.currentTarget)}>Open</button>

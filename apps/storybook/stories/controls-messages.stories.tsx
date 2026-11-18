@@ -1,10 +1,16 @@
 /** Message controls (docs/26 §3.1, ADR-032): MessageToast, MessageBox, MessageStrip, MessageView, MessagePopover. */
 import { Button, Group, MantineProvider } from '@mantine/core';
 import { smartKitCssVariablesResolver, smartKitMantineTheme, SmartKitProvider } from '@rhfan2019/smart-kit';
-import { MessageType, ValueState } from '@rhfan2019/smart-kit/controls';
-import {
-  MessageBox, MessageHost, MessageItem, MessagePopover, MessageStrip, MessageToast, MessageView, VerticalPlacementType, type MessagePopoverRef,
-} from '@rhfan2019/smart-kit/messages';
+import MessageType from '@rhfan2019/smart-kit/ui/core/message/MessageType';
+import { ValueState } from '@rhfan2019/smart-kit/ui/core/library';
+import MessageBox from '@rhfan2019/smart-kit/m/MessageBox';
+import MessageHost from '@rhfan2019/smart-kit/kit/MessageHost';
+import MessageItem from '@rhfan2019/smart-kit/m/MessageItem';
+import MessagePopover from '@rhfan2019/smart-kit/m/MessagePopover';
+import MessageStrip from '@rhfan2019/smart-kit/m/MessageStrip';
+import MessageToast from '@rhfan2019/smart-kit/m/MessageToast';
+import MessageView from '@rhfan2019/smart-kit/m/MessageView';
+import { VerticalPlacementType } from '@rhfan2019/smart-kit/m/library';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useRef, type ReactNode } from 'react';
 
@@ -71,7 +77,7 @@ export const Strip: Story = {
 export const View: Story = { render: () => <MessageView groupItems>{items}</MessageView> };
 
 function PopoverDemo() {
-  const ref = useRef<MessagePopoverRef>(null);
+  const ref = useRef<MessagePopover>(null);
   return (
     <div>
       <Button variant="subtle" color="red" onClick={(e) => ref.current?.toggle(e.currentTarget)}>5 messages</Button>

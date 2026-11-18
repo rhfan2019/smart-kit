@@ -10,7 +10,7 @@ import { TEXTS } from './texts';
 export type ExpandableTextOverflowMode = 'InPlace' | 'Popover';
 export const ExpandableTextOverflowMode = { InPlace: 'InPlace', Popover: 'Popover' } as const;
 
-export interface ExpandableTextProps extends HTMLAttributes<HTMLDivElement> {
+export interface $ExpandableTextSettings extends HTMLAttributes<HTMLDivElement> {
   /** The text. */
   text?: string;
   /** sap.m.WrappingType: Normal or Hyphenated (default Normal). */
@@ -32,7 +32,7 @@ export interface ExpandableTextProps extends HTMLAttributes<HTMLDivElement> {
 export function ExpandableText({
   text = '', wrappingType = 'Normal', textAlign = 'Begin', renderWhitespace = false, overflowMode = 'InPlace', maxCharacters = 100, expanded: expandedProp = false,
   emptyIndicatorMode = 'Off', className, style, ...rest
-}: ExpandableTextProps) {
+}: $ExpandableTextSettings) {
   const t = useControlText(TEXTS);
   const [expanded, setExpanded] = useState(expandedProp);
   const [popover, setPopover] = useState(false);
