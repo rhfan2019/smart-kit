@@ -1,16 +1,24 @@
 name: CI
 
+# Jobs run in parallel (D31): static checks, unit tests and builds in one job; the end-to-end suites in shards, each
+# shard with its own test services; the traceability check merges the shard reports at the end.
+# Version commits of the release ("chore: version packages", its pull request and its merge) only change versions
+# and changelogs: they skip the end-to-end jobs (the same code was tested when it was pushed).
 on:
   push:
     branches: [main]
   pull_request:
 
+concurrency:
+  group: ci-${{ github.ref }}
+  # a new push to a pull request replaces the running check; on main every commit is checked
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   checks:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
-    # PostgreSQL for the purchasing service of apps/pg-server (smart-kit-server, ADR-027): conformance and CLI tests,
-    # and the end-to-end tests against it.
+    timeout-minutes: 30
+    # PostgreSQL for the purchasing service of apps/pg-server (smart-kit-server, ADR-027): conformance and CLI tests.
     services:
       postgres:
         image: postgres:17
@@ -57,19 +65,116 @@ jobs:
         run: npm run verify:pack
       - name: Storybook build
         run: npm run build-storybook
+      # the traceability job reads the unit results
+      - uses: actions/upload-artifact@v4
+        with:
+          name: unit-results
+          path: reports/unit-results.json
+          retention-days: 3
+
+  e2e:
+    name: e2e (${{ matrix.shard }}/3)
+    if: ${{ github.head_ref != 'changeset-release/main' && !startsWith(github.event.head_commit.message, 'chore: version packages') && !contains(github.event.head_commit.message, '/changeset-release/main') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
       - name: Install Playwright browser
         run: npx playwright install --with-deps chromium
       - name: End-to-end tests (axe, screenshots, performance)
-        run: npm run e2e
-      - name: End-to-end tests against PostgreSQL (smart-kit-server)
-        run: npm run e2e:pg
-      # needs the unit and end-to-end results (reports/*.json), so it runs after both
-      - name: Traceability
-        run: npm run trace -- --strict
+        run: npx playwright test --shard=${{ matrix.shard }}/3
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: blob-report-${{ matrix.shard }}
+          path: blob-report
+          retention-days: 3
       - uses: actions/upload-artifact@v4
         if: failure()
         with:
-          name: playwright-report
+          name: playwright-report-${{ matrix.shard }}
           path: |
             test-results/
             tests/e2e/__screenshots__/linux/
+
+  e2e-pg:
+    name: e2e PostgreSQL (${{ matrix.shard }}/2)
+    if: ${{ github.head_ref != 'changeset-release/main' && !startsWith(github.event.head_commit.message, 'chore: version packages') && !contains(github.event.head_commit.message, '/changeset-release/main') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2]
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      SMART_KIT_PG_ADMIN_URL: postgresql://postgres:postgres@localhost:5432/postgres
+      SMART_KIT_DB_PASSWORD: smart_kit_ci
+      SMART_KIT_DATABASE_URL: postgresql://smart_kit_app:smart_kit_ci@localhost:5432/smart_kit_purchasing
+      SMART_KIT_REQUIRE_PG: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: PostgreSQL test database (roles, database, tables, data)
+        run: npm run pg:setup
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+      - name: End-to-end tests against PostgreSQL (smart-kit-server)
+        run: npx playwright test -c playwright.pg.config.ts --shard=${{ matrix.shard }}/2
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-pg-report-${{ matrix.shard }}
+          path: test-results/
+
+  # needs the unit and end-to-end results (docs/13: every criterion maps to a passing test)
+  traceability:
+    needs: [checks, e2e]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - uses: actions/download-artifact@v4
+        with:
+          name: unit-results
+          path: reports
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: blob-report-*
+          path: all-blob-reports
+          merge-multiple: true
+      - name: Merge the shard reports
+        run: npx playwright merge-reports --reporter json all-blob-reports
+        env:
+          PLAYWRIGHT_JSON_OUTPUT_FILE: reports/e2e-results.json
+      - name: Traceability
+        run: npm run trace -- --strict
