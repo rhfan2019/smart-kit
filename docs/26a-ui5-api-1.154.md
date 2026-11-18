@@ -1,6 +1,8 @@
 # 26a SAPUI5 1.154 的控件 API（核实用）
 
-> 2026-11-17 从 SAPUI5 1.154.0 的官方 API 描述文件生成（`https://ui5.sap.com/1.154.0/test-resources/<库>/designtime/api.json`，库：sap.m、sap.ui.core、sap.ui.unified、sap.suite.ui.commons、sap.ui.comp、sap.ui.table）。只列公开、未废弃的属性（名字:类型=默认值）、聚合、事件（参数）、非 get/set 方法；枚举只列值，标 (dep) 的已废弃。默认值有疑问时以源码（`resources/<库>/<控件>-dbg.js`）为准，见 `26` 第 6 节。
+> 2026-11-17 从 SAPUI5 1.154.0 的官方 API 描述文件生成（`https://ui5.sap.com/1.154.0/test-resources/<库>/designtime/api.json`，库：sap.m、sap.ui.core、sap.ui.unified、sap.suite.ui.commons、sap.suite.ui.microchart（阶段 6 补，九个微图表控件及其元素和枚举，不含 Interactive*Chart）、sap.ui.comp、sap.ui.table；阶段 6 还补了 sap.m.p13n（Popup 和面板）、sap.m.QuickView 一族、sap.m.Table 和 sap.f / sap.uxap 的 AccessibleLandmarkInfo，见文末）。只列公开、未废弃的属性（名字:类型=默认值）、聚合、事件（参数）、非 get/set 方法；枚举只列值，标 (dep) 的已废弃。默认值有疑问时以源码（`resources/<库>/<控件>-dbg.js`）为准，见 `26` 第 6 节。
+>
+> 阶段 6 实现的成员（之前登记为偏差，`check:ui5` 已无未登记项）：sap.m.Button / ToggleButton / OverflowToolbarButton 的徽标（BadgeEnabler，0 不显示）；ExpandableText `hasLabelableHTMLElement`；sap.ui.unified.Currency `getFormattedValue`、`getCurrencySymbol`；sap.f.Card `getGridItemRole`；ProcessFlow `getNode`、`getLane`、`setFocusToLabel`；Timeline 的过滤和分组方法；ViewSettingsDialog 的过滤方法；DynamicDateRange 的方法和 DynamicDateOption `getGroup`；UploadSetwithTable `getDefaultFileUploader`；FeedListItem 按 FormattedText 渲染、`disableStyleAttribute`；sap.m.Table 的 `showUnread`、`modeAnimationOn`、`growingDirection`、`keyboardMode`、`itemActionCount` / `itemActionPress`、`contextMenu` / `beforeOpenContextMenu`、`swipeContent` / `swipeDirection` / `swipe`、`getSwipedItem`、`swipeOut`；DynamicPage、ObjectPageLayout、FlexibleColumnLayout 的 `landmarkInfo`，FCL 的 `autoFocus`、`columnsDistributionChange`；sap.m.p13n、sap.m.QuickView 一族和九个微图表（文末）。还没做的见 `tools/ui5-alignment/deviations.json`（如 UploadSetwithTable 的 `cloudFilePicker*`，D42）。
 
 ```text
 ### sap.m.MessageToast (namespace) extends 
@@ -454,4 +456,179 @@
   fields: mode ('include' | 'exclude' | 'override'), characters (default restricted set: \:/*?"<>|[]{}@#$)
 ### sap.m.plugins.UploadSetwithTable.ItemInfo (typedef, argument of itemValidationHandler)
   fields: oItem (UploadItem), iTotalItemsForUpload, oSource
+# sap.suite.ui.microchart (stage 6: smart-kit suite/ui/microchart/*; size is sap.m.Size: XS, S, M, L, Responsive, Auto)
+### sap.suite.ui.microchart.AreaMicroChart (class) extends sap.ui.core.Control
+  props: size:sap.m.Size="Auto"; width:core.CSSSize=null; height:core.CSSSize=null; maxXValue:float=null; minXValue:float=null; maxYValue:float=null; minYValue:float=null; view:sap.suite.ui.microchart.AreaMicroChartViewType="Normal"; colorPalette:string[]=[]; showLabel:boolean=true; hideOnNoData:boolean=false
+  aggs: chart:sap.suite.ui.microchart.AreaMicroChartItem[0..1]; maxThreshold:sap.suite.ui.microchart.AreaMicroChartItem[0..1]; innerMaxThreshold:sap.suite.ui.microchart.AreaMicroChartItem[0..1]; innerMinThreshold:sap.suite.ui.microchart.AreaMicroChartItem[0..1]; minThreshold:sap.suite.ui.microchart.AreaMicroChartItem[0..1]; target:sap.suite.ui.microchart.AreaMicroChartItem[0..1]; firstXLabel:sap.suite.ui.microchart.AreaMicroChartLabel[0..1]; firstYLabel:sap.suite.ui.microchart.AreaMicroChartLabel[0..1]; lastXLabel:sap.suite.ui.microchart.AreaMicroChartLabel[0..1]; lastYLabel:sap.suite.ui.microchart.AreaMicroChartLabel[0..1]; maxLabel:sap.suite.ui.microchart.AreaMicroChartLabel[0..1]; minLabel:sap.suite.ui.microchart.AreaMicroChartLabel[0..1]; lines:sap.suite.ui.microchart.AreaMicroChartItem[0..n]
+  defaultAgg: lines
+  event press: oEvent:object
+### sap.suite.ui.microchart.AreaMicroChartItem (class) extends sap.ui.core.Element
+  props: color:sap.suite.ui.microchart.MicroChartColorType|sap.m.ValueCSSColor="sap.suite.ui.microchart.MicroChartColorType.Neutral"; title:string=null
+  aggs: points:sap.suite.ui.microchart.AreaMicroChartPoint[0..n]
+  defaultAgg: points
+### sap.suite.ui.microchart.AreaMicroChartLabel (class) extends sap.ui.core.Element
+  props: color:sap.suite.ui.microchart.MicroChartColorType|sap.m.ValueCSSColor="sap.suite.ui.microchart.MicroChartColorType.Neutral"; label:string=""
+### sap.suite.ui.microchart.AreaMicroChartPoint (class) extends sap.ui.core.Element
+  props: x:float=null; y:float=null
+  methods: getXValue(), getYValue()
+### sap.suite.ui.microchart.AreaMicroChartViewType (enum) extends 
+  values: Normal, Wide
+### sap.suite.ui.microchart.BulletMicroChart (class) extends sap.ui.core.Control
+  props: size:sap.m.Size="Auto"; mode:sap.suite.ui.microchart.BulletMicroChartModeType="Actual"; scale:string=""; forecastValue:float=null; targetValue:float=null; minValue:float=null; maxValue:float=null; showActualValue:boolean=true; showDeltaValue:boolean=true; showActualValueInDeltaMode:boolean=false; showTargetValue:boolean=true; showValueMarker:boolean=false; showThresholds:boolean=true; actualValueLabel:string=""; deltaValueLabel:string=""; targetValueLabel:string=""; width:core.CSSSize=null; height:core.CSSSize=null; scaleColor:sap.suite.ui.microchart.CommonBackgroundType="MediumLight"; hideOnNoData:boolean=false; smallRangeAllowed:boolean=false
+  aggs: actual:sap.suite.ui.microchart.BulletMicroChartData[0..1]; thresholds:sap.suite.ui.microchart.BulletMicroChartData[0..n]
+  defaultAgg: actual
+  event press: oEvent:object
+### sap.suite.ui.microchart.BulletMicroChartData (class) extends sap.ui.core.Element
+  props: value:float="0"; color:sap.m.ValueColor="Neutral"
+### sap.suite.ui.microchart.BulletMicroChartModeType (enum) extends 
+  values: Actual, Delta
+### sap.suite.ui.microchart.ColumnMicroChart (class) extends sap.ui.core.Control
+  props: size:sap.m.Size="Auto"; width:core.CSSSize=null; height:core.CSSSize=null; showTopLabels:boolean=true; showBottomLabels:boolean=true; allowColumnLabels:boolean=false; hideOnNoData:boolean=false
+  aggs: columns:sap.suite.ui.microchart.ColumnMicroChartData[0..n]; leftTopLabel:sap.suite.ui.microchart.ColumnMicroChartLabel[0..1]; rightTopLabel:sap.suite.ui.microchart.ColumnMicroChartLabel[0..1]; leftBottomLabel:sap.suite.ui.microchart.ColumnMicroChartLabel[0..1]; rightBottomLabel:sap.suite.ui.microchart.ColumnMicroChartLabel[0..1]
+  defaultAgg: columns
+  event press: oEvent:object
+### sap.suite.ui.microchart.ColumnMicroChartData (class) extends sap.ui.core.Element
+  props: color:sap.suite.ui.microchart.MicroChartColorType|sap.m.ValueCSSColor="sap.suite.ui.microchart.MicroChartColorType.Neutral"; label:string=""; displayValue:string=null; value:float=null
+  event press: oEvent:object
+### sap.suite.ui.microchart.ColumnMicroChartLabel (class) extends sap.ui.core.Element
+  props: color:sap.suite.ui.microchart.MicroChartColorType|sap.m.ValueCSSColor="sap.suite.ui.microchart.MicroChartColorType.Neutral"; label:string=""
+### sap.suite.ui.microchart.CommonBackgroundType (enum) extends 
+  values: Dark, Darkest, ExtraDark, ExtraLight, Light, Lightest, Medium, MediumLight, Transparent
+### sap.suite.ui.microchart.ComparisonMicroChart (class) extends sap.ui.core.Control
+  props: size:sap.m.Size="Auto"; scale:string=""; minValue:float=null; maxValue:float=null; view:sap.suite.ui.microchart.ComparisonMicroChartViewType="Normal"; colorPalette:string[]=[]; shrinkable:boolean=false; width:core.CSSSize=null; height:core.CSSSize=null; hideOnNoData:boolean=false
+  aggs: data:sap.suite.ui.microchart.ComparisonMicroChartData[0..n]
+  defaultAgg: data
+  event press: oEvent:object
+### sap.suite.ui.microchart.ComparisonMicroChartData (class) extends sap.ui.core.Element
+  props: value:float="0"; color:sap.suite.ui.microchart.MicroChartColorType|sap.m.ValueCSSColor="sap.suite.ui.microchart.MicroChartColorType.Neutral"; title:string=""; displayValue:string=""
+  event press: oEvent:object
+### sap.suite.ui.microchart.ComparisonMicroChartViewType (enum) extends 
+  values: Normal, Responsive, Wide
+### sap.suite.ui.microchart.DeltaMicroChart (class) extends sap.ui.core.Control
+  props: value1:float=null; value2:float=null; title1:string=null; title2:string=null; displayValue1:string=null; displayValue2:string=null; deltaDisplayValue:string=null; color:string="sap.suite.ui.microchart.MicroChartColorType.Neutral"; view:sap.suite.ui.microchart.DeltaMicroChartViewType="Normal"; width:core.CSSSize=null; height:core.CSSSize=null; size:sap.m.Size="Auto"; hideOnNoData:boolean=false
+  event press: oEvent:object
+### sap.suite.ui.microchart.DeltaMicroChartViewType (enum) extends 
+  values: Normal, Responsive, Wide
+### sap.suite.ui.microchart.HarveyBallMicroChart (class) extends sap.ui.core.Control
+  props: total:float=null; totalLabel:string=null; totalScale:string=null; formattedLabel:boolean=false; showTotal:boolean=true; showFractions:boolean=true; size:sap.m.Size="Auto"; colorPalette:string[]=[]; width:core.CSSSize=null; height:core.CSSSize=null; alignContent:sap.suite.ui.microchart.HorizontalAlignmentType="Left"; hideOnNoData:boolean=false; xsWidth:boolean=false
+  aggs: items:sap.suite.ui.microchart.HarveyBallMicroChartItem[0..n]
+  defaultAgg: items
+  event press: oEvent:object
+### sap.suite.ui.microchart.HarveyBallMicroChartItem (class) extends sap.ui.core.Element
+  props: color:sap.suite.ui.microchart.MicroChartColorType|sap.m.ValueCSSColor="sap.suite.ui.microchart.MicroChartColorType.Neutral"; fraction:float=0; fractionLabel:string=null; fractionScale:string=null; formattedLabel:boolean=false
+### sap.suite.ui.microchart.HorizontalAlignmentType (enum) extends 
+  values: Center, Left, Right
+### sap.suite.ui.microchart.LineMicroChart (class) extends sap.ui.core.Control
+  props: size:sap.m.Size="Auto"; threshold:float=0; showThresholdLine:boolean=true; showThresholdValue:boolean=false; thresholdDisplayValue:string=null; minXValue:float=null; maxXValue:float=null; minYValue:float=null; maxYValue:float=null; leftTopLabel:string=null; rightTopLabel:string=null; leftBottomLabel:string=null; rightBottomLabel:string=null; showTopLabels:boolean=true; showBottomLabels:boolean=true; color:any="Neutral"; showPoints:boolean=false; width:core.CSSSize=null; height:core.CSSSize=null; hideOnNoData:boolean=false
+  aggs: points:sap.suite.ui.microchart.LineMicroChartPoint[0..n]; lines:sap.suite.ui.microchart.LineMicroChartLine[0..n]
+  defaultAgg: points
+  event press: oEvent:object
+### sap.suite.ui.microchart.LineMicroChartEmphasizedPoint (class) extends sap.suite.ui.microchart.LineMicroChartPoint
+  props: color:sap.suite.ui.microchart.MicroChartColorType|sap.m.ValueCSSColor="sap.suite.ui.microchart.MicroChartColorType.Neutral"; show:boolean=false
+### sap.suite.ui.microchart.LineMicroChartLine (class) extends sap.ui.core.Element
+  props: color:any=null; showPoints:boolean=null; type:sap.suite.ui.microchart.LineType="Solid"
+  aggs: points:sap.suite.ui.microchart.LineMicroChartPoint[0..n]
+  defaultAgg: points
+### sap.suite.ui.microchart.LineMicroChartPoint (class) extends sap.ui.core.Element
+  props: x:float=0; y:float=0
+### sap.suite.ui.microchart.LineType (enum) extends 
+  values: Dashed, Dotted, Solid
+### sap.suite.ui.microchart.MicroChartColorType (enum) extends 
+  values: Critical, Error, Good, Neutral, None, Sequence1, Sequence10, Sequence11, Sequence12, Sequence2, Sequence3, Sequence4, Sequence5, Sequence6, Sequence7, Sequence8, Sequence9
+### sap.suite.ui.microchart.RadialMicroChart (class) extends sap.ui.core.Control
+  props: total:float=null; fraction:float=null; percentage:float=null; valueColor:sap.suite.ui.microchart.MicroChartColorType|sap.m.ValueCSSColor="sap.suite.ui.microchart.MicroChartColorType.Neutral"; size:sap.m.Size="Auto"; width:core.CSSSize=null; height:core.CSSSize=null; alignContent:sap.suite.ui.microchart.HorizontalAlignmentType="Left"; hideOnNoData:boolean=false
+  event press: oEvent:object
+### sap.suite.ui.microchart.StackedBarMicroChart (class) extends sap.ui.core.Control
+  props: size:sap.m.Size="Auto"; maxValue:float=null; precision:int=1; displayZeroValue:boolean=true; width:core.CSSSize=null; height:core.CSSSize=null; showLabels:boolean=true; hideOnNoData:boolean=false
+  aggs: bars:sap.suite.ui.microchart.StackedBarMicroChartBar[0..n]
+  defaultAgg: bars
+  event press: oEvent:object
+### sap.suite.ui.microchart.StackedBarMicroChartBar (class) extends sap.ui.core.Element
+  props: value:float="0"; valueColor:sap.suite.ui.microchart.MicroChartColorType|sap.m.ValueCSSColor=null; displayValue:string=null
+# stage 6: sap.m.p13n, sap.m.QuickView, sap.m.Table, landmark info (smart-kit m/p13n/Popup, SelectionPanel, SortPanel, GroupPanel; m/QuickView, QuickViewPage, QuickViewGroup, QuickViewGroupElement; m/Table; f/DynamicPageAccessibleLandmarkInfo, uxap/ObjectPageAccessibleLandmarkInfo, f/FlexibleColumnLayoutAccessibleLandmarkInfo; enums in m/library, ui/core/library)
+### sap.m.p13n.Popup (class) extends sap.ui.core.Control
+  props: title:string=null; mode:m.P13nPopupMode="Dialog"; warningText:string=null; reset:function=null
+  aggs: panels:m.p13n.IContent[0..n]; additionalButtons:m.Button[0..n]
+  event open: 
+  event close: reason:string
+  methods: isOpen(), open(oSource, mSettings)
+### sap.m.P13nPopupMode (enum) extends 
+  values: Dialog, ResponsivePopover
+### sap.m.p13n.BasePanel (class) extends sap.ui.core.Control
+  props: title:string=null; enableReorder:boolean=true
+  aggs: messageStrip:m.MessageStrip[0..1]
+  event change: reason:string, item:m.p13n.Item
+  methods: getItemByKey(sName), getP13nData(bOnlyActive), setP13nData(aP13nData)
+### sap.m.p13n.SelectionPanel (class) extends sap.m.p13n.BasePanel
+  props: title:string="...see text or source"; showHeader:boolean=false; enableCount:boolean=false; fieldColumn:string=""; activeColumn:string=""; itemFactory:function=null; multiSelectMode:m.MultiSelectMode="ClearAll"; enableReorder:boolean=true
+  aggs: messageStrip:m.MessageStrip[0..1]
+  event change: reason:string, item:m.p13n.Item
+  methods: setP13nData(aP13nData), getItemByKey(sName), getP13nData(bOnlyActive)
+### sap.m.p13n.SortPanel (class) extends sap.m.p13n.QueryPanel
+  props: title:string="...see text or source"; queryLimit:int=-1; enableReorder:boolean=true
+  aggs: messageStrip:m.MessageStrip[0..1]
+  event change: reason:string, item:m.p13n.Item
+  methods: static setP13nData(aP13nData), setP13nData(aP13nData), getItemByKey(sName), getP13nData(bOnlyActive)
+### sap.m.p13n.GroupPanel (class) extends sap.m.p13n.QueryPanel
+  props: title:string="...see text or source"; enableShowField:boolean=false; queryLimit:int=-1; enableReorder:boolean=true
+  aggs: messageStrip:m.MessageStrip[0..1]
+  event change: reason:string, item:m.p13n.Item
+  methods: static setP13nData(aP13nData), setP13nData(aP13nData), getItemByKey(sName), getP13nData(bOnlyActive)
+### sap.m.QuickView (class) extends sap.m.QuickViewBase
+  props: placement:m.PlacementType="Right"; width:core.CSSSize="320px"
+  aggs: pages:m.QuickViewPage[0..n]
+  defaultAgg: pages
+  event afterOpen: openBy:core.Control
+  event afterClose: openBy:core.Control, origin:m.Button
+  event beforeOpen: openBy:core.Control
+  event beforeClose: openBy:core.Control, origin:m.Button
+  event navigate: from:core.Control, fromId:string, to:core.Control, toId:string, firstTime:boolean, isTo:boolean, isBack:boolean, isBackToTop:boolean, isBackToPage:boolean, direction:string, navOrigin:core.Control
+  event afterNavigate: from:core.Control, fromId:string, to:core.Control, toId:string, firstTime:boolean, isTo:boolean, isBack:boolean, isBackToTop:boolean, isBackToPage:boolean, direction:string, isTopPage:boolean, navOrigin:core.Control
+  methods: close(), openBy(oControl), navigateBack()
+### sap.m.QuickViewPage (class) extends sap.ui.core.Control
+  props: pageId:string=""; header:string=""; title:string=""; titleUrl:string=""; description:string=""
+  aggs: groups:m.QuickViewGroup[0..n]; avatar:m.Avatar[0..1]
+  defaultAgg: groups
+### sap.m.QuickViewGroup (class) extends sap.ui.core.Element
+  props: visible:boolean=true; heading:string=""
+  aggs: elements:m.QuickViewGroupElement[0..n]
+  defaultAgg: elements
+### sap.m.QuickViewGroupElement (class) extends sap.ui.core.Element
+  props: visible:boolean=true; label:string=""; value:string=""; url:string=""; target:string="_blank"; type:m.QuickViewGroupElementType="text"; pageLinkId:string=""; emailSubject:string=""
+### sap.m.QuickViewGroupElementType (enum) extends 
+  values: email, link, mobile, pageLink, phone, text
+### sap.m.Table (class) extends sap.m.ListBase
+  props: backgroundDesign:m.BackgroundDesign="Translucent"; fixedLayout:any=true; showOverlay:boolean=false; alternateRowColors:boolean=false; popinLayout:m.PopinLayout="Block"; contextualWidth:string="Inherit"; autoPopinMode:boolean=false; hiddenInPopin:core.Priority[]=null; inset:boolean=false; headerText:string=null; headerLevel:core.TitleLevel="Auto"; footerText:string=null; mode:m.ListMode="None"; width:core.CSSSize="100%"; includeItemInSelection:boolean=false; showUnread:boolean=false; noDataText:string=null; showNoData:boolean=true; enableBusyIndicator:boolean=true; modeAnimationOn:boolean=true; showSeparators:m.ListSeparators="All"; swipeDirection:m.SwipeDirection="Both"; growing:boolean=false; growingThreshold:int=20; growingTriggerText:string=null; growingScrollToLoad:boolean=false; growingDirection:m.ListGrowingDirection="Downwards"; rememberSelections:boolean=true; keyboardMode:m.ListKeyboardMode="Navigation"; sticky:m.Sticky[]=null; multiSelectMode:m.MultiSelectMode="Default"; itemActionCount:int=-1
+  aggs: columns:m.Column[0..n]; items:m.ListItemBase[0..n]; swipeContent:core.Control[0..1]; headerToolbar:m.Toolbar[0..1]; infoToolbar:m.Toolbar[0..1]; contextMenu:core.IContextMenu[0..1]; noData:core.Control[0..1]
+  assocs: ariaLabelledBy:core.Control
+  defaultAgg: items
+  event beforeOpenContextMenu: listItem:m.ColumnListItem, column:m.Column
+  event paste: data:string[][]
+  event popinChanged: hasPopin:boolean, visibleInPopin:m.Column[], hiddenInPopin:m.Column[]
+  event selectionChange: listItem:m.ListItemBase, listItems:m.ListItemBase[], selected:boolean, selectAll:boolean
+  event delete: listItem:m.ListItemBase
+  event swipe: listItem:m.ListItemBase, swipeContent:core.Control, srcControl:core.Control, swipeDirection:m.SwipeDirection
+  event updateStarted: reason:string, actual:int, total:int
+  event updateFinished: reason:string, actual:int, total:int
+  event itemPress: listItem:m.ListItemBase, srcControl:core.Control
+  event itemActionPress: action:m.ListItemAction, listItem:m.ListItemBase
+  methods: getGrowingInfo(), getSelectedContexts(bAll), getSelectedItem(), getSelectedItems(), getSwipedItem(), removeSelections(bAll, bFireEvent), requestItems(iItems), scrollToIndex(iIndex), selectAll(bFireEvent), setSelectedItem(oListItem, bSelect, bFireEvent), setSelectedItemById(sId, bSelect), swipeOut(callback)
+### sap.m.ListKeyboardMode (enum) extends 
+  values: Edit, Navigation
+### sap.m.ListGrowingDirection (enum) extends 
+  values: Downwards, Upwards
+### sap.m.SwipeDirection (enum) extends 
+  values: BeginToEnd, Both, EndToBegin
+### sap.m.ListItemActionType (enum) extends 
+  values: Custom, Delete, Edit
+### sap.m.ListItemAction (class) extends sap.m.ListItemActionBase
+  props: type:m.ListItemActionType="Custom"; icon:core.URI=""; text:string=""; visible:boolean=true
+### sap.f.DynamicPageAccessibleLandmarkInfo (class) extends sap.ui.core.Element
+  props: rootRole:core.AccessibleLandmarkRole="None"; rootLabel:string=null; contentRole:core.AccessibleLandmarkRole="None"; contentLabel:string=null; headerRole:core.AccessibleLandmarkRole="None"; headerLabel:string=null; footerRole:core.AccessibleLandmarkRole="None"; footerLabel:string=null; headerContentLabel:string=null
+### sap.uxap.ObjectPageAccessibleLandmarkInfo (class) extends sap.ui.core.Element
+  props: rootRole:core.AccessibleLandmarkRole="Main"; rootLabel:string=null; contentRole:core.AccessibleLandmarkRole="None"; contentLabel:string=null; navigationRole:core.AccessibleLandmarkRole="Navigation"; navigationLabel:string=null; headerRole:core.AccessibleLandmarkRole="Banner"; headerLabel:string=null; footerRole:core.AccessibleLandmarkRole="Region"; footerLabel:string=null; headerContentLabel:string=null
+### sap.f.FlexibleColumnLayoutAccessibleLandmarkInfo (class) extends sap.ui.core.Element
+  props: firstColumnLabel:string=null; middleColumnLabel:string=null; lastColumnLabel:string=null; firstColumnBackArrowLabel:string=null; middleColumnForwardArrowLabel:string=null; middleColumnBackArrowLabel:string=null; lastColumnForwardArrowLabel:string=null
+### sap.ui.core.AccessibleLandmarkRole (enum) extends 
+  values: Banner, Complementary, ContentInfo, Form, Main, Navigation, None, Region, Search
 ```

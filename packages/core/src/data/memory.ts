@@ -149,8 +149,10 @@ export class MemoryProvider implements DataProvider {
 
     const typeOf = (p: string) => resolvePath(model.entityTypes, info.typeName, p).property?.edmType ?? 'Edm.String';
     const val = (r: Row, p: string) => this.value(info.entitySet, info.typeName, r, p);
-    if (req.filters) {
-      const f = req.filters;
+    // an expanded group of an analytical table: its conditions apply as well
+    const filtersOf = req.levelFilter ? { ...req.filters, ...Object.fromEntries(Object.entries(req.levelFilter).map(([k, v]) => [`$hidden:${k}`, v])) } : req.filters;
+    if (filtersOf) {
+      const f = filtersOf;
       rows = rows.filter((r) => Object.entries(f).every(([key, cs]) => {
         if (key === EDIT_STATE) return true;
         const p = hiddenFilterPath(key) ?? key;
@@ -233,6 +235,12 @@ export class MemoryProvider implements DataProvider {
       // analytical table (AL-10): grand total, number of leaves and the page of leaves of one concat() request
       const a = req.analytical;
       const leaves = groupRows(rows, { groupBy: a.groupBy, measures: a.measures });
+      if (a.groupLevel) {
+        const groups = groupRows(rows, { groupBy: a.groupLevel.groupBy, measures: a.groupLevel.measures });
+        const gskip = req.skip ?? 0;
+        const gt = a.grandTotal.length ? groupRows(rows, { groupBy: [], measures: a.grandTotal })[0] ?? {} : undefined;
+        return { rows: req.top === undefined ? groups.slice(gskip) : groups.slice(gskip, gskip + req.top), count: req.count ? groups.length : undefined, leafCount: leaves.length, ...(gt ? { grandTotal: gt } : {}) };
+      }
       const skip = req.skip ?? 0;
       const grandTotal = a.grandTotal.length ? groupRows(rows, { groupBy: [], measures: a.grandTotal })[0] ?? {} : undefined;
       return { rows: req.top === undefined ? leaves.slice(skip) : leaves.slice(skip, skip + req.top), count: req.count ? leaves.length : undefined, ...(grandTotal ? { grandTotal } : {}) };

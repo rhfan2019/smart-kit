@@ -86,8 +86,8 @@ from PostgreSQL.
 
 ## Subpaths
 
-Import from the domain's subpath so the bundle contains only what you use (an app with only `MicroChart` ships about
-5 KB gzip of smart-kit):
+Import from the domain's subpath so the bundle contains only what you use (an app with only one micro chart control,
+e.g. `suite/ui/microchart/BulletMicroChart`, ships about 3 KB gzip of smart-kit):
 
 `/context` · `/theme` · `/i18n` · `/util` · `/field` · `/filter` · `/variants` · `/table` (AG Grid) · `/chart` ·
 `/object` · `/page` · `/actions` · `/edit` · `/messages` · `/templates` (AG Grid) · `/cards` · `/styles.css`

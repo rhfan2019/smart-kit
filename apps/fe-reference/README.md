@@ -24,7 +24,7 @@ node apps/fe-reference/server.mjs              # http://localhost:4420
 | `http://localhost:4420/index.html?app=purchasing-chart` | `fe.ref.purchasingchart` (`webapp/purchasing-chart/`) | `/odata/purchasing/` |
 | `http://localhost:4420/index.html?app=purchasing-views` | `fe.ref.purchasingviews` (`webapp/purchasing-views/`) | `/odata/purchasing/` |
 | `http://localhost:4420/index.html?app=purchasing-analytical` | `fe.ref.purchasinganalytical` (`webapp/purchasing-analytical/`) | `/odata/purchasing/` |
-| `http://localhost:4420/index.html?app=purchasing-display` | `fe.ref.purchasingdisplay` (`webapp/purchasing-display/`) | `/odata/purchasing/` |
+| `http://localhost:4420/index.html?app=purchasing-display` | `fe.ref.purchasingdisplay` (`webapp/purchasing-display/`; also an object page of `PurchaseOrderItems` for `tests/e2e-fe/op6.spec.ts`) | `/odata/purchasing/` |
 | `http://localhost:4420/index.html?app=purchasing-params` | `fe.ref.purchasingparams` (`webapp/purchasing-params/`) | `/odata/purchasing/` |
 | `http://localhost:4420/index.html?app=purchasing-op` | `fe.ref.purchasingop` (`webapp/purchasing-op/`) | `/odata/purchasing-draft/` |
 

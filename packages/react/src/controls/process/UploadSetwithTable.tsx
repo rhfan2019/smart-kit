@@ -384,6 +384,12 @@ export interface UploadSetwithTable {
   uploadItemWithoutFile(promise: Promise<Partial<UploadItem> | undefined>): Promise<UploadItemInstance>;
   /** Lets the control follow the uploads of an UploaderTableItem instance (the `uploader` and the implicit one are registered already). */
   registerUploaderEvents(uploader: UploaderTableItem): void;
+  /**
+   * The default file uploader: the control's file `<input>` element (standing for the sap.ui.unified.FileUploader
+   * instance), with the control's accept, multiple and directory settings; `click()` opens the file dialog. Null before
+   * the control is rendered.
+   */
+  getDefaultFileUploader(): HTMLInputElement | null;
 }
 
 const UploadButtonContext = createContext<ReactNode>(null);
@@ -684,6 +690,7 @@ export function UploadSetwithTable(p: $UploadSetwithTableSettings) {
       return instance(ownRef.current.find((i) => i.id === item.id) ?? item);
     },
     registerUploaderEvents,
+    getDefaultFileUploader: () => input.current,
   };
   useImperativeHandle(p.ref, () => api);
   // a stable instance with the current methods (onActivated, findOn)

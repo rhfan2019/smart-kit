@@ -255,9 +255,11 @@
 | `@rhfan2019/smart-kit/base/i18n/date/CalendarWeekNumbering` | module:sap/base/i18n/date/CalendarWeekNumbering |
 | `@rhfan2019/smart-kit/f/Card` | sap.f.Card |
 | `@rhfan2019/smart-kit/f/DynamicPage` | sap.f.DynamicPage |
+| `@rhfan2019/smart-kit/f/DynamicPageAccessibleLandmarkInfo` | sap.f.DynamicPageAccessibleLandmarkInfo |
 | `@rhfan2019/smart-kit/f/DynamicPageHeader` | sap.f.DynamicPageHeader |
 | `@rhfan2019/smart-kit/f/DynamicPageTitle` | sap.f.DynamicPageTitle |
 | `@rhfan2019/smart-kit/f/FlexibleColumnLayout` | sap.f.FlexibleColumnLayout |
+| `@rhfan2019/smart-kit/f/FlexibleColumnLayoutAccessibleLandmarkInfo` | sap.f.FlexibleColumnLayoutAccessibleLandmarkInfo |
 | `@rhfan2019/smart-kit/f/cards/Header` | sap.f.cards.Header |
 | `@rhfan2019/smart-kit/f/cards/NumericHeader` | sap.f.cards.NumericHeader |
 | `@rhfan2019/smart-kit/f/cards/NumericSideIndicator` | sap.f.cards.NumericSideIndicator |
@@ -274,7 +276,7 @@
 | `@rhfan2019/smart-kit/kit/MessageHost` | 无（React 宿主：承载 MessageToast / MessageBox（UI5 由核心渲染），无对应） |
 | `@rhfan2019/smart-kit/kit/MessageIcon` | 无（消息类型图标，UI5 没有单独的控件） |
 | `@rhfan2019/smart-kit/kit/MessageProvider` | 无（React 上下文：页面消息模型（UI5 用 sap.ui.core.Messaging），无对应的控件） |
-| `@rhfan2019/smart-kit/kit/QuickViewLink` | 无（FE 在字段里内部生成的快速预览链接，无公开类；sap.m.QuickView 在阶段 6 另做） |
+| `@rhfan2019/smart-kit/kit/QuickViewLink` | 无（FE 在字段里内部生成的快速预览链接，无公开类；FE 字段里的快速预览链接，基于 m/QuickView） |
 | `@rhfan2019/smart-kit/kit/SimpleChart` | 无（smart-kit 自己的 SVG 图表（ADR-021）；FE 用 sap.viz / sap.chart，无可对齐的公开类） |
 | `@rhfan2019/smart-kit/kit/ValueHelpDialog` | 无（FE 的值帮助是 sap.ui.mdc.ValueHelp 的内部组合（macros/internal/valuehelp），无公开类） |
 | `@rhfan2019/smart-kit/kit/smartKitGridTheme` | 无（AG Grid 的主题，UI5 没有对应；单独一个模块，/theme 不需要 AG Grid） |
@@ -319,6 +321,10 @@
 | `@rhfan2019/smart-kit/m/ObjectStatus` | sap.m.ObjectStatus |
 | `@rhfan2019/smart-kit/m/OverflowToolbar` | sap.m.OverflowToolbar |
 | `@rhfan2019/smart-kit/m/OverflowToolbarButton` | sap.m.OverflowToolbarButton |
+| `@rhfan2019/smart-kit/m/QuickView` | sap.m.QuickView |
+| `@rhfan2019/smart-kit/m/QuickViewGroup` | sap.m.QuickViewGroup |
+| `@rhfan2019/smart-kit/m/QuickViewGroupElement` | sap.m.QuickViewGroupElement |
+| `@rhfan2019/smart-kit/m/QuickViewPage` | sap.m.QuickViewPage |
 | `@rhfan2019/smart-kit/m/SelectDialog` | sap.m.SelectDialog |
 | `@rhfan2019/smart-kit/m/Table` | sap.m.Table |
 | `@rhfan2019/smart-kit/m/TableSelectDialog` | sap.m.TableSelectDialog |
@@ -327,8 +333,11 @@
 | `@rhfan2019/smart-kit/m/ViewSettingsDialog` | sap.m.ViewSettingsDialog |
 | `@rhfan2019/smart-kit/m/Wizard` | sap.m.Wizard |
 | `@rhfan2019/smart-kit/m/WizardStep` | sap.m.WizardStep |
-| `@rhfan2019/smart-kit/m/library` | sap.m.BackgroundDesign → `BackgroundDesign`；sap.m.BadgeStyle → `BadgeStyle`；sap.m.ButtonAccessibleRole → `ButtonAccessibleRole`；sap.m.ButtonType → `ButtonType`；sap.m.EmptyIndicatorMode → `EmptyIndicatorMode`；sap.m.ExpandableTextOverflowMode → `ExpandableTextOverflowMode`；sap.m.IconTabDensityMode → `IconTabDensityMode`；sap.m.IconTabFilterDesign → `IconTabFilterDesign`；sap.m.IconTabFilterInteractionMode → `IconTabFilterInteractionMode`；sap.m.IconTabHeaderMode → `IconTabHeaderMode`；sap.m.LinkConversion → `LinkConversion`；sap.m.ListType → `ListType`；sap.m.ObjectMarkerType → `ObjectMarkerType`；sap.m.ObjectMarkerVisibility → `ObjectMarkerVisibility`；sap.m.ObjectNumberDisplayMode → `ObjectNumberDisplayMode`；sap.m.OverflowToolbarPriority → `OverflowToolbarPriority`；sap.m.PageBackgroundDesign → `PageBackgroundDesign`；sap.m.ReactiveAreaMode → `ReactiveAreaMode`；sap.m.SelectDialogInitialFocus → `SelectDialogInitialFocus`；sap.m.StandardDynamicDateRangeKeys → `StandardDynamicDateRangeKeys`；sap.m.StringFilterOperator → `StringFilterOperator`；sap.m.TabsOverflowMode → `TabsOverflowMode`；sap.m.TitleAlignment → `TitleAlignment`；sap.m.ToolbarDesign → `ToolbarDesign`；sap.m.ToolbarStyle → `ToolbarStyle`；sap.m.UploadSetwithTableActionPlaceHolder → `UploadSetwithTableActionPlaceHolder`；sap.m.UploadState → `UploadState`；sap.m.VerticalPlacementType → `VerticalPlacementType`；sap.m.WizardRenderMode → `WizardRenderMode`；sap.m.WrappingType → `WrappingType`；sap.m.ListMode → `ListMode`；sap.m.PopinLayout → `PopinLayout`；sap.m.Sticky → `Sticky`；sap.m.MultiSelectMode → `MultiSelectMode`；sap.m.ListSeparators → `ListSeparators`；sap.m.GenericTagDesign → `GenericTagDesign`；sap.m.GenericTagValueState → `GenericTagValueState` |
+| `@rhfan2019/smart-kit/m/library` | sap.m.BackgroundDesign → `BackgroundDesign`；sap.m.BadgeStyle → `BadgeStyle`；sap.m.ButtonAccessibleRole → `ButtonAccessibleRole`；sap.m.ButtonType → `ButtonType`；sap.m.EmptyIndicatorMode → `EmptyIndicatorMode`；sap.m.ExpandableTextOverflowMode → `ExpandableTextOverflowMode`；sap.m.IconTabDensityMode → `IconTabDensityMode`；sap.m.IconTabFilterDesign → `IconTabFilterDesign`；sap.m.IconTabFilterInteractionMode → `IconTabFilterInteractionMode`；sap.m.IconTabHeaderMode → `IconTabHeaderMode`；sap.m.LinkConversion → `LinkConversion`；sap.m.ListType → `ListType`；sap.m.ObjectMarkerType → `ObjectMarkerType`；sap.m.ObjectMarkerVisibility → `ObjectMarkerVisibility`；sap.m.ObjectNumberDisplayMode → `ObjectNumberDisplayMode`；sap.m.OverflowToolbarPriority → `OverflowToolbarPriority`；sap.m.PageBackgroundDesign → `PageBackgroundDesign`；sap.m.ReactiveAreaMode → `ReactiveAreaMode`；sap.m.SelectDialogInitialFocus → `SelectDialogInitialFocus`；sap.m.StandardDynamicDateRangeKeys → `StandardDynamicDateRangeKeys`；sap.m.StringFilterOperator → `StringFilterOperator`；sap.m.TabsOverflowMode → `TabsOverflowMode`；sap.m.TitleAlignment → `TitleAlignment`；sap.m.ToolbarDesign → `ToolbarDesign`；sap.m.ToolbarStyle → `ToolbarStyle`；sap.m.UploadSetwithTableActionPlaceHolder → `UploadSetwithTableActionPlaceHolder`；sap.m.UploadState → `UploadState`；sap.m.VerticalPlacementType → `VerticalPlacementType`；sap.m.WizardRenderMode → `WizardRenderMode`；sap.m.WrappingType → `WrappingType`；sap.m.ListMode → `ListMode`；sap.m.Size → `Size`；sap.m.ValueColor → `ValueColor`；sap.m.P13nPopupMode → `P13nPopupMode`；sap.m.PlacementType → `PlacementType`；sap.m.QuickViewGroupElementType → `QuickViewGroupElementType`；sap.m.ListKeyboardMode → `ListKeyboardMode`；sap.m.ListGrowingDirection → `ListGrowingDirection`；sap.m.SwipeDirection → `SwipeDirection`；sap.m.ListItemActionType → `ListItemActionType`；sap.m.PopinLayout → `PopinLayout`；sap.m.Sticky → `Sticky`；sap.m.MultiSelectMode → `MultiSelectMode`；sap.m.ListSeparators → `ListSeparators`；sap.m.GenericTagDesign → `GenericTagDesign`；sap.m.GenericTagValueState → `GenericTagValueState` |
+| `@rhfan2019/smart-kit/m/p13n/GroupPanel` | sap.m.p13n.GroupPanel |
 | `@rhfan2019/smart-kit/m/p13n/Popup` | sap.m.p13n.Popup |
+| `@rhfan2019/smart-kit/m/p13n/SelectionPanel` | sap.m.p13n.SelectionPanel |
+| `@rhfan2019/smart-kit/m/p13n/SortPanel` | sap.m.p13n.SortPanel |
 | `@rhfan2019/smart-kit/m/plugins/UploadSetwithTable` | sap.m.plugins.UploadSetwithTable |
 | `@rhfan2019/smart-kit/m/upload/ActionsPlaceholder` | sap.m.upload.ActionsPlaceholder |
 | `@rhfan2019/smart-kit/m/upload/UploaderHttpRequestMethod` | sap.m.upload.UploaderHttpRequestMethod |
@@ -339,7 +348,29 @@
 | `@rhfan2019/smart-kit/suite/ui/commons/Timeline` | sap.suite.ui.commons.Timeline |
 | `@rhfan2019/smart-kit/suite/ui/commons/TimelineItem` | sap.suite.ui.commons.TimelineItem |
 | `@rhfan2019/smart-kit/suite/ui/commons/library` | sap.suite.ui.commons.MicroProcessFlowRenderType → `MicroProcessFlowRenderType`；sap.suite.ui.commons.ProcessFlowConnectionLabelState → `ProcessFlowConnectionLabelState`；sap.suite.ui.commons.ProcessFlowNodeState → `ProcessFlowNodeState`；sap.suite.ui.commons.ProcessFlowNodeType → `ProcessFlowNodeType`；sap.suite.ui.commons.ProcessFlowZoomLevel → `ProcessFlowZoomLevel`；sap.suite.ui.commons.TimelineAlignment → `TimelineAlignment`；sap.suite.ui.commons.TimelineAxisOrientation → `TimelineAxisOrientation`；sap.suite.ui.commons.TimelineFilterType → `TimelineFilterType`；sap.suite.ui.commons.TimelineGroupType → `TimelineGroupType` |
-| `@rhfan2019/smart-kit/ui/core/library` | sap.ui.core.IconColor → `IconColor`；sap.ui.core.IndicationColor → `IndicationColor`；sap.ui.core.TitleLevel → `TitleLevel`；sap.ui.core.ValueState → `ValueState` |
+| `@rhfan2019/smart-kit/suite/ui/microchart/AreaMicroChart` | sap.suite.ui.microchart.AreaMicroChart |
+| `@rhfan2019/smart-kit/suite/ui/microchart/AreaMicroChartItem` | sap.suite.ui.microchart.AreaMicroChartItem |
+| `@rhfan2019/smart-kit/suite/ui/microchart/AreaMicroChartLabel` | sap.suite.ui.microchart.AreaMicroChartLabel |
+| `@rhfan2019/smart-kit/suite/ui/microchart/AreaMicroChartPoint` | sap.suite.ui.microchart.AreaMicroChartPoint |
+| `@rhfan2019/smart-kit/suite/ui/microchart/BulletMicroChart` | sap.suite.ui.microchart.BulletMicroChart |
+| `@rhfan2019/smart-kit/suite/ui/microchart/BulletMicroChartData` | sap.suite.ui.microchart.BulletMicroChartData |
+| `@rhfan2019/smart-kit/suite/ui/microchart/ColumnMicroChart` | sap.suite.ui.microchart.ColumnMicroChart |
+| `@rhfan2019/smart-kit/suite/ui/microchart/ColumnMicroChartData` | sap.suite.ui.microchart.ColumnMicroChartData |
+| `@rhfan2019/smart-kit/suite/ui/microchart/ColumnMicroChartLabel` | sap.suite.ui.microchart.ColumnMicroChartLabel |
+| `@rhfan2019/smart-kit/suite/ui/microchart/ComparisonMicroChart` | sap.suite.ui.microchart.ComparisonMicroChart |
+| `@rhfan2019/smart-kit/suite/ui/microchart/ComparisonMicroChartData` | sap.suite.ui.microchart.ComparisonMicroChartData |
+| `@rhfan2019/smart-kit/suite/ui/microchart/DeltaMicroChart` | sap.suite.ui.microchart.DeltaMicroChart |
+| `@rhfan2019/smart-kit/suite/ui/microchart/HarveyBallMicroChart` | sap.suite.ui.microchart.HarveyBallMicroChart |
+| `@rhfan2019/smart-kit/suite/ui/microchart/HarveyBallMicroChartItem` | sap.suite.ui.microchart.HarveyBallMicroChartItem |
+| `@rhfan2019/smart-kit/suite/ui/microchart/LineMicroChart` | sap.suite.ui.microchart.LineMicroChart |
+| `@rhfan2019/smart-kit/suite/ui/microchart/LineMicroChartEmphasizedPoint` | sap.suite.ui.microchart.LineMicroChartEmphasizedPoint |
+| `@rhfan2019/smart-kit/suite/ui/microchart/LineMicroChartLine` | sap.suite.ui.microchart.LineMicroChartLine |
+| `@rhfan2019/smart-kit/suite/ui/microchart/LineMicroChartPoint` | sap.suite.ui.microchart.LineMicroChartPoint |
+| `@rhfan2019/smart-kit/suite/ui/microchart/RadialMicroChart` | sap.suite.ui.microchart.RadialMicroChart |
+| `@rhfan2019/smart-kit/suite/ui/microchart/StackedBarMicroChart` | sap.suite.ui.microchart.StackedBarMicroChart |
+| `@rhfan2019/smart-kit/suite/ui/microchart/StackedBarMicroChartBar` | sap.suite.ui.microchart.StackedBarMicroChartBar |
+| `@rhfan2019/smart-kit/suite/ui/microchart/library` | sap.suite.ui.microchart.AreaMicroChartViewType → `AreaMicroChartViewType`；sap.suite.ui.microchart.BulletMicroChartModeType → `BulletMicroChartModeType`；sap.suite.ui.microchart.CommonBackgroundType → `CommonBackgroundType`；sap.suite.ui.microchart.ComparisonMicroChartViewType → `ComparisonMicroChartViewType`；sap.suite.ui.microchart.DeltaMicroChartViewType → `DeltaMicroChartViewType`；sap.suite.ui.microchart.HorizontalAlignmentType → `HorizontalAlignmentType`；sap.suite.ui.microchart.LineType → `LineType`；sap.suite.ui.microchart.MicroChartColorType → `MicroChartColorType` |
+| `@rhfan2019/smart-kit/ui/core/library` | sap.ui.core.IconColor → `IconColor`；sap.ui.core.IndicationColor → `IndicationColor`；sap.ui.core.TitleLevel → `TitleLevel`；sap.ui.core.ValueState → `ValueState`；sap.ui.core.AccessibleLandmarkRole → `AccessibleLandmarkRole` |
 | `@rhfan2019/smart-kit/ui/core/message/MessageType` | module:sap/ui/core/message/MessageType |
 | `@rhfan2019/smart-kit/ui/integration/cards/AnalyticalContent` | manifest sap.card/Analytical |
 | `@rhfan2019/smart-kit/ui/integration/cards/CalendarContent` | manifest sap.card/Calendar |
@@ -349,6 +380,7 @@
 | `@rhfan2019/smart-kit/ui/integration/cards/TimelineContent` | manifest sap.card/Timeline |
 | `@rhfan2019/smart-kit/ui/unified/Currency` | sap.ui.unified.Currency |
 | `@rhfan2019/smart-kit/uxap/AnchorBar` | sap.uxap.AnchorBar |
+| `@rhfan2019/smart-kit/uxap/ObjectPageAccessibleLandmarkInfo` | sap.uxap.ObjectPageAccessibleLandmarkInfo |
 | `@rhfan2019/smart-kit/uxap/ObjectPageDynamicHeaderContent` | sap.uxap.ObjectPageDynamicHeaderContent |
 | `@rhfan2019/smart-kit/uxap/ObjectPageDynamicHeaderTitle` | sap.uxap.ObjectPageDynamicHeaderTitle |
 | `@rhfan2019/smart-kit/uxap/ObjectPageLayout` | sap.uxap.ObjectPageLayout |

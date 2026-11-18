@@ -65,12 +65,14 @@ describe('UI annotations', () => {
     ]);
   });
 
-  it('ANN-06 Facets: CollectionFacet → section with subsections; ReferenceFacet to nav LineItem → table', () => {
+  it('ANN-06 Facets: CollectionFacet of reference facets → one sub-section, a form with a container per facet (FE createSubSections); ReferenceFacet to nav LineItem → table', () => {
     expect(ui.sections.map((s) => [s.id, s.label, s.subSections.map((x) => x.id)])).toEqual([
-      ['GeneralInfo', 'General Information', ['GeneralData', 'PriceData']],
+      ['GeneralInfo', 'General Information', ['GeneralInfo']],
       ['Reviews', 'Reviews', ['Reviews']],
-      ['More', 'More', ['NotesData']],
+      ['More', 'More', ['More']],
     ]);
+    const form = ui.sections[0]!.subSections[0]!.content;
+    expect(form.kind === 'form' ? form.groups.map((g) => g.id) : []).toEqual(['GeneralData', 'PriceData']);
     const table = ui.sections[1]!.subSections[0]!.content;
     expect(table.kind).toBe('table');
     if (table.kind === 'table') {
@@ -79,8 +81,9 @@ describe('UI annotations', () => {
     }
   });
 
-  it('ANN-07 PartOfPreview=false marks subsections for "Show More"', () => {
-    expect(ui.sections[2]!.subSections[0]!.partOfPreview).toBe(false);
+  it('ANN-07 PartOfPreview=false on a facet of a collection marks its form container for "Show More" (FE Form hasFacetsNotPartOfPreview)', () => {
+    const more = ui.sections[2]!.subSections[0]!.content;
+    expect(more.kind === 'form' ? more.groups.map((g) => g.partOfPreview) : []).toEqual([false]);
     expect(ui.sections[0]!.subSections[0]!.partOfPreview).toBe(true);
   });
 

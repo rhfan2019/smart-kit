@@ -1,111 +1,56 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
-import { MicroChart, niceTicks, SimpleChart, type ChartDatum } from '../src/chart';
+import { niceTicks, SimpleChart, type ChartDatum } from '../src/chart';
+import { BulletMicroChart } from '../src/chart/microBullet';
+import { ColumnMicroChart } from '../src/chart/microColumn';
+import { DeltaMicroChart } from '../src/chart/microDelta';
+import { HarveyBallMicroChart } from '../src/chart/microHarvey';
+import { RadialMicroChart } from '../src/chart/microRadial';
 import { wrap } from './helpers';
 
 const bars = (root: Element) => root.querySelectorAll('[data-sk-microchart-bar]');
 
-describe('P2-OP-04 micro charts (ADR-021)', () => {
+describe('P2-OP-04 micro charts (ADR-021): the sap.suite.ui.microchart controls', () => {
   it('MC-21 bullet: value, target marker and text alternative', () => {
-    render(wrap(<MicroChart kind="bullet" label="Budget" value={1200} target={1440} criticality={3} />));
+    render(wrap(<BulletMicroChart aria-label="Budget" targetValue={1440} actual={{ value: 1200, color: 'Good' }} />));
     const img = screen.getByRole('img', { name: 'Budget: Actual 1,200 (Good), Target 1,440' });
     expect(img).toHaveClass('sk-microchart--bullet', 'sk-chart--positive');
     expect(bars(img)).toHaveLength(2);
     expect(img.querySelector('[data-sk-microchart-bar="target"]')).not.toBeNull();
-    expect(img).toHaveTextContent('1.2K'); // short labels (docs/15 MC-13)
-  });
-
-  it('bullet without target uses the plain value label; custom format is used', () => {
-    render(wrap(<MicroChart kind="bullet" label="Stock" value={7} format={(n) => `${n} pc`} />));
-    expect(screen.getByRole('img', { name: 'Stock: Actual 7 pc' })).toBeInTheDocument();
+    expect(img).toHaveTextContent('12001440');
   });
 
   it('radial: percent in the centre', () => {
-    render(wrap(<MicroChart kind="radial" label="Received" value={50} target={100} />));
+    render(wrap(<RadialMicroChart aria-label="Received" fraction={50} total={100} />));
     const img = screen.getByRole('img', { name: 'Received: 50%' });
     expect(img.querySelector('.sk-microchart__center')).toHaveTextContent('50%');
     expect(img.querySelectorAll('circle')).toHaveLength(2);
   });
 
-  it('harvey: sector and total', () => {
-    render(wrap(<MicroChart kind="harvey" label="Capacity" value={30} target={120} />));
-    const img = screen.getByRole('img', { name: 'Capacity: 30 of 120' });
-    expect(img.querySelector('path[data-sk-microchart-bar="value"]')).not.toBeNull();
-    expect(img).toHaveTextContent('120');
-  });
-
-  it('delta: two bars and a signed delta bar', () => {
-    render(wrap(<MicroChart kind="delta" label="Revenue" value={80} target={100} />));
+  it('delta: two bars and the delta bar', () => {
+    render(wrap(<DeltaMicroChart aria-label="Revenue" value1={80} value2={100} />));
     const img = screen.getByRole('img', { name: 'Revenue: 80 compared with 100, difference -20' });
     expect(bars(img)).toHaveLength(3);
-    // docs/15 MC-62: the delta colour comes from thresholds (criticality); without them it is neutral
     expect(img.querySelector('[data-sk-microchart-bar="delta"]')).toHaveClass('sk-chart--neutral');
-  });
-
-  const points = [{ label: 'Jan', value: 10 }, { label: 'Feb', value: -5, criticality: 1 as const }, { label: 'Mar', value: 20 }];
-  it('column: one column per point, negative below the baseline, first and last labels', () => {
-    render(wrap(<MicroChart kind="column" label="Trend" points={points} />));
-    const img = screen.getByRole('img', { name: 'Trend: Jan 10, Feb -5, Mar 20' });
-    expect(bars(img)).toHaveLength(3);
-    expect(bars(img)[1]).toHaveClass('sk-chart--negative');
-    const base = Number(img.querySelector('.sk-microchart__baseline')!.getAttribute('y1'));
-    expect(Number(bars(img)[1]!.getAttribute('y'))).toBeCloseTo(base);
-    // docs/15 MC-31: first and last values on top, first and last dimension values below
-    expect(img.querySelector('.sk-microchart__edges--top')).toHaveTextContent('1020');
-    expect(img.querySelector('.sk-microchart__edges--bottom')).toHaveTextContent('JanMar');
-  });
-
-  it('line: polyline; points hidden except semantic ones; first / last values and dimension values', () => {
-    render(wrap(<MicroChart kind="line" label="Trend" points={points} />));
-    const img = screen.getByRole('img', { name: 'Trend: Jan 10, Feb -5, Mar 20' });
-    expect(img.querySelector('polyline')!.getAttribute('points')!.split(' ')).toHaveLength(3);
-    // docs/15 MC-37, MC-38: only the point with a semantic colour is drawn
-    expect(bars(img)).toHaveLength(1);
-    expect(img.querySelector('.sk-microchart__edges--top')).toHaveTextContent('1020');
-    expect(img.querySelector('.sk-microchart__edges--bottom')).toHaveTextContent('JanMar');
-  });
-
-  it('comparison: at most twelve bars with label and value (docs/15 MC-41)', () => {
-    const many = Array.from({ length: 14 }, (_, i) => ({ label: String.fromCharCode(65 + i), value: (i + 1) * 10 }));
-    render(wrap(<MicroChart kind="comparison" label="Top" points={many} />));
-    const img = screen.getByRole('img', { name: /^Top: A 10, B 20, .*, L 120$/ });
-    expect(bars(img)).toHaveLength(12);
-    expect(img.querySelectorAll('.sk-microchart__row-label')[3]).toHaveTextContent('D');
   });
 
   it('empty, zero and missing data', () => {
     render(wrap(
       <>
-        <MicroChart kind="bullet" label="A" />
-        <MicroChart kind="radial" label="B" value={5} target={0} />
-        <MicroChart kind="column" label="C" points={[]} />
-        <MicroChart kind="harvey" label="D" value={0} target={10} />
-        <MicroChart kind="bullet" label="E" value={0} target={0} />
+        <BulletMicroChart aria-label="A" />
+        <ColumnMicroChart aria-label="C" columns={[]} />
+        <HarveyBallMicroChart aria-label="D" total={10} items={[{ fraction: 0 }]} />
+        <BulletMicroChart aria-label="E" targetValue={0} actual={{ value: 0 }} />
       </>,
     ));
-    for (const l of ['A', 'B', 'C']) expect(screen.getByRole('img', { name: `${l}: No data` })).toHaveTextContent('No data');
+    for (const l of ['A', 'C']) expect(screen.getByRole('img', { name: `${l}: No data` })).toHaveTextContent('No data');
     expect(bars(screen.getByRole('img', { name: 'D: 0 of 10' }))).toHaveLength(0);
     expect(screen.getByRole('img', { name: 'E: Actual 0, Target 0' })).toBeInTheDocument();
   });
 
-  it('MC-07 MC-11 pressable: a button with the text alternative, Enter and Space press it', async () => {
-    const onPress = vi.fn();
-    render(wrap(<MicroChart kind="radial" label="Received" value={1} target={4} onPress={onPress} />));
-    const button = screen.getByRole('button', { name: 'Received: 25%' });
-    expect(button).toHaveClass('sk-microchart--pressable');
-    expect(screen.queryByRole('img')).toBeNull();
-    const user = userEvent.setup();
-    await user.tab();
-    expect(button).toHaveFocus();
-    await user.keyboard('{Enter}');
-    await user.keyboard(' ');
-    await user.click(button);
-    expect(onPress).toHaveBeenCalledTimes(3);
-  });
-
   it('Chinese text alternative', () => {
-    render(wrap(<MicroChart kind="bullet" label="预算" value={1} target={2} />, { locale: 'zh' }));
+    render(wrap(<BulletMicroChart aria-label="预算" targetValue={2} actual={{ value: 1 }} />, { locale: 'zh' }));
     expect(screen.getByRole('img', { name: '预算：实际 1，目标 2' })).toBeInTheDocument();
   });
 });

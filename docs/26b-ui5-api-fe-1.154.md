@@ -7,6 +7,7 @@
 > - 每节标题后面是 api.json 的 `module`（导入路径）。注意 `FlexibleColumnLayoutActions` 的模块是 `sap/fe/macros/fcl/FlexibleColumnLayoutActions.block`，不是 `sap/fe/macros/FlexibleColumnLayoutActions`。
 > - api.json 里很多属性的默认值是空的，实际默认值由 sap.fe 的转换器决定，见文末"实际默认值（源码）"。
 > - 已废弃、不列的类：`sap.fe.macros.chart.Chart`、`sap.fe.macros.controls.BuildingBlockWithTemplating`、`sap.fe.macros.field.Field`、`sap.fe.macros.filterBar.FilterBar`、`sap.fe.macros.microchart.MicroChart`、`sap.fe.macros.table.Table`、`sap.fe.macros.table.TreeTable`。
+> - 阶段 6 实现的成员（smart-kit `v4/fe/macros/*`）：Table / TreeTable 的 `rowCount`、`variantManagement`（`''` / `Control`）、`quickVariantSelection`、`actionOverflowGroups`、`massEdit`（含 `customContent`）、`analyticalConfiguration`、`enablePaste`、`enablePastingOfComputedProperties`，`creationMode` 的 `creationFields`、`createAtEnd`，`table.Column` 的 `availability`、`tooltip`、`required`、`widthIncludingColumnHeader`，`table.Action` 的 `overflowGroup`、`priority`、`isAIOperation`，方法 `get/setCurrentVariantKey`、`get/setPresentationVariant`、`get/setSelectionVariant`，分析表分组按 groupLevels 折叠；Chart 的 `personalization`（默认 true）、`ignorePersonalizationChanges`、`variantManagement`、`actionOverflowGroups`、变式键和 PV 方法；FilterBar `get/setCurrentVariantKey`；Field `semanticObject`；MicroChart 只剩 sap.fe.macros.MicroChart 的属性，画图用九个 sap.suite.ui.microchart 控件（`26a`）。还没做或不做的（`tools/ui5-alignment/deviations.json`）：树表的移动和复制（要可维护层级）、树表新建、`beforeRebindTable`、`usePropertyKeysMode`、`fromInline`、AddViaValueHelp、Form 的 `navigationPropertiesForAdaptationDialog`（RTA，D42）。
 
 ## 主要积木
 

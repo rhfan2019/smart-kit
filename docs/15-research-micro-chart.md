@@ -135,7 +135,7 @@
 | --- | --- | --- | --- |
 | MC-62 | **用途和结构**：两个关键数字的差，可以是不同时间的，也可以是不同类别的。三根条：值 1、值 2、差值；差值可正可负，颜色由阈值决定（语义色）。左边的标签（两个值的名称或日期）可以省略，右边的数值标签总是显示。 | [MC] Delta | 二期已有 |
 | MC-63 | **标签隐藏**：高度小于 56 px 时隐藏全部标签，但差值本身仍然显示；宽布局下标签放在左右两边，宽度不够时先隐藏数值，再隐藏日期标签。 | [MC] Delta Components | 三期 |
-| MC-64 | **不由注解驱动（D08 决定，与 SAP 一致）**：OData V4 的 Fiori Elements 只认 8 种 `ChartType`，没有 Delta；V2 的 Smart 控件也说明 Delta 没有自己的 `ChartType`。所以：<br>• Delta 只作为展示组件导出（`MicroChart` 的 `kind="delta"`），开发者在扩展点或自定义 Facet 里自己传两个值。<br>• 去掉二期的 `Waterfall` → Delta 约定；模拟服务 `apps/mock/Csdl/purchasing.template.xml` 里的 `Waterfall` 注解改成标准写法。<br>• 想用注解表达"实际与目标之差"，用标准的 Bullet 差值模式（DataPoint 的 `Visualization` 为 `DeltaBulletChart`，MC-24）。 | [FE] `isValidChartType`；[SMC] | 三期 |
+| MC-64 | **不由注解驱动（D08 决定，与 SAP 一致）**：OData V4 的 Fiori Elements 只认 8 种 `ChartType`，没有 Delta；V2 的 Smart 控件也说明 Delta 没有自己的 `ChartType`。所以：<br>• Delta 只作为展示组件导出（阶段 6 起是 `@rhfan2019/smart-kit/suite/ui/microchart/DeltaMicroChart`，属性 `value1`、`value2`、`title1`、`title2`、`color` 同 sap.suite.ui.microchart.DeltaMicroChart），开发者在扩展点或自定义 Facet 里自己传两个值。<br>• 去掉二期的 `Waterfall` → Delta 约定；模拟服务 `apps/mock/Csdl/purchasing.template.xml` 里的 `Waterfall` 注解改成标准写法。<br>• 想用注解表达"实际与目标之差"，用标准的 Bullet 差值模式（DataPoint 的 `Visualization` 为 `DeltaBulletChart`，MC-24）。 | [FE] `isValidChartType`；[SMC] | 三期 |
 
 ## 3. 注解映射
 
@@ -222,11 +222,11 @@ Column、Line、Area、Comparison、Stacked Bar 的数据来自 `UI.Chart` 所�
 | 规则 | 状态 | 测试 |
 | --- | --- | --- |
 | MC-30～MC-33 Column | 完成：默认中性色；上方首尾值、下方首尾维度值；可选每柱标签（72 px 以上且柱子够宽，否则退回首尾） | `charts.test.tsx`、`microcharts.test.tsx` |
-| MC-35～MC-40 Line | 完成：每个度量一条线（最多 3 条，定性色）；多条线时起点取最小首值、终点取最大末值；数据点默认隐藏，语义点和焦点显示；阈值线和阈值标签；固定刻度（`scaleMin`、`scaleMax`）；只有一个点时画成点 | 同上 |
+| MC-35～MC-40 Line | 完成：每个度量一条线（最多 3 条，定性色）；多条线时起点取最小首值、终点取最大末值；数据点默认隐藏，语义点和焦点显示；阈值线和阈值标签；固定刻度（阶段 6 起是 LineMicroChart 的 `minYValue`、`maxYValue`）；只有一个点时画成点 | 同上 |
 | MC-41～MC-43 Comparison | 完成：最多 12 条；宽于 192 px 两侧标签、96～192 px 标签在条上方、不超过 96 px 无标签；名称取维度的 `Common.Text`；`MinimumValue`、`MaximumValue` 定刻度 | 同上 |
 | MC-45～MC-49 Area | 完成：实际值实线、目标值点线；阈值区域按改进方向；起止值、起止维度标签；可选最小最大标签；宽布局 | 同上 |
 | MC-58、MC-59 Stacked Bar | 完成：不支持负数；无最大值时按合计 100%，有最大值时按最大值；百分比 1 位小数；`Common.Text` 作段标签；无语义时用定性色 | 同上 |
-| MC-62、MC-63 Delta | 完成（只作展示组件）：名称在左、数值在右、差值在中间；56 px 以下只留差值 | 同上 |
+| MC-62、MC-63 Delta | 完成（只作展示组件，阶段 6 起是 `suite/ui/microchart/DeltaMicroChart`）：名称在左、数值在右、差值在中间；56 px 以下只留差值 | 同上 |
 | MC-65 请求形状 | 完成：表格和表单单元格用 `$expand($select;$orderby;$top)`，页头 Facet 单独查询，`$select` 相同（ADR-025） | `phase3.test.ts`、`p3-microcharts.spec.ts` |
 
 模拟服务新增：子项页头的 Area（`ItemHistoryArea`）和 Stacked Bar（`ItemConditionShare`）；订单页"子项"表格加一列 Line（`_History/@UI.Chart#Quantities`）。

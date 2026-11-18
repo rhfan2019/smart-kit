@@ -21,17 +21,28 @@
 import { capabilitiesFor } from '../model/access';
 import { resolvePath } from '../model/buildModel';
 import type { EntityUi, FieldModel, MetaModel } from '../model/types';
-import { aggregateMeasure, buildListRequest, fieldPaths, sourceInfo, type AggregateMeasure, type ListRequestOptions, type QueryRequest, type ReadRequest } from './request';
+import { aggregateMeasure, ANALYTICAL_LEAVES_ALIAS, buildListRequest, fieldPaths, sourceInfo, type AggregateMeasure, type ListRequestOptions, type QueryRequest, type ReadRequest, type Row } from './request';
 import { canTotal, unitPathOf } from './totals';
 
 /** Alias of the number of leaves in the first page of an analytical table (sap.ui.model.odata.v4 "UI5__count"). */
 export const ANALYTICAL_COUNT_ALIAS = 'UI5__count';
+export { ANALYTICAL_LEAVES_ALIAS };
 
 export interface AnalyticalRequestOptions extends Omit<ListRequestOptions, 'skip' | 'count'> {
   /** Measures (custom aggregates) with a grand total: the columns whose totals are shown. */
   totals?: string[];
   /** Further properties the visible content needs from the leaves (custom columns' `properties`): grouped by. */
   groupExtra?: string[];
+  /**
+   * Visual grouping (sap.ui.mdc.Table groupLevels, `$$aggregation.groupLevels`): the first page reads the number of
+   * leaves, the grand total and the groups of the first level (collapsed); `leaves` reads the rows of a group.
+   */
+  groupLevels?: string[];
+  /**
+   * sap.fe.macros.table.AnalyticalConfiguration aggregationOnLeafLevel: the leaves are aggregated by the shown
+   * groupable properties, without the keys (`$leafLevelAggregated`).
+   */
+  aggregationOnLeafLevel?: boolean;
 }
 
 /** The analytical part of the first page request (`QueryRequest.analytical`). */
@@ -42,6 +53,8 @@ export interface AnalyticalApply {
   measures: AggregateMeasure[];
   /** Grand total (`concat(aggregate(…),…)` first); empty: none. */
   grandTotal: AggregateMeasure[];
+  /** Visual grouping: the groups of the first level (`groupBy`) with their subtotals (`measures`) instead of the leaves. */
+  groupLevel?: { groupBy: string[]; measures: AggregateMeasure[] };
 }
 
 export interface AnalyticalRequests {
@@ -51,6 +64,12 @@ export interface AnalyticalRequests {
   page(skip: number, top: number): QueryRequest;
   /** What each row of the first page still needs (late properties); undefined when the first page has everything. */
   late?: ReadRequest;
+  /**
+   * Visual grouping: the leaves of the group `group` (a row of the first page) from `skip`: a list request with the
+   * group's conditions first (`$filter=G eq 'v' and (…)`) and `$count` (_AggregationCache, the last level); `$orderby`
+   * keeps what the leaf level groups or aggregates, as the first page (getFilteredOrderby).
+   */
+  leaves?(group: Row, skip: number, top: number): QueryRequest;
 }
 
 const prefixed = (path: string, rel: string) => {
@@ -69,7 +88,7 @@ export function buildAnalyticalRequests(model: MetaModel, ui: EntityUi, o: Analy
   // $$aggregation (sap.ui.mdc.odata.v4.TableDelegate create$$Aggregation)
   const group = new Map<string, string[]>(); // property -> additionally
   const aggregate = new Map<string, string | undefined>(); // measure -> unit
-  for (const k of type.keys) group.set(k, []);
+  if (!o.aggregationOnLeafLevel) for (const k of type.keys) group.set(k, []);
   for (const p of o.groupExtra ?? []) if (plain(p) && !group.has(p)) group.set(p, []);
   const fieldOf = (f: FieldModel) => (f.kind === 'field' ? f.path : undefined);
   for (const f of o.columns) {
@@ -121,8 +140,28 @@ export function buildAnalyticalRequests(model: MetaModel, ui: EntityUi, o: Analy
   const kept = new Set([...groupBy, ...aliases, ...[...aggregate.values()].filter((u): u is string => Boolean(u))]);
   const base = buildListRequest(model, ui, { ...o, skip: 0, count: false });
   const orderBy = base.orderBy.filter((s) => kept.has(s.path));
+  const levels = (o.groupLevels ?? []).filter((p) => !aggregate.has(p));
+  if (levels.length) {
+    // the first level: its property (and the local text as additionally), the visible aggregates with their units
+    const level = levels.slice(0, 1);
+    const text = group.get(level[0]!)?.filter((x) => !level.includes(x)) ?? [];
+    const levelBy = [...level, ...text];
+    analytical.groupLevel = { groupBy: levelBy, measures: measuresOf(aliases, levelBy) };
+    const levelKept = new Set([...levelBy, ...aliases]);
+    const first: QueryRequest = { ...base, select: [], expand: [], orderBy: base.orderBy.filter((s) => levelKept.has(s.path)), skip: 0, count: caps.countable, analytical };
+    const levelFilter = (row: Row) => Object.fromEntries(level.map((p) => [p, [{ operator: 'EQ' as const, values: [row[p] ?? null] }]]));
+    const leafRequest = (row: Row, skip: number, top: number): QueryRequest => (o.aggregationOnLeafLevel
+      // aggregated leaves: the leaf level of $$aggregation under the group's condition
+      ? { ...base, select: [], expand: [], orderBy, skip, top, count: caps.countable, analytical: { groupBy, measures: analytical.measures, grandTotal: [] }, levelFilter: levelFilter(row) }
+      : { ...buildListRequest(model, ui, { ...o, skip, top, count: caps.countable }), orderBy, levelFilter: levelFilter(row) });
+    return { first, page: (skip, top) => ({ ...first, skip, top, count: false }), leaves: leafRequest };
+  }
   const first: QueryRequest = { ...base, select: [], expand: [], orderBy, skip: 0, count: caps.countable, analytical };
-  const page = (skip: number, top: number): QueryRequest => ({ ...buildListRequest(model, ui, { ...o, skip, top, count: false }), orderBy });
+  // aggregated leaves are no entities: the following pages read the same aggregation (without the grand total)
+  const page = (skip: number, top: number): QueryRequest => (o.aggregationOnLeafLevel
+    ? { ...first, skip, top, count: false, analytical: { ...analytical, grandTotal: [] } }
+    : { ...buildListRequest(model, ui, { ...o, skip, top, count: false }), orderBy });
+  if (o.aggregationOnLeafLevel) return { first, page };
 
   // late properties: the list's $select without what the first page delivers, and its $expand
   const delivered = new Set([...groupBy, ...analytical.measures.map((m) => m.path)]);

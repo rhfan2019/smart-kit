@@ -102,5 +102,5 @@
 | 3 | 完成 | 360b348 | D39、D40 | 八项 P1 和 OperationAvailable 缺陷按 FE；FE 对比 15 个场景；`02` 按 FE 源码重写；`fe-behavior` 32 → 28 |
 | 4 | 完成 | 66c48a3 | D43 | 列、动作、筛选栏、值帮助、值的显示、视图、图表、KPI 按 FE；FE 对比 37 个场景；`fe-behavior` 28 → 13；收尾（D45）：分析表单请求、引用的值帮助、参数化实体集、列和动作的 FE 核对，FE 对比 60 个场景 |
 | 5 | 完成 | a8a942b | D46 | `ListReport`、`ObjectPage` 在 `v4/fe/templates`，属性是 manifest 设置（AL-13 核对：LR 333 项、OP 382 项，0 未登记）；`/templates` 删除；FE 对比 75 个场景 |
-| 6 | 未开始 | | | |
+| 6 | 完成 | （本提交） | D47 | 对象页注解按 FE（`29b`、`29c`）；九个微图、`m/p13n`、`m/QuickView`、landmark info；积木补齐 sap.fe.macros 成员，分组分析表可折叠；`check:ui5` 256 个导出 0 未登记，AL-13 0 未登记；FE 对比 101 个场景；`not-implemented` 135（阶段 7 处理） |
 | 7 | 未开始 | | | |

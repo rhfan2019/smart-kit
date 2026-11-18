@@ -16,3 +16,7 @@ export { IconTabFilterDesign, IconTabFilterInteractionMode, IconTabHeaderMode, I
 export { VerticalPlacementType } from '../messages/MessagePopover';
 export { ListMode, PopinLayout, Sticky, MultiSelectMode, ListSeparators } from '../table/ResponsiveTable';
 export { GenericTagDesign, GenericTagValueState } from '../object/GenericTag';
+export { Size, ValueColor } from '../chart/microCore';
+export { P13nPopupMode } from '../controls/p13n/Popup';
+export { PlacementType, QuickViewGroupElementType } from '../controls/quickview/QuickView';
+export { ListKeyboardMode, ListGrowingDirection, SwipeDirection, ListItemActionType } from '../table/ResponsiveTable';

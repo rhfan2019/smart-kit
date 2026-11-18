@@ -82,9 +82,10 @@ test('GT-01 the Totals tab lists the custom aggregates, only in the analytical t
   await waitForRows(page, PO);
   await openSettings(page);
   await page.locator('[data-sk-p13n-totals-tab]').click();
-  const boxes = page.locator('[data-sk-p13n-total]');
+  // the totals are a sap.m.p13n.SelectionPanel in the sap.m.p13n.Popup (stage 6)
+  const boxes = page.locator('[data-sk-p13n-panel="totals"] [data-sk-p13n-item]');
   await expect(boxes).toHaveCount(1);
-  await expect(boxes.first()).toHaveAttribute('data-sk-p13n-total', 'DataField::NetAmount');
+  await expect(boxes.first()).toHaveAttribute('data-sk-p13n-item', 'DataField::NetAmount');
   await expect(page.getByRole('checkbox', { name: 'Net Amount' })).toBeChecked();
   await shot(page, 'GT-01', page.getByRole('dialog'));
   await page.keyboard.press('Escape');
@@ -146,7 +147,8 @@ test('GT-04 GT-06 responsive table grouped by status: group headers with the gro
   await openSettings(page);
   await page.locator('[data-sk-p13n-group-tab]').click();
   await page.locator('[data-sk-p13n-group]').click();
-  await expect(page.getByRole('option')).toHaveText(['No grouping', 'Budget', 'Company Code', 'Created On', 'Currency', 'Delivery Progress', 'Invoiced Amount',
+  // sap.m.p13n.GroupPanel (QueryPanel): no 'none' entry; a criterion is removed with its remove button (stage 6)
+  await expect(page.getByRole('option')).toHaveText(['Budget', 'Company Code', 'Created On', 'Currency', 'Delivery Progress', 'Invoiced Amount',
     'Net Amount', 'Notes', 'Order Date', 'Order Type', 'Order Type Name', 'Purchase Order', 'Purchasing Group', 'Status Criticality', 'Status Name', 'Supplier', 'Supplier Name', 'Version']);
   await page.keyboard.press('Escape');
   await page.keyboard.press('Escape');
@@ -161,60 +163,45 @@ test('GT-04 GT-06 responsive table grouped by status: group headers with the gro
   await shot(page, 'GT-04');
 });
 
-test('GT-10 analytical table grouped by supplier: group rows with count and subtotal; sorting stays inside the groups; more rows while scrolling', async ({ page, request }) => {
+test('GT-10 analytical table grouped by supplier: collapsed groups with their subtotals; expanding reads the group\'s rows, the subtotal moves to its bottom (FE groupLevels, macros6)', async ({ page, request }) => {
   const rec = recordOData(page);
   await open(page, ANALYTICAL);
   await waitForRows(page, PO);
   await groupBy(page, 'Supplier');
   const groupRows = table(page, PO).locator('.ag-row.sk-table__group-row');
   const header = groupRows.first();
-  await expect(header.locator('[data-sk-group-count]')).toHaveAttribute('data-sk-group-count', /\d+/);
-  // the first data row after the header belongs to the group: its supplier tells the group
+  // FE: one request for the number of rows, the grand total and the groups with their subtotals; the groups are collapsed
+  await expect.poll(() => rec.urls.some((u) => /UI5__leaves.*groupby\(\(Supplier\)/.test(decodeURIComponent(u)))).toBe(true);
+  await expect(header.locator('[data-sk-group-row]')).toHaveAttribute('data-sk-group-expanded', 'false');
+  await expect(table(page, PO).locator('.ag-row:not(.sk-table__group-row):not(.ag-row-pinned)')).toHaveCount(0);
+  const supplier = (await header.getAttribute('row-id'))!.replace(/^\$smartKitGroup:/, '');
   const all = await orders(request, DEFAULT_FILTER);
-  const firstPo = (await table(page, PO).locator('.ag-row:not(.sk-table__group-row)[row-index="1"] [col-id="DataField::PurchaseOrder"]').innerText()).trim();
-  const supplier = all.find((o) => o.PurchaseOrder === firstPo)?.Supplier;
   const inGroup = all.filter((o) => o.Supplier === supplier);
-  await expect(header.locator('[data-sk-group-count]')).toHaveAttribute('data-sk-group-count', String(inGroup.length));
-  await expect(header).toContainText(`(${inGroup.length})`);
   await expectTotal(page, header.locator('[data-sk-total="NetAmount"]'), inGroup, { title: 'Subtotals' });
   // group rows cannot be selected
   await expect(table(page, PO).locator('.sk-table__group-row input[type="checkbox"]:visible')).toHaveCount(0);
-  // a header click sorts inside the groups on the service: the group property stays first
-  await table(page, PO).locator('.ag-header-cell[col-id="DataField::PurchaseOrder"] .ag-header-cell-label').click();
-  await expect.poll(() => rec.urls.some((u) => /\$orderby=Supplier( asc)?,PurchaseOrder/.test(decodeURIComponent(u)))).toBe(true);
-  await expect(groupRows.first()).toBeVisible();
-  // more rows (and subtotals of the new groups) while scrolling
-  const before = await groupRows.count();
-  const asked = () => rec.urls.filter((u) => u.includes('$skip=100') || u.includes('$skip=200')).length;
-  for (let i = 0; i < 3; i++) {
-    await table(page, PO).locator('.ag-body-vertical-scroll-viewport').evaluate((el) => el.scrollTo({ top: el.scrollHeight }));
-    await page.waitForTimeout(700);
-  }
-  expect(asked()).toBeGreaterThan(0);
-  expect(before).toBeGreaterThan(0);
+  // expanding: the group's rows with the group's condition first, their number in the header, the subtotal at the bottom
+  await header.locator('[data-sk-group-toggle]').click();
+  await expect.poll(() => rec.urls.some((u) => decodeURIComponent(u).includes(`$filter=Supplier eq '${supplier}' and (`))).toBe(true);
+  await expect(header.locator('[data-sk-group-count]')).toHaveAttribute('data-sk-group-count', String(inGroup.length));
+  await expect(header.locator('[data-sk-total]')).toHaveCount(0);
+  await expectTotal(page, table(page, PO).locator(`.ag-row[row-id="$smartKitGroup:${supplier}:bottom"] [data-sk-total="NetAmount"]`), inGroup, { title: 'Subtotals' });
   await shot(page, 'GT-10');
 });
 
-test('GT-05 more rows request subtotals only for new groups, at most 50 values per request', async ({ page }) => {
+test('GT-05 the subtotals come with the groups: no request per group before a group is expanded', async ({ page }) => {
   const rec = recordOData(page);
   await open(page, ANALYTICAL);
   await waitForRows(page, PO);
   await groupBy(page, 'Supplier');
   await expect(table(page, PO).locator('.sk-table__group-row [data-sk-total="NetAmount"]').first()).toBeVisible();
-  for (let i = 0; i < 4; i++) {
-    await table(page, PO).locator('.ag-body-vertical-scroll-viewport').evaluate((el) => el.scrollTo({ top: el.scrollHeight }));
-    await page.waitForTimeout(700);
-  }
-  const subtotalUrls = rec.urls.filter((u) => u.includes('groupby((Supplier,'));
-  expect(subtotalUrls.length).toBeGreaterThan(1);
-  const asked = subtotalUrls.map((u) => [...u.matchAll(/Supplier eq '(\d+)'/g)].map((m) => m[1]!));
-  for (const values of asked) expect(values.length).toBeLessThanOrEqual(50);
-  const flat = asked.flat();
-  expect(new Set(flat).size).toBe(flat.length); // no group asked twice
+  await page.waitForTimeout(700);
+  expect(rec.urls.filter((u) => /Supplier eq '/.test(decodeURIComponent(u)))).toEqual([]);
   // every group header that is rendered has its subtotal
   const labels = table(page, PO).locator('.sk-table__group-row [data-sk-group-row]');
   const n = await labels.count();
-  await expect.poll(() => table(page, PO).locator('.sk-table__group-row [data-sk-group-row][data-sk-group-count]').count()).toBe(n);
+  expect(n).toBeGreaterThan(0);
+  await expect.poll(() => table(page, PO).locator('.sk-table__group-row [data-sk-total="NetAmount"]').count()).toBe(n);
 });
 
 test('GT-07 grouping and totals are stored in the variant and restored', async ({ page }) => {

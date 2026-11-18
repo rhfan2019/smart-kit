@@ -8,7 +8,8 @@
  * `type`: chosen from the annotations as FE), views=switch|select|type-switch (`tableSettings.quickVariantSelection`),
  * views=type (views by order type from the demo's local annotations, src/annotations.ts), contents=1 (a view per
  * entity set), kpi=1 (`keyPerformanceIndicators`: the KPI tag UI.KPI#OpenAmount); initialLoad=Auto|Disabled|Enabled,
- * vm=None, selection=None|Single|Multi|Auto, export=0, creation=CreationDialog, threshold=<n> (tests/e2e-fe/lr5.spec.ts).
+ * vm=None, selection=None|Single|Multi|Auto, export=0, creation=CreationDialog, threshold=<n> (tests/e2e-fe/lr5.spec.ts);
+ * lr=<JSON> lays further settings over the manifest's (tests/e2e-fe/macros6-lr.spec.ts).
  */
 import ListReport, { type $ListReportSettings } from '@rhfan2019/smart-kit/v4/fe/templates/ListReport';
 import MessageToast from '@rhfan2019/smart-kit/m/MessageToast';
@@ -28,6 +29,23 @@ import type { ShellKey } from '../shellText';
 const SPV = 'com.sap.vocabularies.UI.v1.SelectionPresentationVariant';
 const spv = (q: string) => ({ annotationPath: `${SPV}#${q}` });
 
+/** lr=<JSON>: settings laid over the manifest's list report settings (tests/e2e-fe/macros6-lr.spec.ts lays the same over FE). */
+function withPatch(manifest: unknown, lr: string | null): unknown {
+  if (!lr) return manifest;
+  const m = structuredClone(manifest) as { 'sap.ui5': { routing: { targets: Record<string, { name?: string; options?: { settings?: unknown } }> } } };
+  const target = Object.values(m['sap.ui5'].routing.targets).find((x) => x.name === 'sap.fe.templates.ListReport');
+  if (target?.options) target.options.settings = mergeSettings(target.options.settings, JSON.parse(lr));
+  return m;
+}
+
+/** Deep merge of JSON settings (objects merge, other values replace). */
+function mergeSettings(base: unknown, patch: unknown): unknown {
+  if (!patch || typeof patch !== 'object' || Array.isArray(patch) || !base || typeof base !== 'object' || Array.isArray(base)) return patch;
+  const out: Record<string, unknown> = { ...(base as Record<string, unknown>) };
+  for (const [k, v] of Object.entries(patch)) out[k] = mergeSettings(out[k], v);
+  return out;
+}
+
 export function PurchaseOrdersPage({ service = 'purchasing' }: { service?: string }) {
   const { s } = useShell();
   const [params] = useSearchParams();
@@ -35,11 +53,14 @@ export function PurchaseOrdersPage({ service = 'purchasing' }: { service?: strin
     const viewsParam = params.get('views');
     const table = params.get('table');
     const manifest = table === 'analytical' ? purchasingAnalytical : params.get('chart') ? purchasingChart : viewsParam === 'tabs' ? purchasingViews : service === 'purchasing-draft' ? purchasingDraft : purchasing;
-    let out = listReportSettings(manifest, {
+    let out = listReportSettings(withPatch(manifest, params.get('lr')), {
       text: (key) => s(key as ShellKey),
       templates: {
         // apps/fe-reference/webapp/ext/Overdue.fragment.xml
         'fe.ref.ext.Overdue': (row: Row) => (row.StatusCriticality === 1 ? <span className="demo__overdue" data-demo-overdue>{s('overdue')}</span> : null),
+        // apps/fe-reference/webapp/ext/ExpandedHeader.fragment.xml, CollapsedHeader.fragment.xml (content › header › customHeader)
+        'fe.ref.ext.ExpandedHeader': () => <span data-demo-expanded-header>Purchasing overview</span>,
+        'fe.ref.ext.CollapsedHeader': () => <span data-demo-collapsed-header>Purchasing (collapsed)</span>,
       },
       handlers: {
         // apps/fe-reference/webapp/ext/CustomActions.js copy

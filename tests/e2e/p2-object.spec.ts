@@ -1,6 +1,9 @@
 /** Phase 2 · Object Page (docs/13 §4–7, display mode): Components, anchor bar and tab figures, header facets, content. */
 import { expect, test, type Page } from '@playwright/test';
-import { evidence, mainScroll, open, orderPath, resetServer } from './helpers';
+import { ON_PG, evidence, mainScroll, open, orderPath, resetServer } from './helpers';
+
+/** A contact: the section "Activity" has two sub-sections (FE createSubSections; an order's sections have one each since stage 6). */
+const contactPath = (extra = '') => `/purchasing/object?path=${encodeURIComponent('SupplierContacts(5c0a0001-0d4e-4f00-8a00-000000001eef)')}${extra}`;
 
 test.beforeEach(async ({ page }) => resetServer(page));
 
@@ -16,7 +19,9 @@ test('P2-OPC-02 P2-OPC-03 P2-OPC-04 P2-OPC-07 components: navigation bar, conten
   const shell = await rect(page, '.demo__bar');
   const pageTop = await rect(page, '.sk-dynamic-page');
   expect(pageTop.y).toBeGreaterThanOrEqual(shell.bottom - 1);
-  await expect(page.locator('.sk-dynamic-page [role="banner"]')).toHaveCount(0);
+  // the only banner is the object page's own title area (sap.uxap.ObjectPageAccessibleLandmarkInfo headerRole Banner, stage 6)
+  await expect(page.locator('.sk-dynamic-page [role="banner"]')).toHaveCount(1);
+  await expect(page.locator('.sk-dynamic-page [role="banner"]')).toContainText('4500000001');
   // facets flow from left to right and wrap to a second line
   // measure after the data is shown (empty facets are narrower)
   await expect(page.locator('[data-sk-facet="HeaderBudget"] [data-sk-microchart-bar="value"]')).toHaveCount(1);
@@ -32,41 +37,43 @@ test('P2-OPC-05 breadcrumbs above the title show the drilldown levels', async ({
   expect((await rect(page, '.sk-dynamic-page__breadcrumbs')).bottom).toBeLessThanOrEqual((await rect(page, '.sk-dynamic-page__heading')).y + 1);
 });
 
-test('P2-OPC-08 P2-OP-26 footer toolbar with the determining actions in display mode; hidden when not available', async ({ page }) => {
+test('P2-OPC-08 P2-OP-26 footer toolbar with the determining actions in display mode; disabled when not available (FE)', async ({ page }) => {
   await open(page, orderPath('4500002573')); // New
   const footer = page.locator('.sk-dynamic-page__footer');
   await expect(footer.locator('[data-sk-action="DataFieldForAction::Purchasing.approve"]')).toBeVisible();
   await expect(footer.locator('[data-sk-action="DataFieldForAction::Purchasing.reject"]')).toBeVisible();
   await evidence(page, 'P2-OPC-08', footer);
   await footer.locator('[data-sk-action="DataFieldForAction::Purchasing.approve"]').click();
-  // approved: the actions are no longer available and disappear
-  await expect(footer.locator('[data-sk-action="DataFieldForAction::Purchasing.approve"]')).toHaveCount(0);
+  // approved: the actions are no longer available and are disabled (FE getEnabledForAnnotationAction, stage 6)
+  await expect(footer.locator('[data-sk-action="DataFieldForAction::Purchasing.approve"]')).toBeDisabled();
   await expect(page.locator('[data-sk-message-button]')).toBeVisible();
 });
 
 test('P2-OPA-01 P2-OPA-02 P2-OPA-03 P2-OPA-04 P2-OPA-05 anchors: active and inactive, subsection dropdown with indicator', async ({ page }) => {
-  await open(page, orderPath('4500000001'));
+  test.skip(ON_PG, 'the supplier contacts are only in the test service');
+  await open(page, contactPath());
   const active = page.locator('[data-sk-anchor][aria-current="true"]');
   await expect(active).toHaveCount(1);
-  await expect(active).toHaveAttribute('data-sk-anchor', 'GeneralInformation');
-  const other = page.locator('[data-sk-anchor="Items"]');
+  await expect(active).toHaveAttribute('data-sk-anchor', 'ContactData');
+  const other = page.locator('[data-sk-anchor="ContactActivity"]');
   await expect(other).not.toHaveAttribute('aria-current', 'true');
   const colorActive = await active.evaluate((e) => getComputedStyle(e).color);
   const colorOther = await other.evaluate((e) => getComputedStyle(e).color);
   expect(colorActive).not.toBe(colorOther);
-  const indicator = page.locator('[data-sk-anchor-menu="GeneralInformation"]');
+  const indicator = page.locator('[data-sk-anchor-menu="ContactActivity"]');
   await expect(indicator.locator('svg')).toBeVisible();
   await indicator.click();
   const items = page.getByRole('menuitem');
   await expect(items).toHaveCount(2);
   await evidence(page, 'P2-OPA-03');
   await items.nth(1).click();
-  await expect(page.locator('[data-sk-subsection="AmountData"]')).toBeInViewport();
+  await expect(page.locator('[data-sk-subsection="ContactSupplier"]')).toBeInViewport();
 });
 
 test('P2-OPA-06 P2-OPA-07 P2-OPA-08 P2-OPA-09 P2-OPA-10 P2-OPA-11 overflow: carousel buttons, overflow menu with sections and subsections', async ({ page }) => {
+  test.skip(ON_PG, 'the supplier contacts are only in the test service');
   await page.setViewportSize({ width: 900, height: 900 });
-  await open(page, orderPath('4500000001', { extra: '&extra=8' }));
+  await open(page, contactPath('&extra=8'));
   const forward = page.locator('[data-sk-anchor-scroll="forward"]');
   await expect(forward).toBeVisible();
   const list = page.locator('.sk-anchorbar__list');
@@ -79,8 +86,8 @@ test('P2-OPA-06 P2-OPA-07 P2-OPA-08 P2-OPA-09 P2-OPA-10 P2-OPA-11 overflow: caro
   const nav = await page.locator('.sk-anchorbar').boundingBox();
   expect(b!.x + b!.width).toBeGreaterThan(nav!.x + nav!.width - 80); // on the right
   await button.click();
-  const section = page.locator('[data-sk-overflow-section="GeneralInformation"]');
-  const sub = page.locator('[data-sk-overflow-subsection="AmountData"]');
+  const section = page.locator('[data-sk-overflow-section="ContactActivity"]');
+  const sub = page.locator('[data-sk-overflow-subsection="ContactSupplier"]');
   await expect(section).toBeVisible();
   await expect(sub).toBeVisible();
   // subsections are indented below their section
@@ -92,24 +99,25 @@ test('P2-OPA-06 P2-OPA-07 P2-OPA-08 P2-OPA-09 P2-OPA-10 P2-OPA-11 overflow: caro
   await section.hover();
   await expect.poll(() => section.evaluate((e) => getComputedStyle(e).backgroundColor)).not.toBe(before);
   await evidence(page, 'P2-OPA-08');
-  await page.locator('[data-sk-overflow-section="Items"]').click();
-  await expect(page.locator('[data-sk-section="Items"]')).toBeInViewport();
+  await page.locator('[data-sk-overflow-section="ContactActivity"]').click();
+  await expect(page.locator('[data-sk-section="ContactActivity"]')).toBeInViewport();
   await button.click();
-  await page.locator('[data-sk-overflow-subsection="AmountData"]').click();
-  await expect(page.locator('[data-sk-subsection="AmountData"]')).toBeInViewport();
+  await page.locator('[data-sk-overflow-subsection="ContactSupplier"]').click();
+  await expect(page.locator('[data-sk-subsection="ContactSupplier"]')).toBeInViewport();
 });
 
-test('P2-OPT-01 P2-OPT-02 P2-OPT-03 tabs: always visible, counts, subnavigation arrow; tab content shows the subsection titles', async ({ page }) => {
+test('P2-OPT-01 P2-OPT-02 P2-OPT-03 tabs: always visible, no counts (FE), subnavigation arrow; tab content shows the subsection titles', async ({ page }) => {
   await open(page, orderPath('4500000001', { layout: 'tabs' }));
   const tabs = page.getByRole('tab');
-  await expect(page.locator('[data-sk-anchor="Items"]')).toHaveText('Items (150)');
-  await expect(page.locator('[data-sk-anchor-menu="GeneralInformation"]')).toBeVisible();
+  // FE 1.154: the tab text is the section title without a count (stage 6)
+  await expect(page.locator('[data-sk-anchor="Items"]')).toHaveText('Items');
   await expect(tabs.first()).toHaveAttribute('aria-selected', 'true');
-  // one section at a time, no section title; the subsections have their titles, in order
+  // one section at a time, no section title; one sub-section whose form shows its containers' titles, in order
   await expect(page.locator('.sk-section__title')).toHaveCount(0);
-  const titles = page.locator('[data-sk-section="GeneralInformation"] .sk-subsection__title');
+  const titles = page.locator('[data-sk-section="GeneralInformation"] .sk-form__group-title');
   await expect(titles).toHaveText(['General Data', 'Amounts']);
-  const [a, b] = await titles.evaluateAll((els) => els.map((e) => e.getBoundingClientRect().top));
+  // the containers are columns of the form (FE ColumnLayout)
+  const [a, b] = await titles.evaluateAll((els) => els.map((e) => e.getBoundingClientRect().left));
   expect(b!).toBeGreaterThan(a!);
   await evidence(page, 'P2-OPT-01');
   await mainScroll(page, 400);
@@ -122,7 +130,7 @@ test('P2-OP-08 small screens: the anchor bar becomes a select; tabs scroll horiz
   const select = page.getByRole('combobox', { name: 'Sections' });
   await expect(select).toBeVisible();
   await select.click();
-  await expect(page.getByRole('option', { name: /Amounts/ })).toBeVisible();
+  await expect(page.getByRole('option', { name: /Items/ })).toBeVisible();
   await page.keyboard.press('Escape');
   await open(page, orderPath('4500000001', { layout: 'tabs', extra: '&extra=4' }));
   await expect(page.locator('.sk-anchorbar--select')).toHaveCount(0);
@@ -186,7 +194,7 @@ test('P2-OP-09 title styles: a lone table carries an H3-style title, a table nex
 
 test('P2-OP-10 forms hide Medium and Low importance fields on small screens', async ({ page }) => {
   await open(page, orderPath('4500000001'));
-  const field = (path: string) => page.locator(`[data-sk-subsection="GeneralData"] [data-sk-field-path="${path}"]`);
+  const field = (path: string) => page.locator(`[data-sk-group="GeneralData"] [data-sk-field-path="${path}"]`);
   await expect(field('CreatedAt')).toBeVisible();
   await expect(field('PurchasingGroup')).toBeVisible();
   await page.setViewportSize({ width: 800, height: 900 });
@@ -264,9 +272,10 @@ test('P2-OP-28 messages in display mode: generic tag with the status and the obj
 test('P2-OP-29 loading: lazy sections show a busy placeholder; "Show More" content is rendered only when opened', async ({ page }) => {
   await open(page, orderPath('4500000001'));
   await expect(page.locator('[data-sk-section="Items"] [aria-busy="true"]').or(page.locator('[data-sk-section="Items"] .sk-table'))).toBeVisible();
-  await expect(page.locator('[data-sk-subsection="NotesData"] [data-sk-field-path="Notes"]')).toHaveCount(0);
-  await page.locator('[data-sk-subsection="NotesData"] [data-sk-show-more]').click();
-  await expect(page.locator('[data-sk-subsection="NotesData"] [data-sk-field-path="Notes"]')).toBeVisible();
+  // the container with UI.PartOfPreview false is behind "Show More" of the sub-section NotesSection (FE moreBlocks)
+  await expect(page.locator('[data-sk-subsection="NotesSection"] [data-sk-field-path="Notes"]')).toHaveCount(0);
+  await page.locator('[data-sk-subsection="NotesSection"] [data-sk-show-more]').click();
+  await expect(page.locator('[data-sk-subsection="NotesSection"] [data-sk-field-path="Notes"]')).toBeVisible();
 });
 
 test('P2-OP-30 dynamic side content: shown next to its sub-section by a sub-section action (FE sideContent), contextual content only', async ({ page }) => {

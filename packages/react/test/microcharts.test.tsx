@@ -1,12 +1,38 @@
-/** Phase 3 micro charts (docs/15-research-micro-chart.md): Bullet, Radial, Harvey Ball and the shared rules. */
+/**
+ * The sap.suite.ui.microchart controls (stage 6, docs/15-research-micro-chart.md) and the annotation mapping of
+ * sap.fe.macros.MicroChart (MicroChartHelper of FE 1.154).
+ */
 import { buildModel, type ChartModel, type FieldModel } from '@rhfan2019/smart-kit-core';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { createRef } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import MicroChart from '@rhfan2019/smart-kit/v4/fe/macros/MicroChart';
+import AreaMicroChart from '@rhfan2019/smart-kit/suite/ui/microchart/AreaMicroChart';
+import AreaMicroChartItem from '@rhfan2019/smart-kit/suite/ui/microchart/AreaMicroChartItem';
+import AreaMicroChartLabel from '@rhfan2019/smart-kit/suite/ui/microchart/AreaMicroChartLabel';
+import AreaMicroChartPoint from '@rhfan2019/smart-kit/suite/ui/microchart/AreaMicroChartPoint';
+import BulletMicroChart from '@rhfan2019/smart-kit/suite/ui/microchart/BulletMicroChart';
+import BulletMicroChartData from '@rhfan2019/smart-kit/suite/ui/microchart/BulletMicroChartData';
+import ColumnMicroChart from '@rhfan2019/smart-kit/suite/ui/microchart/ColumnMicroChart';
+import ColumnMicroChartData from '@rhfan2019/smart-kit/suite/ui/microchart/ColumnMicroChartData';
+import ComparisonMicroChart from '@rhfan2019/smart-kit/suite/ui/microchart/ComparisonMicroChart';
+import ComparisonMicroChartData from '@rhfan2019/smart-kit/suite/ui/microchart/ComparisonMicroChartData';
+import DeltaMicroChart from '@rhfan2019/smart-kit/suite/ui/microchart/DeltaMicroChart';
+import HarveyBallMicroChart from '@rhfan2019/smart-kit/suite/ui/microchart/HarveyBallMicroChart';
+import HarveyBallMicroChartItem from '@rhfan2019/smart-kit/suite/ui/microchart/HarveyBallMicroChartItem';
+import LineMicroChart from '@rhfan2019/smart-kit/suite/ui/microchart/LineMicroChart';
+import LineMicroChartEmphasizedPoint from '@rhfan2019/smart-kit/suite/ui/microchart/LineMicroChartEmphasizedPoint';
+import LineMicroChartLine from '@rhfan2019/smart-kit/suite/ui/microchart/LineMicroChartLine';
+import LineMicroChartPoint from '@rhfan2019/smart-kit/suite/ui/microchart/LineMicroChartPoint';
+import RadialMicroChart from '@rhfan2019/smart-kit/suite/ui/microchart/RadialMicroChart';
+import StackedBarMicroChart from '@rhfan2019/smart-kit/suite/ui/microchart/StackedBarMicroChart';
+import StackedBarMicroChartBar from '@rhfan2019/smart-kit/suite/ui/microchart/StackedBarMicroChartBar';
+import { AreaMicroChartViewType, BulletMicroChartModeType, CommonBackgroundType, ComparisonMicroChartViewType, DeltaMicroChartViewType, HorizontalAlignmentType, LineType, MicroChartColorType } from '@rhfan2019/smart-kit/suite/ui/microchart/library';
 import Field from '../src/v4/fe/macros/Field';
 import { chartHidden, chartProps, seriesChartProps } from '../src/chart/fromModel';
+import { MicroChartDrawing } from '../src/chart/MicroChart';
 import { wrap } from './helpers';
 
 const bars = (root: Element, key?: string) => root.querySelectorAll(key ? `[data-sk-microchart-bar="${key}"]` : '[data-sk-microchart-bar]');
@@ -23,42 +49,90 @@ function fakeResize(width: number, height: number) {
 }
 afterEach(() => vi.unstubAllGlobals());
 
-describe('docs/15 shared rules', () => {
+describe('sap.suite.ui.microchart library', () => {
+  it('AL-05 the enums of sap/suite/ui/microchart/library', () => {
+    expect(Object.keys(MicroChartColorType)).toHaveLength(17);
+    expect(BulletMicroChartModeType.Delta).toBe('Delta');
+    expect(Object.keys(CommonBackgroundType)).toHaveLength(9);
+    expect(Object.values(AreaMicroChartViewType)).toEqual(['Normal', 'Wide']);
+    expect(Object.values(ComparisonMicroChartViewType)).toEqual(['Normal', 'Wide', 'Responsive']);
+    expect(Object.values(DeltaMicroChartViewType)).toEqual(['Normal', 'Wide', 'Responsive']);
+    expect(Object.values(HorizontalAlignmentType)).toEqual(['Left', 'Center', 'Right']);
+    expect(Object.values(LineType)).toEqual(['Solid', 'Dashed', 'Dotted']);
+  });
+});
+
+describe('shared rules (docs/15)', () => {
+  it('AL-05 size defaults to Auto (M, S on phones); Responsive fills the container; width / height override', () => {
+    const { container } = render(wrap(<>
+      <RadialMicroChart percentage={10} />
+      <RadialMicroChart percentage={10} size="Responsive" />
+      <RadialMicroChart percentage={10} size="XS" width="5rem" height="2rem" />
+    </>));
+    const [auto, responsive, xs] = [...container.querySelectorAll<HTMLElement>('.sk-microchart')];
+    expect(auto).toHaveClass('sk-microchart--size-Auto');
+    expect(responsive!.className).not.toMatch(/size-/);
+    expect(xs).toHaveClass('sk-microchart--size-XS');
+    expect(xs!.style.width).toBe('5rem');
+    expect(xs!.style.height).toBe('2rem');
+  });
+
   it('MC-02 / MC-27 the measured height decides the labels: below 56 px a bullet has none', () => {
     fakeResize(200, 30);
-    const { container } = render(wrap(<MicroChart kind="bullet" label="Budget" value={10} target={20} />));
+    const { container } = render(wrap(<BulletMicroChart size="Responsive" aria-label="Budget" targetValue={20}><BulletMicroChartData value={10} /></BulletMicroChart>));
     expect(container.querySelector('.sk-microchart')).toHaveClass('sk-microchart--compact');
     expect(container.querySelector('.sk-microchart__lane')).toBeNull();
     // the text alternative still has everything
     expect(screen.getByRole('img', { name: 'Budget: Actual 10, Target 20' })).toBeInTheDocument();
   });
 
-  it('MC-13 visible labels use the short form; the text alternative the full number', () => {
-    render(wrap(<MicroChart kind="harvey" label="Qty" value={1500000} max={4000000} />));
-    const img = screen.getByRole('img', { name: 'Qty: 1,500,000 of 4,000,000' });
-    expect(img).toHaveTextContent('1.5M');
-    expect(img).toHaveTextContent('4M');
-  });
-
   it('MC-04 a number that does not fit hides its whole label group instead of being cut', () => {
-    const spy = vi.spyOn(HTMLElement.prototype, 'scrollWidth', 'get').mockImplementation(function (this: HTMLElement) { return this.textContent === '1.2M' ? 80 : 0; });
-    const { container } = render(wrap(<MicroChart kind="bullet" label="Budget" value={1234567} target={20} />));
+    const spy = vi.spyOn(HTMLElement.prototype, 'scrollWidth', 'get').mockImplementation(function (this: HTMLElement) { return this.textContent === '1234567' ? 80 : 0; });
+    const { container } = render(wrap(<BulletMicroChart targetValue={20} actual={{ value: 1234567 }} />));
     expect(container.querySelector('.sk-microchart__lane')).toHaveAttribute('data-sk-overflow');
     spy.mockRestore();
   });
 
-  it('MC-05 no data: a focusable placeholder that cannot be pressed; MC-06 empty in table cells', () => {
+  it('AL-05 hideOnNoData defaults to false: a focusable "No data" placeholder that cannot be pressed (MC-05); true renders nothing (MC-06)', () => {
     const onPress = vi.fn();
     const { container } = render(wrap(
       <>
-        <MicroChart kind="bullet" label="A" onPress={onPress} />
-        <span data-cell><MicroChart kind="harvey" label="B" value={1} hideOnNoData /></span>
+        <BulletMicroChart aria-label="A" onPress={onPress} />
+        <span data-cell><HarveyBallMicroChart hideOnNoData><HarveyBallMicroChartItem fraction={1} /></HarveyBallMicroChart></span>
       </>,
     ));
     const placeholder = screen.getByRole('img', { name: 'A: No data' });
     expect(placeholder).toHaveAttribute('tabindex', '0');
     expect(screen.queryByRole('button')).toBeNull();
     expect(container.querySelector('[data-cell]')).toBeEmptyDOMElement();
+  });
+
+  it('AL-06 press: a button with the text alternative; Enter, Space and click fire it (MC-07, MC-11)', async () => {
+    const onPress = vi.fn();
+    render(wrap(<RadialMicroChart aria-label="Received" fraction={1} total={4} onPress={onPress} />));
+    const button = screen.getByRole('button', { name: 'Received: 25%' });
+    expect(button).toHaveClass('sk-microchart--pressable');
+    const user = userEvent.setup();
+    await user.tab();
+    expect(button).toHaveFocus();
+    await user.keyboard('{Enter}');
+    await user.keyboard(' ');
+    await user.click(button);
+    expect(onPress).toHaveBeenCalledTimes(3);
+  });
+
+  it('colours: MicroChartColorType semantic and Sequence values, palette parameters and CSS colours', () => {
+    const { container } = render(wrap(<>
+      <RadialMicroChart percentage={1} valueColor="Error" />
+      <RadialMicroChart percentage={1} valueColor="Sequence3" />
+      <RadialMicroChart percentage={1} valueColor="sapUiChartPaletteQualitativeHue5" />
+      <RadialMicroChart percentage={1} valueColor="rebeccapurple" />
+    </>));
+    const roots = [...container.querySelectorAll<HTMLElement>('.sk-microchart')];
+    expect(roots[0]).toHaveClass('sk-chart--negative');
+    expect(roots[1]).toHaveClass('sk-chart--palette-3');
+    expect(roots[2]).toHaveClass('sk-chart--palette-5');
+    expect(roots[3]!.style.getPropertyValue('--sk-chart-mark')).toBe('rebeccapurple');
   });
 
   it('MC-08 every theme defines the eleven palette colours; components only reference tokens', () => {
@@ -69,13 +143,27 @@ describe('docs/15 shared rules', () => {
     }
     for (let i = 1; i <= 11; i++) expect(css).toContain(`--sk-chart-palette-${i}: var(--sk-color-chart-${i});`);
   });
+
+  it('MC-76 the text alternative names the semantic state, so colour is not the only carrier', () => {
+    render(wrap(<>
+      <RadialMicroChart aria-label="R" percentage={40} valueColor="Critical" />
+      <BulletMicroChart aria-label="B" actual={{ value: 1, color: 'Error' }} />
+    </>, { locale: 'zh' }));
+    expect(screen.getByRole('img', { name: 'R：40% (警告)' })).toBeInTheDocument();
+    expect(screen.getByRole('img', { name: 'B：实际 1 (差)' })).toBeInTheDocument();
+  });
 });
 
-describe('docs/15 bullet', () => {
-  it('MC-22 the actual bar is neutral without criticality; MC-23 forecast bar; MC-25 thresholds', () => {
-    render(wrap(<MicroChart kind="bullet" label="Sales" value={60} target={80} forecast={90} thresholds={[{ value: 40, criticality: 1 }, { value: 70, criticality: 2 }]} />));
+describe('BulletMicroChart', () => {
+  it('AL-05 BulletMicroChart: mode Actual, the value and target as labels, MC-22 the actual colour Neutral; MC-23 forecast; MC-25 thresholds', () => {
+    render(wrap(
+      <BulletMicroChart aria-label="Sales" targetValue={80} forecastValue={90} thresholds={[{ value: 40, color: 'Error' }, <BulletMicroChartData key="c" value={70} color="Critical" />]}>
+        <BulletMicroChartData value={60} />
+      </BulletMicroChart>,
+    ));
     const img = screen.getByRole('img', { name: 'Sales: Actual 60, Target 80, Forecast 90, Thresholds 40, 70' });
-    expect(img).toHaveClass('sk-chart--neutral');
+    expect(img).toHaveClass('sk-chart--neutral', 'sk-microchart--bullet');
+    expect(img).toHaveTextContent('6080');
     expect(bars(img, 'forecast')).toHaveLength(1);
     const th = bars(img, 'threshold');
     expect(th).toHaveLength(2);
@@ -83,42 +171,452 @@ describe('docs/15 bullet', () => {
     expect(th[1]).toHaveClass('sk-chart--critical');
   });
 
-  it('MC-24 delta mode: the bar starts at the target and the label is the difference', () => {
-    render(wrap(<MicroChart kind="bullet" label="Invoiced" value={760} target={1000} mode="delta" forecast={900} />));
+  it('MC-24 Delta mode: the bar between actual and target, the label "Δ" and the absolute delta; no forecast', () => {
+    render(wrap(<BulletMicroChart aria-label="Invoiced" mode="Delta" targetValue={1000} forecastValue={900} actual={{ value: 760 }} />));
     const img = screen.getByRole('img', { name: 'Invoiced: Difference -240, Target 1,000' });
     const bar = bars(img, 'delta')[0]!;
     expect(Number(bar.getAttribute('x')) + Number(bar.getAttribute('width'))).toBeCloseTo(100);
     expect(bars(img, 'forecast')).toHaveLength(0);
-    expect(img).toHaveTextContent('-240');
+    expect(img).toHaveTextContent('Δ240');
   });
 
-  it('MC-26 the scale covers all values; MinimumValue / MaximumValue win', () => {
-    render(wrap(<MicroChart kind="bullet" label="S" value={50} target={100} min={0} max={200} />));
-    const value = bars(screen.getByRole('img'), 'value')[0]!;
-    expect(Number(value.getAttribute('width'))).toBeCloseTo(25);
+  it('MC-26 the scale covers all values and minValue / maxValue; smallRangeAllowed keeps a small range', () => {
+    const { container } = render(wrap(<>
+      <BulletMicroChart minValue={0} maxValue={200} targetValue={100} actual={{ value: 50 }} />
+      <BulletMicroChart targetValue={205} actual={{ value: 200 }} thresholds={[{ value: 195 }]} />
+      <BulletMicroChart targetValue={205} actual={{ value: 200 }} thresholds={[{ value: 195 }]} smallRangeAllowed />
+    </>));
+    const w = (i: number) => Number(bars(container.querySelectorAll('.sk-microchart')[i]!, 'value')[0]!.getAttribute('width'));
+    expect(w(0)).toBeCloseTo(25);
+    expect(w(1)).toBeCloseTo((200 / 205) * 100);
+    expect(w(2)).toBeCloseTo(50);
+  });
+
+  it('AL-05 labels replace the numbers and get the scale suffix; showActualValue / showTargetValue / showThresholds / showValueMarker / scaleColor', () => {
+    const { container, rerender } = render(wrap(<BulletMicroChart scale="M" actualValueLabel="1.2" targetValue={2} actual={{ value: 1.2 }} />));
+    expect(container.querySelector('.sk-microchart')).toHaveTextContent('1.2M2M');
+    rerender(wrap(<BulletMicroChart showActualValue={false} showTargetValue={false} showThresholds={false} showValueMarker scaleColor="Transparent" targetValue={2} actual={{ value: 1 }} thresholds={[{ value: 1.5 }]} />));
+    const img = container.querySelector('.sk-microchart')!;
+    expect(img.querySelector('.sk-microchart__lane')).toBeNull();
+    expect(bars(img, 'threshold')).toHaveLength(0);
+    expect(bars(img, 'marker')).toHaveLength(1);
+    expect(img.querySelector('.sk-microchart__track')).toHaveClass('sk-microchart__track--transparent');
+  });
+
+  it('MC-70 SAP anatomy: actual value above the bar at its end, target below at the marker; forecast as high as the track', () => {
+    render(wrap(<BulletMicroChart aria-label="B" targetValue={100} forecastValue={80} minValue={0} maxValue={100} thresholds={[{ value: 30, color: 'Error' }]} actual={{ value: 50 }} />));
+    const img = screen.getByRole('img', { name: /^B:/ });
+    const lanes = img.querySelectorAll('.sk-microchart__lane');
+    expect(lanes).toHaveLength(2);
+    expect((lanes[0]!.firstElementChild as HTMLElement).style.left).toBe('50%');
+    expect((lanes[1]!.firstElementChild as HTMLElement).style.left).toBe('100%');
+    expect(bars(img, 'forecast')[0]!.getAttribute('height')).toBe(img.querySelector('.sk-microchart__track')!.getAttribute('height'));
+    expect(Number(bars(img, 'threshold')[0]!.getAttribute('height'))).toBeGreaterThan(12);
   });
 });
 
-describe('docs/15 radial and Harvey Ball', () => {
-  it('MC-51 radial without target: the value is the percentage', () => {
-    render(wrap(<MicroChart kind="radial" label="Done" value={42} />));
-    expect(screen.getByRole('img', { name: 'Done: 42%' })).toHaveClass('sk-chart--neutral');
+describe('RadialMicroChart and HarveyBallMicroChart', () => {
+  it('AL-05 RadialMicroChart: percentage wins over fraction / total, rounded down to one decimal, within 0–100 %; valueColor Neutral', () => {
+    render(wrap(<>
+      <RadialMicroChart aria-label="P" percentage={42.37} fraction={1} total={2} />
+      <RadialMicroChart aria-label="F" fraction={1} total={4} />
+      <RadialMicroChart aria-label="O" fraction={5} total={4} />
+      <RadialMicroChart aria-label="N" />
+    </>));
+    expect(screen.getByRole('img', { name: 'P: 42.3%' })).toHaveClass('sk-chart--neutral');
+    expect(screen.getByRole('img', { name: 'F: 25%' }).querySelector('.sk-microchart__center')).toHaveTextContent('25%');
+    expect(screen.getByRole('img', { name: 'O: 100%' })).toBeInTheDocument();
+    expect(screen.getByRole('img', { name: 'N: No data' })).toBeInTheDocument();
   });
 
-  it('MC-53 small radial: the percentage moves to the right of the ring', () => {
+  it('MC-53 small radial: the percentage moves to the right of the ring; alignContent', () => {
     fakeResize(120, 24);
-    const { container } = render(wrap(<MicroChart kind="radial" label="Done" value={42} />));
+    const { container } = render(wrap(<RadialMicroChart percentage={42} alignContent="Right" />));
     expect(container.querySelector('.sk-microchart__center')).toBeNull();
     expect(container.querySelector('.sk-microchart__side')).toHaveTextContent('42%');
+    expect(container.querySelector('.sk-microchart')).toHaveClass('sk-microchart--align-Right');
   });
 
-  it('MC-55 Harvey Ball total is the maximum; MC-56 palette colour without criticality; MC-57 small: slice label only', () => {
-    fakeResize(120, 24);
-    render(wrap(<MicroChart kind="harvey" label="Received" value={3} max={8} color={3} />));
+  it('AL-05 HarveyBallMicroChart: the first item against total; labels, scales (3 characters) and formattedLabel; MC-57 small: fraction only', () => {
+    const { container, rerender } = render(wrap(
+      <HarveyBallMicroChart aria-label="Received" total={8} totalScale="Pieces">
+        <HarveyBallMicroChartItem fraction={3} color="Sequence3" fractionScale="Pc" />
+        <HarveyBallMicroChartItem fraction={7} />
+      </HarveyBallMicroChart>,
+    ));
     const img = screen.getByRole('img', { name: 'Received: 3 of 8' });
     expect(img).toHaveClass('sk-chart--palette-3');
-    expect(img).toHaveTextContent('3');
-    expect(img).not.toHaveTextContent('8');
+    expect(img).toHaveTextContent('3Pc8Pie');
+    rerender(wrap(<HarveyBallMicroChart total={4000} totalLabel="4K" formattedLabel colorPalette={['Good']} items={[{ fraction: 1500, fractionLabel: '1.5K', formattedLabel: true, color: 'Error' }]} />));
+    expect(container.querySelector('.sk-microchart')).toHaveClass('sk-chart--positive');
+    expect(container.querySelector('.sk-microchart')).toHaveTextContent('1.5K4K');
+    rerender(wrap(<HarveyBallMicroChart size="XS" total={8} showTotal items={[{ fraction: 3 }]} />));
+    expect(container.querySelector('.sk-microchart')).toHaveTextContent(/^3$/);
+  });
+
+  it('MC-72 Harvey Ball: the slice is inset; the fraction carries the colour', () => {
+    render(wrap(<HarveyBallMicroChart aria-label="H" total={4} items={[{ fraction: 1, color: 'Good' }]} />));
+    const img = screen.getByRole('img', { name: /^H:/ });
+    expect(img.querySelector('.sk-microchart__value--mark')).toHaveTextContent('1');
+    expect(img.querySelector('path')!.getAttribute('d')).toMatch(/^M20 20 L20 3\.5/);
+  });
+});
+
+describe('DeltaMicroChart', () => {
+  it('AL-05 DeltaMicroChart: view Normal (titles above and below), the absolute delta in the middle, color Neutral (MC-62); MC-63 small: delta only', () => {
+    render(wrap(<DeltaMicroChart aria-label="D" value1={105} value2={98} title1="May" title2="April" color="Good" />));
+    const d = screen.getByRole('img', { name: 'D: May 105 compared with April 98, difference +7 (Good)' });
+    expect(d).toHaveTextContent('May105798April');
+    expect(bars(d, 'delta')[0]).toHaveClass('sk-chart--positive');
+    render(wrap(<DeltaMicroChart aria-label="N" value1={1} value2={2} />));
+    expect(bars(screen.getByRole('img', { name: /^N:/ }), 'delta')[0]).toHaveClass('sk-chart--neutral');
+    fakeResize(120, 30);
+    render(wrap(<DeltaMicroChart aria-label="E" value1={105} value2={98} title1="May" title2="April" deltaDisplayValue="+7 %" />));
+    expect(screen.getByRole('img', { name: /^E:/ })).toHaveTextContent(/^\+7 %$/);
+  });
+
+  it('views: Wide puts the titles in a column on the left; Responsive above 12rem; display values replace the numbers', () => {
+    fakeResize(250, 72);
+    const { container } = render(wrap(<>
+      <DeltaMicroChart view="Wide" value1={1} value2={2} title1="A" title2="B" displayValue1="one" displayValue2="two" />
+      <DeltaMicroChart view="Responsive" value1={1} value2={2} title1="A" title2="B" />
+      <DeltaMicroChart value1={1} value2={2} title1="A" title2="B" />
+    </>));
+    const grids = container.querySelectorAll('.sk-microchart__delta-grid');
+    expect(grids[0]).toHaveClass('sk-microchart__delta-grid--wide');
+    expect(grids[0]).toHaveTextContent('ABone1two');
+    expect(grids[1]).toHaveClass('sk-microchart__delta-grid--wide');
+    expect(grids[2]).not.toHaveClass('sk-microchart__delta-grid--wide');
+  });
+
+  it('MC-75 value 1, the delta, value 2 from top to bottom with connectors; neutral value bars', () => {
+    render(wrap(<DeltaMicroChart aria-label="D" value1={10} value2={6} />));
+    const img = screen.getByRole('img', { name: /^D:/ });
+    const y = (k: string) => Number(bars(img, k)[0]!.getAttribute('y'));
+    expect(y('value1')).toBeLessThan(y('delta'));
+    expect(y('delta')).toBeLessThan(y('value2'));
+    expect(img.querySelectorAll('.sk-microchart__connector')).toHaveLength(2);
+    expect(bars(img, 'value1')[0]).toHaveClass('sk-microchart__mark--plain');
+  });
+});
+
+describe('ColumnMicroChart', () => {
+  const cols = [<ColumnMicroChartData key="a" label="Jan" value={10} />, <ColumnMicroChartData key="b" label="Feb" value={-5} color="Error" />, <ColumnMicroChartData key="c" label="Mar" value={20} />];
+
+  it('AL-05 ColumnMicroChart: columns Neutral by default, negative below the baseline; labels only when given (MC-30 … MC-33)', () => {
+    const { container, rerender } = render(wrap(<ColumnMicroChart aria-label="Trend">{cols}</ColumnMicroChart>));
+    const img = screen.getByRole('img', { name: 'Trend: Jan 10, Feb -5, Mar 20' });
+    expect(bars(img)).toHaveLength(3);
+    expect(bars(img)[0]).toHaveClass('sk-chart--neutral');
+    expect(bars(img)[1]).toHaveClass('sk-chart--negative');
+    const base = Number(img.querySelector('.sk-microchart__baseline')!.getAttribute('y1'));
+    expect(Number(bars(img)[1]!.getAttribute('y'))).toBeCloseTo(base);
+    expect(img.querySelector('.sk-microchart__edges')).toBeNull();
+    rerender(wrap(<ColumnMicroChart leftTopLabel={{ label: '10', color: 'Good' }} rightTopLabel={{ label: '20' }} leftBottomLabel={{ label: 'Jan' }} rightBottomLabel={{ label: 'Mar' }} showBottomLabels={false}>{cols}</ColumnMicroChart>));
+    expect(container.querySelector('.sk-microchart__edges--top')).toHaveTextContent('1020');
+    expect(container.querySelector('.sk-microchart__edges--top [data-sk-num]')).toHaveClass('sk-chart--positive');
+    expect(container.querySelector('.sk-microchart__edges--bottom')).toBeNull();
+  });
+
+  it('MC-31 MC-32 allowColumnLabels: a label per column (displayValue or value) from 72 px when the columns are wide enough', () => {
+    fakeResize(300, 90);
+    const columns = [{ value: 3 }, { value: 4, displayValue: 'four' }, { value: 5 }];
+    const { container, unmount } = render(wrap(<ColumnMicroChart allowColumnLabels columns={columns} leftTopLabel={{ label: '3' }} rightTopLabel={{ label: '5' }} />));
+    expect(container.querySelector('.sk-microchart__column-labels')).toHaveTextContent('3four5');
+    expect(container.querySelector('.sk-microchart__edges--top')).toBeNull();
+    unmount();
+    fakeResize(300, 60);
+    const r = render(wrap(<ColumnMicroChart allowColumnLabels columns={columns} leftTopLabel={{ label: '3' }} rightTopLabel={{ label: '5' }} />));
+    expect(r.container.querySelector('.sk-microchart__column-labels')).toBeNull();
+    expect(r.container.querySelector('.sk-microchart__edges--top')).toHaveTextContent('35');
+  });
+
+  it('AL-06 ColumnMicroChartData press: the column fires it, not the chart', () => {
+    const onColumn = vi.fn();
+    const onChart = vi.fn();
+    render(wrap(<ColumnMicroChart onPress={onChart} columns={[{ value: 1, onPress: onColumn }, { value: 2 }]} />));
+    fireEvent.click(bars(screen.getByRole('button'))[0]!);
+    expect(onColumn).toHaveBeenCalledTimes(1);
+    expect(onChart).not.toHaveBeenCalled();
+  });
+});
+
+describe('LineMicroChart', () => {
+  it('AL-05 LineMicroChart: threshold 0 with its line; color Neutral; showPoints false; points as children', () => {
+    render(wrap(
+      <LineMicroChart aria-label="A">
+        <LineMicroChartPoint x={0} y={1} /><LineMicroChartPoint x={1} y={2} /><LineMicroChartPoint x={2} y={3} />
+      </LineMicroChart>,
+    ));
+    const a = screen.getByRole('img', { name: 'A: 1, 2, 3' });
+    expect(a.querySelector('[data-sk-microchart-line="0"]')).toHaveClass('sk-chart--neutral');
+    expect(bars(a, 'threshold')).toHaveLength(1);
+    expect(a.querySelectorAll('.sk-microchart__dot')).toHaveLength(0);
+    // the threshold 0 is part of the y range: the first point (1) is not at the bottom
+    const ys = a.querySelector('polyline')!.getAttribute('points')!.split(' ').map((xy) => Number(xy.split(',')[1]));
+    expect(ys[0]).toBeLessThan(90);
+  });
+
+  it('MC-37 MC-39 showPoints; threshold null disables it; showThresholdValue with thresholdDisplayValue; one point is a dot', () => {
+    render(wrap(<>
+      <LineMicroChart aria-label="P" showPoints threshold={2} showThresholdValue thresholdDisplayValue="Plan" points={[{ x: 0, y: 1 }, { x: 1, y: 3 }]} />
+      <LineMicroChart aria-label="N" threshold={null} points={[{ x: 0, y: 1 }, { x: 1, y: 3 }]} />
+      <LineMicroChart aria-label="H" showThresholdLine={false} points={[{ x: 0, y: 1 }, { x: 1, y: 3 }]} />
+      <LineMicroChart aria-label="O" points={[{ x: 0, y: 4 }]} />
+    </>));
+    const p = screen.getByRole('img', { name: /^P:/ });
+    expect(p.querySelectorAll('.sk-microchart__dot')).toHaveLength(2);
+    expect(p.querySelector('.sk-microchart__threshold-label')).toHaveTextContent('Plan');
+    expect(bars(screen.getByRole('img', { name: /^N:/ }), 'threshold')).toHaveLength(0);
+    expect(bars(screen.getByRole('img', { name: /^H:/ }), 'threshold')).toHaveLength(0);
+    expect(screen.getByRole('img', { name: /^O:/ }).querySelectorAll('.sk-microchart__dot')).toHaveLength(1);
+  });
+
+  it('MC-35 lines with their colour, type and showPoints; the points aggregation wins over lines; labels as properties', () => {
+    render(wrap(<>
+      <LineMicroChart aria-label="L" leftTopLabel="5" rightTopLabel="12" leftBottomLabel="Jan" rightBottomLabel="Mar" showTopLabels={false}
+        lines={[<LineMicroChartLine key="a" color="Good" type="Dashed" showPoints points={[{ x: 0, y: 5 }, { x: 1, y: 9 }]} />, { color: 'Sequence2', points: [{ x: 0, y: 3 }, { x: 1, y: 12 }] }]} />
+      <LineMicroChart aria-label="W" points={[{ x: 0, y: 1 }, { x: 1, y: 2 }]} lines={[{ points: [{ x: 0, y: 5 }] }]} />
+    </>));
+    const l = screen.getByRole('img', { name: 'L: Line 1 5, 9; Line 2 3, 12' });
+    expect(l.querySelector('[data-sk-microchart-line="0"]')).toHaveClass('sk-chart--positive');
+    expect(l.querySelector('[data-sk-microchart-line="0"] polyline')).toHaveClass('sk-microchart__line--dashed');
+    expect(l.querySelector('[data-sk-microchart-line="1"]')).toHaveClass('sk-chart--palette-2');
+    expect(l.querySelectorAll('[data-sk-microchart-line="0"] .sk-microchart__dot')).toHaveLength(2);
+    expect(l.querySelector('.sk-microchart__edges--top')).toBeNull();
+    expect(l.querySelector('.sk-microchart__edges--bottom')).toHaveTextContent('JanMar');
+    expect(screen.getByRole('img', { name: 'W: 1, 2' })).toBeInTheDocument();
+  });
+
+  it('MC-38 emphasized points: shown points in their colour, the line grey (focus mode); { above, below } colours around the threshold', () => {
+    render(wrap(<>
+      <LineMicroChart aria-label="F">
+        <LineMicroChartEmphasizedPoint x={0} y={1} show color="Error" />
+        <LineMicroChartEmphasizedPoint x={1} y={5} />
+        <LineMicroChartEmphasizedPoint x={2} y={3} show />
+      </LineMicroChart>
+      <LineMicroChart aria-label="S" threshold={2} color={{ above: 'Good', below: 'Error' }} showPoints points={[{ x: 0, y: 1 }, { x: 1, y: 3 }]} />
+    </>));
+    const f = screen.getByRole('img', { name: /^F:/ });
+    const dots = f.querySelectorAll('.sk-microchart__dot');
+    expect(dots).toHaveLength(2);
+    expect(dots[0]).toHaveClass('sk-chart--negative');
+    expect(f.querySelector('[data-sk-microchart-line="0"]')).toHaveClass('sk-microchart__line--muted');
+    const s = screen.getByRole('img', { name: /^S:/ });
+    expect(s.querySelectorAll('linearGradient stop')).toHaveLength(2);
+    expect([...s.querySelectorAll('.sk-microchart__dot')].map((d) => d.getAttribute('class'))).toEqual([expect.stringContaining('sk-chart--negative'), expect.stringContaining('sk-chart--positive')]);
+  });
+
+  it('MC-40 minXValue / maxXValue / minYValue / maxYValue fix the scale', () => {
+    render(wrap(<LineMicroChart aria-label="S" minYValue={0} maxYValue={10} points={[{ x: 0, y: 1 }, { x: 1, y: 2 }]} />));
+    const ys = screen.getByRole('img', { name: /^S:/ }).querySelector('polyline')!.getAttribute('points')!.split(' ').map((xy) => Number(xy.split(',')[1]));
+    expect(Math.min(...ys)).toBeGreaterThan(70);
+  });
+});
+
+describe('ComparisonMicroChart', () => {
+  it('AL-05 ComparisonMicroChart: view Normal (labels above the bars), bars only up to 6rem; value labels carry the colour; a track behind every bar (MC-41, MC-42, MC-73)', () => {
+    fakeResize(150, 60);
+    const { container, unmount } = render(wrap(
+      <ComparisonMicroChart aria-label="C">
+        <ComparisonMicroChartData title="A" value={10} color="Good" />
+        <ComparisonMicroChartData title="B" value={-5} color="Error" />
+      </ComparisonMicroChart>,
+    ));
+    expect(container.querySelector('.sk-microchart__rows--normal')).not.toBeNull();
+    expect(container.querySelectorAll('.sk-microchart__row-fit')[1]).toHaveClass('sk-chart--negative');
+    expect(screen.getByRole('img', { name: 'C: A 10 (Good), B -5 (Bad)' })).toBeInTheDocument();
+    expect(container.querySelectorAll('.sk-microchart__row-plot .sk-microchart__track')).toHaveLength(2);
+    unmount();
+    fakeResize(90, 40);
+    const r = render(wrap(<ComparisonMicroChart data={[{ title: 'A', value: 10 }, { title: 'B', value: 5 }]} />));
+    expect(r.container.querySelector('.sk-microchart__rows--bare')).not.toBeNull();
+    expect(r.container.querySelector('.sk-microchart__row-label')).toBeNull();
+  });
+
+  it('views Wide and Responsive (above 12rem); colorPalette replaces the colours in turn; displayValue and scale', () => {
+    fakeResize(250, 60);
+    const { container } = render(wrap(<>
+      <ComparisonMicroChart view="Wide" scale="K" data={[{ title: 'A', value: 1, displayValue: 'one', color: 'Error' }]} colorPalette={['Sequence2', 'Sequence4']} />
+      <ComparisonMicroChart view="Responsive" data={[{ title: 'A', value: 1 }, { title: 'B', value: 2 }, { title: 'C', value: 3 }]} colorPalette={['Sequence2', 'Sequence4']} />
+    </>));
+    const [wide, responsive] = [...container.querySelectorAll('.sk-microchart')];
+    expect(wide!.querySelector('.sk-microchart__rows--wide')).toHaveTextContent('AoneK');
+    expect(bars(wide!)[0]).toHaveClass('sk-chart--palette-2');
+    expect(responsive!.querySelector('.sk-microchart__rows--wide')).not.toBeNull();
+    expect([...bars(responsive!)].map((b) => b.getAttribute('class')!.match(/palette-\d+/)![0])).toEqual(['palette-2', 'palette-4', 'palette-2']);
+  });
+
+  it('AL-06 ComparisonMicroChartData press', () => {
+    const onPress = vi.fn();
+    const { container } = render(wrap(<ComparisonMicroChart data={[{ title: 'A', value: 1, onPress }]} />));
+    fireEvent.click(bars(container)[0]!);
+    expect(onPress).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('AreaMicroChart', () => {
+  const line = (ys: number[]) => ys.map((y, x) => ({ x, y }));
+
+  it('AL-05 AreaMicroChart: the chart line Neutral, the target dotted; areas above maxThreshold, below minThreshold, Critical between (MC-46, MC-47)', () => {
+    render(wrap(
+      <AreaMicroChart aria-label="Max" chart={{ points: line([10, 50, 90]) }} target={{ points: line([60, 60, 60]) }}
+        minThreshold={{ color: 'Error', points: line([20, 20, 20]) }} maxThreshold={{ color: 'Good', points: line([40, 40, 40]) }} />,
+    ));
+    const max = screen.getByRole('img', { name: 'Max: 10, 50, 90, Target 60, 60, 60' });
+    const polys = [...max.querySelectorAll('polygon')];
+    expect(polys.map((p) => p.getAttribute('data-sk-microchart-bar'))).toEqual(['band-max', 'band-min', 'band-between']);
+    expect(polys.map((p) => p.getAttribute('class')!.match(/band--(\w+)/)![1])).toEqual(['positive', 'negative', 'critical']);
+    expect(bars(max, 'target')).toHaveLength(1);
+    expect(bars(max, 'actual')[0]).toHaveClass('sk-chart--neutral');
+  });
+
+  it('the inner area between innerMinThreshold and innerMaxThreshold in innerMaxThreshold\'s colour; lines with colorPalette; points as children', () => {
+    render(wrap(
+      <AreaMicroChart aria-label="T" innerMinThreshold={{ points: line([30, 30]) }} innerMaxThreshold={{ color: 'Good', points: line([70, 70]) }} colorPalette={['Sequence5']}>
+        <AreaMicroChartItem><AreaMicroChartPoint x={0} y={10} /><AreaMicroChartPoint x={1} y={90} /></AreaMicroChartItem>
+      </AreaMicroChart>,
+    ));
+    const t = screen.getByRole('img', { name: /^T:/ });
+    expect(t.querySelectorAll('polygon')).toHaveLength(1);
+    expect(t.querySelector('polygon')).toHaveClass('sk-microchart__band--positive');
+    expect(bars(t, 'line-0')[0]).toHaveClass('sk-chart--palette-5');
+  });
+
+  it('MC-48 labels from the label aggregations (coloured), min / max labels in thirds; showLabel; one point is no data', () => {
+    const { container, rerender } = render(wrap(
+      <AreaMicroChart chart={{ points: line([4, 9, 1, 6]) }} firstYLabel={<AreaMicroChartLabel label="4" color="Error" />} lastYLabel={{ label: '6' }} firstXLabel={{ label: 'P1' }} lastXLabel={{ label: 'P4' }}
+        maxLabel={{ label: '9' }} minLabel={{ label: '1' }} />,
+    ));
+    expect(container.querySelector('.sk-microchart__edges--top')).toHaveTextContent('496');
+    expect(container.querySelector('.sk-microchart__edges--top [data-sk-num]')).toHaveClass('sk-chart--negative');
+    expect(container.querySelector('.sk-microchart__edges--bottom')).toHaveTextContent('P11P4');
+    rerender(wrap(<AreaMicroChart showLabel={false} chart={{ points: line([4, 9]) }} firstYLabel={{ label: '4' }} />));
+    expect(container.querySelector('.sk-microchart__edges')).toBeNull();
+    rerender(wrap(<AreaMicroChart aria-label="One" chart={{ points: line([4]) }} />));
+    expect(screen.getByRole('img', { name: 'One: No data' })).toBeInTheDocument();
+  });
+
+  it('MC-49 view Wide: labels before and after the chart', () => {
+    fakeResize(200, 40);
+    const { container } = render(wrap(<AreaMicroChart view="Wide" chart={{ points: line([1, 2]) }} firstYLabel={{ label: '1' }} lastYLabel={{ label: '2' }} />));
+    expect(container.querySelectorAll('.sk-microchart__wide > .sk-microchart__texts')).toHaveLength(2);
+  });
+
+  it('AL-07 AreaMicroChartPoint: getXValue / getYValue through the ref', () => {
+    const ref = createRef<AreaMicroChartPoint>();
+    render(wrap(<AreaMicroChart chart={{ points: [<AreaMicroChartPoint key="a" ref={ref} x={3} />] }} />));
+    expect(ref.current!.getXValue()).toBe(3);
+    expect(ref.current!.getYValue()).toBeUndefined();
+  });
+});
+
+describe('StackedBarMicroChart', () => {
+  it('AL-05 StackedBarMicroChart: percentages of the sum with precision 1, palette colours in turn, labels shown (MC-58, MC-59)', () => {
+    render(wrap(<StackedBarMicroChart aria-label="S"><StackedBarMicroChartBar value={1} /><StackedBarMicroChartBar value={2} /></StackedBarMicroChart>));
+    const s = screen.getByRole('img', { name: 'S: 1 (33.3%), 2 (66.7%)' });
+    expect(s).toHaveTextContent('33.3%66.7%');
+    expect(bars(s)[0]).toHaveClass('sk-chart--palette-1');
+    expect(bars(s)[1]).toHaveClass('sk-chart--palette-2');
+  });
+
+  it('maxValue: widths of the maximum and absolute labels; displayValue; valueColor; precision; displayZeroValue; showLabels', () => {
+    const { container } = render(wrap(<>
+      <StackedBarMicroChart maxValue={10} bars={[{ value: 2, displayValue: 'two' }, { value: 3, valueColor: 'Good' }]} />
+      <StackedBarMicroChart precision={0} showLabels={false} bars={[{ value: 1 }, { value: 2 }]} />
+      <StackedBarMicroChart displayZeroValue={false} bars={[{ value: 0 }, { value: 2 }]} />
+      <StackedBarMicroChart aria-label="N" />
+    </>));
+    const [m, p, z] = [...container.querySelectorAll('.sk-microchart')];
+    expect((bars(m!)[0] as HTMLElement).style.width).toBe('20%');
+    expect(m).toHaveTextContent('two3');
+    expect(bars(m!)[1]).toHaveClass('sk-chart--positive');
+    expect(p!.querySelector('.sk-microchart__segment-label')).toBeNull();
+    expect(screen.getByRole('img', { name: /33%/ })).toBe(p);
+    expect(bars(z!)).toHaveLength(1);
+    expect(screen.getByRole('img', { name: 'N: No data' })).toBeInTheDocument();
+  });
+});
+
+describe('MicroChartHelper mapping (FE 1.154): annotation data → control', () => {
+  it('bullet: DeltaBulletChart → mode Delta; criticality → actual colour; CriticalityCalculation → thresholds; MC-13 short labels', () => {
+    render(wrap(<>
+      <MicroChartDrawing kind="bullet" label="A" value={1200} target={1440} criticality={3} thresholds={[{ value: 500, criticality: 1 }]} />
+      <MicroChartDrawing kind="bullet" label="D" value={760} target={1000} mode="delta" />
+    </>));
+    const a = screen.getByRole('img', { name: 'A: Actual 1,200 (Good), Target 1,440, Thresholds 500' });
+    expect(a).toHaveClass('sk-chart--positive');
+    expect(a).toHaveTextContent('1.2K1.4K');
+    expect(bars(a, 'threshold')[0]).toHaveClass('sk-chart--negative');
+    expect(bars(screen.getByRole('img', { name: /^D:/ }), 'delta')).toHaveLength(1);
+  });
+
+  it('MC-51 radial: TargetValue is the total, else the value is the percentage; MC-55 MC-56 Harvey Ball: MaximumValue, the qualitative palette without criticality', () => {
+    render(wrap(<>
+      <MicroChartDrawing kind="radial" label="R" value={1} target={4} />
+      <MicroChartDrawing kind="radial" label="P" value={42} />
+      <MicroChartDrawing kind="harvey" label="H" value={1500000} max={4000000} />
+    </>));
+    expect(screen.getByRole('img', { name: 'R: 25%' })).toBeInTheDocument();
+    expect(screen.getByRole('img', { name: 'P: 42%' })).toBeInTheDocument();
+    const h = screen.getByRole('img', { name: 'H: 1,500,000 of 4,000,000' });
+    expect(h).toHaveClass('sk-chart--palette-1');
+    expect(h).toHaveTextContent('1.5M4M');
+  });
+
+  const pts = (vals: number[], extra: Partial<{ criticality: 0 | 1 | 2 | 3 | 5; target: number; display: string }>[] = []) => vals.map((value, i) => ({ label: `P${i + 1}`, value, ...(extra[i] ?? {}) }));
+
+  it('column and area: first / last value (criticality colour) and dimension labels, none with showLabels false (showOnlyChart)', () => {
+    const { container } = render(wrap(<>
+      <MicroChartDrawing kind="column" label="C" points={pts([10, -5, 20], [{ criticality: 1 }])} />
+      <MicroChartDrawing kind="column" label="O" showLabels={false} points={pts([10, 20])} />
+    </>));
+    const c = screen.getByRole('img', { name: 'C: P1 10, P2 -5, P3 20' });
+    expect(c.querySelector('.sk-microchart__edges--top')).toHaveTextContent('1020');
+    expect(c.querySelector('.sk-microchart__edges--top [data-sk-num]')).toHaveClass('sk-chart--negative');
+    expect(c.querySelector('.sk-microchart__edges--bottom')).toHaveTextContent('P1P3');
+    expect(screen.getByRole('img', { name: /^O:/ }).querySelector('.sk-microchart__edges')).toBeNull();
+    void container;
+  });
+
+  it('MC-35 MC-36 line: one line per measure, coloured by its last point; top labels smallest first / largest last value; no threshold line', () => {
+    render(wrap(<MicroChartDrawing kind="line" label="Q" lines={[pts([5, 7, 9], [{}, {}, { criticality: 3 }]), pts([3, 4, 12])]} />));
+    const q = screen.getByRole('img', { name: 'Q: Line 1 5, 7, 9; Line 2 3, 4, 12' });
+    expect(q.querySelector('[data-sk-microchart-line="0"]')).toHaveClass('sk-chart--positive');
+    expect(q.querySelector('[data-sk-microchart-line="1"]')).toHaveClass('sk-chart--neutral');
+    expect(q.querySelector('.sk-microchart__edges--top')).toHaveTextContent('312');
+    expect(q.querySelector('.sk-microchart__edges--bottom')).toHaveTextContent('P1P3');
+    expect(bars(q, 'threshold')).toHaveLength(0);
+  });
+
+  it('comparison: the qualitative palette without criticality, semantic colours with it, at most 12 bars; stacked bar: the measure text as label', () => {
+    const many = Array.from({ length: 14 }, (_, i) => ({ label: String.fromCharCode(65 + i), value: (i + 1) * 10 }));
+    render(wrap(<>
+      <MicroChartDrawing kind="comparison" label="Top" points={many} />
+      <MicroChartDrawing kind="comparison" label="S" points={pts([1, 2], [{ criticality: 1 }])} />
+      <MicroChartDrawing kind="stackedBar" label="B" points={pts([1, 3], [{ display: 'one' }])} />
+    </>));
+    const top = screen.getByRole('img', { name: /^Top: A 10, B 20, .*, L 120$/ });
+    expect(bars(top)).toHaveLength(12);
+    expect(bars(top)[1]).toHaveClass('sk-chart--palette-2');
+    const s = screen.getByRole('img', { name: /^S:/ });
+    expect(bars(s)[0]).toHaveClass('sk-chart--negative');
+    expect(bars(s)[1]).toHaveClass('sk-chart--neutral');
+    expect(screen.getByRole('img', { name: /^B:/ })).toHaveTextContent('one75%');
+  });
+
+  it('MC-47 MC-74 area: threshold items by improvement direction (Maximize: DeviationLow Error below, ToleranceLow Good above; Target: inner Good area); coloured start and end values', () => {
+    const points = pts([10, 50, 90], [{ criticality: 1, target: 60 }, { target: 60 }, { criticality: 3, target: 60 }]);
+    render(wrap(<>
+      <MicroChartDrawing kind="area" label="Max" points={points} areaThresholds={{ direction: 'Maximize', deviationLow: [20, 20, 20], toleranceLow: [40, 40, 40] }} />
+      <MicroChartDrawing kind="area" label="Target" points={points} areaThresholds={{ direction: 'Target', deviationLow: [20, 20, 20], toleranceLow: [30, 30, 30], toleranceHigh: [70, 70, 70], deviationHigh: [80, 80, 80] }} />
+    </>));
+    const max = screen.getByRole('img', { name: 'Max: 10, 50, 90, Target 60, 60, 60' });
+    expect([...max.querySelectorAll('polygon')].map((p) => p.getAttribute('class')!.match(/band--(\w+)/)![1])).toEqual(['positive', 'negative', 'critical']);
+    const top = max.querySelectorAll('.sk-microchart__edges--top [data-sk-num]');
+    expect(top[0]).toHaveClass('sk-chart--negative');
+    expect(top[1]).toHaveClass('sk-chart--positive');
+    expect(screen.getByRole('img', { name: /^Target:/ }).querySelectorAll('polygon')).toHaveLength(4);
   });
 });
 
@@ -144,99 +642,6 @@ describe('docs/15 MC-10 micro chart in a cell', () => {
     ));
     expect(container.querySelector('[data-a] [data-sk-microchart]')).toBeNull();
     expect(container.querySelector('[data-b]')).toBeEmptyDOMElement();
-  });
-});
-
-describe('docs/15 series charts', () => {
-  const pts = (vals: number[], extra: Partial<{ criticality: 0 | 1 | 2 | 3 | 5; target: number }>[] = []) => vals.map((value, i) => ({ label: `P${i + 1}`, value, ...(extra[i] ?? {}) }));
-
-  it('MC-35 MC-36 line: up to three lines in palette colours; start label = smallest first value, end label = largest last value', () => {
-    render(wrap(<MicroChart kind="line" label="Q" lines={[pts([5, 7, 9]), pts([3, 4, 12]), pts([6, 6, 6]), pts([1, 1, 1])]} />));
-    const img = screen.getByRole('img', { name: /^Q: Line 1 P1 5/ });
-    expect(img.querySelectorAll('polyline')).toHaveLength(3);
-    expect(img.querySelector('[data-sk-microchart-line="1"]')).toHaveClass('sk-chart--palette-2');
-    expect(img.querySelector('.sk-microchart__edges--top')).toHaveTextContent('312');
-    expect(img.querySelector('.sk-microchart__edges--bottom')).toHaveTextContent('P1P3');
-  });
-
-  it('MC-37 MC-39 line: points on request; threshold line; one point is drawn as a dot', () => {
-    render(wrap(<>
-      <MicroChart kind="line" label="A" points={pts([1, 2, 3])} showPoints threshold={2} />
-      <MicroChart kind="line" label="B" points={pts([4])} />
-    </>));
-    const a = screen.getByRole('img', { name: /^A:/ });
-    expect(bars(a)).toHaveLength(4); // three points and the threshold line
-    expect(bars(a, 'threshold')).toHaveLength(1);
-    expect(bars(screen.getByRole('img', { name: /^B:/ }))).toHaveLength(1);
-  });
-
-  it('MC-41 MC-42 comparison: labels above the bars up to 192 px, none up to 96 px; value labels carry the semantic colour', () => {
-    fakeResize(150, 60);
-    const { container, unmount } = render(wrap(<MicroChart kind="comparison" label="C" points={pts([10, -5], [{ criticality: 3 }, { criticality: 1 }])} />));
-    expect(container.querySelector('.sk-microchart__rows--normal')).not.toBeNull();
-    expect(container.querySelectorAll('.sk-microchart__row-fit')[1]).toHaveClass('sk-chart--negative');
-    expect(screen.getByRole('img', { name: 'C: P1 10 (Good), P2 -5 (Bad)' })).toBeInTheDocument();
-    unmount();
-    fakeResize(90, 40);
-    const r = render(wrap(<MicroChart kind="comparison" label="C" points={pts([10, 5])} />));
-    expect(r.container.querySelector('.sk-microchart__rows--bare')).not.toBeNull();
-    expect(r.container.querySelector('.sk-microchart__row-label')).toBeNull();
-  });
-
-  it('MC-46 MC-47 MC-48 MC-74 area: actual and dotted target lines, threshold areas by direction, coloured start and end values', () => {
-    const points = pts([10, 50, 90], [{ criticality: 1, target: 60 }, { target: 60 }, { criticality: 3, target: 60 }]);
-    render(wrap(<>
-      <MicroChart kind="area" label="Max" points={points} areaThresholds={{ direction: 'Maximize', deviationLow: [20, 20, 20], toleranceLow: [40, 40, 40] }} />
-      <MicroChart kind="area" label="Target" points={points} areaThresholds={{ direction: 'Target', deviationLow: [20, 20, 20], toleranceLow: [30, 30, 30], toleranceHigh: [70, 70, 70], deviationHigh: [80, 80, 80] }} />
-      <MicroChart kind="area" label="Plain" points={pts([1, 2])} />
-    </>));
-    const max = screen.getByRole('img', { name: /^Max: P1 10, P2 50, P3 90, Target 60, 60, 60$/ });
-    expect([...max.querySelectorAll('polygon')].map((p) => p.getAttribute('data-sk-microchart-bar'))).toEqual(['band-negative', 'band-critical', 'band-positive']);
-    expect(bars(max, 'target')).toHaveLength(1);
-    const top = max.querySelector('.sk-microchart__edges--top')!.children;
-    expect(top[0]).toHaveClass('sk-chart--negative');
-    expect(top[1]).toHaveClass('sk-chart--positive');
-    expect(screen.getByRole('img', { name: /^Target:/ }).querySelectorAll('polygon')).toHaveLength(5);
-    expect(screen.getByRole('img', { name: /^Plain:/ }).querySelectorAll('polygon')).toHaveLength(0);
-  });
-
-  it('MC-49 area wide view: labels before and after the chart; hidden below 36 px', () => {
-    fakeResize(200, 40);
-    const { container } = render(wrap(<MicroChart kind="area" label="W" view="wide" points={pts([1, 2])} />));
-    expect(container.querySelectorAll('.sk-microchart__wide > .sk-microchart__texts')).toHaveLength(2);
-  });
-
-  it('MC-58 MC-59 stacked bar: percentages of the sum (one decimal), of the maximum when given, custom text, no negatives', () => {
-    render(wrap(<>
-      <MicroChart kind="stackedBar" label="S" points={[{ label: 'A', value: 1 }, { label: 'B', value: 2 }, { label: 'X', value: -4 }]} />
-      <MicroChart kind="stackedBar" label="M" max={10} points={[{ label: 'A', value: 2, display: 'two' }, { label: 'B', value: 3, criticality: 3 }]} />
-      <MicroChart kind="stackedBar" label="N" points={[{ label: 'A', value: -1 }]} />
-    </>));
-    const s = screen.getByRole('img', { name: 'S: A 1 (33.3%), B 2 (66.7%)' });
-    expect(s).toHaveTextContent('33.3%66.7%');
-    expect(bars(s)[0]).toHaveClass('sk-chart--palette-1');
-    const m = screen.getByRole('img', { name: /^M:/ });
-    expect((bars(m)[0] as HTMLElement).style.width).toBe('20%');
-    expect(m).toHaveTextContent('two30%');
-    expect(bars(m)[1]).toHaveClass('sk-chart--positive');
-    expect(screen.getByRole('img', { name: 'N: No data' })).toBeInTheDocument();
-  });
-
-  it('MC-62 MC-63 delta: names left, values right, the delta in the middle; below 56 px only the delta value', () => {
-    render(wrap(<MicroChart kind="delta" label="D" value={105} target={98} titles={['May', 'April']} criticality={3} />));
-    const d = screen.getByRole('img', { name: 'D: May 105 compared with April 98, difference +7 (Good)' });
-    expect(d).toHaveTextContent('May105+7April98');
-    expect(bars(d, 'delta')[0]).toHaveClass('sk-chart--positive');
-    fakeResize(120, 30);
-    render(wrap(<MicroChart kind="delta" label="E" value={105} target={98} titles={['May', 'April']} />));
-    expect(screen.getByRole('img', { name: /^E:/ })).toHaveTextContent(/^\+7$/);
-  });
-
-  it('MC-30 MC-33 column: neutral by default, semantic colours per column', () => {
-    render(wrap(<MicroChart kind="column" label="K" points={pts([3, 4], [{}, { criticality: 2 }])} />));
-    const k = screen.getByRole('img', { name: /^K:/ });
-    expect(k).toHaveClass('sk-chart--neutral');
-    expect(bars(k)[1]).toHaveClass('sk-chart--critical');
   });
 });
 
@@ -297,42 +702,7 @@ describe('docs/15 §3 series charts from the model (ADR-025)', () => {
     const props = chartProps(ctx, 'T.Order', cols[2]!.chart!, row)!;
     expect(props.points!.map((p) => p.label)).toEqual(['Freight', 'Price']);
     render(wrap(<span data-c><Field service="shop" typeName="T.Order" metaPath={cols[2]!} row={row} cell /></span>, { model }));
-    expect(screen.getByRole('img', { name: 'Share: Freight 4 (25%), Price 12 (75%)' })).toBeInTheDocument();
-  });
-});
-
-describe('docs/15 optional chart features', () => {
-  const pts = (vals: number[]) => vals.map((value, i) => ({ label: `P${i + 1}`, value }));
-
-  it('MC-31 MC-32 column labels per column from 72 px when the columns are wide enough; otherwise first and last', () => {
-    fakeResize(300, 90);
-    const { container, unmount } = render(wrap(<MicroChart kind="column" label="C" columnLabels points={pts([3, 4, 5])} />));
-    expect(container.querySelector('.sk-microchart__column-labels')).toHaveTextContent('345');
-    expect(container.querySelector('.sk-microchart__edges--top')).toBeNull();
-    unmount();
-    fakeResize(300, 60);
-    const r = render(wrap(<MicroChart kind="column" label="C" columnLabels points={pts([3, 4, 5])} />));
-    expect(r.container.querySelector('.sk-microchart__column-labels')).toBeNull();
-    expect(r.container.querySelector('.sk-microchart__edges--top')).toHaveTextContent('35');
-  });
-
-  it('MC-38 focus points; MC-39 threshold label; MC-40 fixed scale', () => {
-    render(wrap(<>
-      <MicroChart kind="line" label="F" points={pts([1, 5, 3])} focusPoints={[0, 2]} threshold={2} thresholdLabel />
-      <MicroChart kind="line" label="S" points={pts([1, 2])} scaleMin={0} scaleMax={10} />
-    </>));
-    const f = screen.getByRole('img', { name: /^F:/ });
-    expect(f.querySelectorAll('.sk-microchart__dot--focus')).toHaveLength(2);
-    expect(f.querySelector('.sk-microchart__threshold-label')).toHaveTextContent('2');
-    // with the scale 0–10 the values 1 and 2 stay in the lower part of the chart
-    const ys = screen.getByRole('img', { name: /^S:/ }).querySelector('polyline')!.getAttribute('points')!.split(' ').map((xy) => Number(xy.split(',')[1]));
-    expect(Math.min(...ys)).toBeGreaterThan(70);
-  });
-
-  it('MC-48 area minimum and maximum labels: three labels per row', () => {
-    const { container } = render(wrap(<MicroChart kind="area" label="A" minMaxLabels points={pts([4, 9, 1, 6])} />));
-    expect(container.querySelector('.sk-microchart__edges--top')).toHaveTextContent('496');
-    expect(container.querySelector('.sk-microchart__edges--bottom')).toHaveTextContent('P11P4');
+    expect(screen.getByRole('img', { name: 'Share: 4 (25%), 12 (75%)' })).toBeInTheDocument();
   });
 });
 
@@ -356,54 +726,8 @@ describe('docs/15 rules from the model', () => {
     const props = seriesChartProps(ctx, ui.charts.Bars!, [item, { ...item, Kind: 'Y', KindName: 'Price', Qty: '20' }])!;
     expect(props).toMatchObject({ kind: 'comparison', min: 0, max: 40 });
     expect(props.points!.map((p) => p.label)).toEqual(['Freight', 'Price']);
-    render(wrap(<MicroChart {...props} label="B" />));
+    render(wrap(<MicroChartDrawing {...props} label="B" />));
     const bar = screen.getByRole('img', { name: /^B:/ }).querySelector('[data-sk-microchart-bar="1"]')!;
     expect(Number(bar.getAttribute('width'))).toBeCloseTo(50);
   });
 });
-
-describe('docs/15 §7 SAP anatomy (compared with the SAPUI5 1.154 samples)', () => {
-  it('MC-70 bullet: actual value above the bar at its end, target below at the marker; forecast as high as the track; thresholds across the bar', () => {
-    render(wrap(<MicroChart kind="bullet" label="B" value={50} target={100} forecast={80} min={0} max={100} thresholds={[{ value: 30, criticality: 1 }]} />));
-    const img = screen.getByRole('img', { name: /^B:/ });
-    const lanes = img.querySelectorAll('.sk-microchart__lane');
-    expect(lanes).toHaveLength(2);
-    expect((lanes[0]!.firstElementChild as HTMLElement).style.left).toBe('50%');
-    expect((lanes[1]!.firstElementChild as HTMLElement).style.left).toBe('100%');
-    expect(lanes[0]!.compareDocumentPosition(img.querySelector('svg')!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(bars(img, 'forecast')[0]!.getAttribute('height')).toBe(img.querySelector('.sk-microchart__track')!.getAttribute('height'));
-    expect(Number(bars(img, 'threshold')[0]!.getAttribute('height'))).toBeGreaterThan(12);
-  });
-
-  it('MC-72 Harvey Ball: the slice is inset; the value carries the semantic colour, the total the text colour', () => {
-    render(wrap(<MicroChart kind="harvey" label="H" value={1} max={4} criticality={3} />));
-    const img = screen.getByRole('img', { name: /^H:/ });
-    expect(img.querySelector('.sk-microchart__value--mark')).toHaveTextContent('1');
-    expect(img.querySelector('path')!.getAttribute('d')).toMatch(/^M20 20 L20 3\.5/);
-  });
-
-  it('MC-73 comparison: a track behind every bar', () => {
-    render(wrap(<MicroChart kind="comparison" label="C" points={[{ label: 'A', value: 1 }, { label: 'B', value: 2 }]} />));
-    expect(screen.getByRole('img', { name: /^C:/ }).querySelectorAll('.sk-microchart__row-plot .sk-microchart__track')).toHaveLength(2);
-  });
-
-  it('MC-75 delta: value 1, the delta, value 2 from top to bottom with connectors; neutral value bars', () => {
-    render(wrap(<MicroChart kind="delta" label="D" value={10} target={6} />));
-    const img = screen.getByRole('img', { name: /^D:/ });
-    const y = (k: string) => Number(bars(img, k)[0]!.getAttribute('y'));
-    expect(y('value1')).toBeLessThan(y('delta'));
-    expect(y('delta')).toBeLessThan(y('value2'));
-    expect(img.querySelectorAll('.sk-microchart__connector')).toHaveLength(2);
-    expect(bars(img, 'value1')[0]).toHaveClass('sk-microchart__mark--plain');
-  });
-
-  it('MC-76 the text alternative names the semantic state, so colour is not the only carrier', () => {
-    render(wrap(<>
-      <MicroChart kind="radial" label="R" value={40} criticality={2} />
-      <MicroChart kind="bullet" label="B" value={1} criticality={1} />
-    </>, { locale: 'zh' }));
-    expect(screen.getByRole('img', { name: 'R：40% (警告)' })).toBeInTheDocument();
-    expect(screen.getByRole('img', { name: 'B：实际 1 (差)' })).toBeInTheDocument();
-  });
-});
-

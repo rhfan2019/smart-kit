@@ -78,5 +78,12 @@
 | AL-11 | 3、4 | F、U | 同上（筛选字段、列、动作、编辑状态、视图页签、图表）；`al-draft`、`al-aggr`、`al-totals`、`filter-vh-params` 里 `AL-11` 开头的测试 |
 | AL-12 | 3、4 | F、D | 各场景前 5 行单元格文本；`29` 第 4 节 P1 八项和第 5 节 P2 全部有场景（新列类型和动作在阶段 4 收尾补了场景 `cols5-*`）；`02` 按 FE 源码重写，每条写明 FE 模块（核对：Claude，2026-11-18） |
 | AL-08 | 3 | S、D | `fe-behavior` 32 → 28（`fe:*` 每种原因一条），`not-implemented` 119（阶段 3 不涉及 API）（核对：Claude，2026-11-18） |
-
 | AL-13 | 5 | F、S、U | `tests/e2e-fe/lr5.spec.ts`、`op5.spec.ts`（manifest 设置一一对应，示例页导入 FE manifest）；`npm run check:ui5` 里的 `check-manifest-settings.mjs`（ListReport 333 项、ObjectPage 382 项，0 未登记）；`tests/unit/check-manifest-settings.test.ts`、`al-lr5`、`al-op5` 里 `AL-13` 开头的测试 |
+| AL-04 | 6 | S | `check:ui5`：全部 256 个映射的导出（含 `suite/ui/microchart/*`、`m/p13n/*`、`m/QuickView*`、landmark info）没有未登记的属性、聚合、关联 |
+| AL-05 | 6 | S、U | `packages/react/test/microcharts.test.tsx`、`ui5-ctl6-*.test.tsx`、`macros6-*.test.tsx`、`al-op6.test.tsx` 里 `AL-05` 开头的测试 |
+| AL-06 | 6 | S、U | 同上，`AL-06` 开头 |
+| AL-07 | 6 | S、U | 同上，`AL-07` 开头（PV / SV、变式键、p13n 面板、QuickView 导航） |
+| AL-10 | 6 | F、U | `tests/e2e-fe/op6.spec.ts`、`macros6*.spec.ts`、`mc6.spec.ts`（对象页显示、编辑、草稿、子表、页头 Facet；分组分析表；图表个性化）；`packages/core/test/al-op6.test.ts`、`macros6-table.test.tsx` 里 `AL-10` 开头的测试 |
+| AL-11 | 6 | F、U | 同上 |
+| AL-12 | 6 | F、D | 对象页场景前 5 行和表单字段的文本；`29b` 第 4 节 P1、第 5 节 P2 有场景（核对：Claude，2026-11-18） |
+| AL-13 | 6 | F、S、U | `tests/e2e-fe/macros6-lr.spec.ts`（manifest 设置一一对应）；`check-manifest-settings.mjs`（ListReport 333 项、ObjectPage 382 项，0 未登记）；`macros6-lr`、`al-op6` 里 `AL-13` 开头的测试 |

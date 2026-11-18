@@ -32,6 +32,8 @@ export interface AnalyticalRequestsOptions {
   groupExtra?: string[];
   /** Read for a row when it is selected, not with the rows (OperationAvailable paths of toolbar actions). */
   selectionPaths?: string[];
+  /** The leaves are aggregated by the shown properties, without the keys (AnalyticalConfiguration aggregationOnLeafLevel). */
+  aggregationOnLeafLevel?: boolean;
 }
 
 export interface AnalyticalRequestsResult {
@@ -82,7 +84,7 @@ export function useAnalyticalRequests(o: AnalyticalRequestsOptions): AnalyticalR
   const { timeZone } = useSmartKit();
   const model = service.model;
   const notWithRows = new Set(o.selectionPaths ?? []);
-  const opts = { source: o.source, columns: o.columns, filters: o.filters, search: o.search, sort: o.sort, extraSelect: o.extraSelect?.filter((x) => !notWithRows.has(x)), requestAtLeast: o.requestAtLeast, totals: o.totals, groupExtra: o.groupExtra, timeZone };
+  const opts = { source: o.source, columns: o.columns, filters: o.filters, search: o.search, sort: o.sort, extraSelect: o.extraSelect?.filter((x) => !notWithRows.has(x)), requestAtLeast: o.requestAtLeast, totals: o.totals, groupExtra: o.groupExtra, aggregationOnLeafLevel: o.aggregationOnLeafLevel, timeZone };
   const optsKey = JSON.stringify({ ...opts, columns: o.columns.map((c) => c.id) });
   const requests = useMemo(() => {
     if (!o.enabled) return undefined;

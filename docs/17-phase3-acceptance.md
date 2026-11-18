@@ -4,6 +4,8 @@
 >
 > 写法沿用 `13-phase2-acceptance.md`：每条一个编号（直接用 `15` 的规则编号 MC-xx），测试名称里带这个编号；`npm run trace -- --strict` 检查验收方式含 U 或 E 的条目都有**通过**的测试。
 >
+> 阶段 6：直接给数据的画法不再是 `MicroChart` 的 `kind`/`value`/`points`… 属性，而是 `sap.suite.ui.microchart` 的九个控件（`suite/ui/microchart/BulletMicroChart` 等，API 同 SAPUI5 1.154，见 `26a` 末尾）；`v4/fe/macros/MicroChart` 只剩注解驱动的 API，按 FE 的 `MicroChartHelper` 用这九个控件画图。下表的规则不变，单元测试改用这些控件（`microcharts.test.tsx`），FE 对比见 `tests/e2e-fe/mc6.spec.ts`。
+>
 > 验收方式：U = 单元测试（`packages/*/test/phase3.test.ts`、`microcharts.test.tsx`、`charts.test.tsx`）；E = 端到端（`tests/e2e/p3-microcharts.spec.ts`，连 `apps/mock`）；S = 截图（`docs/16-evidence/`，`E2E_EVIDENCE=1` 时生成）；V = 与 SAPUI5 官方示例逐项对比（`15` 第 7 节、`18` 第 3 节）；D = 只是用法指引，写进文档，不能用测试证明。
 
 | 编号 | 要求 | 出处 | 验收方式 |

@@ -8,10 +8,13 @@
  * React form (ADR-032 rule 2): `items` are the row data and every column renders its cell with `cell(row)` — the
  * column list item template of a UI5 items binding; `keyOf` gives the row key.
  */
-import { ActionIcon, Button, Checkbox, Loader, Radio, Text } from '@mantine/core';
+import { ActionIcon, Button, Checkbox, Loader, Menu, Popover, Radio, Text } from '@mantine/core';
 import type { HierarchyNode, Row } from '@rhfan2019/smart-kit-core';
-import { ChevronRight, Trash2, X } from 'lucide-react';
-import { useEffect, useImperativeHandle, useRef, useState, type KeyboardEvent, type ReactNode, type Ref } from 'react';
+import { ChevronRight, MoreHorizontal, Pencil, Trash2, X } from 'lucide-react';
+import {
+  useEffect, useImperativeHandle, useLayoutEffect, useRef, useState,
+  type FocusEvent, type KeyboardEvent, type MouseEvent, type ReactNode, type Ref, type TouchEvent,
+} from 'react';
 import { useText } from '../context/SmartKitProvider';
 import { getPath } from '../field/values';
 import type { TitleLevel } from '../controls/types';
@@ -36,6 +39,38 @@ export const ListSeparators = { All: 'All', Inner: 'Inner', None: 'None' } as co
 export type Priority = 'None' | 'Low' | 'Medium' | 'High';
 /** sap.m.PopinDisplay */
 export type PopinDisplay = 'Block' | 'Inline' | 'WithoutHeader';
+/** sap.m.ListKeyboardMode */
+export type ListKeyboardMode = 'Edit' | 'Navigation';
+export const ListKeyboardMode = { Edit: 'Edit', Navigation: 'Navigation' } as const;
+/** sap.m.ListGrowingDirection */
+export type ListGrowingDirection = 'Downwards' | 'Upwards';
+export const ListGrowingDirection = { Downwards: 'Downwards', Upwards: 'Upwards' } as const;
+/** sap.m.SwipeDirection */
+// LeftToRight / RightToLeft are deprecated in 1.154 (no old names, docs/30 §9)
+export type SwipeDirection = 'BeginToEnd' | 'Both' | 'EndToBegin';
+export const SwipeDirection = { BeginToEnd: 'BeginToEnd', Both: 'Both', EndToBegin: 'EndToBegin' } as const;
+/** sap.m.ListItemActionType */
+export type ListItemActionType = 'Custom' | 'Delete' | 'Edit' | 'Navigation';
+// Navigation is a restricted value in 1.154 (used by sap.m internally); the type keeps it for the row actions
+export const ListItemActionType = { Custom: 'Custom', Delete: 'Delete', Edit: 'Edit' } as const;
+
+/**
+ * An action of a row (sap.m.ListItemAction of the list item aggregation `actions`). "Edit" and "Delete" bring their
+ * own icon and text (Ctrl+E and Delete on the focused row press them); "Navigation" is not shown but makes the row
+ * navigable (chevron and `itemPress`).
+ */
+export interface $ListItemActionSettings {
+  /** Key of the action (React key; tells actions apart in `itemActionPress`). Defaults to the type and the text. */
+  key?: string;
+  /** @defaultValue "Custom" */
+  type?: ListItemActionType;
+  /** Text (tooltip of the button, text of the overflow menu item) of a "Custom" action. @defaultValue "" */
+  text?: string;
+  /** Icon of a "Custom" action. */
+  icon?: ReactNode;
+  /** @defaultValue true */
+  visible?: boolean;
+}
 
 /** A column (sap.m.Column) of the `columns` aggregation. */
 export interface $ColumnSettings {
@@ -107,6 +142,33 @@ export interface Table$PasteEvent {
   preventDefault(): void;
 }
 
+export interface Table$BeforeOpenContextMenuEvent {
+  /** The row in which the context menu was opened. */
+  listItem: Row;
+  /** The column in which the context menu was opened (undefined outside the columns, e.g. the selection cell). */
+  column: $ColumnSettings | undefined;
+  /** Keeps the context menu closed (the browser's own menu opens). */
+  preventDefault(): void;
+}
+export interface Table$SwipeEvent {
+  /** The swiped row. */
+  listItem: Row;
+  /** The `swipeContent` shown at the end of the row. */
+  swipeContent: ReactNode;
+  /** The element the swipe started on. */
+  srcControl: HTMLElement;
+  /** "BeginToEnd" or "EndToBegin" (left to right / right to left in left-to-right languages). */
+  swipeDirection: 'BeginToEnd' | 'EndToBegin';
+  /** Cancels the swipe (the swipe content is not shown). */
+  preventDefault(): void;
+}
+export interface Table$ItemActionPressEvent {
+  /** The pressed action. */
+  action: $ListItemActionSettings;
+  /** The row of the action. */
+  listItem: Row;
+}
+
 export interface GroupSummary {
   count?: number;
   cells: Record<string, ReactNode>;
@@ -175,8 +237,28 @@ export interface $TableSettings {
   growingTriggerText?: string;
   /** Load the next page when the end of the table scrolls into view instead of a button. @defaultValue false */
   growingScrollToLoad?: boolean;
+  /** "Upwards": the "More" button (or scroll to load) is at the top and the items are shown in reverse order, the first one at the bottom (chat-like lists). @defaultValue "Downwards" */
+  growingDirection?: ListGrowingDirection;
   /** More items can be loaded by the parent (`onUpdateStarted` with reason "Growing" asks for them; smart-kit addition). */
   hasMore?: boolean;
+  /** "Navigation": arrow keys move between the cells; "Edit": Tab moves between the input fields of the cells, arrow up / down moves to the same field of the previous / next row. @defaultValue "Navigation" */
+  keyboardMode?: ListKeyboardMode;
+  /** Shows the unread indicator (bold rows) of the rows that `rowUnread` marks. @defaultValue false */
+  showUnread?: boolean;
+  /** Whether a row is unread (sap.m.ListItemBase `unread` of the row; shown with `showUnread`). */
+  rowUnread?(row: Row): boolean;
+  /** The selection controls animate in when `mode` changes. @defaultValue true */
+  modeAnimationOn?: boolean;
+  /** Maximum number of row actions (`rowActions`) shown in a column at the end; more go into an overflow menu. 0–2 enable the actions (mode "Delete" then has no effect); -1 does not show them. @defaultValue -1 */
+  itemActionCount?: number;
+  /** Actions of a row (sap.m.ListItemBase aggregation `actions` of the row). */
+  rowActions?(row: Row): $ListItemActionSettings[];
+  /** Content shown at the end of a row after a touch swipe (e.g. a button); hidden again by a tap elsewhere in the table or `swipeOut`. */
+  swipeContent?: ReactNode;
+  /** Swipe direction that shows `swipeContent`. @defaultValue "Both" */
+  swipeDirection?: SwipeDirection;
+  /** Context menu of the rows (opened by right-click or Shift+F10 / the menu key on a row); a function gets the row (the binding context UI5 sets on the menu). */
+  contextMenu?: ReactNode | ((listItem: Row) => ReactNode);
   /** Moves columns into the pop-in by `importance` as the width shrinks. @defaultValue false */
   autoPopinMode?: boolean;
   /** Importances whose popped-in columns are not shown in the pop-in area ("Show Details" off). */
@@ -215,6 +297,12 @@ export interface $TableSettings {
   onPopinChanged?(e: Table$PopinChangedEvent): void;
   /** Text was pasted into the table (e.g. from a spreadsheet). */
   onPaste?(e: Table$PasteEvent): void;
+  /** The context menu of a row is about to open (`preventDefault` keeps it closed). */
+  onBeforeOpenContextMenu?(e: Table$BeforeOpenContextMenuEvent): void;
+  /** A row was swiped, before `swipeContent` is shown (`preventDefault` cancels). */
+  onSwipe?(e: Table$SwipeEvent): void;
+  /** A row action (`rowActions`) was pressed. */
+  onItemActionPress?(e: Table$ItemActionPressEvent): void;
   /** Instance methods (sap.m.Table / sap.m.ListBase). */
   ref?: Ref<Table>;
 }
@@ -232,6 +320,10 @@ export interface Table {
   /** Loads the next page (growing). */
   requestItems(items?: number): void;
   scrollToIndex(index: number): Promise<void>;
+  /** The row whose `swipeContent` is shown, null when none is. */
+  getSwipedItem(): Row | null;
+  /** Hides the shown `swipeContent`; `callback` gets the swiped row and the swipe content. */
+  swipeOut(callback?: (swipedListItem: Row, swipedContent: ReactNode) => void): Table;
 }
 
 /** Widths below which Low, then Medium columns move out of the table (sap.m.Table pop-in by importance). */
@@ -250,6 +342,25 @@ function pxOf(v: string | undefined): number | undefined {
   if (!m) return undefined;
   return Number(m[1]) * (m[2] === 'em' || m[2] === 'rem' ? 16 : 1);
 }
+
+/** Input fields handle their own arrow keys (text cursor, options). */
+const EDITABLE = 'input:not([type="checkbox"]):not([type="radio"]), textarea, select, [contenteditable="true"], [role="combobox"]';
+/** Tabbable elements inside a row (sap.m.ListItemBase getTabbables), without the cells of the grid navigation. */
+const TABBABLE = 'input, select, textarea, button, a[href], [tabindex]:not([tabindex="-1"])';
+const tabbablesOf = (el: Element | null | undefined) =>
+  [...(el?.querySelectorAll<HTMLElement>(TABBABLE) ?? [])].filter((x) => !x.hasAttribute('data-sk-cell') && !(x as HTMLInputElement).disabled);
+
+/** The element that scrolls the table (the page when no ancestor scrolls). */
+function scrollParent(el: HTMLElement | null): HTMLElement {
+  for (let n = el?.parentElement; n; n = n.parentElement) {
+    const o = getComputedStyle(n).overflowY;
+    if ((o === 'auto' || o === 'scroll') && n.scrollHeight > n.clientHeight) return n;
+  }
+  return (document.scrollingElement as HTMLElement | null) ?? document.documentElement;
+}
+
+/** sap.m.ListBase _getItemActionCount: -1 (no actions) up to 2. */
+const actionCountOf = (n: number | undefined) => Math.min(2, Math.max(-1, Math.trunc(n ?? -1)));
 
 export function Table(p: $TableSettings) {
   const t = useText();
@@ -318,11 +429,20 @@ export function Table(p: $TableSettings) {
   const rows = p.growing && !external ? p.items.slice(0, shown) : p.items;
   const canGrow = Boolean(p.growing) && (external ? Boolean(p.hasMore) : shown < p.items.length);
   const total = external ? undefined : p.items.length;
+  // growingDirection "Upwards" (sap.m.ListBaseRenderer): the trigger is at the top and the items are rendered in
+  // reverse order; loading more keeps the scroll position (GrowingEnablement onScrollToLoad).
+  const upwards = Boolean(p.growing) && p.growingDirection === 'Upwards';
+  const displayRows = upwards ? [...rows].reverse() : rows;
+  const keepScroll = useRef<{ el: HTMLElement; fromBottom: number } | null>(null);
   const grow = (n?: number) => {
     const l = latest.current;
     if (!l.growing) return;
+    if (l.hasMore !== undefined && (!l.hasMore || l.busy)) return;
+    if (l.growingDirection === 'Upwards') {
+      const el = scrollParent(boxRef.current);
+      keepScroll.current = { el, fromBottom: el.scrollHeight - el.scrollTop };
+    }
     if (l.hasMore !== undefined) {
-      if (!l.hasMore || l.busy) return;
       l.onUpdateStarted?.({ reason: 'Growing', actual: l.items.length, total: undefined });
     } else {
       l.onUpdateStarted?.({ reason: 'Growing', actual: Math.min(shown, l.items.length), total: l.items.length });
@@ -338,41 +458,159 @@ export function Table(p: $TableSettings) {
     latest.current.onUpdateFinished?.({ reason: latest.current.growing ? 'Growing' : 'Change', actual, total });
   }, [actual, total]);
 
-  // Scroll to load: the sentinel after the last row starts the next page.
+  // Scroll to load: the sentinel after the last row (before the first one when growing upwards) starts the next page.
   const scrollToLoad = Boolean(p.growing && p.growingScrollToLoad);
+  const scrolledToEnd = useRef(false);
+  useLayoutEffect(() => {
+    const keep = keepScroll.current;
+    if (keep) {
+      keepScroll.current = null;
+      keep.el.scrollTop = keep.el.scrollHeight - keep.fromBottom;
+    } else if (upwards && scrollToLoad && actual > 0 && !scrolledToEnd.current) {
+      // at the beginning the list scrolls to the last item (GrowingEnablement)
+      scrolledToEnd.current = true;
+      const el = scrollParent(boxRef.current);
+      el.scrollTop = el.scrollHeight;
+    }
+  }, [actual, upwards, scrollToLoad]);
   useEffect(() => {
     const el = sentinelRef.current;
     if (!el || !scrollToLoad || typeof IntersectionObserver === 'undefined') return;
-    const obs = new IntersectionObserver(([e]) => { if (e!.isIntersecting) growRef.current(); }, { rootMargin: '0px 0px 200px 0px' });
+    const obs = new IntersectionObserver(([e]) => { if (e!.isIntersecting) growRef.current(); }, { rootMargin: upwards ? '200px 0px 0px 0px' : '0px 0px 200px 0px' });
     obs.observe(el);
     return () => obs.disconnect();
-  }, [scrollToLoad]);
+  }, [scrollToLoad, upwards]);
   useEffect(() => {
     // Rows may not fill the viewport yet: keep loading while the sentinel is visible.
     const el = sentinelRef.current;
-    if (!el || !scrollToLoad || !canGrow || p.busy) return;
+    if (!el || !scrollToLoad || upwards || !canGrow || p.busy) return;
     if (el.getBoundingClientRect().top < window.innerHeight + 200) growRef.current();
   });
 
+  // Mode animation (sap.m.ListItemBaseRenderer decorateMode): once the mode changed, the selection controls animate in.
+  const prevMode = useRef(mode);
+  const [modeChanged, setModeChanged] = useState(false);
+  useLayoutEffect(() => {
+    if (prevMode.current !== mode) setModeChanged(true);
+    prevMode.current = mode;
+  }, [mode]);
+  const modeAnim = modeChanged && p.modeAnimationOn !== false;
+
+  // Item actions (sap.m.ListItemBase actions, sap.m.ListBase itemActionCount).
+  const actionCount = actionCountOf(p.itemActionCount);
+  const actionsOf = (row: Row) => p.rowActions?.(row) ?? [];
+  const navAction = (row: Row) => actionsOf(row).some((a) => a.type === 'Navigation' && a.visible !== false);
+  const rowNavigable = (row: Row) => Boolean(p.navigable) || navAction(row);
+  const navColumn = Boolean(p.navigable) || (Boolean(p.rowActions) && rows.some(navAction));
+  const actionsColumn = actionCount > 0 && Boolean(p.rowActions);
+  const pressAction = (row: Row, action: $ListItemActionSettings) => p.onItemActionPress?.({ action, listItem: row });
+  const actionInfo = (a: $ListItemActionSettings): { icon: ReactNode; text: string } =>
+    a.type === 'Edit' ? { icon: <Pencil className="sk-icon" />, text: t('actions.edit') }
+      : a.type === 'Delete' ? { icon: <X className="sk-icon" />, text: t('actions.delete') }
+        : { icon: a.icon, text: a.text ?? '' };
+  /** ListItemBase _getActionsToRender / _getOverflowActions. */
+  const splitActions = (row: Row) => {
+    const effective = actionsOf(row).filter((a) => a.type !== 'Navigation');
+    const shownActions = effective.filter((a) => a.visible !== false);
+    if (effective.length <= actionCount) return { render: effective, overflow: [] as $ListItemActionSettings[] };
+    const render = shownActions.slice(0, shownActions.length > actionCount ? actionCount - 1 : actionCount);
+    return { render, overflow: shownActions.filter((a) => !render.includes(a)) };
+  };
+  const actionKey = (a: $ListItemActionSettings, i: number) => a.key ?? `${a.type ?? 'Custom'}:${a.text ?? ''}:${i}`;
+  const typedAction = (row: Row, type: ListItemActionType) => actionsOf(row).find((a) => a.type === type && a.visible !== false);
+
+  // Context menu (sap.m.ListBase onItemContextMenu): beforeOpenContextMenu, then the menu opens at the pointer.
+  const [menu, setMenu] = useState<{ row: Row; x: number; y: number } | null>(null);
+  const openContextMenu = (row: Row, e: MouseEvent<HTMLTableRowElement>) => {
+    if (!p.contextMenu) return;
+    const target = e.target as HTMLElement;
+    if (target.closest(EDITABLE)) return; // an input field keeps the browser's menu
+    const td = target.closest<HTMLElement>('td[data-col]');
+    let prevented = false;
+    p.onBeforeOpenContextMenu?.({ listItem: row, column: td ? columns.find((c) => c.id === td.dataset.col) : undefined, preventDefault: () => { prevented = true; } });
+    if (prevented) return;
+    e.preventDefault();
+    let { clientX: x, clientY: y } = e;
+    if (!x && !y) { const r = target.getBoundingClientRect(); x = r.left; y = r.bottom; } // opened by the keyboard
+    setMenu({ row, x, y });
+  };
+
+  // Swipe (sap.m.ListBase onswipeleft / onswiperight, touch only): swipeContent at the end of the swiped row.
+  const [swiped, setSwiped] = useState<{ row: Row; top: number; height: number } | null>(null);
+  const swipedRef = useRef(swiped);
+  swipedRef.current = swiped;
+  const swipeBoxRef = useRef<HTMLDivElement>(null);
+  const touch = useRef<{ x: number; y: number } | null>(null);
+  const swipedAt = useRef(0);
+  const swipe = (row: Row, left: boolean, tr: HTMLElement, src: HTMLElement) => {
+    if (p.swipeContent === undefined || p.swipeContent === null || swiped) return;
+    const rtl = boxRef.current ? getComputedStyle(boxRef.current).direction === 'rtl' : false;
+    const dir = p.swipeDirection ?? 'Both';
+    const except = left === rtl ? 'EndToBegin' : 'BeginToEnd';
+    if (dir === except) return;
+    const swipeDirection = dir === 'Both' ? (left === rtl ? 'BeginToEnd' : 'EndToBegin') : dir;
+    let prevented = false;
+    p.onSwipe?.({ listItem: row, swipeContent: p.swipeContent, srcControl: src, swipeDirection, preventDefault: () => { prevented = true; } });
+    if (prevented) return;
+    const box = boxRef.current!.getBoundingClientRect();
+    const r = tr.getBoundingClientRect();
+    swipedAt.current = Date.now();
+    setSwiped({ row, top: r.top - box.top, height: r.height });
+  };
+  const onTouchStart = (e: TouchEvent<HTMLTableRowElement>) => {
+    const tp = e.touches[0];
+    touch.current = tp && e.touches.length === 1 ? { x: tp.clientX, y: tp.clientY } : null;
+  };
+  const onTouchEnd = (row: Row, e: TouchEvent<HTMLTableRowElement>) => {
+    const start = touch.current;
+    const tp = e.changedTouches[0];
+    touch.current = null;
+    if (!start || !tp) return;
+    const dx = tp.clientX - start.x;
+    const dy = tp.clientY - start.y;
+    if (Math.abs(dx) >= 40 && Math.abs(dx) > 2 * Math.abs(dy)) swipe(row, dx < 0, e.currentTarget, e.target as HTMLElement);
+  };
+  useEffect(() => { if (swiped) swipeBoxRef.current?.focus(); }, [swiped]);
+
   const tableRef = useRef<HTMLTableElement>(null);
-  useImperativeHandle(p.ref, (): Table => ({
-    getGrowingInfo: () => (latest.current.growing ? { actual: rows.length, total } : null),
-    getSelectedItem: () => latest.current.items.find((r) => selectedKeys.has(latest.current.keyOf(r))) ?? null,
-    getSelectedItems: () => latest.current.items.filter((r) => selectedKeys.has(latest.current.keyOf(r))),
-    setSelectedItem: (row, select = true, fireEvent = false) => change([row], select, false, fireEvent),
-    removeSelections: (_all, fireEvent = false) => change(latest.current.items.filter((r) => selectedKeys.has(latest.current.keyOf(r))), false, false, fireEvent),
-    selectAll: (fireEvent = false) => change(rows, true, true, fireEvent),
-    requestItems: (n) => growRef.current(n),
-    scrollToIndex: async (index) => {
-      const trs = tableRef.current?.querySelectorAll<HTMLTableRowElement>('tr[data-sk-row]');
-      const tr = trs?.[index < 0 ? trs.length - 1 : index];
-      tr?.scrollIntoView?.({ block: 'nearest' });
-    },
-  }));
+  useImperativeHandle(p.ref, (): Table => {
+    const api: Table = {
+      getGrowingInfo: () => (latest.current.growing ? { actual: rows.length, total } : null),
+      getSelectedItem: () => latest.current.items.find((r) => selectedKeys.has(latest.current.keyOf(r))) ?? null,
+      getSelectedItems: () => latest.current.items.filter((r) => selectedKeys.has(latest.current.keyOf(r))),
+      setSelectedItem: (row, select = true, fireEvent = false) => change([row], select, false, fireEvent),
+      removeSelections: (_all, fireEvent = false) => change(latest.current.items.filter((r) => selectedKeys.has(latest.current.keyOf(r))), false, false, fireEvent),
+      selectAll: (fireEvent = false) => change(rows, true, true, fireEvent),
+      requestItems: (n) => growRef.current(n),
+      scrollToIndex: async (index) => {
+        // the index counts the items (data order), also when they are rendered upwards
+        const row = rows[index < 0 ? rows.length - 1 : index];
+        const key = row ? latest.current.keyOf(row) : undefined;
+        const tr = [...(tableRef.current?.querySelectorAll<HTMLTableRowElement>('tr[data-sk-row]') ?? [])].find((x) => x.dataset.skRow === key);
+        tr?.scrollIntoView?.({ block: 'nearest' });
+      },
+      getSwipedItem: () => swipedRef.current?.row ?? null,
+      swipeOut: (callback) => {
+        const current = swipedRef.current;
+        if (!current) return api;
+        swipedRef.current = null;
+        setSwiped(null);
+        callback?.(current.row, latest.current.swipeContent);
+        return api;
+      },
+    };
+    return api;
+  });
+  const swipeOut = () => { if (swipedRef.current) setSwiped(null); };
+  const outsideSwipe = (e: { target: EventTarget }) => {
+    // the events that end the swipe gesture itself do not count
+    if (Date.now() - swipedAt.current > 300 && !swipeBoxRef.current?.contains(e.target as Node)) swipeOut();
+  };
 
   const allSelected = rows.length > 0 && rows.every((r) => selectedKeys.has(p.keyOf(r)));
-  const deleteColumn = mode === 'Delete';
-  const span = visible.length + (selectColumn ? 1 : 0) + (p.inlineActions ? 1 : 0) + (p.navigable ? 1 : 0) + (deleteColumn ? 1 : 0);
+  // with item actions (itemActionCount 0–2) the Delete mode has no effect; a Delete action is used instead
+  const deleteColumn = mode === 'Delete' && actionCount === -1;
+  const span = visible.length + (selectColumn ? 1 : 0) + (p.inlineActions ? 1 : 0) + (actionsColumn ? 1 : 0) + (navColumn ? 1 : 0) + (deleteColumn ? 1 : 0);
   const sticky = p.sticky?.includes('ColumnHeaders');
   const headStyle = sticky ? undefined : { position: 'static' as const };
   const alignEnd = (c: $ColumnSettings) => c.hAlign === 'End' || c.hAlign === 'Right';
@@ -395,7 +633,8 @@ export function Table(p: $TableSettings) {
         </th>
         {visible.slice(lead).map((c) => <td key={c.id} data-col={c.id} className={alignEnd(c) ? 'sk-rtable__end' : undefined}>{cells[c.id] ?? null}</td>)}
         {p.inlineActions ? <td /> : null}
-        {p.navigable ? <td /> : null}
+        {actionsColumn ? <td /> : null}
+        {navColumn ? <td /> : null}
         {deleteColumn ? <td /> : null}
       </>
     );
@@ -403,29 +642,57 @@ export function Table(p: $TableSettings) {
 
   const press = (row: Row, src: HTMLElement) => {
     if (mode === 'SingleSelectMaster' || (p.includeItemInSelection && (multi || single))) toggle(row);
-    if (p.navigable || mode === 'SingleSelectMaster') p.onItemPress?.({ listItem: row, srcControl: src });
+    if (rowNavigable(row) || mode === 'SingleSelectMaster') p.onItemPress?.({ listItem: row, srcControl: src });
   };
+  const rowOf = (tr: HTMLElement) => (tr.dataset.skRow === undefined ? undefined : p.items.find((r) => p.keyOf(r) === tr.dataset.skRow));
 
-  // Grid keyboard navigation (arrow keys between cells, Enter presses the row, Space selects).
+  // Grid keyboard navigation (arrow keys between cells, Enter presses the row, Space selects). keyboardMode "Edit"
+  // (sap.m.ListBase onItemArrowUpDown): arrow up / down in an input field moves to the same field of the next row.
   const onKeyDown = (e: KeyboardEvent<HTMLTableElement>) => {
-    const cell = (e.target as HTMLElement).closest<HTMLElement>('[data-sk-cell]');
+    const target = e.target as HTMLElement;
+    const cell = target.closest<HTMLElement>('[data-sk-cell]');
     if (!cell) return;
     const tr = cell.parentElement as HTMLTableRowElement;
+    if (target !== cell && target.closest(EDITABLE)) {
+      if (p.keyboardMode === 'Edit' && (e.key === 'ArrowUp' || e.key === 'ArrowDown') && tr.dataset.skRow !== undefined && !(target instanceof HTMLTextAreaElement)) {
+        const dataRows = [...(tableRef.current?.querySelectorAll<HTMLTableRowElement>('tr[data-sk-row]') ?? [])];
+        const nextRow = dataRows[dataRows.indexOf(tr) + (e.key === 'ArrowUp' ? -1 : 1)];
+        if (!nextRow) return;
+        const own = tabbablesOf(tr);
+        const theirs = tabbablesOf(nextRow);
+        const el = theirs[own.indexOf(target)] ?? theirs[theirs.length - 1] ?? nextRow.querySelector<HTMLElement>('[data-sk-cell]');
+        e.preventDefault();
+        el?.focus();
+        if (el instanceof HTMLInputElement) el.select();
+        return;
+      }
+      // the text cursor moves inside the field; in Edit mode the field keeps all arrow keys
+      if (p.keyboardMode === 'Edit' || e.key === 'ArrowLeft' || e.key === 'ArrowRight') return;
+    }
     const cells = [...tr.querySelectorAll<HTMLElement>('[data-sk-cell]')];
     const i = cells.indexOf(cell);
     const trs = [...(tr.closest('table')?.querySelectorAll<HTMLTableRowElement>('tr[data-sk-row], thead tr') ?? [])];
     const ri = trs.indexOf(tr);
     let next: HTMLElement | undefined;
+    const row = target === cell ? rowOf(tr) : undefined;
     if (e.key === 'ArrowRight') next = cells[i + 1];
     else if (e.key === 'ArrowLeft') next = cells[i - 1];
     else if (e.key === 'ArrowDown') next = trs[ri + 1]?.querySelectorAll<HTMLElement>('[data-sk-cell]')[i];
     else if (e.key === 'ArrowUp') next = trs[ri - 1]?.querySelectorAll<HTMLElement>('[data-sk-cell]')[i];
-    else if (e.key === 'Enter' && tr.dataset.skRow && p.navigable && e.target === cell) {
-      const row = p.items.find((r) => p.keyOf(r) === tr.dataset.skRow);
-      if (row) p.onItemPress?.({ listItem: row, srcControl: cell });
-    } else if (e.key === ' ' && tr.dataset.skRow && mode !== 'None' && mode !== 'Delete' && e.target === cell) {
-      const row = p.items.find((r) => p.keyOf(r) === tr.dataset.skRow);
-      if (row) { toggle(row); e.preventDefault(); }
+    else if (e.key === 'Enter' && row && rowNavigable(row)) {
+      p.onItemPress?.({ listItem: row, srcControl: cell });
+    } else if (e.key === ' ' && row && mode !== 'None' && mode !== 'Delete') {
+      toggle(row); e.preventDefault();
+    } else if (e.key === 'Delete' && row && (deleteColumn || actionCount >= 0)) {
+      // ListItemBase onsapdelete: the Delete mode, or the Delete action when item actions are on
+      if (deleteColumn) p.onDelete?.({ listItem: row });
+      else if (actionCount >= 0) { const a = typedAction(row, 'Delete'); if (a) pressAction(row, a); }
+      e.preventDefault();
+    } else if (e.code === 'KeyE' && (e.metaKey || e.ctrlKey) && row && actionCount >= 0) {
+      // ListItemBase onkeydown: Ctrl+E presses the Edit action
+      const a = typedAction(row, 'Edit');
+      if (a) pressAction(row, a);
+      e.preventDefault();
     }
     if (next) {
       e.preventDefault();
@@ -433,6 +700,13 @@ export function Table(p: $TableSettings) {
       next.tabIndex = 0;
       next.focus();
     }
+  };
+  // keyboardMode "Edit" (ListBase focusPrevious): tabbing into the table focuses its first input field.
+  const onFocus = (e: FocusEvent<HTMLTableElement>) => {
+    if (p.keyboardMode !== 'Edit') return;
+    const target = e.target as HTMLElement;
+    if (!target.hasAttribute('data-sk-cell') || (e.relatedTarget && tableRef.current?.contains(e.relatedTarget as Node))) return;
+    tabbablesOf(tableRef.current?.tBodies[0])[0]?.focus();
   };
 
   const level = p.headerLevel && p.headerLevel !== 'Auto' ? Number(p.headerLevel.slice(1)) : 2;
@@ -453,16 +727,59 @@ export function Table(p: $TableSettings) {
   const popinStyle = p.popinLayout === 'GridSmall' || p.popinLayout === 'GridLarge'
     ? { display: 'grid', gridTemplateColumns: `repeat(auto-fill, minmax(calc(var(--sk-size-popin-label) * ${p.popinLayout === 'GridLarge' ? 4 : 2}), 1fr))` }
     : undefined;
+  const growingTrigger = p.growing && canGrow && !p.growingScrollToLoad ? (
+    <Button variant="subtle" fullWidth className="sk-table__more" loading={p.busy} onClick={() => grow()} data-sk-more>
+      {p.growingTriggerText ?? (total !== undefined ? t('table.moreCount', { loaded: rows.length, count: total }) : t('table.more'))}
+    </Button>
+  ) : null;
+  const sentinel = <div ref={sentinelRef} className="sk-rtable__sentinel" aria-hidden />;
+  const actionsWidth = `${actionCount * 2.75}rem`;
+  const actionCell = (row: Row, index: number) => {
+    const { render, overflow } = splitActions(row);
+    return (
+      <td data-sk-cell tabIndex={-1} className="sk-rtable__item-actions" data-sk-no-nav data-sk-item-actions style={cellStyle(index)}>
+        {render.map((a, i) => {
+          if (a.visible === false) return <span key={actionKey(a, i)} className="sk-rtable__item-action-hidden" aria-hidden />;
+          const info = actionInfo(a);
+          return (
+            <ActionIcon key={actionKey(a, i)} size="sm" variant="subtle" aria-label={info.text} title={info.text} data-sk-item-action={a.type ?? 'Custom'} onClick={() => pressAction(row, a)}>
+              {info.icon}
+            </ActionIcon>
+          );
+        })}
+        {overflow.length ? (
+          <Menu position="bottom-end" withinPortal>
+            <Menu.Target>
+              <ActionIcon size="sm" variant="subtle" aria-label={t('table.itemActionMore')} title={t('table.itemActionMore')} aria-haspopup="menu" data-sk-item-action-overflow>
+                <MoreHorizontal className="sk-icon" />
+              </ActionIcon>
+            </Menu.Target>
+            <Menu.Dropdown>
+              {overflow.map((a, i) => { const info = actionInfo(a); return <Menu.Item key={actionKey(a, i)} leftSection={info.icon} onClick={() => pressAction(row, a)} data-sk-item-action={a.type ?? 'Custom'}>{info.text}</Menu.Item>; })}
+            </Menu.Dropdown>
+          </Menu>
+        ) : null}
+      </td>
+    );
+  };
   return (
-    <div className="sk-rtable" ref={boxRef} data-sk-responsive-table data-width={width} data-mode={mode} style={{ width: p.width, background, padding: p.inset ? 'var(--sk-space-4)' : undefined }} aria-busy={p.busy || undefined}>
+    <div
+      className="sk-rtable" ref={boxRef} data-sk-responsive-table data-width={width} data-mode={mode} data-sk-mode-anim={modeAnim || undefined}
+      style={{ width: p.width, background, padding: p.inset ? 'var(--sk-space-4)' : undefined }} aria-busy={p.busy || undefined}
+      // a tap in the table outside the swipe content hides it (ListBase _swipeIn)
+      onTouchEnd={swiped ? outsideSwipe : undefined}
+      onMouseUp={swiped ? outsideSwipe : undefined}
+    >
       {p.headerText ? <Heading className="sk-rtable__header" data-sk-rtable-header>{p.headerText}</Heading> : null}
       {p.headerToolbar}
       {p.infoToolbar}
-      <table ref={tableRef} role={p.tree ? 'treegrid' : 'grid'} aria-label={p.headerText ?? p['aria-label']} aria-rowcount={rows.length} onKeyDown={onKeyDown} onPaste={p.onPaste ? (e) => {
+      {upwards ? growingTrigger : null}
+      {upwards ? sentinel : null}
+      <table ref={tableRef} role={p.tree ? 'treegrid' : 'grid'} aria-label={p.headerText ?? p['aria-label']} aria-rowcount={rows.length} onKeyDown={onKeyDown} onFocus={onFocus} onPaste={p.onPaste ? (e) => {
         const text = e.clipboardData.getData('text/plain');
         if (!text) return;
         p.onPaste!({ data: text.replace(/\r\n?/g, '\n').replace(/\n$/, '').split('\n').map((line) => line.split('\t')), preventDefault: () => e.preventDefault() });
-      } : undefined} className="sk-rtable__table" style={{ tableLayout: layout }}>
+      } : undefined} className="sk-rtable__table" style={{ tableLayout: layout, pointerEvents: swiped ? 'none' : undefined }}>
         <thead>
           <tr>
             {selectColumn ? (
@@ -482,12 +799,13 @@ export function Table(p: $TableSettings) {
               <th key={c.id} data-sk-cell tabIndex={i === 0 ? 0 : -1} data-col={c.id} className={alignEnd(c) ? 'sk-rtable__end' : undefined} style={c.width ? { ...headStyle, width: c.width } : headStyle}>{c.header}</th>
             ))}
             {p.inlineActions ? <th data-sk-cell tabIndex={-1} style={headStyle}><span className="sk-visually-hidden">{t('actions.inline')}</span></th> : null}
-            {p.navigable ? <th data-sk-cell tabIndex={-1} className="sk-rtable__nav" style={headStyle}><span className="sk-visually-hidden">{t('table.navigate')}</span></th> : null}
+            {actionsColumn ? <th data-sk-cell tabIndex={-1} className="sk-rtable__item-actions" style={{ ...headStyle, width: actionsWidth }}><span className="sk-visually-hidden">{t('actions.inline')}</span></th> : null}
+            {navColumn ? <th data-sk-cell tabIndex={-1} className="sk-rtable__nav" style={headStyle}><span className="sk-visually-hidden">{t('table.navigate')}</span></th> : null}
             {deleteColumn ? <th data-sk-cell tabIndex={-1} style={headStyle}><span className="sk-visually-hidden">{t('actions.delete')}</span></th> : null}
           </tr>
         </thead>
         <tbody>
-          {rows.map((row, index) => {
+          {displayRows.map((row, index) => {
             const k = p.keyOf(row);
             const group = groupCol ? (groupCol.groupValue?.(row) ?? '') : undefined;
             let header: ReactNode = null;
@@ -503,7 +821,9 @@ export function Table(p: $TableSettings) {
             lastGroup = group;
             const selected = selectedKeys.has(k);
             const node = p.tree?.nodeOf(row);
-            const clickable = p.navigable || mode === 'SingleSelectMaster' || (p.includeItemInSelection && mode !== 'None' && mode !== 'Delete');
+            const navigable = rowNavigable(row);
+            const clickable = navigable || mode === 'SingleSelectMaster' || (p.includeItemInSelection && mode !== 'None' && mode !== 'Delete');
+            const unread = Boolean(p.showUnread && p.rowUnread?.(row));
             return [
               header,
               <tr
@@ -514,7 +834,11 @@ export function Table(p: $TableSettings) {
                 aria-expanded={node && node.drillState !== 'leaf' ? node.drillState === 'expanded' : undefined}
                 data-changed={p.changedKeys?.has(k) || undefined}
                 data-sk-highlight={p.rowHighlight?.(row)}
-                className={['sk-rtable__row', clickable ? 'sk-rtable__row--nav' : '', p.rowHighlight?.(row) ? `sk-table__row--${p.rowHighlight(row)}` : ''].join(' ')}
+                data-sk-unread={unread || undefined}
+                className={['sk-rtable__row', clickable ? 'sk-rtable__row--nav' : '', unread ? 'sk-rtable__row--unread' : '', p.rowHighlight?.(row) ? `sk-table__row--${p.rowHighlight(row)}` : ''].join(' ')}
+                onContextMenu={p.contextMenu ? (e) => openContextMenu(row, e) : undefined}
+                onTouchStart={p.swipeContent != null ? onTouchStart : undefined}
+                onTouchEnd={p.swipeContent != null ? (e) => onTouchEnd(row, e) : undefined}
                 onClick={(e) => {
                   if (!clickable) return;
                   if ((e.target as HTMLElement).closest('button, a, input, label, [role="button"], [data-sk-no-nav]')) return;
@@ -531,6 +855,7 @@ export function Table(p: $TableSettings) {
                 {visible.map((c, i) => (
                   <td key={c.id} data-sk-cell tabIndex={-1} data-col={c.id} className={alignEnd(c) ? 'sk-rtable__end' : undefined} style={cellStyle(index)}>
                     {i === 0 && p.tree ? <TreeCell node={node} onToggle={() => p.tree!.toggle(row)}>{c.cell(row)}</TreeCell> : c.cell(row)}
+                    {i === 0 && unread ? <span className="sk-visually-hidden">{t('table.unread')}</span> : null}
                     {i === 0 && p.rowMarker ? p.rowMarker(row) : null}
                     {i === 0 && p.changedKeys?.has(k) ? <div className="sk-rtable__changed" data-sk-changed-marker>{t('table.changedItem')}</div> : null}
                     {i === 0 && inPopin.length ? (
@@ -543,7 +868,12 @@ export function Table(p: $TableSettings) {
                   </td>
                 ))}
                 {p.inlineActions ? <td data-sk-cell tabIndex={-1} className="sk-rtable__actions" data-sk-no-nav style={cellStyle(index)}>{p.inlineActions(row)}</td> : null}
-                {p.navigable ? <td data-sk-cell tabIndex={-1} className="sk-rtable__nav" aria-label={t('table.navigate')} style={cellStyle(index)}><ChevronRight className="sk-icon" aria-hidden /></td> : null}
+                {actionsColumn ? actionCell(row, index) : null}
+                {navColumn ? (
+                  <td data-sk-cell tabIndex={-1} className="sk-rtable__nav" aria-label={navigable ? t('table.navigate') : undefined} style={cellStyle(index)}>
+                    {navigable ? <ChevronRight className="sk-icon" aria-hidden /> : null}
+                  </td>
+                ) : null}
                 {deleteColumn ? (
                   <td data-sk-cell tabIndex={-1} data-sk-no-nav style={cellStyle(index)}>
                     <ActionIcon size="sm" variant="subtle" aria-label={t('actions.delete')} title={t('actions.delete')} onClick={() => p.onDelete?.({ listItem: row })} data-sk-row-delete><Trash2 className="sk-icon" /></ActionIcon>
@@ -561,7 +891,8 @@ export function Table(p: $TableSettings) {
                 {selectColumn ? <td /> : null}
                 {visible.map((c) => <td key={c.id} data-col={c.id} className={alignEnd(c) ? 'sk-rtable__end' : undefined}>{c.footer ?? null}</td>)}
                 {p.inlineActions ? <td /> : null}
-                {p.navigable ? <td /> : null}
+                {actionsColumn ? <td /> : null}
+                {navColumn ? <td /> : null}
                 {deleteColumn ? <td /> : null}
               </tr>
             ) : null}
@@ -569,12 +900,26 @@ export function Table(p: $TableSettings) {
         ) : null}
       </table>
       {!rows.length && !p.busy && p.showNoData !== false ? <div className="sk-table__nodata sk-rtable__nodata" data-sk-nodata>{p.noData ?? <Text c="dimmed">{p.noDataText ?? t('table.noData.empty')}</Text>}</div> : null}
-      {p.growing && canGrow && !p.growingScrollToLoad ? (
-        <Button variant="subtle" fullWidth className="sk-table__more" loading={p.busy} onClick={() => grow()} data-sk-more>
-          {p.growingTriggerText ?? (total !== undefined ? t('table.moreCount', { loaded: rows.length, count: total }) : t('table.more'))}
-        </Button>
+      {upwards ? null : growingTrigger}
+      {upwards ? null : sentinel}
+      {swiped ? (
+        <div
+          ref={swipeBoxRef} className="sk-rtable__swipe" data-sk-swipe tabIndex={-1} style={{ top: swiped.top, height: swiped.height }}
+          onKeyDown={(e) => { if (e.key === 'Escape') swipeOut(); }}
+        >
+          {p.swipeContent}
+        </div>
       ) : null}
-      <div ref={sentinelRef} className="sk-rtable__sentinel" aria-hidden />
+      {p.contextMenu ? (
+        <Popover opened={menu !== null} onChange={(o) => { if (!o) setMenu(null); }} onClose={() => setMenu(null)} position="bottom-start" withinPortal closeOnEscape closeOnClickOutside trapFocus returnFocus>
+          <Popover.Target>
+            <span aria-hidden className="sk-rtable__context-anchor" style={{ position: 'fixed', left: menu?.x ?? 0, top: menu?.y ?? 0, width: 0, height: 0, pointerEvents: 'none' }} />
+          </Popover.Target>
+          <Popover.Dropdown data-sk-context-menu onClick={(e) => { if ((e.target as HTMLElement).closest('button, a, [role="menuitem"]')) setMenu(null); }}>
+            {menu ? (typeof p.contextMenu === 'function' ? p.contextMenu(menu.row) : p.contextMenu) : null}
+          </Popover.Dropdown>
+        </Popover>
+      ) : null}
       {showBusy ? <div className="sk-rtable__loading" role="status"><Loader size="xs" /> {t('table.loadingMore')}</div> : null}
       {p.footerText ? <Text size="sm" c="dimmed" className="sk-rtable__footer-text" data-sk-rtable-footer>{p.footerText}</Text> : null}
       {p.showOverlay ? <div className="sk-table__overlay" data-sk-overlay><Text>{t('page.overlay')}</Text></div> : null}

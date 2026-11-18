@@ -4,7 +4,7 @@
  * a punctuation space (U+2008) in place of the decimal separator; the currency sits in a fixed-width slot.
  */
 import { currencyDigits } from '@rhfan2019/smart-kit-core';
-import type { HTMLAttributes } from 'react';
+import { useImperativeHandle, type HTMLAttributes, type Ref } from 'react';
 import { useControlLocale } from '../context';
 import type { EmptyIndicatorMode } from '../types';
 import { cx, EmptyIndicator } from './shared';
@@ -22,6 +22,15 @@ export interface $CurrencySettings extends Omit<HTMLAttributes<HTMLSpanElement>,
   useSymbol?: boolean;
   /** Shows "–" when there is no amount. @defaultValue 'Off' */
   emptyIndicatorMode?: EmptyIndicatorMode;
+  ref?: Ref<Currency>;
+}
+
+/** Instance methods of Currency. */
+export interface Currency {
+  /** The amount as shown: formatted with the currency's digits and padded to maxPrecision; `""` for the currency `*` (as sap.ui.unified.Currency). */
+  getFormattedValue(): string;
+  /** The locale's symbol of the currency (the code when there is none), whatever useSymbol says. */
+  getCurrencySymbol(): string;
 }
 
 export const FIGURE_SPACE = ' ';
@@ -51,15 +60,21 @@ export function currencyAmount(intlLocale: string, amount: number | string, curr
   return text + (digits === 0 ? PUNCTUATION_SPACE : '') + FIGURE_SPACE.repeat(pad);
 }
 
-export function Currency({ value = 0, stringValue, currency, maxPrecision, useSymbol = true, emptyIndicatorMode = 'Off', className, ...rest }: $CurrencySettings) {
+export function Currency({ value = 0, stringValue, currency, maxPrecision, useSymbol = true, emptyIndicatorMode = 'Off', className, ref, ...rest }: $CurrencySettings) {
   const { intlLocale } = useControlLocale();
   const amount = stringValue ?? value;
   const empty = amount === null || amount === '' || Number.isNaN(Number(amount));
+  // the currency "*" shows no amount (sap.ui.unified.Currency.getFormattedValue)
+  const formatted = empty || currency === '*' ? '' : currencyAmount(intlLocale, amount, currency, maxPrecision);
+  useImperativeHandle(ref, () => ({
+    getFormattedValue: () => formatted,
+    getCurrencySymbol: () => currencyText(intlLocale, currency, true),
+  }), [formatted, intlLocale, currency]);
   return (
     <span {...rest} className={cx('sk-currency', className)} data-sk-currency={currency ?? ''}>
       {empty ? <EmptyIndicator mode={emptyIndicatorMode} /> : (
         <>
-          <span className="sk-currency__value">{currencyAmount(intlLocale, amount, currency, maxPrecision)}</span>
+          <span className="sk-currency__value">{formatted}</span>
           <span className="sk-currency__code">{currencyText(intlLocale, currency, useSymbol)}</span>
         </>
       )}

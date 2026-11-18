@@ -8,6 +8,7 @@ import { ChevronRight, MoreHorizontal, Pencil, Send, User } from 'lucide-react';
 import { useId, useState, type MouseEvent, type ReactNode } from 'react';
 import { useControlLocale, useControlText } from '../context';
 import type { IndicationColor, ValueState } from '../types';
+import { parseHtml, plainText, renderNodes, truncateNodes } from './formattedText';
 import { avatarProps, cx, dateTimeText, pressKeys, toDate, type AvatarShape, type AvatarSize, type DateLike } from './shared';
 import { TEXTS } from './texts';
 
@@ -144,6 +145,11 @@ export interface FeedListItem$IconPressEvent { getDomRef: () => HTMLElement | nu
 
 export interface $FeedListItemSettings {
   sender?: string;
+  /**
+   * The text; it may hold the HTML subset of sap.m.FormattedText (a, abbr, bdi, blockquote, br, cite, code, em, h1–h6, p,
+   * pre, strong, span, u, s, dl, dt, dd, ol, ul, li with style, class, dir and a's href / target / title). Other tags are
+   * dropped with their content; line breaks are kept.
+   */
   text?: string;
   info?: string;
   /** Date, ISO string (formatted in the smart-kit locale) or display text. */
@@ -173,6 +179,8 @@ export interface $FeedListItemSettings {
   convertLinksToAnchorTags?: LinkConversion;
   /** Target of the converted links. @defaultValue '_blank' */
   convertedLinksDefaultTarget?: string;
+  /** Drops the `style` attributes of the HTML in `text`. @defaultValue false */
+  disableStyleAttribute?: boolean;
   /** ListItemBase. @defaultValue 'Inactive' */
   type?: ListType;
   /** @defaultValue true */
@@ -231,8 +239,14 @@ export function FeedListItem(p: $FeedListItemSettings) {
   if (p.visible === false) return null;
   const max = p.maxCharacters ?? (phone ? 300 : 500);
   const text = p.text ?? '';
-  const long = text.length > max;
-  const shown = long && !expanded ? `${text.slice(0, max).trimEnd()}…` : text;
+  // the text as sap.m.FormattedText HTML; collapsed: cut after maxCharacters of plain text, back to the last space (as in UI5)
+  const nodes = parseHtml(text);
+  const plain = plainText(nodes);
+  const long = plain.length > max;
+  const space = plain.slice(0, max).lastIndexOf(' ');
+  const shownNodes = long && !expanded ? truncateNodes(nodes, space > 0 ? space : max) : nodes;
+  const target = p.convertedLinksDefaultTarget ?? '_blank';
+  const links = p.convertLinksToAnchorTags && p.convertLinksToAnchorTags !== 'None' ? (s: string) => linkify(s, p.convertLinksToAnchorTags, target) : undefined;
   const date = p.timestamp instanceof Date || (typeof p.timestamp === 'string' && ISO.test(p.timestamp)) ? toDate(p.timestamp) : undefined;
   const stamp = date ? dateTimeText(date, intlLocale, timeZone) : typeof p.timestamp === 'string' ? p.timestamp : undefined;
   const event = (el: HTMLElement) => ({ getDomRef: () => el });
@@ -265,15 +279,16 @@ export function FeedListItem(p: $FeedListItemSettings) {
           : <span id={senderId} className="sk-feed-item__sender">{p.sender}</span>)}
         {p.unread && <span className="sk-visually-hidden">{t('ctl.feedListItem.unread')}</span>}
         {text && (
-          <p className="sk-feed-item__text" id={textId}>
-            {linkify(shown, p.convertLinksToAnchorTags, p.convertedLinksDefaultTarget ?? '_blank')}
+          <div className="sk-feed-item__text" id={textId}>
+            {renderNodes(shownNodes, { disableStyleAttribute: p.disableStyleAttribute, linkify: links, linkClassName: 'sk-feed-item__link' })}
+            {long && !expanded ? '…' : null}
             {long && (
               <button type="button" className="sk-feed-item__more" aria-expanded={expanded} aria-controls={textId}
                 onClick={(e) => { e.stopPropagation(); setExpanded((x) => !x); }}>
                 {expanded ? (p.lessLabel ?? t('ctl.feedListItem.less')) : (p.moreLabel ?? t('ctl.feedListItem.more'))}
               </button>
             )}
-          </p>
+          </div>
         )}
         {(p.info || stamp) && (
           <div className="sk-feed-item__footer">

@@ -1,19 +1,27 @@
-/** Personalization dialog: column visibility and order, sort, grouping (LR-19, docs/12 U-5, docs/23) and totals (docs/23). */
-import { ActionIcon, Button, Checkbox, Group, Modal, ScrollArea, Select, Stack, Tabs, Text } from '@mantine/core';
-import type { SortItem } from '@rhfan2019/smart-kit-core';
-import { ArrowDown, ArrowUp, Plus, Trash2 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+/**
+ * Personalization dialog of the table: column visibility and order, sort, grouping (LR-19, docs/12 U-5, docs/23) and
+ * totals (docs/23). Built on sap.m.p13n.Popup with SelectionPanel / SortPanel / GroupPanel, as the mdc table of
+ * Fiori elements; the totals are a SelectionPanel without reordering.
+ */
+import type { SortItem as KitSortItem } from '@rhfan2019/smart-kit-core';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useText } from '../context/SmartKitProvider';
+import type { GroupItem, Item, SortItem } from '../controls/p13n/base';
+import { GroupPanel } from '../controls/p13n/GroupPanel';
+import { Popup } from '../controls/p13n/Popup';
+import { SelectionPanel } from '../controls/p13n/SelectionPanel';
+import { SortPanel } from '../controls/p13n/SortPanel';
+import { MessageStrip } from '../messages/MessageStrip';
 
 export interface TableP13nDialogProps {
   /** Whether the dialog is open (controlled). */
   opened: boolean;
   columns: { id: string; label: string }[];
   visible: string[];
-  sort: SortItem[];
+  sort: KitSortItem[];
   sortable: { path: string; label: string }[];
   /** Called with the result when the user confirms. */
-  onOk(visible: string[], sort: SortItem[], groupBy?: string | null, totals?: string[]): void;
+  onOk(visible: string[], sort: KitSortItem[], groupBy?: string | null, totals?: string[]): void;
   /** Called when the user cancels or closes the dialog. */
   onCancel(): void;
   /** Columns that can be grouped by; the "Group" tab is shown only when given. */
@@ -25,109 +33,59 @@ export interface TableP13nDialogProps {
   totals?: string[];
 }
 
+const byLabel = (x: { label: string }, y: { label: string }) => x.label.localeCompare(y.label);
+
 export function TableP13nDialog(p: TableP13nDialogProps) {
   const t = useText();
-  const [order, setOrder] = useState<string[]>([]);
-  const [shown, setShown] = useState<string[]>([]);
-  const [sort, setSort] = useState<SortItem[]>([]);
-  const [group, setGroup] = useState<string | null>(null);
-  const [totals, setTotals] = useState<string[]>([]);
+  const popup = useRef<Popup>(null);
+  const columnsPanel = useRef<SelectionPanel>(null);
+  const sortPanel = useRef<SortPanel>(null);
+  const groupPanel = useRef<GroupPanel>(null);
+  const totalsPanel = useRef<SelectionPanel>(null);
+  const [round, setRound] = useState(0);
   useEffect(() => {
-    if (!p.opened) return;
-    setGroup(p.groupBy ?? null);
-    setTotals(p.totals ?? []);
-    // sap.m.p13n.SelectionPanel: the shown columns in their order, then the others alphabetically by label
-    setOrder([...p.visible, ...p.columns.filter((c) => !p.visible.includes(c.id)).sort((x, y) => x.label.localeCompare(y.label)).map((c) => c.id)]);
-    setShown(p.visible);
-    setSort(p.sort.filter((s) => p.sortable.some((x) => x.path === s.path)));
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- reset when opened
+    if (p.opened && !popup.current?.isOpen()) { setRound((n) => n + 1); popup.current?.open(null); }
   }, [p.opened]);
-  const label = (id: string) => p.columns.find((c) => c.id === id)?.label ?? id;
-  const move = (i: number, d: -1 | 1) => {
-    const next = [...order];
-    const j = i + d;
-    if (j < 0 || j >= next.length) return;
-    [next[i], next[j]] = [next[j]!, next[i]!];
-    setOrder(next);
-  };
+  // the state of the panels, built again for each opening (sap.m.p13n.Engine sets it before Popup.open)
+  const data = useMemo(() => {
+    const label = (id: string) => p.columns.find((c) => c.id === id)?.label ?? id;
+    // sap.m.p13n.SelectionPanel: the shown columns in their order, then the others alphabetically by label
+    const columns: Item[] = [
+      ...p.visible.map((id) => ({ name: id, label: label(id), visible: true })),
+      ...p.columns.filter((c) => !p.visible.includes(c.id)).sort(byLabel).map((c) => ({ name: c.id, label: c.label, visible: false })),
+    ];
+    const sorted = p.sort.filter((s) => p.sortable.some((x) => x.path === s.path));
+    const sort: SortItem[] = [
+      ...sorted.map((s) => ({ name: s.path, label: p.sortable.find((x) => x.path === s.path)!.label, sorted: true, descending: Boolean(s.descending) })),
+      ...p.sortable.filter((x) => !sorted.some((s) => s.path === x.path)).sort(byLabel).map((x) => ({ name: x.path, label: x.label, sorted: false, descending: false })),
+    ];
+    const group: GroupItem[] = [...(p.groupable ?? [])].sort(byLabel)
+      .map((g) => ({ name: g.id, label: g.label, grouped: g.id === p.groupBy }))
+      .sort((x, y) => Number(y.grouped) - Number(x.grouped));
+    const totals: Item[] = (p.totalable ?? []).map((c) => ({ name: c.id, label: c.label, visible: (p.totals ?? []).includes(c.id) }));
+    return { columns, sort, group, totals };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- built again when the dialog opens
+  }, [round]);
+  const panels = [
+    <SelectionPanel key="columns" ref={columnsPanel} title={t('p13n.columns')} showHeader enableCount p13nData={data.columns} />,
+    <SortPanel key="sort" ref={sortPanel} title={t('p13n.sort')} p13nData={data.sort} />,
+    p.groupable ? <GroupPanel key="group" ref={groupPanel} title={t('table.group')} queryLimit={1} p13nData={data.group} /> : null,
+    p.totalable?.length ? (
+      <SelectionPanel key="totals" ref={totalsPanel} title={t('p13n.totals')} enableReorder={false} multiSelectMode="SelectAll" p13nData={data.totals}
+        messageStrip={<MessageStrip text={t('p13n.totalsHint')} />} />
+    ) : null,
+  ];
   return (
-    <Modal opened={p.opened} onClose={p.onCancel} title={t('p13n.title')} size="lg">
-      <Tabs defaultValue="columns" keepMounted={false}>
-        <Tabs.List>
-          <Tabs.Tab value="columns">{t('p13n.columns')}</Tabs.Tab>
-          <Tabs.Tab value="sort" data-sk-p13n-sort-tab>{t('p13n.sort')}</Tabs.Tab>
-          {p.groupable ? <Tabs.Tab value="group" data-sk-p13n-group-tab>{t('table.group')}</Tabs.Tab> : null}
-          {p.totalable?.length ? <Tabs.Tab value="totals" data-sk-p13n-totals-tab>{t('p13n.totals')}</Tabs.Tab> : null}
-        </Tabs.List>
-        {p.totalable?.length ? (
-          <Tabs.Panel value="totals" className="sk-p13n__panel">
-            <Stack gap="xs">
-              <Text size="sm" c="dimmed">{t('p13n.totalsHint')}</Text>
-              {p.totalable.map((c) => (
-                <Checkbox key={c.id} label={c.label} checked={totals.includes(c.id)} data-sk-p13n-total={c.id}
-                  onChange={(e) => setTotals(e.currentTarget.checked ? [...totals, c.id] : totals.filter((x) => x !== c.id))} />
-              ))}
-            </Stack>
-          </Tabs.Panel>
-        ) : null}
-        {p.groupable ? (
-          <Tabs.Panel value="group" className="sk-p13n__panel">
-            <Select
-              label={t('p13n.groupBy')} value={group ?? '$none'} allowDeselect={false} data-sk-p13n-group
-              data={[{ value: '$none', label: t('p13n.noGroup') }, ...[...p.groupable].sort((x, y) => x.label.localeCompare(y.label)).map((g) => ({ value: g.id, label: g.label }))]}
-              onChange={(v) => setGroup(!v || v === '$none' ? null : v)}
-            />
-          </Tabs.Panel>
-        ) : null}
-        <Tabs.Panel value="columns" className="sk-p13n__panel">
-          <ScrollArea.Autosize mah="var(--sk-size-dialog-list)">
-            <Stack gap="xs">
-              {order.map((id, i) => (
-                <Group key={id} justify="space-between" wrap="nowrap" className="sk-p13n__row">
-                  <Checkbox label={label(id)} data-sk-p13n-column={id} checked={shown.includes(id)} onChange={(e) => setShown(e.currentTarget.checked ? [...shown, id] : shown.filter((x) => x !== id))} />
-                  <Group gap={0} wrap="nowrap">
-                    <ActionIcon onClick={() => move(i, -1)} disabled={i === 0} aria-label={`${t('p13n.moveUp')}: ${label(id)}`}><ArrowUp className="sk-icon" /></ActionIcon>
-                    <ActionIcon onClick={() => move(i, 1)} disabled={i === order.length - 1} aria-label={`${t('p13n.moveDown')}: ${label(id)}`}><ArrowDown className="sk-icon" /></ActionIcon>
-                  </Group>
-                </Group>
-              ))}
-            </Stack>
-          </ScrollArea.Autosize>
-        </Tabs.Panel>
-        <Tabs.Panel value="sort" className="sk-p13n__panel">
-          <Stack gap="xs">
-            {sort.map((s, i) => (
-              <Group key={i} wrap="nowrap" gap="xs">
-                <Select
-                  aria-label={t('p13n.sortBy')}
-                  data-sk-p13n-sort-field
-                  className="sk-grow"
-                  value={s.path}
-                  allowDeselect={false}
-                  data={[...p.sortable].sort((x, y) => x.label.localeCompare(y.label)).map((x) => ({ value: x.path, label: x.label }))}
-                  onChange={(v) => v && setSort(sort.map((x, j) => (j === i ? { ...x, path: v } : x)))}
-                />
-                <Select
-                  aria-label={t('p13n.sort')}
-                  value={s.descending ? 'desc' : 'asc'}
-                  allowDeselect={false}
-                  data={[{ value: 'asc', label: t('p13n.ascending') }, { value: 'desc', label: t('p13n.descending') }]}
-                  onChange={(v) => setSort(sort.map((x, j) => (j === i ? { ...x, descending: v === 'desc' } : x)))}
-                />
-                <ActionIcon onClick={() => setSort(sort.filter((_, j) => j !== i))} aria-label={t('p13n.removeSort')}><Trash2 className="sk-icon" /></ActionIcon>
-              </Group>
-            ))}
-            <Button variant="subtle" className="sk-self-start" leftSection={<Plus className="sk-icon" />} disabled={!p.sortable.length} data-sk-p13n-sort-add
-              onClick={() => setSort([...sort, { path: p.sortable.find((x) => !sort.some((s) => s.path === x.path))?.path ?? p.sortable[0]!.path, descending: false }])}>
-              {t('p13n.addSort')}
-            </Button>
-          </Stack>
-        </Tabs.Panel>
-      </Tabs>
-      <Group justify="flex-end" className="sk-dialog-footer">
-        <Button onClick={() => p.onOk(order.filter((id) => shown.includes(id)), sort, p.groupable ? group : undefined, p.totalable?.length ? totals : undefined)} data-sk-p13n-ok>{t('common.ok')}</Button>
-        <Button variant="default" onClick={p.onCancel}>{t('common.cancel')}</Button>
-      </Group>
-    </Modal>
+    <Popup
+      ref={popup} title={t('p13n.title')} panels={panels}
+      onClose={({ reason }) => {
+        if (reason !== 'Ok') { p.onCancel(); return; }
+        const visible = columnsPanel.current?.getP13nData(true).map((x) => x.name) ?? p.visible;
+        const sort = sortPanel.current?.getP13nData(true).map((x) => ({ path: x.name, descending: x.descending })) ?? p.sort;
+        const groupBy = p.groupable ? (groupPanel.current?.getP13nData(true)[0]?.name ?? null) : undefined;
+        const totals = p.totalable?.length ? totalsPanel.current?.getP13nData(true).map((x) => x.name) : undefined;
+        p.onOk(visible, sort, groupBy, totals);
+      }}
+    />
   );
 }

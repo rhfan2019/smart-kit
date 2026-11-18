@@ -205,7 +205,9 @@ test.describe('list report: purchase orders', () => {
     await dialog.getByRole('checkbox', { name: 'DataFieldForAnnotation::Chart::BudgetBullet' }).uncheck();
     await dialog.getByRole('tab', { name: 'Sort' }).click();
     await dialog.getByRole('button', { name: 'Remove' }).first().click();
-    await dialog.getByRole('button', { name: 'Add sort criterion' }).click();
+    // the sort panel is the sap.m.p13n.SortPanel: the last row is the empty query row, choosing a field adds it
+    await dialog.locator('[data-sk-p13n-sort-field]').last().click();
+    await page.getByRole('option', { name: 'Purchase Order', exact: true }).click();
     await dialog.locator('[data-sk-p13n-ok]').click();
     await expect(table(page, 'PurchaseOrders').locator('.ag-header-cell[col-id="DataField::NetAmount"]')).toHaveCount(0);
     await expect.poll(() => {

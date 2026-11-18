@@ -903,3 +903,20 @@ ADR-027 定的范围是"只实现 smart-kit 会发的请求"，用户也定过�
 5. **留给阶段 6**：分组的分析表改成可折叠层级（FE `$$aggregation` groupLevels）、变式管理 `Control`、表格的快速变式、组合视图、自定义页眉、后续块的 `$top`、草稿新建时问非计算键的对话框、显示态页脚的确定性动作、编辑态页头的草稿切换，以及两模板没实现的其余 manifest 设置（共约 300 条 `manifest-missing`，`not-implemented`）。
 
 **偏差登记**：删掉已修的 16 条（含模块路径、页签计数、页大小、图表括号、示例列、FE 的变式和 Overdue 两条由长期条目取代）；表格宏的变式管理和快速变式 10 条从阶段 5 改到阶段 6。`fe-behavior` 20 → 19。
+
+## D47 对齐阶段 6：对象页注解和剩余控件（2026-11-18）
+
+**问题**：按 `31` 阶段 6：对象页注解按 FE（写 `29b`、`29c`）；九个微图表控件、`m/p13n/Popup`、`m/QuickView` 等 `30` 第 4 节剩下的模块；阶段 5 留下的（D46 第 5 条）。
+
+**做法**：四个子代理并行（对象页 op6、微图 mc6、控件 ctl6、积木和列表页 macros6），各用一套端口和自己的登记文件，合并时由我统一删掉已修的条目、改登记的旧条目。对象页组漏登了 40 条 ObjectPage manifest 设置（子区块动作、页脚动作等），合并时补登（`DV-op6-301` 起，照页头动作的理由）。图表动作的六个字段（`defaultAction`、`priority`、`group`、`isAIOperation`、`isPrimaryAction`、`template`）子代理登记成未实现，但一小时内能做，按"能做的不登记"另派子代理实现：`priority`、`group`、`isAIOperation`、`defaultAction`（菜单为 `chart.ActionGroup`，有默认动作时是拆分按钮，主按钮用动作组的 `press`）按 FE 做了；`isPrimaryAction` 和 `template` 在 FE 1.154 的图表工具栏里不起作用（`getChartActions` 不调 `applyManifestPrimaryActionEmphasis`，`MdcChartTemplate` 不渲染动作片段），smart-kit 一样接受但不生效（按建议，跟 FE 源码）。
+
+**结果**：
+1. **模块**：`suite/ui/microchart/*`（九个控件和元素类，属性同 sap.suite.ui.microchart；不认识注解的数据图，只装一个 BulletMicroChart 是 2.9 KB）；`m/p13n/Popup`、`SelectionPanel`、`SortPanel`、`GroupPanel`（表格和图表的个性化都换成它）；`m/QuickView`、`QuickViewPage`、`QuickViewGroup`、`QuickViewGroupElement`；`f/DynamicPageAccessibleLandmarkInfo` 等；`m/library`、`ui/core/library` 补齐枚举。
+2. **按 FE 改的行为（按建议，D44）**：分组的分析表是可折叠层级（首个请求和 FE 相同，展开时按组读行，小计折叠时在组头、展开后在组底）；列表页不读 `rowCountMode` / `rowCount`（FE `_getTableMode`：网格表固定 Auto）；草稿列表 NewPage 新建前先弹"New Object"对话框问非计算键；图表默认显示个性化按钮；对象页页头动作按 FE 的顺序，删除和编辑按 `DeleteHidden` / `UpdateHidden` 和限制注解；排序面板是 UI5 的查询行写法；`ObjectPageLayout` 的 `separatorArrows` 默认 false（kit-extension 改回 UI5 默认）。
+3. **长期偏差（D42、按建议保留）**：后续块的 `$top`（AG Grid 无限行模型按对齐的块读，FE 按可见区前后各留 threshold，要换掉网格的行模型）；树表移动、复制（需要可维护的层级，测试服务和 FE 参考应用都没有）；`cloudFilePicker`（SAP BTP FileShare）；对象页懒加载子区块的分开请求（smart-kit 首个请求读出，请求更少）；`transportSelection`、面包屑层级、路由类设置交给宿主。
+4. **体积**（按建议）：`Table.tsx` 顶层的 `lazy()` 标为 `/*#__PURE__*/`，表格上下文移到 `table/tableContext.ts`，`kit/useTableContext` 从 31.7 KB 回到 1 KB 以下；其余增长来自本阶段的功能（`Field` 画九种微图和完整的 QuickView，`Table` 的分组层级、批量编辑、粘贴、变式），预算按实测值上调并写明原因（`scripts/check-size.mjs`）；新增场景"BulletMicroChart only"（`verify:pack` 用同一个场景核对）。
+5. **其他**：`create.newObject` 的中文改为"新建"（`hostControl` 测试不允许这类通用文本里出现"对象"）；`MICRO_COMPARISON_MAX` 留在 `util`（比较微图最多 12 条，注解驱动的表格和页头都用）。
+
+6. **测试**：对象页组把锚点和标题去重的 e2e 改用联系人页（"Activity"有两个子区块），PostgreSQL 测试库没有联系人实体集，这几步在 `e2e:pg` 里跳过（`ON_PG`）；FE 对比里 `$select` 多出的字段（懒加载子区块、代码表文本）和已登记的条目同因，补登 `DV-op6-013`、`014`、`DV-macros6-l36`。
+
+**偏差登记**：合并后 `check:ui5` 256 个映射导出、0 未登记、0 过期；AL-13 ListReport 333 项、ObjectPage 382 项，0 未登记。按类别：react-idiom 88、kit-extension 186、no-binding 95、different-value 53、not-implemented 135、fe-behavior 6。检查：单测 981、e2e 211、e2e:pg 148（2 个跳过）、FE 对比 101 个场景、trace 全部通过。

@@ -3,8 +3,17 @@
  * guidelines name for it, at the size of the place it lives in (header facet, table cell). The data is fixed
  * demo data; the pages driven by annotations are linked at the end.
  */
-import MicroChart, { type MicroChartCriticality, type MicroChartData, type MicroChartPoint } from '@rhfan2019/smart-kit/v4/fe/macros/MicroChart';
-import type { ReactNode } from 'react';
+import AreaMicroChart from '@rhfan2019/smart-kit/suite/ui/microchart/AreaMicroChart';
+import BulletMicroChart from '@rhfan2019/smart-kit/suite/ui/microchart/BulletMicroChart';
+import ColumnMicroChart from '@rhfan2019/smart-kit/suite/ui/microchart/ColumnMicroChart';
+import ComparisonMicroChart from '@rhfan2019/smart-kit/suite/ui/microchart/ComparisonMicroChart';
+import DeltaMicroChart from '@rhfan2019/smart-kit/suite/ui/microchart/DeltaMicroChart';
+import HarveyBallMicroChart from '@rhfan2019/smart-kit/suite/ui/microchart/HarveyBallMicroChart';
+import LineMicroChart from '@rhfan2019/smart-kit/suite/ui/microchart/LineMicroChart';
+import LineMicroChartEmphasizedPoint from '@rhfan2019/smart-kit/suite/ui/microchart/LineMicroChartEmphasizedPoint';
+import RadialMicroChart from '@rhfan2019/smart-kit/suite/ui/microchart/RadialMicroChart';
+import StackedBarMicroChart from '@rhfan2019/smart-kit/suite/ui/microchart/StackedBarMicroChart';
+import type { ReactElement, ReactNode } from 'react';
 import { Link } from 'react-router';
 import { useShell } from '../App';
 import { objectHref } from '../navigation';
@@ -57,15 +66,17 @@ interface Scenario {
   placement: Placement;
   why: Record<Lang, string>;
   rules: string;
-  chart: Omit<MicroChartData, 'label'>;
+  /** The sap.suite.ui.microchart control; `label` is its accessible name. */
+  chart: (label: string) => ReactElement;
 }
 
 const monthNames = (lang: Lang, n: number, last = new Date(2026, 9, 1)) => Array.from({ length: n }, (_, i) =>
   new Intl.DateTimeFormat(lang === 'zh' ? 'zh-CN' : 'en-US', { month: 'short' }).format(new Date(last.getFullYear(), last.getMonth() - (n - 1 - i), 1)));
 const weeks = (lang: Lang, n: number) => Array.from({ length: n }, (_, i) => (lang === 'zh' ? `第 ${31 + i} 周` : `W${31 + i}`));
-const series = (labels: string[], values: number[], extra?: (v: number, i: number) => Partial<MicroChartPoint>): MicroChartPoint[] =>
-  values.map((value, i) => ({ label: labels[i]!, value, ...extra?.(value, i) }));
-const bySign = (v: number): Partial<MicroChartPoint> => ({ criticality: v < 0 ? 1 : 3 });
+/** The visible numbers are the application's (UI5 shows the value as given): the short form of the locale. */
+const shortOf = (lang: Lang) => { const f = new Intl.NumberFormat(lang === 'zh' ? 'zh-CN' : 'en-US', { notation: 'compact', maximumFractionDigits: 1 }); return (n: number) => f.format(n); };
+const xy = (values: number[]) => values.map((y, x) => ({ x, y }));
+const R = 'Responsive' as const;
 
 function scenarios(lang: Lang): { group: 'single' | 'time' | 'parts'; items: Scenario[] }[] {
   const m6 = monthNames(lang, 6);
@@ -73,6 +84,10 @@ function scenarios(lang: Lang): { group: 'single' | 'time' | 'parts'; items: Sce
   const w12 = weeks(lang, 12);
   const price = [41.8, 42.0, 42.3, 42.1, 42.9, 43.4, 43.2, 44.1, 44.8, 45.3, 45.0, 45.6];
   const cash = [3.1, 3.4, 3.2, 3.8, 4.1, 3.9, 4.4, 4.0, 4.6, 4.9, 5.2, 5.5].map((v) => v * 1e6);
+  const short = shortOf(lang);
+  const margin = [420e3, 380e3, -120e3, 260e3, 510e3, 470e3];
+  const top5 = ['Fasteners Ltd', 'Northstar Metals', 'Blue Ridge Plastics', 'Delta Logistics', 'Acme Tools'];
+  const status = lang === 'zh' ? ['已开票', '已收货待开票', '未交货'] : ['Invoiced', 'Received, not invoiced', 'Open'];
   return [
     {
       group: 'single',
@@ -81,37 +96,37 @@ function scenarios(lang: Lang): { group: 'single' | 'time' | 'parts'; items: Sce
           id: 'bullet-revenue', placement: 'facet', rules: 'MC-20, MC-22, MC-23, MC-25',
           title: { zh: '年初至今销售收入', en: 'Revenue Year to Date' }, subtitle: { zh: '人民币 · 目标 1000 万', en: 'CNY · target 10M' },
           why: { zh: '一个时点的主要值（年初至今收入）同时和目标、预测比较，背景竖线是“差”（600 万）和“警告”（800 万）阈值。已超过警告线，所以是好（绿色）。', en: 'One main value at a point in time (revenue year to date) compared with target and forecast; the lines mark the critical (6M) and warning (8M) thresholds. It is above the warning line, so it is good (green).' },
-          chart: { kind: 'bullet', value: 8.4e6, target: 10e6, forecast: 10.6e6, criticality: 3, thresholds: [{ value: 6e6, criticality: 1 }, { value: 8e6, criticality: 2 }] },
+          chart: (label) => <BulletMicroChart size={R} aria-label={label} targetValue={10e6} forecastValue={10.6e6} actualValueLabel={short(8.4e6)} targetValueLabel={short(10e6)} actual={{ value: 8.4e6, color: 'Good' }} thresholds={[{ value: 6e6, color: 'Error' }, { value: 8e6, color: 'Critical' }]} />,
         },
         {
           id: 'bullet-cost', placement: 'facet', rules: 'MC-24, MC-09',
           title: { zh: '成本中心费用偏差', en: 'Cost Center Variance' }, subtitle: { zh: '实际与预算之差', en: 'Actual minus budget' },
           why: { zh: '关心的是“比预算多了多少”而不是总额，用差值子弹图（DataPoint 的 Visualization = DeltaBulletChart）。费用越低越好（Minimize），超支 18%，所以是差（红色）。', en: 'What matters is how far actual is from budget, not the total, so it is a delta bullet (DataPoint Visualization = DeltaBulletChart). Lower is better (Minimize); 18% over budget is critical (red).' },
-          chart: { kind: 'bullet', mode: 'delta', value: 1.18e6, target: 1e6, criticality: 1 },
+          chart: (label) => <BulletMicroChart size={R} aria-label={label} mode="Delta" targetValue={1e6} deltaValueLabel={short(0.18e6)} targetValueLabel={short(1e6)} actual={{ value: 1.18e6, color: 'Error' }} />,
         },
         {
           id: 'radial-ontime', placement: 'facet', rules: 'MC-50, MC-51',
           title: { zh: '订单准时交货率', en: 'On-Time Delivery Rate' }, subtitle: { zh: '本季度', en: 'This quarter' },
           why: { zh: '只需要一个百分比。没有 TargetValue 时值本身就是百分数（MC-51）。要显示具体件数、或比较两个以上的值时不要用它。', en: 'Only one percentage is needed. Without a TargetValue the value is the percentage (MC-51). Not for absolute numbers or comparing more than two values.' },
-          chart: { kind: 'radial', value: 92, criticality: 3 },
+          chart: (label) => <RadialMicroChart size={R} aria-label={label} percentage={92} valueColor="Good" />,
         },
         {
           id: 'harvey-received', placement: 'facet', rules: 'MC-55, MC-56, MC-57',
           title: { zh: '已收货数量', en: 'Quantity Received' }, subtitle: { zh: '件 · 订购 500', en: 'pcs · ordered 500' },
           why: { zh: '一个值占总数多少：已收 320 件 / 订购 500 件。总数来自 MaximumValue，没有总数就不画。收货进度没有好坏之分，所以用定性色板而不是语义色。', en: 'A value of a total: 320 of 500 pieces received. The total comes from MaximumValue; without it nothing is drawn. Progress is not good or bad, so it uses the qualitative palette, not a semantic colour.' },
-          chart: { kind: 'harvey', value: 320, max: 500, color: 1 },
+          chart: (label) => <HarveyBallMicroChart size={R} aria-label={label} total={500} items={[{ fraction: 320, color: 'Sequence1' }]} />,
         },
         {
           id: 'harvey-contract', placement: 'facet', rules: 'MC-55, MC-56',
           title: { zh: '框架合同额度已用', en: 'Contract Volume Used' }, subtitle: { zh: '人民币 · 额度 800 万', en: 'CNY · volume 8M' },
           why: { zh: '同样是部分占总数，但额度快用完需要提醒，这时 DataPoint 带 Criticality，用语义色（警告）。', en: 'Again a part of a total, but nearly used up needs attention: the DataPoint has a Criticality, so it uses the semantic colour (warning).' },
-          chart: { kind: 'harvey', value: 7.2e6, max: 8e6, criticality: 2 },
+          chart: (label) => <HarveyBallMicroChart size={R} aria-label={label} total={8e6} totalLabel={short(8e6)} formattedLabel items={[{ fraction: 7.2e6, fractionLabel: short(7.2e6), formattedLabel: true, color: 'Critical' }]} />,
         },
         {
           id: 'empty-supplier', placement: 'facet', rules: 'MC-05',
           title: { zh: '新供应商的交货评分', en: 'Delivery Score of a New Supplier' }, subtitle: { zh: '还没有交货记录', en: 'No deliveries yet' },
           why: { zh: '值为空时，页头里不画一个 0 的假图，而是显示“没有数据”（表格单元格里则留空）。', en: 'Without a value the header shows "No data" instead of a misleading zero (a table cell stays empty).' },
-          chart: { kind: 'bullet', target: 100 },
+          chart: (label) => <BulletMicroChart size={R} aria-label={label} targetValue={100} />,
         },
       ],
     },
@@ -122,22 +137,23 @@ function scenarios(lang: Lang): { group: 'single' | 'time' | 'parts'; items: Sce
           id: 'column-margin', placement: 'wideFacet', rules: 'MC-30, MC-31, MC-32',
           title: { zh: '近 6 个月毛利', en: 'Gross Margin, Last 6 Months' }, subtitle: { zh: '人民币', en: 'CNY' },
           why: { zh: '比较每个月的值本身，有正有负（7 月亏损）。柱子按正负着色，高度够 72 px 时每根柱子上显示数值。', en: 'Compares the value of each month, positive and negative (a loss in July). Columns are coloured by sign; at 72 px or higher each column shows its value.' },
-          chart: { kind: 'column', columnLabels: true, points: series(m6, [420e3, 380e3, -120e3, 260e3, 510e3, 470e3], bySign) },
+          chart: (label) => <ColumnMicroChart size={R} aria-label={label} allowColumnLabels columns={margin.map((value, i) => ({ value, label: m6[i], displayValue: short(value), color: value < 0 ? 'Error' : 'Good' }))} leftBottomLabel={{ label: m6[0] }} rightBottomLabel={{ label: m6[5] }} />,
         },
         {
           id: 'line-price', placement: 'wideFacet', rules: 'MC-35, MC-38, MC-39',
           title: { zh: '原材料采购单价走势', en: 'Raw Material Unit Price Trend' }, subtitle: { zh: '近 12 周 · 合同价 44', en: 'Last 12 weeks · contract price 44' },
           why: { zh: '看形状和趋势：单价一路上涨，第 39 周起超过合同价。阈值线标出合同价，首尾两个焦点给出起止值；只画一条线（规范建议 1 条，最多 3 条）。', en: 'Shows the shape of the trend: the price keeps rising and passes the contract price from week 39. The threshold line marks the contract price; focus points give the first and last value. One line (recommended; at most three).' },
-          chart: { kind: 'line', points: series(w12, price), threshold: 44, thresholdLabel: true, focusPoints: [0, 11] },
+          chart: (label) => <LineMicroChart size={R} aria-label={label} threshold={44} showThresholdValue leftTopLabel={String(price[0])} rightTopLabel={String(price[11])} leftBottomLabel={w12[0]} rightBottomLabel={w12[11]}>{price.map((y, x) => <LineMicroChartEmphasizedPoint key={x} x={x} y={y} show={x === 0 || x === 11} />)}</LineMicroChart>,
         },
         {
           id: 'area-cash', placement: 'wideFacet', rules: 'MC-45, MC-46, MC-47',
           title: { zh: '月末现金余额', en: 'Month-End Cash Balance' }, subtitle: { zh: '人民币 · 实际与目标', en: 'CNY · actual and target' },
           why: { zh: '一段时间里实际值（实线）和目标值（点线）的趋势，背景是阈值区域：低于 350 万为差、低于 400 万为警告（越高越好，Maximize）。', en: 'Actual (solid) and target (dotted) over time against threshold areas: below 3.5M is critical, below 4M is a warning (higher is better, Maximize).' },
-          chart: {
-            kind: 'area', points: series(m12, cash, () => ({ target: 4.5e6 })),
-            areaThresholds: { direction: 'Maximize', deviationLow: m12.map(() => 3.5e6), toleranceLow: m12.map(() => 4e6) },
-          },
+          chart: (label) => (
+            <AreaMicroChart size={R} aria-label={label} chart={{ points: xy(cash) }} target={{ points: xy(cash.map(() => 4.5e6)) }}
+              minThreshold={{ color: 'Error', points: xy(cash.map(() => 3.5e6)) }} maxThreshold={{ color: 'Good', points: xy(cash.map(() => 4e6)) }}
+              firstYLabel={{ label: short(cash[0]!), color: 'Error' }} lastYLabel={{ label: short(cash[11]!), color: 'Good' }} firstXLabel={{ label: m12[0] }} lastXLabel={{ label: m12[11] }} />
+          ),
         },
       ],
     },
@@ -148,23 +164,19 @@ function scenarios(lang: Lang): { group: 'single' | 'time' | 'parts'; items: Sce
           id: 'comparison-suppliers', placement: 'wideFacet', rules: 'MC-40, MC-41, MC-42',
           title: { zh: '前 5 大供应商采购额', en: 'Top 5 Suppliers by Spend' }, subtitle: { zh: '本年 · 人民币', en: 'This year · CNY' },
           why: { zh: '比较几个类别（供应商）的大小，不是时间序列。宽度超过 192 px 时名称在左、数值在右；最多 12 条。', en: 'Compares the size of a few categories (suppliers), not a time series. Wider than 192 px: names on the left, values on the right; at most 12 bars.' },
-          chart: { kind: 'comparison', points: series(['Fasteners Ltd', 'Northstar Metals', 'Blue Ridge Plastics', 'Delta Logistics', 'Acme Tools'], [3.2e6, 2.6e6, 1.9e6, 1.1e6, 0.6e6]) },
+          chart: (label) => <ComparisonMicroChart size={R} aria-label={label} view="Responsive" data={[3.2e6, 2.6e6, 1.9e6, 1.1e6, 0.6e6].map((value, i) => ({ value, title: top5[i], displayValue: short(value) }))} />,
         },
         {
           id: 'stacked-status', placement: 'wideFacet', rules: 'MC-58, MC-59',
           title: { zh: '订单金额按状态构成', en: 'Order Value by Status' }, subtitle: { zh: '本月 · 占比', en: 'This month · share' },
           why: { zh: '几部分叠成一根条，看各占整体多少：已开票、已收货待开票、未交货。没有最大值，所以全长是 100%，每段显示百分比。不能有负数。', en: 'The parts stacked into one bar to show their share: invoiced, received but not invoiced, open. No maximum, so the bar is 100% and each segment shows its percentage. No negative values.' },
-          chart: { kind: 'stackedBar', points: [
-            { label: lang === 'zh' ? '已开票' : 'Invoiced', value: 5.4e6, color: 1 },
-            { label: lang === 'zh' ? '已收货待开票' : 'Received, not invoiced', value: 2.1e6, color: 2 },
-            { label: lang === 'zh' ? '未交货' : 'Open', value: 1.5e6, color: 3 },
-          ] },
+          chart: (label) => <StackedBarMicroChart size={R} aria-label={`${label}: ${status.join(', ')}`} bars={[{ value: 5.4e6 }, { value: 2.1e6 }, { value: 1.5e6 }]} />,
         },
         {
           id: 'delta-quarter', placement: 'wideFacet', rules: 'MC-62, MC-64',
           title: { zh: '销售额：本季度比上季度', en: 'Sales: This Quarter vs Last' }, subtitle: { zh: '人民币', en: 'CNY' },
           why: { zh: '两个关键数字的差（这里是两个时间点）。值条用中性色，差值条用语义色（增长为好）。Delta 与 SAP 一致不由注解驱动，应用直接传值。', en: 'The difference of two key numbers (here two points in time). The value bars are neutral; the difference bar is semantic (growth is good). As in SAP, Delta is not driven by annotations; the application passes the values.' },
-          chart: { kind: 'delta', value: 4.2e6, target: 3.6e6, titles: lang === 'zh' ? ['2026 年第 3 季度', '2026 年第 2 季度'] : ['Q3 2026', 'Q2 2026'], criticality: 3 },
+          chart: (label) => <DeltaMicroChart size={R} aria-label={label} view="Wide" value1={4.2e6} value2={3.6e6} displayValue1={short(4.2e6)} displayValue2={short(3.6e6)} deltaDisplayValue={short(0.6e6)} title1={lang === 'zh' ? '2026 年第 3 季度' : 'Q3 2026'} title2={lang === 'zh' ? '2026 年第 2 季度' : 'Q2 2026'} color="Good" />,
         },
       ],
     },
@@ -185,7 +197,7 @@ function Card({ s, lang }: { s: Scenario; lang: Lang }) {
       <div className="demo-mc__facet">
         <div className="demo-mc__facet-title">{title}</div>
         <div className="demo-mc__facet-subtitle">{s.subtitle[lang]}</div>
-        <ChartBox placement={s.placement}><MicroChart label={title} {...s.chart} /></ChartBox>
+        <ChartBox placement={s.placement}>{s.chart(title)}</ChartBox>
       </div>
       <h4>{t.why}</h4>
       <p>{s.why[lang]}</p>
@@ -206,8 +218,7 @@ const SUPPLIERS: SupplierRow[] = [
 
 function SupplierTable({ lang }: { lang: Lang }) {
   const t = TEXT[lang];
-  const w12 = weeks(lang, 12);
-  const crit = (rate: number): MicroChartCriticality => (rate >= 95 ? 3 : rate >= 85 ? 2 : 1);
+  const crit = (rate: number) => (rate >= 95 ? 'Good' : rate >= 85 ? 'Critical' : 'Error');
   // One scale per column (MC-40, MC-59): the largest value of the whole table.
   const spendMax = Math.max(...SUPPLIERS.flatMap((r) => [r.spend ?? 0, r.budget ?? 0]));
   const weeklyMax = Math.max(...SUPPLIERS.flatMap((r) => r.weekly ?? []));
@@ -219,13 +230,14 @@ function SupplierTable({ lang }: { lang: Lang }) {
         {SUPPLIERS.map((r) => (
           <tr key={r.name}>
             <td>{r.name}{r.weekly ? '' : ` ${t.newSupplier}`}</td>
-            <td><ChartBox placement="cell"><MicroChart kind="radial" label={`${r.name} · ${t.onTime}`} value={r.onTime} criticality={r.onTime === undefined ? undefined : crit(r.onTime)} hideOnNoData /></ChartBox></td>
-            <td><ChartBox placement="cell"><MicroChart kind="bullet" label={`${r.name} · ${t.spend}`} value={r.spend} target={r.budget} min={0} max={spendMax} criticality={r.spend !== undefined && r.budget !== undefined && r.spend > r.budget ? 1 : 3} hideOnNoData /></ChartBox></td>
-            <td><ChartBox placement="cell"><MicroChart kind="line" label={`${r.name} · ${t.weekly}`} points={r.weekly ? series(w12, r.weekly) : []} scaleMin={0} scaleMax={weeklyMax} hideOnNoData /></ChartBox></td>
-            <td><ChartBox placement="cell"><MicroChart kind="stackedBar" label={`${r.name} · ${t.quality}`} max={qualityMax} hideOnNoData points={r.quality ? [
-              { label: t.good, value: r.quality[0], criticality: 3 },
-              { label: t.concession, value: r.quality[1], criticality: 2 },
-              { label: t.rejected, value: r.quality[2], criticality: 1 },
+            <td><ChartBox placement="cell"><RadialMicroChart size="Responsive" aria-label={`${r.name} · ${t.onTime}`} percentage={r.onTime} valueColor={r.onTime === undefined ? undefined : crit(r.onTime)} hideOnNoData /></ChartBox></td>
+            <td><ChartBox placement="cell"><BulletMicroChart size="Responsive" aria-label={`${r.name} · ${t.spend}`} targetValue={r.budget} minValue={0} maxValue={spendMax} hideOnNoData
+              actual={r.spend === undefined ? undefined : { value: r.spend, color: r.budget !== undefined && r.spend > r.budget ? 'Error' : 'Good' }} /></ChartBox></td>
+            <td><ChartBox placement="cell"><LineMicroChart size="Responsive" aria-label={`${r.name} · ${t.weekly}`} points={r.weekly ? xy(r.weekly) : []} minYValue={0} maxYValue={weeklyMax} hideOnNoData /></ChartBox></td>
+            <td><ChartBox placement="cell"><StackedBarMicroChart size="Responsive" aria-label={`${r.name} · ${t.quality}: ${t.good}, ${t.concession}, ${t.rejected}`} maxValue={qualityMax} hideOnNoData bars={r.quality ? [
+              { value: r.quality[0], valueColor: 'Good' },
+              { value: r.quality[1], valueColor: 'Critical' },
+              { value: r.quality[2], valueColor: 'Error' },
             ] : []} /></ChartBox></td>
           </tr>
         ))}

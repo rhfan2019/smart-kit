@@ -2,6 +2,7 @@
 import { dialogsEn } from './controls/dialogs.en';
 import { displayEn } from './controls/display.en';
 import { messagesEn } from './controls/messages.en';
+import { p13nEn } from './controls/p13n.en';
 import { processEn } from './controls/process.en';
 
-export const controlsEn = { ...messagesEn, ...displayEn, ...processEn, ...dialogsEn };
+export const controlsEn = { ...messagesEn, ...displayEn, ...processEn, ...dialogsEn, ...p13nEn };

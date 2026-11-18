@@ -195,5 +195,13 @@
   "F.P_DisplayCurrency": "显示货币",
   "F.P_KeyDate": "关键日期",
   "F.OrderCount": "订单数",
-  "F.DisplayCurrency": "显示货币"
+  "F.DisplayCurrency": "显示货币",
+  "Facet.ContactHeader": "联系人",
+  "Facet.ContactPerformance": "表现",
+  "Facet.ContactData": "联系人数据",
+  "Facet.ContactActivity": "活动",
+  "FG.ContactReach": "联系方式",
+  "FG.ContactBanking": "银行信息",
+  "FG.ContactLast": "最近联系",
+  "FG.ContactSupplier": "供应商详情"
 }

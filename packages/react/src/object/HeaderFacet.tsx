@@ -6,7 +6,7 @@ import { Modal } from '@mantine/core';
 import { chartExpand, chartIsSeries, formatNumber, resolvePath, type ChartModel, type FieldModel, type HeaderFacetModel, type Row } from '@rhfan2019/smart-kit-core';
 import { useQuery } from '@tanstack/react-query';
 import { Fragment, useState, type ReactNode } from 'react';
-import { MicroChart, microChartHasData, type MicroChartData } from '../chart/MicroChart';
+import { MicroChartDrawing as MicroChart, microChartHasData, type MicroChartData } from '../chart/MicroChart';
 import { chartHidden, chartProps, MICRO_CHART_KIND } from '../chart/fromModel';
 import { SimpleChart } from '../chart/SimpleChart';
 import { useService, useSmartKit, useText } from '../context/SmartKitProvider';
@@ -112,12 +112,31 @@ export function HeaderFacet(p: HeaderFacetProps) {
     );
   }
   const f = p.facet;
+  // UI.Hidden as a path (FE HeaderFacet visible: isVisible): hidden for this row
+  if (f.hidden && getPath(p.row, f.hidden) === true) return null;
+  if (f.kind === 'collection') {
+    // FE createCollectionHeaderFacet: the reference facets of the collection side by side in one container
+    return (
+      <div className="sk-facet sk-facet--collection" data-sk-facet={f.id} data-sk-facet-kind="collection">
+        {f.facets.map((c) => <HeaderFacet key={c.id} {...p} facet={c} />)}
+      </div>
+    );
+  }
+  if (f.kind === 'contact') {
+    // FE ObjectPageHeaderContact: the title and the contact (name as a link to the contact details)
+    return (
+      <div className="sk-facet sk-facet--contact" data-sk-facet={f.id} data-sk-facet-kind="contact">
+        {f.label ? <div className="sk-facet__title">{f.label}</div> : null}
+        <div className="sk-facet__text"><Field typeName={p.typeName} service={p.service} metaPath={f.field} row={p.row} /></div>
+      </div>
+    );
+  }
   if (f.kind === 'form') {
     return (
       <div className="sk-facet sk-facet--form" data-sk-facet={f.id} data-sk-facet-kind="form">
         {f.label ? <div className="sk-facet__title">{f.label}</div> : null}
         <dl className="sk-facet__pairs">
-          {f.fields.slice(0, 5).map((fd) => (
+          {f.fields.filter((fd) => !(fd.hidden && getPath(p.row, fd.hidden) === true)).slice(0, 5).map((fd) => (
             <div key={fd.id} className="sk-facet__pair">
               <dt>{fd.label}:</dt>
               <dd><Field typeName={p.typeName} service={p.service} metaPath={fd} row={p.row} /></dd>

@@ -204,6 +204,10 @@ async function create(browser: Browser, side: 'fe' | 'sk', dialog: boolean): Pro
       await expect(page.getByRole('dialog')).toBeVisible();
       return 'dialog';
     }
+    // stage 6 (macros6-lr-newobject): the key and the company code are asked in "New Object" first, as in FE
+    const modal = page.getByRole('dialog');
+    await modal.locator('[data-sk-create-field="CompanyCode"] input').first().fill('1000');
+    await modal.getByRole('button', { name: 'Continue' }).click();
     await expect.poll(() => decodeURIComponent(page.url())).toContain('IsActiveEntity=false');
     return 'object page';
   } finally {

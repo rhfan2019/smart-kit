@@ -4,7 +4,8 @@
  * public building blocks (AC-BOOT-01): variant management, filter bar, table or chart, views (IconTabBar), KPI tags,
  * share, footer messages (ADR-023) and the draft editing status.
  */
-import { Button, Group, SegmentedControl, Select, Tabs, Text, Title } from '@mantine/core';
+import { ActionIcon, Button, Group, Menu, SegmentedControl, Select, Tabs, Text, Title } from '@mantine/core';
+import { ChevronDown, Sparkles } from 'lucide-react';
 import {
   buildTotalsRequest, calculateCriticality, capabilitiesFor, DRAFT_EDIT_STATES, EDIT_STATE, editStateOf, isCustomAggregate, isFilterable, parseAnnotationPath, resolvePath,
   STANDARD_VARIANT_ID, withHiddenFilters,
@@ -26,9 +27,10 @@ import VariantManagement from '../v4/fe/macros/VariantManagement';
 import MessageButton from '../v4/fe/macros/MessageButton';
 import Share from '../v4/fe/macros/Share';
 import DynamicPage from '../f/DynamicPage';
+import type { OverflowToolbarLayoutData } from '../m/OverflowToolbar';
 import DynamicPageTitle from '../f/DynamicPageTitle';
 import DynamicPageHeader from '../f/DynamicPageHeader';
-import Chart from '../v4/fe/macros/Chart';
+import Chart, { type $ChartActionGroupSettings, type $ChartActionSettings, type Chart$SelectionChangeEvent, type ChartQuery } from '../v4/fe/macros/Chart';
 import KPITag from '../v4/fe/macros/KPITag';
 import MessageProvider from '../kit/MessageProvider';
 import useMessages from '../kit/useMessages';
@@ -68,6 +70,79 @@ export interface $ManifestActionSettings {
   position?: $PositionSettings;
 }
 
+/**
+ * A custom chart toolbar action (`controlConfiguration › @UI.Chart › actions`, FE getChartActions → MdcChartTemplate):
+ * passed to the Chart building block as sap.fe.macros.chart.Action, a `menu` as sap.fe.macros.chart.ActionGroup.
+ */
+export interface $ManifestChartActionSettings extends $ManifestActionSettings {
+  /** Overflow priority in the chart toolbar (sap.m.OverflowToolbarPriority). */
+  priority?: 'AlwaysOverflow' | 'Disappear' | 'High' | 'Low' | 'NeverOverflow';
+  /** Overflow group of the action: the actions of a group move into "More" together; `overflowGroups` adds separators. */
+  overflowGroup?: number;
+  /** Group of the action (used when there is no `overflowGroup`). */
+  group?: number;
+  /** An AI operation (the AI icon on the button; a menu shows it when all of its actions are AI operations). */
+  isAIOperation?: boolean;
+  /**
+   * With `menu`: the key of the action (of this chart's manifest actions) run by the menu button itself; the menu
+   * becomes a split button (FE MdcChartTemplate getActionToolbarMenuAction: MenuButton buttonMode "Split").
+   */
+  defaultAction?: string;
+  /**
+   * Accepted as in FE, without effect in the chart toolbar: FE 1.154 emphasizes manifest primary actions only in the
+   * page header (ListReportConverter getHeaderActions → applyManifestPrimaryActionEmphasis); MdcChartTemplate renders
+   * chart actions as Transparent / default buttons.
+   */
+  isPrimaryAction?: boolean;
+  /**
+   * Accepted as in FE, without effect in the chart toolbar: FE 1.154 templates custom toolbar content (a fragment in
+   * `template`) only in the table toolbar (ActionsTemplating getCustomToolbarContent); MdcChartTemplate renders such an
+   * action as a button with its `text` and `press`. FE names a fragment, here it is a render function (react-idiom).
+   */
+  template?(): ReactNode;
+}
+
+/** A custom header action of the page (`content › header › actions`, FE getHeaderActions). */
+export interface $ManifestHeaderActionSettings extends $ManifestActionSettings {
+  /**
+   * Overflow priority in the title's toolbar (sap.m.OverflowToolbarPriority): "AlwaysOverflow" puts the action into
+   * its overflow, "NeverOverflow" never.
+   */
+  priority?: 'AlwaysOverflow' | 'Disappear' | 'High' | 'Low' | 'NeverOverflow';
+  /** Overflow group: the actions of a group move into the overflow together; `overflowGroups` adds separators (FE addSeparators). */
+  overflowGroup?: number;
+  /** Group of the action (used when there is no `overflowGroup`). */
+  group?: number;
+  /**
+   * The primary action of the page (FE applyManifestPrimaryActionEmphasis): emphasized, first and never
+   * in the overflow, while the emphasis is active (hidden filter bar or live mode).
+   */
+  isPrimaryAction?: boolean;
+  /** With `menu`: the key of the menu action run by the button itself (a split button, FE getMenuAction). */
+  defaultAction?: string;
+  /** An AI operation (FE: the AI icon on the button). */
+  isAIOperation?: boolean;
+  /** Content shown instead of a button (FE: a fragment name; react-idiom). */
+  template?(): ReactNode;
+}
+
+/** `content › header › overflowGroups › <group>` (FE OverflowGroupManifestConfiguration). */
+export interface $ManifestOverflowGroupSettings {
+  /** A separator before the first action of the group. */
+  showSeparator?: boolean;
+}
+
+/**
+ * `content › header › customHeader` (FE ListReportConverter expanded / collapsedHeaderFragment): FE names fragments,
+ * here they are render functions (react-idiom).
+ */
+export interface $ManifestCustomHeaderSettings {
+  /** Content of the expanded header, above the filter bar. */
+  expandedHeaderFragment?(): ReactNode;
+  /** Content of the collapsed (snapped) title, before the filter summary. */
+  collapsedHeaderFragment?(): ReactNode;
+}
+
 /** A custom column (FE `CustomDefinedTableColumn`); FE names a fragment in `template`, here it renders the cell (react-idiom). */
 export interface $ManifestColumnSettings {
   /** Column header. */
@@ -84,6 +159,14 @@ export interface $ManifestColumnSettings {
   horizontalAlign?: 'Begin' | 'Center' | 'End';
   /** The column is not exported. */
   disableExport?: boolean;
+  /** "Adaptation": only offered in the personalization; "Hidden": left out. @defaultValue "Default" */
+  availability?: 'Adaptation' | 'Default' | 'Hidden';
+  /** Tooltip of the column header. */
+  tooltip?: string;
+  /** The header shows the mandatory marker. */
+  required?: boolean;
+  /** The automatic width includes the column header. */
+  widthIncludingColumnHeader?: boolean;
 }
 
 /** `tableSettings › creationMode` (FE TableManifestSettingsConfiguration). */
@@ -94,6 +177,16 @@ export interface $ManifestCreationModeSettings {
    * @defaultValue "NewPage"
    */
   name?: 'AddViaValueHelp' | 'Async' | 'CreationDialog' | 'CreationRow' | 'Deferred' | 'External' | 'Inline' | 'InlineCreationRows' | 'NewPage' | 'Sync';
+  /** "CreationDialog": the comma-separated properties the dialog asks. */
+  creationFields?: string;
+  /** Inline creation only: not used by the list report, which creates with NewPage / CreationDialog (FE _getCreationBehaviour). */
+  createAtEnd?: boolean;
+  /** Inline creation rows only: not used by the list report (FE _getCreationBehaviour). @defaultValue 1 */
+  inlineCreationRowCount?: number;
+  /** Inline creation rows only: not used by the list report (FE _getCreationBehaviour). @defaultValue false */
+  inlineCreationRowsHiddenInEditMode?: boolean;
+  /** Inline creation rows only: not used by the list report (FE _getCreationBehaviour). @defaultValue false */
+  disableAddRowButtonForEmptyData?: boolean;
 }
 
 /** `tableSettings › quickVariantSelection`: a segmented button (≤ 3) or a select (> 3) in the table toolbar. */
@@ -134,8 +227,32 @@ export interface $ManifestTableSettings {
   header?: string;
   /** @defaultValue true */
   headerVisible?: boolean;
-  /** Grid tables. Default "Auto". */
+  /** Not read by the list report: its grid tables are "Auto" (FE _getTableMode). */
   rowCountMode?: 'Auto' | 'Fixed' | 'Interactive';
+  /** Not read by the list report: its grid tables show at least 3 rows (FE _getTableMode). */
+  rowCount?: number;
+  /** Grid tables: rows read ahead while scrolling (added to the visible rows). */
+  scrollThreshold?: number;
+  /** Ctrl+V on the table creates rows from the pasted lines (tables that create inline). */
+  enablePaste?: boolean;
+  /** Pasted values also fill computed properties. */
+  enablePastingOfComputedProperties?: boolean;
+  /** "Edit" of the selected rows in one dialog; an object limits the fields (comma-separated) and sets the grouping. @defaultValue false */
+  enableMassEdit?: boolean | {
+    visibleFields?: string;
+    ignoredFields?: string;
+    /** @defaultValue "Isolated" */
+    operationGroupingMode?: 'ChangeSet' | 'Isolated';
+    /** Further content of the dialog (FE: a fragment name; react-idiom). */
+    customFragment?(): ReactNode;
+  };
+  /** Analytical tables: how the leaves are read. */
+  analyticalConfiguration?: {
+    /** The leaves are aggregated by the shown properties. @defaultValue false */
+    aggregationOnLeafLevel?: boolean;
+  };
+  /** Further properties read with the rows. */
+  additionalProperties?: string[];
   /** Responsive tables: the "select all" check box. */
   selectAll?: boolean;
   /** @defaultValue 200 */
@@ -164,11 +281,25 @@ export interface $ManifestTableSettings {
   selectionChange?(e: Table$SelectionChangeEvent): void;
 }
 
+/** A custom table toolbar action (`controlConfiguration › @UI.LineItem › actions`). */
+export interface $ManifestTableActionSettings extends $ManifestActionSettings {
+  /** Overflow priority in the table toolbar (sap.m.OverflowToolbarPriority). */
+  priority?: 'AlwaysOverflow' | 'Disappear' | 'High' | 'Low' | 'NeverOverflow';
+  /** Overflow group: the actions of a group move into "More" together; `overflowGroups` adds separators. */
+  overflowGroup?: number;
+  /** Group of the action (used when there is no `overflowGroup`). */
+  group?: number;
+  /** An AI operation (the AI icon on the button). */
+  isAIOperation?: boolean;
+}
+
 /** `controlConfiguration › @UI.LineItem` (FE TableManifestConfiguration). */
 export interface $ManifestTableConfiguration {
   tableSettings?: $ManifestTableSettings;
   /** Custom toolbar actions and menus, by key. */
-  actions?: Record<string, $ManifestActionSettings>;
+  actions?: Record<string, $ManifestTableActionSettings>;
+  /** Separators of the toolbar actions' overflow groups, by group number. */
+  overflowGroups?: Record<string, $ManifestOverflowGroupSettings>;
   /** Custom columns, by key. */
   columns?: Record<string, $ManifestColumnSettings>;
 }
@@ -219,6 +350,41 @@ export interface $ViewPathSettings {
   label?: string;
   /** Content of a custom view (FE: a fragment name; react-idiom). */
   template?(): ReactNode;
+  /**
+   * The view's table keeps the personalization of the table of its annotation (FE: the table id is not the view key);
+   * otherwise each view has its own. @defaultValue false
+   */
+  keepPreviousPersonalization?: boolean;
+  /** Combined view (FE CombinedViewPathConfiguration, the only path): the chart, e.g. `[{ annotationPath: "com.sap.vocabularies.UI.v1.Chart" }]`. */
+  primary?: { annotationPath: string }[];
+  /** Combined view: the table, e.g. `[{ annotationPath: "com.sap.vocabularies.UI.v1.LineItem" }]`. */
+  secondary?: { annotationPath: string }[];
+  /**
+   * Combined view: what is shown at first: "both" (chart and table), "primary" (the chart) or "secondary" (the table);
+   * a switch changes it (FE ListReportController _getDefaultPath). @defaultValue "both"
+   */
+  defaultPath?: 'both' | 'primary' | 'secondary';
+}
+
+/** `controlConfiguration › @UI.Chart` (FE ChartManifestConfiguration). */
+export interface $ManifestChartConfiguration {
+  chartSettings?: {
+    /**
+     * true: all panels; false: none; or the panels. Default (FE getP13nMode): "Sort", "Type" and "Item"; with
+     * `variantManagement` "Control" all.
+     */
+    personalization?: boolean | 'true' | 'false' | { sort?: boolean; type?: boolean; item?: boolean; filter?: boolean };
+    /** Chart title; default UI.Chart Title. */
+    header?: string;
+    /** @defaultValue true */
+    headerVisible?: boolean;
+    /** @defaultValue "Multiple" */
+    selectionMode?: 'Multiple' | 'None' | 'Single';
+  };
+  /** Custom chart toolbar actions by key. */
+  actions?: Record<string, $ManifestChartActionSettings>;
+  /** Separators between the overflow groups of the chart actions, by group number. */
+  overflowGroups?: Record<string, $ManifestOverflowGroupSettings>;
 }
 
 /** Settings of the list report: the FE manifest settings (docs/26c §3–§7) plus the registered smart-kit extensions. */
@@ -233,10 +399,29 @@ export interface $ListReportSettings {
   controlConfiguration?: {
     '@com.sap.vocabularies.UI.v1.LineItem'?: $ManifestTableConfiguration;
     '@com.sap.vocabularies.UI.v1.SelectionFields'?: $ManifestFilterConfiguration;
+    /** The chart's settings; a qualified chart: "@com.sap.vocabularies.UI.v1.Chart#Q". */
+    '@com.sap.vocabularies.UI.v1.Chart'?: $ManifestChartConfiguration;
   } & Record<string, object>;
-  content?: { header?: { actions?: Record<string, $ManifestActionSettings> } };
-  /** "Page": one variant management in the title for the filter bar and the table; "None": no variants. @defaultValue "Page" */
-  variantManagement?: 'None' | 'Page';
+  content?: {
+    header?: {
+      actions?: Record<string, $ManifestHeaderActionSettings>;
+      /** Separators of the header actions' overflow groups, by group number. */
+      overflowGroups?: Record<string, $ManifestOverflowGroupSettings>;
+      customHeader?: $ManifestCustomHeaderSettings;
+    };
+  };
+  /**
+   * "Page": one variant management in the title for the filter bar and the table; "Control": the filter bar, the table
+   * and the chart each have their own (the title shows the page title); "None": no variants. @defaultValue "Page"
+   */
+  variantManagement?: 'Control' | 'None' | 'Page';
+  /**
+   * Annotation path of the UI.SelectionPresentationVariant the list starts from (FE getCompliantVisualizationAnnotation):
+   * its presentation is the table's, its selection variant the filter bar's defaults.
+   */
+  defaultTemplateAnnotationPath?: string;
+  /** Overflow priority of the share button in the title's toolbar. @defaultValue "High" */
+  shareOverflowPriority?: 'AlwaysOverflow' | 'Disappear' | 'High' | 'Low' | 'NeverOverflow';
   /**
    * "Enabled": load on start; "Disabled": only after "Go"; "Auto": load when the start variant has filter values (FE:
    * the standard variant applies automatically when filter values are set). @defaultValue "Auto"
@@ -280,6 +465,7 @@ export interface $ListReportSettings {
 
 const LINE_ITEM = '@com.sap.vocabularies.UI.v1.LineItem';
 const SELECTION_FIELDS = '@com.sap.vocabularies.UI.v1.SelectionFields';
+const CHART = '@com.sap.vocabularies.UI.v1.Chart';
 
 /** The entity set of `contextPath` / `entitySet`. */
 export function entitySetOf(p: Pick<$ListReportSettings, 'entitySet' | 'contextPath'>): string {
@@ -373,6 +559,12 @@ export function listCreationMode(name: $ManifestCreationModeSettings['name']): '
   return name === 'CreationDialog' || name === 'External' || name === 'AddViaValueHelp' ? name : 'NewPage';
 }
 
+/** The `massEdit` of `Table` for `enableMassEdit` (FE getMassEditSettings; the list report saves each object on its own). */
+function massEditOf(v: NonNullable<$ManifestTableSettings['enableMassEdit']>): NonNullable<$TableSettings['massEdit']> {
+  const list = (x: string | undefined) => (x ? x.split(',').map((f) => f.trim()).filter(Boolean) : undefined);
+  return v === true || v === false ? { operationGroupingMode: 'Isolated' } : { visibleFields: list(v.visibleFields), ignoredFields: list(v.ignoredFields), operationGroupingMode: v.operationGroupingMode ?? 'Isolated', customContent: v.customFragment?.() };
+}
+
 /** The personalization string of `Table` ("false" or the panels) for the FE setting. */
 function personalizationOf(v: $ManifestTableSettings['personalization']): string | undefined {
   if (v === undefined || v === true) return undefined;
@@ -395,10 +587,12 @@ interface ViewTab {
   chartMetaPath?: string;
   /** A custom view. */
   template?: () => ReactNode;
+  /** keepPreviousPersonalization: the table's settings are those of its annotation, not of the view. */
+  keep?: boolean;
 }
 
 /** The tabs of `views.paths` (FE ListReportConverter getViewsFromManifest). */
-export function viewTabs(model: MetaModel, entitySet: string, paths: $ViewPathSettings[]): ViewTab[] {
+export function viewTabs(model: MetaModel, entitySet: string, paths: $ViewPathSettings[], defaultMetaPath?: string): ViewTab[] {
   return paths.flatMap((cfg, i): ViewTab[] => {
     if (cfg.template) return [{ key: cfg.key ?? `custom${i}`, entitySet, title: cfg.label ?? '', conditions: [], template: cfg.template }];
     const set = cfg.contextPath ? cfg.contextPath.replace(/^\//, '') : cfg.entitySet ?? entitySet;
@@ -409,16 +603,27 @@ export function viewTabs(model: MetaModel, entitySet: string, paths: $ViewPathSe
     const { term, qualifier } = parseAnnotationPath(path.startsWith('@') ? path : `@${path}`);
     const key = cfg.key ?? path;
     const plural = ui.headerInfo.typeNamePlural;
-    const defaultView = (title: string): ViewTab => (ui.defaultChart !== undefined
-      ? { key, entitySet: set, title, conditions: [], chart: ui.charts[ui.defaultChart], chartMetaPath: '@com.sap.vocabularies.UI.v1.PresentationVariant' }
-      : { key, entitySet: set, title, conditions: [] });
+    const keep = cfg.keepPreviousPersonalization || undefined;
+    // FE getCompliantVisualizationAnnotation: defaultTemplateAnnotationPath (main entity set), the default PV, the LineItem
+    const defaultView = (title: string): ViewTab => (set === entitySet && defaultMetaPath
+      ? { key, entitySet: set, title, conditions: [], metaPath: defaultMetaPath, keep }
+      : ui.defaultChart !== undefined
+        ? { key, entitySet: set, title, conditions: [], chart: ui.charts[ui.defaultChart], chartMetaPath: '@com.sap.vocabularies.UI.v1.PresentationVariant' }
+        : { key, entitySet: set, title, conditions: [], keep });
     if (term === 'SelectionPresentationVariant' && qualifier) {
       const v = ui.views.find((x) => x.id === qualifier);
       if (!v) return [];
       const chartQualifier = v.chart ? Object.keys(ui.charts).find((k) => ui.charts[k] === v.chart) : undefined;
       return [v.visualization === 'chart' && v.chart
         ? { key, entitySet: set, title: v.text, conditions: v.conditions, chart: v.chart, chartMetaPath: `@com.sap.vocabularies.UI.v1.Chart${chartQualifier ? `#${chartQualifier}` : ''}` }
-        : { key, entitySet: set, title: v.text, conditions: v.conditions, metaPath: `@com.sap.vocabularies.UI.v1.SelectionPresentationVariant#${qualifier}` }];
+        : { key, entitySet: set, title: v.text, conditions: v.conditions, metaPath: `@com.sap.vocabularies.UI.v1.SelectionPresentationVariant#${qualifier}`, keep }];
+    }
+    if (term === 'SelectionVariant') {
+      // FE getViews: a SelectionVariant view shows the default visualization with the SV as hidden filters; its tab
+      // text is the SV's Text (getViewTitle)
+      const sv = ui.selectionVariants[qualifier];
+      if (!sv) return [];
+      return [{ ...defaultView(ui.selectionVariantTexts?.[qualifier] ?? ''), conditions: sv }];
     }
     if (term === 'PresentationVariant' && qualifier) {
       const pv = ui.presentationVariants[qualifier];
@@ -427,7 +632,7 @@ export function viewTabs(model: MetaModel, entitySet: string, paths: $ViewPathSe
       if (pv.lineItemQualifier === undefined && pv.chartQualifier !== undefined && ui.charts[pv.chartQualifier]) {
         return [{ key, entitySet: set, title, conditions: [], chart: ui.charts[pv.chartQualifier], chartMetaPath: `@com.sap.vocabularies.UI.v1.PresentationVariant#${qualifier}` }];
       }
-      return [{ key, entitySet: set, title, conditions: [], metaPath: `@com.sap.vocabularies.UI.v1.PresentationVariant#${qualifier}` }];
+      return [{ key, entitySet: set, title, conditions: [], metaPath: `@com.sap.vocabularies.UI.v1.PresentationVariant#${qualifier}`, keep }];
     }
     return [defaultView(ui.presentationVariants['']?.text ?? plural)];
   });
@@ -449,6 +654,81 @@ function quickVariants(ui: EntityUi, cfg: $QuickVariantSelectionSettings | undef
     }
     return [];
   });
+}
+
+/**
+ * The UI.SelectionPresentationVariant of `defaultTemplateAnnotationPath` (FE getSelectionPresentationVariant: only an SPV
+ * counts; FE requires its PresentationVariant).
+ */
+export function defaultTemplateView(ui: EntityUi, path: string | undefined): ViewModel | undefined {
+  if (!path) return undefined;
+  const { term, qualifier } = parseAnnotationPath(path.startsWith('@') ? path : `@${path}`);
+  return term === 'SelectionPresentationVariant' ? ui.views.find((x) => x.id === qualifier) : undefined;
+}
+
+/** Filter conditions of a selection variant's ranges. */
+export function conditionsToFilters(conditions: InitialCondition[]): FilterState {
+  const out: FilterState = {};
+  for (const c of conditions) (out[c.path] ??= []).push({ operator: c.operator as Operator, values: c.values, exclude: c.exclude || undefined });
+  return out;
+}
+
+/** What a combined view shows (FE TemplateContentView): chart and table, the chart, the table. */
+export type CombinedContent = 'Hybrid' | 'Chart' | 'Table';
+
+/** The content a combined view starts with (FE ListReportController _getDefaultPath; not on desktops: the chart). */
+export function combinedDefault(defaultPath: $ViewPathSettings['defaultPath'], desktop = true): CombinedContent {
+  const c: CombinedContent = defaultPath === 'primary' ? 'Chart' : defaultPath === 'secondary' ? 'Table' : 'Hybrid';
+  return c === 'Hybrid' && !desktop ? 'Chart' : c;
+}
+
+/** Chart personalization of `chartSettings.personalization` (FE Chart converter getP13nMode). */
+export function chartPersonalization(v: NonNullable<$ManifestChartConfiguration['chartSettings']>['personalization'], variantManagement: string): string | false {
+  if ((v !== undefined && !v) || v === 'false') return false;
+  if (v && typeof v === 'object') return [v.type && 'Type', v.item && 'Item', v.sort && 'Sort', v.filter && 'Filter'].filter(Boolean).join(',');
+  return variantManagement === 'Control' || v ? 'Sort,Type,Item,Filter' : 'Sort,Type,Item';
+}
+
+const withAt = (path: string) => (path.startsWith('@') ? path : `@${path}`);
+
+/** The UI.Chart of a Chart, PresentationVariant or SelectionPresentationVariant path. */
+function chartOf(ui: EntityUi, metaPath: string): ChartModel | undefined {
+  const { term, qualifier } = parseAnnotationPath(metaPath);
+  if (term === 'Chart') return ui.charts[qualifier];
+  if (term === 'PresentationVariant') { const q = ui.presentationVariants[qualifier]?.chartQualifier; return q === undefined ? undefined : ui.charts[q]; }
+  if (term === 'SelectionPresentationVariant') return ui.views.find((x) => x.id === qualifier)?.chart;
+  return undefined;
+}
+
+/** The selected data points after a chart `selectionChange`. */
+export function nextPoints(points: Record<string, unknown>[], e: Chart$SelectionChangeEvent): Record<string, unknown>[] {
+  const key = (d: Record<string, unknown>) => JSON.stringify(d);
+  const changed = new Set(e.data.map((x) => key(x.data)));
+  const rest = points.filter((d) => !changed.has(key(d)));
+  return e.selected ? [...rest, ...e.data.map((x) => x.data)] : rest;
+}
+
+/**
+ * Table conditions of the selected data points (FE ChartUtils setChartFilters): the dimension values of the points, one
+ * EQ condition per value and dimension.
+ */
+export function pointConditions(points: Record<string, unknown>[], isDimension: (path: string) => boolean): InitialCondition[] {
+  const out: InitialCondition[] = [];
+  const seen = new Set<string>();
+  for (const d of points) {
+    for (const [path, value] of Object.entries(d)) {
+      const k = JSON.stringify([path, value]);
+      if (!isDimension(path) || seen.has(k)) continue;
+      seen.add(k);
+      out.push({ path, operator: 'EQ', values: [value], exclude: false });
+    }
+  }
+  return out;
+}
+
+/** A child of the title's OverflowToolbar with its layout data (the toolbar reads `layoutData` from its children). */
+function ToolbarSlot(p: { layoutData?: OverflowToolbarLayoutData; children?: ReactNode }) {
+  return <>{p.children}</>;
 }
 
 /** Orders keyed entries by `position` (FE ConfigurableObject insertCustomElements, relative to each other). */
@@ -491,33 +771,48 @@ function ListReportInner(p: $ListReportSettings) {
   const pageKey = p.pageKey ?? `list:${entitySet}`;
   const { ui, set } = useMetaModel(entitySet, { service: p.service });
   const draft = Boolean(set.draft?.root);
+  // defaultTemplateAnnotationPath (FE getCompliantVisualizationAnnotation / getSelectionVariant): the SPV's presentation
+  // is the main table's, its selection variant the filter bar's defaults.
+  const defaultSpv = useMemo(() => defaultTemplateView(ui, p.defaultTemplateAnnotationPath), [ui, p.defaultTemplateAnnotationPath]);
+  const defaultMetaPath = defaultSpv ? `@com.sap.vocabularies.UI.v1.SelectionPresentationVariant#${defaultSpv.id}` : undefined;
+  const defaultFilters = useMemo(() => (defaultSpv ? conditionsToFilters(defaultSpv.conditions) : undefined), [defaultSpv]);
 
   // Views (FE ListReportConverter / MultipleModeControl): a tab per path; the properties of the views' selection
   // variants that are not selection fields leave the filter bar (FE FilterBar.ts getExcludedFilterProperties).
-  const tabs = useMemo(() => (p.views ? viewTabs(model, entitySet, p.views.paths) : []), [model, entitySet, p.views]);
+  // A combined view (`primary` / `secondary`) is the only view (FE getViews: "ALP flavor cannot have multiple views").
+  const combined = p.views?.paths.find((x) => x.primary?.length && x.secondary?.length);
+  const tabs = useMemo(() => (p.views && !combined ? viewTabs(model, entitySet, p.views.paths, defaultMetaPath) : []), [model, entitySet, p.views, combined, defaultMetaPath]);
   const quick = useMemo(() => quickVariants(ui, ts.quickVariantSelection), [ui, ts.quickVariantSelection]);
   const viewPaths = useMemo(() => viewExcludedPaths([...tabs.filter((x) => x.entitySet === entitySet), ...quick], ui.selectionFields), [tabs, quick, entitySet, ui.selectionFields]);
   const showCounts = p.views?.showCounts ?? new Set(tabs.map((x) => x.entitySet)).size > 1;
 
-  const filter = useFilterState(entitySet, { service: p.service, pageKey, liveMode, autoExecute: false });
-  const [view, setView] = usePageState<{ columns?: string[]; sort?: SortItem[]; groupBy?: string | null; totals?: string[]; headerExpanded?: boolean; headerPinned?: boolean; tab?: string; quick?: string }>(`${pageKey}:view`, {});
+  const filter = useFilterState(entitySet, { service: p.service, pageKey, liveMode, autoExecute: false, initial: defaultFilters ? { filters: defaultFilters } : undefined });
+  const [view, setView] = usePageState<{ columns?: string[]; sort?: SortItem[]; groupBy?: string | null; totals?: string[]; headerExpanded?: boolean; headerPinned?: boolean; tab?: string; quick?: string; content?: CombinedContent }>(`${pageKey}:view`, {});
   const columns = view.columns;
   const sort = view.sort ?? ui.presentation.sortOrder;
   const activeTab = view.tab && tabs.some((x) => x.key === view.tab) ? view.tab : tabs[0]?.key;
   const activeQuick = quick.find((x) => x.key === view.quick) ?? quick[0];
 
   const standard = useMemo<VariantContent>(
-    () => ({ filters: filter.defaults.filters, search: '', filterFields: filter.defaults.fields, sort: ui.presentation.sortOrder, custom: tabs.length || quick.length ? { tab: tabs[0]?.key, quick: quick[0]?.key } : undefined }),
-    [filter.defaults, ui], // eslint-disable-line react-hooks/exhaustive-deps
+    () => (variantManagement === 'Control'
+      // "Control": the filter bar's own variants hold the filter bar only (the table and the chart have theirs)
+      ? { filters: defaultFilters ?? filter.defaults.filters, search: '', filterFields: filter.defaults.fields }
+      : { filters: defaultFilters ?? filter.defaults.filters, search: '', filterFields: filter.defaults.fields, sort: ui.presentation.sortOrder, custom: tabs.length || quick.length ? { tab: tabs[0]?.key, quick: quick[0]?.key } : undefined }),
+    [filter.defaults, ui, defaultFilters, variantManagement], // eslint-disable-line react-hooks/exhaustive-deps
   );
   const apply = (v: { key?: string; content: VariantContent; autoApply: boolean }) => {
     // the standard variant applies automatically by initialLoad (FE executeOnSelectionForStandardDefault)
     const auto = v.key === STANDARD_VARIANT_ID ? loadsOnStart(initialLoad, variantManagement, v.content.filters ?? {}) : v.autoApply;
     filter.load({ filters: v.content.filters, search: v.content.search, fields: v.content.filterFields }, auto || liveMode);
+    if (variantManagement === 'Control') return;
     const custom = v.content.custom as { tab?: string; quick?: string } | undefined;
     setView((s) => ({ ...s, columns: v.content.columns, sort: v.content.sort, groupBy: v.content.groupBy, totals: v.content.totals, tab: custom?.tab ?? s.tab, quick: custom?.quick ?? s.quick }));
   };
-  const variants = useVariants(pageKey, { service: p.service, standard, enabled: variantManagement !== 'None', onDefaultLoaded: (v) => apply({ key: v.id, content: v.content, autoApply: v.autoApply }) });
+  // The variant management of the title: the page's ("Page") or the filter bar's ("Control" with a filter bar; FE
+  // VariantManagement.fragment.xml), else the page title.
+  const titleVariants = variantManagement === 'Page' || (variantManagement === 'Control' && !hideFilterBar);
+  // "Control": the variants of the filter bar (FE <filterBarId>::VariantManagement) are kept apart from the page's.
+  const variants = useVariants(variantManagement === 'Control' ? `${pageKey}:filterBar` : pageKey, { service: p.service, standard, enabled: titleVariants, onDefaultLoaded: (v) => apply({ key: v.id, content: v.content, autoApply: v.autoApply }) });
   const initialized = useRef(false);
   useEffect(() => {
     if (initialized.current || variants.isLoading) return;
@@ -526,7 +821,9 @@ function ListReportInner(p: $ListReportSettings) {
     if (hideFilterBar || loadsOnStart(initialLoad, variantManagement, filter.filters)) filter.go();
   }, [variants.isLoading, variants.variants, filter, initialLoad, variantManagement, hideFilterBar]);
   // The page variant stores the selected view (FE: the IconTabBar's selected key is part of the page variant).
-  const content: VariantContent = { filters: filter.filters, search: filter.search, filterFields: filter.fields, columns, sort, groupBy: view.groupBy, totals: view.totals, custom: tabs.length || quick.length ? { tab: activeTab, quick: activeQuick?.key } : undefined };
+  const content: VariantContent = variantManagement === 'Control'
+    ? { filters: filter.filters, search: filter.search, filterFields: filter.fields }
+    : { filters: filter.filters, search: filter.search, filterFields: filter.fields, columns, sort, groupBy: view.groupBy, totals: view.totals, custom: tabs.length || quick.length ? { tab: activeTab, quick: activeQuick?.key } : undefined };
 
   // LR-13: expanded when no query ran on start, collapsed otherwise.
   const headerExpanded = view.headerExpanded ?? filter.applied === null;
@@ -682,7 +979,8 @@ function ListReportInner(p: $ListReportSettings) {
   const manifestColumns = useMemo<$ColumnSettings[] | undefined>(() => (tableConfig?.columns
     ? Object.entries(tableConfig.columns).map(([key, c]) => ({
       key, header: c.header, template: c.template, properties: c.properties, width: c.width, importance: c.importance, horizontalAlign: c.horizontalAlign,
-      disableExport: c.disableExport, ...(c.position?.placement === 'End' ? {} : { anchor: c.position?.anchor, placement: c.position?.placement }),
+      disableExport: c.disableExport, availability: c.availability, tooltip: c.tooltip, required: c.required, widthIncludingColumnHeader: c.widthIncludingColumnHeader,
+      ...(c.position?.placement === 'End' ? {} : { anchor: c.position?.anchor, placement: c.position?.placement }),
     }))
     : undefined), [tableConfig?.columns]);
   const manifestActions = useMemo<{ actions?: $ActionSettings[]; groups?: ActionGroup[] }>(() => {
@@ -690,6 +988,7 @@ function ListReportInner(p: $ListReportSettings) {
     const actions: $ActionSettings[] = entries.filter(([, a]) => !a.menu).map(([key, a]) => ({
       key, text: a.text ?? key, anchor: a.position?.anchor, placement: a.position?.placement === 'End' ? undefined : a.position?.placement,
       enabled: a.enabled, visible: a.visible, requiresSelection: a.requiresSelection, enableOnSelect: a.enableOnSelect,
+      priority: a.priority, overflowGroup: a.overflowGroup ?? a.group, isAIOperation: a.isAIOperation,
       onPress: a.press ? (e) => a.press!({ selectedContexts: e.selectedContexts }) : undefined,
     }));
     const groups: ActionGroup[] = entries.filter(([, a]) => a.menu).map(([key, a]) => ({ id: key, label: a.text ?? key, actions: a.menu! }));
@@ -703,28 +1002,72 @@ function ListReportInner(p: $ListReportSettings) {
   const creation = listCreationMode(ts.creationMode?.name);
   const maxItems = ui.presentationVariants['']?.maxItems;
 
-  const table = (tab: ViewTab | undefined, key: string, title: string) => {
+  // controlConfiguration › @UI.Chart[#qualifier] (FE ChartManifestConfiguration, getManifestControlConfiguration of the
+  // chart's annotation path; MacroChart.fragment.xml: header level H3)
+  const chartConfigOf = (set: string, metaPath: string): $ManifestChartConfiguration | undefined => {
+    const setUi = model.ui[model.entitySets[set]?.typeName ?? ''];
+    const c = setUi ? chartOf(setUi, metaPath) : undefined;
+    const q = setUi && c ? Object.keys(setUi.charts).find((k) => setUi.charts[k] === c) : undefined;
+    return p.controlConfiguration?.[`${CHART}${q ? `#${q}` : ''}`] as $ManifestChartConfiguration | undefined;
+  };
+  // Selected data points of a combined view's chart: they filter its table.
+  const [chartPoints, setChartPoints] = useState<Record<string, unknown>[]>([]);
+  const chartSelection = useMemo(() => {
+    const typeProps = model.entityTypes[set.typeName]?.properties ?? {};
+    const measures = new Set(combined ? chartOf(ui, withAt(combined.primary![0]!.annotationPath))?.measures ?? [] : []);
+    return pointConditions(chartPoints, (k) => Boolean(typeProps[k]) && !measures.has(k));
+  }, [chartPoints, model, set.typeName, ui, combined]);
+  const chart = (set: string, metaPath: string, query: ChartQuery | null, extra?: { headerContent?: ReactNode; onSelectionChange?: (e: Chart$SelectionChangeEvent) => void }) => {
+    const config = chartConfigOf(set, metaPath);
+    // FE getActionsFromManifest: a `menu` is a menu button of other manifest actions (they leave the toolbar, FE
+    // MdcChartTemplate removeMenuItems), its `defaultAction` the action of the split button's main part
+    const all = config?.actions ?? {};
+    const inMenu = new Set(Object.values(all).flatMap((a) => a.menu ?? []));
+    const pressOf = (a: $ManifestChartActionSettings | undefined) => (a?.press ? (e: { selectedContexts: Row[] }) => a.press!({ selectedContexts: e.selectedContexts.map((r) => ({ getPath: () => '', getObject: () => r })) }) : undefined);
+    const settings = (key: string, a: $ManifestChartActionSettings): $ChartActionSettings => ({
+      key, text: a.text ?? key, enabled: a.enabled, visible: a.visible, requiresSelection: a.requiresSelection,
+      overflowGroup: a.overflowGroup, group: a.group, priority: a.priority, isAIOperation: a.isAIOperation,
+      anchor: a.position?.anchor, placement: a.position?.placement === 'End' ? undefined : a.position?.placement,
+      press: pressOf(a),
+    });
+    const actions = positioned(all).filter(([key]) => !inMenu.has(key)).map(([key, a]): $ChartActionSettings | $ChartActionGroupSettings => {
+      if (!a.menu) return settings(key, a);
+      // FE mapMenuDefaultAction: only a visible action can be the default action
+      const def = a.defaultAction && all[a.defaultAction]?.visible !== false ? all[a.defaultAction] : undefined;
+      return { ...settings(key, a), requiresSelection: undefined, press: def ? pressOf(def) ?? (() => undefined) : undefined, actions: a.menu.flatMap((k) => (all[k] ? [settings(k, all[k])] : [])) };
+    });
+    return (
+      <Chart
+        revision={refreshRevision} contextPath={`/${set}`} metaPath={metaPath} service={p.service} query={query} onDrilldown={(e) => drilldown(e.dimension, e.value)}
+        personalization={chartPersonalization(config?.chartSettings?.personalization, variantManagement)}
+        header={config?.chartSettings?.header} headerVisible={config?.chartSettings?.headerVisible} selectionMode={config?.chartSettings?.selectionMode}
+        actions={actions.length ? actions : undefined}
+        actionOverflowGroups={config?.overflowGroups ? Object.entries(config.overflowGroups).map(([k, g]) => ({ overflowGroup: Number(k), showSeparator: g.showSeparator })) : undefined}
+        variantManagement={variantManagement === 'Control' ? 'Control' : undefined}
+        headerContent={extra?.headerContent} onSelectionChange={extra?.onSelectionChange}
+      />
+    );
+  };
+
+  const table = (tab: ViewTab | undefined, key: string, title: string, extra?: { conditions?: InitialCondition[]; toolbarEnd?: ReactNode; main?: boolean; defaultSort?: SortItem[] }) => {
     const set = tab?.entitySet ?? entitySet;
-    const main = set === entitySet && !tab?.metaPath;
-    const conditions = [...(tab?.conditions ?? []), ...(set === entitySet && activeQuick ? activeQuick.conditions : [])];
+    const main = extra?.main ?? (set === entitySet && (!tab?.metaPath || tab.metaPath === defaultMetaPath));
+    const conditions = [...(tab?.conditions ?? []), ...(set === entitySet && activeQuick ? activeQuick.conditions : []), ...(extra?.conditions ?? [])];
     const q = queryFor(set, conditions);
     if (tab?.template) return tab.template();
-    if (tab?.chart || (!tab && ui.defaultChart !== undefined)) {
-      const chartMetaPath = tab?.chartMetaPath ?? '@com.sap.vocabularies.UI.v1.PresentationVariant';
-      return <Chart revision={refreshRevision} contextPath={`/${set}`} metaPath={chartMetaPath} service={p.service} query={q.query} onDrilldown={(e) => drilldown(e.dimension, e.value)} />;
-    }
+    if (tab?.chart || (!tab && ui.defaultChart !== undefined && !defaultMetaPath)) return chart(set, tab?.chartMetaPath ?? '@com.sap.vocabularies.UI.v1.PresentationVariant', q.query);
     const type = tableTypeOf(set);
     const threshold = thresholdOf(type, ts.threshold, set === entitySet ? maxItems : undefined);
     const own = main && !activeQuick?.view;
     const common: Omit<$TableSettings, 'type' | 'ref'> = {
       service: p.service,
       contextPath: `/${set}`,
-      metaPath: tab?.metaPath ?? (activeQuick?.view ? `@com.sap.vocabularies.UI.v1.SelectionPresentationVariant#${activeQuick.view.id}` : undefined),
+      metaPath: tab?.metaPath ?? (activeQuick?.view ? `@com.sap.vocabularies.UI.v1.SelectionPresentationVariant#${activeQuick.view.id}` : defaultMetaPath),
       query: q.query,
       showOverlay: filter.dirty && !liveMode,
       visibleColumns: own ? columns : undefined,
       onVisibleColumnsChange: own ? (c) => setView((s) => ({ ...s, columns: c })) : undefined,
-      sort: own ? sort : undefined,
+      sort: own ? view.sort ?? extra?.defaultSort ?? sort : undefined,
       onSortChange: own ? (s) => setView((x) => ({ ...x, sort: s })) : undefined,
       groupBy: own ? view.groupBy : undefined,
       onGroupByChange: own ? (g) => setView((x) => ({ ...x, groupBy: g })) : undefined,
@@ -733,11 +1076,14 @@ function ListReportInner(p: $ListReportSettings) {
       columns: set === entitySet ? manifestColumns : undefined,
       actions: set === entitySet ? manifestActions.actions : undefined,
       actionGroups: set === entitySet ? manifestActions.groups : undefined,
-      creationMode: { name: creation },
+      creationMode: { name: creation, creationFields: creation === 'CreationDialog' ? ts.creationMode?.creationFields : undefined },
       onRowPress: ts.rowPress,
       onSelectionChange: ts.selectionChange,
       navigable: navigable(set),
-      pageKey: `${pageKey}${key === 'main' ? '' : `:${key}`}`,
+      // keepPreviousPersonalization: the table of the annotation, not of the view (FE configureMultiViews: the table id)
+      pageKey: tab?.keep ? `${pageKey}${tab.metaPath && tab.metaPath !== defaultMetaPath ? `:${tab.metaPath}` : ''}` : `${pageKey}${key === 'main' ? '' : `:${key}`}`,
+      variantManagement: variantManagement === 'Control' ? 'Control' : undefined,
+      toolbarEnd: extra?.toolbarEnd,
       header: ts.header ?? title,
       headerVisible: ts.headerVisible === false || (quick.length > 0 && ts.quickVariantSelection?.hideTableTitle) ? false : undefined,
       titleAddon: set === entitySet ? contentSwitch : undefined,
@@ -751,7 +1097,9 @@ function ListReportInner(p: $ListReportSettings) {
       disableCopyToClipboard: ts.disableCopyToClipboard,
       enableFullScreen: ts.enableFullScreen,
       personalization: personalizationOf(ts.personalization),
-      rowCountMode: ts.rowCountMode,
+      // FE _getTableMode: a list report's grid tables are always "Auto" with at least 3 rows (rowCountMode / rowCount are not read)
+      rowCountMode: type === 'ResponsiveTable' ? undefined : 'Auto',
+      rowCount: type === 'ResponsiveTable' ? undefined : 3,
       enableSelectAll: ts.selectAll,
       selectionLimit: ts.selectionLimit,
       frozenColumnCount: ts.frozenColumnCount,
@@ -763,7 +1111,14 @@ function ListReportInner(p: $ListReportSettings) {
       readOnly: ts.readOnly,
       ignoredFields: ts.ignoredFields,
       threshold,
-      scrollThreshold: type === 'ResponsiveTable' ? undefined : gridRequestSize(threshold),
+      // FE reads threshold + ⌈window height / 25⌉ first also with a fixed row count (fe:macros6-lr-row-count)
+      scrollThreshold: type === 'ResponsiveTable' ? undefined : gridRequestSize(ts.scrollThreshold ?? threshold),
+      enablePaste: ts.enablePaste,
+      enablePastingOfComputedProperties: ts.enablePastingOfComputedProperties,
+      massEdit: ts.enableMassEdit ? massEditOf(ts.enableMassEdit) : undefined,
+      analyticalConfiguration: ts.analyticalConfiguration,
+      additionalProperties: set === entitySet ? ts.additionalProperties : undefined,
+      actionOverflowGroups: set === entitySet && tableConfig?.overflowGroups ? Object.entries(tableConfig.overflowGroups).map(([k, g]) => ({ overflowGroup: Number(k), showSeparator: g.showSeparator })) : undefined,
       onBeforeExport: p.onBeforeExport,
       onExported: p.onExported,
     };
@@ -800,6 +1155,26 @@ function ListReportInner(p: $ListReportSettings) {
         ))}
       </Tabs>
     );
+  } else if (combined) {
+    // FE CollectionVisualization.fragment.xml: the content switcher (Chart and Table / Chart / Table), the primary
+    // visualization (chart) unless "Table", the secondary (table) unless "Chart"; selecting data points in the chart
+    // filters the table (ListReportController onChartSelectionChanged, ChartUtils setChartFilters).
+    const desktop = typeof window === 'undefined' || window.matchMedia?.('(pointer: fine)').matches !== false;
+    const shown = view.content ?? combinedDefault(combined.defaultPath, desktop);
+    const items: { value: CombinedContent; label: string }[] = [...(desktop ? [{ value: 'Hybrid' as const, label: t('views.hybrid') }] : []), { value: 'Chart', label: t('views.chart') }, { value: 'Table', label: t('views.table') }];
+    const switcher = <SegmentedControl size="xs" value={shown} onChange={(v) => setView((s) => ({ ...s, content: v as CombinedContent }))} data={items} aria-label={t('views.switch')} data-sk-content-switch={shown} />;
+    const chartPath = withAt(combined.primary![0]!.annotationPath);
+    const tablePath = withAt(combined.secondary![0]!.annotationPath);
+    const chartQ = queryFor(entitySet).query;
+    // a LineItem path is the table without a presentation variant (FE getDataVisualizationConfiguration: no sort)
+    const lineItem = parseAnnotationPath(tablePath).term === 'LineItem';
+    const tableTab: ViewTab = { key: combined.key ?? 'combined', entitySet, title: mainTitle, conditions: [], metaPath: tablePath };
+    body = (
+      <div className="sk-list-combined" data-sk-combined-view>
+        {shown !== 'Table' ? chart(entitySet, chartPath, chartQ, { headerContent: switcher, onSelectionChange: (e) => setChartPoints((pts) => nextPoints(pts, e)) }) : null}
+        {shown !== 'Chart' ? table(tableTab, 'main', mainTitle, { conditions: chartSelection, toolbarEnd: shown === 'Table' ? switcher : undefined, main: true, defaultSort: lineItem ? [] : undefined }) : null}
+      </div>
+    );
   } else {
     body = table(undefined, 'main', mainTitle);
   }
@@ -807,12 +1182,63 @@ function ListReportInner(p: $ListReportSettings) {
   const pageTitle = p.title ?? ui.headerInfo.typeNamePlural;
   const shareHref = navigation?.href?.({ kind: 'list', entitySet, service: service.name });
   const share = shareHref ? <Share title={pageTitle} href={shareHref} /> : null;
-  const headerActions = positioned(p.content?.header?.actions ?? {}).filter(([, a]) => a.visible !== false).map(([key, a]) => (
-    <Button key={key} size="xs" variant="subtle" disabled={a.enabled === false} onClick={() => a.press?.({ selectedContexts: [] })} data-sk-header-action={key}>{a.text ?? key}</Button>
-  ));
+  // Header actions (FE getHeaderActions) in the title's OverflowToolbar: the primary action is emphasized, first and never
+  // in the overflow while the emphasis is active (hidden filter bar or live mode, LR_EMPHASIS_SUPPRESSION_CONDITION);
+  // `priority` and `overflowGroup` / `group` are the OverflowToolbarLayoutData; `overflowGroups` add separators before
+  // their group (FE addSeparators); `menu` makes a menu button of other header actions, `defaultAction` a split button.
+  const emphasis = hideFilterBar || Boolean(p.useHiddenFilterBar) || liveMode;
+  const allHeader = p.content?.header?.actions ?? {};
+  const inMenu = new Set(Object.values(allHeader).flatMap((a) => a.menu ?? []));
+  const entries = positioned(allHeader).filter(([key, a]) => a.visible !== false && !inMenu.has(key));
+  const ordered = emphasis ? [...entries.filter(([, a]) => a.isPrimaryAction), ...entries.filter(([, a]) => !a.isPrimaryAction)] : entries;
+  const separators = p.content?.header?.overflowGroups ?? {};
+  const run = (a: $ManifestHeaderActionSettings | undefined) => a?.press?.({ selectedContexts: [] });
+  const headerActions: ReactNode[] = [];
+  let lastGroup: number | undefined;
+  for (const [key, a] of ordered) {
+    const primary = emphasis && a.isPrimaryAction;
+    const group = a.overflowGroup ?? a.group;
+    const layoutData = { priority: primary ? 'NeverOverflow' as const : a.priority, group };
+    if (group !== undefined && group !== lastGroup && separators[String(group)]?.showSeparator) {
+      headerActions.push(<ToolbarSlot key={`${key}:separator`} layoutData={layoutData}><span className="sk-list-report__separator" role="separator" data-sk-header-separator /></ToolbarSlot>);
+    }
+    lastGroup = group;
+    const icon = a.isAIOperation ? <Sparkles className="sk-icon" /> : undefined;
+    let el: ReactNode;
+    if (a.template) el = a.template();
+    else if (a.menu) {
+      const items = a.menu.map((k) => [k, allHeader[k]] as const).filter(([, m]) => m && m.visible !== false);
+      const def = a.defaultAction ? allHeader[a.defaultAction] : undefined;
+      const dropdown = (
+        <Menu.Dropdown>
+          {items.map(([k, m]) => <Menu.Item key={k} disabled={m!.enabled === false} onClick={() => run(m)} data-sk-header-action={k}>{m!.text ?? k}</Menu.Item>)}
+        </Menu.Dropdown>
+      );
+      el = def ? (
+        <Group gap={0} wrap="nowrap" data-sk-header-menu={key}>
+          <Button size="xs" variant={primary ? 'filled' : 'subtle'} leftSection={icon} disabled={a.enabled === false} onClick={() => run(def)} data-sk-header-action={key}>{a.text ?? key}</Button>
+          <Menu position="bottom-end">
+            <Menu.Target><ActionIcon size="md" variant={primary ? 'filled' : 'subtle'} aria-label={a.text ?? key} data-sk-header-menu-arrow><ChevronDown className="sk-icon" /></ActionIcon></Menu.Target>
+            {dropdown}
+          </Menu>
+        </Group>
+      ) : (
+        <Menu position="bottom-end">
+          <Menu.Target>
+            <Button size="xs" variant={primary ? 'filled' : 'subtle'} leftSection={icon} rightSection={<ChevronDown className="sk-icon" />} disabled={a.enabled === false} data-sk-header-menu={key}>{a.text ?? key}</Button>
+          </Menu.Target>
+          {dropdown}
+        </Menu>
+      );
+    } else {
+      el = <Button size="xs" variant={primary ? 'filled' : 'subtle'} leftSection={icon} disabled={a.enabled === false} onClick={() => run(a)} data-sk-header-action={key}>{a.text ?? key}</Button>;
+    }
+    headerActions.push(<ToolbarSlot key={key} layoutData={layoutData}>{el}</ToolbarSlot>);
+  }
+  const custom = p.content?.header?.customHeader;
   const hasMessages = Boolean(messages?.messages.length);
   const kpis = p.keyPerformanceIndicators && Object.keys(p.keyPerformanceIndicators).length ? p.keyPerformanceIndicators : undefined;
-  const heading = variantManagement === 'None'
+  const heading = !titleVariants
     ? <Title order={2} size="h4" data-sk-page-title>{pageTitle}</Title>
     : <VariantManagement variants={variants} content={content} onSelect={apply} standardName={p.title} supportApplyAutomatically={!liveMode} creationAllowed={p.canSaveVariants} />;
 
@@ -832,14 +1258,26 @@ function ListReportInner(p: $ListReportSettings) {
               </Group>
             ) : heading}
             snappedTitleOnMobile={pageTitle}
-            actions={headerActions.length || share ? <Group gap="xs" wrap="nowrap">{headerActions}{share}</Group> : undefined}
-            snappedContent={hideFilterBar || p.useHiddenFilterBar ? undefined : <FilterSummary entitySet={entitySet} service={p.service} filters={Object.fromEntries(Object.entries(filter.filters).filter(([k]) => k !== EDIT_STATE))} search={filter.search} />}
+            actions={headerActions.length || share ? [...headerActions, ...(share ? [<ToolbarSlot key="$share" layoutData={{ priority: p.shareOverflowPriority ?? 'High' }}>{share}</ToolbarSlot>] : [])] : undefined}
+            snappedContent={custom?.collapsedHeaderFragment || !(hideFilterBar || p.useHiddenFilterBar) ? (
+              <>
+                {custom?.collapsedHeaderFragment ? <div data-sk-collapsed-header>{custom.collapsedHeaderFragment()}</div> : null}
+                {hideFilterBar || p.useHiddenFilterBar ? null : <FilterSummary entitySet={entitySet} service={p.service} filters={Object.fromEntries(Object.entries(filter.filters).filter(([k]) => k !== EDIT_STATE))} search={filter.search} />}
+              </>
+            ) : undefined}
             onStateChange={(e) => setHeaderExpanded(e.isExpanded)}
           />
         )}
-        header={hideFilterBar || p.useHiddenFilterBar ? undefined : (
+        header={hideFilterBar || (p.useHiddenFilterBar && !custom?.expandedHeaderFragment) ? undefined : (
           <DynamicPageHeader>
-            <FilterBar state={barState} extend={filterExtend} filterFields={filterFields} showClearButton={filterConfig?.showClearButton} navigationPropertiesForPersonalization={filterConfig?.navigationPropertiesForPersonalization} showMessages={false} />
+            {custom?.expandedHeaderFragment ? <div data-sk-expanded-header>{custom.expandedHeaderFragment()}</div> : null}
+            {p.useHiddenFilterBar ? null : (
+              <FilterBar
+                state={barState} extend={filterExtend} filterFields={filterFields} showClearButton={filterConfig?.showClearButton}
+                navigationPropertiesForPersonalization={filterConfig?.navigationPropertiesForPersonalization} showMessages={false}
+                variants={titleVariants ? variants : undefined} onVariantSelect={titleVariants ? apply : undefined}
+              />
+            )}
           </DynamicPageHeader>
         )}
         headerExpanded={headerExpanded}

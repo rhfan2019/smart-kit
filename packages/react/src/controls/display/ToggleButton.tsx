@@ -1,6 +1,7 @@
 /** sap.m.ToggleButton: a sap.m.Button that stays pressed until it is pressed again (docs/26 §3.2). */
 import { ActionIcon, Button } from '@mantine/core';
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode, type Ref } from 'react';
+import { badgeValueText, useButtonBadge } from './buttonBadge';
 import type { OverflowToolbarLayoutData } from './OverflowToolbar';
 import { cx } from './shared';
 
@@ -45,7 +46,10 @@ export interface $ToggleButtonSettings {
   accessibleRole?: ButtonAccessibleRole;
   /** Style of the badge. @defaultValue 'Default' */
   badgeStyle?: BadgeStyle;
-  /** Extension: badge value shown on the button (SAPUI5 sets it through BadgeCustomData). */
+  /**
+   * Extension: badge value shown on the button (SAPUI5 sets it through BadgeCustomData). Limited as in sap.m.Button: hidden
+   * below the minimum (1), `9999+`-style above the maximum, empty for a non-numeric value (see setBadgeMinValue / setBadgeMaxValue).
+   */
   badge?: string | number;
   /** Layout data when the button is in an OverflowToolbar. */
   layoutData?: OverflowToolbarLayoutData;
@@ -56,6 +60,15 @@ export interface $ToggleButtonSettings {
   'aria-label'?: string;
   className?: string;
   'data-testid'?: string;
+  ref?: Ref<ToggleButton>;
+}
+
+/** Instance methods of ToggleButton (the sap.m.Button badge methods). */
+export interface ToggleButton {
+  /** Value below which the badge is hidden (from 1 up to the current maximum; invalid values are ignored); returns the instance. @defaultValue 1 */
+  setBadgeMinValue(iMin: number): ToggleButton;
+  /** Value above which the badge shows `<max>+` (`999+` from 1000); from the current minimum up to 9999; returns the instance. @defaultValue 9999 */
+  setBadgeMaxValue(iMax: number): ToggleButton;
 }
 
 /** Event object of ToggleButton's press. */
@@ -75,8 +88,10 @@ function variantOf(type: ButtonType, pressed: boolean): string {
 
 export function ToggleButton({
   pressed: pressedProp = false, text, type = 'Default', width, enabled = true, icon, iconFirst = true, activeIcon, ariaHasPopup = 'None', accessibleRole = 'Default',
-  badgeStyle = 'Default', badge, layoutData: _layoutData, onPress, className, ...aria
+  badgeStyle = 'Default', badge, layoutData: _layoutData, onPress, className, ref, ...aria
 }: $ToggleButtonSettings) {
+  const limits = useButtonBadge(ref);
+  const badgeShown = badgeValueText(badge, limits.min, limits.max);
   const [pressed, setPressed] = useState(pressedProp);
   useEffect(() => setPressed(pressedProp), [pressedProp]);
   const toggle = () => {
@@ -95,11 +110,11 @@ export function ToggleButton({
     'aria-pressed': pressed,
     'aria-haspopup': ariaHasPopup === 'None' ? undefined : (ariaHasPopup.toLowerCase() as 'menu'),
     role: accessibleRole === 'Link' ? 'link' : undefined,
-    className: cx('sk-toggle-button', pressed && 'sk-toggle-button--pressed', `sk-toggle-button--${type.toLowerCase()}`, badge !== undefined && 'sk-has-badge', className),
+    className: cx('sk-toggle-button', pressed && 'sk-toggle-button--pressed', `sk-toggle-button--${type.toLowerCase()}`, badgeShown !== null && 'sk-has-badge', className),
     'data-sk-toggle-button': pressed ? 'pressed' : 'released',
     style: width ? { width } : undefined,
   };
-  const badgeEl = badge !== undefined ? <span className={cx('sk-button-badge', badgeStyle === 'Attention' && 'sk-button-badge--attention')} data-sk-badge>{badge}</span> : null;
+  const badgeEl = badgeShown !== null ? <span className={cx('sk-button-badge', badgeStyle === 'Attention' && 'sk-button-badge--attention')} data-sk-badge>{badgeShown}</span> : null;
   return text ? (
     <Button {...common} leftSection={iconFirst ? shownIcon : undefined} rightSection={iconFirst ? undefined : shownIcon}>{text}{badgeEl}</Button>
   ) : <ActionIcon {...common}>{shownIcon}{badgeEl}</ActionIcon>;

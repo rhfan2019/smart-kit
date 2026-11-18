@@ -8,5 +8,6 @@ export { ListReport as default } from '../../../templates/ListReport';
 export type {
   $ListReportSettings, $ManifestTableConfiguration, $ManifestTableSettings, $ManifestCreationModeSettings, $QuickVariantSelectionSettings,
   $ManifestActionSettings, $ManifestColumnSettings, $ManifestFilterConfiguration, $ManifestFilterFieldSettings, $KPIConfiguration,
-  $ViewPathSettings, $PositionSettings, InitialLoadMode,
+  $ViewPathSettings, $PositionSettings, InitialLoadMode, $ManifestHeaderActionSettings, $ManifestChartActionSettings, $ManifestChartConfiguration,
+  $ManifestOverflowGroupSettings, $ManifestCustomHeaderSettings,
 } from '../../../templates/ListReport';

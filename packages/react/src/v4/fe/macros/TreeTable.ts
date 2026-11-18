@@ -4,3 +4,4 @@
 export { TreeTable as default } from '../../../table/Table';
 export type { $TreeTableSettings, Context, Table$RowPressEvent as TreeTable$RowPressEvent, Table$SelectionChangeEvent as TreeTable$SelectionChangeEvent } from '../../../table/Table';
 export type { TreeTable$ToggleOpenStateEvent } from '../../../table/tree';
+export type { $OverflowGroupSettings, $QuickVariantSelectionSettings, $MassEditSettings, $AnalyticalConfigurationSettings } from '../../../table/Table';

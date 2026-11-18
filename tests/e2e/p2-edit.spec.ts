@@ -11,7 +11,7 @@ const get = async (page: Page, svc: string, path: string) => (await page.request
 
 test('P2-OP-15 P2-OP-16 edit keeps the layout; the footer offers Save and Cancel; initial focus on the first editable field', async ({ page }) => {
   await open(page, orderPath('4500000001'));
-  const label = page.locator('[data-sk-subsection="GeneralData"] [data-sk-field-path="Description"] .sk-form__label');
+  const label = page.locator('[data-sk-group="GeneralData"] [data-sk-field-path="Description"] .sk-form__label');
   const before = await label.boundingBox();
   await page.locator('[data-sk-action="Edit"]').click();
   await expect(footer(page).locator('[data-sk-save]')).toBeVisible();
@@ -20,7 +20,7 @@ test('P2-OP-15 P2-OP-16 edit keeps the layout; the footer offers Save and Cancel
   await expect.poll(() => page.evaluate(() => Boolean(document.activeElement?.closest('[data-sk-editable]')))).toBe(true);
   const sections = await page.locator('[data-sk-section]').evaluateAll((els) => els.map((e) => e.getAttribute('data-sk-section')));
   expect(sections.slice(1)).toEqual(['GeneralInformation', 'Custom::Timeline', 'Items', 'NotesSection']);
-  const after = await page.locator('[data-sk-subsection="GeneralData"] [data-sk-field-path="Description"] .sk-form__label').boundingBox();
+  const after = await page.locator('[data-sk-group="GeneralData"] [data-sk-field-path="Description"] .sk-form__label').boundingBox();
   expect(Math.abs(after!.x - before!.x)).toBeLessThan(2); // same column
   await evidence(page, 'P2-OP-15');
 });
@@ -65,9 +65,10 @@ test('P2-OP-20 global edit: editable header fields move to a temporary "Header" 
   await expect(first).toHaveAttribute('data-sk-section', '$Header');
   await expect(page.locator('[data-sk-anchor="$Header"]')).toHaveText('Header');
   for (const p of ['Description', 'PurchasingGroup', 'OrderDate', 'Supplier']) await expect(first.locator(`[data-sk-field-path="${p}"] [data-sk-editor], [data-sk-field-path="${p}"] input`).first()).toBeVisible();
-  // not editable (key, immutable): not in the section
-  await expect(first.locator('[data-sk-field-path="PurchaseOrder"]')).toHaveCount(0);
-  await expect(first.locator('[data-sk-field-path="CompanyCode"]')).toHaveCount(0);
+  // not editable (key, immutable): shown in the section, read-only (FE createEditableHeaderSection, stage 6)
+  await expect(first.locator('[data-sk-field-path="PurchaseOrder"] input')).toHaveCount(0);
+  await expect(first.locator('[data-sk-field-path="CompanyCode"] input')).toHaveCount(0);
+  await expect(first.locator('[data-sk-field-path="CompanyCode"]')).toHaveCount(1);
   await evidence(page, 'P2-OP-20');
 });
 

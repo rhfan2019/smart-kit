@@ -7,7 +7,7 @@ import { Avatar, Progress, Rating } from '@mantine/core';
 import { arrangeText, createMessage, formatNumber, resolvePath, type FieldModel, type MetaModel, type PropertyModel, type Row, type TextArrangement } from '@rhfan2019/smart-kit-core';
 import { AlertTriangle, CheckCircle2, Info, XCircle } from 'lucide-react';
 import { useCallback, useImperativeHandle, useMemo, useRef, useState, type ReactNode, type Ref } from 'react';
-import { MicroChart } from '../chart/MicroChart';
+import { MicroChartDrawing as MicroChart } from '../chart/MicroChart';
 import { chartHidden, chartProps } from '../chart/fromModel';
 import { useService, useSmartKit, useText } from '../context/SmartKitProvider';
 import type { MessageType } from '../controls/types';
@@ -15,6 +15,7 @@ import { useMessages, type MessagesApi } from '../messages/MessageContext';
 import type { FieldRenderer, FieldRenderProps } from './renderers';
 import { fieldValue, getPath, resolveRef } from './values';
 import { FieldEditor } from './FieldEditor';
+import { fieldEditState } from '../edit/fieldControl';
 import { QuickViewLink } from './QuickView';
 import { ContactLink } from './ContactLink';
 import { SemanticLink } from './SemanticLink';
@@ -128,6 +129,12 @@ export interface $FieldSettings {
   showLabel?: boolean;
   /** Rendered in a table cell: a micro chart without data leaves the cell empty (docs/15 MC-06). */
   cell?: boolean;
+  /**
+   * Semantic objects of the field: one name or a stringified array ('["A","B"]'). They overwrite the
+   * Common.SemanticObject of the property (FE Field: the value is a smart link to the targets of these semantic objects,
+   * from NavigationAdapter.semanticTargets, D42).
+   */
+  semanticObject?: string;
   ref?: Ref<Field>;
 }
 
@@ -188,6 +195,19 @@ function setPath(row: Row | undefined, path: string, value: unknown): Row {
   }
   cur[segs[segs.length - 1]!] = value;
   return out;
+}
+
+/** The `semanticObject` setting: one name or a stringified array of names; undefined when not set. */
+export function parseSemanticObjects(value: string | undefined): string[] | undefined {
+  const v = value?.trim();
+  if (!v) return undefined;
+  if (v.startsWith('[')) {
+    try {
+      const list: unknown = JSON.parse(v);
+      if (Array.isArray(list)) return list.filter((x): x is string => typeof x === 'string' && x !== '');
+    } catch { /* not an array: a single name */ }
+  }
+  return [v];
 }
 
 /** Scripts never run from a cell link. */
@@ -291,7 +311,7 @@ export function Field(props: $FieldSettings) {
     const fmt = (n: number) => formatNumber(String(n), intlLocale, digits !== undefined ? { min: digits, max: digits } : { max: 2 });
     return (
       <span className="sk-field sk-field--chart">
-        <MicroChart {...cp} label={props['aria-label'] ?? field.label} format={fmt} hideOnNoData={props.cell} />
+        <MicroChart {...cp} label={props['aria-label'] ?? field.label} format={fmt} hideOnNoData={props.cell} size={props.cell ? 'XS' : undefined} />
       </span>
     );
   }
@@ -315,12 +335,18 @@ export function Field(props: $FieldSettings) {
   const custom = rendererFor(renderers, typeName, field, renderProps);
   if (custom) return <>{custom(renderProps)}</>;
   if (mode === 'edit' && field.kind === 'field') {
+    // Common.FieldControl, also as a path (FE FieldControlHelper): Mandatory (7) is required, Inapplicable (0) disabled
+    const prefix = mainPath?.includes('/') ? mainPath.slice(0, mainPath.lastIndexOf('/')) : '';
+    const edit = fieldEditState(v.property, props.row, true, prefix);
+    // a changed value shows without the (old) text of the row until the row is read again
+    const edited = mainPath !== undefined && valueProp !== undefined && valueProp !== resolveRef(props.row, { path: mainPath });
     const message = fieldMessages.find((m) => m.type === 'Error' || m.type === 'Warning')?.message;
     return (
       <FieldEditor
         property={v.property} value={v.value} onChange={change} onLiveChange={props.onLiveChange ? (text) => props.onLiveChange?.({ value: text }) : undefined}
-        label={props['aria-label'] ?? field.label} unit={v.unit} error={props.error ?? message} required={Boolean(v.property?.mandatory)} disabled={!enabled}
+        label={props['aria-label'] ?? field.label} unit={v.unit} error={props.error ?? message} required={edit.required} disabled={!enabled || edit.disabled}
         id={props.id} service={props.service} showLabel={props.showLabel} minRows={fo.textLinesEdit} maxLength={fo.textMaxLength}
+        typeName={typeName} path={mainPath} displayValue={edited ? v.formatted : v.display}
       />
     );
   }
@@ -374,9 +400,10 @@ export function Field(props: $FieldSettings) {
     );
   }
   // Smart links (D42): DataFieldWithIntentBasedNavigation, Common.SemanticObject; targets from the host's NavigationAdapter.
-  const semanticObject = field.intent?.semanticObject ?? v.property?.semanticObject;
-  if (semanticObject && !link && !field.quickView && v.display) {
-    content = <SemanticLink semanticObject={semanticObject} action={field.intent?.action} intent={Boolean(field.intent)} row={row} path={mainPath} service={props.service}>{content}</SemanticLink>;
+  // The `semanticObject` setting overwrites the property's semantic objects (FE Field semanticObject).
+  const semanticObjects = field.intent ? [field.intent.semanticObject] : parseSemanticObjects(props.semanticObject) ?? (v.property?.semanticObject ? [v.property.semanticObject] : []);
+  if (semanticObjects.length && !link && !field.quickView && v.display) {
+    content = <SemanticLink semanticObject={semanticObjects} action={field.intent?.action} intent={Boolean(field.intent)} row={row} path={mainPath} service={props.service}>{content}</SemanticLink>;
   }
   if (v.property?.edmType === 'Edm.Stream') content = <StreamLink row={row} path={mainPath ?? ''} property={v.property} />;
   if (field.quickView && v.value !== null && v.value !== undefined && v.value !== '') content = <QuickViewLink typeName={typeName} field={field} row={row} service={props.service}>{content}</QuickViewLink>;

@@ -1180,6 +1180,42 @@
             <PropertyValue Property="Visualizations"><Collection><AnnotationPath>@UI.Chart#ByStatus</AnnotationPath></Collection></PropertyValue>
           </Record>
         </Annotation>
+        <!-- stage 6 (macros6, tests/e2e-fe/macros6-lr.spec.ts): selection variants with a Text as views.paths of the list
+             report (FE getViews: a SelectionVariant view = the default visualization filtered by the SV, titled by its Text) -->
+        <Annotation Term="UI.SelectionVariant" Qualifier="ViewNew">
+          <Record Type="UI.SelectionVariantType">
+            <PropertyValue Property="Text" String="New Orders"/>
+            <PropertyValue Property="SelectOptions">
+              <Collection>
+                <Record Type="UI.SelectOptionType">
+                  <PropertyValue Property="PropertyName" PropertyPath="Status"/>
+                  <PropertyValue Property="Ranges">
+                    <Collection>
+                      <Record Type="UI.SelectionRangeType"><PropertyValue Property="Sign" EnumMember="UI.SelectionRangeSignType/I"/><PropertyValue Property="Option" EnumMember="UI.SelectionRangeOptionType/EQ"/><PropertyValue Property="Low" String="NEW"/></Record>
+                    </Collection>
+                  </PropertyValue>
+                </Record>
+              </Collection>
+            </PropertyValue>
+          </Record>
+        </Annotation>
+        <Annotation Term="UI.SelectionVariant" Qualifier="ViewOrdered">
+          <Record Type="UI.SelectionVariantType">
+            <PropertyValue Property="Text" String="Ordered"/>
+            <PropertyValue Property="SelectOptions">
+              <Collection>
+                <Record Type="UI.SelectOptionType">
+                  <PropertyValue Property="PropertyName" PropertyPath="Status"/>
+                  <PropertyValue Property="Ranges">
+                    <Collection>
+                      <Record Type="UI.SelectionRangeType"><PropertyValue Property="Sign" EnumMember="UI.SelectionRangeSignType/I"/><PropertyValue Property="Option" EnumMember="UI.SelectionRangeOptionType/EQ"/><PropertyValue Property="Low" String="ORD"/></Record>
+                    </Collection>
+                  </PropertyValue>
+                </Record>
+              </Collection>
+            </PropertyValue>
+          </Record>
+        </Annotation>
       </Annotations>
 
       <Annotations Target="Purchasing.PurchaseOrder/PurchaseOrder">
@@ -2240,6 +2276,145 @@
                   <PropertyValue Property="locality" Path="City"/>
                   <PropertyValue Property="country" Path="Country"/>
                 </Record>
+              </Collection>
+            </PropertyValue>
+          </Record>
+        </Annotation>
+      </Annotations>
+      <!-- stage 6 (tests/e2e-fe/op6.spec.ts, docs/29c): the object page of a contact. Header facets: a Communication.Contact
+           facet, a collection facet of two data points, a statically hidden facet. Sections: a collection facet of
+           reference facets (one sub-section, a form with containers: field group, data point, a container with
+           UI.PartOfPreview false; a field with UI.PartOfPreview false; a Communication.Contact container breaks FE 1.154's
+           ColumnLayout, "cellsLarge" "12"), a collection facet with a nested collection facet
+           (a sub-section per child; the supplier facet hidden by the path _Supplier/IsBlocked) and a hidden facet. -->
+      <Annotations Target="Purchasing.SupplierContact">
+        <Annotation Term="UI.HeaderFacets">
+          <Collection>
+            <Record Type="UI.ReferenceFacet">
+              <PropertyValue Property="ID" String="HeaderContact"/>
+              <PropertyValue Property="Label" String="{{label:Facet.ContactHeader}}"/>
+              <PropertyValue Property="Target" AnnotationPath="@Communication.Contact"/>
+            </Record>
+            <Record Type="UI.CollectionFacet">
+              <PropertyValue Property="ID" String="HeaderPerformance"/>
+              <PropertyValue Property="Label" String="{{label:Facet.ContactPerformance}}"/>
+              <PropertyValue Property="Facets">
+                <Collection>
+                  <Record Type="UI.ReferenceFacet">
+                    <PropertyValue Property="ID" String="HeaderScore"/>
+                    <PropertyValue Property="Target" AnnotationPath="@UI.DataPoint#Score"/>
+                  </Record>
+                  <Record Type="UI.ReferenceFacet">
+                    <PropertyValue Property="ID" String="HeaderResponse"/>
+                    <PropertyValue Property="Target" AnnotationPath="@UI.DataPoint#Response"/>
+                  </Record>
+                </Collection>
+              </PropertyValue>
+            </Record>
+            <Record Type="UI.ReferenceFacet">
+              <PropertyValue Property="ID" String="HeaderHidden"/>
+              <PropertyValue Property="Target" AnnotationPath="@UI.FieldGroup#ContactBanking"/>
+              <Annotation Term="UI.Hidden" Bool="true"/>
+            </Record>
+          </Collection>
+        </Annotation>
+        <Annotation Term="UI.Facets">
+          <Collection>
+            <Record Type="UI.CollectionFacet">
+              <PropertyValue Property="ID" String="ContactData"/>
+              <PropertyValue Property="Label" String="{{label:Facet.ContactData}}"/>
+              <PropertyValue Property="Facets">
+                <Collection>
+                  <Record Type="UI.ReferenceFacet">
+                    <PropertyValue Property="ID" String="ContactReach"/>
+                    <PropertyValue Property="Label" String="{{label:FG.ContactReach}}"/>
+                    <PropertyValue Property="Target" AnnotationPath="@UI.FieldGroup#ContactReach"/>
+                  </Record>
+                  <Record Type="UI.ReferenceFacet">
+                    <PropertyValue Property="ID" String="ContactScore"/>
+                    <PropertyValue Property="Target" AnnotationPath="@UI.DataPoint#Score"/>
+                  </Record>
+                  <Record Type="UI.ReferenceFacet">
+                    <PropertyValue Property="ID" String="ContactBanking"/>
+                    <PropertyValue Property="Label" String="{{label:FG.ContactBanking}}"/>
+                    <PropertyValue Property="Target" AnnotationPath="@UI.FieldGroup#ContactBanking"/>
+                    <Annotation Term="UI.PartOfPreview" Bool="false"/>
+                  </Record>
+                </Collection>
+              </PropertyValue>
+            </Record>
+            <Record Type="UI.CollectionFacet">
+              <PropertyValue Property="ID" String="ContactActivity"/>
+              <PropertyValue Property="Label" String="{{label:Facet.ContactActivity}}"/>
+              <PropertyValue Property="Facets">
+                <Collection>
+                  <Record Type="UI.CollectionFacet">
+                    <PropertyValue Property="ID" String="ContactLast"/>
+                    <PropertyValue Property="Label" String="{{label:FG.ContactLast}}"/>
+                    <PropertyValue Property="Facets">
+                      <Collection>
+                        <Record Type="UI.ReferenceFacet">
+                          <PropertyValue Property="ID" String="ContactLastData"/>
+                          <PropertyValue Property="Label" String="{{label:FG.ContactLast}}"/>
+                          <PropertyValue Property="Target" AnnotationPath="@UI.FieldGroup#ContactLast"/>
+                        </Record>
+                      </Collection>
+                    </PropertyValue>
+                  </Record>
+                  <Record Type="UI.ReferenceFacet">
+                    <PropertyValue Property="ID" String="ContactSupplier"/>
+                    <PropertyValue Property="Label" String="{{label:FG.ContactSupplier}}"/>
+                    <PropertyValue Property="Target" AnnotationPath="@UI.FieldGroup#ContactSupplier"/>
+                    <Annotation Term="UI.Hidden" Path="_Supplier/IsBlocked"/>
+                  </Record>
+                </Collection>
+              </PropertyValue>
+            </Record>
+            <Record Type="UI.ReferenceFacet">
+              <PropertyValue Property="ID" String="ContactHidden"/>
+              <PropertyValue Property="Label" String="{{label:FG.ContactBanking}}"/>
+              <PropertyValue Property="Target" AnnotationPath="@UI.FieldGroup#ContactBanking"/>
+              <Annotation Term="UI.Hidden" Bool="true"/>
+            </Record>
+          </Collection>
+        </Annotation>
+        <Annotation Term="UI.FieldGroup" Qualifier="ContactReach">
+          <Record Type="UI.FieldGroupType">
+            <PropertyValue Property="Data">
+              <Collection>
+                <Record Type="UI.DataField"><PropertyValue Property="Value" Path="Email"/></Record>
+                <Record Type="UI.DataField"><PropertyValue Property="Value" Path="Phone"/></Record>
+                <Record Type="UI.DataField"><PropertyValue Property="Value" Path="Mobile"/><Annotation Term="UI.PartOfPreview" Bool="false"/></Record>
+                <Record Type="UI.DataField"><PropertyValue Property="Value" Path="Department"/></Record>
+              </Collection>
+            </PropertyValue>
+          </Record>
+        </Annotation>
+        <Annotation Term="UI.FieldGroup" Qualifier="ContactBanking">
+          <Record Type="UI.FieldGroupType">
+            <PropertyValue Property="Data">
+              <Collection>
+                <Record Type="UI.DataField"><PropertyValue Property="Value" Path="Iban"/></Record>
+              </Collection>
+            </PropertyValue>
+          </Record>
+        </Annotation>
+        <Annotation Term="UI.FieldGroup" Qualifier="ContactLast">
+          <Record Type="UI.FieldGroupType">
+            <PropertyValue Property="Data">
+              <Collection>
+                <Record Type="UI.DataField"><PropertyValue Property="Value" Path="LastContactAt"/></Record>
+                <Record Type="UI.DataField"><PropertyValue Property="Value" Path="JobTitle"/></Record>
+              </Collection>
+            </PropertyValue>
+          </Record>
+        </Annotation>
+        <Annotation Term="UI.FieldGroup" Qualifier="ContactSupplier">
+          <Record Type="UI.FieldGroupType">
+            <PropertyValue Property="Data">
+              <Collection>
+                <Record Type="UI.DataField"><PropertyValue Property="Value" Path="Supplier"/></Record>
+                <Record Type="UI.DataField"><PropertyValue Property="Value" Path="City"/></Record>
               </Collection>
             </PropertyValue>
           </Record>

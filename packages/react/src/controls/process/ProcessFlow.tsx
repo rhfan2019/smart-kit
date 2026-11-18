@@ -157,6 +157,12 @@ export interface ProcessFlow {
   updateModel(): void;
   updateNodesOnly(): void;
   applyNodeDisplayState(): void;
+  /** The node of `nodes` with this nodeId (the node data object, standing for the ProcessFlowNode instance), or undefined. */
+  getNode(sNodeId: string | number): ProcessFlowNode | undefined;
+  /** The lane of `lanes` with this laneId (the lane header data object, standing for the ProcessFlowLaneHeader instance), or undefined. */
+  getLane(sLaneId: string): ProcessFlowLaneHeader | undefined;
+  /** Moves the keyboard focus to a shown connection label (the same object as in a node's `children`); ignored when it is disabled or dimmed. */
+  setFocusToLabel(label: ProcessFlowConnectionLabel): void;
 }
 
 const LEVELS: ProcessFlowZoomLevel[] = ['One', 'Two', 'Three', 'Four'];
@@ -314,6 +320,7 @@ export function ProcessFlow(p: $ProcessFlowSettings) {
   const [zoom, setZoom] = useState<ProcessFlowZoomLevel>('Two');
   const manual = useRef(false);
   const focusedId = useRef<string | number | undefined>(undefined);
+  const labelEls = useRef(new Map<ProcessFlowConnectionLabel, HTMLButtonElement>());
   const [path, setPath] = useState<Set<string> | null>(null);
   const [optimized, setOptimized] = useState(false);
   const [, redraw] = useReducer((x: number) => x + 1, 0);
@@ -384,7 +391,14 @@ export function ProcessFlow(p: $ProcessFlowSettings) {
     updateModel: redraw,
     updateNodesOnly: redraw,
     applyNodeDisplayState: redraw,
-  }), [zoom, step, edges, p.nodes]);
+    getNode: (id) => (p.nodes ?? []).find((n) => String(n.nodeId) === String(id)),
+    getLane: (id) => (p.lanes ?? []).find((l) => l.laneId === id),
+    setFocusToLabel: (label) => {
+      // as ProcessFlow._labelCanGetFocus: enabled, and on the highlighted path when there is one
+      const el = labelEls.current.get(label);
+      if (el && !el.disabled && !el.classList.contains('sk-process-flow__label--dimmed')) el.focus();
+    },
+  }), [zoom, step, edges, p.nodes, p.lanes]);
 
   const isHighlighted = (id: string) => (path ? path.has(id) : !!placed.get(id)?.node.highlighted);
   const anyHighlighted = !!path || (p.nodes ?? []).some((n) => n.highlighted);
@@ -443,6 +457,7 @@ export function ProcessFlow(p: $ProcessFlowSettings) {
             const target = placed.get(l.edge.to)!.node;
             return (
               <button key={`label-${l.key}`} type="button"
+                ref={(el) => { if (el) labelEls.current.set(label, el); else labelEls.current.delete(label); }}
                 className={cx('sk-process-flow__label', `sk-process-flow__label--${TONE[label.state ?? 'Neutral']}`, l.dimmed && 'sk-process-flow__label--dimmed')}
                 style={{ insetInlineStart: pct(l.lx, cols), insetBlockStart: pct(l.ly, rows) }}
                 disabled={label.enabled === false}

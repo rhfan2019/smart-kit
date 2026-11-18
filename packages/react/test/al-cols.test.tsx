@@ -210,8 +210,8 @@ describe('AL-10 AL-12 cols5 personalization and toolbar (FE comparison tests/e2e
     render(host(shop(action('discontinue')), <Table service="shop" contextPath="/Products" type="ResponsiveTable" />));
     const dialog = await settings();
     fireEvent.click(within(dialog).getByRole('tab', { name: 'Sort' }));
-    fireEvent.click(dialog.querySelector('[data-sk-p13n-sort-add]')!);
-    const sort = await options(dialog.querySelector<HTMLElement>('[data-sk-p13n-sort-field]')!);
+    // sap.m.p13n.SortPanel (QueryPanel): the last row is the empty one to add a criterion (stage 6)
+    const sort = await options([...dialog.querySelectorAll<HTMLElement>('[data-sk-p13n-sort-field]')].at(-1)!);
     // NonSortableProperties (Notes) and hidden properties are not offered; the text of CategoryID (_Category/Name) and
     // the criticality path of the status column (StatusCriticality, hidden) are
     expect(sort).not.toContain('Notes');
@@ -220,11 +220,14 @@ describe('AL-10 AL-12 cols5 personalization and toolbar (FE comparison tests/e2e
     expect(sort).toContain('Name'); // _Category/Name
     expect(sort).toContain('Status Criticality');
     expect(sort.length).toBeGreaterThan(5);
-    expect(sort).toEqual([...sort].sort((a, b) => a.localeCompare(b)));
+    // sap.m.p13n.SortPanel lists its items in model order: the current sort criterion first, then the others alphabetically
+    expect(sort[0]).toBe('Release Date');
+    expect(sort.slice(1)).toEqual([...sort.slice(1)].sort((a, b) => a.localeCompare(b)));
     fireEvent.keyDown(document.activeElement ?? document.body, { key: 'Escape' });
     fireEvent.click(within(dialog).getByRole('tab', { name: 'Group' }));
     const group = await options(dialog.querySelector<HTMLElement>('[data-sk-p13n-group]')!);
-    expect(group.slice(1).sort()).toEqual([...sort].sort());
+    // sap.m.p13n.GroupPanel has no "none" entry (a criterion is removed with its remove button)
+    expect([...group].sort()).toEqual([...sort].sort());
   });
 
   it('AL-12 cols5 toolbar actions stay in the toolbar while they fit (sap.m.OverflowToolbar), not after four', async () => {

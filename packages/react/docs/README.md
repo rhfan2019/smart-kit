@@ -26,7 +26,7 @@ Two levels, use the highest one that fits:
 1. **Templates**: `ListReport` (`v4/fe/templates/ListReport`; filter bar + variant management + table or chart, views; props = the FE manifest settings) and
    `ObjectPage` (`v4/fe/templates/ObjectPage`; header, sections from `UI.Facets`, sub-tables, edit / create / delete, actions). One element per page.
 2. **Building blocks**: `FilterBar` (`v4/fe/macros/FilterBar`) + `useFilterState`, `Table` / `TreeTable` (`v4/fe/macros/Table`, `v4/fe/macros/TreeTable`), `Field` (`v4/fe/macros/Field`), `Form` (`v4/fe/macros/Form`), `Chart` (`v4/fe/macros/Chart`),
-   `MicroChart` (`v4/fe/macros/MicroChart`), `DynamicPage` (`f/DynamicPage`), `ObjectPageLayout` (`uxap/ObjectPageLayout`), cards (`/cards`), value help, messages — for pages the templates
+   `MicroChart` (`v4/fe/macros/MicroChart`; the nine data-only micro charts are `suite/ui/microchart/BulletMicroChart` …), `DynamicPage` (`f/DynamicPage`), `ObjectPageLayout` (`uxap/ObjectPageLayout`), cards (`/cards`), value help, messages — for pages the templates
    do not cover. Every block also has hooks (`useListQuery`, `useObject`, `useValueList`, …) for fully custom UI.
 
 It is built on **Mantine 9** (components and theme), **TanStack Query 5** (data), **AG Grid 36** (grid table, optional).
@@ -159,8 +159,8 @@ no UI5 counterpart is in `@rhfan2019/smart-kit/kit/<name>` (for example `kit/Mes
 below.
 
 Import from the subpath of the domain. The root entry `@rhfan2019/smart-kit` exports the same names, but then the
-bundler also resolves AG Grid; importing only what you use keeps the app small (an app with only `MicroChart`
-ships about 5 KB gzip of smart-kit).
+bundler also resolves AG Grid; importing only what you use keeps the app small (an app with only one micro chart
+control, e.g. `suite/ui/microchart/BulletMicroChart`, ships about 3 KB gzip of smart-kit).
 
 | Subpath | Main exports | Needs AG Grid |
 | --- | --- | --- |

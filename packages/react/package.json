@@ -70,6 +70,11 @@
       "types": "./dist/f/DynamicPage.d.ts",
       "import": "./dist/f/DynamicPage.js"
     },
+    "./f/DynamicPageAccessibleLandmarkInfo": {
+      "smart-kit-source": "./src/f/DynamicPageAccessibleLandmarkInfo.ts",
+      "types": "./dist/f/DynamicPageAccessibleLandmarkInfo.d.ts",
+      "import": "./dist/f/DynamicPageAccessibleLandmarkInfo.js"
+    },
     "./f/DynamicPageHeader": {
       "smart-kit-source": "./src/f/DynamicPageHeader.ts",
       "types": "./dist/f/DynamicPageHeader.d.ts",
@@ -84,6 +89,11 @@
       "smart-kit-source": "./src/f/FlexibleColumnLayout.ts",
       "types": "./dist/f/FlexibleColumnLayout.d.ts",
       "import": "./dist/f/FlexibleColumnLayout.js"
+    },
+    "./f/FlexibleColumnLayoutAccessibleLandmarkInfo": {
+      "smart-kit-source": "./src/f/FlexibleColumnLayoutAccessibleLandmarkInfo.ts",
+      "types": "./dist/f/FlexibleColumnLayoutAccessibleLandmarkInfo.d.ts",
+      "import": "./dist/f/FlexibleColumnLayoutAccessibleLandmarkInfo.js"
     },
     "./f/cards/Header": {
       "smart-kit-source": "./src/f/cards/Header.ts",
@@ -390,6 +400,26 @@
       "types": "./dist/m/OverflowToolbarButton.d.ts",
       "import": "./dist/m/OverflowToolbarButton.js"
     },
+    "./m/QuickView": {
+      "smart-kit-source": "./src/m/QuickView.ts",
+      "types": "./dist/m/QuickView.d.ts",
+      "import": "./dist/m/QuickView.js"
+    },
+    "./m/QuickViewGroup": {
+      "smart-kit-source": "./src/m/QuickViewGroup.ts",
+      "types": "./dist/m/QuickViewGroup.d.ts",
+      "import": "./dist/m/QuickViewGroup.js"
+    },
+    "./m/QuickViewGroupElement": {
+      "smart-kit-source": "./src/m/QuickViewGroupElement.ts",
+      "types": "./dist/m/QuickViewGroupElement.d.ts",
+      "import": "./dist/m/QuickViewGroupElement.js"
+    },
+    "./m/QuickViewPage": {
+      "smart-kit-source": "./src/m/QuickViewPage.ts",
+      "types": "./dist/m/QuickViewPage.d.ts",
+      "import": "./dist/m/QuickViewPage.js"
+    },
     "./m/SelectDialog": {
       "smart-kit-source": "./src/m/SelectDialog.ts",
       "types": "./dist/m/SelectDialog.d.ts",
@@ -435,10 +465,25 @@
       "types": "./dist/m/library.d.ts",
       "import": "./dist/m/library.js"
     },
+    "./m/p13n/GroupPanel": {
+      "smart-kit-source": "./src/m/p13n/GroupPanel.ts",
+      "types": "./dist/m/p13n/GroupPanel.d.ts",
+      "import": "./dist/m/p13n/GroupPanel.js"
+    },
     "./m/p13n/Popup": {
       "smart-kit-source": "./src/m/p13n/Popup.ts",
       "types": "./dist/m/p13n/Popup.d.ts",
       "import": "./dist/m/p13n/Popup.js"
+    },
+    "./m/p13n/SelectionPanel": {
+      "smart-kit-source": "./src/m/p13n/SelectionPanel.ts",
+      "types": "./dist/m/p13n/SelectionPanel.d.ts",
+      "import": "./dist/m/p13n/SelectionPanel.js"
+    },
+    "./m/p13n/SortPanel": {
+      "smart-kit-source": "./src/m/p13n/SortPanel.ts",
+      "types": "./dist/m/p13n/SortPanel.d.ts",
+      "import": "./dist/m/p13n/SortPanel.js"
     },
     "./m/plugins/UploadSetwithTable": {
       "smart-kit-source": "./src/m/plugins/UploadSetwithTable.ts",
@@ -490,6 +535,116 @@
       "types": "./dist/suite/ui/commons/library.d.ts",
       "import": "./dist/suite/ui/commons/library.js"
     },
+    "./suite/ui/microchart/AreaMicroChart": {
+      "smart-kit-source": "./src/suite/ui/microchart/AreaMicroChart.ts",
+      "types": "./dist/suite/ui/microchart/AreaMicroChart.d.ts",
+      "import": "./dist/suite/ui/microchart/AreaMicroChart.js"
+    },
+    "./suite/ui/microchart/AreaMicroChartItem": {
+      "smart-kit-source": "./src/suite/ui/microchart/AreaMicroChartItem.ts",
+      "types": "./dist/suite/ui/microchart/AreaMicroChartItem.d.ts",
+      "import": "./dist/suite/ui/microchart/AreaMicroChartItem.js"
+    },
+    "./suite/ui/microchart/AreaMicroChartLabel": {
+      "smart-kit-source": "./src/suite/ui/microchart/AreaMicroChartLabel.ts",
+      "types": "./dist/suite/ui/microchart/AreaMicroChartLabel.d.ts",
+      "import": "./dist/suite/ui/microchart/AreaMicroChartLabel.js"
+    },
+    "./suite/ui/microchart/AreaMicroChartPoint": {
+      "smart-kit-source": "./src/suite/ui/microchart/AreaMicroChartPoint.ts",
+      "types": "./dist/suite/ui/microchart/AreaMicroChartPoint.d.ts",
+      "import": "./dist/suite/ui/microchart/AreaMicroChartPoint.js"
+    },
+    "./suite/ui/microchart/BulletMicroChart": {
+      "smart-kit-source": "./src/suite/ui/microchart/BulletMicroChart.ts",
+      "types": "./dist/suite/ui/microchart/BulletMicroChart.d.ts",
+      "import": "./dist/suite/ui/microchart/BulletMicroChart.js"
+    },
+    "./suite/ui/microchart/BulletMicroChartData": {
+      "smart-kit-source": "./src/suite/ui/microchart/BulletMicroChartData.ts",
+      "types": "./dist/suite/ui/microchart/BulletMicroChartData.d.ts",
+      "import": "./dist/suite/ui/microchart/BulletMicroChartData.js"
+    },
+    "./suite/ui/microchart/ColumnMicroChart": {
+      "smart-kit-source": "./src/suite/ui/microchart/ColumnMicroChart.ts",
+      "types": "./dist/suite/ui/microchart/ColumnMicroChart.d.ts",
+      "import": "./dist/suite/ui/microchart/ColumnMicroChart.js"
+    },
+    "./suite/ui/microchart/ColumnMicroChartData": {
+      "smart-kit-source": "./src/suite/ui/microchart/ColumnMicroChartData.ts",
+      "types": "./dist/suite/ui/microchart/ColumnMicroChartData.d.ts",
+      "import": "./dist/suite/ui/microchart/ColumnMicroChartData.js"
+    },
+    "./suite/ui/microchart/ColumnMicroChartLabel": {
+      "smart-kit-source": "./src/suite/ui/microchart/ColumnMicroChartLabel.ts",
+      "types": "./dist/suite/ui/microchart/ColumnMicroChartLabel.d.ts",
+      "import": "./dist/suite/ui/microchart/ColumnMicroChartLabel.js"
+    },
+    "./suite/ui/microchart/ComparisonMicroChart": {
+      "smart-kit-source": "./src/suite/ui/microchart/ComparisonMicroChart.ts",
+      "types": "./dist/suite/ui/microchart/ComparisonMicroChart.d.ts",
+      "import": "./dist/suite/ui/microchart/ComparisonMicroChart.js"
+    },
+    "./suite/ui/microchart/ComparisonMicroChartData": {
+      "smart-kit-source": "./src/suite/ui/microchart/ComparisonMicroChartData.ts",
+      "types": "./dist/suite/ui/microchart/ComparisonMicroChartData.d.ts",
+      "import": "./dist/suite/ui/microchart/ComparisonMicroChartData.js"
+    },
+    "./suite/ui/microchart/DeltaMicroChart": {
+      "smart-kit-source": "./src/suite/ui/microchart/DeltaMicroChart.ts",
+      "types": "./dist/suite/ui/microchart/DeltaMicroChart.d.ts",
+      "import": "./dist/suite/ui/microchart/DeltaMicroChart.js"
+    },
+    "./suite/ui/microchart/HarveyBallMicroChart": {
+      "smart-kit-source": "./src/suite/ui/microchart/HarveyBallMicroChart.ts",
+      "types": "./dist/suite/ui/microchart/HarveyBallMicroChart.d.ts",
+      "import": "./dist/suite/ui/microchart/HarveyBallMicroChart.js"
+    },
+    "./suite/ui/microchart/HarveyBallMicroChartItem": {
+      "smart-kit-source": "./src/suite/ui/microchart/HarveyBallMicroChartItem.ts",
+      "types": "./dist/suite/ui/microchart/HarveyBallMicroChartItem.d.ts",
+      "import": "./dist/suite/ui/microchart/HarveyBallMicroChartItem.js"
+    },
+    "./suite/ui/microchart/LineMicroChart": {
+      "smart-kit-source": "./src/suite/ui/microchart/LineMicroChart.ts",
+      "types": "./dist/suite/ui/microchart/LineMicroChart.d.ts",
+      "import": "./dist/suite/ui/microchart/LineMicroChart.js"
+    },
+    "./suite/ui/microchart/LineMicroChartEmphasizedPoint": {
+      "smart-kit-source": "./src/suite/ui/microchart/LineMicroChartEmphasizedPoint.ts",
+      "types": "./dist/suite/ui/microchart/LineMicroChartEmphasizedPoint.d.ts",
+      "import": "./dist/suite/ui/microchart/LineMicroChartEmphasizedPoint.js"
+    },
+    "./suite/ui/microchart/LineMicroChartLine": {
+      "smart-kit-source": "./src/suite/ui/microchart/LineMicroChartLine.ts",
+      "types": "./dist/suite/ui/microchart/LineMicroChartLine.d.ts",
+      "import": "./dist/suite/ui/microchart/LineMicroChartLine.js"
+    },
+    "./suite/ui/microchart/LineMicroChartPoint": {
+      "smart-kit-source": "./src/suite/ui/microchart/LineMicroChartPoint.ts",
+      "types": "./dist/suite/ui/microchart/LineMicroChartPoint.d.ts",
+      "import": "./dist/suite/ui/microchart/LineMicroChartPoint.js"
+    },
+    "./suite/ui/microchart/RadialMicroChart": {
+      "smart-kit-source": "./src/suite/ui/microchart/RadialMicroChart.ts",
+      "types": "./dist/suite/ui/microchart/RadialMicroChart.d.ts",
+      "import": "./dist/suite/ui/microchart/RadialMicroChart.js"
+    },
+    "./suite/ui/microchart/StackedBarMicroChart": {
+      "smart-kit-source": "./src/suite/ui/microchart/StackedBarMicroChart.ts",
+      "types": "./dist/suite/ui/microchart/StackedBarMicroChart.d.ts",
+      "import": "./dist/suite/ui/microchart/StackedBarMicroChart.js"
+    },
+    "./suite/ui/microchart/StackedBarMicroChartBar": {
+      "smart-kit-source": "./src/suite/ui/microchart/StackedBarMicroChartBar.ts",
+      "types": "./dist/suite/ui/microchart/StackedBarMicroChartBar.d.ts",
+      "import": "./dist/suite/ui/microchart/StackedBarMicroChartBar.js"
+    },
+    "./suite/ui/microchart/library": {
+      "smart-kit-source": "./src/suite/ui/microchart/library.ts",
+      "types": "./dist/suite/ui/microchart/library.d.ts",
+      "import": "./dist/suite/ui/microchart/library.js"
+    },
     "./ui/core/library": {
       "smart-kit-source": "./src/ui/core/library.ts",
       "types": "./dist/ui/core/library.d.ts",
@@ -539,6 +694,11 @@
       "smart-kit-source": "./src/uxap/AnchorBar.ts",
       "types": "./dist/uxap/AnchorBar.d.ts",
       "import": "./dist/uxap/AnchorBar.js"
+    },
+    "./uxap/ObjectPageAccessibleLandmarkInfo": {
+      "smart-kit-source": "./src/uxap/ObjectPageAccessibleLandmarkInfo.ts",
+      "types": "./dist/uxap/ObjectPageAccessibleLandmarkInfo.d.ts",
+      "import": "./dist/uxap/ObjectPageAccessibleLandmarkInfo.js"
     },
     "./uxap/ObjectPageDynamicHeaderContent": {
       "smart-kit-source": "./src/uxap/ObjectPageDynamicHeaderContent.ts",

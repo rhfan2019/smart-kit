@@ -368,7 +368,6 @@ async function skP13n(page: Page): Promise<P13n> {
   await expect(dialog).toBeVisible();
   const columns = (await dialog.locator('.sk-p13n__row label').allInnerTexts()).map((s) => s.trim());
   await dialog.locator('[data-sk-p13n-sort-tab]').click();
-  await dialog.locator('[data-sk-p13n-sort-add]').click();
   await dialog.locator('[data-sk-p13n-sort-field]').last().click();
   const sort = (await page.getByRole('option').allInnerTexts()).map((s) => s.trim());
   await page.keyboard.press('Escape');

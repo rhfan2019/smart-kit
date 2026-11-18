@@ -77,8 +77,13 @@ export interface ResolvedValueLists {
  */
 export function useValueLists(entitySet: string, path: string, serviceName?: string, enabled = true): ResolvedValueLists {
   const service = useService(serviceName);
+  return useValueListsOfType(service.model.entitySets[entitySet]?.typeName ?? '', path, serviceName, enabled);
+}
+
+/** {@link useValueLists} for a property of an entity type (edit mode: the field knows its type, not its entity set). */
+export function useValueListsOfType(typeName: string, path: string, serviceName?: string, enabled = true): ResolvedValueLists {
+  const service = useService(serviceName);
   const { namespace, locale } = useSmartKit();
-  const typeName = service.model.entitySets[entitySet]?.typeName ?? '';
   const property = getProperty(service.model, typeName, path);
   const references = property?.valueListReferences ?? [];
   const results = useQueries({ queries: references.map((r) => serviceQuery(namespace, service.name, locale, service.dataProvider, r, enabled)) });

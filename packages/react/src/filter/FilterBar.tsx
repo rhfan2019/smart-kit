@@ -3,12 +3,14 @@
  * (LR-05–LR-11, docs/26b).
  */
 import { Button, Group, TextInput } from '@mantine/core';
-import { activeFilterPaths, filterExpressionRules, getProperty, isComplete, type Condition, type FilterState, type Operator } from '@rhfan2019/smart-kit-core';
+import { activeFilterPaths, filterExpressionRules, getProperty, isComplete, STANDARD_VARIANT_ID, type Condition, type FilterState, type Operator } from '@rhfan2019/smart-kit-core';
 import { Search } from 'lucide-react';
 import { createContext, useContext, useEffect, useImperativeHandle, useMemo, useRef, useState, type ReactNode, type Ref } from 'react';
 import { useMetaModel, useText } from '../context/SmartKitProvider';
 import { MessageBox } from '../messages/MessageBox';
 import { applyExtensions, type ExtendEntry } from '../util/extend';
+import type { VariantManagement$SelectEvent } from '../variants/VariantManagement';
+import type { VariantsApi } from '../variants/useVariants';
 import { AdaptFiltersDialog } from './AdaptFiltersDialog';
 import { ConditionInput, useFieldLabel } from './ConditionInput';
 import { filterSummaryText } from './FilterSummary';
@@ -94,6 +96,10 @@ export interface FilterBar {
   setSelectionVariant(selectionVariant: SelectionVariant, prefillDescriptions?: boolean): Promise<void>;
   /** Triggers the search; rejects when mandatory fields are empty. */
   triggerSearch(): Promise<object | undefined>;
+  /** Key of the current variant of the associated variant management (`variants`; "" the standard); null without one. */
+  getCurrentVariantKey(): string | null;
+  /** Selects the variant with this key in the associated variant management and applies it; an unknown key is ignored. */
+  setCurrentVariantKey(key: string): void;
 }
 
 export interface $FilterBarSettings {
@@ -141,6 +147,17 @@ export interface $FilterBarSettings {
   onAfterClear?(): void;
   /** Filter state from `useFilterState` (controlled); without it the bar keeps its own state for `contextPath`. */
   state?: FilterStateApi;
+  /**
+   * The associated variant management (FE: the page's or the filter bar's own sap.ui.fl VariantManagement): the result
+   * of `useVariants`, as passed to `VariantManagement`. `getCurrentVariantKey` / `setCurrentVariantKey` use it.
+   */
+  variants?: VariantsApi;
+  /**
+   * Applies a variant chosen with `setCurrentVariantKey` (the `onSelect` of the `VariantManagement`, e.g. a page that
+   * also restores table settings). Default: its filters, search and filter fields are loaded into `state`, and the
+   * search runs when the variant applies automatically.
+   */
+  onVariantSelect?(e: VariantManagement$SelectEvent): void;
   /** Name of the service in `SmartKitProvider` `services` (own state only). */
   service?: string;
   /** Insert, replace or remove fields by id (property path); custom fields store their conditions under their id. */
@@ -402,6 +419,16 @@ function FilterBarWithState(p: $FilterBarSettings & { state: FilterStateApi }) {
     async triggerSearch() {
       if (!search()) throw new Error('FilterBar: mandatory filter fields are empty');
       return undefined;
+    },
+    getCurrentVariantKey: () => latest.current.p.variants?.currentId ?? null,
+    setCurrentVariantKey(key) {
+      const { variants, onVariantSelect } = latest.current.p;
+      // FE FilterBar: an unknown key is ignored (sap.ui.fl.variants.VariantManagement#setCurrentVariantKey)
+      if (!variants || (key !== variants.currentId && key !== STANDARD_VARIANT_ID && !variants.variants.some((v) => v.id === key))) return;
+      const v = variants.select(key);
+      const e: VariantManagement$SelectEvent = { key: v.id, content: v.content, autoApply: v.autoApply };
+      if (onVariantSelect) onVariantSelect(e);
+      else latest.current.s.load({ filters: v.content.filters, search: v.content.search, fields: v.content.filterFields }, v.autoApply);
     },
   }));
 

@@ -14,21 +14,22 @@
  */
 import { ActionIcon, Alert, Anchor, Button, Group, Menu, Modal, Stack, Text, TextInput, Tooltip } from '@mantine/core';
 import {
-  canGroup, canSubtotal, canTotal, capabilitiesFor, hierarchyOf, isAbortError, isSortable, keyPredicate, matches, messagesFromError, parseAnnotationPath, resolvePath, sourceInfo,
-  type ActionModel, type EntityTypeModel, type FieldModel, type FilterState, type MetaModel, type Message, type MessageType, type PresentationModel, type QueryRequest, type QuerySource, type Row, type SortItem, type TotalsEntry,
+  canGroup, canSubtotal, canTotal, capabilitiesFor, hierarchyOf, isAbortError, isSortable, keyPredicate, matches, messagesFromError, parseAnnotationPath, resolvePath, sourceInfo, STANDARD_VARIANT_ID, withHiddenFilters,
+  type ActionModel, type EntityTypeModel, type FieldModel, type FilterState, type MetaModel, type Message, type MessageType, type PresentationModel, type QueryRequest, type QuerySource, type Row, type SortItem, type TotalsEntry, type VariantContent,
 } from '@rhfan2019/smart-kit-core';
 import { useQueryClient } from '@tanstack/react-query';
 import {
   AllCommunityModule, ModuleRegistry, type CellKeyDownEvent, type ColDef, type GridApi, type GridReadyEvent, type IDatasource, type SortChangedEvent,
 } from 'ag-grid-community';
 import { AgGridReact } from 'ag-grid-react';
-import { ChevronDown, ChevronRight, Copy, Download, ListCollapse, ListTree, Maximize2, Minimize2, MoreHorizontal, Search, Settings2 } from 'lucide-react';
-import { createContext, useCallback, useContext, useEffect, useImperativeHandle, useMemo, useRef, useState, type ReactNode, type Ref } from 'react';
+import { ChevronDown, ChevronRight, Copy, Download, ListCollapse, ListTree, Maximize2, Minimize2, MoreHorizontal, Search, Settings2, Sparkles, X } from 'lucide-react';
+import { lazy, Suspense, useCallback, useContext, useEffect, useImperativeHandle, useMemo, useRef, useState, type ReactNode, type Ref } from 'react';
 import { actionPaths, isActionAvailable, useActionRunner, type ActionResult } from '../actions/useActionRunner';
 import { useService, useSmartKit, useText } from '../context/SmartKitProvider';
 import type { TitleLevel } from '../controls/types';
 import { typedText } from '../i18n/text';
 import { CreateDialog, createFields, createWith, useEditStrategy } from '../edit/editing';
+import { createPopupFields, NewObjectDialog } from '../edit/NewObjectDialog';
 import { Field } from '../field/Field';
 import { fieldValue, getPath } from '../field/values';
 import { useMessages } from '../messages/MessageContext';
@@ -42,11 +43,23 @@ import { exportRows } from './exportRows';
 import { TableP13nDialog } from './TableP13nDialog';
 import { useListQuery } from './useListQuery';
 import { InlineCreateRow } from './InlineCreateRow';
+import { TableCtx, useTableContext, type TableContextValue } from './tableContext';
+export { useTableContext, type TableContextValue };
 import { groupValueOf, Table as MTable, type $ColumnSettings as MColumn, type PopinLayout, type Priority } from './ResponsiveTable';
 import { MultiUnitTotal, TotalLines, useGrandTotals, useSubtotals, useTotalFormatter } from './useTotals';
 import { useAnalyticalRequests } from './useAnalytical';
+import { GROUP_ROW, groupOf, useAnalyticalGroups, type GroupRowData } from './useAnalyticalGroups';
 import { TreeCell, useTree, useTreeState, type TreeMethods, type TreeTable$ToggleOpenStateEvent } from './tree';
 import { specialCell, type CellEnv } from './cells';
+import { parseClipboard, pastedRows, pasteTargets } from './paste';
+// the mass edit dialog (with the field editors) loads when it is opened
+const MassEditDialog = /*#__PURE__*/ lazy(() => import('./MassEditDialog'));
+import { conditionsAsFilters, QuickVariantSwitch, quickVariantsOf, stateOfPresentationVariant, tablePresentationVariant, useQuickCounts } from './tableState';
+import { fromSelectionVariant, toSelectionVariant } from '../filter/selectionVariant';
+import { VariantManagement } from '../variants/VariantManagement';
+import { useVariants } from '../variants/useVariants';
+import type { PresentationVariant } from '../list/presentationVariant';
+import type { SelectionVariant } from '../filter/selectionVariant';
 
 let gridModulesRegistered = false;
 
@@ -78,6 +91,12 @@ export interface ColumnItem {
   headerHidden?: boolean;
   /** Offered in the personalization only (FE availability "Adaptation": entity properties outside the LineItem). */
   adaptation?: boolean;
+  /** Header tooltip. */
+  tooltip?: string;
+  /** Header with the mandatory marker. */
+  required?: boolean;
+  /** The automatic width includes the header (column `widthIncludingColumnHeader`). */
+  widthIncludingColumnHeader?: boolean;
 }
 
 /** A toolbar action (annotation or custom); the internal form of `actions` and `extend`. */
@@ -91,6 +110,14 @@ export interface ActionItem {
   enabled?(selected: Row[]): boolean;
   /** Menu button the action belongs to (similar actions grouped, LR Table Toolbar). */
   group?: string;
+  /** Overflow group: the actions of a group move into "More" together (sap.fe.macros.table.Action `overflowGroup`). */
+  overflowGroup?: number;
+  /** Overflow priority (sap.m.OverflowToolbarPriority). */
+  priority?: $ActionSettings['priority'];
+  /** A separator before the action (the first of an overflow group with `showSeparator`, FE Action addSeparators). */
+  separator?: boolean;
+  /** An AI operation (BaseAction isAIOperation): the button shows the AI icon. */
+  ai?: boolean;
   /** A menu button with these items (UI.DataFieldForActionGroup, `actionGroups`); always enabled as in FE. */
   menu?: ActionItem[];
   /** Kept for positioning only (FE templates the standard action but it is not shown). */
@@ -137,6 +164,14 @@ export interface $ColumnSettings {
   properties?: string[];
   /** The column is not exported. */
   disableExport?: boolean;
+  /** "Default": shown; "Adaptation": only offered in the personalization; "Hidden": left out. @defaultValue "Default" */
+  availability?: 'Adaptation' | 'Default' | 'Hidden';
+  /** Tooltip of the column header. */
+  tooltip?: string;
+  /** The column header shows the mandatory marker. */
+  required?: boolean;
+  /** The automatic width is at least as wide as the column header. */
+  widthIncludingColumnHeader?: boolean;
   /** Cell content (the template control of the column in FE). */
   template?(row: Row): ReactNode;
 }
@@ -161,6 +196,46 @@ export interface $ActionSettings {
   visible?: boolean;
   /** The button was pressed; the contexts of the selected rows are passed. */
   onPress?(e: { selectedContexts: Context[] }): void;
+  /** Marks the action as an AI operation (an AI icon on the button). */
+  isAIOperation?: boolean;
+  /** The overflow group of the action in the toolbar (sap.fe.macros.table.Action `overflowGroup`; see `actionOverflowGroups`). */
+  overflowGroup?: number;
+  /** Priority in the overflow toolbar: "High" stays, "Low" moves first, "AlwaysOverflow" / "NeverOverflow" (sap.m.OverflowToolbarPriority). */
+  priority?: 'AlwaysOverflow' | 'Disappear' | 'High' | 'Low' | 'NeverOverflow';
+}
+
+/** A separator group of the toolbar's overflow (sap.fe.macros.table.OverflowGroup). */
+export interface $OverflowGroupSettings {
+  /** The group of the toolbar separator in the overflow toolbar. */
+  overflowGroup?: number;
+  /** Shows a toolbar separator before the group. */
+  showSeparator?: boolean;
+}
+
+/** Quick filters of the table toolbar (sap.fe.macros.table.QuickVariantSelection). */
+export interface $QuickVariantSelectionSettings {
+  /** Annotation paths of the UI.SelectionVariant (or UI.SelectionPresentationVariant) annotations used as quick filters. */
+  paths?: string[];
+  /** Shows the counts next to the texts. @defaultValue false */
+  showCounts?: boolean;
+}
+
+/** The mass edit dialog (sap.fe.macros.table.MassEdit). */
+export interface $MassEditSettings {
+  /** Fields shown in the mass edit dialog (default: the updatable fields of the columns). */
+  visibleFields?: string[];
+  /** Fields left out of the mass edit dialog. */
+  ignoredFields?: string[];
+  /** "ChangeSet": the changes are saved together; "Isolated": each object on its own. */
+  operationGroupingMode?: 'ChangeSet' | 'Isolated';
+  /** Further content of the dialog, below the fields (FE: a sap.ui.layout.form.FormContainer). */
+  customContent?: ReactNode;
+}
+
+/** Settings of the analytical table (sap.fe.macros.table.AnalyticalConfiguration). */
+export interface $AnalyticalConfigurationSettings {
+  /** True if leaf level rows shall display aggregated data. @defaultValue false */
+  aggregationOnLeafLevel?: boolean;
 }
 
 /** Creation options (sap.fe.macros.table.TableCreationOptions) of the `creationMode` aggregation. */
@@ -174,6 +249,10 @@ export interface $TableCreationOptionsSettings {
   name?: 'AddViaValueHelp' | 'CreationDialog' | 'External' | 'Inline' | 'InlineCreationRows' | 'NewPage';
   /** false: no "Create" button (smart-kit addition; FE hides it with UI.CreateHidden). */
   enabled?: boolean;
+  /** "CreationDialog": the comma-separated properties the dialog asks (default: the mandatory ones, else the line item's editable fields). */
+  creationFields?: string;
+  /** "Inline": the new row is created at the end of the table instead of the top. */
+  createAtEnd?: boolean;
 }
 
 /** What is exported (`onBeforeExport`, `onExported`); the same filters, search and sort as the file. */
@@ -238,6 +317,31 @@ export interface $TableSettings {
    * "Interactive" grow with the rows and a "More" button (default of sub-tables).
    */
   rowCountMode?: 'Auto' | 'Fixed' | 'Interactive';
+  /**
+   * Grid tables: the number of rows shown — "Fixed" and "Interactive" show exactly this many rows with their own
+   * scrollbar, "Auto" at least this many. Default: "Fixed" / "Interactive" grow with the rows and a "More" button.
+   */
+  rowCount?: number;
+  /**
+   * "Control": a variant management of the table's own (columns, sort, grouping, totals and the table's filter) in the
+   * toolbar, kept in smart-kit's variant store under `pageKey` (D42). Default: none.
+   */
+  variantManagement?: '' | 'Control';
+  /** Quick filters: a segmented button (≤ 3) or a select (> 3) of selection variants in the toolbar. */
+  quickVariantSelection?: $QuickVariantSelectionSettings;
+  /** Separators of the toolbar actions' overflow groups. */
+  actionOverflowGroups?: $OverflowGroupSettings[];
+  /** Offers "Edit" (mass edit) for the selected rows in a dialog. */
+  massEdit?: $MassEditSettings;
+  /** Analytical tables: how the leaves are read. */
+  analyticalConfiguration?: $AnalyticalConfigurationSettings;
+  /**
+   * Pasting rows from the clipboard (Ctrl+V on the table) creates them, when the table can create inline (editable
+   * sub-tables). Default: true in sub-tables (FE: object page), else false.
+   */
+  enablePaste?: boolean;
+  /** Pasted values also fill computed (Core.Computed) properties. @defaultValue false */
+  enablePastingOfComputedProperties?: boolean;
   /** Table title in the toolbar; default `UI.HeaderInfo/TypeNamePlural`, with the row count. */
   header?: string;
   /** Shows the title. Default true. */
@@ -343,6 +447,8 @@ export interface $TableSettings {
   children?: ReactNode;
   /** Extra CSS class on the root element. */
   className?: string;
+  /** Further properties read with the rows (FE: the table's `additionalProperties`, the manifest's tableSettings; smart-kit addition). */
+  additionalProperties?: string[];
   /** Menu buttons for similar actions (smart-kit addition). */
   actionGroups?: ActionGroup[];
   /** Called after an object was created (default for lists: navigate to its object page). */
@@ -416,6 +522,18 @@ export interface Table {
   /** Adds a message about the whole table to the page messages; resolves with its id. */
   addMessage(parameters: { message?: string; description?: string; type?: 'Error' | 'Warning' | 'Success' | 'Information' | 'None'; persistent?: boolean }): Promise<string>;
   removeMessage(id: string): void;
+  /** Key of the selected variant of `variantManagement` "Control" ("" the standard variant); null without one. */
+  getCurrentVariantKey(): string | null;
+  /** Selects a variant of `variantManagement` "Control"; an unknown key is ignored. */
+  setCurrentVariantKey(key: string): void;
+  /** Sort, grouping, totals and the visible columns as the JSON form of sap.fe.navigation.PresentationVariant. */
+  getPresentationVariant(): Promise<PresentationVariant>;
+  /** Applies sort (SortOrder), grouping (GroupBy), totals (Aggregations) and columns (the LineItem visualization). */
+  setPresentationVariant(tablePV: PresentationVariant): Promise<void>;
+  /** The table's own filter conditions (not the filter bar's) as the JSON form of sap.fe.navigation.SelectionVariant. */
+  getSelectionVariant(): Promise<SelectionVariant>;
+  /** Clears the table's own filter conditions and applies the SelectionVariant. */
+  setSelectionVariant(selectionVariant: SelectionVariant, prefillDescriptions?: boolean): Promise<void>;
 }
 
 /** Instance methods of sap.fe.macros.TreeTable: those of `Table` plus the tree methods of sap.ui.table.TreeTable. */
@@ -432,25 +550,6 @@ interface CoreSettings extends Omit<$TreeTableSettings, 'type' | 'ref'>, Pick<$T
 
 /** Data of the grid's pinned totals row (docs/23). */
 const TOTAL_ROW = '$smartKitTotal';
-/** Group header rows of grouped grid tables (docs/23 §9): `{ [GROUP_ROW]: { key, value, row } }`. */
-const GROUP_ROW = '$smartKitGroup';
-interface GroupRowData { key: string; display: string; first: Row }
-const groupOf = (data: unknown): GroupRowData | undefined => (data as Row | undefined)?.[GROUP_ROW] as GroupRowData | undefined;
-/** Rows per request of grouped grid tables (client-side rows, loaded while scrolling). */
-const GRID_GROUP_BLOCK = 100;
-
-export interface TableContextValue {
-  entitySet: string;
-  typeName: string;
-  source: QuerySource;
-  rows: Row[];
-  selected: Row[];
-  count?: number;
-  filters: FilterState;
-  search: string;
-  sort: SortItem[];
-  refresh(): void;
-}
 
 interface InternalCtx {
   p: CoreSettings;
@@ -474,19 +573,20 @@ interface InternalCtx {
   search: string;
   setSearch(s: string): void;
   searchable: boolean;
+  /** The table's variant management (`variantManagement` "Control"). */
+  variant?: ReactNode;
+  /** The quick filter switch (`quickVariantSelection`). */
+  quick?: ReactNode;
+  /** The table's own filter conditions (setSelectionVariant): "Filtered By" with a clear button. */
+  filterInfo?: { labels: string[]; clear(): void };
 }
 
-const TableCtx = createContext<InternalCtx | null>(null);
 function useInternal() {
-  const c = useContext(TableCtx);
+  const c = useContext(TableCtx) as InternalCtx | null;
   if (!c) throw new Error('Table parts must be used inside <Table> or <TreeTable>');
   return c;
 }
 
-/** Context for custom content in and around the table (AC-EXT-02). */
-export function useTableContext(): TableContextValue {
-  return useInternal().ctx;
-}
 
 /** Index of the row at the top of the viewport (getFirstDisplayedRowIndex includes the render buffer). */
 function topRowIndex(api: GridApi): number {
@@ -532,6 +632,27 @@ function TitlePart() {
   );
 }
 
+function VariantPart() {
+  return <>{useInternal().variant ?? null}</>;
+}
+
+function QuickPart() {
+  return <>{useInternal().quick ?? null}</>;
+}
+
+/** The info bar of the table's own filter (sap.ui.mdc.Table "Filtered By"). */
+function FilterInfoPart() {
+  const { filterInfo } = useInternal();
+  const t = useText();
+  if (!filterInfo?.labels.length) return null;
+  return (
+    <Group gap="xs" wrap="nowrap" className="sk-table__filter-info" role="status" data-sk-table-filter-info>
+      <Text size="sm" className="sk-grow">{t('table.filteredBy', { fields: filterInfo.labels.join(', ') })}</Text>
+      <ActionIcon variant="subtle" size="sm" aria-label={t('table.clearFilters')} title={t('table.clearFilters')} onClick={filterInfo.clear} data-sk-table-filter-clear><X className="sk-icon" /></ActionIcon>
+    </Group>
+  );
+}
+
 function ActionsPart() {
   const { actions, ctx, width } = useInternal();
   const t = useText();
@@ -544,19 +665,23 @@ function ActionsPart() {
   const shown = actions.filter((a) => !a.hidden && (!a.menu || a.menu.length));
   // sap.m.OverflowToolbar (FE table toolbar): actions move into "More" only when they do not fit. The widths are
   // estimated from the labels (title, search and the table buttons keep about 520px); narrow tables (e.g. the first
-  // column of a flexible column layout) keep at most two.
-  let INLINE = 0;
+  // column of a flexible column layout) keep at most two. Priorities (sap.m.OverflowToolbarPriority): "NeverOverflow"
+  // stays, "AlwaysOverflow" / "Disappear" go, "Low" goes before the others; an overflow group goes as a whole.
+  const keep = new Set<ActionItem>();
   if (width >= 560) {
     let room = width - 520;
-    for (const a of shown) {
-      room -= a.label.length * 7.5 + 34 + (a.menu ? 20 : 0);
-      if (room < 0) break;
-      INLINE += 1;
+    const cost = (a: ActionItem) => a.label.length * 7.5 + 34 + (a.menu ? 20 : 0);
+    for (const a of shown.filter((x) => x.priority === 'NeverOverflow')) { keep.add(a); room -= cost(a); }
+    for (const a of [...shown.filter((x) => !x.priority || x.priority === 'High'), ...shown.filter((x) => x.priority === 'Low')]) {
+      if (room - cost(a) < 0) break;
+      room -= cost(a);
+      keep.add(a);
     }
-    if (width < 900) INLINE = Math.min(INLINE, 2);
-  }
-  const inline = shown.slice(0, INLINE);
-  const overflow = shown.slice(INLINE).flatMap((a) => a.menu ?? [a]);
+    if (width < 900) [...keep].filter((a) => a.priority !== 'NeverOverflow').slice(2).forEach((a) => keep.delete(a));
+  } else for (const a of shown.filter((x) => x.priority === 'NeverOverflow')) keep.add(a);
+  for (const a of shown) if (a.overflowGroup !== undefined && a.priority !== 'NeverOverflow' && shown.some((x) => x.overflowGroup === a.overflowGroup && !keep.has(x) && x.priority !== 'Disappear')) keep.delete(a);
+  const inline = shown.filter((a) => keep.has(a));
+  const overflow = shown.filter((a) => !keep.has(a) && a.priority !== 'Disappear').flatMap((a) => (a.menu ? a.menu.map((m, i) => (i === 0 ? { ...m, separator: a.separator } : m)) : [a]));
   return (
     <>
       {inline.map((a) => {
@@ -573,7 +698,12 @@ function ActionsPart() {
           );
         }
         const b = btn(a);
-        return <Button key={a.id} variant="subtle" disabled={b.disabled} onClick={b.onPress} data-sk-action={a.id}>{a.label}</Button>;
+        return (
+          <span key={a.id} className="sk-table__action">
+            {a.separator ? <span className="sk-toolbar__separator" role="separator" aria-orientation="vertical" data-sk-separator /> : null}
+            <Button variant="subtle" disabled={b.disabled} onClick={b.onPress} leftSection={a.ai ? <Sparkles className="sk-icon" /> : undefined} data-sk-action={a.id}>{a.label}</Button>
+          </span>
+        );
       })}
       {overflow.length ? (
         <Menu position="bottom-end">
@@ -581,9 +711,14 @@ function ActionsPart() {
             <ActionIcon aria-label={t('table.overflow')} title={t('table.overflow')}><MoreHorizontal className="sk-icon" /></ActionIcon>
           </Menu.Target>
           <Menu.Dropdown>
-            {overflow.map((a) => {
+            {overflow.map((a, i) => {
               const b = btn(a);
-              return <Menu.Item key={a.id} disabled={b.disabled} onClick={b.onPress} data-sk-action={a.id}>{a.label}</Menu.Item>;
+              return (
+                <span key={a.id}>
+                  {a.separator && i > 0 ? <Menu.Divider data-sk-separator /> : null}
+                  <Menu.Item disabled={b.disabled} onClick={b.onPress} data-sk-action={a.id}>{a.label}</Menu.Item>
+                </span>
+              );
             })}
           </Menu.Dropdown>
         </Menu>
@@ -671,7 +806,8 @@ function ToolbarPart({ children, before }: { children?: ReactNode; before?: Reac
       {children ?? (
         <>
           <TitlePart />
-          {before ?? p.titleAddon}
+          <VariantPart />
+          {before ?? p.titleAddon ?? <QuickPart />}
           <span className="sk-grow" />
           <Group gap="xs" wrap="nowrap" className="sk-table__toolbar-actions">
             {p.isSearchable ? <SearchPart /> : null}
@@ -744,7 +880,9 @@ function TableCore(p: CoreSettings) {
   const ui = model.ui[info.typeName]!;
   const caps = info.parentSet ? capabilitiesFor(model, info.parentSet, info.navigation) : capabilitiesFor(model, info.entitySet);
   const rowCountMode = p.rowCountMode ?? (parent ? 'Fixed' : 'Auto');
-  const mode: 'grid' | 'auto' | 'responsive' = p.type === 'ResponsiveTable' || (p.tree && p.responsive) ? 'responsive' : rowCountMode === 'Auto' ? 'grid' : 'auto';
+  // `rowCount` with "Fixed" / "Interactive": exactly that many rows with the grid's own scrollbar (sap.ui.table.rowmodes.Fixed)
+  const fixedRows = rowCountMode !== 'Auto' && p.rowCount !== undefined && p.rowCount > 0 ? p.rowCount : undefined;
+  const mode: 'grid' | 'auto' | 'responsive' = p.type === 'ResponsiveTable' || (p.tree && p.responsive) ? 'responsive' : rowCountMode === 'Auto' || fixedRows ? 'grid' : 'auto';
   const responsive = mode === 'responsive';
   const editing = p.readOnly === undefined ? false : !p.readOnly;
   // Tree table (docs/26 §3.10): no grouping, no totals, no paging.
@@ -754,7 +892,13 @@ function TableCore(p: CoreSettings) {
   const draftRoot = !parent && Boolean(model.entitySets[info.entitySet]?.draft?.root);
   // Draft root or node list (FE isObjectPathDraftSupported, outside an object page).
   const draftList = !parent && Boolean(model.entitySets[info.entitySet]?.draft);
-  const meta = useMemo(() => resolveMetaPath(ui, p.metaPath), [ui, p.metaPath]);
+  // Quick filters (FE QuickFilterSelector): the selected one's conditions are hidden filters; a selection presentation
+  // variant also brings its line item and presentation.
+  const quickVariants = useMemo(() => quickVariantsOf(ui, p.quickVariantSelection?.paths), [ui, p.quickVariantSelection?.paths]);
+  const [quickKey, setQuickKey] = usePageState<string | undefined>(p.pageKey && quickVariants.length ? `${p.pageKey}:table:quick` : undefined, undefined);
+  const activeQuick = quickVariants.find((x) => x.key === quickKey) ?? quickVariants[0];
+  const metaPath = activeQuick?.view ? `@com.sap.vocabularies.UI.v1.SelectionPresentationVariant#${activeQuick.view.id}` : p.metaPath;
+  const meta = useMemo(() => resolveMetaPath(ui, metaPath), [ui, metaPath]);
   const [ignored, setIgnored] = useState(p.ignoredFields);
   useEffect(() => setIgnored(p.ignoredFields), [p.ignoredFields]);
   const [labels, setLabels] = useState<Record<string, string>>({});
@@ -795,11 +939,12 @@ function TableCore(p: CoreSettings) {
       base.push({ id: name, label: prop.label, field: { id: name, kind: 'field', path: name, label: prop.label, criticalityIcon: true, isSemanticKey: ui.semanticKey.includes(name) }, adaptation: true });
     }
     // `columns` (sap.fe.macros.table.Column) first, then `extend`.
-    const custom: ExtendEntry<ColumnItem>[] = (p.columns ?? []).map((c) => ({
+    const custom: ExtendEntry<ColumnItem>[] = (p.columns ?? []).filter((c) => c.availability !== 'Hidden').map((c) => ({
       id: c.key, position: c.anchor ? (c.placement === 'Before' ? 'before' : 'after') : 'end', anchor: c.anchor,
       item: {
         id: c.key, label: c.header ?? '', render: c.template, select: c.properties, width: pxWidth(c.width), align: c.horizontalAlign,
         importance: c.importance === 'None' ? undefined : c.importance, disableExport: c.disableExport,
+        adaptation: c.availability === 'Adaptation' || undefined, tooltip: c.tooltip, required: c.required, widthIncludingColumnHeader: c.widthIncludingColumnHeader,
       },
     }));
     const colExt = (p.extend ?? []).filter((e) => e.kind !== 'action') as ExtendEntry<ColumnItem>[];
@@ -818,11 +963,15 @@ function TableCore(p: CoreSettings) {
   const isDeletable = (row: Row) => !caps.deletablePath || getPath(row, caps.deletablePath) !== false;
   const [creating, setCreating] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState<Row[] | null>(null);
+  const canMassEdit = Boolean(p.massEdit) && caps.updatable && !hiddenBy(caps.updateHidden) && (!parent || editing) && Boolean(service.dataProvider.update) && p.selectionMode !== 'None' && p.selectionMode !== 'Single' && p.selectionMode !== 'ForceSingle';
+  /** Draft lists edit the active objects without a draft (FE: the updatable contexts of a read-only draft table). */
+  const massEditable = (row: Row) => !draftRoot || (row.IsActiveEntity !== false && !row.HasDraftEntity);
+  const [massEditRows, setMassEditRows] = useState<Row[] | null>(null);
 
   const stateKey = p.pageKey && !p.ignorePersonalizationChanges ? `${p.pageKey}:table` : undefined;
   const firstPage = p.threshold ?? 10;
   const growSize = p.threshold ?? 20;
-  const [own, setOwn] = usePageState<{ columns: string[]; known?: string[]; sort?: SortItem[]; search: string; loaded: number; groupBy?: string | null; totals?: string[]; details?: boolean }>(stateKey, () => ({ columns: allColumns.filter((c) => !c.adaptation).map((c) => c.id), search: '', loaded: firstPage }));
+  const [own, setOwn] = usePageState<{ columns: string[]; known?: string[]; sort?: SortItem[]; search: string; loaded: number; groupBy?: string | null; totals?: string[]; details?: boolean; filters?: FilterState }>(stateKey, () => ({ columns: allColumns.filter((c) => !c.adaptation).map((c) => c.id), search: '', loaded: firstPage }));
   const visibleIds = (p.visibleColumns ?? own.columns).filter((id) => allColumns.some((c) => c.id === id));
   // Columns added by extensions after the state was stored are shown too.
   const known = new Set([...(own.known ?? own.columns), ...(p.visibleColumns ?? [])]);
@@ -840,9 +989,9 @@ function TableCore(p: CoreSettings) {
   const fields = visibleColumns.map((c) => c.field).filter((f): f is FieldModel => Boolean(f));
   const draftFields = draftList ? draftPaths(model, type, draftRoot, isTree) : [];
   // LineItem@UI.Criticality: the row highlight (FE Table getHighlightRowBinding, TableFormatter rowHighlighting).
-  const lineItemQualifier = p.metaPath && parseAnnotationPath(p.metaPath).term === 'LineItem' ? parseAnnotationPath(p.metaPath).qualifier : '';
+  const lineItemQualifier = metaPath && parseAnnotationPath(metaPath).term === 'LineItem' ? parseAnnotationPath(metaPath).qualifier : '';
   const highlightRef = ui.rowHighlight?.[lineItemQualifier];
-  const extraSelect = [...visibleColumns.flatMap((c) => c.select ?? []), ...actionPaths(modelActions), ...draftFields,
+  const extraSelect = [...visibleColumns.flatMap((c) => c.select ?? []), ...(p.additionalProperties ?? []), ...actionPaths(modelActions), ...draftFields,
     ...(highlightRef && 'path' in highlightRef ? [highlightRef.path] : []), ...(caps.deletablePath ? [caps.deletablePath] : [])];
   // The ETag property (Core.OptimisticConcurrency) is not selected: the service returns `@odata.etag` with every entity,
   // and the OData V4 model of Fiori elements does not add it to $select either (DV-FE-02).
@@ -897,7 +1046,15 @@ function TableCore(p: CoreSettings) {
   const defaultTotals = presentation.hasTotal || presentation.total.length ? totalable.filter((c) => presentation.total.includes(totalPath(c)!)) : totalable;
   const totalIds = (totalsOwned ? p.totals : own.totals) ?? defaultTotals.map((c) => c.id);
   const setTotals = (ids: string[]) => { if (!totalsOwned) setOwn((x) => ({ ...x, totals: ids })); p.onTotalsChange?.(ids); };
-  const filters = p.query?.filters ?? {};
+  // The table's own conditions (FE: the mdc table's filter, setSelectionVariant) and the quick filter: hidden filters.
+  const controlFilters = own.filters ?? {};
+  const setControlFilters = (f: FilterState) => setOwn((x) => ({ ...x, filters: f }));
+  const tableHidden = useMemo(() => {
+    const out: FilterState = { ...conditionsAsFilters(activeQuick?.conditions ?? []) };
+    for (const [k, v] of Object.entries(controlFilters)) out[k] = [...(out[k] ?? []), ...v];
+    return out;
+  }, [activeQuick, JSON.stringify(controlFilters)]); // eslint-disable-line react-hooks/exhaustive-deps
+  const filters = useMemo(() => (Object.keys(tableHidden).length ? withHiddenFilters(p.query?.filters ?? {}, tableHidden) : p.query?.filters ?? {}), [JSON.stringify(p.query?.filters), tableHidden]); // eslint-disable-line react-hooks/exhaustive-deps
   const effectiveSearch = [p.query?.search, search].filter(Boolean).join(' ');
   // initialLoad false: nothing is loaded before refresh() or a new query.
   const [loadRequested, setLoadRequested] = useState(p.initialLoad !== false);
@@ -917,21 +1074,34 @@ function TableCore(p: CoreSettings) {
   const gridGrouped = mode === 'grid' && Boolean(groupPath);
   // The grid's infinite row model with server blocks; grouped and tree grids hold client-side rows instead.
   const infinite = mode === 'grid' && !gridGrouped && !isTree;
-  const sort = useMemo(() => (groupPath ? [{ path: groupPath, descending: false }, ...baseSort.filter((x) => x.path !== groupPath)] : baseSort), [groupPath, JSON.stringify(baseSort)]); // eslint-disable-line react-hooks/exhaustive-deps
+  // Responsive tables sort by the group property first (sap.m.Table groups consecutive rows); the analytical grid's
+  // visual grouping (groupLevels) keeps the table's sort.
+  const sort = useMemo(() => (groupPath && !gridGrouped ? [{ path: groupPath, descending: false }, ...baseSort.filter((x) => x.path !== groupPath)] : baseSort), [groupPath, gridGrouped, JSON.stringify(baseSort)]); // eslint-disable-line react-hooks/exhaustive-deps
   // AL-10 (FE AnalyticalTable): the first page reads rows, grand total and count in one $apply, see useAnalytical.ts.
   const apply = useAnalyticalRequests({
     enabled: analytical && executed && !groupPath, service: p.service, source, columns: fields, filters, search: effectiveSearch, sort, extraSelect,
-    requestAtLeast: meta.presentation?.requestAtLeast, totals: measures,
+    requestAtLeast: meta.presentation?.requestAtLeast, totals: measures, aggregationOnLeafLevel: p.analyticalConfiguration?.aggregationOnLeafLevel,
     groupExtra: [...visibleColumns.filter((c) => !c.field).flatMap((c) => c.select ?? []), ...(highlightRef && 'path' in highlightRef ? [highlightRef.path] : [])],
     // toolbar actions without an inline column: their OperationAvailable is read when a row is selected
     selectionPaths: actionPaths(modelActions).filter((x) => !actionPaths(fields.flatMap((f) => (f.kind === 'action' && f.action ? [f.action] : []))).includes(x)),
   });
+  // Visual grouping of the analytical grid (FE groupLevels): collapsible groups, read on demand (useAnalyticalGroups.ts).
+  const notWithRows = actionPaths(modelActions).filter((x) => !actionPaths(fields.flatMap((f) => (f.kind === 'action' && f.action ? [f.action] : []))).includes(x));
+  const [groupsRevision, setGroupsRevision] = useState(0);
+  const groupDisplayRef = useRef<(row: Row) => string>(() => '');
+  const groups = useAnalyticalGroups({
+    enabled: gridGrouped && executed, service: p.service, source, groupPath: groupPath ?? '', columns: fields, filters, search: effectiveSearch, sort,
+    extraSelect: extraSelect.filter((x) => !notWithRows.includes(x)), requestAtLeast: meta.presentation?.requestAtLeast, totals: measures,
+    groupExtra: [...visibleColumns.filter((c) => !c.field).flatMap((c) => c.select ?? []), ...(highlightRef && 'path' in highlightRef ? [highlightRef.path] : [])],
+    aggregationOnLeafLevel: p.analyticalConfiguration?.aggregationOnLeafLevel, pageSize: p.scrollThreshold ?? 100,
+    display: (row) => groupDisplayRef.current(row), revision: groupsRevision,
+  });
   const list = useListQuery({
     service: p.service, source, columns: fields, filters, search: effectiveSearch, sort, extraSelect, requestAtLeast: meta.presentation?.requestAtLeast,
     blockRequest: apply.blockRequest, onBlock: apply.received,
-    pageSize: gridGrouped ? GRID_GROUP_BLOCK : responsive ? p.threshold ?? 20 : Math.max(firstPage, own.loaded),
-    growSize: gridGrouped ? GRID_GROUP_BLOCK : responsive ? p.threshold ?? 20 : growSize,
-    enabled: !infinite && executed,
+    pageSize: responsive ? p.threshold ?? 20 : Math.max(firstPage, own.loaded),
+    growSize: responsive ? p.threshold ?? 20 : growSize,
+    enabled: !infinite && executed && !gridGrouped,
     hierarchy: hierarchy ? { qualifier: hierarchy.qualifier, ...treeState.request } : undefined,
   });
   // A new query starts a new selection (rows of the old result may be gone).
@@ -957,9 +1127,14 @@ function TableCore(p: CoreSettings) {
   const apiRef = useRef<GridApi | null>(null);
   const queryClient = useQueryClient();
 
-  const keyOf = useCallback((row: Row) => keyPredicate(type, row), [type]);
+  // AnalyticalConfiguration aggregationOnLeafLevel: the leaves are aggregates; they are entities (navigable, with bound
+  // actions) only when all keys are shown (FE TableDelegate checkAllKeysAreRequested, UI.isNodeLevelNavigable).
+  const leafAggregated = analytical && Boolean(p.analyticalConfiguration?.aggregationOnLeafLevel);
+  const allKeysShown = type.keys.filter((k) => k !== 'IsActiveEntity').every((k) => fields.some((f) => f.kind === 'field' && f.path === k));
+  const leafEntities = !leafAggregated || allKeysShown;
+  const keyOf = useCallback((row: Row) => (leafEntities ? keyPredicate(type, row) : JSON.stringify(Object.entries(row).filter(([k]) => !k.startsWith('@')))), [type, leafEntities]);
   const pathOf = useCallback((row: Row) => ('entitySet' in source ? `${source.entitySet}${keyOf(row)}` : `${source.parent}/${source.navigation}${keyOf(row)}`), [source, keyOf]);
-  const navigable = p.navigable ?? Boolean(p.onRowPress || navigation?.hasObjectPage?.(info.entitySet, service.name));
+  const navigable = (p.navigable ?? Boolean(p.onRowPress || navigation?.hasObjectPage?.(info.entitySet, service.name))) && (leafEntities || Boolean(p.onRowPress));
   const navigate = useCallback((row: Row) => {
     const path = pathOf(row);
     if (p.onRowPress) p.onRowPress({ bindingContext: contextOf(path, row) });
@@ -970,10 +1145,31 @@ function TableCore(p: CoreSettings) {
   const stored = useStoredState<{ selectedKeys: string[]; firstRow: number }>(stateKey ? `${stateKey}:view` : undefined);
   const restore = useRef(stored.read());
 
-  const loadedRows = useMemo(() => (infinite ? [] : apply.withLate(list.rows).map((r) => overrides[keyOf(r)] ?? r)), [infinite, list.rows, overrides, keyOf, apply.version]); // eslint-disable-line react-hooks/exhaustive-deps
+  const loadedRows = useMemo(() => (infinite ? [] : (gridGrouped ? groups.leaves : apply.withLate(list.rows)).map((r) => overrides[keyOf(r)] ?? r)), [infinite, gridGrouped, groups.leaves, list.rows, overrides, keyOf, apply.version]); // eslint-disable-line react-hooks/exhaustive-deps
   const tree = useTree({ hierarchy, rows: loadedRows, tree: treeState, onToggleOpenState: p.onToggleOpenState });
   /** Rows that can be selected: not group headers; with `disableLeafSelection` no tree leaves. */
   const selectable = (row: Row | undefined) => Boolean(row) && !groupOf(row) && !(p.disableLeafSelection && isTree && latest.current.tree.nodeOf(row!)?.drillState === 'leaf');
+  // ------------------------------------------------------------------ variants, PresentationVariant, SelectionVariant
+  // `variantManagement` "Control" (FE: the mdc table's own variant management): columns, sort, grouping, totals and the
+  // table's own filter, in smart-kit's variant store (D42).
+  const tableVariantsOn = p.variantManagement === 'Control';
+  const defaultColumns = useMemo(() => allColumns.filter((c) => !c.adaptation).map((c) => c.id), [allColumns]);
+  const variantStandard = useMemo<VariantContent>(() => ({ columns: defaultColumns, sort: presentation.sortOrder, groupBy: undefined, totals: undefined, filters: {} }), [defaultColumns, presentation]);
+  const applyVariant = (c: VariantContent) => {
+    setVisibleIds(c.columns ?? defaultColumns);
+    setSort(c.sort ?? presentation.sortOrder);
+    if (!groupOwned) setOwn((x) => ({ ...x, groupBy: c.groupBy ?? undefined, totals: c.totals, filters: c.filters ?? {} }));
+    else { p.onGroupByChange?.(c.groupBy ?? null); setOwn((x) => ({ ...x, filters: c.filters ?? {} })); }
+    if (totalsOwned && c.totals) p.onTotalsChange?.(c.totals);
+  };
+  const tableVariants = useVariants(`${p.pageKey ?? `table:${info.entitySet}`}:variants`, { service: p.service, standard: variantStandard, enabled: tableVariantsOn, onDefaultLoaded: (v) => applyVariant(v.content) });
+  const variantContent: VariantContent = { columns: visible, sort: baseSort, groupBy: groupBy ?? undefined, totals: totalIds, filters: controlFilters };
+  const pvState = () => ({
+    columns: visible, sort: baseSort, groupBy: groupPath ? [groupPath] : [], totals: totalColumns.map((c) => totalPath(c)!),
+    initialExpansionLevel: isTree ? (p.initialExpansionLevel ?? (presentation.initialExpansionLevel !== undefined ? presentation.initialExpansionLevel + 1 : undefined)) : undefined,
+  });
+  const labelOfPath = (path: string) => allColumns.find((c) => fieldPath(c) === path)?.label ?? resolvePath(model.entityTypes, info.typeName, path).property?.label ?? path;
+
   useImperativeHandle(p.ref, (): TreeTable => {
     const ctxs = (rows: Row[]) => rows.map((r) => contextOf(pathOf(r), r));
     const self: TreeTable = {
@@ -1003,6 +1199,23 @@ function TableCore(p: CoreSettings) {
         return id;
       },
       removeMessage: (id) => messages?.remove(id),
+      getCurrentVariantKey: () => (tableVariantsOn ? tableVariants.currentId : null),
+      setCurrentVariantKey: (key) => {
+        if (!tableVariantsOn || (key !== STANDARD_VARIANT_ID && !tableVariants.variants.some((v) => v.id === key))) return;
+        applyVariant(tableVariants.select(key).content);
+      },
+      getPresentationVariant: async () => tablePresentationVariant(pvState()),
+      setPresentationVariant: async (pv) => {
+        const current = pvState();
+        const next = stateOfPresentationVariant(pv, current, { columns: allColumns.map((c) => c.id), properties: [...new Set([...p13nProps.map((x) => x.path), ...groupable.map((g) => g.path), ...allColumns.flatMap((c) => (fieldPath(c) ? [fieldPath(c)!] : []))])] });
+        if (next.columns !== current.columns) setVisibleIds(next.columns);
+        if (next.sort !== current.sort) setSort(next.sort);
+        if (next.groupBy !== current.groupBy) setGroupBy(next.groupBy.length ? groupable.find((g) => g.path === next.groupBy[0])?.id ?? null : null);
+        if (next.totals !== current.totals) setTotals(totalable.filter((c) => next.totals.includes(totalPath(c)!)).map((c) => c.id));
+        if (isTree && next.initialExpansionLevel !== undefined && next.initialExpansionLevel !== current.initialExpansionLevel) tree.api.expandToLevel(next.initialExpansionLevel);
+      },
+      getSelectionVariant: async () => toSelectionVariant(controlFilters, ''),
+      setSelectionVariant: async (sv, prefill) => { setControlFilters(fromSelectionVariant(sv, prefill)); },
     };
     return self;
   });
@@ -1010,9 +1223,9 @@ function TableCore(p: CoreSettings) {
 
   // ------------------------------------------------------------------ totals and subtotals (docs/23)
   const totalsQuery = { service: p.service, source, filters, search: effectiveSearch, measures, revision: totalsRevision };
-  const ownGrand = useGrandTotals({ ...totalsQuery, enabled: executed && !apply.active });
-  const grand = !apply.active ? ownGrand : infinite ? apply.grand : apply.grandOf(list.first, list.error, list.isFetching);
-  const subtotalsOn = Boolean(analytical && groupPath && canSubtotal(model, source, groupPath));
+  const ownGrand = useGrandTotals({ ...totalsQuery, enabled: executed && !apply.active && !gridGrouped });
+  const grand = gridGrouped ? groups.grand : !apply.active ? ownGrand : infinite ? apply.grand : apply.grandOf(list.first, list.error, list.isFetching);
+  const subtotalsOn = Boolean(analytical && groupPath && (gridGrouped || canSubtotal(model, source, groupPath)));
   const groupValues = useMemo(() => {
     if (!subtotalsOn || !groupPath) return [];
     const seen = new Set<string>();
@@ -1024,7 +1237,7 @@ function TableCore(p: CoreSettings) {
     }
     return out;
   }, [listRows, groupPath, subtotalsOn]);
-  const subtotals = useSubtotals({ ...totalsQuery, groupBy: groupPath ?? '', groupValues, enabled: executed && subtotalsOn });
+  const subtotals = useSubtotals({ ...totalsQuery, groupBy: groupPath ?? '', groupValues, enabled: executed && subtotalsOn && !gridGrouped });
   const formatTotal = useTotalFormatter(p.service, source);
   const totalValue = (c: ColumnItem, entry: TotalsEntry | undefined, failed: boolean): ReactNode => {
     const path = totalPath(c);
@@ -1054,30 +1267,27 @@ function TableCore(p: CoreSettings) {
     ? allColumns.find((c) => c.id === groupBy) ?? (groupPath ? { id: groupBy, label: groupable.find((c) => c.id === groupBy)?.label ?? groupPath, field: { id: groupBy, kind: 'field', path: groupPath, label: '', criticalityIcon: false, isSemanticKey: false } } : undefined)
     : undefined;
   const groupDisplay = (row: Row) => (groupColumn?.field ? fieldValue(valueCtx, groupColumn.field, row).display || groupValueOf(groupPath ?? '')(row) : '');
-  const groupedRows = useMemo<Row[] | undefined>(() => {
-    if (!gridGrouped || !groupPath) return undefined;
-    const out: Row[] = [];
-    let last: string | undefined;
-    for (const r of listRows) {
-      const v = getPath(r, groupPath);
-      const key = v === null || v === undefined ? '' : String(v);
-      if (key !== last) out.push({ [GROUP_ROW]: { key, display: groupDisplay(r), first: r } satisfies GroupRowData });
-      last = key;
-      out.push(r);
-    }
-    return out;
-  }, [gridGrouped, groupPath, listRows, intlLocale, timeZone]); // eslint-disable-line react-hooks/exhaustive-deps
+  groupDisplayRef.current = groupDisplay;
+  const groupedRows = gridGrouped ? groups.rows.map((r) => (groupOf(r) ? r : overrides[keyOf(r)] ?? r)) : undefined;
   const groupSummaryOf = (g: GroupRowData) => {
     if (!subtotalsOn) return undefined;
-    const failed = Boolean(subtotals.error);
-    const e = subtotals.get(getPath(g.first, groupPath!));
-    return { entry: e, failed };
+    return { entry: groups.subtotal(g.key), failed: Boolean(groups.error) };
   };
+  // FE (sap.ui.table, `$$aggregation.groupLevels`): a collapsed group shows its subtotals in its header, an expanded
+  // group in a row at its bottom.
   const groupCell = (c: ColumnItem, i: number, g: GroupRowData): ReactNode => {
-    const sum = groupSummaryOf(g);
+    const sum = g.expanded && !g.bottom ? undefined : groupSummaryOf(g);
     if (i === 0) {
-      const count = sum?.entry?.count;
-      return <span className="sk-table__group-label" data-sk-group-row={g.display} data-sk-group-count={count}>{t('table.groupHeader', { label: groupColumn?.label ?? '', value: g.display || '–' }) + (count !== undefined ? t('table.groupCount', { count }) : '')}</span>;
+      if (g.bottom) return <span className="sk-table__group-label sk-table__group-label--bottom" data-sk-group-bottom={g.display} />;
+      const label = t('table.groupHeader', { label: groupColumn?.label ?? '', value: g.display || '–' }) + (g.count !== undefined ? t('table.groupCount', { count: g.count }) : '');
+      return (
+        <span className="sk-table__group-label" data-sk-group-row={g.display} data-sk-group-count={g.count} data-sk-group-expanded={g.expanded}>
+          <ActionIcon variant="subtle" size="sm" aria-label={g.expanded ? t('table.collapseNode') : t('table.expandNode')} aria-expanded={g.expanded} onClick={() => latest.current.toggleGroup(g.key)} data-sk-group-toggle>
+            {g.expanded ? <ChevronDown className="sk-icon" /> : <ChevronRight className="sk-icon" />}
+          </ActionIcon>
+          {label}
+        </span>
+      );
     }
     return sum && (sum.entry || sum.failed) ? totalValue(c, sum.entry, sum.failed) : null;
   };
@@ -1087,7 +1297,7 @@ function TableCore(p: CoreSettings) {
     if (!gridGrouped || !api || api.isDestroyed()) return;
     api.refreshCells({ force: true });
     api.resetRowHeights();
-  }, [gridGrouped, subtotals.version, groupedRows]);
+  }, [gridGrouped, groups.rows]);
   /** Lines of the highest subtotal of a group (one per currency). */
   const groupLines = (g: GroupRowData) => {
     const e = groupSummaryOf(g)?.entry;
@@ -1096,9 +1306,9 @@ function TableCore(p: CoreSettings) {
   const ctx: TableContextValue = {
     entitySet: info.entitySet, typeName: info.typeName, source,
     rows: infinite ? gridRows : listRows, selected,
-    count: infinite ? gridCount : list.count,
+    count: infinite ? gridCount : gridGrouped ? groups.leafCount : list.count,
     filters, search: effectiveSearch, sort,
-    refresh: () => { setOverrides({}); setTotalsRevision((n) => n + 1); if (infinite) setRefreshToken((n) => n + 1); else list.refresh(); },
+    refresh: () => { setOverrides({}); setTotalsRevision((n) => n + 1); if (infinite) setRefreshToken((n) => n + 1); else if (gridGrouped) setGroupsRevision((n) => n + 1); else list.refresh(); },
   };
   const onCountChange = p.onCountChange;
   useEffect(() => { onCountChange?.(ctx.count); }, [ctx.count, onCountChange]);
@@ -1142,7 +1352,7 @@ function TableCore(p: CoreSettings) {
     // Core.OperationAvailable: bound actions per selected row; unbound actions by the constant or expression
     // itself (FE Table.ts _useEnabledExpression, UIFormatters getActionEnabledExpression: equal(value, true)).
     // The copy action (UI.IsCopyAction) needs exactly one row unless OperationAvailable says more (FE getCopyAction).
-    enabled: (sel) => (a.copy && !a.operationAvailable ? sel.length === 1 : a.bound ? sel.some((r) => isActionAvailable(a, r)) : isActionAvailable(a, undefined)),
+    enabled: (sel) => (a.bound && !leafEntities ? false : a.copy && !a.operationAvailable ? sel.length === 1 : a.bound ? sel.some((r) => isActionAvailable(a, r)) : isActionAvailable(a, undefined)),
     onPress: (c) => runner.run(a, a.bound ? c.selected.map(targetOf) : [{ row: {}, path: '', label: '' }]),
   });
   const actions = useMemo(() => {
@@ -1167,12 +1377,15 @@ function TableCore(p: CoreSettings) {
     if (copy) base.push({ ...actionItem(copy), label: copy.label || t('actions.copy') });
     base.push({
       id: 'Delete', label: t('actions.delete'), requiresSelection: true, hidden: !canDelete,
-      enabled: (sel) => sel.some(isDeletable), onPress: (c) => setConfirmDelete(c.selected),
+      enabled: (sel) => leafEntities && sel.some(isDeletable), onPress: (c) => setConfirmDelete(c.selected),
     });
+    // FE StandardActions getStandardActionMassEdit: visible with `massEdit` on updatable lists (object page: in edit
+    // mode), enabled with updatable rows selected
+    base.push({ id: 'MassEdit', label: t('table.massEdit'), requiresSelection: true, hidden: !canMassEdit, enabled: (sel) => sel.some(massEditable), onPress: (c) => setMassEditRows(c.selected.filter(massEditable)) });
     const custom: ExtendEntry<ActionItem>[] = (p.actions ?? []).filter((a) => a.visible !== false).map((a) => ({
       id: a.key, position: a.placement === 'Before' || !a.anchor ? 'before' : 'after', anchor: a.anchor ?? 'Create',
       item: {
-        id: a.key, label: a.text, requiresSelection: Boolean(a.requiresSelection || a.enableOnSelect),
+        id: a.key, label: a.text, requiresSelection: Boolean(a.requiresSelection || a.enableOnSelect), overflowGroup: a.overflowGroup, priority: a.priority, ai: a.isAIOperation,
         enabled: (sel) => a.enabled !== false && (a.enableOnSelect !== 'single' || sel.length === 1),
         onPress: (c) => a.onPress?.({ selectedContexts: c.selected.map((r) => contextOf(pathOf(r), r)) }),
       },
@@ -1185,9 +1398,15 @@ function TableCore(p: CoreSettings) {
       out = out.filter((a) => !items.includes(a));
       out.splice(out.findIndex((a) => a.id === 'Create'), 0, { id: g.id, label: g.label, onPress: () => undefined, menu: items });
     }
-    return out;
+    // `actionOverflowGroups`: a separator before the first action of a group with showSeparator (FE Action addSeparators)
+    const started = new Set<number>();
+    return out.map((a, i) => {
+      if (a.overflowGroup === undefined || started.has(a.overflowGroup)) return a;
+      started.add(a.overflowGroup);
+      return i > 0 && (p.actionOverflowGroups ?? []).some((g) => g.overflowGroup === a.overflowGroup && g.showSeparator) ? { ...a, separator: true } : a;
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps -- runner is stable enough; rebuilt with its inputs
-  }, [p.extend, p.actions, p.actionGroups, modelActions, canCreate, canDelete, t, targetOf]);
+  }, [p.extend, p.actions, p.actionGroups, p.actionOverflowGroups, modelActions, canCreate, canDelete, canMassEdit, t, targetOf, leafEntities]);
   /** Row highlight (FE TableFormatter rowHighlighting): 1 Error, 2 Warning, 3 Success, 5 Information; a new draft is Information. */
   const rowState = (row: Row): string | undefined => {
     // A constant (EnumMember) reaches FE's formatter as the enum name, which is no valid highlight: FE logs an error and
@@ -1227,10 +1446,15 @@ function TableCore(p: CoreSettings) {
   // creationMode "NewPage" on a draft list (FE _getCreationBehaviour, EditFlow createDocument): Create makes a new draft
   // and opens it on the object page. Lists without draft create with the dialog (smart-kit, D42).
   const newPage = !parent && creationName === 'NewPage' && strategy.kind === 'draft' && Boolean(navigation?.hasObjectPage?.(info.entitySet, service.name));
+  // FE createWithDialog "WithNavigation": non-computed keys and immutable properties are asked in "New Object" first.
+  const newObjectFields = useMemo(() => (newPage ? createPopupFields(model, info.typeName) : []), [newPage, model, info.typeName]);
+  const [askNewObject, setAskNewObject] = useState(false);
+  const createDraft = (values: Row) => strategy.create(source, values).then((s) => { setAskNewObject(false); navigation!.toObject(s.path, service.name); });
   useEffect(() => {
     if (!creating || !newPage) return;
     setCreating(false);
-    strategy.create(source, {}).then((s) => navigation!.toObject(s.path, service.name), (e: unknown) => messages?.add(messagesFromError(e)));
+    if (newObjectFields.length) setAskNewObject(true);
+    else createDraft({}).catch((e: unknown) => messages?.add(messagesFromError(e)));
   }, [creating, newPage]); // eslint-disable-line react-hooks/exhaustive-deps
   const onCreated = (path: string, row: Row, ms: Message[]) => {
     messages?.add([...ms, { id: `created-${Date.now()}`, type: 'success', message: typedText(t, 'create.done', ui.headerInfo.typeName), source: 'server' }]);
@@ -1239,6 +1463,10 @@ function TableCore(p: CoreSettings) {
     if (p.onCreated) p.onCreated(path, row);
     else if (!parent && navigation?.hasObjectPage?.(info.entitySet, service.name)) navigation.toObject(path, service.name);
   };
+  // creationMode creationFields (FE CreationDialog): the listed properties, by their line item field when there is one
+  const dialogFields = p.creationMode?.creationFields
+    ? p.creationMode.creationFields.split(',').map((x) => x.trim()).filter((x) => type.properties[x]).map((x): FieldModel => lineItem.find((f) => f.kind === 'field' && f.path === x) ?? { id: `DataField::${x}`, kind: 'field', path: x, label: type.properties[x]!.label, criticalityIcon: true, isSemanticKey: false })
+    : createFields(model, info.typeName, lineItem);
   const createChild = async (values: Row) => {
     const r = await service.dataProvider.create!(source, values);
     onCreated(r.path, r.row, r.messages ?? []);
@@ -1293,6 +1521,41 @@ function TableCore(p: CoreSettings) {
     el.addEventListener('keydown', onKey);
     return () => el.removeEventListener('keydown', onKey);
   }, [canCreate, createMode]);
+  // Paste (FE TableAPI onPaste, PasteHelper pasteData): Ctrl+V on an editable table that creates inline adds the
+  // pasted lines as new rows. Default: on in sub-tables (FE: the object page), off elsewhere.
+  const pasteOn = (p.enablePaste ?? Boolean(parent)) && canCreate && createMode === 'inline' && Boolean(parent) && !isTree;
+  const latestPaste = useRef({ visibleColumns, type });
+  latestPaste.current = { visibleColumns, type };
+  useEffect(() => {
+    const el = sectionRef.current;
+    if (!el || !pasteOn) return;
+    const onPaste = (e: ClipboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (target?.closest('input, textarea, [contenteditable="true"], [data-sk-inline-create]')) return;
+      const text = e.clipboardData?.getData('text/plain');
+      if (!text) return;
+      e.preventDefault();
+      const { visibleColumns: cols, type: t0 } = latestPaste.current;
+      const targets = pasteTargets(t0, cols.map((c) => c.field), Boolean(p.enablePastingOfComputedProperties));
+      const { rows, errors } = pastedRows(t0, targets, parseClipboard(text));
+      if (errors.length) {
+        messages?.add(errors.map((x, i) => ({ id: `paste-${Date.now()}-${i}`, type: 'error' as const, message: t('table.pasteError', { row: x.row, message: x.message }), source: 'client' as const })));
+        return;
+      }
+      void (async () => {
+        const out: Message[] = [];
+        let done = 0;
+        for (const values of rows) {
+          try { const r = await service.dataProvider.create!(source, values); out.push(...(r.messages ?? [])); done++; } catch (err) { out.push(...messagesFromError(err)); }
+        }
+        if (done) out.unshift({ id: `pasted-${Date.now()}`, type: 'success', message: t('table.pasteDone', { count: done }), source: 'client' });
+        messages?.add(out);
+        ctx.refresh();
+      })();
+    };
+    el.addEventListener('paste', onPaste);
+    return () => el.removeEventListener('paste', onPaste);
+  }); // re-attached with the latest handlers
   // Sticky column headers below the sticky toolbar (LR Sticky Behavior, responsive table).
   useEffect(() => {
     const el = sectionRef.current;
@@ -1312,15 +1575,15 @@ function TableCore(p: CoreSettings) {
   const statusColumn = draftList && !responsive && visibleColumns.some((c) => c.field?.kind === 'field' && Boolean(c.field.path) && ui.semanticKey.includes(c.field.path!));
   const statusMarker = statusColumn ? (row: Row) => <DraftIndicator row={row} iconOnly load={() => loadDraftAdmin(row)} /> : undefined;
   const cellMarker = statusColumn ? undefined : marker;
-  const latest = useRef({ ctx, p, navigate, sort, totalCell, groupCell, groupLines, tree });
-  latest.current = { ctx, p, navigate, sort, totalCell, groupCell, groupLines, tree };
+  const latest = useRef({ ctx, p, navigate, sort, totalCell, groupCell, groupLines, tree, toggleGroup: groups.toggle });
+  latest.current = { ctx, p, navigate, sort, totalCell, groupCell, groupLines, tree, toggleGroup: groups.toggle };
 
   // Frozen columns (grid tables); default the first.
   const frozen = p.disableColumnFreeze ? 0 : p.frozenColumnCount ?? 1;
   /** Width of a column: by its content type (`enableAutoColumnWidth`), at least its header (`widthIncludingColumnHeader`). */
   const autoWidth = (c: ColumnItem, edmType: string | undefined) => {
     const base = p.enableAutoColumnWidth === false ? 200 : defaultWidth(c.field, edmType);
-    return p.widthIncludingColumnHeader ? Math.max(base, c.label.length * 8 + 48) : base;
+    return c.widthIncludingColumnHeader ?? p.widthIncludingColumnHeader ? Math.max(base, c.label.length * 8 + 48) : base;
   };
   const colDefs = useMemo<ColDef[]>(() => {
     const defs: ColDef[] = visibleColumns.map((c, i) => {
@@ -1329,8 +1592,8 @@ function TableCore(p: CoreSettings) {
       const s = sort.find((x) => x.path === sortPath);
       return {
         colId: c.id,
-        headerName: c.label,
-        ...(c.headerHidden ? { headerClass: 'sk-table__header--hidden', headerTooltip: c.label } : {}),
+        headerName: c.required ? `${c.label} *` : c.label,
+        ...(c.headerHidden ? { headerClass: 'sk-table__header--hidden', headerTooltip: c.label } : c.tooltip ? { headerTooltip: c.tooltip } : {}),
         width: c.width ?? autoWidth(c, prop?.edmType),
         minWidth: 80,
         // Not pinned while grouped: a column span cannot cross from the pinned into the scrolled columns.
@@ -1460,7 +1723,7 @@ function TableCore(p: CoreSettings) {
 
   // Grid totals: a pinned row at the bottom, as high as the most currencies of one total (docs/23).
   // Only once rows are there: no totals row under the loading placeholder or the "no data" text.
-  const gridEmptyNow = infinite ? gridEmpty || gridRows.length === 0 : list.rows.length === 0;
+  const gridEmptyNow = infinite ? gridEmpty || gridRows.length === 0 : gridGrouped ? groups.rows.length === 0 : list.rows.length === 0;
   const pinnedBottom = useMemo(
     () => (!responsive && executed && measures.length && !gridEmptyNow ? [{ [TOTAL_ROW]: { entry: grand.entry, error: grand.error?.message } }] : undefined),
     [responsive, executed, measures.join('|'), gridEmptyNow, grand.entry, grand.error], // eslint-disable-line react-hooks/exhaustive-deps
@@ -1527,16 +1790,28 @@ function TableCore(p: CoreSettings) {
     ro.observe(el);
     return () => ro.disconnect();
   }, []);
+  // `rowCount` (sap.ui.table.rowmodes): "Fixed" / "Interactive" exactly that many rows, "Auto" at least that many
+  const rowsHeight = p.rowCount ? `calc(var(--sk-header-row-height) + ${p.rowCount} * var(--sk-row-height) + 2px)` : undefined;
+  const rowsStyle = !rowsHeight || responsive ? undefined : fixedRows ? { flex: 'none', height: rowsHeight, minHeight: 0 } : mode === 'grid' ? { minHeight: rowsHeight } : undefined;
+  const inlineCreate = <InlineCreateRow service={p.service} typeName={info.typeName} fields={createFields(model, info.typeName, lineItem)} onCreate={createChild} onCancel={() => setCreating(false)} />;
+  // FE QuickFilter showCounts: `$count` per quick filter, its conditions first
+  const quickCounts = useQuickCounts({
+    service: p.service, enabled: Boolean(p.quickVariantSelection?.showCounts) && executed && caps.countable, variants: quickVariants, revision: totalsRevision,
+    request: (v) => ({ source, select: [], expand: [], orderBy: [], filters: withHiddenFilters(p.query?.filters ?? {}, conditionsAsFilters(v.conditions)), search: effectiveSearch && caps.searchable ? effectiveSearch : undefined, count: false, hiddenFiltersFirst: true }),
+  });
   const internal: InternalCtx = {
     p, ctx, title, allColumns, visibleIds: visible, setVisibleIds, setSort, actions, openP13n: () => setP13n(true),
     exportNow: () => void exportNow(), exporting, search, setSearch, searchable,
     copyNow, canCopy: !p.disableCopyToClipboard, copied, width,
     details: { available: responsive && hiddenCols.length > 0, shown: Boolean(own.details), toggle: () => setOwn((x) => ({ ...x, details: !x.details })) },
     fullScreen: { on: fullScreen, toggle: () => setFullScreen((x) => !x) },
+    variant: tableVariantsOn ? <span className="sk-table__variant" data-sk-table-variant><VariantManagement variants={tableVariants} content={variantContent} onSelect={(e) => applyVariant(e.content)} headerLevel="H4" supportApplyAutomatically={false} /></span> : undefined,
+    quick: quickVariants.length > 1 ? <QuickVariantSwitch variants={quickVariants} value={activeQuick?.key} counts={quickCounts} onChange={setQuickKey} /> : undefined,
+    filterInfo: Object.keys(controlFilters).length ? { labels: Object.keys(controlFilters).map(labelOfPath), clear: () => setControlFilters({}) } : undefined,
   };
 
-  const error = infinite ? gridError : list.error;
-  const empty = infinite ? gridEmpty : executed && !list.isLoading && list.rows.length === 0 && !list.error;
+  const error = infinite ? gridError : gridGrouped ? groups.error : list.error;
+  const empty = infinite ? gridEmpty : gridGrouped ? executed && !groups.isLoading && groups.rows.length === 0 && !groups.error : executed && !list.isLoading && list.rows.length === 0 && !list.error;
   const threshold = p.showAllThreshold ?? 200;
   const preview = mode === 'auto' && list.count !== undefined && list.count > threshold;
   const scrollGrowing = mode === 'auto' && Boolean(p.growingScrollToLoad) && !preview;
@@ -1647,7 +1922,7 @@ function TableCore(p: CoreSettings) {
         : gridGrouped
         ? {
             rowData: groupedRows ?? [],
-            loading: list.isLoading,
+            loading: groups.isLoading,
             // Rows stay in the service's order (sorted by the group first); a header click sorts on the service.
             postSortRows: (params: { nodes: { sourceRowIndex: number }[] }) => { params.nodes.sort((a, b) => a.sourceRowIndex - b.sourceRowIndex); },
             getRowHeight: (r: { data?: Row }) => {
@@ -1663,7 +1938,7 @@ function TableCore(p: CoreSettings) {
         : mode === 'grid'
           ? { rowModelType: 'infinite' as const, cacheBlockSize: p.scrollThreshold ?? 100, maxBlocksInCache: 50, infiniteInitialRowCount: 1 }
           : { rowData: list.rows, domLayout: 'autoHeight' as const })}
-      getRowId={(r) => (r.rowPinned ? `${TOTAL_ROW}:${r.rowPinned}` : groupOf(r.data) ? `${GROUP_ROW}:${groupOf(r.data)!.key}` : keyOf(r.data as Row))}
+      getRowId={(r) => (r.rowPinned ? `${TOTAL_ROW}:${r.rowPinned}` : groupOf(r.data) ? `${GROUP_ROW}:${groupOf(r.data)!.key}${groupOf(r.data)!.bottom ? ':bottom' : ''}` : keyOf(r.data as Row))}
       pinnedBottomRowData={pinnedBottom}
       getRowClass={(r) => (r.node.rowPinned ? 'sk-table__total-row' : groupOf(r.data) ? 'sk-table__group-row' : r.data && rowState(r.data as Row) ? `sk-table__row--${rowState(r.data as Row)}` : undefined)}
       rowSelection={selection === 'None' ? undefined : selection === 'Single'
@@ -1699,9 +1974,8 @@ function TableCore(p: CoreSettings) {
       }}
       onBodyScroll={(e) => {
         if (mode === 'grid' && e.direction === 'vertical') page?.contentScrolled(e.top);
-        // Grouped grid: the next block once the last rows come into view.
-        const l = latestList.current;
-        if (gridGrouped && l.hasMore && !l.isFetching && e.api.getLastDisplayedRowIndex() >= e.api.getDisplayedRowCount() - 20) l.loadMore();
+        // Grouped grid: the next leaves of a group, or the next groups, once their last rows come into view.
+        if (gridGrouped && !groups.isFetching) groups.loadMore(e.api.getLastDisplayedRowIndex());
       }}
       onBodyScrollEnd={() => saveView()}
       onViewportChanged={() => apply.loadLate(apiRef.current, pathOf, replaceRow)}
@@ -1715,6 +1989,12 @@ function TableCore(p: CoreSettings) {
       onCellKeyDown={(e: CellKeyDownEvent) => {
         const ev = e.event as KeyboardEvent | undefined;
         // Tree tables: "+" expands, "-" collapses the node of the focused row (sap.ui.table.TreeTable).
+        // Group rows: "+" / "-" / Enter expand and collapse (sap.ui.table group headers).
+        const g = groupOf(e.data);
+        if (g && !g.bottom && (ev?.key === '+' || ev?.key === '-' || ev?.key === 'Enter')) {
+          if (ev.key === 'Enter' || g.expanded === (ev.key === '-')) latest.current.toggleGroup(g.key);
+          return;
+        }
         if (isTree && e.data && (ev?.key === '+' || ev?.key === '-')) {
           const node = tree.nodeOf(e.data as Row);
           if (node && node.drillState !== 'leaf' && (node.drillState === 'expanded') === (ev.key === '-')) tree.toggle(e.data as Row);
@@ -1727,16 +2007,15 @@ function TableCore(p: CoreSettings) {
 
   return (
     <TableCtx.Provider value={internal}>
-      <section ref={sectionRef} className={['sk-table', `sk-table--${mode}`, p.className].filter(Boolean).join(' ')} data-sk-fullscreen={fullScreen || undefined}
-        style={fullScreen ? { position: 'fixed', inset: 0, zIndex: 300, background: 'var(--sk-color-surface)', padding: 'var(--sk-space-4)', display: 'flex', flexDirection: 'column', overflow: 'auto' } : undefined} aria-label={title} data-sk-table={info.entitySet} aria-busy={p.busy || list.isFetching || undefined}>
+      <section ref={sectionRef} className={['sk-table', `sk-table--${mode}`, fixedRows ? 'sk-table--fixed-rows' : '', p.className].filter(Boolean).join(' ')} data-sk-fullscreen={fullScreen || undefined}
+        style={fullScreen ? { position: 'fixed', inset: 0, zIndex: 300, background: 'var(--sk-color-surface)', padding: 'var(--sk-space-4)', display: 'flex', flexDirection: 'column', overflow: 'auto' } : fixedRows ? { flex: 'none', minHeight: 0 } : undefined} aria-label={title} data-sk-table={info.entitySet} aria-busy={p.busy || list.isFetching || undefined}>
         {p.children ?? <ToolbarPart />}
+        <FilterInfoPart />
         {error ? (
           <Alert color="red" variant="light" className="sk-table__error" role="alert">{t('table.error', { message: error.message })}</Alert>
         ) : null}
-        {creating && createMode === 'inline' && parent ? (
-          <InlineCreateRow service={p.service} typeName={info.typeName} fields={createFields(model, info.typeName, lineItem)} onCreate={createChild} onCancel={() => setCreating(false)} />
-        ) : null}
-        <div className="sk-table__body">
+        {creating && createMode === 'inline' && parent && !p.creationMode?.createAtEnd ? inlineCreate : null}
+        <div className="sk-table__body" style={rowsStyle} data-sk-row-count={p.rowCount}>
           {grid}
           {responsiveTable}
           {(!executed || empty) && !error && !responsive ? <div className="sk-table__nodata" data-sk-nodata>{noDataContent}</div> : null}
@@ -1744,6 +2023,7 @@ function TableCore(p: CoreSettings) {
           {p.showOverlay ? <div className="sk-table__overlay" data-sk-overlay><Text>{t('page.overlay')}</Text></div> : null}
           {p.busy || (list.isFetching && mode === 'auto' && list.rows.length === 0) ? <div className="sk-table__busy" role="status" aria-label={t('table.loading')} data-sk-busy /> : null}
         </div>
+        {creating && createMode === 'inline' && parent && p.creationMode?.createAtEnd ? inlineCreate : null}
         {preview ? (
           <div className="sk-table__show-all">
             <Anchor component="button" type="button" onClick={() => (p.onShowAll ? p.onShowAll() : parent && navigation?.toTable?.(parent.path, parent.navigation, service.name))} data-sk-show-all>
@@ -1772,6 +2052,31 @@ function TableCore(p: CoreSettings) {
         onCancel={() => setP13n(false)}
       />
       {runner.dialogs}
+      {massEditRows ? (
+        <Suspense fallback={null}><MassEditDialog
+          opened type={type} typeName={info.typeName} service={p.service} rows={massEditRows} customContent={p.massEdit?.customContent}
+          columns={visibleColumns.map((c) => c.field)} visibleFields={p.massEdit?.visibleFields} ignoredFields={p.massEdit?.ignoredFields}
+          onClose={() => setMassEditRows(null)}
+          onApply={async (changes) => {
+            const out: Message[] = [];
+            let done = 0;
+            for (const row of massEditRows) {
+              try {
+                const session = await strategy.begin(pathOf(row), row);
+                for (const [k, v] of Object.entries(changes)) session.set(k, v);
+                const r = await session.save();
+                out.push(...(r.messages ?? []));
+                done++;
+              } catch (e) { out.push(...messagesFromError(e)); }
+            }
+            if (done) out.unshift({ id: `mass-edit-${Date.now()}`, type: 'success', message: t('table.massEdit.done'), source: 'client' });
+            messages?.add(out);
+            setMassEditRows(null);
+            ctx.refresh();
+          }}
+        /></Suspense>
+      ) : null}
+      {askNewObject ? <NewObjectDialog opened service={p.service} typeName={info.typeName} fields={newObjectFields} onContinue={createDraft} onCancel={() => setAskNewObject(false)} /> : null}
       {canCreate && !newPage && (createMode === 'dialog' || !parent) ? (
         <CreateDialog
           opened={creating}
@@ -1779,7 +2084,7 @@ function TableCore(p: CoreSettings) {
           title={t('create.title', { type: ui.headerInfo.typeName })}
           service={p.service}
           typeName={info.typeName}
-          fields={createFields(model, info.typeName, lineItem)}
+          fields={dialogFields}
           onCreate={parent ? createChild : createRoot}
         />
       ) : null}

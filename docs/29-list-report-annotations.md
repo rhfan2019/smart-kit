@@ -67,16 +67,16 @@
 - 图表：除 Bar 以外都画成柱状图（FE 映射约 40 种）；不用 PV 的 SortOrder；不支持 DynamicMeasures、AggregatedProperty；标题不用 `Chart.Title`；没有 `Chart.Actions`。**阶段 4**：照 FE 映射 38 种类型，其中 dual、combination、scatter、bubble、heatmap、treemap、waterfall、bullet 是近似画法；PV SortOrder、DynamicMeasures、AggregatedProperty、`Chart.Title` 已按 FE；`Chart.Actions` 只做了 DataFieldForAction。
 - 多视图的来源：FE 由 manifest 指定视图（SPV、PV 或 SV，可以带自己的实体集，引用 Chart 的视图是单独的图表视图）；smart-kit 自动收集所有带限定符的 SPV，每个视图都是"表格 + 可切换的图表"。视图没有排序时 smart-kit 回退到默认 PV 的排序；视图的 RequestAtLeast 不生效。**阶段 4**：图表视图、视图自己的排序和 RequestAtLeast 已按 FE；由属性指定视图、页签计数用 `/$count`、页签结构**阶段 5 已按 FE**（`views.paths` 指 SPV、PV 或 LineItem，可带实体集或自定义 `template`；计数单独显示，只数未选中的页签）；组合视图在阶段 6（DV-lr5-036～038）。
 - 自动判断：ApplySupported 支持全部 8 种转换时 FE 自动用分析表格，有成对的 RecursiveHierarchy 时自动用树表；树表的初始展开取 PV 的 `InitialExpansionLevel`；没有 `Total` 时默认合计所有可聚合列。smart-kit 都要手工设。**阶段 4**：分析表、树表的自动判断和初始展开已按 FE（默认合计阶段 3 已按 FE，D39）；都不满足时 FE 默认 ResponsiveTable，**阶段 5 已按 FE**（页大小也按 FE 的 `threshold`，网格表首块 `$top` 一致）；**阶段 4 收尾**：未分组的分析表已按 FE 用一个 `$apply` 的 `concat` 同时取行、合计和条数，分组的分析表（FE 是可折叠的层级）改到阶段 6（DV-lr5-118、119，取代 DV-apply-005、006）。
-- `UI.KPI`（列表页标题区的 KPI 标签）没实现；列表里没有 `Common.SideEffects`。**阶段 4**：KPI 标签已按 FE（`keyPerformanceIndicators` 属性，**阶段 5** 定为 manifest 的 `keyPerformanceIndicators › <名字>`；点标签弹出的图表卡片没做）；SideEffects 在 FE 列表页只随批量编辑和内联编辑触发，smart-kit 列表页两者都没有，留给阶段 6。
+- `UI.KPI`（列表页标题区的 KPI 标签）没实现；列表里没有 `Common.SideEffects`。**阶段 4**：KPI 标签已按 FE（`keyPerformanceIndicators` 属性，**阶段 5** 定为 manifest 的 `keyPerformanceIndicators › <名字>`；点标签弹出的图表卡片没做）；SideEffects 在 FE 列表页只随批量编辑和内联编辑触发，smart-kit 列表页两者都没有，留给阶段 6。**阶段 6**：批量编辑已有（保存后整表重读），SideEffects 仍不读，和对象页一起长期。
 
 **阶段 4 之后还剩的**（详见 `02` 第 7.4 节）
 - 阶段 4 收尾（D45）已完成：分析表的单个 `$apply`（`concat`）请求（未分组）；`ValueListReferences` / `ValueListMapping`；`ResultContext` 和 SV 的 Parameters；新列类型和新动作用真 FE 核对。剩下的已登记（DV-vhref-001～004；DV-apply-005～010 在阶段 5 已修或由 DV-lr5-* 取代），列在下面。
 - 阶段 5（D46）已完成：页签计数用 `/$count`、页签结构；页大小、`threshold` 和网格表首块 `$top`；没设 `type` 时默认 ResponsiveTable；草稿列表的 NewPage 新建；`keyPerformanceIndicators` 按 manifest 定名；图表 `$apply` 的视图条件 `filter()` 不加括号；示例的自定义列不再换掉订单类型单元格。
-- 阶段 5 改到阶段 6：分组的分析表按 FE 的可折叠层级读（DV-lr5-118、119）；变式管理 `Control`，以及表格宏自己的变式管理和快速变式（DV-lr5-023、DV-table-005、009 等 10 条；模板的 `tableSettings.quickVariantSelection` 已做）；滚动后各块的 `$top`（DV-lr5-122）；草稿 NewPage 新建时问非计算键的对话框（DV-lr5-117）。
+- 阶段 5 改到阶段 6，**阶段 6（D47）已完成**：分组的分析表按 FE 的可折叠层级读（首个请求和 FE 相同，组开始折叠、小计在组头，展开时用列表请求读组内行；`macros6-grouped`、`macros6-grouped-expand`）；变式管理 `Control`，以及表格、图表、筛选栏各自的变式管理和表格宏的快速变式；草稿 NewPage 新建时先弹"New Object"对话框问非计算键和不可变字段（`macros6-lr-newobject`）；`views.paths[].annotationPath` 指向 SelectionVariant、组合视图、默认 SPV（`defaultTemplateAnnotationPath`）。滚动后各块的 `$top` 改为长期（DV-macros6-t38）。
 - 长期（D42、D44）：变式存在 smart-kit 自己的变式服务，不用 flexibility（DV-lr5-116）；FE 切换视图时多发一次请求，不照抄（DV-lr5-120）。
-- 阶段 6：SideEffects；对象页请求不再选 ETag 属性；编辑态的引用值帮助；参数化实体集的对象页、图表、树表和分析表。
+- 阶段 6：对象页请求不再选 ETag 属性、编辑态的引用值帮助已做（`29b`、`29c`）；SideEffects、参数化实体集的对象页、图表、树表和分析表（DV-op6-206）改为长期。
 - 近似画法的图表类型（dual、combination、scatter、bubble、heatmap、treemap、waterfall、bullet），还没排。
-- D42：smart-kit 不依赖 SAP 和 Fiori 启动台；语义对象链接通过 `NavigationAdapter` 由宿主给目标，没有目标时 IBN 列只显示值；参数化实体集的参数不取启动台的用户默认值（DV-vhref-004）。
+- D42：smart-kit 不依赖 SAP 和 Fiori 启动台；语义对象链接通过 `NavigationAdapter` 由宿主给目标，没有目标时 IBN 列只显示值（阶段 6：`Field` 积木的 `semanticObject` 属性可覆盖注解的语义对象）；参数化实体集的参数不取启动台的用户默认值（DV-vhref-004）。
 
 ## 6. smart-kit 多做或做得不同的（要决定保留还是去掉）
 
@@ -110,4 +110,4 @@
 
 每一批都：先把相关条目写成验收条目和测试（同一份注解，断言 smart-kit 发出的请求和显示与 FE 一致），再改代码；改到使用方可见的行为时写 changeset 和给 invoice-assure 的说明。
 
-对象页的注解这次没有对照，需要同样做一遍。
+对象页的注解这次没有对照，需要同样做一遍（阶段 6 已做，见 `29b`、`29c`）。

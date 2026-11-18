@@ -5,6 +5,7 @@ import { keyPredicate } from '../query/entityPath';
 import { readQueryString, sourceInfo, sourcePath, toQueryString, type QueryRequest, type QueryResult, type QuerySource, type ReadRequest, type Row } from '../query/request';
 import { messagesFromHeader } from './messages';
 import { ANALYTICAL_COUNT_ALIAS } from '../query/analytical';
+import { ANALYTICAL_LEAVES_ALIAS } from '../query/request';
 import { buildModel, type BuildModelOptions } from '../model/buildModel';
 import { errorFromResponse } from './errors';
 import type { DataProvider, FetchLike, RequestOptions, WriteResult } from './provider';
@@ -68,10 +69,13 @@ export class ODataV4Provider implements DataProvider {
     if (req.analytical) {
       // concat(): the grand total row first, then the row with the number of leaves, then the leaves (AL-10)
       const rows = [...(body.value ?? [])];
+      // grouped: the number of leaves comes first (concat(groupby(…)/aggregate($count as UI5__leaves),…))
+      const leavesRow = req.analytical.groupLevel ? rows.shift() : undefined;
+      const leaves = leavesRow?.[ANALYTICAL_LEAVES_ALIAS];
       const grandTotal = req.analytical.grandTotal.length ? rows.shift() : undefined;
       const countRow = req.count ? rows.shift() : undefined;
       const n = countRow?.[ANALYTICAL_COUNT_ALIAS];
-      return { rows, count: n === undefined || n === null ? undefined : Number(n), ...(grandTotal ? { grandTotal } : {}) };
+      return { rows, count: n === undefined || n === null ? undefined : Number(n), ...(grandTotal ? { grandTotal } : {}), ...(leaves === undefined || leaves === null ? {} : { leafCount: Number(leaves) }) };
     }
     const count = body['@odata.count'];
     return { rows: body.value ?? [], count: count === undefined ? undefined : Number(count) };

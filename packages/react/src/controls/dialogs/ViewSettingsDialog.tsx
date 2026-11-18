@@ -117,6 +117,23 @@ export interface ViewSettingsDialog {
   open(pageId?: ViewSettingsDialogPage): void;
   /** Deselects all filters and the preset filter. */
   clearFilters(): void;
+  /** The selected filter values (the ViewSettingsItem data objects; a single-select filter gives only its first). */
+  getSelectedFilterItems(): ViewSettingsItem[];
+  /** The selected filter values as `{ filterKey: { valueKey: true } }`. */
+  getSelectedFilterCompoundKeys(): Record<string, Record<string, boolean>>;
+  /** "Filtered by: Status (New, Approved), Region (North)", or "Filtered by: <preset>"; empty without filters. */
+  getSelectedFilterString(): string;
+  /**
+   * Selects filter values, `{ filterKey: { valueKey: true } }`: a listed filter gets exactly the values set to true (only
+   * the first for a single-select filter), other filters keep theirs; a non-empty object clears the preset filter.
+   * Returns the instance.
+   */
+  setSelectedFilterCompoundKeys(oSelectedFilterKeys: Record<string, Record<string, boolean>>): ViewSettingsDialog;
+  /**
+   * Sets the function that decides whether a value of a filter detail page matches the search, `fnTest(query, text)`;
+   * it replaces filterSearchOperator (`null` goes back to it). Returns the instance.
+   */
+  setFilterSearchCallback(fnTest: ((query: string, value: string) => boolean) | null): ViewSettingsDialog;
 }
 
 interface Settings {
@@ -180,6 +197,19 @@ export function ViewSettingsDialog(p: $ViewSettingsDialogSettings) {
   // The confirmed settings: start from the props, then what the user confirmed (UI5 keeps them in the control).
   const [committed, setCommitted] = useState<Settings | null>(null);
   const [draft, setDraft] = useState<Settings>(() => initial(p));
+  const [searchCallback, setSearchCallback] = useState<{ fn: (query: string, value: string) => boolean } | null>(null);
+  // the current selection: the draft while the dialog is open (UI5 changes the items as the user selects), else the confirmed one
+  const current = () => (opened ? draft : committed ?? initial(p));
+  const selectedValues = (st: Settings) => (p.filterItems ?? []).flatMap((f) => {
+    const sel = f.items.filter((i) => st.filters[f.key]?.includes(i.key));
+    return (f.multiSelect ?? true) ? sel : sel.slice(0, 1);
+  });
+  const compoundKeys = (st: Settings) => Object.fromEntries((p.filterItems ?? []).filter((f) => st.filters[f.key]?.length)
+    .map((f) => [f.key, Object.fromEntries(st.filters[f.key]!.map((k) => [k, true]))]));
+  const filterString = (st: Settings) => {
+    const preset = p.presetFilterItems?.find((i) => i.key === st.preset);
+    return preset ? t('ctl.vsd.filteredBy', { filters: preset.text }) : viewSettingsFilterString(p.filterItems ?? [], st.filters, t);
+  };
 
   const clearFilters = () => {
     const next = (x: Settings): Settings => ({ ...x, filters: emptyFilters(p), preset: undefined });
@@ -187,15 +217,44 @@ export function ViewSettingsDialog(p: $ViewSettingsDialogSettings) {
     setCommitted((c) => (c ? next(c) : next(initial(p))));
     p.onResetFilters?.();
   };
-  useImperativeHandle(p.ref, () => ({
-    open(pageId) {
-      setDraft(committed ?? initial(p));
-      setPage(pageId && pages.includes(pageId) ? pageId : pages[0] ?? 'sort');
-      setDetail(null);
-      setOpened(true);
-    },
-    clearFilters,
-  }));
+  // one stable instance (the setters return it, as UI5's `this`), refreshed with the current methods on each commit
+  const [self] = useState(() => ({}) as ViewSettingsDialog);
+  useImperativeHandle(p.ref, () => {
+    const methods: ViewSettingsDialog = {
+      open(pageId) {
+        setDraft(committed ?? initial(p));
+        setPage(pageId && pages.includes(pageId) ? pageId : pages[0] ?? 'sort');
+        setDetail(null);
+        setOpened(true);
+      },
+      clearFilters,
+      getSelectedFilterItems: () => selectedValues(current()),
+      getSelectedFilterCompoundKeys: () => compoundKeys(current()),
+      getSelectedFilterString: () => filterString(current()),
+      setSelectedFilterCompoundKeys(keys) {
+        if (keys && Object.keys(keys).length) {
+          const next = (x: Settings): Settings => {
+            const filters = { ...x.filters };
+            for (const f of p.filterItems ?? []) {
+              const given = keys[f.key];
+              if (!given) continue;
+              const on = f.items.filter((i) => given[i.key]).map((i) => i.key);
+              filters[f.key] = (f.multiSelect ?? true) ? on : on.slice(0, 1);
+            }
+            return { ...x, filters, preset: undefined };
+          };
+          setDraft(next);
+          setCommitted((c) => next(c ?? initial(p)));
+        }
+        return self;
+      },
+      setFilterSearchCallback(fnTest) {
+        setSearchCallback(fnTest ? { fn: fnTest } : null);
+        return self;
+      },
+    };
+    return Object.assign(self, methods);
+  });
 
   /** Closes unless `beforeClose` is prevented. */
   const closeWith = (after: () => void) => {
@@ -207,19 +266,16 @@ export function ViewSettingsDialog(p: $ViewSettingsDialogSettings) {
   };
   const cancel = () => closeWith(() => p.onCancel?.());
   const confirm = () => closeWith(() => {
-    const filterItems = p.filterItems ?? [];
-    const selectedValues = filterItems.flatMap((f) => f.items.filter((i) => draft.filters[f.key]?.includes(i.key)));
-    const preset = p.presetFilterItems?.find((i) => i.key === draft.preset);
     setCommitted(draft);
     p.onConfirm?.({
       sortItem: p.sortItems?.find((i) => i.key === draft.sort),
       sortDescending: draft.sortDescending,
       groupItem: p.groupItems?.find((i) => i.key === draft.group),
       groupDescending: draft.groupDescending,
-      presetFilterItem: preset,
-      filterItems: selectedValues,
-      filterCompoundKeys: Object.fromEntries(filterItems.filter((f) => draft.filters[f.key]?.length).map((f) => [f.key, Object.fromEntries(draft.filters[f.key]!.map((k) => [k, true]))])),
-      filterString: preset ? t('ctl.vsd.filteredBy', { filters: preset.text }) : viewSettingsFilterString(filterItems, draft.filters, t),
+      presetFilterItem: p.presetFilterItems?.find((i) => i.key === draft.preset),
+      filterItems: selectedValues(draft),
+      filterCompoundKeys: compoundKeys(draft),
+      filterString: filterString(draft),
     });
   });
   const reset = () => {
@@ -252,7 +308,7 @@ export function ViewSettingsDialog(p: $ViewSettingsDialogSettings) {
     const multi = detailItem.multiSelect ?? true;
     const sel = draft.filters[detailItem.key] ?? [];
     const q = detailSearch.trim().toLowerCase();
-    const items = detailItem.items.filter((i) => matchesFilter(i.text, q, p.filterSearchOperator));
+    const items = detailItem.items.filter((i) => (searchCallback ? searchCallback.fn(detailSearch, i.text) : matchesFilter(i.text, q, p.filterSearchOperator)));
     const set = (keys: string[]) => setDraft({ ...draft, preset: undefined, filters: { ...draft.filters, [detailItem.key]: keys } });
     const selectable = detailItem.items.filter((i) => i.enabled !== false);
     const all = selectable.every((i) => sel.includes(i.key));

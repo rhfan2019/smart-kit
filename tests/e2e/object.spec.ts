@@ -1,11 +1,13 @@
 import { expect, test, type Page } from '@playwright/test';
-import { open, recordOData, resetServer, table, PURCHASING } from './helpers';
+import { ON_PG, open, recordOData, resetServer, table, PURCHASING } from './helpers';
 
 const PO = '4500000001';
 /** Anchor navigation unless `layout` says otherwise (purchase orders default to tabs, see AC-OP-03). */
 const poPath = (po = PO, layout: 'anchor' | 'tabs' | '' = 'anchor') => `/purchasing/object?path=${encodeURIComponent(`PurchaseOrders('${po}')`)}${layout ? `&layout=${layout}` : ''}`;
 const navTop = (page: Page) => page.locator('.sk-dynamic-page__navigation').evaluate((el) => Math.round(el.getBoundingClientRect().top));
 const itemPath = (po = PO, item = 10) => `/purchasing/object?path=${encodeURIComponent(`PurchaseOrders('${po}')/_Item(PurchaseOrder='${po}',PurchaseOrderItem=${item})`)}`;
+/** A contact: the section "Activity" has two sub-sections (a collection facet with a collection facet, FE createSubSections; stage 6). */
+const contactPath = () => `/purchasing/object?path=${encodeURIComponent('SupplierContacts(5c0a0001-0d4e-4f00-8a00-000000001eef)')}`;
 const main = (page: Page) => page.locator('#demo-main');
 const scrollMain = (page: Page, y: number) => main(page).evaluate((el, top) => el.scrollTo({ top }), y);
 
@@ -49,11 +51,15 @@ test('AC-OP-02 anchors: scroll, scroll spy, subsection menu, overflow, small-scr
   await expect(page.locator('[data-sk-section="Items"]')).toBeInViewport();
   await scrollMain(page, 0);
   await expect(page.locator('[data-sk-anchor="GeneralInformation"]')).toHaveAttribute('aria-current', 'true');
-  // subsection dropdown for a section with two subsections
-  await page.locator('[data-sk-anchor-menu="GeneralInformation"]').click();
-  await expect(page.getByRole('menuitem')).toHaveCount(2);
-  await page.keyboard.press('Escape');
-  await expect(page.locator('[data-sk-anchor-menu="Items"]')).toHaveCount(0);
+  // subsection dropdown for a section with two subsections (FE: a collection facet of reference facets is one
+  // sub-section, so the order's sections have one each; the contact's "Activity" has two)
+  await expect(page.locator('[data-sk-anchor-menu="GeneralInformation"]')).toHaveCount(0);
+  if (!ON_PG) {
+    await open(page, contactPath());
+    await page.locator('[data-sk-anchor-menu="ContactActivity"]').click();
+    await expect(page.getByRole('menuitem')).toHaveCount(2);
+    await page.keyboard.press('Escape');
+  }
   // overflow menu
   await page.setViewportSize({ width: 900, height: 900 });
   await open(page, `${poPath()}&extra=8`);
@@ -86,11 +92,11 @@ test.describe('with smooth scrolling (no reduced motion)', () => {
   });
 });
 
-test('AC-OP-03 purchase orders use tab navigation: one section, counts on every tab, the tab bar stays in place', async ({ page }) => {
+test('AC-OP-03 purchase orders use tab navigation: one section, the tab bar stays in place', async ({ page }) => {
   await open(page, poPath(PO, '')); // default of the demo: an order has up to 150 items (OP Tables)
   await expect(page.locator('[data-sk-section]')).toHaveCount(1);
-  // the count is there before the tab is opened
-  await expect(page.locator('[data-sk-anchor="Items"]')).toHaveText('Items (150)');
+  // FE 1.154: the tab text is the section title, without a count (stage 6, docs/29c E)
+  await expect(page.locator('[data-sk-anchor="Items"]')).toHaveText('Items');
   const top = await navTop(page);
   for (const id of ['Items', 'NotesSection', 'Custom::Timeline', 'GeneralInformation']) {
     await page.locator(`[data-sk-anchor="${id}"]`).click();
@@ -171,9 +177,9 @@ test('AC-OP-11 header: title click, collapse releases the pin, no pin for a tall
 
 test('AC-OP-04 title de-duplication (four cases)', async ({ page }) => {
   await open(page, poPath());
-  // ② two subsections: section title + subsection titles
+  // ① one subsection (a collection facet of field groups is one sub-section, FE): its title is promoted
   await expect(page.locator('[data-sk-section="GeneralInformation"] > .sk-section__title')).toBeVisible();
-  await expect(page.locator('[data-sk-section="GeneralInformation"] .sk-subsection__title')).toHaveCount(2);
+  await expect(page.locator('[data-sk-section="GeneralInformation"] .sk-subsection__title')).toHaveCount(0);
   // ④ one subsection with one table: the table title is the title
   await expect(page.locator('[data-sk-section="Items"] > .sk-section__title')).toHaveCount(0);
   await page.locator('[data-sk-anchor="Items"]').click();
@@ -181,21 +187,24 @@ test('AC-OP-04 title de-duplication (four cases)', async ({ page }) => {
   // ① one subsection: its title is promoted
   await expect(page.locator('[data-sk-section="NotesSection"] > .sk-section__title')).toBeVisible();
   await expect(page.locator('[data-sk-section="NotesSection"] .sk-subsection__title')).toHaveCount(0);
-  // ③ first subsection is a table: no subsection title, the table carries it; the second keeps its title
+  // ③ a collection facet with a table and a field group is one mixed sub-section (FE): the table carries its title
   await open(page, itemPath());
   await page.locator('[data-sk-anchor="Pricing"]').click();
   const pricing = page.locator('[data-sk-section="Pricing"]');
   await expect(pricing.locator('> .sk-section__title')).toBeVisible();
-  await expect(pricing.locator('[data-sk-subsection="PricingConditions"] .sk-subsection__title')).toHaveCount(0);
-  await expect(pricing.locator('[data-sk-subsection="PricingConditions"] [data-sk-table-title]')).toHaveText(/\(\d+\)$/);
-  await expect(pricing.locator('[data-sk-subsection="PricingTotals"] .sk-subsection__title')).toBeVisible();
+  await expect(pricing.locator('[data-sk-subsection-part="PricingConditions"] [data-sk-table-title]')).toHaveText(/\(\d+\)$/);
+  // ② two subsections: section title + subsection titles (the contacts are only in the test service)
+  if (ON_PG) return;
+  await open(page, contactPath());
+  await expect(page.locator('[data-sk-section="ContactActivity"] > .sk-section__title')).toBeVisible();
+  await expect(page.locator('[data-sk-section="ContactActivity"] .sk-subsection__title')).toHaveCount(2);
 });
 
 test('AC-OP-05 form columns follow the content width; labels on top', async ({ page }) => {
   const columns = async () => {
-    // fields hidden by UI.Importance on smaller screens (phase 2) do not count
-    const xs = await page.locator('[data-sk-subsection="GeneralData"] .sk-form__field').evaluateAll((els) => els.filter((e) => getComputedStyle(e).display !== 'none').map((e) => Math.round(e.getBoundingClientRect().left)));
-    return new Set(xs).size;
+    // the form of General Information has two containers (FE ColumnLayout: the containers go into the columns), so the
+    // columns are counted as the grid's tracks (stage 6)
+    return page.locator('[data-sk-subsection="GeneralInformation"] .sk-form__grid').evaluate((e) => getComputedStyle(e).gridTemplateColumns.split(' ').filter(Boolean).length);
   };
   for (const [width, expected] of [[1700, 6], [1250, 4], [850, 3], [500, 1]] as const) {
     await page.setViewportSize({ width, height: 900 });

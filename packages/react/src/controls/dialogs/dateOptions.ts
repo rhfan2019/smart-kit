@@ -53,7 +53,12 @@ export interface DynamicDateOption {
   valueTypes?: string[];
   /** The option text in the list (UI5 `getText`). */
   getText?(): string;
-  /** The group header shown above the option (UI5 `getGroupHeader`); default "Other Options". */
+  /**
+   * The group of the option (UI5 `getGroup`): a standard group name (SingleDates, DateRanges, Weeks, Month, Quarters,
+   * Years), a group added with the control's `addGroup`, or a group number (1–6 the standard groups, 7… the added ones).
+   */
+  getGroup?(): string | number;
+  /** The group header shown above the option (UI5 `getGroupHeader`); default "Other Options" (a group added with `addGroup` uses its header). */
   getGroupHeader?(): string;
   format?(value: DynamicDateRangeValue): string;
   parse?(text: string): DynamicDateRangeValue | null | undefined;

@@ -11,7 +11,8 @@ import { useState, type ReactNode } from 'react';
 import { useSmartKit } from '../context/SmartKitProvider';
 
 export interface SemanticLinkProps {
-  semanticObject: string;
+  /** The semantic object, or several (the targets of all of them, FE Field `semanticObject`). */
+  semanticObject: string | string[];
   /** DataFieldWithIntentBasedNavigation/Action: only the target of this action. */
   action?: string;
   row: Row | undefined;
@@ -26,7 +27,8 @@ export interface SemanticLinkProps {
 export function useSemanticTargets(p: Omit<SemanticLinkProps, 'children' | 'intent'>): SemanticTarget[] {
   const { navigation } = useSmartKit();
   if (!navigation?.semanticTargets || !p.row) return [];
-  const all = navigation.semanticTargets({ semanticObject: p.semanticObject, action: p.action, row: p.row, path: p.path, service: p.service }) ?? [];
+  const objects = typeof p.semanticObject === 'string' ? [p.semanticObject] : p.semanticObject;
+  const all = objects.flatMap((semanticObject) => navigation.semanticTargets!({ semanticObject, action: p.action, row: p.row!, path: p.path, service: p.service }) ?? []);
   return p.action ? all.filter((x) => x.action === undefined || x.action === p.action) : all;
 }
 
@@ -35,12 +37,12 @@ export function SemanticLink(p: SemanticLinkProps) {
   const targets = useSemanticTargets(p);
   if (!targets.length) return <>{p.children}</>;
   if (p.intent || targets.length === 1) {
-    return <a className="sk-link" href={targets[0]!.href} data-sk-semantic-link={p.semanticObject} onClick={(e) => e.stopPropagation()}>{p.children}</a>;
+    return <a className="sk-link" href={targets[0]!.href} data-sk-semantic-link={String(p.semanticObject)} onClick={(e) => e.stopPropagation()}>{p.children}</a>;
   }
   return (
     <Popover opened={opened} onChange={setOpened} width={280} position="bottom-start" withArrow trapFocus returnFocus>
       <Popover.Target>
-        <UnstyledButton className="sk-link sk-quickview__link" onClick={(e) => { e.stopPropagation(); setOpened((o) => !o); }} aria-haspopup="dialog" aria-expanded={opened} data-sk-semantic-link={p.semanticObject}>
+        <UnstyledButton className="sk-link sk-quickview__link" onClick={(e) => { e.stopPropagation(); setOpened((o) => !o); }} aria-haspopup="dialog" aria-expanded={opened} data-sk-semantic-link={String(p.semanticObject)}>
           {p.children}
         </UnstyledButton>
       </Popover.Target>

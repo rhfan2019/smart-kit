@@ -88,6 +88,10 @@ test('P2-OP-23 subobjects with fewer than 8 fields are created in a dialog (draf
 test('P2-LR-15 creationMode NewPage (FE default) on the draft service: Create opens a new draft on the object page', async ({ page }) => {
   await open(page, '/po-draft');
   await page.locator('[data-sk-table="PurchaseOrders"] [data-sk-action="Create"]').click();
+  // stage 6: the key and the immutable company code are asked in "New Object" first (FE createWithDialog)
+  const dialog = page.getByRole('dialog', { name: 'New Object' });
+  await dialog.locator('[data-sk-create-field="CompanyCode"] input:not([type="hidden"])').fill('1000');
+  await dialog.getByRole('button', { name: 'Continue' }).click();
   await expect.poll(() => decodeURIComponent(page.url())).toContain('IsActiveEntity=false)');
 });
 

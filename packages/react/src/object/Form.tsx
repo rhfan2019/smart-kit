@@ -2,11 +2,12 @@
  * sap.fe.macros.Form (docs/26b, ADR-033): field groups with labels on top, 1/3/4/6 columns by container width
  * (FE's ColumnLayout defaults, OP-13). `contextPath` + `metaPath` locate the field group or facet as in Fiori elements.
  */
-import { resolvePath, type FormGroupModel, type MetaModel, type Row } from '@rhfan2019/smart-kit-core';
-import type { CSSProperties, ReactNode } from 'react';
-import { useService } from '../context/SmartKitProvider';
-import { isEditable } from '../edit/editing';
+import { resolvePath, type FormGroupModel, type MetaModel, type Row, type SubSectionModel } from '@rhfan2019/smart-kit-core';
+import { useState, type CSSProperties, type ReactNode } from 'react';
+import { useService, useText } from '../context/SmartKitProvider';
+import { fieldEditState } from '../edit/editing';
 import { Field, typeOfContextPath } from '../field/Field';
+import { getPath } from '../field/values';
 import { applyExtensions, type ExtendEntry } from '../util/extend';
 
 export interface FormFieldItem {
@@ -98,18 +99,30 @@ export function formGroupsOf(model: MetaModel, typeName: string, metaPath: strin
   if (fg) { const g = ui.fieldGroups[fg[1] ?? '']; return g ? [g] : []; }
   if (IDENTIFICATION.test(metaPath)) return [{ id: 'Identification', fields: ui.identification }];
   // a reference facet (subsection), or a collection facet (section): the groups of its form subsections
+  const groupsOf = (sub: SubSectionModel): FormGroupModel[] => (sub.content.kind === 'form' ? sub.content.groups : sub.content.kind === 'mixed' ? sub.content.parts.flatMap(groupsOf) : []);
   for (const s of ui.sections) {
-    if (s.id === metaPath) return s.subSections.flatMap((sub) => (sub.content.kind === 'form' ? sub.content.groups : []));
-    for (const sub of s.subSections) if (sub.id === metaPath && sub.content.kind === 'form') return sub.content.groups;
+    if (s.id === metaPath && s.subSections.length > 1) return s.subSections.flatMap(groupsOf);
+    for (const sub of s.subSections) if (sub.id === metaPath) return groupsOf(sub);
   }
   return [];
 }
 
+/** The path is true in the row (UI.Hidden given as a path). */
+const hiddenIn = (row: Row | undefined, path: string | undefined) => {
+  if (!path) return false;
+  const v = getPath(row, path);
+  return v === true || v === 'true';
+};
+
 /** sap.fe.macros.Form */
 export function Form(p: $FormSettings) {
   const service = useService(p.service);
+  const t = useText();
   const typeName = p.typeName ?? typeOfContextPath(service.model, p.contextPath) ?? '';
-  const groups = formGroupsOf(service.model, typeName, p.metaPath);
+  // FE UIFormatters isVisible: containers and fields with UI.Hidden true for this row are not shown
+  const groups = formGroupsOf(service.model, typeName, p.metaPath).filter((g) => !hiddenIn(p.row, g.hidden));
+  // Fields with UI.PartOfPreview false are shown with "Show Details" of their container (FE Form ShowHideDetails)
+  const [details, setDetails] = useState<Record<string, boolean>>({});
   if (p.visible === false) return null;
   const anchorGroup = (id: string) => groups.findIndex((g) => g.fields.some((f) => f.id === id));
   const editing = p.readOnly === false;
@@ -122,18 +135,25 @@ export function Form(p: $FormSettings) {
       {p.title ? <h4 className="sk-form__title sk-title--h4">{p.title}</h4> : null}
       <div className="sk-form__grid">
         {groups.map((g, gi) => {
-          const items: FormFieldItem[] = g.fields.map((f) => ({ id: f.id, label: f.label }));
+          const hasDetails = g.fields.some((f) => f.partOfPreview === false);
+          const items: FormFieldItem[] = g.fields.filter((f) => !hiddenIn(p.row, f.hidden) && (f.partOfPreview !== false || details[g.id])).map((f) => ({ id: f.id, label: f.label }));
           const ext = (p.extend ?? []).filter((e) => (e.anchor ? anchorGroup(e.anchor) === gi : e.position === 'replace' ? anchorGroup(e.id) === gi : gi === groups.length - 1));
           const fields = applyExtensions(items, ext, 'Form');
           return (
             <div className="sk-form__group" key={g.id} data-sk-group={g.id} role="group" aria-label={g.label}>
               {groupTitles && g.label ? <h5 className="sk-form__group-title sk-title--h5">{g.label}</h5> : null}
+              {hasDetails ? (
+                <button type="button" className="sk-form__details sk-link" onClick={() => setDetails((d) => ({ ...d, [g.id]: !d[g.id] }))} aria-expanded={Boolean(details[g.id])} data-sk-form-details={g.id}>
+                  {details[g.id] ? t('form.hideDetails') : t('form.showDetails')}
+                </button>
+              ) : null}
               {fields.map((item) => {
                 const model = g.fields.find((f) => f.id === item.id);
                 const prop = model?.path ? resolvePath(service.model.entityTypes, typeName, model.path).property : undefined;
-                const editable = editing && model?.kind === 'field' && !model.path?.includes('/') && isEditable(prop, Boolean(p.creating));
+                const state = fieldEditState(prop, p.values ?? p.row, Boolean(p.creating));
+                const editable = editing && model?.kind === 'field' && !model.path?.includes('/') && state.editable;
                 const value = model?.path ? (editing ? p.values?.[model.path] : undefined) : undefined;
-                const required = Boolean(prop?.mandatory);
+                const required = state.required;
                 const inputId = model?.path ? `sk-field-${typeName.replace(/\W/g, '_')}-${model.path.replace(/\W/g, '_')}` : undefined;
                 return (
                   <div

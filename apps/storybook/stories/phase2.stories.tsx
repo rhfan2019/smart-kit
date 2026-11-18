@@ -11,13 +11,20 @@ import MTable from '@rhfan2019/smart-kit/m/Table';
 import DynamicPage from '@rhfan2019/smart-kit/f/DynamicPage';
 import DynamicPageTitle from '@rhfan2019/smart-kit/f/DynamicPageTitle';
 import FlexibleColumnLayout, { type $FlexibleColumnLayoutSettings } from '@rhfan2019/smart-kit/f/FlexibleColumnLayout';
+import FlexibleColumnLayoutAccessibleLandmarkInfo from '@rhfan2019/smart-kit/f/FlexibleColumnLayoutAccessibleLandmarkInfo';
 import GenericTag from '@rhfan2019/smart-kit/m/GenericTag';
 import ObjectMarker from '@rhfan2019/smart-kit/m/ObjectMarker';
 import Share from '@rhfan2019/smart-kit/v4/fe/macros/Share';
 import FlexibleColumnLayoutActions from '@rhfan2019/smart-kit/v4/fe/macros/fcl/FlexibleColumnLayoutActions.block';
 import SimpleChart from '@rhfan2019/smart-kit/kit/SimpleChart';
 import ChartMacro from '@rhfan2019/smart-kit/v4/fe/macros/Chart';
-import MicroChart from '@rhfan2019/smart-kit/v4/fe/macros/MicroChart';
+import BulletMicroChart from '@rhfan2019/smart-kit/suite/ui/microchart/BulletMicroChart';
+import RadialMicroChart from '@rhfan2019/smart-kit/suite/ui/microchart/RadialMicroChart';
+import HarveyBallMicroChart from '@rhfan2019/smart-kit/suite/ui/microchart/HarveyBallMicroChart';
+import DeltaMicroChart from '@rhfan2019/smart-kit/suite/ui/microchart/DeltaMicroChart';
+import ColumnMicroChart from '@rhfan2019/smart-kit/suite/ui/microchart/ColumnMicroChart';
+import LineMicroChart from '@rhfan2019/smart-kit/suite/ui/microchart/LineMicroChart';
+import ComparisonMicroChart from '@rhfan2019/smart-kit/suite/ui/microchart/ComparisonMicroChart';
 import MessageButton from '@rhfan2019/smart-kit/v4/fe/macros/MessageButton';
 import MessageIcon from '@rhfan2019/smart-kit/kit/MessageIcon';
 import MessageProvider from '@rhfan2019/smart-kit/kit/MessageProvider';
@@ -33,17 +40,17 @@ type Story = StoryObj;
 const pad = { padding: 16 };
 
 export const MicroCharts: Story = {
-  // Micro charts fill their container (docs/15 MC-02); each one gets a header facet sized box here. All rules: "Phase 3".
+  // The sap.suite.ui.microchart controls; size Responsive fills the header facet sized box. All rules: "Phase 3".
   render: () => (
     <div style={{ ...pad, display: 'flex', gap: 24, flexWrap: 'wrap' }}>
       {[
-        <MicroChart key="b" kind="bullet" label="Budget" value={1200} target={1440} />,
-        <MicroChart key="r" kind="radial" label="Delivered" value={52} target={100} />,
-        <MicroChart key="h" kind="harvey" label="Received" value={3} max={8} />,
-        <MicroChart key="d" kind="delta" label="Invoiced" value={900} target={1200} />,
-        <MicroChart key="c" kind="column" label="Amounts" points={[{ label: '1', value: 3 }, { label: '2', value: -1 }, { label: '3', value: 5 }]} />,
-        <MicroChart key="l" kind="line" label="Quantities" points={[{ label: '1', value: 3 }, { label: '2', value: 4 }, { label: '3', value: 2 }]} />,
-        <MicroChart key="m" kind="comparison" label={`Top ${MICRO_COMPARISON_MAX}`} points={[{ label: 'A', value: 30 }, { label: 'B', value: 12 }]} onPress={() => undefined} />,
+        <BulletMicroChart key="b" size="Responsive" aria-label="Budget" targetValue={1440} actual={{ value: 1200 }} />,
+        <RadialMicroChart key="r" size="Responsive" aria-label="Delivered" fraction={52} total={100} />,
+        <HarveyBallMicroChart key="h" size="Responsive" aria-label="Received" total={8} items={[{ fraction: 3 }]} />,
+        <DeltaMicroChart key="d" size="Responsive" aria-label="Invoiced" value1={900} value2={1200} />,
+        <ColumnMicroChart key="c" size="Responsive" aria-label="Amounts" columns={[{ label: '1', value: 3 }, { label: '2', value: -1 }, { label: '3', value: 5 }]} />,
+        <LineMicroChart key="l" size="Responsive" aria-label="Quantities" points={[{ x: 1, y: 3 }, { x: 2, y: 4 }, { x: 3, y: 2 }]} />,
+        <ComparisonMicroChart key="m" size="Responsive" aria-label={`Top ${MICRO_COMPARISON_MAX}`} data={[{ title: 'A', value: 30 }, { title: 'B', value: 12 }]} onPress={() => undefined} />,
       ].map((chart) => <div key={chart.key} style={{ width: 160, height: 72 }}>{chart}</div>)}
     </div>
   ),
@@ -133,12 +140,31 @@ export const ResponsiveTableAndQuickView: Story = {
   ),
 };
 
+// sap.m.ListBase (UI5 alignment stage 6): unread rows, item actions with overflow, context menu, swipe (touch), upwards growing
+export const ResponsiveTableListBase: Story = {
+  render: () => (
+    <div style={pad}>
+      <MTable
+        headerText="sap.m.ListBase" columns={[{ id: 'a', header: 'Name', cell: (r) => String(r.Name) }]} items={data.Products!.slice(0, 6)} keyOf={(r) => String(r.ID)}
+        showUnread rowUnread={(r) => Number(r.ID) % 2 === 1}
+        itemActionCount={2} rowActions={() => [{ type: 'Edit' }, { type: 'Delete' }, { key: 'copy', text: 'Copy' }]} onItemActionPress={(e) => console.log('itemActionPress', e.action, e.listItem)}
+        contextMenu={(r) => <Button size="xs" variant="subtle">Open {String(r.Name)}</Button>}
+        swipeContent={<Button size="xs">Approve</Button>}
+        growing growingThreshold={3} growingDirection="Upwards"
+      />
+    </div>
+  ),
+};
+
 function FclDemo() {
   const [layout, setLayout] = useState<NonNullable<$FlexibleColumnLayoutSettings['layout']>>('TwoColumnsMidExpanded');
   return (
     <div style={{ height: '100vh' }}>
       <FlexibleColumnLayout
         layout={layout} onStateChange={(e) => setLayout(e.layout)} beginColumnPages={<TableMacro contextPath="/Products" />}
+        // drag the separator (or move it with the arrow keys): the new sizes arrive as columnsDistributionChange
+        onColumnsDistributionChange={(e) => console.info('columnsDistributionChange', e.media, e.layout, e.columnsSizes)}
+        landmarkInfo={<FlexibleColumnLayoutAccessibleLandmarkInfo firstColumnLabel="Products" middleColumnLabel="Product details" />}
         midColumnPages={<DynamicPage title={<DynamicPageTitle heading="Product" navigationActions={<FlexibleColumnLayoutActions />} />} content={<ObjectPage path="Products(1)" />} />}
       />
     </div>

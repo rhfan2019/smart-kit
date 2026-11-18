@@ -72,7 +72,11 @@ export function AnchorBar(p: $AnchorBarSettings) {
 }
 
 /** The anchor bar, or the tab bar of an ObjectPageLayout with `useIconTabBar` (OP-09). */
-export function SectionBar({ tabs: tabMode, ...p }: $AnchorBarSettings & { tabs?: boolean }) {
+export function SectionBar({ tabs: tabMode, landmark, ...p }: $AnchorBarSettings & {
+  tabs?: boolean;
+  /** ObjectPageLayout's navigation landmark (ObjectPageAccessibleLandmarkInfo); without it a nav labelled "Sections". */
+  landmark?: { role?: string; label?: string };
+}) {
   const t = useText();
   const items = p.content ?? NO_ITEMS;
   const select = (sectionId: string, sub?: string) => p.onSelect?.(sectionId, sub);
@@ -134,10 +138,13 @@ export function SectionBar({ tabs: tabMode, ...p }: $AnchorBarSettings & { tabs?
     e.preventDefault();
   };
 
+  // navigation role: a nav element; another role: a div with that role; role None: a plain div
+  const NavTag = (landmark && landmark.role !== 'navigation' ? 'div' : 'nav') as 'nav';
   return (
-    <nav
+    <NavTag
+      role={landmark?.role !== 'navigation' ? landmark?.role : undefined}
       className={['sk-anchorbar', tabMode ? 'sk-anchorbar--tabs' : '', p.upperCase ? 'sk-anchorbar--upper' : '', `sk-anchorbar--${(p.design ?? 'Auto').toLowerCase()}`, p.style === 'Clear' ? 'sk-anchorbar--clear' : '', active ? 'sk-anchorbar--active' : ''].filter(Boolean).join(' ')}
-      aria-label={t('object.sections')} ref={barRef} inert={p.enabled === false} aria-disabled={p.enabled === false ? true : undefined}
+      aria-label={landmark ? landmark.label : t('object.sections')} ref={barRef} inert={p.enabled === false} aria-disabled={p.enabled === false ? true : undefined}
       aria-haspopup={active && p.ariaHasPopup && p.ariaHasPopup !== 'None' ? (p.ariaHasPopup.toLowerCase() as 'menu') : undefined}
       style={{ ...(p.width ? { width: p.width } : {}), ...(p.height ? { height: p.height, minHeight: p.height } : {}) }}
       data-background-design={p.backgroundDesign} onClick={press}
@@ -193,6 +200,6 @@ export function SectionBar({ tabs: tabMode, ...p }: $AnchorBarSettings & { tabs?
           </Menu.Dropdown>
         </Menu>
       ) : null}
-    </nav>
+    </NavTag>
   );
 }

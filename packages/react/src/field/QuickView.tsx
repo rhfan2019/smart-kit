@@ -1,8 +1,12 @@
-/** Quick view (LR Navigation · cross navigation): a link that opens a popover with the referenced object's UI.QuickViewFacets. */
-import { Avatar, Group, Loader, Popover, Text, UnstyledButton } from '@mantine/core';
+/**
+ * Quick view (LR Navigation · cross navigation): a link that opens a sap.m.QuickView with the referenced object's
+ * UI.HeaderInfo (header = TypeName, title, description, image) and UI.QuickViewFacets (one group per facet).
+ */
+import { Avatar, UnstyledButton } from '@mantine/core';
 import { buildObjectRequest, keyPredicate, type FieldModel, type Row } from '@rhfan2019/smart-kit-core';
 import { useQuery } from '@tanstack/react-query';
-import { useMemo, useState, type ReactNode } from 'react';
+import { useMemo, useRef, useState, type ReactNode } from 'react';
+import { QuickView, QuickViewGroup, QuickViewGroupElement, QuickViewPage } from '../controls/quickview/QuickView';
 import { useService, useSmartKit, useText } from '../context/SmartKitProvider';
 import { Field } from './Field';
 import { getPath } from './values';
@@ -12,6 +16,8 @@ export function QuickViewLink({ typeName, field, row, service: serviceName, chil
   const { navigation } = useSmartKit();
   const t = useText();
   const [opened, setOpened] = useState(false);
+  const link = useRef<HTMLButtonElement>(null);
+  const qvRef = useRef<QuickView>(null);
   const qv = field.quickView!;
   const model = service.model;
   // Key of the referenced object from the referential constraints of the navigation.
@@ -51,37 +57,30 @@ export function QuickViewLink({ typeName, field, row, service: serviceName, chil
   const image = ui.headerInfo.imageUrl && 'path' in ui.headerInfo.imageUrl ? getPath(data, ui.headerInfo.imageUrl.path) : undefined;
   const href = navigation?.hasObjectPage?.(target.entitySet, service.name) ? navigation.href?.({ kind: 'object', path: target.path, service: service.name }) : undefined;
   return (
-    <Popover opened={opened} onChange={setOpened} width={300} position="bottom-start" withArrow trapFocus returnFocus>
-      <Popover.Target>
-        <UnstyledButton className="sk-link sk-quickview__link" onClick={(e) => { e.stopPropagation(); setOpened((o) => !o); }} aria-haspopup="dialog" aria-expanded={opened} data-sk-quickview-link>
-          {children}
-        </UnstyledButton>
-      </Popover.Target>
-      <Popover.Dropdown role="dialog" aria-label={t('quickView.title', { type: ui.headerInfo.typeName })} data-sk-quickview onClick={(e) => e.stopPropagation()}>
-        {q.isLoading ? <Loader size="sm" /> : (
-          <div className="sk-quickview">
-            <Group gap="sm" wrap="nowrap" mb="sm">
-              {image ? <Avatar src={String(image)} alt="" radius="md" /> : null}
-              <div>
-                <Text fw={600} data-sk-quickview-title>{href ? <a className="sk-link" href={href}>{String(title ?? '')}</a> : String(title ?? '')}</Text>
-                {description ? <Text size="sm" c="dimmed">{String(description)}</Text> : null}
-                <Text size="xs" c="dimmed">{ui.headerInfo.typeName}</Text>
-              </div>
-            </Group>
-            {groups.map((g) => (
-              <dl key={g.id} className="sk-quickview__group">
-                {g.label ? <Text size="sm" fw={600}>{g.label}</Text> : null}
-                {g.fields.map((f) => (
-                  <div key={f.id} className="sk-facet__pair">
-                    <dt>{f.label}:</dt>
-                    <dd><Field typeName={qv.typeName} service={service.name} metaPath={f} row={data} /></dd>
-                  </div>
-                ))}
-              </dl>
-            ))}
-          </div>
-        )}
-      </Popover.Dropdown>
-    </Popover>
+    <>
+      <UnstyledButton
+        ref={link} className="sk-link sk-quickview__link" aria-haspopup="dialog" aria-expanded={opened} data-sk-quickview-link
+        onClick={(e) => { e.stopPropagation(); if (opened) qvRef.current?.close(); else qvRef.current?.openBy(link.current); }}
+      >
+        {children}
+      </UnstyledButton>
+      <QuickView
+        ref={qvRef} placement="Bottom" width="var(--sk-size-field-quickview)" busy={q.isLoading} aria-label={t('quickView.title', { type: ui.headerInfo.typeName })}
+        onAfterOpen={() => setOpened(true)} onAfterClose={() => setOpened(false)}
+      >
+        <QuickViewPage
+          header={ui.headerInfo.typeName} title={String(title ?? '')} titleUrl={href} description={description ? String(description) : undefined}
+          avatar={image ? <Avatar src={String(image)} alt="" radius="md" /> : undefined}
+        >
+          {groups.map((g) => (
+            <QuickViewGroup key={g.id} heading={g.label}>
+              {g.fields.map((f) => (
+                <QuickViewGroupElement key={f.id} label={f.label} value={<Field typeName={qv.typeName} service={service.name} metaPath={f} row={data} />} />
+              ))}
+            </QuickViewGroup>
+          ))}
+        </QuickViewPage>
+      </QuickView>
+    </>
   );
 }

@@ -26,6 +26,8 @@ UI.DataFieldForAction (ADR-024).
 | `menu` |  | `string` | Id of the UI.DataFieldForActionGroup the action belongs to ("DataFieldForActionGroup::&lt;ID>"). |
 | `criticality` |  | `ValueRef` |  |
 | `operationAvailable` |  | `ValueRef` | Core.OperationAvailable: a constant or a path relative to the bound entity (binding parameter removed). |
+| `hidden` |  | `string` | UI.Hidden of the record as a path (a constant true drops the action): the button is hidden for rows where it is true. |
+| `emphasized` |  | `boolean` | UI.Emphasized of the record (FE HeaderAndFooterAction getDataFieldAnnotationAction: emphasized when there is no Criticality). |
 
 ### `activeFilterPaths` — function
 
@@ -100,6 +102,7 @@ The analytical part of the first page request (`QueryRequest.analytical`).
 | `groupBy` | **yes** | `string[]` | Leaf level: sorted group properties, followed by the `additionally` properties (local texts). |
 | `measures` | **yes** | `AggregateMeasure[]` | Aggregates of the leaves (custom aggregates by name), each followed by its unit unless it is grouped by. |
 | `grandTotal` | **yes** | `AggregateMeasure[]` | Grand total (`concat(aggregate(…),…)` first); empty: none. |
+| `groupLevel` |  | `{ groupBy: string[]; measures: AggregateMeasure[] }` | Visual grouping: the groups of the first level (`groupBy`) with their subtotals (`measures`) instead of the leaves. |
 
 ### `AnalyticalRequestOptions` — interface
 
@@ -109,6 +112,8 @@ The analytical part of the first page request (`QueryRequest.analytical`).
 | `source` | **yes** | `QuerySource` |  |
 | `totals` |  | `string[]` | Measures (custom aggregates) with a grand total: the columns whose totals are shown. |
 | `groupExtra` |  | `string[]` | Further properties the visible content needs from the leaves (custom columns' `properties`): grouped by. |
+| `groupLevels` |  | `string[]` | Visual grouping (sap.ui.mdc.Table groupLevels, `$$aggregation.groupLevels`): the first page reads the number of leaves, the grand total and the groups of the first level (collapsed); `leaves` reads the rows of a group. |
+| `aggregationOnLeafLevel` |  | `boolean` | sap.fe.macros.table.AnalyticalConfiguration aggregationOnLeafLevel: the leaves are aggregated by the shown groupable properties, without the keys (`$leafLevelAggregated`). |
 | `search` |  | `string` |  |
 | `filters` |  | `FilterState` |  |
 | `top` |  | `number` |  |
@@ -124,6 +129,7 @@ The analytical part of the first page request (`QueryRequest.analytical`).
 | `first` | **yes** | `QueryRequest` | First page: grand total, number of leaves (`count`) and the first `top` leaves in one `$apply`. |
 | `page` | **yes** | `(skip: number, top: number) => QueryRequest` | A following page: a plain list request without `$count`. |
 | `late` |  | `ReadRequest` | What each row of the first page still needs (late properties); undefined when the first page has everything. |
+| `leaves` |  | `(group: Row, skip: number, top: number) => QueryRequest` | Visual grouping: the leaves of the group `group` (a row of the first page) from `skip`: a list request with the group's conditions first (`$filter=G eq 'v' and (…)`) and `$count` (_AggregationCache, the last level); `$orderby` keeps what the leaf level groups or aggregates, as the first page (getFilteredOrderby). |
 
 ### `arrangeText` — function
 
@@ -281,6 +287,7 @@ capabilitiesFor(model: MetaModel, parentSet: string, navigation?: string): Capab
 | `caseInsensitive` |  | `boolean` | Capabilities.FilterFunctions contains "tolower": string filters are case-insensitive (`tolower(p) eq tolower('x')`). |
 | `createHidden` |  | `ValueRef` | UI.CreateHidden / UI.DeleteHidden of the entity set, else of its type (FE StandardActions isActionAnnotatedHidden). |
 | `deleteHidden` |  | `ValueRef` |  |
+| `updateHidden` |  | `ValueRef` | UI.UpdateHidden of the entity set (else its type): a constant true hides the object page's Edit, a path per object (FE getEditButtonVisibility). |
 | `aggregation` |  | `AggregationModel` | Aggregation.ApplySupported on the entity set or its type ($apply: groups and totals, docs/23). Absent: no aggregation. |
 
 ### `chartExpand` — function
@@ -788,6 +795,8 @@ export type FetchLike = (input: string, init?: { method?: string; headers?: Reco
 | `linkTarget` |  | `string` | UI.DataFieldWithUrl: HTML5.LinkTarget of the record or of the property ("_blank", "_self", …); none: the same window ("_top"). |
 | `iconUrl` |  | `ValueRef` | UI.DataFieldWithUrl/IconUrl: an icon shown before the linked value. |
 | `importance` |  | `Importance` | UI.Importance of the record (responsive table columns, forms on small screens). |
+| `hidden` |  | `string` | UI.Hidden of the record or of its property as a path (a constant true drops the field): hidden for rows where the path is true (FE UIFormatters isVisible / DataField isReferencePropertyStaticallyHidden). |
+| `partOfPreview` |  | `boolean` | UI.PartOfPreview false on the record: in a form the field is shown only with "Show More" details (FE Form isFieldPartOfPreview). |
 | `quickView` |  | `{ navigation: string; typeName: string }` | The value refers to another object that has UI.QuickViewFacets (cross navigation, LR Navigation). |
 
 ### `fieldPaths` — function
@@ -846,7 +855,7 @@ export type FilterState = Record<string, Condition[]>;
 Builds the $filter string of a request (filters and anyOf).
 
 ```ts
-filterString(model: MetaModel, typeName: string, req: Pick<QueryRequest, "filters" | "anyOf" | "anyOfOnly" | "timeZone" | "caseInsensitive" | "hiddenFiltersFirst">, o?: { wrapHidden?: boolean; }): string | undefined
+filterString(model: MetaModel, typeName: string, req: Pick<QueryRequest, "filters" | "anyOf" | "anyOfOnly" | "timeZone" | "caseInsensitive" | "hiddenFiltersFirst" | "levelFilter">, o?: { wrapHidden?: boolean; }): string | undefined
 ```
 
 ### `FIXED_DAY_OPERATORS` — const
@@ -929,6 +938,8 @@ formatValue(value: unknown, prop: Pick<PropertyModel, "edmType" | "scale" | "isC
 | `id` | **yes** | `string` |  |
 | `fields` | **yes** | `FieldModel[]` |  |
 | `label` |  | `string` |  |
+| `partOfPreview` |  | `boolean` | UI.PartOfPreview false of the facet: the form container is shown only after "Show More" (FE Form hasFacetsNotPartOfPreview). |
+| `hidden` |  | `string` | UI.Hidden of the facet as a path: the container is hidden for rows where it is true (a constant true drops it). |
 
 ### `getEntitySet` — function
 
@@ -967,7 +978,7 @@ groupKey(v: unknown): string
 ### `HeaderFacetModel` — type
 
 ```ts
-export type HeaderFacetModel = | { id: string; kind: 'form'; label?: string; fields: FieldModel[] } | { id: string; kind: 'dataPoint'; label?: string; dataPoint: DataPointModel } /** Micro chart facet. */ | { id: string; kind: 'chart'; label?: string; chart: ChartModel } /** Plain text facet: a field group with a single multi-line text field. */ | { id: string; kind: 'text'; label?: string; fie…
+export type HeaderFacetModel = | { id: string; kind: 'form'; label?: string; fields: FieldModel[]; hidden?: string } | { id: string; kind: 'dataPoint'; label?: string; dataPoint: DataPointModel; hidden?: string } /** Micro chart facet. */ | { id: string; kind: 'chart'; label?: string; chart: ChartModel; hidden?: string } /** Plain text facet: a field group with a single multi-line text field. *…
 ```
 
 ### `HeaderInfoModel` — interface
@@ -1361,7 +1372,7 @@ export type NavigationTarget = { kind: 'object'; path: EntityPath; service?: str
 
 ### `objectFields` — function
 
-Fields shown by the object page: header, header facets, and every form in every section.
+Fields shown by the object page: header, header facets, and every form in every section (also the parts of mixed sub-sections), and the UI.Hidden paths of facets and fields (FE binds `visible` to them, so they are selected).
 
 ```ts
 objectFields(ui: EntityUi): FieldModel[]
@@ -1529,6 +1540,8 @@ propertyFilter(path: string, conditions: Condition[], type: EdmType, opts?: Filt
 | `valueLists` |  | `ValueListModel[]` | All Common.ValueList annotations that apply, by qualifier, default ("") first (FE `putDefaultQualifierFirst`), limited to Common.ValueListRelevantQualifiers when it lists qualifiers; `valueList` is the first of them. Absent when there is at most one. |
 | `valueListReferences` |  | `string[]` | Common.ValueListReferences: URLs of value help services' `$metadata` (relative to this service's `$metadata`) whose Common.ValueListMapping annotations describe the value lists of the property. They are loaded on demand (`ValueListReferenceService`, `referencedValueLists`); `valueList` / `valueLists` hold only the local ones. |
 | `valueListFixedValues` |  | `boolean` | Common.ValueListWithFixedValues (also for value lists that come from Common.ValueListReferences). |
+| `hiddenPath` |  | `string` | UI.Hidden as a path: the field is hidden for rows where it is true (FE UIFormatters isVisible). |
+| `placeholder` |  | `string` | UI.Placeholder: the placeholder of the editor (FE FieldTemplating getPlaceholder). |
 | `isEmailAddress` |  | `boolean` | Communication.IsEmailAddress: shown as a `mailto:` link. |
 | `isPhoneNumber` |  | `boolean` | Communication.IsPhoneNumber: shown as a `tel:` link. |
 | `masked` |  | `boolean` | Common.Masked: shown as "*" characters. |
@@ -1564,6 +1577,7 @@ propertyFilter(path: string, conditions: Condition[], type: EdmType, opts?: Filt
 | `aggregate` |  | `{ groupBy: string[]; measures: AggregateMeasure[] }` | Server-side aggregation ($apply, OData Data Aggregation): group by `groupBy` and aggregate the measures (ADR-021). |
 | `hierarchy` |  | `HierarchyRequest` | Recursive hierarchy (docs/26 §3.10): the visible nodes as `$apply=…/com.sap.vocabularies.Hierarchy.v1.TopLevels(…)`. |
 | `analytical` |  | `AnalyticalApply` | First page of an analytical table (AL-10, ./analytical.ts): grand total, number of leaves (`count`) and the leaves from `skip` / `top`, sorted by `orderBy`, in one `$apply` with `concat`; `select` and `expand` are not sent. |
+| `levelFilter` |  | `FilterState` | Conditions of an expanded group of an analytical table (sap.ui.model.odata.v4.lib._AggregationCache): written first, the other filters follow in parentheses (`$filter=Status eq 'A' and (…)`). |
 
 ### `QueryResult` — interface
 
@@ -1572,6 +1586,7 @@ propertyFilter(path: string, conditions: Condition[], type: EdmType, opts?: Filt
 | `rows` | **yes** | `Row[]` |  |
 | `count` |  | `number` |  |
 | `grandTotal` |  | `Row` | The grand total row of an analytical request (`QueryRequest.analytical` with a grand total). |
+| `leafCount` |  | `number` | Number of leaves of a grouped analytical request (`UI5__leaves`; `count` is then the number of groups). |
 
 ### `QuerySource` — type
 
@@ -1738,8 +1753,10 @@ export type Row = Record<string, unknown>;
 | Member | Required | Type | Description |
 | --- | --- | --- | --- |
 | `id` | **yes** | `string` |  |
-| `label` | **yes** | `string` |  |
+| `label` | **yes** | `string` | UI.Facet/Label, else the label of the first sub-section (anchor text). |
 | `subSections` | **yes** | `SubSectionModel[]` |  |
+| `showTitle` |  | `boolean` | The facet has a UI.Facet/Label (FE ObjectPageSection showTitle). |
+| `hidden` |  | `string` | UI.Hidden of the facet as a path (a constant true drops the section). |
 
 ### `selectAndExpand` — function
 
@@ -1853,7 +1870,7 @@ strictestExpression(expressions: readonly FilterExpression[]): FilterExpression 
 ### `SubSectionContent` — type
 
 ```ts
-export type SubSectionContent = | { kind: 'form'; groups: FormGroupModel[] } | { kind: 'table'; navigation: string; targetType: string; columns: ColumnModel[]; presentation: PresentationModel } | { kind: 'dataPoint'; dataPoint: DataPointModel } /** Header micro charts (UI.Chart referenced from UI.HeaderFacets). */ | { kind: 'chart'; chart: ChartModel };
+export type SubSectionContent = | { kind: 'form'; groups: FormGroupModel[] } | { kind: 'table'; navigation: string; targetType: string; columns: ColumnModel[]; presentation: PresentationModel } | { kind: 'dataPoint'; dataPoint: DataPointModel } /** Header micro charts (UI.Chart referenced from UI.HeaderFacets). */ | { kind: 'chart'; chart: ChartModel } /** * A collection facet with tables (or c…
 ```
 
 ### `SubSectionModel` — interface
@@ -1861,9 +1878,10 @@ export type SubSectionContent = | { kind: 'form'; groups: FormGroupModel[] } | {
 | Member | Required | Type | Description |
 | --- | --- | --- | --- |
 | `id` | **yes** | `string` |  |
-| `label` | **yes** | `string` |  |
+| `label` | **yes** | `string` | UI.Facet/Label; empty without one. |
 | `partOfPreview` | **yes** | `boolean` |  |
 | `content` | **yes** | `SubSectionContent` |  |
+| `hidden` |  | `string` | UI.Hidden of the facet as a path (a constant true drops the sub-section). |
 
 ### `targetEntitySet` — function
 

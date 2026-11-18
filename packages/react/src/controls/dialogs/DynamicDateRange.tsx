@@ -87,12 +87,39 @@ export interface DynamicDateRange {
   openBy(domRef?: HTMLElement | null): void;
   /** The dates of a value, with the control's week numbering and custom options. */
   toDates(value: DynamicDateRangeValue): Date[];
+  /** Appends a standard option key to the options of the control (once). */
+  addStandardOption(sKey: StandardDynamicDateRangeKeys): void;
+  /**
+   * The option with this key: a custom option as given, or, for a standard key of the control, an option object with
+   * its text, group, format / parse / toDates (standing for the StandardDynamicDateOption instance); undefined otherwise.
+   */
+  getOption(sKey: string): DynamicDateOption | undefined;
+  /** Adds an option group (after the standard groups); custom options select it with `getGroup()` returning its name. */
+  addGroup(sGroupName: string, sGroupHeader: string): void;
+  /** Sets a new header for a group added with addGroup. */
+  setGroupHeader(sGroupName: string, sGroupHeader: string): void;
+  /** The header text of a standard group or of a group added with addGroup. */
+  getGroupHeader(sGroupName: string): string | undefined;
+  /** Removes the groups added with addGroup. */
+  removeCustomGroups(): void;
 }
+
+/** The standard option groups with their numbers (UI5 `DynamicDateRangeGroups`); added groups get the next numbers. */
+const STANDARD_GROUPS = ['SingleDates', 'DateRanges', 'Weeks', 'Month', 'Quarters', 'Years'];
 
 /** One entry of the option list; the LAST/NEXT X options with a number are one entry per direction, as in UI5. */
 interface Entry { id: string; label: string; group: string; keys: string[]; kind: Kind | 'custom'; custom?: DynamicDateOption }
 
-function entriesOf(standard: readonly string[], custom: DynamicDateOption[], t: FormatContext['t']): Entry[] {
+/** The group key of a custom option: a standard or added group from `getGroup`, else its header (default "Custom"). */
+function customGroupOf(c: DynamicDateOption, added: ReadonlyArray<{ name: string }>): string {
+  const g = c.getGroup?.();
+  const names = [...STANDARD_GROUPS, ...added.map((x) => x.name)];
+  const name = typeof g === 'number' ? names[g - 1] : g;
+  if (name && names.includes(name)) return name;
+  return c.getGroupHeader?.() ?? 'Custom';
+}
+
+function entriesOf(standard: readonly string[], custom: DynamicDateOption[], t: FormatContext['t'], added: ReadonlyArray<{ name: string }> = []): Entry[] {
   const out: Entry[] = [];
   for (const k of standard) {
     const u = unitKey(k);
@@ -104,7 +131,7 @@ function entriesOf(standard: readonly string[], custom: DynamicDateOption[], t: 
     }
     out.push({ id: k, label: optionText(t, k), group: groupOf(k), keys: [k], kind: kindOf(k) });
   }
-  for (const c of custom) out.push({ id: c.key, label: c.getText?.() ?? c.key, group: c.getGroupHeader?.() ?? 'Custom', keys: [c.key], kind: 'custom', custom: c });
+  for (const c of custom) out.push({ id: c.key, label: c.getText?.() ?? c.key, group: customGroupOf(c, added), keys: [c.key], kind: 'custom', custom: c });
   for (const e of out) if (e.kind === 'units') e.keys.sort((a, b) => UNITS.indexOf(unitKey(a)!.unit) - UNITS.indexOf(unitKey(b)!.unit));
   return out;
 }
@@ -122,7 +149,13 @@ export function DynamicDateRange(p: $DynamicDateRangeSettings) {
   const t = useControlText(TEXTS);
   const { intlLocale } = useControlLocale();
   const ctx: FormatContext = { t, intlLocale, formatter: p.formatter };
-  const standard = p.standardOptions ?? DEFAULT_STANDARD_OPTIONS;
+  // addStandardOption appends to the standardOptions prop; a new prop value starts over (as setStandardOptions)
+  const [addedOptions, setAddedOptions] = useState<{ base: readonly string[] | undefined; keys: string[] }>({ base: p.standardOptions, keys: [] });
+  if (addedOptions.base !== p.standardOptions) setAddedOptions({ base: p.standardOptions, keys: [] });
+  const baseOptions = p.standardOptions ?? DEFAULT_STANDARD_OPTIONS;
+  const standard = useMemo(() => (addedOptions.keys.length ? [...baseOptions, ...addedOptions.keys.filter((k) => !baseOptions.includes(k as StandardDynamicDateRangeKeys))] : baseOptions),
+    [baseOptions, addedOptions.keys]);
+  const [addedGroups, setGroups] = useState<Array<{ name: string; header: string }>>([]);
   const custom = useMemo(() => p.customOptions ?? [], [p.customOptions]);
   const enabled = p.enabled ?? true;
   const editable = p.editable ?? true;
@@ -133,7 +166,7 @@ export function DynamicDateRange(p: $DynamicDateRangeSettings) {
   const [anchor, setAnchor] = useState<DOMRect | null>(null);
   const [field, setField] = useState<HTMLElement | null>(null);
   const listId = useId();
-  const entries = useMemo(() => entriesOf(standard, custom, t), [standard, custom, t]);
+  const entries = useMemo(() => entriesOf(standard, custom, t, addedGroups), [standard, custom, t, addedGroups]);
   const customOf = (key: string) => custom.find((c) => c.key === key);
 
   const datesOf = (v: DynamicDateRangeValue) => {
@@ -180,13 +213,40 @@ export function DynamicDateRange(p: $DynamicDateRangeSettings) {
     setOpened(true);
   };
 
-  useImperativeHandle(p.ref, () => ({ open: openAt, openBy: openAt, toDates: datesOf }));
+  const groupHeader = (name: string) => (STANDARD_GROUPS.includes(name) ? t(`ctl.ddr.group.${name}` as MessageKey) : addedGroups.find((g) => g.name === name)?.header);
+  /** A standard option as a DynamicDateOption object (getOption). */
+  const standardOption = (key: string): DynamicDateOption => ({
+    key,
+    valueTypes: valueTypesOf(key),
+    getText: () => optionText(t, key),
+    getGroup: () => STANDARD_GROUPS.indexOf(groupOf(key)) + 1,
+    getGroupHeader: () => groupHeader(groupOf(key)) ?? '',
+    format: (v) => formatStandard(v, ctx),
+    parse: (text) => parseStandard(text, [key], ctx),
+    toDates: (v, numbering) => standardToDates(v, numbering ?? p.calendarWeekNumbering, undefined, intlLocale),
+    enhanceFormattedValue: () => enhances(key),
+  });
 
-  const groups = GROUP_ORDER.concat(entries.map((e) => e.group).filter((g) => !GROUP_ORDER.includes(g)))
+  useImperativeHandle(p.ref, () => ({
+    open: openAt,
+    openBy: openAt,
+    toDates: datesOf,
+    addStandardOption: (key) => setAddedOptions((a) => (a.keys.includes(key) ? a : { ...a, keys: [...a.keys, key] })),
+    getOption: (key) => customOf(key) ?? (standard.includes(key as StandardDynamicDateRangeKeys) ? standardOption(key) : undefined),
+    addGroup: (name, header) => setGroups((g) => [...g, { name, header }]),
+    setGroupHeader: (name, header) => setGroups((g) => g.map((x) => (x.name === name ? { ...x, header } : x))),
+    getGroupHeader: groupHeader,
+    removeCustomGroups: () => setGroups([]),
+  }));
+
+  // standard groups, then the added groups (numbers 7…), then the other custom groups
+  const order = [...STANDARD_GROUPS, ...addedGroups.map((g) => g.name), ...GROUP_ORDER.filter((g) => !STANDARD_GROUPS.includes(g))];
+  const groups = order.concat(entries.map((e) => e.group).filter((g) => !order.includes(g)))
+    .filter((g, i, all) => all.indexOf(g) === i)
     .map((g) => [g, entries.filter((e) => e.group === g)] as const).filter(([, es]) => es.length);
   const selectedEntry = p.value && entries.find((e) => e.keys.includes(p.value!.operator));
   const detailEntry = entries.find((e) => e.id === detail);
-  const groupLabel = (g: string) => (GROUP_ORDER.includes(g) ? t(`ctl.ddr.group.${g}` as MessageKey) : g);
+  const groupLabel = (g: string) => (GROUP_ORDER.includes(g) ? t(`ctl.ddr.group.${g}` as MessageKey) : addedGroups.find((x) => x.name === g)?.header ?? g);
   const needsDetail = (e: Entry) => (e.kind === 'custom' ? Boolean(e.custom?.valueTypes?.length || e.custom?.createValueHelpUI) : e.kind !== 'none');
 
   const input = p.hideInput ? null : (

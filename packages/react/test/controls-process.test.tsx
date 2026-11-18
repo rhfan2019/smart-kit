@@ -333,7 +333,8 @@ describe('FeedInput and FeedListItem', () => {
         <FeedListItem sender="Ben" text="ok" timestamp="Yesterday" senderActive={false} onSenderPress={onSenderPress} />
       </ul>, 'en',
     );
-    expect(screen.getByText(/The supplier confirm…/)).toBeInTheDocument();
+    // collapsed back to the last space before maxCharacters, as sap.m.FeedListItem._getCollapsedText
+    expect(screen.getByText(/^The supplier…$/)).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Show more' }));
     expect(screen.getByText(/all items\./)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Less' })).toHaveAttribute('aria-expanded', 'true');

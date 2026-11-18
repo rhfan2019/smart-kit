@@ -11,6 +11,7 @@ import {
 } from 'react';
 import { useControlText } from '../context';
 import type { AriaHasPopup, BadgeStyle, ButtonAccessibleRole, ButtonType } from './ToggleButton';
+import { badgeValueText, useButtonBadge } from './buttonBadge';
 import { cx } from './shared';
 import { TEXTS } from './texts';
 
@@ -70,7 +71,7 @@ export interface $OverflowToolbarButtonSettings {
   accessibleRole?: ButtonAccessibleRole;
   /** Style of the badge. @defaultValue 'Default' */
   badgeStyle?: BadgeStyle;
-  /** Extension: badge value shown on the button (SAPUI5 sets it through BadgeCustomData). */
+  /** Extension: badge value shown on the button (SAPUI5 sets it through BadgeCustomData); limited as in sap.m.Button (see ToggleButton). */
   badge?: string | number;
   /** Layout data in the OverflowToolbar. */
   layoutData?: OverflowToolbarLayoutData;
@@ -79,13 +80,24 @@ export interface $OverflowToolbarButtonSettings {
   /** Tooltip (the SAPUI5 tooltip of sap.ui.core.Element); defaults to `text` in the toolbar. */
   title?: string;
   'data-testid'?: string;
+  ref?: Ref<OverflowToolbarButton>;
+}
+
+/** Instance methods of OverflowToolbarButton (the sap.m.Button badge methods). */
+export interface OverflowToolbarButton {
+  /** Value below which the badge is hidden (from 1 up to the current maximum; invalid values are ignored); returns the instance. @defaultValue 1 */
+  setBadgeMinValue(iMin: number): OverflowToolbarButton;
+  /** Value above which the badge shows `<max>+` (`999+` from 1000); from the current minimum up to 9999; returns the instance. @defaultValue 9999 */
+  setBadgeMaxValue(iMax: number): OverflowToolbarButton;
 }
 
 /** sap.m.OverflowToolbarButton: icon only in the toolbar, icon and text in the overflow. */
 export function OverflowToolbarButton({
   text, icon, type = 'Default', enabled = true, width, iconFirst = true, activeIcon, ariaHasPopup = 'None', accessibleRole = 'Default', badgeStyle = 'Default',
-  badge, layoutData: _layoutData, onPress, title, ...rest
+  badge, layoutData: _layoutData, onPress, title, ref, ...rest
 }: $OverflowToolbarButtonSettings) {
+  const limits = useButtonBadge(ref);
+  const badgeShown = badgeValueText(badge, limits.min, limits.max);
   const inOverflow = useContext(InOverflow);
   const [held, setHeld] = useState(false);
   const variant = type === 'Emphasized' ? 'filled' : type === 'Default' || type === 'Transparent' ? 'subtle' : 'default';
@@ -96,10 +108,10 @@ export function OverflowToolbarButton({
     onPointerDown: activeIcon ? () => setHeld(true) : undefined, onPointerUp: activeIcon ? release : undefined, onPointerLeave: activeIcon ? release : undefined,
     'aria-haspopup': ariaHasPopup === 'None' ? undefined : (ariaHasPopup.toLowerCase() as 'menu'),
     role: accessibleRole === 'Link' ? 'link' : undefined,
-    className: cx(badge !== undefined && 'sk-has-badge'),
+    className: cx(badgeShown !== null && 'sk-has-badge'),
     'data-sk-overflow-toolbar-button': inOverflow ? 'overflow' : 'toolbar',
   };
-  const badgeEl = badge !== undefined ? <span className={cx('sk-button-badge', badgeStyle === 'Attention' && 'sk-button-badge--attention')} data-sk-badge>{badge}</span> : null;
+  const badgeEl = badgeShown !== null ? <span className={cx('sk-button-badge', badgeStyle === 'Attention' && 'sk-button-badge--attention')} data-sk-badge>{badgeShown}</span> : null;
   return inOverflow || !shownIcon ? (
     <Button {...common} leftSection={iconFirst ? shownIcon : undefined} rightSection={iconFirst ? undefined : shownIcon} title={title}>{text}{badgeEl}</Button>
   ) : <ActionIcon {...common} aria-label={text} title={title ?? text}>{shownIcon}{badgeEl}</ActionIcon>;

@@ -14,7 +14,7 @@ import { CardAvatar } from './Header';
 import { useCardList, type CardDataProps } from './useCardList';
 
 /** Loaded only when a list draws bullets (ADR-026 P4: an application without bullets does not ship the micro charts). */
-const ItemBullet = lazy(() => import('./ItemBullet'));
+const ItemBullet = /*#__PURE__*/ lazy(() => import('./ItemBullet'));
 
 export interface $ListContentSettings extends CardDataProps {
   /** OVP `listType`: "condensed" (standard item, 3 values; default) or "extended" (up to 6 values). */

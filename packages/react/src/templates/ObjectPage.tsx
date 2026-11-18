@@ -6,14 +6,15 @@
  * (ADR-024), messages (ADR-023), object marker, the editable "Header" section, paging buttons, side content.
  */
 import { Alert, Anchor, Avatar, Breadcrumbs, Button, Group, Image, Menu, Modal, Stack, Text, UnstyledButton } from '@mantine/core';
-import { useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
-  capabilitiesFor, childPathOf, ConcurrencyError, DERIVED_GENERAL_SECTION, isDraftRow, messagesFromError, resolveEntityPath,
-  siblingPath, targetEntitySet, type EditSession, type FieldModel, type Message, type Row, type SectionModel,
+  capabilitiesFor, resolvePath, childPathOf, ConcurrencyError, DERIVED_GENERAL_SECTION, isDraftRow, messagesFromError, resolveEntityPath,
+  siblingPath, targetEntitySet, type ActionModel, type EditSession, type FieldModel, type FormGroupModel, type HeaderFacetModel, type Message, type Row,
+  type SectionModel, type SubSectionModel,
 } from '@rhfan2019/smart-kit-core';
 import { useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState, type ReactNode, type Ref } from 'react';
 import {
-  actionPaths, fieldErrors, getPath, isActionAvailable, isEditable,
+  actionPaths, fieldErrors, getPath, isActionAvailable,
   typedText, usePageState, useService, useSmartKit, useText,
   validate,
 } from '../index';
@@ -112,10 +113,50 @@ function Crumb({ path, service, onClick }: { path: string; service?: string; onC
   );
 }
 
-/** Draft administrative paths of a draft-enabled type. */
+/**
+ * Draft administrative paths of a draft-enabled type, as FE's object page selects them (DraftIsCreatedByMe, DraftUUID,
+ * InProcessByUser); who changed the draft and when is read when the draft indicator's popover opens.
+ */
 function draftSelect(type: { properties: Record<string, unknown>; navigations: Record<string, unknown> }): string[] {
   const out = ['IsActiveEntity', 'HasDraftEntity', 'HasActiveEntity'].filter((p) => p in type.properties);
-  if (type.navigations.DraftAdministrativeData) out.push('DraftAdministrativeData/DraftIsCreatedByMe', 'DraftAdministrativeData/InProcessByUser', 'DraftAdministrativeData/LastChangedByUser', 'DraftAdministrativeData/LastChangeDateTime', 'DraftAdministrativeData/CreatedByUser');
+  if (type.navigations.DraftAdministrativeData) out.push('DraftAdministrativeData/DraftIsCreatedByMe', 'DraftAdministrativeData/DraftUUID', 'DraftAdministrativeData/InProcessByUser');
+  return out;
+}
+
+/** FE HeaderAndFooterAction IMPORTANT_CRITICALITIES: VeryPositive, Positive, Negative, VeryNegative (constants) come first. */
+export function isCriticalAction(a: ActionModel): boolean {
+  const c = a.criticality;
+  return Boolean(c && 'value' in c && [4, 3, 1, -1].includes(Number(c.value)));
+}
+
+/** The path is true in the row (UI.Hidden, UI.UpdateHidden, UI.DeleteHidden given as a path). */
+const isTrue = (row: Row | undefined, path: string | undefined) => {
+  if (!path) return false;
+  const v = getPath(row, path);
+  return v === true || v === 'true';
+};
+
+/** The groups of a form shown first, and those behind "Show More" (UI.PartOfPreview false, FE moreBlocks). */
+export function splitPreview(groups: FormGroupModel[]): { preview: FormGroupModel[]; more: FormGroupModel[] } {
+  return { preview: groups.filter((g) => g.partOfPreview !== false), more: groups.filter((g) => g.partOfPreview === false) };
+}
+
+/**
+ * The form of the editable header section (FE createEditableHeaderSection): the title and the description
+ * (HeaderInfo) and the fields of the header facets that are forms, data points or contacts, editable or not;
+ * micro chart facets are not part of it.
+ */
+export function editableHeaderGroups(ui: { headerInfo: { title?: string; description?: string }; headerFacets: HeaderFacetModel[] }, label: (path: string) => string): FormGroupModel[] {
+  const field = (path: string): FieldModel => ({ id: `Header::${path}`, kind: 'field', path, label: label(path), criticalityIcon: true, isSemanticKey: false });
+  const info = [ui.headerInfo.title, ui.headerInfo.description].filter((x): x is string => Boolean(x)).map(field);
+  const out: FormGroupModel[] = info.length ? [{ id: 'HeaderInfo', fields: info }] : [];
+  const add = (f: HeaderFacetModel): void => {
+    if (f.kind === 'collection') { f.facets.forEach(add); return; }
+    const fields: FieldModel[] = f.kind === 'form' ? f.fields : f.kind === 'text' || f.kind === 'contact' ? [f.field]
+      : f.kind === 'dataPoint' ? [{ id: f.id, kind: 'dataPoint', dataPoint: f.dataPoint, label: f.label ?? f.dataPoint.title, criticalityIcon: true, isSemanticKey: false }] : [];
+    if (fields.length) out.push({ id: f.id, label: f.label, fields, ...(f.hidden ? { hidden: f.hidden } : {}) });
+  };
+  ui.headerFacets.forEach(add);
   return out;
 }
 
@@ -263,17 +304,28 @@ function ObjectPageInner(p: $ObjectPageSettings & { registerNavigate(fn: (m: Mes
   const [busy, setBusy] = useState(false);
   const [confirm, setConfirm] = useState<'discard' | 'delete' | null>(null);
   const editing = mode !== 'display';
+  // The draft switch (FE DraftToggle) shows the saved version of a draft: `shown` is then 'active'.
+  const [shown, setShown] = useState<'active' | undefined>(undefined);
   // The draft instance is read while editing a draft (ADR-018).
-  const readPath = session?.draft && session.path ? session.path : creating ? '' : p.path;
-  const extra = useMemo(() => [...(p.additionalProperties ?? []), ...(draftEnabled ? draftSelect(type) : []), ...actionPaths(model.ui[typeName]!.objectActions)], [p.additionalProperties, draftEnabled, type, model, typeName]);
+  const readPath = session?.draft && session.path ? session.path : creating ? '' : shown === 'active' ? activePath : p.path;
+  const caps0 = useMemo(() => capabilitiesFor(model, entitySet), [model, entitySet]);
+  const extra = useMemo(() => {
+    const actions = model.ui[typeName]!.objectActions;
+    const refPath = (r: typeof caps0.deleteHidden) => (r && 'path' in r ? [r.path] : []);
+    return [
+      ...(p.additionalProperties ?? []), ...(draftEnabled ? draftSelect(type) : []), ...actionPaths(actions),
+      // UI.Hidden of the actions, UI.UpdateHidden / UI.DeleteHidden and the Deletable path are bound to the buttons (FE)
+      ...actions.flatMap((a) => (a.hidden ? [a.hidden] : [])), ...refPath(caps0.updateHidden), ...refPath(caps0.deleteHidden),
+      ...(caps0.deletablePath ? [caps0.deletablePath] : []),
+    ];
+  }, [p.additionalProperties, draftEnabled, type, model, typeName, caps0]);
   const obj = useObject(readPath || `${entitySet}`, { service: p.service, extraSelect: extra, enabled: Boolean(readPath) });
   const ui = model.ui[typeName]!;
   const data = creating && !session?.draft ? values : obj.data;
   const pageKey = `object:${creating ? `new:${entitySet}` : resolved!.canonical}`;
   const [view, setView] = usePageState<{ headerExpanded?: boolean; pinned?: boolean; section?: string }>(pageKey, {});
-  const [counts, setCounts] = useState<Record<string, number | undefined>>({});
   const [sideShown, setSideShown] = useState<Record<string, boolean>>({});
-  const caps = capabilitiesFor(model, entitySet);
+  const caps = caps0;
   const canWrite = Boolean(service.dataProvider.update && service.dataProvider.invoke);
   const editable = (p.editable ?? caps.updatable) && canWrite && !creating;
   const deletable = caps.deletable && Boolean(service.dataProvider.remove) && !creating;
@@ -285,10 +337,10 @@ function ObjectPageInner(p: $ObjectPageSettings & { registerNavigate(fn: (m: Mes
   // Opening a draft directly (or returning to one) continues the edit session.
   const resumed = useRef(false);
   useEffect(() => {
-    if (resumed.current || !obj.data || mode !== 'display' || !isDraftRow(obj.data)) return;
+    if (resumed.current || shown === 'active' || !obj.data || mode !== 'display' || !isDraftRow(obj.data)) return;
     resumed.current = true;
     void strategy.begin(p.path, obj.data).then((s) => { setSession(s); setValues({ ...s.values }); setMode('edit'); });
-  }, [obj.data, mode, strategy, p.path]);
+  }, [obj.data, mode, strategy, p.path, shown]);
 
   // Create mode with the draft strategy: the draft is created when the page opens.
   const started = useRef(false);
@@ -300,25 +352,20 @@ function ObjectPageInner(p: $ObjectPageSettings & { registerNavigate(fn: (m: Mes
 
   const editableFields = useMemo(() => {
     const out: FieldModel[] = [];
-    for (const s of ui.sections) for (const sub of s.subSections) if (sub.content.kind === 'form') for (const g of sub.content.groups) out.push(...g.fields);
+    const sub = (x: SubSectionModel): void => {
+      if (x.content.kind === 'form') for (const g of x.content.groups) out.push(...g.fields);
+      if (x.content.kind === 'mixed') x.content.parts.forEach(sub);
+    };
+    for (const s of ui.sections) s.subSections.forEach(sub);
     return out;
   }, [ui]);
-  // Editable header fields: title, description and header form facets (OP Editing header content); only with
-  // editableHeaderContent (FE: otherwise the header stays read-only while editing).
-  const headerFields = useMemo(() => {
-    const out: FieldModel[] = [];
-    if (!headerEditable) return out;
-    const add = (path: string | undefined) => {
-      if (!path || path.includes('/')) return;
-      const prop = type.properties[path];
-      if (!isEditable(prop, creating) || out.some((f) => f.path === path)) return;
-      out.push({ id: `Header::${path}`, kind: 'field', path, label: prop!.label, criticalityIcon: true, isSemanticKey: false });
-    };
-    add(ui.headerInfo.title);
-    add(ui.headerInfo.description);
-    for (const f of ui.headerFacets) if (f.kind === 'form') for (const fd of f.fields) add(fd.path);
-    return out;
-  }, [ui, type, creating, headerEditable]);
+  // The editable header section (FE createEditableHeaderSection, editableHeaderContent): title, description and the
+  // fields of the header facets; without editableHeaderContent the header stays read-only while editing.
+  const headerGroups = useMemo(
+    () => (headerEditable ? editableHeaderGroups(ui, (path) => resolvePath(model.entityTypes, typeName, path).property?.label ?? path) : []),
+    [ui, headerEditable, model, typeName],
+  );
+  const headerFields = useMemo(() => headerGroups.flatMap((g) => g.fields), [headerGroups]);
 
   const flushTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const change = useCallback((path: string, value: unknown) => {
@@ -348,6 +395,7 @@ function ObjectPageInner(p: $ObjectPageSettings & { registerNavigate(fn: (m: Mes
       const s = await strategy.begin(activePath, obj.data);
       setSession(s);
       setValues({ ...s.values });
+      setShown(undefined);
       setMode('edit');
       messages.clear();
     } catch (e) {
@@ -420,12 +468,32 @@ function ObjectPageInner(p: $ObjectPageSettings & { registerNavigate(fn: (m: Mes
     obj.refresh();
   };
 
+  // The draft switch (FE DraftToggle, editFlow toggleDraftActive): the saved version is shown in display mode; the
+  // draft stays and is edited again with "Draft".
+  const showSavedVersion = async () => {
+    clearTimeout(flushTimer.current);
+    try {
+      await session?.flush();
+    } catch (e) {
+      messages.add(messagesFromError(e));
+    }
+    setSession(null);
+    setDraftStatus(null);
+    setMode('display');
+    setShown('active');
+    resumed.current = true;
+    void invalidate();
+  };
+
   const remove = async () => {
     setConfirm(null);
     try {
-      await service.dataProvider.remove!(activePath, { etag: obj.data?.['@odata.etag'] as string | undefined });
+      // a sub-object is deleted in edit mode (FE getDeleteButtonVisibility), i.e. its draft instance
+      await service.dataProvider.remove!(editing ? readPath : activePath, { etag: obj.data?.['@odata.etag'] as string | undefined });
       void invalidate();
+      const parent = resolved && resolved.levels.length > 1 ? resolved.levels[resolved.levels.length - 2] : undefined;
       if (p.onDeleted) p.onDeleted();
+      else if (parent) navigation?.toObject(editing ? siblingPath(model, parent.path, false) : parent.path, service.name);
       else navigation?.toList(entitySet, service.name);
     } catch (e) {
       messages.add(messagesFromError(e));
@@ -449,7 +517,8 @@ function ObjectPageInner(p: $ObjectPageSettings & { registerNavigate(fn: (m: Mes
   // Pressing a message focuses its field (OP In Edit Mode: message popover).
   const sectionOfField = (path: string) => {
     if (headerFields.some((f) => f.path === path) && editing) return EDITABLE_HEADER_SECTION;
-    for (const s of ui.sections) for (const sub of s.subSections) if (sub.content.kind === 'form' && sub.content.groups.some((g) => g.fields.some((f) => f.path === path))) return s.id;
+    const has = (x: SubSectionModel): boolean => (x.content.kind === 'form' && x.content.groups.some((g) => g.fields.some((f) => f.path === path))) || (x.content.kind === 'mixed' && x.content.parts.some(has));
+    for (const s of ui.sections) if (s.subSections.some(has)) return s.id;
     return undefined;
   };
   const focusField = (m: Message) => {
@@ -471,8 +540,18 @@ function ObjectPageInner(p: $ObjectPageSettings & { registerNavigate(fn: (m: Mes
   // ------------------------------------------------------------------ actions (ADR-024)
   const runner = useActionRunner({ service: p.service, onDone: () => { obj.refresh(); void invalidate(); } });
   const objectTarget = { row: data ?? {}, path: activePath, label: String(getPath(data, ui.headerInfo.title ?? type.keys[0]!) ?? '') };
-  const headerModelActions = ui.objectActions.filter((a) => !a.determining && isActionAvailable(a, data));
-  const footerActions = ui.objectActions.filter((a) => a.determining && isActionAvailable(a, data));
+  // Annotation actions (FE HeaderAndFooterAction): UI.Identification's DataFieldForAction; the button is shown unless
+  // UI.Hidden is true and disabled while Core.OperationAvailable is false, in display and in edit mode. Determining
+  // actions are in the footer, the others in the header; IsCopyAction is the header's "Copy" (only on the first level).
+  const viewLevel = resolved?.levels.length ?? 1;
+  const annotationActions = ui.objectActions.filter((a) => !isTrue(data, a.hidden));
+  const headerModelActions = annotationActions.filter((a) => !a.determining && !a.copy);
+  const copyAction = viewLevel === 1 ? annotationActions.find((a) => !a.determining && a.copy) : undefined;
+  const footerActions = annotationActions.filter((a) => a.determining);
+  const annotationButton = (a: ActionModel, variant: 'subtle' | 'default' | 'filled', text = a.label): KeyedAction => ({
+    key: a.id, text, press: () => runner.run(a, [objectTarget]),
+    node: <Button key={a.id} variant={a.emphasized && !a.criticality ? 'filled' : variant} disabled={!isActionAvailable(a, data) || !data} onClick={() => runner.run(a, [objectTarget])} data-sk-action={a.id}>{text}</Button>,
+  });
   const pageContext: Context = { getPath: () => `/${activePath}`, getObject: () => data ?? {} };
   /** Custom actions (ManifestAction) placed among the keyed standard and annotation actions. */
   const withCustomActions = (items: KeyedAction[], custom: Record<string, ManifestAction> | undefined, variant: 'subtle' | 'default'): KeyedAction[] => {
@@ -547,22 +626,6 @@ function ObjectPageInner(p: $ObjectPageSettings & { registerNavigate(fn: (m: Mes
     } : undefined),
   ), [ui.headerFacets, customHeaderFacets, typeName, p.service, data, readPath]);
 
-  // Tab layout: every tab with a table shows its item count (OP Tab Navigation), also before the tab is opened.
-  const countQueries = useMemo(() => (!useIconTabBar || creating ? [] : ui.sections.flatMap((s: SectionModel) => s.subSections.flatMap((sub) => {
-    if (sub.content.kind !== 'table' || !capabilitiesFor(model, entitySet, sub.content.navigation).countable) return [];
-    const keys = model.entityTypes[sub.content.targetType]?.keys ?? [];
-    return [{ id: sub.id, navigation: sub.content.navigation, keys }];
-  }))), [useIconTabBar, ui, model, entitySet, creating]);
-  const counted = useQueries({
-    queries: countQueries.map((c) => ({
-      queryKey: ['sk-count', service.name, readPath, c.navigation],
-      queryFn: ({ signal }: { signal: AbortSignal }) => service.dataProvider.query({ source: { parent: readPath, navigation: c.navigation }, select: c.keys, expand: [], orderBy: [], top: 0, count: true }, { signal }),
-    })),
-  });
-  const countKey = counted.map((q) => q.data?.count ?? '').join(',');
-  const tabCounts = useMemo(() => Object.fromEntries(countQueries.map((c, i) => [c.id, counted[i]?.data?.count])), [countKey, countQueries]); // eslint-disable-line react-hooks/exhaustive-deps
-  const countOf = (id: string) => counts[id] ?? tabCounts[id];
-
   const formValues = editing ? values : undefined;
   const customSections = p.content?.body?.sections;
   const sections: SectionItem[] = useMemo(() => {
@@ -597,84 +660,104 @@ function ObjectPageInner(p: $ObjectPageSettings & { registerNavigate(fn: (m: Mes
         isTable: s.template ? false : base?.isTable,
       };
     };
-    const annotationSections: KSection[] = ui.sections.map((s: SectionModel) => {
+    const form = (groups: FormGroupModel[]) => <Form typeName={typeName} service={p.service} row={data} metaPath={groups} readOnly={!editing} values={formValues} onChange={(e) => change(e.path, e.value)} errors={errors} creating={creating} />;
+    const table = (sub: SubSectionModel, nav: string, level: number, last: boolean) => {
+      const target = targetEntitySet(model, entitySet, nav);
+      const cfg = tableConfigurationOf(p, nav);
+      const ts = cfg?.tableSettings;
+      const navEntry = p.navigation?.[nav];
+      // "Routing" of smart-kit: a `navigation` entry, else the host's NavigationAdapter has an object page.
+      const routed = navEntry ? Boolean(navEntry.detail) : Boolean(target && navigation?.hasObjectPage?.(target, service.name));
+      const aggregations = tableAggregationsOf(cfg);
+      return (
+        <Table
+          key={sub.id}
+          service={p.service}
+          contextPath={`/${entitySet}/${nav}`}
+          bindingContext={readPath}
+          header={ts?.header ?? label(sub)}
+          headerVisible={ts?.headerVisible}
+          headerLevel={`H${Math.min(6, level)}` as `H${3 | 4 | 5 | 6}`}
+          pageKey={`${pageKey}:${sub.id}`}
+          type={ts?.type === 'TreeTable' ? undefined : ts?.type}
+          selectionMode={ts?.selectionMode}
+          enableExport={ts?.enableExport}
+          exportFileName={ts?.exportFileName}
+          exportSheetName={ts?.exportSheetName}
+          exportRequestSize={ts?.exportRequestSize}
+          disableCopyToClipboard={ts?.disableCopyToClipboard}
+          enableFullScreen={ts?.enableFullScreen}
+          personalization={personalizationOf(ts?.personalization)}
+          rowCountMode={ts?.rowCountMode}
+          selectionLimit={ts?.selectionLimit}
+          frozenColumnCount={ts?.frozenColumnCount}
+          disableColumnFreeze={ts?.disableColumnFreeze}
+          widthIncludingColumnHeader={ts?.widthIncludingColumnHeader}
+          condensedTableLayout={ts?.condensedTableLayout}
+          popinLayout={ts?.popinLayout}
+          threshold={ts?.threshold}
+          scrollThreshold={ts?.scrollThreshold}
+          ignoredFields={ts?.ignoredFields}
+          isSearchable={ts?.isSearchable ?? true}
+          modeForNoDataMessage={p.useTextForNoDataMessages ? 'text' : 'illustratedMessage-ExtraSmall'}
+          columns={aggregations.columns}
+          actions={aggregations.actions}
+          actionGroups={aggregations.actionGroups}
+          onRowPress={ts?.rowPress ?? (p.onRowNavigate ? (e) => p.onRowNavigate!(e.bindingContext.getObject(), e.bindingContext.getPath().slice(1)) : undefined)}
+          onSelectionChange={ts?.selectionChange}
+          navigable={p.onRowNavigate || ts?.rowPress ? true : routed}
+          readOnly={!editing || Boolean(ts?.readOnly)}
+          creationMode={{ name: creationModeOf(ts, routed) === 'CreationDialog' ? 'CreationDialog' : 'Inline' }}
+          growingScrollToLoad={useIconTabBar && last}
+          showAllThreshold={p.showAllThreshold}
+        />
+      );
+    };
+    /**
+     * The content of an annotation sub-section (FE SectionContent): a form (its containers with UI.PartOfPreview false
+     * behind "Show More", FE moreBlocks), a table, a data point or chart, or the parts of a mixed sub-section in order.
+     */
+    const contentOf = (sub: SubSectionModel, level: number, last: boolean, notes = false): Omit<KSub, 'key' | 'id' | 'title'> | undefined => {
+      const c = sub.content;
+      if (c.kind === 'form') {
+        // useSingleTextAreaFieldAsNotes: the single multi-line text of a container is shown without its label
+        const single = (g: FormGroupModel) => g.fields.length === 1 && g.fields[0]!.path && resolvePath(model.entityTypes, typeName, g.fields[0]!.path).property?.multiLine;
+        const groups = notes ? c.groups.map((g) => (single(g) ? { ...g, fields: [{ ...g.fields[0]!, label: '' }] } : g)) : c.groups;
+        const { preview, more } = splitPreview(groups);
+        return {
+          partOfPreview: sub.partOfPreview,
+          content: preview.length ? form(preview) : undefined,
+          blocks: more.length ? [{ id: `${sub.id}::More`, columns: 3, more: true, content: form(more) }] : undefined,
+        };
+      }
+      if (c.kind === 'dataPoint') return { partOfPreview: sub.partOfPreview, content: <HeaderFacet typeName={typeName} service={p.service} row={data} facet={{ id: sub.id, kind: 'dataPoint', label: label(sub), dataPoint: c.dataPoint }} /> };
+      if (c.kind === 'chart') return { partOfPreview: sub.partOfPreview, content: <HeaderFacet typeName={typeName} service={p.service} row={data} path={readPath} facet={{ id: sub.id, kind: 'chart', label: label(sub), chart: c.chart }} /> };
+      if (c.kind === 'mixed') {
+        const parts = c.parts.filter((x) => !isTrue(data, x.hidden)).map((x) => ({ part: x, c: contentOf(x, level + 1, false, notes) })).filter((x) => x.c);
+        if (!parts.length) return undefined;
+        return {
+          partOfPreview: sub.partOfPreview,
+          lazy: parts.some((x) => x.c!.isTable),
+          content: (
+            <div className="sk-mixed-subsection" data-sk-mixed-subsection={sub.id}>
+              {parts.map((x) => <div key={x.part.id} className="sk-mixed-subsection__part" data-sk-subsection-part={x.part.id}>{x.c!.content}{x.c!.blocks?.map((b) => <div key={b.id}>{b.content}</div>)}</div>)}
+            </div>
+          ),
+        };
+      }
+      if (creating && !session?.draft) return undefined;
+      return { partOfPreview: sub.partOfPreview, isTable: true, lazy: true, content: table(sub, c.navigation, level, last) };
+    };
+    const annotationSections: KSection[] = ui.sections.filter((s) => !isTrue(data, s.hidden)).map((s: SectionModel) => {
       const tableTitleLevel = s.subSections.length === 1 ? 3 : 4; // OP Title Styles
+      const visible = s.subSections.filter((sub) => !isTrue(data, sub.hidden));
       return {
         key: s.id,
         id: s.id,
         title: label(s),
-        subSections: s.subSections.flatMap((sub, index): KSub[] => {
-          const subTitle = label(sub);
-          const common = { key: sub.id, id: sub.id, title: subTitle, partOfPreview: sub.partOfPreview, lazy: lazyAll };
-          if (sub.content.kind === 'form') {
-            const groups = sub.content.groups;
-            return [{ ...common, partOfPreview: editing ? true : sub.partOfPreview, content: <Form typeName={typeName} service={p.service} row={data} metaPath={groups} readOnly={!editing} values={formValues} onChange={(e) => change(e.path, e.value)} errors={errors} creating={creating} /> }];
-          }
-          if (sub.content.kind === 'dataPoint') {
-            return [{ ...common, content: <HeaderFacet typeName={typeName} service={p.service} row={data} facet={{ id: sub.id, kind: 'dataPoint', label: subTitle, dataPoint: sub.content.dataPoint }} /> }];
-          }
-          if (sub.content.kind === 'chart') {
-            return [{ ...common, content: <HeaderFacet typeName={typeName} service={p.service} row={data} path={readPath} facet={{ id: sub.id, kind: 'chart', label: subTitle, chart: sub.content.chart }} /> }];
-          }
-          if (creating && !session?.draft) return [];
-          const nav = sub.content.navigation;
-          const target = targetEntitySet(model, entitySet, nav);
-          const last = index === s.subSections.length - 1;
-          const cfg = tableConfigurationOf(p, nav);
-          const ts = cfg?.tableSettings;
-          const navEntry = p.navigation?.[nav];
-          // "Routing" of smart-kit: a `navigation` entry, else the host's NavigationAdapter has an object page.
-          const routed = navEntry ? Boolean(navEntry.detail) : Boolean(target && navigation?.hasObjectPage?.(target, service.name));
-          const aggregations = tableAggregationsOf(cfg);
-          return [{
-            ...common,
-            isTable: true,
-            lazy: true,
-            count: countOf(sub.id),
-            content: (
-              <Table
-                service={p.service}
-                contextPath={`/${entitySet}/${nav}`}
-                bindingContext={readPath}
-                header={ts?.header ?? subTitle}
-                headerVisible={ts?.headerVisible}
-                headerLevel={`H${tableTitleLevel}`}
-                pageKey={`${pageKey}:${sub.id}`}
-                type={ts?.type === 'TreeTable' ? undefined : ts?.type}
-                selectionMode={ts?.selectionMode}
-                enableExport={ts?.enableExport}
-                exportFileName={ts?.exportFileName}
-                exportSheetName={ts?.exportSheetName}
-                exportRequestSize={ts?.exportRequestSize}
-                disableCopyToClipboard={ts?.disableCopyToClipboard}
-                enableFullScreen={ts?.enableFullScreen}
-                personalization={personalizationOf(ts?.personalization)}
-                rowCountMode={ts?.rowCountMode}
-                selectionLimit={ts?.selectionLimit}
-                frozenColumnCount={ts?.frozenColumnCount}
-                disableColumnFreeze={ts?.disableColumnFreeze}
-                widthIncludingColumnHeader={ts?.widthIncludingColumnHeader}
-                condensedTableLayout={ts?.condensedTableLayout}
-                popinLayout={ts?.popinLayout}
-                threshold={ts?.threshold}
-                scrollThreshold={ts?.scrollThreshold}
-                ignoredFields={ts?.ignoredFields}
-                isSearchable={ts?.isSearchable ?? true}
-                modeForNoDataMessage={p.useTextForNoDataMessages ? 'text' : 'illustratedMessage-ExtraSmall'}
-                columns={aggregations.columns}
-                actions={aggregations.actions}
-                actionGroups={aggregations.actionGroups}
-                onRowPress={p.onRowNavigate ? (e) => p.onRowNavigate!(e.bindingContext.getObject(), e.bindingContext.getPath().slice(1)) : undefined}
-                navigable={p.onRowNavigate ? true : routed}
-                onCountChange={(c) => setCounts((x) => (x[sub.id] === c ? x : { ...x, [sub.id]: c }))}
-                readOnly={!editing || Boolean(ts?.readOnly)}
-                creationMode={{ name: creationModeOf(ts, routed) === 'CreationDialog' ? 'CreationDialog' : 'Inline' }}
-                onCreated={() => setCounts((x) => ({ ...x, [sub.id]: undefined }))}
-                growingScrollToLoad={useIconTabBar && last}
-                showAllThreshold={p.showAllThreshold}
-              />
-            ),
-          }];
+        subSections: visible.flatMap((sub, index): KSub[] => {
+          const c = contentOf(sub, tableTitleLevel, index === visible.length - 1, Boolean(customSections?.[s.id]?.useSingleTextAreaFieldAsNotes));
+          return c ? [{ key: sub.id, id: sub.id, title: label(sub), lazy: lazyAll, ...c }] : [];
         }),
       };
     });
@@ -701,13 +784,13 @@ function ObjectPageInner(p: $ObjectPageSettings & { registerNavigate(fn: (m: Mes
     // fields and the `templateEdit` of custom header facets, before all sections.
     if (editing && headerEditable) {
       const subs: KSub[] = [];
-      if (headerFields.length) subs.push({ key: EDITABLE_HEADER_SECTION, id: EDITABLE_HEADER_SECTION, title: t('edit.headerSection'), content: <Form typeName={typeName} service={p.service} row={data} metaPath={[{ id: EDITABLE_HEADER_SECTION, fields: headerFields }]} readOnly={false} values={formValues} onChange={(e) => change(e.path, e.value)} errors={errors} creating={creating} /> });
+      if (headerGroups.length) subs.push({ key: EDITABLE_HEADER_SECTION, id: EDITABLE_HEADER_SECTION, title: t('edit.headerSection'), content: form(headerGroups) });
       for (const f of headerFacets) if (f.custom?.templateEdit) subs.push({ key: f.key, id: f.key, title: f.custom.title ?? f.key, content: <div data-sk-custom-subsection={f.key}>{f.custom.templateEdit(data)}</div> });
       if (subs.length) out.unshift({ key: EDITABLE_HEADER_SECTION, id: EDITABLE_HEADER_SECTION, title: t('edit.headerSection'), subSections: subs });
     }
     return out.map(({ key: _k, subSections, ...s }) => ({ ...s, subSections: subSections.map(({ key: _s, ...sub }) => sub) }));
     // eslint-disable-next-line react-hooks/exhaustive-deps -- rebuilt when data, model, mode, settings or counts change
-  }, [ui, data, typeName, readPath, p.service, counts, tabCounts, p.controlConfiguration, p.navigation, p.useTextForNoDataMessages, p.enableLazyLoading, customSections, sideShown, navigation, t, editing, formValues, errors, headerFields, headerFacets, headerEditable, useIconTabBar, creating, session]);
+  }, [ui, data, typeName, readPath, p.service, p.controlConfiguration, p.navigation, p.useTextForNoDataMessages, p.enableLazyLoading, customSections, sideShown, navigation, t, editing, formValues, errors, headerGroups, headerFacets, headerEditable, useIconTabBar, creating, session]);
 
   // Restore the section that was active when the page was left (NAV-04): once, with the value stored at mount.
   const initialSection = useRef(view.section);
@@ -757,16 +840,42 @@ function ObjectPageInner(p: $ObjectPageSettings & { registerNavigate(fn: (m: Mes
     </>
   ) : undefined;
 
-  // Global actions (OP Components (6)): business actions as text buttons, generic ones as icons; overflow right to left.
-  // Custom actions (`content › header › actions`) are placed among EditAction, DeleteAction and the annotation actions;
-  // Share stays at the end.
-  // While editing, Edit / Delete and the annotation actions are hidden; the custom actions stay (FE: no mode dependency).
-  const headerActions = withCustomActions(editing ? [] : [
-    ...(editable ? [{ key: 'EditAction', node: <Button key="EditAction" variant="filled" disabled={busy || !obj.data} onClick={() => void startEdit()} data-sk-action="Edit">{t('actions.edit')}</Button> }] : []),
-    ...(deletable ? [{ key: 'DeleteAction', node: <Button key="DeleteAction" variant="subtle" onClick={() => setConfirm('delete')} data-sk-action="Delete">{t('actions.delete')}</Button> }] : []),
-    ...headerModelActions.map((a) => ({ key: a.id, text: a.label, press: () => runner.run(a, [objectTarget]), node: <Button key={a.id} variant="subtle" onClick={() => runner.run(a, [objectTarget])} data-sk-action={a.id}>{a.label}</Button> })),
+  // Global actions (FE HeaderAndFooterAction getHeaderDefaultActions): the draft switch, the critical annotation actions,
+  // Edit, Delete, Copy, the other annotation actions; custom actions (`content › header › actions`) placed among them;
+  // Share at the end. Edit is shown in display mode (not with UI.UpdateHidden); Delete in display mode of the object
+  // page, in edit mode of a sub-object page (not with UI.DeleteHidden), disabled while Deletable is false or another
+  // user has the draft (InProcessByUser); the annotation actions in both modes.
+  const refTrue = (r: typeof caps.updateHidden) => Boolean(r && ('value' in r ? r.value === true || r.value === 'true' : isTrue(data, r.path)));
+  const draftAdmin = (data?.DraftAdministrativeData ?? undefined) as Row | undefined;
+  const showDraftSwitch = Boolean(setModel.draft?.root && setModel.draft.editAction) && !refTrue(caps.updateHidden) && !creating && !session?.isNew
+    && (editing ? Boolean(session?.draft) : data?.HasDraftEntity === true && draftAdmin?.DraftIsCreatedByMe === true);
+  // FE Draft.HasNoDraftForCurrentUser: no Edit while the user has a draft of the object (the draft switch leads to it)
+  const ownDraft = Boolean(setModel.draft?.root) && data?.HasDraftEntity === true && draftAdmin?.DraftIsCreatedByMe === true;
+  const editVisible = editable && !editing && !refTrue(caps.updateHidden) && !ownDraft;
+  const deleteVisible = deletable && (viewLevel > 1 ? editing : !editing) && !refTrue(caps.deleteHidden);
+  const deleteEnabled = (!caps.deletablePath || isTrue(data, caps.deletablePath)) && !(setModel.draft?.root && draftAdmin?.InProcessByUser);
+  const headerActions = withCustomActions([
+    ...(showDraftSwitch ? [{
+      key: 'DraftActions',
+      node: (
+        <Menu key="DraftActions" position="bottom-end">
+          <Menu.Target>
+            <Button variant="subtle" rightSection={<span aria-hidden>▾</span>} data-sk-action="SwitchDraftAndActiveObject">{editing ? t('draft.switchDraft') : t('draft.switchSavedVersion')}</Button>
+          </Menu.Target>
+          <Menu.Dropdown>
+            <Menu.Item onClick={() => void (editing ? undefined : startEdit())} data-sk-draft-switch="draft">{t('draft.switchDraft')}</Menu.Item>
+            <Menu.Item onClick={() => void (editing ? showSavedVersion() : undefined)} data-sk-draft-switch="active">{t('draft.switchSavedVersion')}</Menu.Item>
+          </Menu.Dropdown>
+        </Menu>
+      ),
+    }] : []),
+    ...headerModelActions.filter(isCriticalAction).map((a) => annotationButton(a, 'subtle')),
+    ...(editVisible ? [{ key: 'EditAction', node: <Button key="EditAction" variant="filled" disabled={busy || !obj.data} onClick={() => void startEdit()} data-sk-action="Edit">{t('actions.edit')}</Button> }] : []),
+    ...(deleteVisible ? [{ key: 'DeleteAction', node: <Button key="DeleteAction" variant="subtle" disabled={!deleteEnabled} onClick={() => setConfirm('delete')} data-sk-action="Delete">{t('actions.delete')}</Button> }] : []),
+    ...(copyAction ? [annotationButton(copyAction, 'subtle', copyAction.label || t('actions.copy'))] : []),
+    ...headerModelActions.filter((a) => !isCriticalAction(a)).map((a) => annotationButton(a, 'subtle')),
   ], header?.actions, 'subtle');
-  const actions = editing ? headerActions.map((a) => a.node) : [
+  const actions = [
     ...headerActions.map((a) => a.node),
     <Pinned key="Share" layoutData={{ priority: 'NeverOverflow' }}><Share title={heading} href={navigation?.href?.({ kind: 'object', path: activePath, service: service.name })} /></Pinned>,
   ];
@@ -781,17 +890,22 @@ function ObjectPageInner(p: $ObjectPageSettings & { registerNavigate(fn: (m: Mes
   // Footer toolbar (OP Footer Toolbar): messages; finalizing actions (SaveAction / CancelAction while editing, determining
   // actions in display mode) and the custom footer actions (`content › footer › actions`).
   const customFooter = p.content?.footer?.actions;
-  const footerItems = withCustomActions(editing ? [
-    { key: 'SaveAction', node: <Button key="SaveAction" onClick={() => void save()} loading={busy} data-sk-save>{creating ? t('actions.create') : t('edit.save')}</Button> },
-    {
+  // FE getFooterDefaultActions: the critical determining actions, SaveAction, the other determining actions,
+  // CancelAction (position End). The determining actions are shown in display and in edit mode (disabled while
+  // Core.OperationAvailable is false); Save and Cancel only while editing.
+  const footerItems = withCustomActions([
+    ...footerActions.filter(isCriticalAction).map((a) => annotationButton(a, 'default')),
+    ...(editing ? [{ key: 'SaveAction', node: <Button key="SaveAction" onClick={() => void save()} loading={busy} data-sk-save>{creating ? t('actions.create') : t('edit.save')}</Button> }] : []),
+    ...footerActions.filter((a) => !isCriticalAction(a)).map((a) => annotationButton(a, 'default')),
+    ...(editing ? [{
       key: 'CancelAction',
       node: (
         <Button key="CancelAction" variant="default" onClick={() => (session?.draft || session?.changed.size || creating ? setConfirm('discard') : void discard())} data-sk-cancel>
           {session?.draft ? t('edit.discardDraft') : t('edit.cancel')}
         </Button>
       ),
-    },
-  ] : footerActions.map((a, i) => ({ key: a.id, text: a.label, press: () => runner.run(a, [objectTarget]), node: <Button key={a.id} variant={i === 0 ? 'filled' : 'default'} onClick={() => runner.run(a, [objectTarget])} data-sk-action={a.id}>{a.label}</Button> })), customFooter, 'default');
+    }] : []),
+  ], customFooter, 'default');
   const footer = editing || footerItems.length || messages.messages.length ? (
     <Group justify="space-between" wrap="nowrap" data-sk-footer>
       <Group gap="xs"><MessageButton />{editing && session?.draft && draftStatus ? <Text size="sm" c="dimmed" role="status" data-sk-draft-status>{draftStatus === 'saving' ? t('edit.draftSaving') : t('edit.draftSaved')}</Text> : null}</Group>
@@ -799,7 +913,10 @@ function ObjectPageInner(p: $ObjectPageSettings & { registerNavigate(fn: (m: Mes
     </Group>
   ) : undefined;
 
-  const marker = draftEnabled && (mode === 'edit' || obj.data?.HasDraftEntity === true) ? <DraftIndicator row={session?.draft ? { ...obj.data, IsActiveEntity: false, DraftAdministrativeData: { DraftIsCreatedByMe: true, ...(obj.data?.DraftAdministrativeData as Row | undefined) } } : obj.data} /> : undefined;
+  // The draft indicator reads who changed the draft and when as its popover opens (FE DraftIndicator; the page selects
+  // only DraftIsCreatedByMe, DraftUUID and InProcessByUser).
+  const loadDraftAdmin = () => service.dataProvider.read(readPath, { select: [], expand: [{ navigation: 'DraftAdministrativeData', select: [], expand: [] }] });
+  const marker = draftEnabled && (mode === 'edit' || obj.data?.HasDraftEntity === true) ? <DraftIndicator load={readPath ? loadDraftAdmin : undefined} row={session?.draft ? { ...obj.data, IsActiveEntity: false, DraftAdministrativeData: { DraftIsCreatedByMe: true, ...(obj.data?.DraftAdministrativeData as Row | undefined) } } : obj.data} /> : undefined;
   const keyInfo = typeof p.keyInfo === 'function' ? p.keyInfo(data) : p.keyInfo;
   // The title (with the object marker next to it) and, while snapped, the small avatar before it.
   const headingLine = <><h1 className="sk-dynamic-page__heading" data-sk-heading>{heading}</h1>{marker ? <span className="sk-dynamic-page__title-addon">{marker}</span> : null}</>;

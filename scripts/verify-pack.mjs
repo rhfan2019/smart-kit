@@ -6,7 +6,7 @@
 // Web project (Vite + React + TypeScript, the peer dependencies at the tested versions):
 //   - every subpath of @rhfan2019/smart-kit (and core) imports at runtime and exports what docs/api.md lists;
 //   - the types are found: every value and type name from docs/api.md, with moduleResolution "bundler" and "nodenext";
-//   - an app that imports only MicroChart ships what scripts/check-size.mjs measures (same method, ± 0.3 KB);
+//   - an app that imports only BulletMicroChart ships what scripts/check-size.mjs measures (same method, ± 0.3 KB);
 //   - styles.css and styles.layered.css resolve and end up in the built app (the layered one inside `@layer smart-kit`);
 //   - the React entries (all but /i18n) start with the 'use client' directive (Next.js App Router);
 //   - the docs for coding agents are in the package (node_modules/@rhfan2019/smart-kit/docs, skills).
@@ -140,13 +140,13 @@ for (const [resolution, module] of [['bundler', 'ESNext'], ['nodenext', 'NodeNex
   check(own.length === 0, `types: every documented name resolves (moduleResolution ${resolution}, smart-kit's .d.ts checked)`, own.slice(0, 6).join(' | '));
 }
 
-// the app: only MicroChart, plus the stylesheet
+// the app: only ColumnMicroChart, plus the stylesheet
 writeFileSync(join(web, 'index.html'), '<!doctype html><html><body><div id="root"></div><script type="module" src="/src/main.tsx"></script></body></html>\n');
 writeFileSync(join(web, 'src/main.tsx'), [
   "import '@rhfan2019/smart-kit/styles.css';",
   "import { createRoot } from 'react-dom/client';",
-  "import MicroChart from '@rhfan2019/smart-kit/v4/fe/macros/MicroChart';",
-  "createRoot(document.getElementById('root')!).render(<MicroChart kind=\"column\" label=\"Sales\" points={[{ label: 'a', value: 1 }, { label: 'b', value: 3 }]} />);",
+  "import ColumnMicroChart from '@rhfan2019/smart-kit/suite/ui/microchart/ColumnMicroChart';",
+  "createRoot(document.getElementById('root')!).render(<ColumnMicroChart columns={[{ label: 'a', value: 1 }, { label: 'b', value: 3 }]} />);",
   '',
 ].join('\n'));
 writeFileSync(join(web, 'vite.config.js'), "import react from '@vitejs/plugin-react';\nexport default { plugins: [react()], logLevel: 'error' };\n");
@@ -156,7 +156,7 @@ try {
   const css = assets.filter((f) => f.endsWith('.css')).map((f) => readFileSync(join(web, 'dist/assets', f), 'utf8')).join('');
   check(css.includes('--sk-') && css.includes('.sk-'), 'styles.css: resolves and ends up in the built app', `${(gzipSync(css).length / 1024).toFixed(1)} KB gzip`);
 } catch (e) {
-  check(false, 'vite build of the MicroChart app', String(e.stderr ?? e).split('\n').slice(0, 5).join(' | '));
+  check(false, 'vite build of the ColumnMicroChart app', String(e.stderr ?? e).split('\n').slice(0, 5).join(' | '));
 }
 // S8: the layered stylesheet resolves and keeps its layer through a bundler
 writeFileSync(join(web, 'src/layered.js'), "import '@rhfan2019/smart-kit/styles.layered.css';\n");
@@ -172,11 +172,11 @@ try {
 } catch (e) {
   check(false, 'vite build of styles.layered.css', String(e.stderr ?? e).split('\n').slice(0, 5).join(' | '));
 }
-// same measurement as check-size.mjs ("MicroChart only", everything except React), but resolved through node_modules
+// same measurement as check-size.mjs ("BulletMicroChart only", everything except React), but resolved through node_modules
 writeFileSync(join(web, 'measure.mjs'), `import { build } from 'vite';
 import { gzipSync } from 'node:zlib';
 const id = '\\0size-entry';
-const code = "import MicroChart from '@rhfan2019/smart-kit/v4/fe/macros/MicroChart'; console.log(MicroChart);";
+const code = "import BulletMicroChart from '@rhfan2019/smart-kit/suite/ui/microchart/BulletMicroChart'; console.log(BulletMicroChart);";
 const reactOnly = (s) => s === 'react' || s === 'react-dom' || s.startsWith('react/') || s.startsWith('react-dom/');
 const out = await build({ configFile: false, logLevel: 'silent', define: { 'process.env.NODE_ENV': '"production"' },
   plugins: [{ name: 'size-entry', resolveId: (s) => (s === 'size-entry' ? id : null), load: (s) => (s === id ? code : null) }],
@@ -187,11 +187,11 @@ console.log((chunks.reduce((n, o) => n + gzipSync(o.code).length, 0) / 1024).toF
 try {
   const installed = Number(run('node', ['measure.mjs'], web).trim());
   const sizeOut = run('node', ['scripts/check-size.mjs'], ROOT);
-  const repo = Number(/MicroChart only \(v4\/fe\/macros\/MicroChart\)\s+([\d.]+) KB/.exec(sizeOut)?.[1]);
-  // 8 → 44 KB: sap.fe.macros.MicroChart is annotation-driven (stage 2, D38); the 8 KB data-only charts return in stage 6
-  check(Math.abs(installed - repo) <= 0.3 && installed <= 44, 'size: an app with only MicroChart ships what check-size.mjs measures', `installed ${installed.toFixed(1)} KB, repo ${repo} KB gzip`);
+  const repo = Number(/BulletMicroChart only \(suite\/ui\/microchart\/BulletMicroChart\)\s+([\d.]+) KB/.exec(sizeOut)?.[1]);
+  // the data-only micro charts (sap.suite.ui.microchart, stage 6): no model, no provider
+  check(Math.abs(installed - repo) <= 0.3 && installed <= 4, 'size: an app with only BulletMicroChart ships what check-size.mjs measures', `installed ${installed.toFixed(1)} KB, repo ${repo} KB gzip`);
 } catch (e) {
-  check(false, 'size: MicroChart only', String(e.stderr ?? e).split('\n').slice(0, 5).join(' | '));
+  check(false, 'size: BulletMicroChart only', String(e.stderr ?? e).split('\n').slice(0, 5).join(' | '));
 }
 // docs for coding agents ship with the package
 const docsDir = join(web, 'node_modules/@rhfan2019/smart-kit/docs');

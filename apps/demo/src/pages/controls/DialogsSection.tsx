@@ -8,6 +8,13 @@ import SelectDialog, { type StandardListItem } from '@rhfan2019/smart-kit/m/Sele
 import TableSelectDialog from '@rhfan2019/smart-kit/m/TableSelectDialog';
 import ViewSettingsDialog from '@rhfan2019/smart-kit/m/ViewSettingsDialog';
 import Wizard from '@rhfan2019/smart-kit/m/Wizard';
+import Popup from '@rhfan2019/smart-kit/m/p13n/Popup';
+import SelectionPanel from '@rhfan2019/smart-kit/m/p13n/SelectionPanel';
+import SortPanel from '@rhfan2019/smart-kit/m/p13n/SortPanel';
+import QuickView from '@rhfan2019/smart-kit/m/QuickView';
+import QuickViewPage from '@rhfan2019/smart-kit/m/QuickViewPage';
+import QuickViewGroup from '@rhfan2019/smart-kit/m/QuickViewGroup';
+import QuickViewGroupElement from '@rhfan2019/smart-kit/m/QuickViewGroupElement';
 import WizardStep from '@rhfan2019/smart-kit/m/WizardStep';
 import { CheckCircle2, Clock, Inbox, Landmark, XCircle } from 'lucide-react';
 import { useRef, useState, type ReactNode } from 'react';
@@ -39,6 +46,11 @@ export function DialogsSection() {
   const tableRef = useRef<TableSelectDialog>(null);
   const viewRef = useRef<ViewSettingsDialog>(null);
   const wizardRef = useRef<Wizard>(null);
+  const p13nRef = useRef<Popup>(null);
+  const colsRef = useRef<SelectionPanel>(null);
+  const sortRef = useRef<SortPanel>(null);
+  const quickRef = useRef<QuickView>(null);
+  const [p13n, setP13n] = useState('–');
   const dates = range && valid ? DynamicDateRange.toDates(range).map((d) => d.toLocaleDateString()).join(' – ') : '';
 
   return (
@@ -73,6 +85,32 @@ export function DialogsSection() {
           />
         </Box>
       </SimpleGrid>
+
+      <Box label="sap.m.p13n.Popup · QuickView">
+        <Group gap="xs">
+          <Button variant="default" onClick={(e) => p13nRef.current?.open(e.currentTarget)} data-demo-p13n-open>Personalize</Button>
+          <Button variant="default" onClick={(e) => quickRef.current?.openBy(e.currentTarget)} data-demo-quickview-open>Supplier quick view</Button>
+        </Group>
+        <Text size="sm">{p13n}</Text>
+        <Popup
+          ref={p13nRef} title="View Settings" warningText="Reset all changes?" reset={() => setP13n('Reset')}
+          onClose={({ reason }) => setP13n(reason === 'Ok' ? `Columns: ${colsRef.current?.getP13nData(true).map((x) => x.label).join(', ')} · Sort: ${sortRef.current?.getP13nData(true).map((x) => `${x.label}${x.descending ? ' ↓' : ''}`).join(', ') || '–'}` : reason)}
+          panels={[
+            <SelectionPanel key="columns" ref={colsRef} title="Columns" showHeader enableCount p13nData={[{ name: 'po', label: 'Purchase Order', visible: true }, { name: 'supplier', label: 'Supplier', visible: true }, { name: 'amount', label: 'Net Amount', visible: false }]} />,
+            <SortPanel key="sort" ref={sortRef} p13nData={[{ name: 'date', label: 'Order Date', sorted: true, descending: true }, { name: 'amount', label: 'Net Amount', sorted: false, descending: false }]} />,
+          ]}
+        />
+        <QuickView ref={quickRef} placement="Bottom">
+          <QuickViewPage pageId="supplier" header="Supplier" title="Domestic US Supplier 1" description="Wholesale">
+            <QuickViewGroup heading="Contact">
+              <QuickViewGroupElement label="Email" value="orders@supplier.test" type="email" />
+              <QuickViewGroupElement label="Phone" value="+1 555 0100" type="phone" />
+              <QuickViewGroupElement label="Contact person" value="Jane Doe" type="pageLink" pageLinkId="person" />
+            </QuickViewGroup>
+          </QuickViewPage>
+          <QuickViewPage pageId="person" header="Contact person" title="Jane Doe" description="Sales" />
+        </QuickView>
+      </Box>
 
       <Box label="IconTabBar">
         <IconTabBar ariaTexts={{ headerLabel: 'Purchase order status' }} content={<Text size="sm">No orders in this status.</Text>}>

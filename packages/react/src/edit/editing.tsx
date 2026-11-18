@@ -2,12 +2,13 @@
 import { Button, Group, Modal, Stack } from '@mantine/core';
 import {
   createMessage, editStrategyFor, messagesFromError, resolvePath, type EditStrategy, type FieldModel, type Message, type MetaModel,
-  type PropertyModel, type QuerySource, type Row,
+  type QuerySource, type Row,
 } from '@rhfan2019/smart-kit-core';
 import { useMemo, useState } from 'react';
 import { useService, useText } from '../context/SmartKitProvider';
 import type { TextFn } from '../i18n/text';
 import { Field } from '../field/Field';
+import { fieldEditState, isEditable } from './fieldControl';
 
 /** The edit strategy of an entity set (service override or the default by model). */
 export function useEditStrategy(entitySet: string, serviceName?: string): EditStrategy {
@@ -15,15 +16,7 @@ export function useEditStrategy(entitySet: string, serviceName?: string): EditSt
   return useMemo(() => service.editStrategy?.(entitySet) ?? editStrategyFor(service.model, entitySet, service.dataProvider), [service, entitySet]);
 }
 
-/** Whether a property can be changed: not computed, not a key, not read-only (immutable only when creating). */
-export function isEditable(prop: PropertyModel | undefined, creating: boolean): boolean {
-  if (!prop) return false;
-  if (prop.computed || prop.readOnly || prop.hidden) return false;
-  if (prop.isKey && !creating) return false;
-  if (prop.isKey && creating && prop.name === 'IsActiveEntity') return false;
-  if (prop.immutable && !creating) return false;
-  return true;
-}
+export { fieldControlOf, fieldEditState, isEditable } from './fieldControl';
 
 const NUMERIC = /Int|Decimal|Double|Single|Byte/;
 
@@ -35,10 +28,11 @@ export function validate(model: MetaModel, typeName: string, fields: FieldModel[
     if (f.kind !== 'field' || !f.path || f.path.includes('/') || seen.has(f.path)) continue;
     seen.add(f.path);
     const prop = resolvePath(model.entityTypes, typeName, f.path).property;
-    if (!isEditable(prop, creating)) continue;
+    const state = fieldEditState(prop, values, creating);
+    if (!state.editable || state.disabled) continue;
     const v = values[f.path];
     const empty = v === undefined || v === null || v === '';
-    if (prop!.mandatory && empty) out.push(createMessage('error', t('edit.requiredField', { field: f.label }), { target: f.path, source: 'client' }));
+    if (state.required && empty) out.push(createMessage('error', t('edit.requiredField', { field: f.label }), { target: f.path, source: 'client' }));
     else if (!empty && NUMERIC.test(prop!.edmType) && !/^[-+]?(\d+(\.\d*)?|\.\d+)$/.test(String(v).trim())) out.push(createMessage('error', t('edit.invalidNumber', { field: f.label }), { target: f.path, source: 'client' }));
   }
   return out;

@@ -506,6 +506,9 @@ async function handleWrite(req, res, svc, target, url) {
       if (target.single) return odataError(res, 405, 'MethodNotAllowed', `POST to a single ${target.set} entity is not supported.`);
       if (items && draft && !resource.includes('/')) return odataError(res, 405, 'NotInsertable', 'Create draft items through the order: PurchaseOrders(...)/_Item.');
       const allowed = CREATABLE[target.set];
+      // stage 6 (macros6): the order number is a non-computed key that the "New Object" dialog asks (FE
+      // getCreatePopupFields); the service numbers new orders itself, so a given number is ignored (as in $batch)
+      if (orders) delete body.PurchaseOrder;
       const bad = Object.keys(body).filter((k) => !k.startsWith('@') && !allowed.includes(k));
       if (bad.length) return odataError(res, 400, 'PropertyNotCreatable', `Properties not allowed on create: ${bad.join(', ')}. Allowed: ${allowed.join(', ')}.`);
       if (items) {

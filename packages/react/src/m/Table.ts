@@ -5,4 +5,5 @@ export { Table as default } from '../table/ResponsiveTable';
 export type {
   $TableSettings, $ColumnSettings, GroupSummary, Table$SelectionChangeEvent, Table$ItemPressEvent, Table$DeleteEvent, Table$UpdateStartedEvent,
   Table$UpdateFinishedEvent, Table$PopinChangedEvent, Table$PasteEvent, PopinDisplay,
+  Table$BeforeOpenContextMenuEvent, Table$SwipeEvent, Table$ItemActionPressEvent, $ListItemActionSettings,
 } from '../table/ResponsiveTable';

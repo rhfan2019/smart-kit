@@ -556,8 +556,11 @@ const default: { readonly Default: "Default"; readonly ISO_8601: "ISO_8601"; rea
 | `className` |  | `string` | Extra CSS class on the root element. |
 | `style` |  | `CSSProperties` | Inline style, e.g. `{ width: 400 }`; the `width` / `height` props win over the style's. |
 | `aria-roledescription` |  | `string` | Accessible description of the card type, e.g. "List card". |
+| `ref` |  | `Ref&lt;Card>` |  |
 
 ### `default` — component
+
+Instance methods of Card.
 
 `import { default } from '@rhfan2019/smart-kit/f/Card';`
 
@@ -576,6 +579,7 @@ const default: { readonly Default: "Default"; readonly ISO_8601: "ISO_8601"; rea
 | `className` |  | `string` | Extra CSS class on the root element. |
 | `style` |  | `CSSProperties` | Inline style, e.g. `{ width: 400 }`; the `width` / `height` props win over the style's. |
 | `aria-roledescription` |  | `string` | Accessible description of the card type, e.g. "List card". |
+| `ref` |  | `Ref&lt;Card>` |  |
 
 ### `HeaderPosition` — type
 
@@ -613,6 +617,7 @@ export type SemanticRole = 'Region' | 'ListItem';
 | `backgroundDesign` |  | `PageBackgroundDesign` | Page background. |
 | `fitContent` |  | `boolean` | The content fills the remaining height and scrolls itself (grid tables); otherwise the page scrolls. |
 | `stickySubheaderProvider` |  | `ReactNode` | Sticky content under the header (an anchor bar or tab bar). |
+| `landmarkInfo` |  | `ReactNode` | ARIA landmark roles and labels of the page's containers, a DynamicPageAccessibleLandmarkInfo; without it no landmarks are written. |
 | `onPinnedStateChange` |  | `(e: DynamicPage$PinnedStateChangeEvent) => void` | Fired when the pin button is pressed. |
 | `onBreakpointChange` |  | `(e: DynamicPage$BreakpointChangeEvent) => void` | Fired when the page width moves into another media range. |
 | `titleMessage` |  | `ReactNode` | Extension: shown between title and header content; stays visible when snapped (object page message strip). |
@@ -639,6 +644,7 @@ export type SemanticRole = 'Region' | 'ListItem';
 | `backgroundDesign` |  | `PageBackgroundDesign` | Page background. |
 | `fitContent` |  | `boolean` | The content fills the remaining height and scrolls itself (grid tables); otherwise the page scrolls. |
 | `stickySubheaderProvider` |  | `ReactNode` | Sticky content under the header (an anchor bar or tab bar). |
+| `landmarkInfo` |  | `ReactNode` | ARIA landmark roles and labels of the page's containers, a DynamicPageAccessibleLandmarkInfo; without it no landmarks are written. |
 | `onPinnedStateChange` |  | `(e: DynamicPage$PinnedStateChangeEvent) => void` | Fired when the pin button is pressed. |
 | `onBreakpointChange` |  | `(e: DynamicPage$BreakpointChangeEvent) => void` | Fired when the page width moves into another media range. |
 | `titleMessage` |  | `ReactNode` | Extension: shown between title and header content; stays visible when snapped (object page message strip). |
@@ -663,6 +669,42 @@ Event object of DynamicPage's pinnedStateChange.
 | Member | Required | Type | Description |
 | --- | --- | --- | --- |
 | `pinned` | **yes** | `boolean` | True when the header is now pinned. |
+
+## `@rhfan2019/smart-kit/f/DynamicPageAccessibleLandmarkInfo`
+
+`$DynamicPageAccessibleLandmarkInfoSettings` (interface) · `default` (component)
+
+### `$DynamicPageAccessibleLandmarkInfoSettings` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `rootRole` |  | `AccessibleLandmarkRole` | Landmark role of the root container. |
+| `rootLabel` |  | `string` | Label of the root container's landmark. |
+| `contentRole` |  | `AccessibleLandmarkRole` | Landmark role of the content container. |
+| `contentLabel` |  | `string` | Label of the content container's landmark. |
+| `headerRole` |  | `AccessibleLandmarkRole` | Landmark role of the header container (title and pinned header content). |
+| `headerLabel` |  | `string` | Label of the header container's landmark. |
+| `footerRole` |  | `AccessibleLandmarkRole` | Landmark role of the footer container. |
+| `footerLabel` |  | `string` | Label of the footer container's landmark. |
+| `headerContentLabel` |  | `string` | Label of the header content region; without it "Expanded header". |
+
+### `default` — component
+
+sap.f.DynamicPageAccessibleLandmarkInfo: give it to DynamicPage's `landmarkInfo`; it renders nothing itself.
+
+`import { default } from '@rhfan2019/smart-kit/f/DynamicPageAccessibleLandmarkInfo';`
+
+| Prop | Required | Type | Description |
+| --- | --- | --- | --- |
+| `rootRole` |  | `AccessibleLandmarkRole` | Landmark role of the root container. |
+| `rootLabel` |  | `string` | Label of the root container's landmark. |
+| `contentRole` |  | `AccessibleLandmarkRole` | Landmark role of the content container. |
+| `contentLabel` |  | `string` | Label of the content container's landmark. |
+| `headerRole` |  | `AccessibleLandmarkRole` | Landmark role of the header container (title and pinned header content). |
+| `headerLabel` |  | `string` | Label of the header container's landmark. |
+| `footerRole` |  | `AccessibleLandmarkRole` | Landmark role of the footer container. |
+| `footerLabel` |  | `string` | Label of the footer container's landmark. |
+| `headerContentLabel` |  | `string` | Label of the header content region; without it "Expanded header". |
 
 ## `@rhfan2019/smart-kit/f/DynamicPageHeader`
 
@@ -742,7 +784,7 @@ Event object of DynamicPageTitle's stateChange.
 
 ## `@rhfan2019/smart-kit/f/FlexibleColumnLayout`
 
-`$FlexibleColumnLayoutSettings` (interface) · `default` (component) · `FlexibleColumnLayout$ColumnResizeEvent` (interface) · `FlexibleColumnLayout$StateChangeEvent` (interface)
+`$FlexibleColumnLayoutSettings` (interface) · `default` (component) · `FlexibleColumnLayout$ColumnResizeEvent` (interface) · `FlexibleColumnLayout$ColumnsDistributionChangeEvent` (interface) · `FlexibleColumnLayout$StateChangeEvent` (interface)
 
 ### `$FlexibleColumnLayoutSettings` — interface
 
@@ -753,11 +795,14 @@ Event object of DynamicPageTitle's stateChange.
 | `midColumnPages` |  | `ReactNode` | Pages of the mid column. |
 | `endColumnPages` |  | `ReactNode` | Pages of the end column. |
 | `backgroundDesign` |  | `BackgroundDesign` | Background of the layout. |
-| `onStateChange` |  | `(e: FlexibleColumnLayout$StateChangeEvent) => void` | Fired when the user asks for another layout (arrows, layout actions) or the maximum column count changes. |
+| `autoFocus` |  | `boolean` | The focus moves to the first focusable element of a column's page when the column shows a page for the first time, and when it shows another page (another React key or element type) while the focus was in the column. |
+| `landmarkInfo` |  | `ReactNode` | Labels of the column regions (and the separator arrows), a FlexibleColumnLayoutAccessibleLandmarkInfo. |
+| `onStateChange` |  | `(e: FlexibleColumnLayout$StateChangeEvent) => void` | Fired when the user asks for another layout (dragging a separator, layout actions, arrows) or the maximum column count changes. |
 | `onColumnResize` |  | `(e: FlexibleColumnLayout$ColumnResizeEvent) => void` | Fired when column widths change; true for each column that changed. |
+| `onColumnsDistributionChange` |  | `(e: FlexibleColumnLayout$ColumnsDistributionChangeEvent) => void` | Fired when the user resized the columns by moving a separator. |
 | `midPaging` |  | `ColumnPaging` | Extension: paging of the mid column for its Paginator (the host's list). |
 | `endPaging` |  | `ColumnPaging` | Extension: paging of the end column for its Paginator. |
-| `separatorArrows` |  | `boolean` | Extension: arrow buttons on the separators between the columns (default true). |
+| `separatorArrows` |  | `boolean` | Extension: arrow buttons on the separators that switch to the neighbouring layout (default false). |
 | `className` |  | `string` | Extra CSS class on the root element. |
 | `ref` |  | `Ref&lt;FlexibleColumnLayout>` |  |
 
@@ -774,11 +819,14 @@ Instance methods of FlexibleColumnLayout.
 | `midColumnPages` |  | `ReactNode` | Pages of the mid column. |
 | `endColumnPages` |  | `ReactNode` | Pages of the end column. |
 | `backgroundDesign` |  | `BackgroundDesign` | Background of the layout. |
-| `onStateChange` |  | `(e: FlexibleColumnLayout$StateChangeEvent) => void` | Fired when the user asks for another layout (arrows, layout actions) or the maximum column count changes. |
+| `autoFocus` |  | `boolean` | The focus moves to the first focusable element of a column's page when the column shows a page for the first time, and when it shows another page (another React key or element type) while the focus was in the column. |
+| `landmarkInfo` |  | `ReactNode` | Labels of the column regions (and the separator arrows), a FlexibleColumnLayoutAccessibleLandmarkInfo. |
+| `onStateChange` |  | `(e: FlexibleColumnLayout$StateChangeEvent) => void` | Fired when the user asks for another layout (dragging a separator, layout actions, arrows) or the maximum column count changes. |
 | `onColumnResize` |  | `(e: FlexibleColumnLayout$ColumnResizeEvent) => void` | Fired when column widths change; true for each column that changed. |
+| `onColumnsDistributionChange` |  | `(e: FlexibleColumnLayout$ColumnsDistributionChangeEvent) => void` | Fired when the user resized the columns by moving a separator. |
 | `midPaging` |  | `ColumnPaging` | Extension: paging of the mid column for its Paginator (the host's list). |
 | `endPaging` |  | `ColumnPaging` | Extension: paging of the end column for its Paginator. |
-| `separatorArrows` |  | `boolean` | Extension: arrow buttons on the separators between the columns (default true). |
+| `separatorArrows` |  | `boolean` | Extension: arrow buttons on the separators that switch to the neighbouring layout (default false). |
 | `className` |  | `string` | Extra CSS class on the root element. |
 | `ref` |  | `Ref&lt;FlexibleColumnLayout>` |  |
 
@@ -792,6 +840,16 @@ Event object of FlexibleColumnLayout's columnResize.
 | `midColumn` | **yes** | `boolean` |  |
 | `endColumn` | **yes** | `boolean` |  |
 
+### `FlexibleColumnLayout$ColumnsDistributionChangeEvent` — interface
+
+Event object of FlexibleColumnLayout's columnsDistributionChange.
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `media` | **yes** | `string` | The media: "desktop" (3 columns fit) or "tablet". |
+| `layout` | **yes** | `string` | The layout after the resize. |
+| `columnsSizes` | **yes** | `string` | Sizes of the columns in percent, separated by "/" (begin/mid/end). |
+
 ### `FlexibleColumnLayout$StateChangeEvent` — interface
 
 Event object of FlexibleColumnLayout's stateChange.
@@ -800,8 +858,40 @@ Event object of FlexibleColumnLayout's stateChange.
 | --- | --- | --- | --- |
 | `layout` | **yes** | `LayoutType` | The layout to apply. |
 | `maxColumnsCount` | **yes** | `number` | How many columns fit (3 from 1280px, 2 from 960px, 1 below). |
-| `isNavigationArrow` | **yes** | `boolean` | The change comes from a separator arrow. |
+| `isNavigationArrow` | **yes** | `boolean` | The change comes from the user (a dragged separator or a separator arrow). |
 | `isResize` | **yes** | `boolean` | The change comes from a resize (the maximum column count changed). |
+
+## `@rhfan2019/smart-kit/f/FlexibleColumnLayoutAccessibleLandmarkInfo`
+
+`$FlexibleColumnLayoutAccessibleLandmarkInfoSettings` (interface) · `default` (component)
+
+### `$FlexibleColumnLayoutAccessibleLandmarkInfoSettings` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `firstColumnLabel` |  | `string` | Label of the first column's region; without it "First column". |
+| `middleColumnLabel` |  | `string` | Label of the middle column's region; without it "Middle column". |
+| `lastColumnLabel` |  | `string` | Label of the last column's region; without it "Last column". |
+| `firstColumnBackArrowLabel` |  | `string` | Label of the arrow that makes the first column smaller (separator arrows); without it a predefined text. |
+| `middleColumnForwardArrowLabel` |  | `string` | Label of the arrow that makes the first column larger; without it a predefined text. |
+| `middleColumnBackArrowLabel` |  | `string` | Label of the arrow that makes the last column larger or shows it; without it a predefined text. |
+| `lastColumnForwardArrowLabel` |  | `string` | Label of the arrow that makes the last column smaller; without it a predefined text. |
+
+### `default` — component
+
+sap.f.FlexibleColumnLayoutAccessibleLandmarkInfo: give it to FlexibleColumnLayout's `landmarkInfo`; it renders nothing itself.
+
+`import { default } from '@rhfan2019/smart-kit/f/FlexibleColumnLayoutAccessibleLandmarkInfo';`
+
+| Prop | Required | Type | Description |
+| --- | --- | --- | --- |
+| `firstColumnLabel` |  | `string` | Label of the first column's region; without it "First column". |
+| `middleColumnLabel` |  | `string` | Label of the middle column's region; without it "Middle column". |
+| `lastColumnLabel` |  | `string` | Label of the last column's region; without it "Last column". |
+| `firstColumnBackArrowLabel` |  | `string` | Label of the arrow that makes the first column smaller (separator arrows); without it a predefined text. |
+| `middleColumnForwardArrowLabel` |  | `string` | Label of the arrow that makes the first column larger; without it a predefined text. |
+| `middleColumnBackArrowLabel` |  | `string` | Label of the arrow that makes the last column larger or shows it; without it a predefined text. |
+| `lastColumnForwardArrowLabel` |  | `string` | Label of the arrow that makes the last column smaller; without it a predefined text. |
 
 ## `@rhfan2019/smart-kit/f/cards/Header`
 
@@ -1195,6 +1285,9 @@ Dialog with the fields of a new object (LR Add/Create Items Using a Dialog, OP C
 | `disabled` |  | `boolean` | Disables the input. |
 | `id` |  | `string` | Element id (e.g. for an external `&lt;label htmlFor>`). |
 | `service` |  | `string` | Name of the service in `SmartKitProvider` `services`; default: the provider's `defaultService`. |
+| `typeName` |  | `string` | Entity type and property path of the field: value lists of Common.ValueListReferences are loaded for them. |
+| `path` |  | `string` |  |
+| `displayValue` |  | `string` | The value as displayed (with its text, e.g. "Name (Key)"): shown in a value help input while it is not changed. |
 
 ### `FieldEditorProps` — interface
 
@@ -1669,6 +1762,8 @@ default(): TableContextValue
 ```
 
 ### `TableContextValue` — interface
+
+What custom content in and around the table sees (AC-EXT-02, kit/useTableContext).
 
 | Member | Required | Type | Description |
 | --- | --- | --- | --- |
@@ -2478,7 +2573,8 @@ A custom option (sap.m.DynamicDateOption); methods are optional except where the
 | `key` | **yes** | `string` |  |
 | `valueTypes` |  | `string[]` | The value types, e.g. `['int']`, `['date']`; empty: the option is picked without a detail page. |
 | `getText` |  | `() => string` | The option text in the list (UI5 `getText`). |
-| `getGroupHeader` |  | `() => string` | The group header shown above the option (UI5 `getGroupHeader`); default "Other Options". |
+| `getGroup` |  | `() => string \| number` | The group of the option (UI5 `getGroup`): a standard group name (SingleDates, DateRanges, Weeks, Month, Quarters, Years), a group added with the control's `addGroup`, or a group number (1–6 the standard groups, 7… the added ones). |
+| `getGroupHeader` |  | `() => string` | The group header shown above the option (UI5 `getGroupHeader`); default "Other Options" (a group added with `addGroup` uses its header). |
 | `format` |  | `(value: DynamicDateRangeValue) => string` |  |
 | `parse` |  | `(text: string) => DynamicDateRangeValue \| null \| undefined` |  |
 | `toDates` |  | `(value: DynamicDateRangeValue, calendarWeekNumbering?: CalendarWeekNumbering) => Date[]` |  |
@@ -2520,6 +2616,7 @@ The value of a DynamicDateRange, as in UI5: `{ operator: 'LASTDAYS', values: [7]
 | `maxCharacters` |  | `number` | Characters shown before "More". |
 | `expanded` |  | `boolean` | InPlace mode: the full text is shown (default false). The control also toggles it itself; a changed prop wins. |
 | `emptyIndicatorMode` |  | `EmptyIndicatorMode` | Shows "–" when text is empty. |
+| `ref` |  | `Ref&lt;ExpandableText>` |  |
 | `defaultChecked` |  | `boolean \| undefined` |  |
 | `defaultValue` |  | `string \| number \| readonly string[] \| undefined` |  |
 | `suppressContentEditableWarning` |  | `boolean \| undefined` |  |
@@ -2800,6 +2897,8 @@ The value of a DynamicDateRange, as in UI5: `{ operator: 'LASTDAYS', values: [7]
 
 ### `default` — component
 
+Instance methods of ExpandableText.
+
 `import { default } from '@rhfan2019/smart-kit/m/ExpandableText';`
 
 | Prop | Required | Type | Description |
@@ -2812,6 +2911,7 @@ The value of a DynamicDateRange, as in UI5: `{ operator: 'LASTDAYS', values: [7]
 | `maxCharacters` |  | `number` | Characters shown before "More". |
 | `expanded` |  | `boolean` | InPlace mode: the full text is shown (default false). The control also toggles it itself; a changed prop wins. |
 | `emptyIndicatorMode` |  | `EmptyIndicatorMode` | Shows "–" when text is empty. |
+| `ref` |  | `Ref&lt;ExpandableText>` |  |
 | `defaultChecked` |  | `boolean \| undefined` |  |
 | `defaultValue` |  | `string \| number \| readonly string[] \| undefined` |  |
 | `suppressContentEditableWarning` |  | `boolean \| undefined` |  |
@@ -3157,7 +3257,7 @@ Event object of `onPost`.
 | Member | Required | Type | Description |
 | --- | --- | --- | --- |
 | `sender` |  | `string` |  |
-| `text` |  | `string` |  |
+| `text` |  | `string` | The text; it may hold the HTML subset of sap.m.FormattedText (a, abbr, bdi, blockquote, br, cite, code, em, h1–h6, p, pre, strong, span, u, s, dl, dt, dd, ol, ul, li with style, class, dir and a's href / target / title). Other tags are dropped with their content; line breaks are kept. |
 | `info` |  | `string` |  |
 | `timestamp` |  | `DateLike` | Date, ISO string (formatted in the smart-kit locale) or display text. |
 | `maxCharacters` |  | `number` | Characters before "More" (default 500 on desktop, 300 on phones). |
@@ -3173,6 +3273,7 @@ Event object of `onPost`.
 | `iconActive` |  | `boolean` | Avatar as a button (needs `onIconPress`). |
 | `convertLinksToAnchorTags` |  | `LinkConversion` | Turns URLs in the text into links. |
 | `convertedLinksDefaultTarget` |  | `string` | Target of the converted links. |
+| `disableStyleAttribute` |  | `boolean` | Drops the `style` attributes of the HTML in `text`. |
 | `type` |  | `ListType` | ListItemBase. |
 | `visible` |  | `boolean` |  |
 | `unread` |  | `boolean` |  |
@@ -3196,7 +3297,7 @@ One feed entry; renders an `<li>`, so place it in a `<ul>` (like sap.m.List).
 | Prop | Required | Type | Description |
 | --- | --- | --- | --- |
 | `sender` |  | `string` |  |
-| `text` |  | `string` |  |
+| `text` |  | `string` | The text; it may hold the HTML subset of sap.m.FormattedText (a, abbr, bdi, blockquote, br, cite, code, em, h1–h6, p, pre, strong, span, u, s, dl, dt, dd, ol, ul, li with style, class, dir and a's href / target / title). Other tags are dropped with their content; line breaks are kept. |
 | `info` |  | `string` |  |
 | `timestamp` |  | `DateLike` | Date, ISO string (formatted in the smart-kit locale) or display text. |
 | `maxCharacters` |  | `number` | Characters before "More" (default 500 on desktop, 300 on phones). |
@@ -3212,6 +3313,7 @@ One feed entry; renders an `<li>`, so place it in a `<ul>` (like sap.m.List).
 | `iconActive` |  | `boolean` | Avatar as a button (needs `onIconPress`). |
 | `convertLinksToAnchorTags` |  | `LinkConversion` | Turns URLs in the text into links. |
 | `convertedLinksDefaultTarget` |  | `string` | Target of the converted links. |
+| `disableStyleAttribute` |  | `boolean` | Drops the `style` attributes of the HTML in `text`. |
 | `type` |  | `ListType` | ListItemBase. |
 | `visible` |  | `boolean` |  |
 | `unread` |  | `boolean` |  |
@@ -7419,15 +7521,16 @@ sap.m.OverflowToolbarLayoutData: set it on a toolbar child as the `layoutData` p
 | `ariaHasPopup` |  | `AriaHasPopup` | aria-haspopup. |
 | `accessibleRole` |  | `ButtonAccessibleRole` | Link makes screen readers announce a link. |
 | `badgeStyle` |  | `BadgeStyle` | Style of the badge. |
-| `badge` |  | `string \| number` | Extension: badge value shown on the button (SAPUI5 sets it through BadgeCustomData). |
+| `badge` |  | `string \| number` | Extension: badge value shown on the button (SAPUI5 sets it through BadgeCustomData); limited as in sap.m.Button (see ToggleButton). |
 | `layoutData` |  | `OverflowToolbarLayoutData` | Layout data in the OverflowToolbar. |
 | `onPress` |  | `(e: Record&lt;string, never>) => void` | Fired when the button is pressed. |
 | `title` |  | `string` | Tooltip (the SAPUI5 tooltip of sap.ui.core.Element); defaults to `text` in the toolbar. |
 | `data-testid` |  | `string` |  |
+| `ref` |  | `Ref&lt;OverflowToolbarButton>` |  |
 
 ### `default` — component
 
-sap.m.OverflowToolbarButton: icon only in the toolbar, icon and text in the overflow.
+sap.m.OverflowToolbarButton: icon only in the toolbar, icon and text in the overflow. Instance methods of OverflowToolbarButton (the sap.m.Button badge methods).
 
 `import { default } from '@rhfan2019/smart-kit/m/OverflowToolbarButton';`
 
@@ -7443,11 +7546,199 @@ sap.m.OverflowToolbarButton: icon only in the toolbar, icon and text in the over
 | `ariaHasPopup` |  | `AriaHasPopup` | aria-haspopup. |
 | `accessibleRole` |  | `ButtonAccessibleRole` | Link makes screen readers announce a link. |
 | `badgeStyle` |  | `BadgeStyle` | Style of the badge. |
-| `badge` |  | `string \| number` | Extension: badge value shown on the button (SAPUI5 sets it through BadgeCustomData). |
+| `badge` |  | `string \| number` | Extension: badge value shown on the button (SAPUI5 sets it through BadgeCustomData); limited as in sap.m.Button (see ToggleButton). |
 | `layoutData` |  | `OverflowToolbarLayoutData` | Layout data in the OverflowToolbar. |
 | `onPress` |  | `(e: Record&lt;string, never>) => void` | Fired when the button is pressed. |
 | `title` |  | `string` | Tooltip (the SAPUI5 tooltip of sap.ui.core.Element); defaults to `text` in the toolbar. |
 | `data-testid` |  | `string` |  |
+| `ref` |  | `Ref&lt;OverflowToolbarButton>` |  |
+
+## `@rhfan2019/smart-kit/m/QuickView`
+
+`$QuickViewSettings` (interface) · `default` (component) · `QuickView$AfterCloseEvent` (type) · `QuickView$AfterNavigateEvent` (interface) · `QuickView$AfterOpenEvent` (type) · `QuickView$BeforeCloseEvent` (interface) · `QuickView$BeforeOpenEvent` (interface) · `QuickView$NavigateEvent` (interface)
+
+### `$QuickViewSettings` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `placement` |  | `PlacementType` | Where the popover appears next to the `openBy` control. |
+| `width` |  | `string` | The width of the popover. |
+| `children` |  | `ReactNode` | The pages (QuickViewPage); the first one is shown first. |
+| `busy` |  | `boolean` | Shows a busy indicator instead of the page (sap.ui.core.Control busy). |
+| `aria-label` |  | `string` | The accessible name of the popover. |
+| `onNavigate` |  | `(e: QuickView$NavigateEvent) => void` |  |
+| `onAfterNavigate` |  | `(e: QuickView$AfterNavigateEvent) => void` |  |
+| `onBeforeOpen` |  | `(e: QuickView$BeforeOpenEvent) => void` |  |
+| `onAfterOpen` |  | `(e: QuickView$AfterOpenEvent) => void` |  |
+| `onBeforeClose` |  | `(e: QuickView$BeforeCloseEvent) => void` |  |
+| `onAfterClose` |  | `(e: QuickView$AfterCloseEvent) => void` |  |
+| `ref` |  | `Ref&lt;QuickView>` |  |
+
+### `default` — component
+
+Instance methods of QuickView.
+
+`import { default } from '@rhfan2019/smart-kit/m/QuickView';`
+
+| Prop | Required | Type | Description |
+| --- | --- | --- | --- |
+| `placement` |  | `PlacementType` | Where the popover appears next to the `openBy` control. |
+| `width` |  | `string` | The width of the popover. |
+| `children` |  | `ReactNode` | The pages (QuickViewPage); the first one is shown first. |
+| `busy` |  | `boolean` | Shows a busy indicator instead of the page (sap.ui.core.Control busy). |
+| `aria-label` |  | `string` | The accessible name of the popover. |
+| `onNavigate` |  | `(e: QuickView$NavigateEvent) => void` |  |
+| `onAfterNavigate` |  | `(e: QuickView$AfterNavigateEvent) => void` |  |
+| `onBeforeOpen` |  | `(e: QuickView$BeforeOpenEvent) => void` |  |
+| `onAfterOpen` |  | `(e: QuickView$AfterOpenEvent) => void` |  |
+| `onBeforeClose` |  | `(e: QuickView$BeforeCloseEvent) => void` |  |
+| `onAfterClose` |  | `(e: QuickView$AfterCloseEvent) => void` |  |
+| `ref` |  | `Ref&lt;QuickView>` |  |
+
+### `QuickView$AfterCloseEvent` — type
+
+```ts
+export type QuickView$AfterCloseEvent = QuickView$BeforeCloseEvent;
+```
+
+### `QuickView$AfterNavigateEvent` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `isTopPage` | **yes** | `boolean` | Whether the page navigated to is the first page. |
+| `from` | **yes** | `$QuickViewPageSettings` | The settings of the page navigated from. |
+| `fromId` | **yes** | `string` |  |
+| `to` | **yes** | `$QuickViewPageSettings` | The settings of the page navigated to. |
+| `toId` | **yes** | `string` |  |
+| `firstTime` | **yes** | `boolean` |  |
+| `isTo` | **yes** | `boolean` |  |
+| `isBack` | **yes** | `boolean` |  |
+| `isBackToTop` | **yes** | `boolean` |  |
+| `isBackToPage` | **yes** | `boolean` |  |
+| `direction` | **yes** | `'to' \| 'back'` |  |
+| `navOrigin` | **yes** | `null` |  |
+
+### `QuickView$AfterOpenEvent` — type
+
+```ts
+export type QuickView$AfterOpenEvent = QuickView$BeforeOpenEvent;
+```
+
+### `QuickView$BeforeCloseEvent` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `openBy` | **yes** | `Element \| null` |  |
+| `origin` | **yes** | `Element \| null` | The element that closed it: null for Escape or a click outside. |
+
+### `QuickView$BeforeOpenEvent` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `openBy` | **yes** | `Element \| null` |  |
+
+### `QuickView$NavigateEvent` — interface
+
+Parameters of `navigate` (sap.m.NavContainer navigate).
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `from` | **yes** | `$QuickViewPageSettings` | The settings of the page navigated from. |
+| `fromId` | **yes** | `string` |  |
+| `to` | **yes** | `$QuickViewPageSettings` | The settings of the page navigated to. |
+| `toId` | **yes** | `string` |  |
+| `firstTime` | **yes** | `boolean` |  |
+| `isTo` | **yes** | `boolean` |  |
+| `isBack` | **yes** | `boolean` |  |
+| `isBackToTop` | **yes** | `boolean` |  |
+| `isBackToPage` | **yes** | `boolean` |  |
+| `direction` | **yes** | `'to' \| 'back'` |  |
+| `navOrigin` | **yes** | `null` |  |
+| `preventDefault` | **yes** | `() => void` | Cancels the navigation. |
+
+## `@rhfan2019/smart-kit/m/QuickViewGroup`
+
+`$QuickViewGroupSettings` (interface) · `default` (component)
+
+### `$QuickViewGroupSettings` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `visible` |  | `boolean` | Whether the group is shown. |
+| `heading` |  | `string` | The heading of the group. |
+| `children` |  | `ReactNode` | The elements (QuickViewGroupElement). |
+
+### `default` — component
+
+`import { default } from '@rhfan2019/smart-kit/m/QuickViewGroup';`
+
+| Prop | Required | Type | Description |
+| --- | --- | --- | --- |
+| `visible` |  | `boolean` | Whether the group is shown. |
+| `heading` |  | `string` | The heading of the group. |
+| `children` |  | `ReactNode` | The elements (QuickViewGroupElement). |
+
+## `@rhfan2019/smart-kit/m/QuickViewGroupElement`
+
+`$QuickViewGroupElementSettings` (interface) · `default` (component)
+
+### `$QuickViewGroupElementSettings` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `visible` |  | `boolean` | Whether the element is shown. |
+| `label` |  | `string` | The label. |
+| `value` |  | `ReactNode` | The value; smart-kit also takes an element (e.g. a formatted field). |
+| `url` |  | `string` | The address of a "link" element. |
+| `target` |  | `string` | The target of a "link" element. |
+| `type` |  | `QuickViewGroupElementType` | text, link, email, phone, mobile or pageLink. |
+| `pageLinkId` |  | `string` | The `pageId` a "pageLink" element navigates to. |
+| `emailSubject` |  | `string` | The subject of the mail an "email" element starts. |
+
+### `default` — component
+
+`import { default } from '@rhfan2019/smart-kit/m/QuickViewGroupElement';`
+
+| Prop | Required | Type | Description |
+| --- | --- | --- | --- |
+| `visible` |  | `boolean` | Whether the element is shown. |
+| `label` |  | `string` | The label. |
+| `value` |  | `ReactNode` | The value; smart-kit also takes an element (e.g. a formatted field). |
+| `url` |  | `string` | The address of a "link" element. |
+| `target` |  | `string` | The target of a "link" element. |
+| `type` |  | `QuickViewGroupElementType` | text, link, email, phone, mobile or pageLink. |
+| `pageLinkId` |  | `string` | The `pageId` a "pageLink" element navigates to. |
+| `emailSubject` |  | `string` | The subject of the mail an "email" element starts. |
+
+## `@rhfan2019/smart-kit/m/QuickViewPage`
+
+`$QuickViewPageSettings` (interface) · `default` (component)
+
+### `$QuickViewPageSettings` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `pageId` |  | `string` | The id other pages navigate to with a "pageLink" element. |
+| `header` |  | `string` | The header text of the page (shown at the top). |
+| `title` |  | `string` | The title. |
+| `titleUrl` |  | `string` | Makes the title a link. |
+| `description` |  | `string` | The description below the title. |
+| `avatar` |  | `ReactNode` | The avatar (a sap.m.Avatar element, e.g. Mantine's Avatar). |
+| `children` |  | `ReactNode` | The groups (QuickViewGroup). |
+
+### `default` — component
+
+`import { default } from '@rhfan2019/smart-kit/m/QuickViewPage';`
+
+| Prop | Required | Type | Description |
+| --- | --- | --- | --- |
+| `pageId` |  | `string` | The id other pages navigate to with a "pageLink" element. |
+| `header` |  | `string` | The header text of the page (shown at the top). |
+| `title` |  | `string` | The title. |
+| `titleUrl` |  | `string` | Makes the title a link. |
+| `description` |  | `string` | The description below the title. |
+| `avatar` |  | `ReactNode` | The avatar (a sap.m.Avatar element, e.g. Mantine's Avatar). |
+| `children` |  | `ReactNode` | The groups (QuickViewGroup). |
 
 ## `@rhfan2019/smart-kit/m/SelectDialog`
 
@@ -7647,7 +7938,7 @@ export type VerticalAlign = 'Bottom' | 'Inherit' | 'Middle' | 'Top';
 
 ## `@rhfan2019/smart-kit/m/Table`
 
-`$ColumnSettings` (interface) · `$TableSettings` (interface) · `default` (component) · `GroupSummary` (interface) · `PopinDisplay` (type) · `Table$DeleteEvent` (interface) · `Table$ItemPressEvent` (interface) · `Table$PasteEvent` (interface) · `Table$PopinChangedEvent` (interface) · `Table$SelectionChangeEvent` (interface) · `Table$UpdateFinishedEvent` (type) · `Table$UpdateStartedEvent` (interface)
+`$ColumnSettings` (interface) · `$ListItemActionSettings` (interface) · `$TableSettings` (interface) · `default` (component) · `GroupSummary` (interface) · `PopinDisplay` (type) · `Table$BeforeOpenContextMenuEvent` (interface) · `Table$DeleteEvent` (interface) · `Table$ItemActionPressEvent` (interface) · `Table$ItemPressEvent` (interface) · `Table$PasteEvent` (interface) · `Table$PopinChangedEvent` (interface) · `Table$SelectionChangeEvent` (interface) · `Table$SwipeEvent` (interface) · `Table$UpdateFinishedEvent` (type) · `Table$UpdateStartedEvent` (interface)
 
 ### `$ColumnSettings` — interface
 
@@ -7667,6 +7958,18 @@ A column (sap.m.Column) of the `columns` aggregation.
 | `popinDisplay` |  | `PopinDisplay` | How the pop-in shows header and value. |
 | `footer` |  | `ReactNode` | Footer of the column (sap.m.Column aggregation `footer`). |
 | `groupValue` |  | `(row: Row) => string` | Text of the grouping header (value of the group property; smart-kit addition). |
+
+### `$ListItemActionSettings` — interface
+
+An action of a row (sap.m.ListItemAction of the list item aggregation `actions`). "Edit" and "Delete" bring their own icon and text (Ctrl+E and Delete on the focused row press them); "Navigation" is not shown but makes the row navigable (chevron and `itemPress`).
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `key` |  | `string` | Key of the action (React key; tells actions apart in `itemActionPress`). Defaults to the type and the text. |
+| `type` |  | `ListItemActionType` |  |
+| `text` |  | `string` | Text (tooltip of the button, text of the overflow menu item) of a "Custom" action. |
+| `icon` |  | `ReactNode` | Icon of a "Custom" action. |
+| `visible` |  | `boolean` |  |
 
 ### `$TableSettings` — interface
 
@@ -7703,7 +8006,17 @@ A column (sap.m.Column) of the `columns` aggregation.
 | `growingThreshold` |  | `number` | Items per page when the table grows over `items` itself (no `hasMore`). |
 | `growingTriggerText` |  | `string` | Text of the "More" button (default "More"). |
 | `growingScrollToLoad` |  | `boolean` | Load the next page when the end of the table scrolls into view instead of a button. |
+| `growingDirection` |  | `ListGrowingDirection` | "Upwards": the "More" button (or scroll to load) is at the top and the items are shown in reverse order, the first one at the bottom (chat-like lists). |
 | `hasMore` |  | `boolean` | More items can be loaded by the parent (`onUpdateStarted` with reason "Growing" asks for them; smart-kit addition). |
+| `keyboardMode` |  | `ListKeyboardMode` | "Navigation": arrow keys move between the cells; "Edit": Tab moves between the input fields of the cells, arrow up / down moves to the same field of the previous / next row. |
+| `showUnread` |  | `boolean` | Shows the unread indicator (bold rows) of the rows that `rowUnread` marks. |
+| `rowUnread` |  | `(row: Row) => boolean` | Whether a row is unread (sap.m.ListItemBase `unread` of the row; shown with `showUnread`). |
+| `modeAnimationOn` |  | `boolean` | The selection controls animate in when `mode` changes. |
+| `itemActionCount` |  | `number` | Maximum number of row actions (`rowActions`) shown in a column at the end; more go into an overflow menu. 0–2 enable the actions (mode "Delete" then has no effect); -1 does not show them. |
+| `rowActions` |  | `(row: Row) => $ListItemActionSettings[]` | Actions of a row (sap.m.ListItemBase aggregation `actions` of the row). |
+| `swipeContent` |  | `ReactNode` | Content shown at the end of a row after a touch swipe (e.g. a button); hidden again by a tap elsewhere in the table or `swipeOut`. |
+| `swipeDirection` |  | `SwipeDirection` | Swipe direction that shows `swipeContent`. |
+| `contextMenu` |  | `ReactNode \| ((listItem: Row) => ReactNode)` | Context menu of the rows (opened by right-click or Shift+F10 / the menu key on a row); a function gets the row (the binding context UI5 sets on the menu). |
 | `autoPopinMode` |  | `boolean` | Moves columns into the pop-in by `importance` as the width shrinks. |
 | `hiddenInPopin` |  | `Priority[]` | Importances whose popped-in columns are not shown in the pop-in area ("Show Details" off). |
 | `contextualWidth` |  | `string` | Width used for the pop-in: "Inherit" (the table's), "Desktop", "Tablet", "Phone" or a CSS width. |
@@ -7724,6 +8037,9 @@ A column (sap.m.Column) of the `columns` aggregation.
 | `onUpdateFinished` |  | `(e: Table$UpdateFinishedEvent) => void` | The items changed. |
 | `onPopinChanged` |  | `(e: Table$PopinChangedEvent) => void` | The set of columns in the pop-in changed. |
 | `onPaste` |  | `(e: Table$PasteEvent) => void` | Text was pasted into the table (e.g. from a spreadsheet). |
+| `onBeforeOpenContextMenu` |  | `(e: Table$BeforeOpenContextMenuEvent) => void` | The context menu of a row is about to open (`preventDefault` keeps it closed). |
+| `onSwipe` |  | `(e: Table$SwipeEvent) => void` | A row was swiped, before `swipeContent` is shown (`preventDefault` cancels). |
+| `onItemActionPress` |  | `(e: Table$ItemActionPressEvent) => void` | A row action (`rowActions`) was pressed. |
 | `ref` |  | `Ref&lt;Table>` | Instance methods (sap.m.Table / sap.m.ListBase). |
 
 ### `default` — component
@@ -7765,7 +8081,17 @@ Instance methods of sap.m.Table (through `ref`). Rows stand for the list items.
 | `growingThreshold` |  | `number` | Items per page when the table grows over `items` itself (no `hasMore`). |
 | `growingTriggerText` |  | `string` | Text of the "More" button (default "More"). |
 | `growingScrollToLoad` |  | `boolean` | Load the next page when the end of the table scrolls into view instead of a button. |
+| `growingDirection` |  | `ListGrowingDirection` | "Upwards": the "More" button (or scroll to load) is at the top and the items are shown in reverse order, the first one at the bottom (chat-like lists). |
 | `hasMore` |  | `boolean` | More items can be loaded by the parent (`onUpdateStarted` with reason "Growing" asks for them; smart-kit addition). |
+| `keyboardMode` |  | `ListKeyboardMode` | "Navigation": arrow keys move between the cells; "Edit": Tab moves between the input fields of the cells, arrow up / down moves to the same field of the previous / next row. |
+| `showUnread` |  | `boolean` | Shows the unread indicator (bold rows) of the rows that `rowUnread` marks. |
+| `rowUnread` |  | `(row: Row) => boolean` | Whether a row is unread (sap.m.ListItemBase `unread` of the row; shown with `showUnread`). |
+| `modeAnimationOn` |  | `boolean` | The selection controls animate in when `mode` changes. |
+| `itemActionCount` |  | `number` | Maximum number of row actions (`rowActions`) shown in a column at the end; more go into an overflow menu. 0–2 enable the actions (mode "Delete" then has no effect); -1 does not show them. |
+| `rowActions` |  | `(row: Row) => $ListItemActionSettings[]` | Actions of a row (sap.m.ListItemBase aggregation `actions` of the row). |
+| `swipeContent` |  | `ReactNode` | Content shown at the end of a row after a touch swipe (e.g. a button); hidden again by a tap elsewhere in the table or `swipeOut`. |
+| `swipeDirection` |  | `SwipeDirection` | Swipe direction that shows `swipeContent`. |
+| `contextMenu` |  | `ReactNode \| ((listItem: Row) => ReactNode)` | Context menu of the rows (opened by right-click or Shift+F10 / the menu key on a row); a function gets the row (the binding context UI5 sets on the menu). |
 | `autoPopinMode` |  | `boolean` | Moves columns into the pop-in by `importance` as the width shrinks. |
 | `hiddenInPopin` |  | `Priority[]` | Importances whose popped-in columns are not shown in the pop-in area ("Show Details" off). |
 | `contextualWidth` |  | `string` | Width used for the pop-in: "Inherit" (the table's), "Desktop", "Tablet", "Phone" or a CSS width. |
@@ -7786,6 +8112,9 @@ Instance methods of sap.m.Table (through `ref`). Rows stand for the list items.
 | `onUpdateFinished` |  | `(e: Table$UpdateFinishedEvent) => void` | The items changed. |
 | `onPopinChanged` |  | `(e: Table$PopinChangedEvent) => void` | The set of columns in the pop-in changed. |
 | `onPaste` |  | `(e: Table$PasteEvent) => void` | Text was pasted into the table (e.g. from a spreadsheet). |
+| `onBeforeOpenContextMenu` |  | `(e: Table$BeforeOpenContextMenuEvent) => void` | The context menu of a row is about to open (`preventDefault` keeps it closed). |
+| `onSwipe` |  | `(e: Table$SwipeEvent) => void` | A row was swiped, before `swipeContent` is shown (`preventDefault` cancels). |
+| `onItemActionPress` |  | `(e: Table$ItemActionPressEvent) => void` | A row action (`rowActions`) was pressed. |
 | `ref` |  | `Ref&lt;Table>` | Instance methods (sap.m.Table / sap.m.ListBase). |
 
 ### `GroupSummary` — interface
@@ -7803,11 +8132,26 @@ sap.m.PopinDisplay
 export type PopinDisplay = 'Block' | 'Inline' | 'WithoutHeader';
 ```
 
+### `Table$BeforeOpenContextMenuEvent` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `listItem` | **yes** | `Row` | The row in which the context menu was opened. |
+| `column` | **yes** | `$ColumnSettings \| undefined` | The column in which the context menu was opened (undefined outside the columns, e.g. the selection cell). |
+| `preventDefault` | **yes** | `() => void` | Keeps the context menu closed (the browser's own menu opens). |
+
 ### `Table$DeleteEvent` — interface
 
 | Member | Required | Type | Description |
 | --- | --- | --- | --- |
 | `listItem` | **yes** | `Row` |  |
+
+### `Table$ItemActionPressEvent` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `action` | **yes** | `$ListItemActionSettings` | The pressed action. |
+| `listItem` | **yes** | `Row` | The row of the action. |
 
 ### `Table$ItemPressEvent` — interface
 
@@ -7839,6 +8183,16 @@ export type PopinDisplay = 'Block' | 'Inline' | 'WithoutHeader';
 | `listItems` | **yes** | `Row[]` | The rows whose selection changed. |
 | `selected` | **yes** | `boolean` | Whether they were selected (true) or deselected (false). |
 | `selectAll` | **yes** | `boolean` | The change came from the "select all" checkbox. |
+
+### `Table$SwipeEvent` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `listItem` | **yes** | `Row` | The swiped row. |
+| `swipeContent` | **yes** | `ReactNode` | The `swipeContent` shown at the end of the row. |
+| `srcControl` | **yes** | `HTMLElement` | The element the swipe started on. |
+| `swipeDirection` | **yes** | `'BeginToEnd' \| 'EndToBegin'` | "BeginToEnd" or "EndToBegin" (left to right / right to left in left-to-right languages). |
+| `preventDefault` | **yes** | `() => void` | Cancels the swipe (the swipe content is not shown). |
 
 ### `Table$UpdateFinishedEvent` — type
 
@@ -8025,13 +8379,14 @@ export type TableSelectDialog$UpdateStartedEvent = ListUpdateEvent;
 | `ariaHasPopup` |  | `AriaHasPopup` | aria-haspopup. |
 | `accessibleRole` |  | `ButtonAccessibleRole` | Link makes screen readers announce a link. |
 | `badgeStyle` |  | `BadgeStyle` | Style of the badge. |
-| `badge` |  | `string \| number` | Extension: badge value shown on the button (SAPUI5 sets it through BadgeCustomData). |
+| `badge` |  | `string \| number` | Extension: badge value shown on the button (SAPUI5 sets it through BadgeCustomData). Limited as in sap.m.Button: hidden below the minimum (1), `9999+`-style above the maximum, empty for a non-numeric value (see setBadgeMinValue / setBadgeMaxValue). |
 | `layoutData` |  | `OverflowToolbarLayoutData` | Layout data when the button is in an OverflowToolbar. |
 | `onPress` |  | `(e: ToggleButton$PressEvent) => void` | Fired after a press with the new state. |
 | `title` |  | `string` | Tooltip (the SAPUI5 tooltip of sap.ui.core.Element). |
 | `aria-label` |  | `string` |  |
 | `className` |  | `string` |  |
 | `data-testid` |  | `string` |  |
+| `ref` |  | `Ref&lt;ToggleButton>` |  |
 
 ### `AriaHasPopup` — type
 
@@ -8042,6 +8397,8 @@ export type AriaHasPopup = 'None' | 'Menu' | 'ListBox' | 'Tree' | 'Grid' | 'Dial
 ```
 
 ### `default` — component
+
+Instance methods of ToggleButton (the sap.m.Button badge methods).
 
 `import { default } from '@rhfan2019/smart-kit/m/ToggleButton';`
 
@@ -8058,13 +8415,14 @@ export type AriaHasPopup = 'None' | 'Menu' | 'ListBox' | 'Tree' | 'Grid' | 'Dial
 | `ariaHasPopup` |  | `AriaHasPopup` | aria-haspopup. |
 | `accessibleRole` |  | `ButtonAccessibleRole` | Link makes screen readers announce a link. |
 | `badgeStyle` |  | `BadgeStyle` | Style of the badge. |
-| `badge` |  | `string \| number` | Extension: badge value shown on the button (SAPUI5 sets it through BadgeCustomData). |
+| `badge` |  | `string \| number` | Extension: badge value shown on the button (SAPUI5 sets it through BadgeCustomData). Limited as in sap.m.Button: hidden below the minimum (1), `9999+`-style above the maximum, empty for a non-numeric value (see setBadgeMinValue / setBadgeMaxValue). |
 | `layoutData` |  | `OverflowToolbarLayoutData` | Layout data when the button is in an OverflowToolbar. |
 | `onPress` |  | `(e: ToggleButton$PressEvent) => void` | Fired after a press with the new state. |
 | `title` |  | `string` | Tooltip (the SAPUI5 tooltip of sap.ui.core.Element). |
 | `aria-label` |  | `string` |  |
 | `className` |  | `string` |  |
 | `data-testid` |  | `string` |  |
+| `ref` |  | `Ref&lt;ToggleButton>` |  |
 
 ### `ToggleButton$PressEvent` — interface
 
@@ -8348,7 +8706,7 @@ A step of a Wizard; rendered by the Wizard (alone it renders nothing).
 
 ## `@rhfan2019/smart-kit/m/library`
 
-`BackgroundDesign` (const) · `BadgeStyle` (const) · `ButtonAccessibleRole` (const) · `ButtonType` (const) · `EmptyIndicatorMode` (const) · `ExpandableTextOverflowMode` (const) · `GenericTagDesign` (const) · `GenericTagValueState` (const) · `IconTabDensityMode` (const) · `IconTabFilterDesign` (const) · `IconTabFilterInteractionMode` (const) · `IconTabHeaderMode` (const) · `LinkConversion` (const) · `ListMode` (const) · `ListSeparators` (const) · `ListType` (const) · `MultiSelectMode` (const) · `ObjectMarkerType` (const) · `ObjectMarkerVisibility` (const) · `ObjectNumberDisplayMode` (const) · `OverflowToolbarPriority` (const) · `PageBackgroundDesign` (const) · `PopinLayout` (const) · `ReactiveAreaMode` (const) · `SelectDialogInitialFocus` (const) · `StandardDynamicDateRangeKeys` (const) · `Sticky` (const) · `StringFilterOperator` (const) · `TabsOverflowMode` (const) · `TitleAlignment` (const) · `ToolbarDesign` (const) · `ToolbarStyle` (const) · `UploadSetwithTableActionPlaceHolder` (const) · `UploadState` (const) · `VerticalPlacementType` (const) · `WizardRenderMode` (const) · `WrappingType` (const)
+`BackgroundDesign` (const) · `BadgeStyle` (const) · `ButtonAccessibleRole` (const) · `ButtonType` (const) · `EmptyIndicatorMode` (const) · `ExpandableTextOverflowMode` (const) · `GenericTagDesign` (const) · `GenericTagValueState` (const) · `IconTabDensityMode` (const) · `IconTabFilterDesign` (const) · `IconTabFilterInteractionMode` (const) · `IconTabHeaderMode` (const) · `LinkConversion` (const) · `ListGrowingDirection` (const) · `ListItemActionType` (const) · `ListKeyboardMode` (const) · `ListMode` (const) · `ListSeparators` (const) · `ListType` (const) · `MultiSelectMode` (const) · `ObjectMarkerType` (const) · `ObjectMarkerVisibility` (const) · `ObjectNumberDisplayMode` (const) · `OverflowToolbarPriority` (const) · `P13nPopupMode` (const) · `PageBackgroundDesign` (const) · `PlacementType` (const) · `PopinLayout` (const) · `QuickViewGroupElementType` (const) · `ReactiveAreaMode` (const) · `SelectDialogInitialFocus` (const) · `Size` (const) · `StandardDynamicDateRangeKeys` (const) · `Sticky` (const) · `StringFilterOperator` (const) · `SwipeDirection` (const) · `TabsOverflowMode` (const) · `TitleAlignment` (const) · `ToolbarDesign` (const) · `ToolbarStyle` (const) · `UploadSetwithTableActionPlaceHolder` (const) · `UploadState` (const) · `ValueColor` (const) · `VerticalPlacementType` (const) · `WizardRenderMode` (const) · `WrappingType` (const)
 
 ### `BackgroundDesign` — const
 
@@ -8454,6 +8812,30 @@ sap.m.LinkConversion
 const LinkConversion: { readonly None: "None"; readonly All: "All"; readonly ProtocolOnly: "ProtocolOnly"; }
 ```
 
+### `ListGrowingDirection` — const
+
+sap.m.ListGrowingDirection
+
+```ts
+const ListGrowingDirection: { readonly Downwards: "Downwards"; readonly Upwards: "Upwards"; }
+```
+
+### `ListItemActionType` — const
+
+sap.m.ListItemActionType
+
+```ts
+const ListItemActionType: { readonly Custom: "Custom"; readonly Delete: "Delete"; readonly Edit: "Edit"; }
+```
+
+### `ListKeyboardMode` — const
+
+sap.m.ListKeyboardMode
+
+```ts
+const ListKeyboardMode: { readonly Edit: "Edit"; readonly Navigation: "Navigation"; }
+```
+
 ### `ListMode` — const
 
 sap.m.ListMode (the deprecated SingleSelect is left out).
@@ -8518,6 +8900,14 @@ sap.m.OverflowToolbarPriority
 const OverflowToolbarPriority: { readonly NeverOverflow: "NeverOverflow"; readonly High: "High"; readonly Low: "Low"; readonly Disappear: "Disappear"; readonly AlwaysOv…
 ```
 
+### `P13nPopupMode` — const
+
+sap.m.P13nPopupMode
+
+```ts
+const P13nPopupMode: { readonly Dialog: "Dialog"; readonly ResponsivePopover: "ResponsivePopover"; }
+```
+
 ### `PageBackgroundDesign` — const
 
 sap.m.PageBackgroundDesign
@@ -8526,12 +8916,28 @@ sap.m.PageBackgroundDesign
 const PageBackgroundDesign: { readonly List: "List"; readonly Solid: "Solid"; readonly Standard: "Standard"; readonly Transparent: "Transparent"; }
 ```
 
+### `PlacementType` — const
+
+sap.m.PlacementType
+
+```ts
+const PlacementType: { readonly Auto: "Auto"; readonly Bottom: "Bottom"; readonly Horizontal: "Horizontal"; readonly HorizontalPreferredLeft: "HorizontalPrefe…
+```
+
 ### `PopinLayout` — const
 
 sap.m.PopinLayout
 
 ```ts
 const PopinLayout: { readonly Block: "Block"; readonly GridLarge: "GridLarge"; readonly GridSmall: "GridSmall"; }
+```
+
+### `QuickViewGroupElementType` — const
+
+sap.m.QuickViewGroupElementType
+
+```ts
+const QuickViewGroupElementType: { readonly email: "email"; readonly link: "link"; readonly mobile: "mobile"; readonly pageLink: "pageLink"; readonly phone: "phone"; read…
 ```
 
 ### `ReactiveAreaMode` — const
@@ -8548,6 +8954,14 @@ sap.m.SelectDialogInitialFocus
 
 ```ts
 const SelectDialogInitialFocus: { readonly List: "List"; readonly SearchField: "SearchField"; }
+```
+
+### `Size` — const
+
+sap.m.Size (the size of a micro chart).
+
+```ts
+const Size: { readonly XS: "XS"; readonly S: "S"; readonly M: "M"; readonly L: "L"; readonly Responsive: "Responsive"; readonly Auto: "Auto"; }
 ```
 
 ### `StandardDynamicDateRangeKeys` — const
@@ -8572,6 +8986,14 @@ sap.m.StringFilterOperator (how the search field of a filter detail page matches
 
 ```ts
 const StringFilterOperator: { readonly AnyWordStartsWith: "AnyWordStartsWith"; readonly Contains: "Contains"; readonly Equals: "Equals"; readonly StartsWith: "Starts…
+```
+
+### `SwipeDirection` — const
+
+sap.m.SwipeDirection
+
+```ts
+const SwipeDirection: { readonly BeginToEnd: "BeginToEnd"; readonly Both: "Both"; readonly EndToBegin: "EndToBegin"; }
 ```
 
 ### `TabsOverflowMode` — const
@@ -8622,6 +9044,14 @@ sap.m.UploadState
 const UploadState: { readonly Ready: "Ready"; readonly Uploading: "Uploading"; readonly Complete: "Complete"; readonly Error: "Error"; }
 ```
 
+### `ValueColor` — const
+
+sap.m.ValueColor
+
+```ts
+const ValueColor: { readonly Good: "Good"; readonly Critical: "Critical"; readonly Error: "Error"; readonly Neutral: "Neutral"; readonly None: "None"; }
+```
+
 ### `VerticalPlacementType` — const
 
 sap.m.VerticalPlacementType
@@ -8646,31 +9076,283 @@ sap.m.WrappingType
 const WrappingType: { readonly Normal: "Normal"; readonly Hyphenated: "Hyphenated"; }
 ```
 
-## `@rhfan2019/smart-kit/m/p13n/Popup`
+## `@rhfan2019/smart-kit/m/p13n/GroupPanel`
 
-`default` (component) · `TableP13nDialogProps` (interface)
+`$GroupPanelSettings` (interface) · `BasePanel$ChangeEvent` (interface) · `ChangeReason` (type) · `default` (component) · `GroupItem` (interface) · `GroupPanel$ChangeEvent` (type)
+
+### `$GroupPanelSettings` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `title` |  | `string` | A short text describing the panel (the tab text in a Popup). Default: the localized text "Group" (p13n.DEFAULT_TITLE_GROUP). |
+| `enableShowField` |  | `boolean` | Shows a check box per row whether the grouped field stays visible (GroupItem.showIfGrouped). |
+| `enableReorder` |  | `boolean` | Whether the group criteria can be reordered (move buttons). |
+| `queryLimit` |  | `number` | The maximum number of group criteria; -1: no limit. |
+| `messageStrip` |  | `ReactNode` | A message strip shown above the rows (BasePanel `messageStrip`, a sap.m.MessageStrip element). |
+| `p13nData` |  | `GroupItem[]` | The personalization state shown (BasePanel.setP13nData): the grouped items first, in group order. A new array starts the panel again. |
+| `onChange` |  | `(e: GroupPanel$ChangeEvent) => void` | Fired when the user changes the state (BasePanel `change`; reason "showifgrouped" for the check box). |
+| `ref` |  | `Ref&lt;GroupPanel>` |  |
+
+### `BasePanel$ChangeEvent` — interface
+
+sap.m.p13n.BasePanel `change` event.
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `reason` | **yes** | `ChangeReason` | Add, Remove, Move, SelectAll, DeselectAll, RangeSelect (SortPanel: sortorder; GroupPanel: showifgrouped). |
+| `item` | **yes** | `T \| T[]` | The changed item (for SelectAll / DeselectAll the list of items). |
+
+### `ChangeReason` — type
+
+The `reason` of the BasePanel `change` event (BasePanel.CHANGE_REASON_*, SortPanel / GroupPanel extras).
+
+```ts
+export type ChangeReason = 'Add' | 'Remove' | 'Move' | 'SelectAll' | 'DeselectAll' | 'RangeSelect' | 'sortorder' | 'showifgrouped';
+```
 
 ### `default` — component
+
+Instance methods of GroupPanel (sap.m.p13n.BasePanel).
+
+`import { default } from '@rhfan2019/smart-kit/m/p13n/GroupPanel';`
+
+| Prop | Required | Type | Description |
+| --- | --- | --- | --- |
+| `title` |  | `string` | A short text describing the panel (the tab text in a Popup). Default: the localized text "Group" (p13n.DEFAULT_TITLE_GROUP). |
+| `enableShowField` |  | `boolean` | Shows a check box per row whether the grouped field stays visible (GroupItem.showIfGrouped). |
+| `enableReorder` |  | `boolean` | Whether the group criteria can be reordered (move buttons). |
+| `queryLimit` |  | `number` | The maximum number of group criteria; -1: no limit. |
+| `messageStrip` |  | `ReactNode` | A message strip shown above the rows (BasePanel `messageStrip`, a sap.m.MessageStrip element). |
+| `p13nData` |  | `GroupItem[]` | The personalization state shown (BasePanel.setP13nData): the grouped items first, in group order. A new array starts the panel again. |
+| `onChange` |  | `(e: GroupPanel$ChangeEvent) => void` | Fired when the user changes the state (BasePanel `change`; reason "showifgrouped" for the check box). |
+| `ref` |  | `Ref&lt;GroupPanel>` |  |
+
+### `GroupItem` — interface
+
+sap.m.p13n.GroupItem
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `name` | **yes** | `string` |  |
+| `label` | **yes** | `string` |  |
+| `grouped` | **yes** | `boolean` | Whether the item is grouped. |
+| `showIfGrouped` |  | `boolean` | GroupPanel `enableShowField`: whether the grouped field stays visible as a column (default true). |
+
+### `GroupPanel$ChangeEvent` — type
+
+GroupPanel `change` event (sap.m.p13n.BasePanel `change`).
+
+```ts
+export type GroupPanel$ChangeEvent = BasePanel$ChangeEvent<GroupItem>;
+```
+
+## `@rhfan2019/smart-kit/m/p13n/Popup`
+
+`$PopupSettings` (interface) · `default` (component) · `Popup$CloseEvent` (interface) · `Popup$CloseReason` (type) · `PopupOpenSettings` (interface)
+
+### `$PopupSettings` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `title` |  | `string` | The title of the popup. |
+| `mode` |  | `P13nPopupMode` | Dialog or ResponsivePopover (placed below the `open()` source). |
+| `warningText` |  | `string` | The confirmation text shown before `reset` is called (only with `reset`). |
+| `reset` |  | `(control?: unknown) => void` | Called after the user confirmed a reset; the Reset button is shown only when it is given. |
+| `panels` |  | `ReactNode` | The panels (sap.m.p13n.IContent): SelectionPanel, SortPanel, GroupPanel elements or other content; the React key is the panel key, its `title` prop the tab text. |
+| `additionalButtons` |  | `ReactNode[]` | Additional buttons in the Dialog footer, after OK and Cancel. |
+| `onOpen` |  | `() => void` | Fired when the popup opens. |
+| `onClose` |  | `(e: Popup$CloseEvent) => void` | Fired when the popup closes. |
+| `ref` |  | `Ref&lt;Popup>` |  |
+
+### `default` — component
+
+Instance methods of Popup.
 
 `import { default } from '@rhfan2019/smart-kit/m/p13n/Popup';`
 
 | Prop | Required | Type | Description |
 | --- | --- | --- | --- |
-| `opened` | **yes** | `boolean` | Whether the dialog is open (controlled). |
-| `columns` | **yes** | `{ id: string; label: string }[]` |  |
-| `visible` | **yes** | `string[]` |  |
-| `sort` | **yes** | `SortItem[]` |  |
-| `sortable` | **yes** | `{ path: string; label: string }[]` |  |
-| `onOk` | **yes** | `(visible: string[], sort: SortItem[], groupBy?: string \| null, totals?: string[]) => void` | Called with the result when the user confirms. |
-| `onCancel` | **yes** | `() => void` | Called when the user cancels or closes the dialog. |
-| `groupable` |  | `{ id: string; label: string }[]` | Columns that can be grouped by; the "Group" tab is shown only when given. |
-| `groupBy` |  | `string \| null` |  |
-| `totalable` |  | `{ id: string; label: string }[]` | Columns whose totals can be shown; the "Totals" tab is shown only when given and not empty (docs/23). |
-| `totals` |  | `string[]` | Column ids whose totals are shown. |
+| `title` |  | `string` | The title of the popup. |
+| `mode` |  | `P13nPopupMode` | Dialog or ResponsivePopover (placed below the `open()` source). |
+| `warningText` |  | `string` | The confirmation text shown before `reset` is called (only with `reset`). |
+| `reset` |  | `(control?: unknown) => void` | Called after the user confirmed a reset; the Reset button is shown only when it is given. |
+| `panels` |  | `ReactNode` | The panels (sap.m.p13n.IContent): SelectionPanel, SortPanel, GroupPanel elements or other content; the React key is the panel key, its `title` prop the tab text. |
+| `additionalButtons` |  | `ReactNode[]` | Additional buttons in the Dialog footer, after OK and Cancel. |
+| `onOpen` |  | `() => void` | Fired when the popup opens. |
+| `onClose` |  | `(e: Popup$CloseEvent) => void` | Fired when the popup closes. |
+| `ref` |  | `Ref&lt;Popup>` |  |
 
-### `TableP13nDialogProps` — interface
+### `Popup$CloseEvent` — interface
 
-Props of `TableP13nDialog` (see above).
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `reason` | **yes** | `Popup$CloseReason` | Ok, Cancel, Escape, or AutoClose (ResponsivePopover closed by a click outside). |
+
+### `Popup$CloseReason` — type
+
+The `reason` of the `close` event.
+
+```ts
+export type Popup$CloseReason = 'Ok' | 'Cancel' | 'Escape' | 'AutoClose';
+```
+
+### `PopupOpenSettings` — interface
+
+The settings of `open()` (Popup.open mSettings).
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `activePanel` |  | `string` | The key of the panel shown first (the React key of the panel element). |
+| `enableReset` |  | `boolean` | Whether the Reset button is enabled when the popup opens. |
+| `contentWidth` |  | `string` | CSS width of the content (Dialog default "40rem", popover "30rem"). |
+| `contentHeight` |  | `string` | CSS height of the content (Dialog default "55rem" at most, popover "35rem"). |
+
+## `@rhfan2019/smart-kit/m/p13n/SelectionPanel`
+
+`$SelectionPanelSettings` (interface) · `BasePanel$ChangeEvent` (interface) · `ChangeReason` (type) · `default` (component) · `Item` (interface) · `SelectionPanel$ChangeEvent` (type)
+
+### `$SelectionPanelSettings` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `title` |  | `string` | A short text describing the panel (the tab text in a Popup with several panels). Default: the localized text "Fields" (p13n.DEFAULT_TITLE_SELECTION). |
+| `enableReorder` |  | `boolean` | Whether the items can be reordered (move buttons). |
+| `showHeader` |  | `boolean` | Shows a header with a search field and the "Show Selected" switch. |
+| `enableCount` |  | `boolean` | Shows the count of selected items in the field column header, e.g. "Field (3/12)". |
+| `fieldColumn` |  | `string` | The header text of the field column; empty: the localized text "Field". |
+| `activeColumn` |  | `string` | The header text of the second column; when set, items with `active: true` show an active marker there. |
+| `itemFactory` |  | `(item: Item) => ReactNode` | Extra content per item, rendered below its label (UI5: a factory returning a control per item). |
+| `multiSelectMode` |  | `MultiSelectMode` | The multi-selection mode of the list: ClearAll shows a "Deselect All" button, SelectAll / Default a select-all check box. |
+| `messageStrip` |  | `ReactNode` | A message strip shown above the list (BasePanel `messageStrip`, a sap.m.MessageStrip element). |
+| `p13nData` |  | `Item[]` | The personalization state shown (BasePanel.setP13nData); a new array starts the panel again from it. |
+| `onChange` |  | `(e: SelectionPanel$ChangeEvent) => void` | Fired when the user changes the state (BasePanel `change`). |
+| `ref` |  | `Ref&lt;SelectionPanel>` |  |
+
+### `BasePanel$ChangeEvent` — interface
+
+sap.m.p13n.BasePanel `change` event.
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `reason` | **yes** | `ChangeReason` | Add, Remove, Move, SelectAll, DeselectAll, RangeSelect (SortPanel: sortorder; GroupPanel: showifgrouped). |
+| `item` | **yes** | `T \| T[]` | The changed item (for SelectAll / DeselectAll the list of items). |
+
+### `ChangeReason` — type
+
+The `reason` of the BasePanel `change` event (BasePanel.CHANGE_REASON_*, SortPanel / GroupPanel extras).
+
+```ts
+export type ChangeReason = 'Add' | 'Remove' | 'Move' | 'SelectAll' | 'DeselectAll' | 'RangeSelect' | 'sortorder' | 'showifgrouped';
+```
+
+### `default` — component
+
+Instance methods of SelectionPanel (sap.m.p13n.BasePanel).
+
+`import { default } from '@rhfan2019/smart-kit/m/p13n/SelectionPanel';`
+
+| Prop | Required | Type | Description |
+| --- | --- | --- | --- |
+| `title` |  | `string` | A short text describing the panel (the tab text in a Popup with several panels). Default: the localized text "Fields" (p13n.DEFAULT_TITLE_SELECTION). |
+| `enableReorder` |  | `boolean` | Whether the items can be reordered (move buttons). |
+| `showHeader` |  | `boolean` | Shows a header with a search field and the "Show Selected" switch. |
+| `enableCount` |  | `boolean` | Shows the count of selected items in the field column header, e.g. "Field (3/12)". |
+| `fieldColumn` |  | `string` | The header text of the field column; empty: the localized text "Field". |
+| `activeColumn` |  | `string` | The header text of the second column; when set, items with `active: true` show an active marker there. |
+| `itemFactory` |  | `(item: Item) => ReactNode` | Extra content per item, rendered below its label (UI5: a factory returning a control per item). |
+| `multiSelectMode` |  | `MultiSelectMode` | The multi-selection mode of the list: ClearAll shows a "Deselect All" button, SelectAll / Default a select-all check box. |
+| `messageStrip` |  | `ReactNode` | A message strip shown above the list (BasePanel `messageStrip`, a sap.m.MessageStrip element). |
+| `p13nData` |  | `Item[]` | The personalization state shown (BasePanel.setP13nData); a new array starts the panel again from it. |
+| `onChange` |  | `(e: SelectionPanel$ChangeEvent) => void` | Fired when the user changes the state (BasePanel `change`). |
+| `ref` |  | `Ref&lt;SelectionPanel>` |  |
+
+### `Item` — interface
+
+sap.m.p13n.Item: one personalization entry (a column, a field).
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `name` | **yes** | `string` | The unique key of the item. |
+| `label` | **yes** | `string` | The text shown for the item. |
+| `visible` | **yes** | `boolean` | Whether the item is selected (shown). |
+| `active` |  | `boolean` | SelectionPanel `activeColumn`: whether the item is marked active. |
+| `tooltip` |  | `string` | A tooltip for the item. |
+
+### `SelectionPanel$ChangeEvent` — type
+
+SelectionPanel `change` event (sap.m.p13n.BasePanel `change`).
+
+```ts
+export type SelectionPanel$ChangeEvent = BasePanel$ChangeEvent<Item>;
+```
+
+## `@rhfan2019/smart-kit/m/p13n/SortPanel`
+
+`$SortPanelSettings` (interface) · `BasePanel$ChangeEvent` (interface) · `ChangeReason` (type) · `default` (component) · `SortItem` (interface) · `SortPanel$ChangeEvent` (type)
+
+### `$SortPanelSettings` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `title` |  | `string` | A short text describing the panel (the tab text in a Popup). Default: the localized text "Sort" (p13n.DEFAULT_TITLE_SORT). |
+| `enableReorder` |  | `boolean` | Whether the sort criteria can be reordered (move buttons). |
+| `queryLimit` |  | `number` | The maximum number of sort criteria; -1: no limit. |
+| `messageStrip` |  | `ReactNode` | A message strip shown above the rows (BasePanel `messageStrip`, a sap.m.MessageStrip element). |
+| `p13nData` |  | `SortItem[]` | The personalization state shown (BasePanel.setP13nData): the sorted items first, in sort order. A new array starts the panel again. |
+| `onChange` |  | `(e: SortPanel$ChangeEvent) => void` | Fired when the user changes the state (BasePanel `change`; reason "sortorder" when the order switch changes). |
+| `ref` |  | `Ref&lt;SortPanel>` |  |
+
+### `BasePanel$ChangeEvent` — interface
+
+sap.m.p13n.BasePanel `change` event.
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `reason` | **yes** | `ChangeReason` | Add, Remove, Move, SelectAll, DeselectAll, RangeSelect (SortPanel: sortorder; GroupPanel: showifgrouped). |
+| `item` | **yes** | `T \| T[]` | The changed item (for SelectAll / DeselectAll the list of items). |
+
+### `ChangeReason` — type
+
+The `reason` of the BasePanel `change` event (BasePanel.CHANGE_REASON_*, SortPanel / GroupPanel extras).
+
+```ts
+export type ChangeReason = 'Add' | 'Remove' | 'Move' | 'SelectAll' | 'DeselectAll' | 'RangeSelect' | 'sortorder' | 'showifgrouped';
+```
+
+### `default` — component
+
+Instance methods of SortPanel (sap.m.p13n.BasePanel).
+
+`import { default } from '@rhfan2019/smart-kit/m/p13n/SortPanel';`
+
+| Prop | Required | Type | Description |
+| --- | --- | --- | --- |
+| `title` |  | `string` | A short text describing the panel (the tab text in a Popup). Default: the localized text "Sort" (p13n.DEFAULT_TITLE_SORT). |
+| `enableReorder` |  | `boolean` | Whether the sort criteria can be reordered (move buttons). |
+| `queryLimit` |  | `number` | The maximum number of sort criteria; -1: no limit. |
+| `messageStrip` |  | `ReactNode` | A message strip shown above the rows (BasePanel `messageStrip`, a sap.m.MessageStrip element). |
+| `p13nData` |  | `SortItem[]` | The personalization state shown (BasePanel.setP13nData): the sorted items first, in sort order. A new array starts the panel again. |
+| `onChange` |  | `(e: SortPanel$ChangeEvent) => void` | Fired when the user changes the state (BasePanel `change`; reason "sortorder" when the order switch changes). |
+| `ref` |  | `Ref&lt;SortPanel>` |  |
+
+### `SortItem` — interface
+
+sap.m.p13n.SortItem
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `name` | **yes** | `string` |  |
+| `label` | **yes** | `string` |  |
+| `sorted` | **yes** | `boolean` | Whether the item is sorted. |
+| `descending` | **yes** | `boolean` | Descending sort order. |
+
+### `SortPanel$ChangeEvent` — type
+
+SortPanel `change` event (sap.m.p13n.BasePanel `change`).
+
+```ts
+export type SortPanel$ChangeEvent = BasePanel$ChangeEvent<SortItem>;
+```
 
 ## `@rhfan2019/smart-kit/m/plugins/UploadSetwithTable`
 
@@ -9619,9 +10301,907 @@ sap.suite.ui.commons.TimelineGroupType
 const TimelineGroupType: { readonly None: "None"; readonly Year: "Year"; readonly Quarter: "Quarter"; readonly Month: "Month"; readonly Week: "Week"; readonly Day…
 ```
 
+## `@rhfan2019/smart-kit/suite/ui/microchart/AreaMicroChart`
+
+`$AreaMicroChartSettings` (interface) · `default` (component)
+
+### `$AreaMicroChartSettings` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `maxXValue` |  | `number` |  |
+| `minXValue` |  | `number` |  |
+| `maxYValue` |  | `number` |  |
+| `minYValue` |  | `number` |  |
+| `view` |  | `AreaMicroChartViewType` | The view: Wide puts the labels before and after the chart. |
+| `colorPalette` |  | `string[]` | Colours assigned to `lines` in turn; replaces their colours. |
+| `showLabel` |  | `boolean` | Shows the labels. |
+| `chart` |  | `Item` | The actual values line. |
+| `maxThreshold` |  | `Item` | The area above this line. |
+| `innerMaxThreshold` |  | `Item` | The upper line of the inner area (its colour fills the area). |
+| `innerMinThreshold` |  | `Item` | The lower line of the inner area. |
+| `minThreshold` |  | `Item` | The area below this line. |
+| `target` |  | `Item` | The target values line. |
+| `firstXLabel` |  | `Label` |  |
+| `firstYLabel` |  | `Label` |  |
+| `lastXLabel` |  | `Label` |  |
+| `lastYLabel` |  | `Label` |  |
+| `maxLabel` |  | `Label` |  |
+| `minLabel` |  | `Label` |  |
+| `lines` |  | `Item[]` | More lines (default aggregation: also the AreaMicroChartItem children). |
+| `children` |  | `ReactNode` |  |
+| `size` |  | `Size` | The size of the micro chart: XS, S, M, L are fixed boxes; Auto is M (S on phones); Responsive fills the container. |
+| `width` |  | `string` | The width of the chart (CSS size); overrides the width of `size`. |
+| `height` |  | `string` | The height of the chart (CSS size); overrides the height of `size`. |
+| `hideOnNoData` |  | `boolean` | The control is hidden when there is no data. |
+| `onPress` |  | `() => void` | The chart was pressed; with a handler the chart is a button (Enter / Space / click). Not fired without data. |
+| `aria-label` |  | `string` | Accessible name; the text alternative of the chart is appended. |
+| `className` |  | `string` |  |
+| `style` |  | `CSSProperties` |  |
+
+### `default` — component
+
+sap.suite.ui.microchart.AreaMicroChart
+
+`import { default } from '@rhfan2019/smart-kit/suite/ui/microchart/AreaMicroChart';`
+
+| Prop | Required | Type | Description |
+| --- | --- | --- | --- |
+| `maxXValue` |  | `number` |  |
+| `minXValue` |  | `number` |  |
+| `maxYValue` |  | `number` |  |
+| `minYValue` |  | `number` |  |
+| `view` |  | `AreaMicroChartViewType` | The view: Wide puts the labels before and after the chart. |
+| `colorPalette` |  | `string[]` | Colours assigned to `lines` in turn; replaces their colours. |
+| `showLabel` |  | `boolean` | Shows the labels. |
+| `chart` |  | `Item` | The actual values line. |
+| `maxThreshold` |  | `Item` | The area above this line. |
+| `innerMaxThreshold` |  | `Item` | The upper line of the inner area (its colour fills the area). |
+| `innerMinThreshold` |  | `Item` | The lower line of the inner area. |
+| `minThreshold` |  | `Item` | The area below this line. |
+| `target` |  | `Item` | The target values line. |
+| `firstXLabel` |  | `Label` |  |
+| `firstYLabel` |  | `Label` |  |
+| `lastXLabel` |  | `Label` |  |
+| `lastYLabel` |  | `Label` |  |
+| `maxLabel` |  | `Label` |  |
+| `minLabel` |  | `Label` |  |
+| `lines` |  | `Item[]` | More lines (default aggregation: also the AreaMicroChartItem children). |
+| `children` |  | `ReactNode` |  |
+| `size` |  | `Size` | The size of the micro chart: XS, S, M, L are fixed boxes; Auto is M (S on phones); Responsive fills the container. |
+| `width` |  | `string` | The width of the chart (CSS size); overrides the width of `size`. |
+| `height` |  | `string` | The height of the chart (CSS size); overrides the height of `size`. |
+| `hideOnNoData` |  | `boolean` | The control is hidden when there is no data. |
+| `onPress` |  | `() => void` | The chart was pressed; with a handler the chart is a button (Enter / Space / click). Not fired without data. |
+| `aria-label` |  | `string` | Accessible name; the text alternative of the chart is appended. |
+| `className` |  | `string` |  |
+| `style` |  | `CSSProperties` |  |
+
+## `@rhfan2019/smart-kit/suite/ui/microchart/AreaMicroChartItem`
+
+`$AreaMicroChartItemSettings` (interface) · `default` (component)
+
+### `$AreaMicroChartItemSettings` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `color` |  | `MicroChartColor` | The colour of the line or area. |
+| `title` |  | `string` | The title of the line. |
+| `points` |  | `PointProp[]` | The points (default aggregation: also the AreaMicroChartPoint children). |
+| `children` |  | `ReactNode` |  |
+
+### `default` — component
+
+A line or threshold of AreaMicroChart; drawn by its parent (it only mounts its point elements, for their refs).
+
+`import { default } from '@rhfan2019/smart-kit/suite/ui/microchart/AreaMicroChartItem';`
+
+| Prop | Required | Type | Description |
+| --- | --- | --- | --- |
+| `color` |  | `MicroChartColor` | The colour of the line or area. |
+| `title` |  | `string` | The title of the line. |
+| `points` |  | `PointProp[]` | The points (default aggregation: also the AreaMicroChartPoint children). |
+| `children` |  | `ReactNode` |  |
+
+## `@rhfan2019/smart-kit/suite/ui/microchart/AreaMicroChartLabel`
+
+`$AreaMicroChartLabelSettings` (interface) · `default` (component)
+
+### `$AreaMicroChartLabelSettings` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `color` |  | `MicroChartColor` | The colour of the label. |
+| `label` |  | `string` | The text. |
+
+### `default` — component
+
+A label of AreaMicroChart; rendered by its parent.
+
+`import { default } from '@rhfan2019/smart-kit/suite/ui/microchart/AreaMicroChartLabel';`
+
+| Prop | Required | Type | Description |
+| --- | --- | --- | --- |
+| `color` |  | `MicroChartColor` | The colour of the label. |
+| `label` |  | `string` | The text. |
+
+## `@rhfan2019/smart-kit/suite/ui/microchart/AreaMicroChartPoint`
+
+`$AreaMicroChartPointSettings` (interface) · `default` (component)
+
+### `$AreaMicroChartPointSettings` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `x` |  | `number` | The x value. |
+| `y` |  | `number` | The y value. |
+| `ref` |  | `Ref&lt;AreaMicroChartPoint>` |  |
+
+### `default` — component
+
+A point of an AreaMicroChartItem; rendered by its parent. Instance methods (via `ref`).
+
+`import { default } from '@rhfan2019/smart-kit/suite/ui/microchart/AreaMicroChartPoint';`
+
+| Prop | Required | Type | Description |
+| --- | --- | --- | --- |
+| `x` |  | `number` | The x value. |
+| `y` |  | `number` | The y value. |
+| `ref` |  | `Ref&lt;AreaMicroChartPoint>` |  |
+
+## `@rhfan2019/smart-kit/suite/ui/microchart/BulletMicroChart`
+
+`$BulletMicroChartSettings` (interface) · `default` (component)
+
+### `$BulletMicroChartSettings` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `mode` |  | `BulletMicroChartModeType` | Shows the actual value or the delta between the actual and the target value. |
+| `scale` |  | `string` | The scaling suffix added to all values. |
+| `forecastValue` |  | `number` | The forecast value (Actual mode only): a bar behind the actual value bar. |
+| `targetValue` |  | `number` | The target value: a vertical marker. |
+| `minValue` |  | `number` | The start of the scale (for comparable charts). |
+| `maxValue` |  | `number` | The end of the scale (for comparable charts). |
+| `showActualValue` |  | `boolean` | Shows the actual value (Actual mode). |
+| `showDeltaValue` |  | `boolean` | Shows the delta value (Delta mode). |
+| `showActualValueInDeltaMode` |  | `boolean` | Shows the actual value in Delta mode (priority over `showDeltaValue`). |
+| `showTargetValue` |  | `boolean` | Shows the target value. |
+| `showValueMarker` |  | `boolean` | Shows the value marker. |
+| `showThresholds` |  | `boolean` | Shows the threshold markers. |
+| `actualValueLabel` |  | `string` | Shown instead of the actual value. |
+| `deltaValueLabel` |  | `string` | Shown instead of the calculated delta. |
+| `targetValueLabel` |  | `string` | Shown instead of the target value. |
+| `scaleColor` |  | `CommonBackgroundType` | The background color of the scale (only Transparent changes the theme colour). |
+| `smallRangeAllowed` |  | `boolean` | The scale need not start at 0 for small value ranges. |
+| `actual` |  | `$BulletMicroChartDataSettings \| ReactElement&lt;$BulletMicroChartDataSettings>` | The actual value (default aggregation: also the first BulletMicroChartData child). |
+| `thresholds` |  | `($BulletMicroChartDataSettings \| ReactElement&lt;$BulletMicroChartDataSettings>)[]` | The thresholds. |
+| `children` |  | `ReactNode` |  |
+| `size` |  | `Size` | The size of the micro chart: XS, S, M, L are fixed boxes; Auto is M (S on phones); Responsive fills the container. |
+| `width` |  | `string` | The width of the chart (CSS size); overrides the width of `size`. |
+| `height` |  | `string` | The height of the chart (CSS size); overrides the height of `size`. |
+| `hideOnNoData` |  | `boolean` | The control is hidden when there is no data. |
+| `onPress` |  | `() => void` | The chart was pressed; with a handler the chart is a button (Enter / Space / click). Not fired without data. |
+| `aria-label` |  | `string` | Accessible name; the text alternative of the chart is appended. |
+| `className` |  | `string` |  |
+| `style` |  | `CSSProperties` |  |
+
+### `default` — component
+
+sap.suite.ui.microchart.BulletMicroChart
+
+`import { default } from '@rhfan2019/smart-kit/suite/ui/microchart/BulletMicroChart';`
+
+| Prop | Required | Type | Description |
+| --- | --- | --- | --- |
+| `mode` |  | `BulletMicroChartModeType` | Shows the actual value or the delta between the actual and the target value. |
+| `scale` |  | `string` | The scaling suffix added to all values. |
+| `forecastValue` |  | `number` | The forecast value (Actual mode only): a bar behind the actual value bar. |
+| `targetValue` |  | `number` | The target value: a vertical marker. |
+| `minValue` |  | `number` | The start of the scale (for comparable charts). |
+| `maxValue` |  | `number` | The end of the scale (for comparable charts). |
+| `showActualValue` |  | `boolean` | Shows the actual value (Actual mode). |
+| `showDeltaValue` |  | `boolean` | Shows the delta value (Delta mode). |
+| `showActualValueInDeltaMode` |  | `boolean` | Shows the actual value in Delta mode (priority over `showDeltaValue`). |
+| `showTargetValue` |  | `boolean` | Shows the target value. |
+| `showValueMarker` |  | `boolean` | Shows the value marker. |
+| `showThresholds` |  | `boolean` | Shows the threshold markers. |
+| `actualValueLabel` |  | `string` | Shown instead of the actual value. |
+| `deltaValueLabel` |  | `string` | Shown instead of the calculated delta. |
+| `targetValueLabel` |  | `string` | Shown instead of the target value. |
+| `scaleColor` |  | `CommonBackgroundType` | The background color of the scale (only Transparent changes the theme colour). |
+| `smallRangeAllowed` |  | `boolean` | The scale need not start at 0 for small value ranges. |
+| `actual` |  | `$BulletMicroChartDataSettings \| ReactElement&lt;$BulletMicroChartDataSettings>` | The actual value (default aggregation: also the first BulletMicroChartData child). |
+| `thresholds` |  | `($BulletMicroChartDataSettings \| ReactElement&lt;$BulletMicroChartDataSettings>)[]` | The thresholds. |
+| `children` |  | `ReactNode` |  |
+| `size` |  | `Size` | The size of the micro chart: XS, S, M, L are fixed boxes; Auto is M (S on phones); Responsive fills the container. |
+| `width` |  | `string` | The width of the chart (CSS size); overrides the width of `size`. |
+| `height` |  | `string` | The height of the chart (CSS size); overrides the height of `size`. |
+| `hideOnNoData` |  | `boolean` | The control is hidden when there is no data. |
+| `onPress` |  | `() => void` | The chart was pressed; with a handler the chart is a button (Enter / Space / click). Not fired without data. |
+| `aria-label` |  | `string` | Accessible name; the text alternative of the chart is appended. |
+| `className` |  | `string` |  |
+| `style` |  | `CSSProperties` |  |
+
+## `@rhfan2019/smart-kit/suite/ui/microchart/BulletMicroChartData`
+
+`$BulletMicroChartDataSettings` (interface) · `default` (component)
+
+### `$BulletMicroChartDataSettings` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `value` |  | `number` | The value. |
+| `color` |  | `ValueColor` | The semantic color of the value. |
+
+### `default` — component
+
+A value of BulletMicroChart (`actual` or one of `thresholds`); rendered by its parent.
+
+`import { default } from '@rhfan2019/smart-kit/suite/ui/microchart/BulletMicroChartData';`
+
+| Prop | Required | Type | Description |
+| --- | --- | --- | --- |
+| `value` |  | `number` | The value. |
+| `color` |  | `ValueColor` | The semantic color of the value. |
+
+## `@rhfan2019/smart-kit/suite/ui/microchart/ColumnMicroChart`
+
+`$ColumnMicroChartSettings` (interface) · `default` (component)
+
+### `$ColumnMicroChartSettings` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `showTopLabels` |  | `boolean` | Shows the two top labels. |
+| `showBottomLabels` |  | `boolean` | Shows the two bottom labels. |
+| `allowColumnLabels` |  | `boolean` | With enough room, a label per column replaces the top labels. |
+| `columns` |  | `($ColumnMicroChartDataSettings \| ReactElement&lt;$ColumnMicroChartDataSettings>)[]` | The columns (default aggregation: also the ColumnMicroChartData children). |
+| `leftTopLabel` |  | `Label` |  |
+| `rightTopLabel` |  | `Label` |  |
+| `leftBottomLabel` |  | `Label` |  |
+| `rightBottomLabel` |  | `Label` |  |
+| `children` |  | `ReactNode` |  |
+| `size` |  | `Size` | The size of the micro chart: XS, S, M, L are fixed boxes; Auto is M (S on phones); Responsive fills the container. |
+| `width` |  | `string` | The width of the chart (CSS size); overrides the width of `size`. |
+| `height` |  | `string` | The height of the chart (CSS size); overrides the height of `size`. |
+| `hideOnNoData` |  | `boolean` | The control is hidden when there is no data. |
+| `onPress` |  | `() => void` | The chart was pressed; with a handler the chart is a button (Enter / Space / click). Not fired without data. |
+| `aria-label` |  | `string` | Accessible name; the text alternative of the chart is appended. |
+| `className` |  | `string` |  |
+| `style` |  | `CSSProperties` |  |
+
+### `default` — component
+
+sap.suite.ui.microchart.ColumnMicroChart
+
+`import { default } from '@rhfan2019/smart-kit/suite/ui/microchart/ColumnMicroChart';`
+
+| Prop | Required | Type | Description |
+| --- | --- | --- | --- |
+| `showTopLabels` |  | `boolean` | Shows the two top labels. |
+| `showBottomLabels` |  | `boolean` | Shows the two bottom labels. |
+| `allowColumnLabels` |  | `boolean` | With enough room, a label per column replaces the top labels. |
+| `columns` |  | `($ColumnMicroChartDataSettings \| ReactElement&lt;$ColumnMicroChartDataSettings>)[]` | The columns (default aggregation: also the ColumnMicroChartData children). |
+| `leftTopLabel` |  | `Label` |  |
+| `rightTopLabel` |  | `Label` |  |
+| `leftBottomLabel` |  | `Label` |  |
+| `rightBottomLabel` |  | `Label` |  |
+| `children` |  | `ReactNode` |  |
+| `size` |  | `Size` | The size of the micro chart: XS, S, M, L are fixed boxes; Auto is M (S on phones); Responsive fills the container. |
+| `width` |  | `string` | The width of the chart (CSS size); overrides the width of `size`. |
+| `height` |  | `string` | The height of the chart (CSS size); overrides the height of `size`. |
+| `hideOnNoData` |  | `boolean` | The control is hidden when there is no data. |
+| `onPress` |  | `() => void` | The chart was pressed; with a handler the chart is a button (Enter / Space / click). Not fired without data. |
+| `aria-label` |  | `string` | Accessible name; the text alternative of the chart is appended. |
+| `className` |  | `string` |  |
+| `style` |  | `CSSProperties` |  |
+
+## `@rhfan2019/smart-kit/suite/ui/microchart/ColumnMicroChartData`
+
+`$ColumnMicroChartDataSettings` (interface) · `default` (component)
+
+### `$ColumnMicroChartDataSettings` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `color` |  | `MicroChartColor` | The colour of the column. |
+| `label` |  | `string` | The title of the column (text alternative). |
+| `displayValue` |  | `string` | Shown instead of the value as the column label (allowColumnLabels). |
+| `value` |  | `number` | The value. |
+| `onPress` |  | `() => void` | The column was pressed. |
+
+### `default` — component
+
+A column of ColumnMicroChart; rendered by its parent.
+
+`import { default } from '@rhfan2019/smart-kit/suite/ui/microchart/ColumnMicroChartData';`
+
+| Prop | Required | Type | Description |
+| --- | --- | --- | --- |
+| `color` |  | `MicroChartColor` | The colour of the column. |
+| `label` |  | `string` | The title of the column (text alternative). |
+| `displayValue` |  | `string` | Shown instead of the value as the column label (allowColumnLabels). |
+| `value` |  | `number` | The value. |
+| `onPress` |  | `() => void` | The column was pressed. |
+
+## `@rhfan2019/smart-kit/suite/ui/microchart/ColumnMicroChartLabel`
+
+`$ColumnMicroChartLabelSettings` (interface) · `default` (component)
+
+### `$ColumnMicroChartLabelSettings` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `color` |  | `MicroChartColor` | The colour of the label. |
+| `label` |  | `string` | The text. |
+
+### `default` — component
+
+A corner label of ColumnMicroChart; rendered by its parent.
+
+`import { default } from '@rhfan2019/smart-kit/suite/ui/microchart/ColumnMicroChartLabel';`
+
+| Prop | Required | Type | Description |
+| --- | --- | --- | --- |
+| `color` |  | `MicroChartColor` | The colour of the label. |
+| `label` |  | `string` | The text. |
+
+## `@rhfan2019/smart-kit/suite/ui/microchart/ComparisonMicroChart`
+
+`$ComparisonMicroChartSettings` (interface) · `default` (component)
+
+### `$ComparisonMicroChartSettings` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `scale` |  | `string` | The scaling suffix added to the values. |
+| `minValue` |  | `number` | The start of the scale (for comparable charts). |
+| `maxValue` |  | `number` | The end of the scale (for comparable charts). |
+| `view` |  | `ComparisonMicroChartViewType` | The view of the chart. |
+| `colorPalette` |  | `string[]` | Colours assigned to the bars in turn; replaces the items' colours. |
+| `shrinkable` |  | `boolean` | The height is defined by the content. |
+| `data` |  | `($ComparisonMicroChartDataSettings \| ReactElement&lt;$ComparisonMicroChartDataSettings>)[]` | The bars (default aggregation: also the ComparisonMicroChartData children). |
+| `children` |  | `ReactNode` |  |
+| `size` |  | `Size` | The size of the micro chart: XS, S, M, L are fixed boxes; Auto is M (S on phones); Responsive fills the container. |
+| `width` |  | `string` | The width of the chart (CSS size); overrides the width of `size`. |
+| `height` |  | `string` | The height of the chart (CSS size); overrides the height of `size`. |
+| `hideOnNoData` |  | `boolean` | The control is hidden when there is no data. |
+| `onPress` |  | `() => void` | The chart was pressed; with a handler the chart is a button (Enter / Space / click). Not fired without data. |
+| `aria-label` |  | `string` | Accessible name; the text alternative of the chart is appended. |
+| `className` |  | `string` |  |
+| `style` |  | `CSSProperties` |  |
+
+### `default` — component
+
+sap.suite.ui.microchart.ComparisonMicroChart
+
+`import { default } from '@rhfan2019/smart-kit/suite/ui/microchart/ComparisonMicroChart';`
+
+| Prop | Required | Type | Description |
+| --- | --- | --- | --- |
+| `scale` |  | `string` | The scaling suffix added to the values. |
+| `minValue` |  | `number` | The start of the scale (for comparable charts). |
+| `maxValue` |  | `number` | The end of the scale (for comparable charts). |
+| `view` |  | `ComparisonMicroChartViewType` | The view of the chart. |
+| `colorPalette` |  | `string[]` | Colours assigned to the bars in turn; replaces the items' colours. |
+| `shrinkable` |  | `boolean` | The height is defined by the content. |
+| `data` |  | `($ComparisonMicroChartDataSettings \| ReactElement&lt;$ComparisonMicroChartDataSettings>)[]` | The bars (default aggregation: also the ComparisonMicroChartData children). |
+| `children` |  | `ReactNode` |  |
+| `size` |  | `Size` | The size of the micro chart: XS, S, M, L are fixed boxes; Auto is M (S on phones); Responsive fills the container. |
+| `width` |  | `string` | The width of the chart (CSS size); overrides the width of `size`. |
+| `height` |  | `string` | The height of the chart (CSS size); overrides the height of `size`. |
+| `hideOnNoData` |  | `boolean` | The control is hidden when there is no data. |
+| `onPress` |  | `() => void` | The chart was pressed; with a handler the chart is a button (Enter / Space / click). Not fired without data. |
+| `aria-label` |  | `string` | Accessible name; the text alternative of the chart is appended. |
+| `className` |  | `string` |  |
+| `style` |  | `CSSProperties` |  |
+
+## `@rhfan2019/smart-kit/suite/ui/microchart/ComparisonMicroChartData`
+
+`$ComparisonMicroChartDataSettings` (interface) · `default` (component)
+
+### `$ComparisonMicroChartDataSettings` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `value` |  | `number` | The value. |
+| `color` |  | `MicroChartColor` | The colour of the bar. |
+| `title` |  | `string` | The title of the bar. |
+| `displayValue` |  | `string` | Shown instead of the value. |
+| `onPress` |  | `() => void` | The bar was pressed. |
+
+### `default` — component
+
+A bar of ComparisonMicroChart; rendered by its parent.
+
+`import { default } from '@rhfan2019/smart-kit/suite/ui/microchart/ComparisonMicroChartData';`
+
+| Prop | Required | Type | Description |
+| --- | --- | --- | --- |
+| `value` |  | `number` | The value. |
+| `color` |  | `MicroChartColor` | The colour of the bar. |
+| `title` |  | `string` | The title of the bar. |
+| `displayValue` |  | `string` | Shown instead of the value. |
+| `onPress` |  | `() => void` | The bar was pressed. |
+
+## `@rhfan2019/smart-kit/suite/ui/microchart/DeltaMicroChart`
+
+`$DeltaMicroChartSettings` (interface) · `default` (component)
+
+### `$DeltaMicroChartSettings` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `value1` |  | `number` | The first value. |
+| `value2` |  | `number` | The second value. |
+| `title1` |  | `string` | The title of the first value. |
+| `title2` |  | `string` | The title of the second value. |
+| `displayValue1` |  | `string` | Shown instead of value1. |
+| `displayValue2` |  | `string` | Shown instead of value2. |
+| `deltaDisplayValue` |  | `string` | Shown instead of the calculated delta. |
+| `color` |  | `MicroChartColor` | The colour of the delta. |
+| `view` |  | `DeltaMicroChartViewType` | The view of the chart. |
+| `size` |  | `Size` | The size of the micro chart: XS, S, M, L are fixed boxes; Auto is M (S on phones); Responsive fills the container. |
+| `width` |  | `string` | The width of the chart (CSS size); overrides the width of `size`. |
+| `height` |  | `string` | The height of the chart (CSS size); overrides the height of `size`. |
+| `hideOnNoData` |  | `boolean` | The control is hidden when there is no data. |
+| `onPress` |  | `() => void` | The chart was pressed; with a handler the chart is a button (Enter / Space / click). Not fired without data. |
+| `aria-label` |  | `string` | Accessible name; the text alternative of the chart is appended. |
+| `className` |  | `string` |  |
+| `style` |  | `CSSProperties` |  |
+
+### `default` — component
+
+sap.suite.ui.microchart.DeltaMicroChart
+
+`import { default } from '@rhfan2019/smart-kit/suite/ui/microchart/DeltaMicroChart';`
+
+| Prop | Required | Type | Description |
+| --- | --- | --- | --- |
+| `value1` |  | `number` | The first value. |
+| `value2` |  | `number` | The second value. |
+| `title1` |  | `string` | The title of the first value. |
+| `title2` |  | `string` | The title of the second value. |
+| `displayValue1` |  | `string` | Shown instead of value1. |
+| `displayValue2` |  | `string` | Shown instead of value2. |
+| `deltaDisplayValue` |  | `string` | Shown instead of the calculated delta. |
+| `color` |  | `MicroChartColor` | The colour of the delta. |
+| `view` |  | `DeltaMicroChartViewType` | The view of the chart. |
+| `size` |  | `Size` | The size of the micro chart: XS, S, M, L are fixed boxes; Auto is M (S on phones); Responsive fills the container. |
+| `width` |  | `string` | The width of the chart (CSS size); overrides the width of `size`. |
+| `height` |  | `string` | The height of the chart (CSS size); overrides the height of `size`. |
+| `hideOnNoData` |  | `boolean` | The control is hidden when there is no data. |
+| `onPress` |  | `() => void` | The chart was pressed; with a handler the chart is a button (Enter / Space / click). Not fired without data. |
+| `aria-label` |  | `string` | Accessible name; the text alternative of the chart is appended. |
+| `className` |  | `string` |  |
+| `style` |  | `CSSProperties` |  |
+
+## `@rhfan2019/smart-kit/suite/ui/microchart/HarveyBallMicroChart`
+
+`$HarveyBallMicroChartSettings` (interface) · `default` (component)
+
+### `$HarveyBallMicroChartSettings` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `total` |  | `number` | The total (a full circle). |
+| `totalLabel` |  | `string` | Shown instead of the total value. |
+| `totalScale` |  | `string` | The scaling factor shown after the total. |
+| `formattedLabel` |  | `boolean` | `totalLabel` already combines the value and the scale. |
+| `showTotal` |  | `boolean` | Shows the total. |
+| `showFractions` |  | `boolean` | Shows the fraction. |
+| `colorPalette` |  | `string[]` | Colours; only the first is used and replaces the item's colour. |
+| `alignContent` |  | `HorizontalAlignmentType` | The alignment of the content. |
+| `xsWidth` |  | `boolean` | The wider XS dimensions (7rem instead of 6rem). |
+| `items` |  | `($HarveyBallMicroChartItemSettings \| ReactElement&lt;$HarveyBallMicroChartItemSettings>)[]` | The items (default aggregation: also the HarveyBallMicroChartItem children). |
+| `children` |  | `ReactNode` |  |
+| `size` |  | `Size` | The size of the micro chart: XS, S, M, L are fixed boxes; Auto is M (S on phones); Responsive fills the container. |
+| `width` |  | `string` | The width of the chart (CSS size); overrides the width of `size`. |
+| `height` |  | `string` | The height of the chart (CSS size); overrides the height of `size`. |
+| `hideOnNoData` |  | `boolean` | The control is hidden when there is no data. |
+| `onPress` |  | `() => void` | The chart was pressed; with a handler the chart is a button (Enter / Space / click). Not fired without data. |
+| `aria-label` |  | `string` | Accessible name; the text alternative of the chart is appended. |
+| `className` |  | `string` |  |
+| `style` |  | `CSSProperties` |  |
+
+### `default` — component
+
+sap.suite.ui.microchart.HarveyBallMicroChart
+
+`import { default } from '@rhfan2019/smart-kit/suite/ui/microchart/HarveyBallMicroChart';`
+
+| Prop | Required | Type | Description |
+| --- | --- | --- | --- |
+| `total` |  | `number` | The total (a full circle). |
+| `totalLabel` |  | `string` | Shown instead of the total value. |
+| `totalScale` |  | `string` | The scaling factor shown after the total. |
+| `formattedLabel` |  | `boolean` | `totalLabel` already combines the value and the scale. |
+| `showTotal` |  | `boolean` | Shows the total. |
+| `showFractions` |  | `boolean` | Shows the fraction. |
+| `colorPalette` |  | `string[]` | Colours; only the first is used and replaces the item's colour. |
+| `alignContent` |  | `HorizontalAlignmentType` | The alignment of the content. |
+| `xsWidth` |  | `boolean` | The wider XS dimensions (7rem instead of 6rem). |
+| `items` |  | `($HarveyBallMicroChartItemSettings \| ReactElement&lt;$HarveyBallMicroChartItemSettings>)[]` | The items (default aggregation: also the HarveyBallMicroChartItem children). |
+| `children` |  | `ReactNode` |  |
+| `size` |  | `Size` | The size of the micro chart: XS, S, M, L are fixed boxes; Auto is M (S on phones); Responsive fills the container. |
+| `width` |  | `string` | The width of the chart (CSS size); overrides the width of `size`. |
+| `height` |  | `string` | The height of the chart (CSS size); overrides the height of `size`. |
+| `hideOnNoData` |  | `boolean` | The control is hidden when there is no data. |
+| `onPress` |  | `() => void` | The chart was pressed; with a handler the chart is a button (Enter / Space / click). Not fired without data. |
+| `aria-label` |  | `string` | Accessible name; the text alternative of the chart is appended. |
+| `className` |  | `string` |  |
+| `style` |  | `CSSProperties` |  |
+
+## `@rhfan2019/smart-kit/suite/ui/microchart/HarveyBallMicroChartItem`
+
+`$HarveyBallMicroChartItemSettings` (interface) · `default` (component)
+
+### `$HarveyBallMicroChartItemSettings` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `color` |  | `MicroChartColor` | The colour of the slice and of the fraction label. |
+| `fraction` |  | `number` | The fraction of the total that defines the slice. |
+| `fractionLabel` |  | `string` | Shown instead of the fraction value. |
+| `fractionScale` |  | `string` | The scaling factor shown after the fraction value. |
+| `formattedLabel` |  | `boolean` | `fractionLabel` already combines the value and the scale. |
+
+### `default` — component
+
+The item of HarveyBallMicroChart (only the first is drawn, as in UI5); rendered by its parent.
+
+`import { default } from '@rhfan2019/smart-kit/suite/ui/microchart/HarveyBallMicroChartItem';`
+
+| Prop | Required | Type | Description |
+| --- | --- | --- | --- |
+| `color` |  | `MicroChartColor` | The colour of the slice and of the fraction label. |
+| `fraction` |  | `number` | The fraction of the total that defines the slice. |
+| `fractionLabel` |  | `string` | Shown instead of the fraction value. |
+| `fractionScale` |  | `string` | The scaling factor shown after the fraction value. |
+| `formattedLabel` |  | `boolean` | `fractionLabel` already combines the value and the scale. |
+
+## `@rhfan2019/smart-kit/suite/ui/microchart/LineMicroChart`
+
+`$LineMicroChartSettings` (interface) · `default` (component)
+
+### `$LineMicroChartSettings` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `threshold` |  | `number \| null` | The threshold (vertical normalisation and the threshold line); `null` disables it. |
+| `showThresholdLine` |  | `boolean` | Shows the threshold line. |
+| `showThresholdValue` |  | `boolean` | Shows the threshold value (with the threshold line). |
+| `thresholdDisplayValue` |  | `string` | Shown instead of the threshold value. |
+| `minXValue` |  | `number` |  |
+| `maxXValue` |  | `number` |  |
+| `minYValue` |  | `number` |  |
+| `maxYValue` |  | `number` |  |
+| `leftTopLabel` |  | `string` |  |
+| `rightTopLabel` |  | `string` |  |
+| `leftBottomLabel` |  | `string` |  |
+| `rightBottomLabel` |  | `string` |  |
+| `showTopLabels` |  | `boolean` | Shows the two top labels. |
+| `showBottomLabels` |  | `boolean` | Shows the two bottom labels. |
+| `color` |  | `LineMicroChartColor` | The colour of the chart. |
+| `showPoints` |  | `boolean` | Shows the points. |
+| `points` |  | `PointProp[]` | The points of a single line (default aggregation: also the point children); when given, `lines` is ignored. |
+| `lines` |  | `($LineMicroChartLineSettings \| ReactElement&lt;$LineMicroChartLineSettings>)[]` | The lines. |
+| `children` |  | `ReactNode` |  |
+| `size` |  | `Size` | The size of the micro chart: XS, S, M, L are fixed boxes; Auto is M (S on phones); Responsive fills the container. |
+| `width` |  | `string` | The width of the chart (CSS size); overrides the width of `size`. |
+| `height` |  | `string` | The height of the chart (CSS size); overrides the height of `size`. |
+| `hideOnNoData` |  | `boolean` | The control is hidden when there is no data. |
+| `onPress` |  | `() => void` | The chart was pressed; with a handler the chart is a button (Enter / Space / click). Not fired without data. |
+| `aria-label` |  | `string` | Accessible name; the text alternative of the chart is appended. |
+| `className` |  | `string` |  |
+| `style` |  | `CSSProperties` |  |
+
+### `default` — component
+
+sap.suite.ui.microchart.LineMicroChart
+
+`import { default } from '@rhfan2019/smart-kit/suite/ui/microchart/LineMicroChart';`
+
+| Prop | Required | Type | Description |
+| --- | --- | --- | --- |
+| `threshold` |  | `number \| null` | The threshold (vertical normalisation and the threshold line); `null` disables it. |
+| `showThresholdLine` |  | `boolean` | Shows the threshold line. |
+| `showThresholdValue` |  | `boolean` | Shows the threshold value (with the threshold line). |
+| `thresholdDisplayValue` |  | `string` | Shown instead of the threshold value. |
+| `minXValue` |  | `number` |  |
+| `maxXValue` |  | `number` |  |
+| `minYValue` |  | `number` |  |
+| `maxYValue` |  | `number` |  |
+| `leftTopLabel` |  | `string` |  |
+| `rightTopLabel` |  | `string` |  |
+| `leftBottomLabel` |  | `string` |  |
+| `rightBottomLabel` |  | `string` |  |
+| `showTopLabels` |  | `boolean` | Shows the two top labels. |
+| `showBottomLabels` |  | `boolean` | Shows the two bottom labels. |
+| `color` |  | `LineMicroChartColor` | The colour of the chart. |
+| `showPoints` |  | `boolean` | Shows the points. |
+| `points` |  | `PointProp[]` | The points of a single line (default aggregation: also the point children); when given, `lines` is ignored. |
+| `lines` |  | `($LineMicroChartLineSettings \| ReactElement&lt;$LineMicroChartLineSettings>)[]` | The lines. |
+| `children` |  | `ReactNode` |  |
+| `size` |  | `Size` | The size of the micro chart: XS, S, M, L are fixed boxes; Auto is M (S on phones); Responsive fills the container. |
+| `width` |  | `string` | The width of the chart (CSS size); overrides the width of `size`. |
+| `height` |  | `string` | The height of the chart (CSS size); overrides the height of `size`. |
+| `hideOnNoData` |  | `boolean` | The control is hidden when there is no data. |
+| `onPress` |  | `() => void` | The chart was pressed; with a handler the chart is a button (Enter / Space / click). Not fired without data. |
+| `aria-label` |  | `string` | Accessible name; the text alternative of the chart is appended. |
+| `className` |  | `string` |  |
+| `style` |  | `CSSProperties` |  |
+
+## `@rhfan2019/smart-kit/suite/ui/microchart/LineMicroChartEmphasizedPoint`
+
+`$LineMicroChartEmphasizedPointSettings` (interface) · `default` (component)
+
+### `$LineMicroChartEmphasizedPointSettings` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `color` |  | `MicroChartColor` | The colour of the point (when shown). |
+| `show` |  | `boolean` | The point is shown. |
+| `x` |  | `number` | The horizontal position. |
+| `y` |  | `number` | The vertical position. |
+
+### `default` — component
+
+A point that can be shown in its own colour (focus mode); rendered by its parent.
+
+`import { default } from '@rhfan2019/smart-kit/suite/ui/microchart/LineMicroChartEmphasizedPoint';`
+
+| Prop | Required | Type | Description |
+| --- | --- | --- | --- |
+| `color` |  | `MicroChartColor` | The colour of the point (when shown). |
+| `show` |  | `boolean` | The point is shown. |
+| `x` |  | `number` | The horizontal position. |
+| `y` |  | `number` | The vertical position. |
+
+## `@rhfan2019/smart-kit/suite/ui/microchart/LineMicroChartLine`
+
+`$LineMicroChartLineSettings` (interface) · `default` (component)
+
+### `$LineMicroChartLineSettings` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `color` |  | `LineMicroChartColor` | The colour of the line (default: the chart's colour). |
+| `showPoints` |  | `boolean` | Shows the points (priority over the chart's showPoints). |
+| `type` |  | `LineType` | The line type. |
+| `points` |  | `PointProp[]` | The points (default aggregation: also the point children). |
+| `children` |  | `ReactNode` |  |
+
+### `default` — component
+
+A line of LineMicroChart; rendered by its parent.
+
+`import { default } from '@rhfan2019/smart-kit/suite/ui/microchart/LineMicroChartLine';`
+
+| Prop | Required | Type | Description |
+| --- | --- | --- | --- |
+| `color` |  | `LineMicroChartColor` | The colour of the line (default: the chart's colour). |
+| `showPoints` |  | `boolean` | Shows the points (priority over the chart's showPoints). |
+| `type` |  | `LineType` | The line type. |
+| `points` |  | `PointProp[]` | The points (default aggregation: also the point children). |
+| `children` |  | `ReactNode` |  |
+
+## `@rhfan2019/smart-kit/suite/ui/microchart/LineMicroChartPoint`
+
+`$LineMicroChartPointSettings` (interface) · `default` (component)
+
+### `$LineMicroChartPointSettings` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `x` |  | `number` | The horizontal position. |
+| `y` |  | `number` | The vertical position. |
+
+### `default` — component
+
+A point of a line; rendered by its parent.
+
+`import { default } from '@rhfan2019/smart-kit/suite/ui/microchart/LineMicroChartPoint';`
+
+| Prop | Required | Type | Description |
+| --- | --- | --- | --- |
+| `x` |  | `number` | The horizontal position. |
+| `y` |  | `number` | The vertical position. |
+
+## `@rhfan2019/smart-kit/suite/ui/microchart/RadialMicroChart`
+
+`$RadialMicroChartSettings` (interface) · `default` (component)
+
+### `$RadialMicroChartSettings` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `total` |  | `number` | The total value (360 degrees). |
+| `fraction` |  | `number` | The fraction of the total that is shown. |
+| `percentage` |  | `number` | The percentage shown; when set, `total` and `fraction` are not considered. |
+| `valueColor` |  | `MicroChartColor` | The colour of the filled path. |
+| `alignContent` |  | `HorizontalAlignmentType` | The alignment of the content. |
+| `size` |  | `Size` | The size of the micro chart: XS, S, M, L are fixed boxes; Auto is M (S on phones); Responsive fills the container. |
+| `width` |  | `string` | The width of the chart (CSS size); overrides the width of `size`. |
+| `height` |  | `string` | The height of the chart (CSS size); overrides the height of `size`. |
+| `hideOnNoData` |  | `boolean` | The control is hidden when there is no data. |
+| `onPress` |  | `() => void` | The chart was pressed; with a handler the chart is a button (Enter / Space / click). Not fired without data. |
+| `aria-label` |  | `string` | Accessible name; the text alternative of the chart is appended. |
+| `className` |  | `string` |  |
+| `style` |  | `CSSProperties` |  |
+
+### `default` — component
+
+sap.suite.ui.microchart.RadialMicroChart
+
+`import { default } from '@rhfan2019/smart-kit/suite/ui/microchart/RadialMicroChart';`
+
+| Prop | Required | Type | Description |
+| --- | --- | --- | --- |
+| `total` |  | `number` | The total value (360 degrees). |
+| `fraction` |  | `number` | The fraction of the total that is shown. |
+| `percentage` |  | `number` | The percentage shown; when set, `total` and `fraction` are not considered. |
+| `valueColor` |  | `MicroChartColor` | The colour of the filled path. |
+| `alignContent` |  | `HorizontalAlignmentType` | The alignment of the content. |
+| `size` |  | `Size` | The size of the micro chart: XS, S, M, L are fixed boxes; Auto is M (S on phones); Responsive fills the container. |
+| `width` |  | `string` | The width of the chart (CSS size); overrides the width of `size`. |
+| `height` |  | `string` | The height of the chart (CSS size); overrides the height of `size`. |
+| `hideOnNoData` |  | `boolean` | The control is hidden when there is no data. |
+| `onPress` |  | `() => void` | The chart was pressed; with a handler the chart is a button (Enter / Space / click). Not fired without data. |
+| `aria-label` |  | `string` | Accessible name; the text alternative of the chart is appended. |
+| `className` |  | `string` |  |
+| `style` |  | `CSSProperties` |  |
+
+## `@rhfan2019/smart-kit/suite/ui/microchart/StackedBarMicroChart`
+
+`$StackedBarMicroChartSettings` (interface) · `default` (component)
+
+### `$StackedBarMicroChartSettings` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `maxValue` |  | `number` | The value of the full length; ignored when smaller than the sum of the bars. |
+| `precision` |  | `number` | Decimals of the calculated percentages. |
+| `displayZeroValue` |  | `boolean` | Bars with value 0 are drawn (with a minimum width). |
+| `showLabels` |  | `boolean` | Shows the bar labels. |
+| `bars` |  | `($StackedBarMicroChartBarSettings \| ReactElement&lt;$StackedBarMicroChartBarSettings>)[]` | The bars (default aggregation: also the StackedBarMicroChartBar children). |
+| `children` |  | `ReactNode` |  |
+| `size` |  | `Size` | The size of the micro chart: XS, S, M, L are fixed boxes; Auto is M (S on phones); Responsive fills the container. |
+| `width` |  | `string` | The width of the chart (CSS size); overrides the width of `size`. |
+| `height` |  | `string` | The height of the chart (CSS size); overrides the height of `size`. |
+| `hideOnNoData` |  | `boolean` | The control is hidden when there is no data. |
+| `onPress` |  | `() => void` | The chart was pressed; with a handler the chart is a button (Enter / Space / click). Not fired without data. |
+| `aria-label` |  | `string` | Accessible name; the text alternative of the chart is appended. |
+| `className` |  | `string` |  |
+| `style` |  | `CSSProperties` |  |
+
+### `default` — component
+
+sap.suite.ui.microchart.StackedBarMicroChart
+
+`import { default } from '@rhfan2019/smart-kit/suite/ui/microchart/StackedBarMicroChart';`
+
+| Prop | Required | Type | Description |
+| --- | --- | --- | --- |
+| `maxValue` |  | `number` | The value of the full length; ignored when smaller than the sum of the bars. |
+| `precision` |  | `number` | Decimals of the calculated percentages. |
+| `displayZeroValue` |  | `boolean` | Bars with value 0 are drawn (with a minimum width). |
+| `showLabels` |  | `boolean` | Shows the bar labels. |
+| `bars` |  | `($StackedBarMicroChartBarSettings \| ReactElement&lt;$StackedBarMicroChartBarSettings>)[]` | The bars (default aggregation: also the StackedBarMicroChartBar children). |
+| `children` |  | `ReactNode` |  |
+| `size` |  | `Size` | The size of the micro chart: XS, S, M, L are fixed boxes; Auto is M (S on phones); Responsive fills the container. |
+| `width` |  | `string` | The width of the chart (CSS size); overrides the width of `size`. |
+| `height` |  | `string` | The height of the chart (CSS size); overrides the height of `size`. |
+| `hideOnNoData` |  | `boolean` | The control is hidden when there is no data. |
+| `onPress` |  | `() => void` | The chart was pressed; with a handler the chart is a button (Enter / Space / click). Not fired without data. |
+| `aria-label` |  | `string` | Accessible name; the text alternative of the chart is appended. |
+| `className` |  | `string` |  |
+| `style` |  | `CSSProperties` |  |
+
+## `@rhfan2019/smart-kit/suite/ui/microchart/StackedBarMicroChartBar`
+
+`$StackedBarMicroChartBarSettings` (interface) · `default` (component)
+
+### `$StackedBarMicroChartBarSettings` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `value` |  | `number` | The value (the width of the bar). |
+| `valueColor` |  | `MicroChartColor` | The colour of the bar (default: the next qualitative palette colour). |
+| `displayValue` |  | `string` | Shown instead of the value. |
+
+### `default` — component
+
+A bar of StackedBarMicroChart; rendered by its parent.
+
+`import { default } from '@rhfan2019/smart-kit/suite/ui/microchart/StackedBarMicroChartBar';`
+
+| Prop | Required | Type | Description |
+| --- | --- | --- | --- |
+| `value` |  | `number` | The value (the width of the bar). |
+| `valueColor` |  | `MicroChartColor` | The colour of the bar (default: the next qualitative palette colour). |
+| `displayValue` |  | `string` | Shown instead of the value. |
+
+## `@rhfan2019/smart-kit/suite/ui/microchart/library`
+
+`AreaMicroChartViewType` (const) · `BulletMicroChartModeType` (const) · `CommonBackgroundType` (const) · `ComparisonMicroChartViewType` (const) · `DeltaMicroChartViewType` (const) · `HorizontalAlignmentType` (const) · `LineType` (const) · `MicroChartColorType` (const)
+
+### `AreaMicroChartViewType` — const
+
+sap.suite.ui.microchart.AreaMicroChartViewType
+
+```ts
+const AreaMicroChartViewType: { readonly Normal: "Normal"; readonly Wide: "Wide"; }
+```
+
+### `BulletMicroChartModeType` — const
+
+sap.suite.ui.microchart.BulletMicroChartModeType
+
+```ts
+const BulletMicroChartModeType: { readonly Actual: "Actual"; readonly Delta: "Delta"; }
+```
+
+### `CommonBackgroundType` — const
+
+sap.suite.ui.microchart.CommonBackgroundType
+
+```ts
+const CommonBackgroundType: { readonly Lightest: "Lightest"; readonly ExtraLight: "ExtraLight"; readonly Light: "Light"; readonly MediumLight: "MediumLight"; readonl…
+```
+
+### `ComparisonMicroChartViewType` — const
+
+sap.suite.ui.microchart.ComparisonMicroChartViewType
+
+```ts
+const ComparisonMicroChartViewType: { readonly Normal: "Normal"; readonly Wide: "Wide"; readonly Responsive: "Responsive"; }
+```
+
+### `DeltaMicroChartViewType` — const
+
+sap.suite.ui.microchart.DeltaMicroChartViewType
+
+```ts
+const DeltaMicroChartViewType: { readonly Normal: "Normal"; readonly Wide: "Wide"; readonly Responsive: "Responsive"; }
+```
+
+### `HorizontalAlignmentType` — const
+
+sap.suite.ui.microchart.HorizontalAlignmentType
+
+```ts
+const HorizontalAlignmentType: { readonly Left: "Left"; readonly Center: "Center"; readonly Right: "Right"; }
+```
+
+### `LineType` — const
+
+sap.suite.ui.microchart.LineType
+
+```ts
+const LineType: { readonly Solid: "Solid"; readonly Dashed: "Dashed"; readonly Dotted: "Dotted"; }
+```
+
+### `MicroChartColorType` — const
+
+sap.suite.ui.microchart.MicroChartColorType
+
+```ts
+const MicroChartColorType: { readonly Good: "Good"; readonly Critical: "Critical"; readonly Error: "Error"; readonly Neutral: "Neutral"; readonly None: "None"; read…
+```
+
 ## `@rhfan2019/smart-kit/ui/core/library`
 
-`IconColor` (const) · `IndicationColor` (const) · `TitleLevel` (const) · `ValueState` (const)
+`AccessibleLandmarkRole` (const) · `IconColor` (const) · `IndicationColor` (const) · `TitleLevel` (const) · `ValueState` (const)
+
+### `AccessibleLandmarkRole` — const
+
+sap.ui.core.AccessibleLandmarkRole: the ARIA landmark role of a container (None: no landmark).
+
+```ts
+const AccessibleLandmarkRole: { readonly None: "None"; readonly Banner: "Banner"; readonly Main: "Main"; readonly Region: "Region"; readonly Navigation: "Navigation"; …
+```
 
 ### `IconColor` — const
 
@@ -10027,6 +11607,7 @@ Property paths of the timeline items, named as the manifest's `content.item` (sa
 | `maxPrecision` |  | `number` | Fraction digits the amount is padded to, so amounts in different currencies align (default: the currency's digits). |
 | `useSymbol` |  | `boolean` | Shows the currency symbol (€, $) instead of the code where one exists. |
 | `emptyIndicatorMode` |  | `EmptyIndicatorMode` | Shows "–" when there is no amount. |
+| `ref` |  | `Ref&lt;Currency>` |  |
 | `defaultChecked` |  | `boolean \| undefined` |  |
 | `defaultValue` |  | `string \| number \| readonly string[] \| undefined` |  |
 | `suppressContentEditableWarning` |  | `boolean \| undefined` |  |
@@ -10307,6 +11888,8 @@ Property paths of the timeline items, named as the manifest's `content.item` (sa
 
 ### `default` — component
 
+Instance methods of Currency.
+
 `import { default } from '@rhfan2019/smart-kit/ui/unified/Currency';`
 
 | Prop | Required | Type | Description |
@@ -10317,6 +11900,7 @@ Property paths of the timeline items, named as the manifest's `content.item` (sa
 | `maxPrecision` |  | `number` | Fraction digits the amount is padded to, so amounts in different currencies align (default: the currency's digits). |
 | `useSymbol` |  | `boolean` | Shows the currency symbol (€, $) instead of the code where one exists. |
 | `emptyIndicatorMode` |  | `EmptyIndicatorMode` | Shows "–" when there is no amount. |
+| `ref` |  | `Ref&lt;Currency>` |  |
 | `defaultChecked` |  | `boolean \| undefined` |  |
 | `defaultValue` |  | `string \| number \| readonly string[] \| undefined` |  |
 | `suppressContentEditableWarning` |  | `boolean \| undefined` |  |
@@ -10660,6 +12244,46 @@ sap.uxap.AnchorBar. Instance methods of AnchorBar.
 | `onSelect` |  | `(sectionId: string, subSectionId?: string) => void` | Extension: an anchor (and optionally one of its subsections) was chosen; the page scrolls to it. |
 | `ref` |  | `Ref&lt;AnchorBar>` |  |
 
+## `@rhfan2019/smart-kit/uxap/ObjectPageAccessibleLandmarkInfo`
+
+`$ObjectPageAccessibleLandmarkInfoSettings` (interface) · `default` (component)
+
+### `$ObjectPageAccessibleLandmarkInfoSettings` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `rootRole` |  | `AccessibleLandmarkRole` | Landmark role of the root container. |
+| `rootLabel` |  | `string` | Label of the root container's landmark. |
+| `contentRole` |  | `AccessibleLandmarkRole` | Landmark role of the content container (the sections). |
+| `contentLabel` |  | `string` | Label of the content container's landmark. |
+| `navigationRole` |  | `AccessibleLandmarkRole` | Landmark role of the navigation container (anchor bar or tab bar). |
+| `navigationLabel` |  | `string` | Label of the navigation container's landmark. |
+| `headerRole` |  | `AccessibleLandmarkRole` | Landmark role of the header container (title and pinned header content). |
+| `headerLabel` |  | `string` | Label of the header container's landmark. |
+| `footerRole` |  | `AccessibleLandmarkRole` | Landmark role of the footer container. |
+| `footerLabel` |  | `string` | Label of the footer container's landmark. |
+| `headerContentLabel` |  | `string` | Label of the header content region; without it "Expanded header". |
+
+### `default` — component
+
+sap.uxap.ObjectPageAccessibleLandmarkInfo: give it to ObjectPageLayout's `landmarkInfo`; it renders nothing itself.
+
+`import { default } from '@rhfan2019/smart-kit/uxap/ObjectPageAccessibleLandmarkInfo';`
+
+| Prop | Required | Type | Description |
+| --- | --- | --- | --- |
+| `rootRole` |  | `AccessibleLandmarkRole` | Landmark role of the root container. |
+| `rootLabel` |  | `string` | Label of the root container's landmark. |
+| `contentRole` |  | `AccessibleLandmarkRole` | Landmark role of the content container (the sections). |
+| `contentLabel` |  | `string` | Label of the content container's landmark. |
+| `navigationRole` |  | `AccessibleLandmarkRole` | Landmark role of the navigation container (anchor bar or tab bar). |
+| `navigationLabel` |  | `string` | Label of the navigation container's landmark. |
+| `headerRole` |  | `AccessibleLandmarkRole` | Landmark role of the header container (title and pinned header content). |
+| `headerLabel` |  | `string` | Label of the header container's landmark. |
+| `footerRole` |  | `AccessibleLandmarkRole` | Landmark role of the footer container. |
+| `footerLabel` |  | `string` | Label of the footer container's landmark. |
+| `headerContentLabel` |  | `string` | Label of the header content region; without it "Expanded header". |
+
 ## `@rhfan2019/smart-kit/uxap/ObjectPageDynamicHeaderContent`
 
 `$ObjectPageDynamicHeaderContentSettings` (type) · `default` (component)
@@ -10768,6 +12392,7 @@ Event object of ObjectPageDynamicHeaderTitle's stateChange.
 | `onNavigate` |  | `(e: ObjectPageLayout$NavigateEvent) => void` | Fired when a section is chosen in the anchor bar or tab bar. |
 | `onSubSectionVisibilityChange` |  | `(e: ObjectPageLayout$SubSectionVisibilityChangeEvent) => void` | Fired when the subsections in view change. |
 | `onBreakpointChange` |  | `(e: ObjectPageLayout$BreakpointChangeEvent) => void` | Fired when the page width moves into another media range. |
+| `landmarkInfo` |  | `ReactNode` | ARIA landmark roles and labels of the page's containers, an ObjectPageAccessibleLandmarkInfo; without it main, banner and region with default labels. |
 | `extend` |  | `ExtendEntry&lt;SectionItem>[]` | Extension: insert, replace or remove sections (ids as in the model). |
 | `headerMessage` |  | `ReactNode` | Extension: message strip between title and header content (OP-17). |
 | `headerExpanded` |  | `boolean` | Extension: the header is expanded (state restoration); without it the page keeps the state itself. |
@@ -10831,6 +12456,7 @@ Instance methods of ObjectPageLayout.
 | `onNavigate` |  | `(e: ObjectPageLayout$NavigateEvent) => void` | Fired when a section is chosen in the anchor bar or tab bar. |
 | `onSubSectionVisibilityChange` |  | `(e: ObjectPageLayout$SubSectionVisibilityChangeEvent) => void` | Fired when the subsections in view change. |
 | `onBreakpointChange` |  | `(e: ObjectPageLayout$BreakpointChangeEvent) => void` | Fired when the page width moves into another media range. |
+| `landmarkInfo` |  | `ReactNode` | ARIA landmark roles and labels of the page's containers, an ObjectPageAccessibleLandmarkInfo; without it main, banner and region with default labels. |
 | `extend` |  | `ExtendEntry&lt;SectionItem>[]` | Extension: insert, replace or remove sections (ids as in the model). |
 | `headerMessage` |  | `ReactNode` | Extension: message strip between title and header content (OP-17). |
 | `headerExpanded` |  | `boolean` | Extension: the header is expanded (state restoration); without it the page keeps the state itself. |
@@ -10946,7 +12572,55 @@ const ObjectPageSubSectionLayout: { readonly TitleOnTop: "TitleOnTop"; readonly 
 
 ## `@rhfan2019/smart-kit/v4/fe/macros/Chart`
 
-`$ChartSettings` (interface) · `Chart$DrilldownEvent` (interface) · `Chart$SelectionChangeEvent` (interface) · `ChartQuery` (interface) · `ChartSelectionData` (interface) · `default` (component)
+`$ChartActionGroupSettings` (interface) · `$ChartActionSettings` (interface) · `$ChartOverflowGroupSettings` (interface) · `$ChartSettings` (interface) · `Chart$DrilldownEvent` (interface) · `Chart$SelectionChangeEvent` (interface) · `ChartItem` (interface) · `ChartP13nState` (interface) · `ChartQuery` (interface) · `ChartSelectionData` (interface) · `default` (component) · `PresentationVariant` (interface) · `PresentationVariantVisualization` (interface)
+
+### `$ChartActionGroupSettings` — interface
+
+A menu button of the chart toolbar (sap.fe.macros.chart.ActionGroup, a sap.fe.macros.chart.Action with `actions`). With `press` (the inherited chart.Action event) the button is a split button whose main part runs `press` (FE: the manifest menu's `defaultAction`, MenuButton buttonMode "Split" with useDefaultActionOnly); without it a plain menu. A menu without visible actions is not shown; its AI icon shows when it or all of its actions are AI operations. The menu button itself is enabled unless `enabled` is false (FE: `requiresSelection` of a group is not used); its actions follow their own `requiresSelection`.
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `actions` | **yes** | `$ChartActionSettings[]` | The actions of the menu. |
+| `key` | **yes** | `string` | Unique key of the action. |
+| `text` | **yes** | `string` | Button text. |
+| `anchor` |  | `string` | Key of another action the new one is placed next to; default: after the last action. |
+| `placement` |  | `'After' \| 'Before'` | "After" (default) or "Before" `anchor`. |
+| `enabled` |  | `boolean` |  |
+| `visible` |  | `boolean` |  |
+| `requiresSelection` |  | `boolean` | Enabled only with selected data points. |
+| `overflowGroup` |  | `number` | Overflow group of the action (sap.m.OverflowToolbarLayoutData group): the actions of a group move into the overflow together; takes precedence over `group`. |
+| `group` |  | `number` | Group of the action in the overflow toolbar (used when there is no `overflowGroup`). |
+| `priority` |  | `'AlwaysOverflow' \| 'Disappear' \| 'High' \| 'Low' \| 'NeverOverflow'` | Priority in the overflow toolbar: "High" stays, "Low" moves first, "AlwaysOverflow" / "NeverOverflow" (sap.m.OverflowToolbarPriority). |
+| `isAIOperation` |  | `boolean` | Displays the AI icon on the action button. |
+| `press` |  | `(e: { selectedContexts: Row[] }) => void` | The button was pressed; the aggregated rows of the selected data points are passed. |
+
+### `$ChartActionSettings` — interface
+
+A custom action of the chart toolbar (sap.fe.macros.chart.Action; `press` names a handler in FE, here it is the handler).
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `key` | **yes** | `string` | Unique key of the action. |
+| `text` | **yes** | `string` | Button text. |
+| `anchor` |  | `string` | Key of another action the new one is placed next to; default: after the last action. |
+| `placement` |  | `'After' \| 'Before'` | "After" (default) or "Before" `anchor`. |
+| `enabled` |  | `boolean` |  |
+| `visible` |  | `boolean` |  |
+| `requiresSelection` |  | `boolean` | Enabled only with selected data points. |
+| `overflowGroup` |  | `number` | Overflow group of the action (sap.m.OverflowToolbarLayoutData group): the actions of a group move into the overflow together; takes precedence over `group`. |
+| `group` |  | `number` | Group of the action in the overflow toolbar (used when there is no `overflowGroup`). |
+| `priority` |  | `'AlwaysOverflow' \| 'Disappear' \| 'High' \| 'Low' \| 'NeverOverflow'` | Priority in the overflow toolbar: "High" stays, "Low" moves first, "AlwaysOverflow" / "NeverOverflow" (sap.m.OverflowToolbarPriority). |
+| `isAIOperation` |  | `boolean` | Displays the AI icon on the action button. |
+| `press` |  | `(e: { selectedContexts: Row[] }) => void` | The button was pressed; the aggregated rows of the selected data points are passed. |
+
+### `$ChartOverflowGroupSettings` — interface
+
+An overflow group of the chart toolbar (sap.fe.macros.chart.OverflowGroup).
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `overflowGroup` | **yes** | `number` | The group (the `overflowGroup` of its actions). |
+| `showSeparator` |  | `boolean` | A separator before the group (FE Action addSeparators). |
 
 ### `$ChartSettings` — interface
 
@@ -10957,14 +12631,18 @@ const ObjectPageSubSectionLayout: { readonly TitleOnTop: "TitleOnTop"; readonly 
 | `header` |  | `string` | Header text of the chart; default the UI.Chart Title (FE MdcChartTemplate `header`; none without a Title). |
 | `headerVisible` |  | `boolean` | Whether the header (title and the content after it) is shown; the toolbar actions stay. |
 | `selectionMode` |  | `'None' \| 'Single' \| 'Multiple'` | "None": the data points cannot be selected; "Single": one; "Multiple": selecting adds to the selection. |
-| `actions` |  | `ReactNode` | Toolbar actions at the end of the toolbar (sap.fe.macros.Chart `actions`). |
+| `actions` |  | `($ChartActionSettings \| $ChartActionGroupSettings)[] \| ReactNode` | Toolbar actions after the annotation actions (sap.fe.macros.Chart `actions`, sap.fe.macros.chart.Action and sap.fe.macros.chart.ActionGroup): an array of action settings, or any React content placed as it is. |
+| `actionOverflowGroups` |  | `$ChartOverflowGroupSettings[]` | Separators between the overflow groups of the actions (sap.fe.macros.chart.OverflowGroup). |
+| `personalization` |  | `string \| boolean` | Options of the chart personalization: true all ("Sort", "Type", "Item", "Filter"), false none, or a comma-separated list of them ("Type": the chart type button; "Item": dimensions and measures, "View By"; "Sort"; "Filter": the chart's own filters). The list report passes "Sort,Type,Item" (FE getP13nMode). |
+| `ignorePersonalizationChanges` |  | `boolean` | The personalization (and the chart's variant) is kept only while the chart is shown and is not restored when it is shown again. |
+| `variantManagement` |  | `'' \| 'Control'` | "Control": a variant management of the chart's own in its toolbar (smart-kit's variant store, D42); not set: none. It needs personalization (FE: no variant management when personalization is disabled). |
 | `onSelectionChange` |  | `(e: Chart$SelectionChangeEvent) => void` | Data points were selected or deselected. |
 | `service` |  | `string` | Name of the service in `SmartKitProvider` `services`; default: the provider's `defaultService`. |
 | `query` |  | `ChartQuery \| null` | Applied filters (from `useFilterState` / the filter bar); null means "not executed yet". Undefined loads without filters. |
 | `headerContent` |  | `ReactNode` | Content after the header text (e.g. the view switch of the list report). |
 | `onDrilldown` |  | `(e: Chart$DrilldownEvent) => void` | Drilldown: "Show Details" of the selected data point. |
 | `revision` |  | `number` | Change to reload. |
-| `ref` |  | `Ref&lt;Chart>` | getSelectedContexts, getSelectionVariant, setSelectionVariant. |
+| `ref` |  | `Ref&lt;Chart>` | getSelectedContexts, get/setSelectionVariant, get/setPresentationVariant, get/setCurrentVariantKey. |
 
 ### `Chart$DrilldownEvent` — interface
 
@@ -10983,6 +12661,26 @@ sap.fe.macros.Chart `selectionChange`: data points were selected or deselected.
 | --- | --- | --- | --- |
 | `data` | **yes** | `ChartSelectionData[]` | The data points whose selection changed. |
 | `selected` | **yes** | `boolean` | True when they were selected, false when deselected. |
+
+### `ChartItem` — interface
+
+A dimension or measure of the chart with its role (sap.ui.mdc.chart.Item).
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `name` | **yes** | `string` |  |
+| `kind` | **yes** | `'Dimension' \| 'Measure'` |  |
+| `role` | **yes** | `string` | Dimensions: "Category", "Series", "Category2"; measures: "Axis1" … "Axis4" (UI.Chart DimensionAttributes / MeasureAttributes). |
+
+### `ChartP13nState` — interface
+
+The personalized state of a chart.
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `chartType` | **yes** | `string` | UI.ChartType member, e.g. "Column". |
+| `items` | **yes** | `ChartItem[]` |  |
+| `sort` | **yes** | `SortItem[]` |  |
 
 ### `ChartQuery` — interface
 
@@ -11014,14 +12712,40 @@ Chart building block (sap.fe.macros.Chart). Renders nothing when the metaPath do
 | `header` |  | `string` | Header text of the chart; default the UI.Chart Title (FE MdcChartTemplate `header`; none without a Title). |
 | `headerVisible` |  | `boolean` | Whether the header (title and the content after it) is shown; the toolbar actions stay. |
 | `selectionMode` |  | `'None' \| 'Single' \| 'Multiple'` | "None": the data points cannot be selected; "Single": one; "Multiple": selecting adds to the selection. |
-| `actions` |  | `ReactNode` | Toolbar actions at the end of the toolbar (sap.fe.macros.Chart `actions`). |
+| `actions` |  | `($ChartActionSettings \| $ChartActionGroupSettings)[] \| ReactNode` | Toolbar actions after the annotation actions (sap.fe.macros.Chart `actions`, sap.fe.macros.chart.Action and sap.fe.macros.chart.ActionGroup): an array of action settings, or any React content placed as it is. |
+| `actionOverflowGroups` |  | `$ChartOverflowGroupSettings[]` | Separators between the overflow groups of the actions (sap.fe.macros.chart.OverflowGroup). |
+| `personalization` |  | `string \| boolean` | Options of the chart personalization: true all ("Sort", "Type", "Item", "Filter"), false none, or a comma-separated list of them ("Type": the chart type button; "Item": dimensions and measures, "View By"; "Sort"; "Filter": the chart's own filters). The list report passes "Sort,Type,Item" (FE getP13nMode). |
+| `ignorePersonalizationChanges` |  | `boolean` | The personalization (and the chart's variant) is kept only while the chart is shown and is not restored when it is shown again. |
+| `variantManagement` |  | `'' \| 'Control'` | "Control": a variant management of the chart's own in its toolbar (smart-kit's variant store, D42); not set: none. It needs personalization (FE: no variant management when personalization is disabled). |
 | `onSelectionChange` |  | `(e: Chart$SelectionChangeEvent) => void` | Data points were selected or deselected. |
 | `service` |  | `string` | Name of the service in `SmartKitProvider` `services`; default: the provider's `defaultService`. |
 | `query` |  | `ChartQuery \| null` | Applied filters (from `useFilterState` / the filter bar); null means "not executed yet". Undefined loads without filters. |
 | `headerContent` |  | `ReactNode` | Content after the header text (e.g. the view switch of the list report). |
 | `onDrilldown` |  | `(e: Chart$DrilldownEvent) => void` | Drilldown: "Show Details" of the selected data point. |
 | `revision` |  | `number` | Change to reload. |
-| `ref` |  | `Ref&lt;Chart>` | getSelectedContexts, getSelectionVariant, setSelectionVariant. |
+| `ref` |  | `Ref&lt;Chart>` | getSelectedContexts, get/setSelectionVariant, get/setPresentationVariant, get/setCurrentVariantKey. |
+
+### `PresentationVariant` — interface
+
+sap.fe.navigation.PresentationVariant.ExternalPresentationVariant (the object of `toJSONObject()`).
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `PresentationVariantID` | **yes** | `string` |  |
+| `Version` |  | `{ Major: string; Minor: string; Patch: string }` |  |
+| `Text` |  | `string` |  |
+| `ContextUrl` |  | `string` |  |
+| `SortOrder` |  | `{ Property: string; Descending: boolean }[]` |  |
+| `Visualizations` |  | `PresentationVariantVisualization[]` |  |
+
+### `PresentationVariantVisualization` — interface
+
+A visualization of a PresentationVariant: the table's (Type "LineItem") or the chart's (Type "Chart").
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `Type` | **yes** | `string` |  |
+| `Content` |  | `unknown` | Table: the visible columns (`{ Value }`); chart: chart type, dimensions and measures with their roles. |
 
 ## `@rhfan2019/smart-kit/v4/fe/macros/Field`
 
@@ -11047,6 +12771,7 @@ Chart building block (sap.fe.macros.Chart). Renders nothing when the metaPath do
 | `id` |  | `string` | Edit mode: element id of the input. |
 | `showLabel` |  | `boolean` | Edit mode: show the label above the editor (dialogs). |
 | `cell` |  | `boolean` | Rendered in a table cell: a micro chart without data leaves the cell empty (docs/15 MC-06). |
+| `semanticObject` |  | `string` | Semantic objects of the field: one name or a stringified array ('["A","B"]'). They overwrite the Common.SemanticObject of the property (FE Field: the value is a smart link to the targets of these semantic objects, from NavigationAdapter.semanticTargets, D42). |
 | `ref` |  | `Ref&lt;Field>` |  |
 
 ### `default` — component
@@ -11073,6 +12798,7 @@ sap.fe.macros.Field Instance (ref) of a Field.
 | `id` |  | `string` | Edit mode: element id of the input. |
 | `showLabel` |  | `boolean` | Edit mode: show the label above the editor (dialogs). |
 | `cell` |  | `boolean` | Rendered in a table cell: a micro chart without data leaves the cell empty (docs/15 MC-06). |
+| `semanticObject` |  | `string` | Semantic objects of the field: one name or a stringified array ('["A","B"]'). They overwrite the Common.SemanticObject of the property (FE Field: the value is a smart link to the targets of these semantic objects, from NavigationAdapter.semanticTargets, D42). |
 | `ref` |  | `Ref&lt;Field>` |  |
 
 ### `Field$ChangeEvent` — interface
@@ -11149,6 +12875,8 @@ sap.fe.macros.field.FieldFormatOptions: how the value is shown or edited (a data
 | `onSearch` |  | `() => void` | Fired when the search was executed ("Go", Enter in the search field, live mode, `triggerSearch`). |
 | `onAfterClear` |  | `() => void` | Fired after the "Clear" button was pressed. |
 | `state` |  | `FilterStateApi` | Filter state from `useFilterState` (controlled); without it the bar keeps its own state for `contextPath`. |
+| `variants` |  | `VariantsApi` | The associated variant management (FE: the page's or the filter bar's own sap.ui.fl VariantManagement): the result of `useVariants`, as passed to `VariantManagement`. `getCurrentVariantKey` / `setCurrentVariantKey` use it. |
+| `onVariantSelect` |  | `(e: VariantManagement$SelectEvent) => void` | Applies a variant chosen with `setCurrentVariantKey` (the `onSelect` of the `VariantManagement`, e.g. a page that also restores table settings). Default: its filters, search and filter fields are loaded into `state`, and the search runs when the variant applies automatically. |
 | `service` |  | `string` | Name of the service in `SmartKitProvider` `services` (own state only). |
 | `extend` |  | `ExtendEntry&lt;FilterFieldItem>[]` | Insert, replace or remove fields by id (property path); custom fields store their conditions under their id. |
 | `actions` |  | `ReactNode` | Extra buttons before "Go". |
@@ -11191,6 +12919,8 @@ sap.fe.macros.FilterBar (docs/26b). Without `state` it keeps its own filter stat
 | `onSearch` |  | `() => void` | Fired when the search was executed ("Go", Enter in the search field, live mode, `triggerSearch`). |
 | `onAfterClear` |  | `() => void` | Fired after the "Clear" button was pressed. |
 | `state` |  | `FilterStateApi` | Filter state from `useFilterState` (controlled); without it the bar keeps its own state for `contextPath`. |
+| `variants` |  | `VariantsApi` | The associated variant management (FE: the page's or the filter bar's own sap.ui.fl VariantManagement): the result of `useVariants`, as passed to `VariantManagement`. `getCurrentVariantKey` / `setCurrentVariantKey` use it. |
+| `onVariantSelect` |  | `(e: VariantManagement$SelectEvent) => void` | Applies a variant chosen with `setCurrentVariantKey` (the `onSelect` of the `VariantManagement`, e.g. a page that also restores table settings). Default: its filters, search and filter fields are loaded into `state`, and the search runs when the variant applies automatically. |
 | `service` |  | `string` | Name of the service in `SmartKitProvider` `services` (own state only). |
 | `extend` |  | `ExtendEntry&lt;FilterFieldItem>[]` | Insert, replace or remove fields by id (property path); custom fields store their conditions under their id. |
 | `actions` |  | `ReactNode` | Extra buttons before "Go". |
@@ -11406,185 +13136,43 @@ sap.fe.macros.MessageButton `visibilityChange`: the button was shown or hidden.
 
 ## `@rhfan2019/smart-kit/v4/fe/macros/MicroChart`
 
-`$MicroChartSettings` (interface) · `default` (component) · `MicroChartAreaThresholds` (interface) · `MicroChartCriticality` (type) · `MicroChartData` (interface) · `MicroChartKind` (type) · `MicroChartPoint` (interface) · `MicroChartSize` (type) · `MicroChartThreshold` (interface)
+`$MicroChartSettings` (interface) · `default` (component)
 
 ### `$MicroChartSettings` — interface
 
 | Member | Required | Type | Description |
 | --- | --- | --- | --- |
-| `contextPath` |  | `string` | Entity set path of the annotated entity, e.g. "/Orders" (sap.fe.macros.MicroChart#contextPath). |
-| `metaPath` |  | `string` | Annotation path of the UI.Chart, e.g. "@com.sap.vocabularies.UI.v1.Chart#Budget" (alias "@UI.Chart#Budget"), or "_Items/@UI.Chart#Trend" over a collection. With it the chart, its title, subtitle and unit come from the annotations and the data from `row` / `path`; without it the data props (`kind`, `value`, `points`…) draw the chart. |
-| `showOnlyChart` |  | `boolean` | Only the chart, without title, subtitle and unit of measure. |
-| `size` |  | `MicroChartSize` | A fixed size; without it the chart fills its container (MC-02). |
+| `contextPath` |  | `string` | Entity set path of the annotated entity, e.g. "/Orders". |
+| `metaPath` |  | `string` | Annotation path of the UI.Chart, e.g. "@com.sap.vocabularies.UI.v1.Chart#Budget" (alias "@UI.Chart#Budget"), or "_Items/@UI.Chart#Trend" over a collection. Type, data, title and unit come from the annotations. |
+| `showOnlyChart` |  | `boolean` | Only the chart, without title, subtitle and unit of measure (and without the column and area labels, as in FE). |
+| `size` |  | `Size` | The size of the micro chart (sap.m.Size; default: the control's Auto; Responsive for comparison charts, as in FE). |
 | `hideOnNoData` |  | `boolean` | Render nothing when there is no data (table cells, MC-06); otherwise a "No data" placeholder (MC-05). |
 | `titleAsLink` |  | `boolean` | The title is a link that fires `titlePress`. |
 | `linkAriaText` |  | `string` | Accessible name of the title link. |
 | `onTitlePress` |  | `() => void` | The title link was pressed (`titleAsLink`). |
-| `onPress` |  | `() => void` | When set, the chart is a button (Enter / Space / click). Not used for the "No data" placeholder. |
 | `service` |  | `string` | Name of the service in `SmartKitProvider` `services`; default: the provider's `defaultService`. |
 | `row` |  | `Row` | The annotated entity as read from the service (the binding context in Fiori elements); undefined while loading. |
 | `path` |  | `string` | Entity path of the annotated entity, e.g. "Orders('1')": reads the collection of a chart over a navigation. |
-| `color` |  | `number` | Qualitative palette colour 1–11, used when there is no criticality (Harvey Ball, MC-56). Default 1. |
-| `kind` |  | `MicroChartKind` | Chart type: "bullet" \| "radial" \| "harvey" \| "delta" \| "column" \| "line" \| "comparison" \| "area" \| "stackedBar" (from `UI.Chart/ChartType` when model-driven). |
-| `label` |  | `string` | Accessible name, e.g. the facet title or the column header. |
-| `value` |  | `number` | Single-value charts (bullet, radial, harvey, delta value 1). |
-| `target` |  | `number` | Bullet target; radial total (default 100: the value is a percentage, MC-51); delta value 2. |
-| `forecast` |  | `number` | Bullet forecast (MC-23). |
-| `min` |  | `number` | Bullet scale start (default: the smallest of 0 and all values, MC-26). |
-| `max` |  | `number` | Bullet scale end (default: the largest value); Harvey Ball total (MaximumValue, MC-55). |
-| `thresholds` |  | `MicroChartThreshold[]` | Bullet threshold markers (MC-25). |
-| `mode` |  | `'actual' \| 'delta'` | Bullet: 'delta' shows the difference between the value and the target (DeltaBulletChart, MC-24). |
-| `criticality` |  | `MicroChartCriticality` | Semantic colour of the value (from `UI.DataPoint/Criticality` or `CriticalityCalculation`). |
-| `points` |  | `MicroChartPoint[]` | Series charts (column, line, comparison, area, stacked bar). Comparison shows at most 12 bars (MC-41). |
-| `lines` |  | `MicroChartPoint[][]` | Line: up to three lines, one per measure (MC-35); replaces `points`. |
-| `threshold` |  | `number` | Line: a threshold line (MC-39). |
-| `showPoints` |  | `boolean` | Line: show the data points (MC-37; default false). |
-| `areaThresholds` |  | `MicroChartAreaThresholds` | Area: threshold areas (MC-47). |
-| `view` |  | `'normal' \| 'wide'` | Area: 'wide' puts the labels before and after the chart (MC-49). |
-| `titles` |  | `[string, string]` | Delta: names (or dates) of the two values, the optional left labels (MC-62). |
-| `columnLabels` |  | `boolean` | Column: a value label on every column when the columns are wide enough and the chart is at least 72 px high (MC-31). |
-| `focusPoints` |  | `number[]` | Line: indexes of focus points of the first line, e.g. [0, n - 1] for the first and last value (MC-38). |
-| `thresholdLabel` |  | `boolean` | Line: show the threshold value next to the threshold line (MC-39). |
-| `minMaxLabels` |  | `boolean` | Area: the smallest and largest value as extra labels (MC-48). |
-| `scaleMin` |  | `number` | Line, column, area: a fixed scale, so that the charts of a table column are comparable (MC-40). |
-| `scaleMax` |  | `number` |  |
-| `format` |  | `(n: number) => string` | Formats numbers for the text alternative (default Intl.NumberFormat of the locale). |
-| `formatLabel` |  | `(n: number) => string` | Formats the visible number labels (default: short form of the locale, e.g. "6.7M", MC-13). |
 
 ### `default` — component
 
-Micro chart building block (sap.fe.macros.MicroChart): with `metaPath` the UI.Chart annotation decides type, data, title and unit; without it the data props draw the chart directly.
+Micro chart building block (sap.fe.macros.MicroChart): the UI.Chart annotation decides type, data, title and unit.
 
 `import { default } from '@rhfan2019/smart-kit/v4/fe/macros/MicroChart';`
 
 | Prop | Required | Type | Description |
 | --- | --- | --- | --- |
-| `contextPath` |  | `string` | Entity set path of the annotated entity, e.g. "/Orders" (sap.fe.macros.MicroChart#contextPath). |
-| `metaPath` |  | `string` | Annotation path of the UI.Chart, e.g. "@com.sap.vocabularies.UI.v1.Chart#Budget" (alias "@UI.Chart#Budget"), or "_Items/@UI.Chart#Trend" over a collection. With it the chart, its title, subtitle and unit come from the annotations and the data from `row` / `path`; without it the data props (`kind`, `value`, `points`…) draw the chart. |
-| `showOnlyChart` |  | `boolean` | Only the chart, without title, subtitle and unit of measure. |
-| `size` |  | `MicroChartSize` | A fixed size; without it the chart fills its container (MC-02). |
+| `contextPath` |  | `string` | Entity set path of the annotated entity, e.g. "/Orders". |
+| `metaPath` |  | `string` | Annotation path of the UI.Chart, e.g. "@com.sap.vocabularies.UI.v1.Chart#Budget" (alias "@UI.Chart#Budget"), or "_Items/@UI.Chart#Trend" over a collection. Type, data, title and unit come from the annotations. |
+| `showOnlyChart` |  | `boolean` | Only the chart, without title, subtitle and unit of measure (and without the column and area labels, as in FE). |
+| `size` |  | `Size` | The size of the micro chart (sap.m.Size; default: the control's Auto; Responsive for comparison charts, as in FE). |
 | `hideOnNoData` |  | `boolean` | Render nothing when there is no data (table cells, MC-06); otherwise a "No data" placeholder (MC-05). |
 | `titleAsLink` |  | `boolean` | The title is a link that fires `titlePress`. |
 | `linkAriaText` |  | `string` | Accessible name of the title link. |
 | `onTitlePress` |  | `() => void` | The title link was pressed (`titleAsLink`). |
-| `onPress` |  | `() => void` | When set, the chart is a button (Enter / Space / click). Not used for the "No data" placeholder. |
 | `service` |  | `string` | Name of the service in `SmartKitProvider` `services`; default: the provider's `defaultService`. |
 | `row` |  | `Row` | The annotated entity as read from the service (the binding context in Fiori elements); undefined while loading. |
 | `path` |  | `string` | Entity path of the annotated entity, e.g. "Orders('1')": reads the collection of a chart over a navigation. |
-| `color` |  | `number` | Qualitative palette colour 1–11, used when there is no criticality (Harvey Ball, MC-56). Default 1. |
-| `kind` |  | `MicroChartKind` | Chart type: "bullet" \| "radial" \| "harvey" \| "delta" \| "column" \| "line" \| "comparison" \| "area" \| "stackedBar" (from `UI.Chart/ChartType` when model-driven). |
-| `label` |  | `string` | Accessible name, e.g. the facet title or the column header. |
-| `value` |  | `number` | Single-value charts (bullet, radial, harvey, delta value 1). |
-| `target` |  | `number` | Bullet target; radial total (default 100: the value is a percentage, MC-51); delta value 2. |
-| `forecast` |  | `number` | Bullet forecast (MC-23). |
-| `min` |  | `number` | Bullet scale start (default: the smallest of 0 and all values, MC-26). |
-| `max` |  | `number` | Bullet scale end (default: the largest value); Harvey Ball total (MaximumValue, MC-55). |
-| `thresholds` |  | `MicroChartThreshold[]` | Bullet threshold markers (MC-25). |
-| `mode` |  | `'actual' \| 'delta'` | Bullet: 'delta' shows the difference between the value and the target (DeltaBulletChart, MC-24). |
-| `criticality` |  | `MicroChartCriticality` | Semantic colour of the value (from `UI.DataPoint/Criticality` or `CriticalityCalculation`). |
-| `points` |  | `MicroChartPoint[]` | Series charts (column, line, comparison, area, stacked bar). Comparison shows at most 12 bars (MC-41). |
-| `lines` |  | `MicroChartPoint[][]` | Line: up to three lines, one per measure (MC-35); replaces `points`. |
-| `threshold` |  | `number` | Line: a threshold line (MC-39). |
-| `showPoints` |  | `boolean` | Line: show the data points (MC-37; default false). |
-| `areaThresholds` |  | `MicroChartAreaThresholds` | Area: threshold areas (MC-47). |
-| `view` |  | `'normal' \| 'wide'` | Area: 'wide' puts the labels before and after the chart (MC-49). |
-| `titles` |  | `[string, string]` | Delta: names (or dates) of the two values, the optional left labels (MC-62). |
-| `columnLabels` |  | `boolean` | Column: a value label on every column when the columns are wide enough and the chart is at least 72 px high (MC-31). |
-| `focusPoints` |  | `number[]` | Line: indexes of focus points of the first line, e.g. [0, n - 1] for the first and last value (MC-38). |
-| `thresholdLabel` |  | `boolean` | Line: show the threshold value next to the threshold line (MC-39). |
-| `minMaxLabels` |  | `boolean` | Area: the smallest and largest value as extra labels (MC-48). |
-| `scaleMin` |  | `number` | Line, column, area: a fixed scale, so that the charts of a table column are comparable (MC-40). |
-| `scaleMax` |  | `number` |  |
-| `format` |  | `(n: number) => string` | Formats numbers for the text alternative (default Intl.NumberFormat of the locale). |
-| `formatLabel` |  | `(n: number) => string` | Formats the visible number labels (default: short form of the locale, e.g. "6.7M", MC-13). |
-
-### `MicroChartAreaThresholds` — interface
-
-Area threshold boundaries, one value per point (MC-47).
-
-| Member | Required | Type | Description |
-| --- | --- | --- | --- |
-| `direction` | **yes** | `'Maximize' \| 'Minimize' \| 'Target'` |  |
-| `deviationLow` |  | `number[]` |  |
-| `toleranceLow` |  | `number[]` |  |
-| `toleranceHigh` |  | `number[]` |  |
-| `deviationHigh` |  | `number[]` |  |
-
-### `MicroChartCriticality` — type
-
-```ts
-export type MicroChartCriticality = 0 | 1 | 2 | 3 | 5;
-```
-
-### `MicroChartData` — interface
-
-The data-driven drawing of one micro chart (the plain-control usage; stage 6: the sap.suite.ui.microchart controls).
-
-| Member | Required | Type | Description |
-| --- | --- | --- | --- |
-| `kind` | **yes** | `MicroChartKind` | Chart type: "bullet" \| "radial" \| "harvey" \| "delta" \| "column" \| "line" \| "comparison" \| "area" \| "stackedBar" (from `UI.Chart/ChartType` when model-driven). |
-| `label` | **yes** | `string` | Accessible name, e.g. the facet title or the column header. |
-| `value` |  | `number` | Single-value charts (bullet, radial, harvey, delta value 1). |
-| `target` |  | `number` | Bullet target; radial total (default 100: the value is a percentage, MC-51); delta value 2. |
-| `forecast` |  | `number` | Bullet forecast (MC-23). |
-| `min` |  | `number` | Bullet scale start (default: the smallest of 0 and all values, MC-26). |
-| `max` |  | `number` | Bullet scale end (default: the largest value); Harvey Ball total (MaximumValue, MC-55). |
-| `thresholds` |  | `MicroChartThreshold[]` | Bullet threshold markers (MC-25). |
-| `mode` |  | `'actual' \| 'delta'` | Bullet: 'delta' shows the difference between the value and the target (DeltaBulletChart, MC-24). |
-| `criticality` |  | `MicroChartCriticality` | Semantic colour of the value (from `UI.DataPoint/Criticality` or `CriticalityCalculation`). |
-| `color` |  | `number` | Qualitative palette colour 1–11, used when there is no criticality (Harvey Ball, MC-56). Default 1. |
-| `points` |  | `MicroChartPoint[]` | Series charts (column, line, comparison, area, stacked bar). Comparison shows at most 12 bars (MC-41). |
-| `lines` |  | `MicroChartPoint[][]` | Line: up to three lines, one per measure (MC-35); replaces `points`. |
-| `threshold` |  | `number` | Line: a threshold line (MC-39). |
-| `showPoints` |  | `boolean` | Line: show the data points (MC-37; default false). |
-| `areaThresholds` |  | `MicroChartAreaThresholds` | Area: threshold areas (MC-47). |
-| `view` |  | `'normal' \| 'wide'` | Area: 'wide' puts the labels before and after the chart (MC-49). |
-| `titles` |  | `[string, string]` | Delta: names (or dates) of the two values, the optional left labels (MC-62). |
-| `columnLabels` |  | `boolean` | Column: a value label on every column when the columns are wide enough and the chart is at least 72 px high (MC-31). |
-| `focusPoints` |  | `number[]` | Line: indexes of focus points of the first line, e.g. [0, n - 1] for the first and last value (MC-38). |
-| `thresholdLabel` |  | `boolean` | Line: show the threshold value next to the threshold line (MC-39). |
-| `minMaxLabels` |  | `boolean` | Area: the smallest and largest value as extra labels (MC-48). |
-| `scaleMin` |  | `number` | Line, column, area: a fixed scale, so that the charts of a table column are comparable (MC-40). |
-| `scaleMax` |  | `number` |  |
-| `format` |  | `(n: number) => string` | Formats numbers for the text alternative (default Intl.NumberFormat of the locale). |
-| `formatLabel` |  | `(n: number) => string` | Formats the visible number labels (default: short form of the locale, e.g. "6.7M", MC-13). |
-| `hideOnNoData` |  | `boolean` | Render nothing when there is no data (table cells, MC-06); otherwise a "No data" placeholder (MC-05). |
-| `size` |  | `MicroChartSize` | A fixed size; without it the chart fills its container (MC-02). |
-| `onPress` |  | `() => void` | When set, the chart is a button (Enter / Space / click). Not used for the "No data" placeholder. |
-
-### `MicroChartKind` — type
-
-```ts
-export type MicroChartKind = 'bullet' | 'radial' | 'harvey' | 'delta' | 'column' | 'line' | 'comparison' | 'area' | 'stackedBar';
-```
-
-### `MicroChartPoint` — interface
-
-| Member | Required | Type | Description |
-| --- | --- | --- | --- |
-| `label` | **yes** | `string` | Dimension value (category or date) shown as a label. |
-| `value` | **yes** | `number` |  |
-| `criticality` |  | `MicroChartCriticality` |  |
-| `target` |  | `number` | Area: the target value at this point (MC-46). |
-| `display` |  | `string` | Stacked bar: text shown on the segment instead of the percentage (MC-59). |
-| `color` |  | `number` | Stacked bar: qualitative palette colour 1–11 when there is no criticality. |
-
-### `MicroChartSize` — type
-
-Size of the micro chart (sap.m.Size as used by sap.fe.macros.MicroChart); without it the chart fills its container.
-
-```ts
-export type MicroChartSize = 'XS' | 'S' | 'M' | 'L';
-```
-
-### `MicroChartThreshold` — interface
-
-A bullet chart threshold marker (MC-25).
-
-| Member | Required | Type | Description |
-| --- | --- | --- | --- |
-| `value` | **yes** | `number` |  |
-| `criticality` | **yes** | `MicroChartCriticality` |  |
 
 ## `@rhfan2019/smart-kit/v4/fe/macros/Paginator`
 
@@ -11642,7 +13230,7 @@ sap.fe.macros.share.ShareOptions
 
 ## `@rhfan2019/smart-kit/v4/fe/macros/Table`
 
-`$ActionSettings` (interface) · `$ColumnSettings` (interface) · `$TableCreationOptionsSettings` (interface) · `$TableSettings` (interface) · `ActionGroup` (interface) · `ActionItem` (interface) · `ColumnItem` (interface) · `Context` (interface) · `default` (component) · `Table$BeforeExportEvent` (interface) · `Table$ExportedEvent` (type) · `Table$RowPressEvent` (interface) · `Table$SelectionChangeEvent` (interface) · `TableContextValue` (interface) · `TableExtendEntry` (type) · `TableQuery` (interface)
+`$ActionSettings` (interface) · `$AnalyticalConfigurationSettings` (interface) · `$ColumnSettings` (interface) · `$MassEditSettings` (interface) · `$OverflowGroupSettings` (interface) · `$QuickVariantSelectionSettings` (interface) · `$TableCreationOptionsSettings` (interface) · `$TableSettings` (interface) · `ActionGroup` (interface) · `ActionItem` (interface) · `ColumnItem` (interface) · `Context` (interface) · `default` (component) · `PresentationVariant` (interface) · `PresentationVariantVisualization` (interface) · `SelectionVariant` (interface) · `SelectionVariantRange` (interface) · `Table$BeforeExportEvent` (interface) · `Table$ExportedEvent` (type) · `Table$RowPressEvent` (interface) · `Table$SelectionChangeEvent` (interface) · `TableContextValue` (interface) · `TableExtendEntry` (type) · `TableQuery` (interface)
 
 ### `$ActionSettings` — interface
 
@@ -11659,6 +13247,17 @@ A custom action (sap.fe.macros.table.Action) of the `actions` aggregation.
 | `requiresSelection` |  | `boolean` | Enabled only with selected rows. |
 | `visible` |  | `boolean` |  |
 | `onPress` |  | `(e: { selectedContexts: Context[] }) => void` | The button was pressed; the contexts of the selected rows are passed. |
+| `isAIOperation` |  | `boolean` | Marks the action as an AI operation (an AI icon on the button). |
+| `overflowGroup` |  | `number` | The overflow group of the action in the toolbar (sap.fe.macros.table.Action `overflowGroup`; see `actionOverflowGroups`). |
+| `priority` |  | `'AlwaysOverflow' \| 'Disappear' \| 'High' \| 'Low' \| 'NeverOverflow'` | Priority in the overflow toolbar: "High" stays, "Low" moves first, "AlwaysOverflow" / "NeverOverflow" (sap.m.OverflowToolbarPriority). |
+
+### `$AnalyticalConfigurationSettings` — interface
+
+Settings of the analytical table (sap.fe.macros.table.AnalyticalConfiguration).
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `aggregationOnLeafLevel` |  | `boolean` | True if leaf level rows shall display aggregated data. |
 
 ### `$ColumnSettings` — interface
 
@@ -11675,7 +13274,40 @@ A custom column (sap.fe.macros.table.Column) of the `columns` aggregation.
 | `horizontalAlign` |  | `'Begin' \| 'Center' \| 'End'` | Horizontal alignment of the cells. |
 | `properties` |  | `string[]` | Properties the column shows: they are selected from the service (and exported). |
 | `disableExport` |  | `boolean` | The column is not exported. |
+| `availability` |  | `'Adaptation' \| 'Default' \| 'Hidden'` | "Default": shown; "Adaptation": only offered in the personalization; "Hidden": left out. |
+| `tooltip` |  | `string` | Tooltip of the column header. |
+| `required` |  | `boolean` | The column header shows the mandatory marker. |
+| `widthIncludingColumnHeader` |  | `boolean` | The automatic width is at least as wide as the column header. |
 | `template` |  | `(row: Row) => ReactNode` | Cell content (the template control of the column in FE). |
+
+### `$MassEditSettings` — interface
+
+The mass edit dialog (sap.fe.macros.table.MassEdit).
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `visibleFields` |  | `string[]` | Fields shown in the mass edit dialog (default: the updatable fields of the columns). |
+| `ignoredFields` |  | `string[]` | Fields left out of the mass edit dialog. |
+| `operationGroupingMode` |  | `'ChangeSet' \| 'Isolated'` | "ChangeSet": the changes are saved together; "Isolated": each object on its own. |
+| `customContent` |  | `ReactNode` | Further content of the dialog, below the fields (FE: a sap.ui.layout.form.FormContainer). |
+
+### `$OverflowGroupSettings` — interface
+
+A separator group of the toolbar's overflow (sap.fe.macros.table.OverflowGroup).
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `overflowGroup` |  | `number` | The group of the toolbar separator in the overflow toolbar. |
+| `showSeparator` |  | `boolean` | Shows a toolbar separator before the group. |
+
+### `$QuickVariantSelectionSettings` — interface
+
+Quick filters of the table toolbar (sap.fe.macros.table.QuickVariantSelection).
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `paths` |  | `string[]` | Annotation paths of the UI.SelectionVariant (or UI.SelectionPresentationVariant) annotations used as quick filters. |
+| `showCounts` |  | `boolean` | Shows the counts next to the texts. |
 
 ### `$TableCreationOptionsSettings` — interface
 
@@ -11685,6 +13317,8 @@ Creation options (sap.fe.macros.table.TableCreationOptions) of the `creationMode
 | --- | --- | --- | --- |
 | `name` |  | `'AddViaValueHelp' \| 'CreationDialog' \| 'External' \| 'Inline' \| 'InlineCreationRows' \| 'NewPage'` | "CreationDialog" (a dialog with the line item fields; then the object page of a list), "Inline" / "InlineCreationRows" (a new row in sub-tables), "NewPage" (draft lists: a new draft opens on the object page; lists without draft use the dialog). Default: "CreationDialog" for lists, "Inline" for sub-tables; "External" and "AddViaValueHelp" are not implemented yet (they behave as the default). |
 | `enabled` |  | `boolean` | false: no "Create" button (smart-kit addition; FE hides it with UI.CreateHidden). |
+| `creationFields` |  | `string` | "CreationDialog": the comma-separated properties the dialog asks (default: the mandatory ones, else the line item's editable fields). |
+| `createAtEnd` |  | `boolean` | "Inline": the new row is created at the end of the table instead of the top. |
 
 ### `$TableSettings` — interface
 
@@ -11698,6 +13332,14 @@ Settings of sap.fe.macros.Table (docs/26b; defaults in "实际默认值（源码
 | `service` |  | `string` | Name of the service in `SmartKitProvider` `services`; default: the provider's `defaultService` (smart-kit addition). |
 | `type` |  | `'GridTable' \| 'ResponsiveTable' \| 'AnalyticalTable'` | Table type: "ResponsiveTable" (sap.m.Table, rows scroll with the page; grouping without subtotals), "GridTable" (the grid; no grouping, no totals) and "AnalyticalTable" (the grid with grouping, group subtotals and totals of the custom aggregates, on entity sets with Aggregation.ApplySupported; docs/23, D39). Default: the grid (FE derives it from the annotations, stage 4). |
 | `rowCountMode` |  | `'Auto' \| 'Fixed' \| 'Interactive'` | Grid tables: "Auto" fills the available height with its own scrollbar (default of list tables); "Fixed" and "Interactive" grow with the rows and a "More" button (default of sub-tables). |
+| `rowCount` |  | `number` | Grid tables: the number of rows shown — "Fixed" and "Interactive" show exactly this many rows with their own scrollbar, "Auto" at least this many. Default: "Fixed" / "Interactive" grow with the rows and a "More" button. |
+| `variantManagement` |  | `'' \| 'Control'` | "Control": a variant management of the table's own (columns, sort, grouping, totals and the table's filter) in the toolbar, kept in smart-kit's variant store under `pageKey` (D42). Default: none. |
+| `quickVariantSelection` |  | `$QuickVariantSelectionSettings` | Quick filters: a segmented button (≤ 3) or a select (> 3) of selection variants in the toolbar. |
+| `actionOverflowGroups` |  | `$OverflowGroupSettings[]` | Separators of the toolbar actions' overflow groups. |
+| `massEdit` |  | `$MassEditSettings` | Offers "Edit" (mass edit) for the selected rows in a dialog. |
+| `analyticalConfiguration` |  | `$AnalyticalConfigurationSettings` | Analytical tables: how the leaves are read. |
+| `enablePaste` |  | `boolean` | Pasting rows from the clipboard (Ctrl+V on the table) creates them, when the table can create inline (editable sub-tables). Default: true in sub-tables (FE: object page), else false. |
+| `enablePastingOfComputedProperties` |  | `boolean` | Pasted values also fill computed (Core.Computed) properties. |
 | `header` |  | `string` | Table title in the toolbar; default `UI.HeaderInfo/TypeNamePlural`, with the row count. |
 | `headerVisible` |  | `boolean` | Shows the title. Default true. |
 | `headerLevel` |  | `TitleLevel` | Heading level of the title (OP Title Styles; smart-kit addition). Default "H2". |
@@ -11746,6 +13388,7 @@ Settings of sap.fe.macros.Table (docs/26b; defaults in "实际默认值（源码
 | `onExported` |  | `(e: Table$ExportedEvent) => void` | Called after the file was written. |
 | `children` |  | `ReactNode` | Replace the default parts: &lt;Table.Toolbar> etc. |
 | `className` |  | `string` | Extra CSS class on the root element. |
+| `additionalProperties` |  | `string[]` | Further properties read with the rows (FE: the table's `additionalProperties`, the manifest's tableSettings; smart-kit addition). |
 | `actionGroups` |  | `ActionGroup[]` | Menu buttons for similar actions (smart-kit addition). |
 | `onCreated` |  | `(path: string, row: Row) => void` | Called after an object was created (default for lists: navigate to its object page). |
 | `growingScrollToLoad` |  | `boolean` | Sub-tables ("Fixed" rows): grow when the end of the table is scrolled into view instead of a "More" button. |
@@ -11783,6 +13426,10 @@ A toolbar action (annotation or custom); the internal form of `actions` and `ext
 | `requiresSelection` |  | `boolean` | Disabled while no row is selected (LR-18). |
 | `enabled` |  | `(selected: Row[]) => boolean` | Further enablement check on the selected rows. |
 | `group` |  | `string` | Menu button the action belongs to (similar actions grouped, LR Table Toolbar). |
+| `overflowGroup` |  | `number` | Overflow group: the actions of a group move into "More" together (sap.fe.macros.table.Action `overflowGroup`). |
+| `priority` |  | `$ActionSettings['priority']` | Overflow priority (sap.m.OverflowToolbarPriority). |
+| `separator` |  | `boolean` | A separator before the action (the first of an overflow group with `showSeparator`, FE Action addSeparators). |
+| `ai` |  | `boolean` | An AI operation (BaseAction isAIOperation): the button shows the AI icon. |
 | `menu` |  | `ActionItem[]` | A menu button with these items (UI.DataFieldForActionGroup, `actionGroups`); always enabled as in FE. |
 | `hidden` |  | `boolean` | Kept for positioning only (FE templates the standard action but it is not shown). |
 
@@ -11803,6 +13450,9 @@ A column of the table (annotation or custom); the internal form of `columns` and
 | `disableExport` |  | `boolean` | Not exported to the spreadsheet. |
 | `headerHidden` |  | `boolean` | The header text is hidden (FE headerVisible false: inline action columns). |
 | `adaptation` |  | `boolean` | Offered in the personalization only (FE availability "Adaptation": entity properties outside the LineItem). |
+| `tooltip` |  | `string` | Header tooltip. |
+| `required` |  | `boolean` | Header with the mandatory marker. |
+| `widthIncludingColumnHeader` |  | `boolean` | The automatic width includes the header (column `widthIncludingColumnHeader`). |
 
 ### `Context` — interface
 
@@ -11827,6 +13477,14 @@ sap.fe.macros.Table: annotation-driven table (`contextPath`, `metaPath`, docs/30
 | `service` |  | `string` | Name of the service in `SmartKitProvider` `services`; default: the provider's `defaultService` (smart-kit addition). |
 | `type` |  | `'GridTable' \| 'ResponsiveTable' \| 'AnalyticalTable'` | Table type: "ResponsiveTable" (sap.m.Table, rows scroll with the page; grouping without subtotals), "GridTable" (the grid; no grouping, no totals) and "AnalyticalTable" (the grid with grouping, group subtotals and totals of the custom aggregates, on entity sets with Aggregation.ApplySupported; docs/23, D39). Default: the grid (FE derives it from the annotations, stage 4). |
 | `rowCountMode` |  | `'Auto' \| 'Fixed' \| 'Interactive'` | Grid tables: "Auto" fills the available height with its own scrollbar (default of list tables); "Fixed" and "Interactive" grow with the rows and a "More" button (default of sub-tables). |
+| `rowCount` |  | `number` | Grid tables: the number of rows shown — "Fixed" and "Interactive" show exactly this many rows with their own scrollbar, "Auto" at least this many. Default: "Fixed" / "Interactive" grow with the rows and a "More" button. |
+| `variantManagement` |  | `'' \| 'Control'` | "Control": a variant management of the table's own (columns, sort, grouping, totals and the table's filter) in the toolbar, kept in smart-kit's variant store under `pageKey` (D42). Default: none. |
+| `quickVariantSelection` |  | `$QuickVariantSelectionSettings` | Quick filters: a segmented button (≤ 3) or a select (> 3) of selection variants in the toolbar. |
+| `actionOverflowGroups` |  | `$OverflowGroupSettings[]` | Separators of the toolbar actions' overflow groups. |
+| `massEdit` |  | `$MassEditSettings` | Offers "Edit" (mass edit) for the selected rows in a dialog. |
+| `analyticalConfiguration` |  | `$AnalyticalConfigurationSettings` | Analytical tables: how the leaves are read. |
+| `enablePaste` |  | `boolean` | Pasting rows from the clipboard (Ctrl+V on the table) creates them, when the table can create inline (editable sub-tables). Default: true in sub-tables (FE: object page), else false. |
+| `enablePastingOfComputedProperties` |  | `boolean` | Pasted values also fill computed (Core.Computed) properties. |
 | `header` |  | `string` | Table title in the toolbar; default `UI.HeaderInfo/TypeNamePlural`, with the row count. |
 | `headerVisible` |  | `boolean` | Shows the title. Default true. |
 | `headerLevel` |  | `TitleLevel` | Heading level of the title (OP Title Styles; smart-kit addition). Default "H2". |
@@ -11875,6 +13533,7 @@ sap.fe.macros.Table: annotation-driven table (`contextPath`, `metaPath`, docs/30
 | `onExported` |  | `(e: Table$ExportedEvent) => void` | Called after the file was written. |
 | `children` |  | `ReactNode` | Replace the default parts: &lt;Table.Toolbar> etc. |
 | `className` |  | `string` | Extra CSS class on the root element. |
+| `additionalProperties` |  | `string[]` | Further properties read with the rows (FE: the table's `additionalProperties`, the manifest's tableSettings; smart-kit addition). |
 | `actionGroups` |  | `ActionGroup[]` | Menu buttons for similar actions (smart-kit addition). |
 | `onCreated` |  | `(path: string, row: Row) => void` | Called after an object was created (default for lists: navigate to its object page). |
 | `growingScrollToLoad` |  | `boolean` | Sub-tables ("Fixed" rows): grow when the end of the table is scrolled into view instead of a "More" button. |
@@ -11889,6 +13548,52 @@ sap.fe.macros.Table: annotation-driven table (`contextPath`, `metaPath`, docs/30
 | `totals` |  | `string[]` | Column ids whose totals are shown (controlled, docs/23). Default: the columns of `UI.PresentationVariant/Total`. |
 | `onTotalsChange` |  | `(ids: string[]) => void` | Called with the total column ids after personalization; when given, `totals` is fully controlled (undefined: the default). |
 | `ref` |  | `Ref&lt;Table>` | Instance methods: refresh, getSelectedContexts, clearSelection, … (sap.fe.macros.Table). |
+
+### `PresentationVariant` — interface
+
+sap.fe.navigation.PresentationVariant.ExternalPresentationVariant (the object of `toJSONObject()`).
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `PresentationVariantID` | **yes** | `string` |  |
+| `Version` |  | `{ Major: string; Minor: string; Patch: string }` |  |
+| `Text` |  | `string` |  |
+| `ContextUrl` |  | `string` |  |
+| `SortOrder` |  | `{ Property: string; Descending: boolean }[]` |  |
+| `Visualizations` |  | `PresentationVariantVisualization[]` |  |
+
+### `PresentationVariantVisualization` — interface
+
+A visualization of a PresentationVariant: the table's (Type "LineItem") or the chart's (Type "Chart").
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `Type` | **yes** | `string` |  |
+| `Content` |  | `unknown` | Table: the visible columns (`{ Value }`); chart: chart type, dimensions and measures with their roles. |
+
+### `SelectionVariant` — interface
+
+The JSON object of a sap.fe.navigation.SelectionVariant.
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `SelectionVariantID` |  | `string` |  |
+| `Text` |  | `string` |  |
+| `ODataFilterExpression` |  | `string` |  |
+| `Parameters` |  | `{ PropertyName: string; PropertyValue: string }[]` |  |
+| `SelectOptions` |  | `{ PropertyName: string; Ranges: SelectionVariantRange[] }[]` |  |
+
+### `SelectionVariantRange` — interface
+
+One range of a select option (sap.fe.navigation.SelectionVariant).
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `Sign` | **yes** | `'I' \| 'E'` |  |
+| `Option` | **yes** | `string` |  |
+| `Low` | **yes** | `string` |  |
+| `High` |  | `string \| null` |  |
+| `Text` |  | `string` | Description of the value (used by `setSelectionVariant(sv, true)`). |
 
 ### `Table$BeforeExportEvent` — interface
 
@@ -11926,6 +13631,8 @@ export type Table$ExportedEvent = Table$BeforeExportEvent;
 
 ### `TableContextValue` — interface
 
+What custom content in and around the table sees (AC-EXT-02, kit/useTableContext).
+
 | Member | Required | Type | Description |
 | --- | --- | --- | --- |
 | `entitySet` | **yes** | `string` |  |
@@ -11954,7 +13661,44 @@ export type TableExtendEntry = | (ExtendEntry<ColumnItem> & { kind?: 'column' })
 
 ## `@rhfan2019/smart-kit/v4/fe/macros/TreeTable`
 
-`$TreeTableSettings` (interface) · `Context` (interface) · `default` (component) · `TreeTable$RowPressEvent` (interface) · `TreeTable$SelectionChangeEvent` (interface) · `TreeTable$ToggleOpenStateEvent` (interface)
+`$AnalyticalConfigurationSettings` (interface) · `$MassEditSettings` (interface) · `$OverflowGroupSettings` (interface) · `$QuickVariantSelectionSettings` (interface) · `$TreeTableSettings` (interface) · `Context` (interface) · `default` (component) · `TreeTable$RowPressEvent` (interface) · `TreeTable$SelectionChangeEvent` (interface) · `TreeTable$ToggleOpenStateEvent` (interface)
+
+### `$AnalyticalConfigurationSettings` — interface
+
+Settings of the analytical table (sap.fe.macros.table.AnalyticalConfiguration).
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `aggregationOnLeafLevel` |  | `boolean` | True if leaf level rows shall display aggregated data. |
+
+### `$MassEditSettings` — interface
+
+The mass edit dialog (sap.fe.macros.table.MassEdit).
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `visibleFields` |  | `string[]` | Fields shown in the mass edit dialog (default: the updatable fields of the columns). |
+| `ignoredFields` |  | `string[]` | Fields left out of the mass edit dialog. |
+| `operationGroupingMode` |  | `'ChangeSet' \| 'Isolated'` | "ChangeSet": the changes are saved together; "Isolated": each object on its own. |
+| `customContent` |  | `ReactNode` | Further content of the dialog, below the fields (FE: a sap.ui.layout.form.FormContainer). |
+
+### `$OverflowGroupSettings` — interface
+
+A separator group of the toolbar's overflow (sap.fe.macros.table.OverflowGroup).
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `overflowGroup` |  | `number` | The group of the toolbar separator in the overflow toolbar. |
+| `showSeparator` |  | `boolean` | Shows a toolbar separator before the group. |
+
+### `$QuickVariantSelectionSettings` — interface
+
+Quick filters of the table toolbar (sap.fe.macros.table.QuickVariantSelection).
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `paths` |  | `string[]` | Annotation paths of the UI.SelectionVariant (or UI.SelectionPresentationVariant) annotations used as quick filters. |
+| `showCounts` |  | `boolean` | Shows the counts next to the texts. |
 
 ### `$TreeTableSettings` — interface
 
@@ -11971,12 +13715,20 @@ Settings of sap.fe.macros.TreeTable: those of `Table` plus the hierarchy.
 | `ref` |  | `Ref&lt;TreeTable>` | Instance methods of `Table` plus expand, collapse, collapseAll, expandToLevel, isExpanded (sap.ui.table.TreeTable). |
 | `children` |  | `ReactNode` | Replace the default parts: &lt;Table.Toolbar> etc. |
 | `className` |  | `string` | Extra CSS class on the root element. |
-| `threshold` |  | `number` | Rows per request when growing (sub-tables and responsive tables); default 10 for the first, 20 for each further page. |
+| `sort` |  | `SortItem[]` | Sort order (controlled); default from `UI.PresentationVariant/SortOrder` (smart-kit addition). |
 | `contextPath` |  | `string` | Entity set path as in FE: "/Orders"; a sub-table "/Orders/_Item" (the navigation of the object in `bindingContext`). |
 | `metaPath` |  | `string` | Annotation path of the table: "@com.sap.vocabularies.UI.v1.LineItem#Q" (alias "@UI.LineItem#Q"), "@…SelectionPresentationVariant#Q" or "@…PresentationVariant#Q" (their line item, sort, grouping and totals); sub-tables may prefix the navigation ("_Item/@UI.LineItem"). Default: the LineItem (sub-tables: the one of the UI.Facets entry). |
 | `bindingContext` |  | `string` | Instance path of the parent object of a sub-table, e.g. "Orders('1')" (FE: the binding context; smart-kit addition). |
 | `service` |  | `string` | Name of the service in `SmartKitProvider` `services`; default: the provider's `defaultService` (smart-kit addition). |
 | `rowCountMode` |  | `'Auto' \| 'Fixed' \| 'Interactive'` | Grid tables: "Auto" fills the available height with its own scrollbar (default of list tables); "Fixed" and "Interactive" grow with the rows and a "More" button (default of sub-tables). |
+| `rowCount` |  | `number` | Grid tables: the number of rows shown — "Fixed" and "Interactive" show exactly this many rows with their own scrollbar, "Auto" at least this many. Default: "Fixed" / "Interactive" grow with the rows and a "More" button. |
+| `variantManagement` |  | `'' \| 'Control'` | "Control": a variant management of the table's own (columns, sort, grouping, totals and the table's filter) in the toolbar, kept in smart-kit's variant store under `pageKey` (D42). Default: none. |
+| `quickVariantSelection` |  | `$QuickVariantSelectionSettings` | Quick filters: a segmented button (≤ 3) or a select (> 3) of selection variants in the toolbar. |
+| `actionOverflowGroups` |  | `$OverflowGroupSettings[]` | Separators of the toolbar actions' overflow groups. |
+| `massEdit` |  | `$MassEditSettings` | Offers "Edit" (mass edit) for the selected rows in a dialog. |
+| `analyticalConfiguration` |  | `$AnalyticalConfigurationSettings` | Analytical tables: how the leaves are read. |
+| `enablePaste` |  | `boolean` | Pasting rows from the clipboard (Ctrl+V on the table) creates them, when the table can create inline (editable sub-tables). Default: true in sub-tables (FE: object page), else false. |
+| `enablePastingOfComputedProperties` |  | `boolean` | Pasted values also fill computed (Core.Computed) properties. |
 | `header` |  | `string` | Table title in the toolbar; default `UI.HeaderInfo/TypeNamePlural`, with the row count. |
 | `headerVisible` |  | `boolean` | Shows the title. Default true. |
 | `headerLevel` |  | `TitleLevel` | Heading level of the title (OP Title Styles; smart-kit addition). Default "H2". |
@@ -11996,6 +13748,7 @@ Settings of sap.fe.macros.TreeTable: those of `Table` plus the hierarchy.
 | `isSearchable` |  | `boolean` | Search field in the toolbar (when the service can search). Default: no search field. |
 | `selectionMode` |  | `'None' \| 'Single' \| 'Multi' \| 'Auto' \| 'ForceMulti' \| 'ForceSingle'` | "None", "Single", "Multi"; "Auto", "ForceMulti" are "Multi", "ForceSingle" is "Single". Default "Multi". |
 | `enableSelectAll` |  | `boolean` | "Select all" check box in tables that hold all rows (responsive, sub-tables); false hides it. |
+| `threshold` |  | `number` | Rows per request when growing (sub-tables and responsive tables); default 10 for the first, 20 for each further page. |
 | `scrollThreshold` |  | `number` | Grid tables: rows per request while scrolling. Default 100. |
 | `disableColumnFreeze` |  | `boolean` | Grid tables: no column is frozen. |
 | `frozenColumnCount` |  | `number` | Grid tables: number of frozen (pinned) columns. Default 1. |
@@ -12011,7 +13764,6 @@ Settings of sap.fe.macros.TreeTable: those of `Table` plus the hierarchy.
 | `query` |  | `TableQuery \| null` | Applied filters; null means "not executed yet" (shows "To start, set the relevant filters."). Undefined loads without filters (smart-kit addition). |
 | `visibleColumns` |  | `string[]` | Visible column ids in order (controlled, smart-kit addition). |
 | `onVisibleColumnsChange` |  | `(ids: string[]) => void` | Called with the visible column ids after personalization. |
-| `sort` |  | `SortItem[]` | Sort order (controlled); default from `UI.PresentationVariant/SortOrder` (smart-kit addition). |
 | `onSortChange` |  | `(sort: SortItem[]) => void` | Called with the new sort order. |
 | `onSelectionChange` |  | `(e: Table$SelectionChangeEvent) => void` | The selection changed. |
 | `onCountChange` |  | `(count: number \| undefined) => void` | Called when the total count becomes known (object page tab counts; smart-kit addition). |
@@ -12022,6 +13774,7 @@ Settings of sap.fe.macros.TreeTable: those of `Table` plus the hierarchy.
 | `showOverlay` |  | `boolean` | Grey out the table (filters changed in manual mode; sap.m.Table showOverlay). |
 | `onBeforeExport` |  | `(e: Table$BeforeExportEvent) => boolean \| void \| Promise&lt;boolean \| void>` | Called when the rows to export are loaded, before the file is written. Return false (or a promise of false) to cancel: no file is written. Use it to check permissions or to log the export. |
 | `onExported` |  | `(e: Table$ExportedEvent) => void` | Called after the file was written. |
+| `additionalProperties` |  | `string[]` | Further properties read with the rows (FE: the table's `additionalProperties`, the manifest's tableSettings; smart-kit addition). |
 | `actionGroups` |  | `ActionGroup[]` | Menu buttons for similar actions (smart-kit addition). |
 | `onCreated` |  | `(path: string, row: Row) => void` | Called after an object was created (default for lists: navigate to its object page). |
 | `growingScrollToLoad` |  | `boolean` | Sub-tables ("Fixed" rows): grow when the end of the table is scrolled into view instead of a "More" button. |
@@ -12058,12 +13811,20 @@ sap.fe.macros.TreeTable: the recursive hierarchy of the entity type (Aggregation
 | `ref` |  | `Ref&lt;TreeTable>` | Instance methods of `Table` plus expand, collapse, collapseAll, expandToLevel, isExpanded (sap.ui.table.TreeTable). |
 | `children` |  | `ReactNode` | Replace the default parts: &lt;Table.Toolbar> etc. |
 | `className` |  | `string` | Extra CSS class on the root element. |
-| `threshold` |  | `number` | Rows per request when growing (sub-tables and responsive tables); default 10 for the first, 20 for each further page. |
+| `sort` |  | `SortItem[]` | Sort order (controlled); default from `UI.PresentationVariant/SortOrder` (smart-kit addition). |
 | `contextPath` |  | `string` | Entity set path as in FE: "/Orders"; a sub-table "/Orders/_Item" (the navigation of the object in `bindingContext`). |
 | `metaPath` |  | `string` | Annotation path of the table: "@com.sap.vocabularies.UI.v1.LineItem#Q" (alias "@UI.LineItem#Q"), "@…SelectionPresentationVariant#Q" or "@…PresentationVariant#Q" (their line item, sort, grouping and totals); sub-tables may prefix the navigation ("_Item/@UI.LineItem"). Default: the LineItem (sub-tables: the one of the UI.Facets entry). |
 | `bindingContext` |  | `string` | Instance path of the parent object of a sub-table, e.g. "Orders('1')" (FE: the binding context; smart-kit addition). |
 | `service` |  | `string` | Name of the service in `SmartKitProvider` `services`; default: the provider's `defaultService` (smart-kit addition). |
 | `rowCountMode` |  | `'Auto' \| 'Fixed' \| 'Interactive'` | Grid tables: "Auto" fills the available height with its own scrollbar (default of list tables); "Fixed" and "Interactive" grow with the rows and a "More" button (default of sub-tables). |
+| `rowCount` |  | `number` | Grid tables: the number of rows shown — "Fixed" and "Interactive" show exactly this many rows with their own scrollbar, "Auto" at least this many. Default: "Fixed" / "Interactive" grow with the rows and a "More" button. |
+| `variantManagement` |  | `'' \| 'Control'` | "Control": a variant management of the table's own (columns, sort, grouping, totals and the table's filter) in the toolbar, kept in smart-kit's variant store under `pageKey` (D42). Default: none. |
+| `quickVariantSelection` |  | `$QuickVariantSelectionSettings` | Quick filters: a segmented button (≤ 3) or a select (> 3) of selection variants in the toolbar. |
+| `actionOverflowGroups` |  | `$OverflowGroupSettings[]` | Separators of the toolbar actions' overflow groups. |
+| `massEdit` |  | `$MassEditSettings` | Offers "Edit" (mass edit) for the selected rows in a dialog. |
+| `analyticalConfiguration` |  | `$AnalyticalConfigurationSettings` | Analytical tables: how the leaves are read. |
+| `enablePaste` |  | `boolean` | Pasting rows from the clipboard (Ctrl+V on the table) creates them, when the table can create inline (editable sub-tables). Default: true in sub-tables (FE: object page), else false. |
+| `enablePastingOfComputedProperties` |  | `boolean` | Pasted values also fill computed (Core.Computed) properties. |
 | `header` |  | `string` | Table title in the toolbar; default `UI.HeaderInfo/TypeNamePlural`, with the row count. |
 | `headerVisible` |  | `boolean` | Shows the title. Default true. |
 | `headerLevel` |  | `TitleLevel` | Heading level of the title (OP Title Styles; smart-kit addition). Default "H2". |
@@ -12083,6 +13844,7 @@ sap.fe.macros.TreeTable: the recursive hierarchy of the entity type (Aggregation
 | `isSearchable` |  | `boolean` | Search field in the toolbar (when the service can search). Default: no search field. |
 | `selectionMode` |  | `'None' \| 'Single' \| 'Multi' \| 'Auto' \| 'ForceMulti' \| 'ForceSingle'` | "None", "Single", "Multi"; "Auto", "ForceMulti" are "Multi", "ForceSingle" is "Single". Default "Multi". |
 | `enableSelectAll` |  | `boolean` | "Select all" check box in tables that hold all rows (responsive, sub-tables); false hides it. |
+| `threshold` |  | `number` | Rows per request when growing (sub-tables and responsive tables); default 10 for the first, 20 for each further page. |
 | `scrollThreshold` |  | `number` | Grid tables: rows per request while scrolling. Default 100. |
 | `disableColumnFreeze` |  | `boolean` | Grid tables: no column is frozen. |
 | `frozenColumnCount` |  | `number` | Grid tables: number of frozen (pinned) columns. Default 1. |
@@ -12098,7 +13860,6 @@ sap.fe.macros.TreeTable: the recursive hierarchy of the entity type (Aggregation
 | `query` |  | `TableQuery \| null` | Applied filters; null means "not executed yet" (shows "To start, set the relevant filters."). Undefined loads without filters (smart-kit addition). |
 | `visibleColumns` |  | `string[]` | Visible column ids in order (controlled, smart-kit addition). |
 | `onVisibleColumnsChange` |  | `(ids: string[]) => void` | Called with the visible column ids after personalization. |
-| `sort` |  | `SortItem[]` | Sort order (controlled); default from `UI.PresentationVariant/SortOrder` (smart-kit addition). |
 | `onSortChange` |  | `(sort: SortItem[]) => void` | Called with the new sort order. |
 | `onSelectionChange` |  | `(e: Table$SelectionChangeEvent) => void` | The selection changed. |
 | `onCountChange` |  | `(count: number \| undefined) => void` | Called when the total count becomes known (object page tab counts; smart-kit addition). |
@@ -12109,6 +13870,7 @@ sap.fe.macros.TreeTable: the recursive hierarchy of the entity type (Aggregation
 | `showOverlay` |  | `boolean` | Grey out the table (filters changed in manual mode; sap.m.Table showOverlay). |
 | `onBeforeExport` |  | `(e: Table$BeforeExportEvent) => boolean \| void \| Promise&lt;boolean \| void>` | Called when the rows to export are loaded, before the file is written. Return false (or a promise of false) to cancel: no file is written. Use it to check permissions or to log the export. |
 | `onExported` |  | `(e: Table$ExportedEvent) => void` | Called after the file was written. |
+| `additionalProperties` |  | `string[]` | Further properties read with the rows (FE: the table's `additionalProperties`, the manifest's tableSettings; smart-kit addition). |
 | `actionGroups` |  | `ActionGroup[]` | Menu buttons for similar actions (smart-kit addition). |
 | `onCreated` |  | `(path: string, row: Row) => void` | Called after an object was created (default for lists: navigate to its object page). |
 | `growingScrollToLoad` |  | `boolean` | Sub-tables ("Fixed" rows): grow when the end of the table is scrolled into view instead of a "More" button. |
@@ -12203,7 +13965,7 @@ _no props_
 
 ## `@rhfan2019/smart-kit/v4/fe/templates/ListReport`
 
-`$KPIConfiguration` (interface) · `$ListReportSettings` (interface) · `$ManifestActionSettings` (interface) · `$ManifestColumnSettings` (interface) · `$ManifestCreationModeSettings` (interface) · `$ManifestFilterConfiguration` (interface) · `$ManifestFilterFieldSettings` (interface) · `$ManifestTableConfiguration` (interface) · `$ManifestTableSettings` (interface) · `$PositionSettings` (interface) · `$QuickVariantSelectionSettings` (interface) · `$ViewPathSettings` (interface) · `default` (component) · `InitialLoadMode` (type)
+`$KPIConfiguration` (interface) · `$ListReportSettings` (interface) · `$ManifestActionSettings` (interface) · `$ManifestChartActionSettings` (interface) · `$ManifestChartConfiguration` (interface) · `$ManifestColumnSettings` (interface) · `$ManifestCreationModeSettings` (interface) · `$ManifestCustomHeaderSettings` (interface) · `$ManifestFilterConfiguration` (interface) · `$ManifestFilterFieldSettings` (interface) · `$ManifestHeaderActionSettings` (interface) · `$ManifestOverflowGroupSettings` (interface) · `$ManifestTableConfiguration` (interface) · `$ManifestTableSettings` (interface) · `$PositionSettings` (interface) · `$QuickVariantSelectionSettings` (interface) · `$ViewPathSettings` (interface) · `default` (component) · `InitialLoadMode` (type)
 
 ### `$KPIConfiguration` — interface
 
@@ -12226,8 +13988,10 @@ Settings of the list report: the FE manifest settings (docs/26c §3–§7) plus 
 | `contextPath` |  | `string` | Context path of the list, e.g. "/Orders" (a parameterized set: "/P/Set"); wins over `entitySet`. |
 | `navigation` |  | `Record&lt;string, { detail?: { route?: string } }>` | Row navigation per entity set: `detail.route` makes rows navigate to the object page (NavigationAdapter.toObject). |
 | `controlConfiguration` |  | `{ '@com.sap.vocabularies.UI.v1.LineItem'?: $ManifestTableConfiguration; '@com.sap.vocabularies.UI.v1.SelectionFields'?: $ManifestFilterCo…` | Settings of the controls by annotation path (table, filter bar). |
-| `content` |  | `{ header?: { actions?: Record&lt;string, $ManifestActionSettings> } }` |  |
-| `variantManagement` |  | `'None' \| 'Page'` | "Page": one variant management in the title for the filter bar and the table; "None": no variants. |
+| `content` |  | `{ header?: { actions?: Record&lt;string, $ManifestHeaderActionSettings>; /** Separators of the header actions' overflow groups, by group num…` |  |
+| `variantManagement` |  | `'Control' \| 'None' \| 'Page'` | "Page": one variant management in the title for the filter bar and the table; "Control": the filter bar, the table and the chart each have their own (the title shows the page title); "None": no variants. |
+| `defaultTemplateAnnotationPath` |  | `string` | Annotation path of the UI.SelectionPresentationVariant the list starts from (FE getCompliantVisualizationAnnotation): its presentation is the table's, its selection variant the filter bar's defaults. |
+| `shareOverflowPriority` |  | `'AlwaysOverflow' \| 'Disappear' \| 'High' \| 'Low' \| 'NeverOverflow'` | Overflow priority of the share button in the title's toolbar. |
 | `initialLoad` |  | `InitialLoadMode \| boolean` | "Enabled": load on start; "Disabled": only after "Go"; "Auto": load when the start variant has filter values (FE: the standard variant applies automatically when filter values are set). |
 | `liveMode` |  | `boolean` | Every filter change applies at once (no "Go"). |
 | `views` |  | `{ paths: $ViewPathSettings[]; showCounts?: boolean }` | Views: a tab per path (an IconTabBar), `showCounts` adds the number of items (default: with several entity sets). |
@@ -12260,6 +14024,38 @@ A manifest action (FE `ManifestAction`) of the page header or of the table toolb
 | `menu` |  | `string[]` | Table actions: a menu button with these actions (keys such as "DataFieldForAction::Namespace.action"). |
 | `position` |  | `$PositionSettings` |  |
 
+### `$ManifestChartActionSettings` — interface
+
+A custom chart toolbar action (`controlConfiguration ›
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `priority` |  | `'AlwaysOverflow' \| 'Disappear' \| 'High' \| 'Low' \| 'NeverOverflow'` | Overflow priority in the chart toolbar (sap.m.OverflowToolbarPriority). |
+| `overflowGroup` |  | `number` | Overflow group of the action: the actions of a group move into "More" together; `overflowGroups` adds separators. |
+| `group` |  | `number` | Group of the action (used when there is no `overflowGroup`). |
+| `isAIOperation` |  | `boolean` | An AI operation (the AI icon on the button; a menu shows it when all of its actions are AI operations). |
+| `defaultAction` |  | `string` | With `menu`: the key of the action (of this chart's manifest actions) run by the menu button itself; the menu becomes a split button (FE MdcChartTemplate getActionToolbarMenuAction: MenuButton buttonMode "Split"). |
+| `isPrimaryAction` |  | `boolean` | Accepted as in FE, without effect in the chart toolbar: FE 1.154 emphasizes manifest primary actions only in the page header (ListReportConverter getHeaderActions → applyManifestPrimaryActionEmphasis); MdcChartTemplate renders chart actions as Transparent / default buttons. |
+| `template` |  | `() => ReactNode` | Accepted as in FE, without effect in the chart toolbar: FE 1.154 templates custom toolbar content (a fragment in `template`) only in the table toolbar (ActionsTemplating getCustomToolbarContent); MdcChartTemplate renders such an action as a button with its `text` and `press`. FE names a fragment, here it is a render function (react-idiom). |
+| `text` |  | `string` | Button text. |
+| `press` |  | `(e: { selectedContexts: Context[] }) => void` | The button was pressed; table actions receive the selected rows. |
+| `visible` |  | `boolean` |  |
+| `enabled` |  | `boolean` |  |
+| `requiresSelection` |  | `boolean` | Table actions: enabled only with selected rows. |
+| `enableOnSelect` |  | `'multi' \| 'single'` | Table actions: enabled with exactly one ("single") or at least one ("multi") selected row. |
+| `menu` |  | `string[]` | Table actions: a menu button with these actions (keys such as "DataFieldForAction::Namespace.action"). |
+| `position` |  | `$PositionSettings` |  |
+
+### `$ManifestChartConfiguration` — interface
+
+`controlConfiguration ›
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `chartSettings` |  | `{ /** * true: all panels; false: none; or the panels. Default (FE getP13nMode): "Sort", "Type" and "Item"; with * `variantManagement` "Co…` |  |
+| `actions` |  | `Record&lt;string, $ManifestChartActionSettings>` | Custom chart toolbar actions by key. |
+| `overflowGroups` |  | `Record&lt;string, $ManifestOverflowGroupSettings>` | Separators between the overflow groups of the chart actions, by group number. |
+
 ### `$ManifestColumnSettings` — interface
 
 A custom column (FE `CustomDefinedTableColumn`); FE names a fragment in `template`, here it renders the cell (react-idiom).
@@ -12274,6 +14070,10 @@ A custom column (FE `CustomDefinedTableColumn`); FE names a fragment in `templat
 | `importance` |  | `'High' \| 'Low' \| 'Medium' \| 'None'` | Importance for the pop-in of responsive tables. |
 | `horizontalAlign` |  | `'Begin' \| 'Center' \| 'End'` |  |
 | `disableExport` |  | `boolean` | The column is not exported. |
+| `availability` |  | `'Adaptation' \| 'Default' \| 'Hidden'` | "Adaptation": only offered in the personalization; "Hidden": left out. |
+| `tooltip` |  | `string` | Tooltip of the column header. |
+| `required` |  | `boolean` | The header shows the mandatory marker. |
+| `widthIncludingColumnHeader` |  | `boolean` | The automatic width includes the column header. |
 
 ### `$ManifestCreationModeSettings` — interface
 
@@ -12282,6 +14082,20 @@ A custom column (FE `CustomDefinedTableColumn`); FE names a fragment in `templat
 | Member | Required | Type | Description |
 | --- | --- | --- | --- |
 | `name` |  | `'AddViaValueHelp' \| 'Async' \| 'CreationDialog' \| 'CreationRow' \| 'Deferred' \| 'External' \| 'Inline' \| 'InlineCreationRows' \| 'NewPage' \| …` | The list report allows "NewPage" (draft: a new draft opens on the object page), "CreationDialog" and "External"; the other values fall back to "NewPage" as in FE. Services without draft create with a dialog (kit-extension, D42). |
+| `creationFields` |  | `string` | "CreationDialog": the comma-separated properties the dialog asks. |
+| `createAtEnd` |  | `boolean` | Inline creation only: not used by the list report, which creates with NewPage / CreationDialog (FE _getCreationBehaviour). |
+| `inlineCreationRowCount` |  | `number` | Inline creation rows only: not used by the list report (FE _getCreationBehaviour). |
+| `inlineCreationRowsHiddenInEditMode` |  | `boolean` | Inline creation rows only: not used by the list report (FE _getCreationBehaviour). |
+| `disableAddRowButtonForEmptyData` |  | `boolean` | Inline creation rows only: not used by the list report (FE _getCreationBehaviour). |
+
+### `$ManifestCustomHeaderSettings` — interface
+
+`content › header › customHeader` (FE ListReportConverter expanded / collapsedHeaderFragment): FE names fragments, here they are render functions (react-idiom).
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `expandedHeaderFragment` |  | `() => ReactNode` | Content of the expanded header, above the filter bar. |
+| `collapsedHeaderFragment` |  | `() => ReactNode` | Content of the collapsed (snapped) title, before the filter summary. |
 
 ### `$ManifestFilterConfiguration` — interface
 
@@ -12306,6 +14120,36 @@ A filter field of `controlConfiguration ›
 | `required` |  | `boolean` |  |
 | `position` |  | `$PositionSettings` |  |
 
+### `$ManifestHeaderActionSettings` — interface
+
+A custom header action of the page (`content › header › actions`, FE getHeaderActions).
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `priority` |  | `'AlwaysOverflow' \| 'Disappear' \| 'High' \| 'Low' \| 'NeverOverflow'` | Overflow priority in the title's toolbar (sap.m.OverflowToolbarPriority): "AlwaysOverflow" puts the action into its overflow, "NeverOverflow" never. |
+| `overflowGroup` |  | `number` | Overflow group: the actions of a group move into the overflow together; `overflowGroups` adds separators (FE addSeparators). |
+| `group` |  | `number` | Group of the action (used when there is no `overflowGroup`). |
+| `isPrimaryAction` |  | `boolean` | The primary action of the page (FE applyManifestPrimaryActionEmphasis): emphasized, first and never in the overflow, while the emphasis is active (hidden filter bar or live mode). |
+| `defaultAction` |  | `string` | With `menu`: the key of the menu action run by the button itself (a split button, FE getMenuAction). |
+| `isAIOperation` |  | `boolean` | An AI operation (FE: the AI icon on the button). |
+| `template` |  | `() => ReactNode` | Content shown instead of a button (FE: a fragment name; react-idiom). |
+| `text` |  | `string` | Button text. |
+| `press` |  | `(e: { selectedContexts: Context[] }) => void` | The button was pressed; table actions receive the selected rows. |
+| `visible` |  | `boolean` |  |
+| `enabled` |  | `boolean` |  |
+| `requiresSelection` |  | `boolean` | Table actions: enabled only with selected rows. |
+| `enableOnSelect` |  | `'multi' \| 'single'` | Table actions: enabled with exactly one ("single") or at least one ("multi") selected row. |
+| `menu` |  | `string[]` | Table actions: a menu button with these actions (keys such as "DataFieldForAction::Namespace.action"). |
+| `position` |  | `$PositionSettings` |  |
+
+### `$ManifestOverflowGroupSettings` — interface
+
+`content › header › overflowGroups › <group>` (FE OverflowGroupManifestConfiguration).
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `showSeparator` |  | `boolean` | A separator before the first action of the group. |
+
 ### `$ManifestTableConfiguration` — interface
 
 `controlConfiguration ›
@@ -12313,7 +14157,8 @@ A filter field of `controlConfiguration ›
 | Member | Required | Type | Description |
 | --- | --- | --- | --- |
 | `tableSettings` |  | `$ManifestTableSettings` |  |
-| `actions` |  | `Record&lt;string, $ManifestActionSettings>` | Custom toolbar actions and menus, by key. |
+| `actions` |  | `Record&lt;string, $ManifestTableActionSettings>` | Custom toolbar actions and menus, by key. |
+| `overflowGroups` |  | `Record&lt;string, $ManifestOverflowGroupSettings>` | Separators of the toolbar actions' overflow groups, by group number. |
 | `columns` |  | `Record&lt;string, $ManifestColumnSettings>` | Custom columns, by key. |
 
 ### `$ManifestTableSettings` — interface
@@ -12336,7 +14181,14 @@ A filter field of `controlConfiguration ›
 | `quickVariantSelection` |  | `$QuickVariantSelectionSettings` |  |
 | `header` |  | `string` | Table title; default UI.HeaderInfo/TypeNamePlural. |
 | `headerVisible` |  | `boolean` |  |
-| `rowCountMode` |  | `'Auto' \| 'Fixed' \| 'Interactive'` | Grid tables. Default "Auto". |
+| `rowCountMode` |  | `'Auto' \| 'Fixed' \| 'Interactive'` | Not read by the list report: its grid tables are "Auto" (FE _getTableMode). |
+| `rowCount` |  | `number` | Not read by the list report: its grid tables show at least 3 rows (FE _getTableMode). |
+| `scrollThreshold` |  | `number` | Grid tables: rows read ahead while scrolling (added to the visible rows). |
+| `enablePaste` |  | `boolean` | Ctrl+V on the table creates rows from the pasted lines (tables that create inline). |
+| `enablePastingOfComputedProperties` |  | `boolean` | Pasted values also fill computed properties. |
+| `enableMassEdit` |  | `boolean \| { visibleFields?: string; ignoredFields?: string; /** @defaultValue "Isolated" */ operationGroupingMode?: 'ChangeSet' \| 'Isolat…` | "Edit" of the selected rows in one dialog; an object limits the fields (comma-separated) and sets the grouping. |
+| `analyticalConfiguration` |  | `{ /** The leaves are aggregated by the shown properties. @defaultValue false */ aggregationOnLeafLevel?: boolean; }` | Analytical tables: how the leaves are read. |
+| `additionalProperties` |  | `string[]` | Further properties read with the rows. |
 | `selectAll` |  | `boolean` | Responsive tables: the "select all" check box. |
 | `selectionLimit` |  | `number` |  |
 | `frozenColumnCount` |  | `number` |  |
@@ -12383,6 +14235,10 @@ sap.fe.core.converters.helpers.ConfigurableObject Position.
 | `contextPath` |  | `string` |  |
 | `label` |  | `string` | Tab text of a custom view. |
 | `template` |  | `() => ReactNode` | Content of a custom view (FE: a fragment name; react-idiom). |
+| `keepPreviousPersonalization` |  | `boolean` | The view's table keeps the personalization of the table of its annotation (FE: the table id is not the view key); otherwise each view has its own. |
+| `primary` |  | `{ annotationPath: string }[]` | Combined view (FE CombinedViewPathConfiguration, the only path): the chart, e.g. `[{ annotationPath: "com.sap.vocabularies.UI.v1.Chart" }]`. |
+| `secondary` |  | `{ annotationPath: string }[]` | Combined view: the table, e.g. `[{ annotationPath: "com.sap.vocabularies.UI.v1.LineItem" }]`. |
+| `defaultPath` |  | `'both' \| 'primary' \| 'secondary'` | Combined view: what is shown at first: "both" (chart and table), "primary" (the chart) or "secondary" (the table); a switch changes it (FE ListReportController _getDefaultPath). |
 
 ### `default` — component
 
@@ -12394,8 +14250,10 @@ sap.fe.core.converters.helpers.ConfigurableObject Position.
 | `contextPath` |  | `string` | Context path of the list, e.g. "/Orders" (a parameterized set: "/P/Set"); wins over `entitySet`. |
 | `navigation` |  | `Record&lt;string, { detail?: { route?: string } }>` | Row navigation per entity set: `detail.route` makes rows navigate to the object page (NavigationAdapter.toObject). |
 | `controlConfiguration` |  | `{ '@com.sap.vocabularies.UI.v1.LineItem'?: $ManifestTableConfiguration; '@com.sap.vocabularies.UI.v1.SelectionFields'?: $ManifestFilterCo…` | Settings of the controls by annotation path (table, filter bar). |
-| `content` |  | `{ header?: { actions?: Record&lt;string, $ManifestActionSettings> } }` |  |
-| `variantManagement` |  | `'None' \| 'Page'` | "Page": one variant management in the title for the filter bar and the table; "None": no variants. |
+| `content` |  | `{ header?: { actions?: Record&lt;string, $ManifestHeaderActionSettings>; /** Separators of the header actions' overflow groups, by group num…` |  |
+| `variantManagement` |  | `'Control' \| 'None' \| 'Page'` | "Page": one variant management in the title for the filter bar and the table; "Control": the filter bar, the table and the chart each have their own (the title shows the page title); "None": no variants. |
+| `defaultTemplateAnnotationPath` |  | `string` | Annotation path of the UI.SelectionPresentationVariant the list starts from (FE getCompliantVisualizationAnnotation): its presentation is the table's, its selection variant the filter bar's defaults. |
+| `shareOverflowPriority` |  | `'AlwaysOverflow' \| 'Disappear' \| 'High' \| 'Low' \| 'NeverOverflow'` | Overflow priority of the share button in the title's toolbar. |
 | `initialLoad` |  | `InitialLoadMode \| boolean` | "Enabled": load on start; "Disabled": only after "Go"; "Auto": load when the start variant has filter values (FE: the standard variant applies automatically when filter values are set). |
 | `liveMode` |  | `boolean` | Every filter change applies at once (no "Go"). |
 | `views` |  | `{ paths: $ViewPathSettings[]; showCounts?: boolean }` | Views: a tab per path (an IconTabBar), `showCounts` adds the number of items (default: with several entity sets). |
@@ -12541,6 +14399,7 @@ A custom section, or the override of an annotation section (ManifestSection).
 | `subSections` |  | `Record&lt;string, ManifestSubSection>` |  |
 | `actions` |  | `Record&lt;string, ManifestAction>` | Actions of a section without sub-sections. |
 | `isPartOfPreview` |  | `boolean` | false: behind "Show More". |
+| `useSingleTextAreaFieldAsNotes` |  | `boolean` | An annotation section: a form container whose only field is a multi-line text shows it without its label (FE ObjectPageConverter getUseSingleTextAreaFieldAsNotes). |
 | `messageStrip` |  | `ReactNode` | Message strip at the top of the section (OP-17); smart-kit addition. |
 
 ### `ManifestSideContent` — interface
@@ -12727,3 +14586,5 @@ A custom column, or the override of an annotation column (key "DataField::Path")
 | `isSearchable` |  | `boolean` | Search field (default by SearchRestrictions). |
 | `readOnly` |  | `boolean` | Read only also while editing. |
 | `ignoredFields` |  | `string` | Comma-separated properties whose columns are left out. |
+| `rowPress` |  | `(e: Table$RowPressEvent) => void` | A row was pressed (FE names an extension function; react-idiom). Default: navigation to the sub-object page. |
+| `selectionChange` |  | `(e: Table$SelectionChangeEvent) => void` | The selection changed (FE names an extension function; react-idiom). |

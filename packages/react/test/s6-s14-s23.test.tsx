@@ -123,7 +123,7 @@ describe('FCL column separator (S23)', () => {
 
   it('the arrow asks the host for the new layout (controlled) and the widths follow the layout', () => {
     const onLayoutChange = vi.fn();
-    const ui = (layout: LayoutType) => wrap(<FlexibleColumnLayout layout={layout} onStateChange={(e) => onLayoutChange(e.layout)} beginColumnPages={<p>list</p>} midColumnPages={<p>object</p>} />);
+    const ui = (layout: LayoutType) => wrap(<FlexibleColumnLayout layout={layout} separatorArrows onStateChange={(e) => onLayoutChange(e.layout)} beginColumnPages={<p>list</p>} midColumnPages={<p>object</p>} />);
     const { container, rerender } = render(ui('TwoColumnsMidExpanded'));
     expect(container.querySelector('[data-sk-fcl-separator="1"]')).not.toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Expand the first column' }));

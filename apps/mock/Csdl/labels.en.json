@@ -195,5 +195,13 @@
   "F.P_DisplayCurrency": "Display Currency",
   "F.P_KeyDate": "Key Date",
   "F.OrderCount": "Orders",
-  "F.DisplayCurrency": "Display Currency"
+  "F.DisplayCurrency": "Display Currency",
+  "Facet.ContactHeader": "Contact",
+  "Facet.ContactPerformance": "Performance",
+  "Facet.ContactData": "Contact Data",
+  "Facet.ContactActivity": "Activity",
+  "FG.ContactReach": "Reach",
+  "FG.ContactBanking": "Bank Details",
+  "FG.ContactLast": "Last Contact",
+  "FG.ContactSupplier": "Supplier Details"
 }

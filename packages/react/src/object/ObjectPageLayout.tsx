@@ -4,11 +4,12 @@
  * Sections are a view model (`sections`), so that custom sections can be inserted anywhere (`extend`).
  */
 import { Button, Skeleton } from '@mantine/core';
-import { useEffect, useImperativeHandle, useMemo, useRef, useState, type ReactNode, type Ref } from 'react';
+import { isValidElement, useEffect, useImperativeHandle, useMemo, useRef, useState, type ReactNode, type Ref } from 'react';
 import { useText } from '../context/SmartKitProvider';
 import type { BackgroundDesign } from '../controls/dialogs/IconTabBar';
 import { preventable, type PreventableEvent } from '../controls/types';
 import { DynamicPage, DynamicPageHeader, DynamicPageTitle, useDynamicPage, type $DynamicPageHeaderSettings, type $DynamicPageTitleSettings, type DynamicPage$BreakpointChangeEvent } from '../page/DynamicPage';
+import { landmarkProps, objectPageLandmarks, PageLandmarkOverride, type $ObjectPageAccessibleLandmarkInfoSettings, type FormattedLandmark } from '../page/landmarks';
 import { applyExtensions, type ExtendEntry } from '../util/extend';
 import { SectionBar } from './AnchorBar';
 import { scrollParent } from './scroll';
@@ -148,6 +149,8 @@ export interface $ObjectPageLayoutSettings {
   onSubSectionVisibilityChange?(e: ObjectPageLayout$SubSectionVisibilityChangeEvent): void;
   /** Fired when the page width moves into another media range. */
   onBreakpointChange?(e: ObjectPageLayout$BreakpointChangeEvent): void;
+  /** ARIA landmark roles and labels of the page's containers, an ObjectPageAccessibleLandmarkInfo; without it main, banner and region with default labels. */
+  landmarkInfo?: ReactNode;
   /** Extension: unique scope for element ids (e.g. the entity type). */
   scope: string;
   /** Extension: insert, replace or remove sections (ids as in the model). */
@@ -311,10 +314,12 @@ interface NavProps {
   onChoose(section: string, subSection?: string): boolean;
   onActive(id: string): void;
   onFixed(fixed: boolean): void;
+  /** Navigation landmark of the landmark info. */
+  landmark?: FormattedLandmark;
 }
 
 /** Anchor bar rendered inside DynamicPage, so that anchors can collapse the header before scrolling. */
-function SectionNavigation({ scope, sections, tabs, tab, popover, upperCase, backgroundDesign, visible, api, onTab, onChoose, onActive, onFixed }: NavProps) {
+function SectionNavigation({ scope, sections, tabs, tab, popover, upperCase, backgroundDesign, visible, api, onTab, onChoose, onActive, onFixed, landmark }: NavProps) {
   const ids = sections.map((s) => s.id);
   const spy = useSectionScrollSpy(scope, ids, !tabs);
   const page = useDynamicPage();
@@ -358,7 +363,7 @@ function SectionNavigation({ scope, sections, tabs, tab, popover, upperCase, bac
   if (!visible) return null;
   return (
     <SectionBar
-      content={items} selectedButton={tabs ? tab : spy.active} tabs={tabs} showPopover={popover} upperCase={upperCase} backgroundDesign={backgroundDesign}
+      content={items} selectedButton={tabs ? tab : spy.active} tabs={tabs} landmark={landmark} showPopover={popover} upperCase={upperCase} backgroundDesign={backgroundDesign}
       onSelect={(s, sub) => { if (onChoose(s, sub)) select(s, sub); }}
     />
   );
@@ -459,8 +464,16 @@ export function ObjectPageLayout(p: $ObjectPageLayoutSettings) {
     </DynamicPageHeader>
   ) : undefined;
   const o: ViewOptions = { scope: p.scope, lazy: Boolean(p.enableLazyLoading), level: p.sectionTitleLevel };
+  // Landmarks (sap.uxap.ObjectPageLayoutRenderer): the header label carries the title text.
+  const heading = isValidElement(p.headerTitle) ? (p.headerTitle.props as $ObjectPageDynamicHeaderTitleSettings).heading : undefined;
+  const titleText = typeof heading === 'string' || typeof heading === 'number' ? String(heading) : undefined;
+  const lm = objectPageLandmarks(landmarkProps<$ObjectPageAccessibleLandmarkInfoSettings>(p.landmarkInfo), {
+    root: t('object.rootLabel'), header: titleText ? t('object.headerLabelWithTitle', { title: titleText }) : t('object.headerLabel'),
+    footer: t('object.footerLabel'), navigation: t('object.sections'),
+  });
 
   const page = (
+    <PageLandmarkOverride.Provider value={lm}>
     <DynamicPage
       className={[
         'sk-object-page', tabs ? 'sk-object-page--tabs' : '', p.subSectionLayout === 'TitleOnLeft' ? 'sk-object-page--title-on-left' : '',
@@ -480,7 +493,7 @@ export function ObjectPageLayout(p: $ObjectPageLayoutSettings) {
         <SectionNavigation
           scope={p.scope} sections={sections} tabs={tabs} tab={tab} popover={p.showAnchorBarPopover !== false} upperCase={p.upperCaseAnchorBar !== false}
           backgroundDesign={p.backgroundDesignAnchorBar} visible={p.showAnchorBar !== false || tabs} api={nav}
-          onTab={onTab} onChoose={onChoose} onActive={onActive} onFixed={(fixed) => latest.current.onToggleAnchorBar?.({ fixed })}
+          onTab={onTab} onChoose={onChoose} onActive={onActive} onFixed={(fixed) => latest.current.onToggleAnchorBar?.({ fixed })} landmark={lm.navigation}
         />
       ) : undefined}
       footer={p.footer}
@@ -497,6 +510,7 @@ export function ObjectPageLayout(p: $ObjectPageLayoutSettings) {
         </>
       )}
     />
+    </PageLandmarkOverride.Provider>
   );
   if (!p.sideContent) return page;
   return (

@@ -25,6 +25,8 @@ export const en = {
   'page.collapseHeader': 'Collapse Header',
   'page.pinHeader': 'Pin Header',
   'page.unpinHeader': 'Unpin Header',
+  'page.roleDescription': 'Dynamic Page',
+  'page.expandedHeader': 'Expanded header',
   'page.overlay': 'The filters have changed. Choose Go to update the results.',
   'table.title': '{title} ({count})',
   'table.noData.start': 'To start, set the relevant filters.',
@@ -119,6 +121,10 @@ export const en = {
   'object.showMore': 'Show More',
   'object.showLess': 'Show Less',
   'object.sections': 'Sections',
+  'object.rootLabel': 'Object details Object Page',
+  'object.headerLabelWithTitle': '{title} Header area Object Page Header',
+  'object.headerLabel': 'Object header area Object Page Header',
+  'object.footerLabel': 'General Actions for Object Page',
   'object.moreSections': 'More sections',
   'object.subsections': 'Subsections of {name}',
   'object.loadError': 'Could not load: {message}',
@@ -200,6 +206,10 @@ export const en = {
   'layout.expandMid': 'Expand the second column',
   'layout.expandEnd': 'Expand the third column',
   'layout.showEnd': 'Show the third column',
+  'layout.firstColumn': 'First column',
+  'layout.midColumn': 'Middle column',
+  'layout.lastColumn': 'Last column',
+  'layout.separatorMove': 'Press ARROW keys to move',
 } as const;
 
 type Widen<T> = { -readonly [K in keyof T]: T[K] extends string ? string : { [P in keyof T[K]]: string } };

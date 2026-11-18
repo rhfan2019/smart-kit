@@ -5,7 +5,7 @@
  */
 import { Avatar, Button, Checkbox, Popover, Textarea, TextInput } from '@mantine/core';
 import { ArrowDownUp, Filter, Search, X } from 'lucide-react';
-import { useImperativeHandle, useState, type ReactNode, type Ref } from 'react';
+import { useImperativeHandle, useRef, useState, type ReactNode, type Ref } from 'react';
 import { relativeDateTime } from '../../cards/format';
 import type { TextFn } from '../../i18n/text';
 import { useControlLocale, useControlText } from '../context';
@@ -128,6 +128,16 @@ export interface Timeline$ItemFilteringEvent {
 /** Event object of `onSelect`. */
 export interface Timeline$SelectEvent { selectedItem: TimelineSelectedItem; userAction: boolean }
 
+/** A group of the Timeline (getGroups); stands for UI5's group header item, whose userName holds the group key. */
+export interface TimelineGroup { key: string; title: string; dateTime?: Date }
+/** Result of the grouping function of setCustomGrouping: the group key, its title and the item's date. */
+export interface TimelineCustomGroup { key: string; title: string; date?: Date }
+/**
+ * A filter on the items for setModelFilter / setCustomModelFilter; it stands for sap.ui.model.Filter (like the Filter's
+ * `test` function): true keeps the item. The items are filtered on the client, as a Timeline bound to a client model.
+ */
+export type TimelineItemFilter = (item: TimelineSelectedItem) => boolean;
+
 export interface $TimelineSettings {
   children?: ReactNode;
   /** @defaultValue 'Right' */
@@ -204,10 +214,35 @@ export interface Timeline {
   adjustUI(): void;
   /** Shows a message strip above the items; closing it fires `onCustomMessageClosed`. */
   setCustomMessage(message: string | null): void;
+  /** The selected item-filter criteria, `{ key, text }` (text defaults to the key). */
+  getCurrentFilter(): TimelineFilterListItem[];
+  /** Selects item-filter criteria by key (one key or an array); keys not in the filter list are ignored. Fires no filterSelectionChange. */
+  setCurrentFilter(aSelectedItemKeys: string[] | string): void;
+  /** Sets the search term (the search field and the search filter); fires no filterSelectionChange. */
+  setCurrentSearch(sSearchTerm: string): void;
+  /** Sets the time range filter; `type` is the step used for the dates in the filter info bar (default Day). */
+  setCurrentTimeFilter(mArguments: { from?: Date | null; to?: Date | null; type?: TimelineGroupType }): void;
+  /** The shown groups (empty when not grouped); they stand for UI5's group header items. */
+  getGroups(): TimelineGroup[];
+  /** Groups by a function of the item date returning `{ key, title, date }` (instead of groupByType); `null` removes it. */
+  setCustomGrouping(fnGroupBy: ((date: Date) => TimelineCustomGroup) | null): void;
+  /**
+   * Replaces one of the default filters (Data: item filter, Time: time range, Search: search) by `filter`; `null` restores
+   * the default (and for Time clears the dates). With `refresh: false` it takes effect on the next filter change. A user
+   * change of that filter goes back to the default filter, as in UI5.
+   */
+  setModelFilter(mArguments: { type: TimelineFilterType; filter?: TimelineItemFilter | null; refresh?: boolean }): void;
+  /** Adds (or replaces) a filter on top of the default filters under an id; `null` removes it. Cleared by the info bar's clear icon. */
+  setCustomModelFilter(sFilterId: string, oFilter: TimelineItemFilter | null): void;
+  /** Replaces the default text of the Data or Time part of the filter info bar (Search is not supported, as in UI5). */
+  setModelFilterMessage(sType: TimelineFilterType, sMessage: string): void;
+  /** Appends a message to the filter info bar text. */
+  setCustomFilterMessage(sMessage: string): void;
 }
 
 interface Entry { id: string; item: TimelineSelectedItem; date?: Date; index: number }
 interface Criteria { query: string; keys: string[]; time: TimelineTimeKeys }
+type ModelFilters = Partial<Record<TimelineFilterType, TimelineItemFilter>>;
 
 const dateParts = (d: Date, timeZone?: string) => {
   const parts = new Intl.DateTimeFormat('en-CA', { timeZone, year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(d);
@@ -242,13 +277,13 @@ export function timelineGroup(t: TextFn, type: TimelineGroupType, d: Date, intlL
   }
 }
 
-/** The filters an item fails (empty object: it is shown). */
-function failing(e: Entry, c: Criteria): TimelineFilterReasons {
+/** The filters an item fails (empty object: it is shown); a model filter (setModelFilter) replaces the default one of its type. */
+function failing(e: Entry, c: Criteria, mf: ModelFilters = {}): TimelineFilterReasons {
   const r: TimelineFilterReasons = {};
   const q = c.query.trim().toLowerCase();
-  if (q && ![e.item.title, e.item.text, e.item.userName, e.item.filterValue].some((v) => v?.toLowerCase().includes(q))) r.search = true;
-  if (c.keys.length && !c.keys.includes(e.item.filterValue ?? '')) r.data = true;
-  if ((c.time.from || c.time.to) && (!e.date || (c.time.from && e.date < c.time.from) || (c.time.to && e.date > c.time.to))) r.time = true;
+  if (mf.Search ? !mf.Search(e.item) : q && ![e.item.title, e.item.text, e.item.userName, e.item.filterValue].some((v) => v?.toLowerCase().includes(q))) r.search = true;
+  if (mf.Data ? !mf.Data(e.item) : c.keys.length && !c.keys.includes(e.item.filterValue ?? '')) r.data = true;
+  if (mf.Time ? !mf.Time(e.item) : (c.time.from || c.time.to) && (!e.date || (c.time.from && e.date < c.time.from) || (c.time.to && e.date > c.time.to))) r.time = true;
   return r;
 }
 
@@ -271,6 +306,15 @@ export function Timeline(p: $TimelineSettings) {
   }
   const [filterOpen, setFilterOpen] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  // setModelFilter: `pendingFilters` holds the latest call, `modelFilters` what is applied (refresh: false waits)
+  const pendingFilters = useRef<ModelFilters>({});
+  const [modelFilters, setModelFilters] = useState<ModelFilters>({});
+  const [customFilters, setCustomFilters] = useState<ReadonlyMap<string, TimelineItemFilter>>(() => new Map());
+  // setModelFilterMessage / setCustomFilterMessage
+  const [messages, setMessages] = useState<{ data?: string; range?: string; custom?: string }>({});
+  const [rangeType, setRangeType] = useState<TimelineGroupType | undefined>();
+  const [customGroupBy, setCustomGroupBy] = useState<{ fn: (date: Date) => TimelineCustomGroup } | null>(null);
+  const groupsRef = useRef<TimelineGroup[]>([]);
   const horizontal = p.axisOrientation === 'Horizontal';
   const groupBy = p.groupByType ?? 'None';
 
@@ -280,10 +324,10 @@ export function Timeline(p: $TimelineSettings) {
     ?? [...new Set(all.map((e) => e.item.filterValue).filter((v): v is string => !!v))].map((key) => ({ key, text: key }));
 
   /** New filter criteria: fires itemFiltering for each item that would be hidden (preventDefault keeps it). */
-  const apply = (next: Criteria, change: Timeline$FilterSelectionChangeEvent) => {
+  const apply = (next: Criteria, change?: Timeline$FilterSelectionChangeEvent, mf: ModelFilters = modelFilters) => {
     const keep = new Set<string>();
     for (const e of all) {
-      const reasons = failing(e, next);
+      const reasons = failing(e, next, mf);
       if (!Object.keys(reasons).length || !p.onItemFiltering) continue;
       const ev = preventable({ item: e.item, reasons, dataKeys: next.keys, timeKeys: next.time, searchTerm: next.query });
       p.onItemFiltering(ev);
@@ -292,7 +336,27 @@ export function Timeline(p: $TimelineSettings) {
     setCriteria(next);
     setKept(keep);
     setShown(threshold);
-    p.onFilterSelectionChange?.(change);
+    if (change) p.onFilterSelectionChange?.(change);
+  };
+  /** A user change of one filter type: it drops the model filter and the message of that type (as Timeline._filterData). */
+  const userApply = (type: TimelineFilterType, next: Criteria, change: Timeline$FilterSelectionChangeEvent) => {
+    const mf = { ...pendingFilters.current };
+    delete mf[type];
+    pendingFilters.current = mf;
+    setModelFilters(mf);
+    if (type !== 'Search') setMessages((m) => ({ ...m, [type === 'Data' ? 'data' : 'range']: undefined }));
+    apply(next, change, mf);
+  };
+  /** The clear icon of the filter info bar (Timeline._clearFilter): item and time filters, their model filters and messages, custom filters. */
+  const clearFilter = () => {
+    const mf = { ...pendingFilters.current };
+    delete mf.Data;
+    delete mf.Time;
+    pendingFilters.current = mf;
+    setModelFilters(mf);
+    setCustomFilters(new Map());
+    setMessages({});
+    apply({ ...criteria, keys: [], time: {} }, { clear: true }, mf);
   };
   const reset = () => {
     setCriteria(EMPTY);
@@ -305,9 +369,47 @@ export function Timeline(p: $TimelineSettings) {
     resetTimeLimits: () => setCriteria((c) => ({ ...c, time: {} })),
     adjustUI: () => {},
     setCustomMessage: (m) => setMessage(m || null),
+    getCurrentFilter: () => criteria.keys.map((key) => {
+      const o = options.find((x) => x.key === key);
+      return { key, text: o?.text || key };
+    }),
+    setCurrentFilter: (aSelectedItemKeys) => {
+      if (!aSelectedItemKeys) return;
+      const wanted = Array.isArray(aSelectedItemKeys) ? aSelectedItemKeys : [aSelectedItemKeys];
+      apply({ ...criteria, keys: options.filter((o) => wanted.includes(o.key)).map((o) => o.key) });
+    },
+    setCurrentSearch: (sSearchTerm) => apply({ ...criteria, query: sSearchTerm ?? '' }),
+    setCurrentTimeFilter: (mArguments) => {
+      setRangeType(mArguments.type);
+      apply({ ...criteria, time: { from: mArguments.from ?? undefined, to: mArguments.to ?? undefined } });
+    },
+    getGroups: () => groupsRef.current,
+    setCustomGrouping: (fnGroupBy) => setCustomGroupBy(fnGroupBy ? { fn: fnGroupBy } : null),
+    setModelFilter: ({ type, filter, refresh }) => {
+      const mf = { ...pendingFilters.current };
+      if (filter) mf[type] = filter;
+      else delete mf[type];
+      pendingFilters.current = mf;
+      if (refresh === false) return;
+      setModelFilters(mf);
+      // a removed Time filter also resets the dates (as in UI5)
+      apply(type === 'Time' && !filter ? { ...criteria, time: {} } : criteria, undefined, mf);
+    },
+    setCustomModelFilter: (sFilterId, oFilter) => setCustomFilters((m) => {
+      const next = new Map(m);
+      if (oFilter) next.set(sFilterId, oFilter);
+      else next.delete(sFilterId);
+      return next;
+    }),
+    setModelFilterMessage: (sType, sMessage) => {
+      if (sType === 'Data') setMessages((m) => ({ ...m, data: sMessage }));
+      if (sType === 'Time') setMessages((m) => ({ ...m, range: sMessage }));
+    },
+    setCustomFilterMessage: (sMessage) => setMessages((m) => ({ ...m, custom: sMessage })),
   }));
 
-  const sorted = all.filter((e) => kept.has(e.id) || !Object.keys(failing(e, criteria)).length);
+  const custom = [...customFilters.values()];
+  const sorted = all.filter((e) => custom.every((f) => f(e.item)) && (kept.has(e.id) || !Object.keys(failing(e, criteria, modelFilters)).length));
   if (p.sort !== false) {
     sorted.sort((a, b) => {
       if (!a.date || !b.date) return a.date ? -1 : b.date ? 1 : a.index - b.index;
@@ -316,13 +418,29 @@ export function Timeline(p: $TimelineSettings) {
   }
   const visible = threshold > 0 ? sorted.slice(0, shown) : sorted;
 
-  const groups: Array<{ key: string; text?: string; entries: Entry[] }> = [];
+  const groups: Array<{ key: string; text?: string; date?: Date; entries: Entry[] }> = [];
   for (const e of visible) {
-    const g = groupBy !== 'None' && e.date ? timelineGroup(t, groupBy, e.date, intlLocale, timeZone) : { key: '', text: undefined };
+    const own = customGroupBy && e.date ? customGroupBy.fn(e.date) : undefined;
+    const g = own ? { key: own.key, text: own.title, date: own.date ?? e.date }
+      : groupBy !== 'None' && e.date ? { ...timelineGroup(t, groupBy, e.date, intlLocale, timeZone), date: e.date } : { key: '', text: undefined, date: undefined };
     const last = groups[groups.length - 1];
     if (last && last.key === g.key) last.entries.push(e);
-    else groups.push({ key: g.key, text: g.text, entries: [e] });
+    else groups.push({ key: g.key, text: g.text, date: g.date, entries: [e] });
   }
+  groupsRef.current = groups.filter((g) => g.text !== undefined).map((g) => ({ key: g.key, title: g.text!, dateTime: g.date }));
+
+  // the filter info bar text (Timeline._getFilterMessage / _getRangeMessage)
+  const rangeTitle = (d: Date | undefined) => (d ? timelineGroup(t, rangeType && rangeType !== 'None' ? rangeType : 'Day', d, intlLocale, timeZone).text : '');
+  const infoParts: string[] = [];
+  if (messages.data) infoParts.push(messages.data);
+  else if (criteria.keys.length) {
+    infoParts.push(`${p.filterTitle || t('ctl.timeline.filterItems')} (${criteria.keys.map((k) => options.find((o) => o.key === k)?.text || k).join(', ')})`);
+  }
+  // UI5's range filter always has both dates; here one date is enough to show the range part
+  if (messages.range) infoParts.push(messages.range);
+  else if (criteria.time.from || criteria.time.to) infoParts.push(`${t('ctl.timeline.rangeSelection')} (${rangeTitle(criteria.time.from)} - ${rangeTitle(criteria.time.to)})`);
+  if (messages.custom) infoParts.push(messages.custom);
+  const filterInfo = infoParts.length ? t('ctl.timeline.filterInfoBy', { text: infoParts.join(', ') }) : null;
 
   const select = (item: TimelineSelectedItem) => {
     item.onPress?.();
@@ -350,7 +468,7 @@ export function Timeline(p: $TimelineSettings) {
           {p.showSearch !== false && (
             <TextInput className="sk-timeline__search" size="xs" type="search" placeholder={t('ctl.timeline.search')} aria-label={t('ctl.timeline.search')}
               leftSection={<Search className="sk-timeline__bar-icon" aria-hidden="true" />} value={criteria.query}
-              onChange={(ev) => apply({ ...criteria, query: ev.currentTarget.value }, { type: 'Search', searchTerm: ev.currentTarget.value })} />
+              onChange={(ev) => userApply('Search', { ...criteria, query: ev.currentTarget.value }, { type: 'Search', searchTerm: ev.currentTarget.value })} />
           )}
           {p.showSort !== false && p.sort !== false && (
             <Button className="sk-timeline__sort" size="xs" variant="subtle" aria-label={t('ctl.timeline.sort')} aria-pressed={oldestFirst} title={t('ctl.timeline.sort')}
@@ -375,7 +493,7 @@ export function Timeline(p: $TimelineSettings) {
                 {p.customFilter ?? (
                   <>
                     {p.showItemFilter !== false && options.length > 0 && (
-                      <Checkbox.Group value={criteria.keys} onChange={(keys) => apply({ ...criteria, keys }, {
+                      <Checkbox.Group value={criteria.keys} onChange={(keys) => userApply('Data', { ...criteria, keys }, {
                         type: 'Data', selectedItem: keys[0], selectedItems: options.filter((o) => keys.includes(o.key)),
                       })}>
                         <div className="sk-timeline__filter-list">
@@ -391,7 +509,7 @@ export function Timeline(p: $TimelineSettings) {
                               const v = ev.currentTarget.value;
                               const d = v ? new Date(`${v}T${k === 'from' ? '00:00:00' : '23:59:59.999'}`) : undefined;
                               const time = { ...criteria.time, [k]: d };
-                              apply({ ...criteria, time }, { type: 'Time', timeKeys: time });
+                              userApply('Time', { ...criteria, time }, { type: 'Time', timeKeys: time });
                             }} />
                         ))}
                       </div>
@@ -402,6 +520,14 @@ export function Timeline(p: $TimelineSettings) {
               </Popover.Dropdown>
             </Popover>
           )}
+        </div>
+      )}
+      {filterInfo && (
+        <div className="sk-timeline__filter-info" role="status" title={filterInfo} data-sk-timeline-filter-info>
+          <span>{filterInfo}</span>
+          <button type="button" className="sk-timeline__message-close" aria-label={t('ctl.timeline.clear')} title={t('ctl.timeline.clear')} onClick={clearFilter}>
+            <X className="sk-timeline__bar-icon" aria-hidden="true" />
+          </button>
         </div>
       )}
       {message && (

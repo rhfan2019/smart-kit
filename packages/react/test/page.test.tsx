@@ -89,7 +89,7 @@ describe('DynamicPage', () => {
 describe('FlexibleColumnLayout', () => {
   const fcl = (layout: Parameters<typeof FlexibleColumnLayout>[0]['layout'], onStateChange = vi.fn(), ref?: React.Ref<FclInstance>) => wrap(
     <FlexibleColumnLayout
-      ref={ref} layout={layout} onStateChange={onStateChange}
+      ref={ref} layout={layout} onStateChange={onStateChange} separatorArrows
       beginColumnPages={<p>list</p>}
       midColumnPages={<DynamicPage title={<DynamicPageTitle heading="Object" navigationActions={<><Paginator /><FlexibleColumnLayoutActions /></>} />} />}
       midPaging={{ onNext: () => undefined }}

@@ -22,6 +22,7 @@ import type { BackgroundDesign } from '../controls/dialogs/IconTabBar';
 import type { PageBackgroundDesign } from '../controls/dialogs/Wizard';
 import { OverflowToolbar } from '../controls/display/OverflowToolbar';
 import { useColumn } from './columnContext';
+import { dynamicPageLandmarks, landmarkProps, PageLandmarkOverride, type $DynamicPageAccessibleLandmarkInfoSettings } from './landmarks';
 
 /** Page width from which the navigation actions share the line with the actions (DP Responsiveness). */
 const LAYOUT_BREAKPOINT = 1280;
@@ -108,6 +109,8 @@ export interface $DynamicPageSettings {
   fitContent?: boolean;
   /** Sticky content under the header (an anchor bar or tab bar). */
   stickySubheaderProvider?: ReactNode;
+  /** ARIA landmark roles and labels of the page's containers, a DynamicPageAccessibleLandmarkInfo; without it no landmarks are written. */
+  landmarkInfo?: ReactNode;
   /** Fired when the pin button is pressed. */
   onPinnedStateChange?(e: DynamicPage$PinnedStateChangeEvent): void;
   /** Fired when the page width moves into another media range. */
@@ -259,7 +262,7 @@ export function DynamicPage(p: $DynamicPageSettings) {
     p.onPinnedStateChange?.({ pinned: v });
   };
 
-  const headerRef = useRef<HTMLDivElement>(null);
+  const headerRef = useRef<HTMLElement>(null);
   const stickyRef = useRef<HTMLDivElement>(null);
   const navRef = useRef<HTMLDivElement>(null);
   const [titleHeight, setTitleHeight] = useState(0);
@@ -488,25 +491,35 @@ export function DynamicPage(p: $DynamicPageSettings) {
     </TitleCtx.Provider>
   );
 
+  // Landmarks (sap.f.DynamicPageRenderer): an ObjectPageLayout gives its own (PageLandmarkOverride).
+  const override = useContext(PageLandmarkOverride);
+  const lm = override ?? dynamicPageLandmarks(landmarkProps<$DynamicPageAccessibleLandmarkInfoSettings>(p.landmarkInfo), textOf(titleProps.heading), t('page.roleDescription'));
+  // the tags differ by landmark (article / header / footer, or div with a role); the refs only need HTMLElement
+  const RootTag = lm.root.tag as 'div';
+  const HeaderTag = lm.header.tag as 'div';
+  const FooterTag = lm.footer.tag as 'div';
+
+  // sap.f.DynamicPageHeader: a region labelled "Expanded header" (or the info's headerContentLabel).
   const headerContent = hasHeader && expanded ? (
-    <div className="sk-dynamic-page__header" ref={headerRef} id={`${p['data-testid'] ?? 'sk'}-header`} data-sk-header-region data-background-design={headerProps.backgroundDesign}>
+    <section className="sk-dynamic-page__header" ref={headerRef} id={`${p['data-testid'] ?? 'sk'}-header`} role="region" aria-label={lm.headerContentLabel ?? t('page.expandedHeader')} data-sk-header-region data-background-design={headerProps.backgroundDesign}>
       {p.header}
-    </div>
+    </section>
   ) : null;
 
   return (
     <Ctx.Provider value={ctx}>
-      <div
+      <RootTag
         ref={rootRef}
+        role={lm.root.role} aria-label={lm.root.label} aria-roledescription={lm.root.roleDescription}
         className={['sk-dynamic-page', `sk-dynamic-page--${fill ? 'fill' : 'flow'}`, p.letterboxing ? 'sk-dynamic-page--letterboxing' : '', p.className].filter(Boolean).join(' ')}
         data-testid={p['data-testid']} data-wide={wide || undefined} data-background-design={p.backgroundDesign ?? 'Standard'}
         style={{ ['--sk-sticky-offset' as string]: `calc(var(--sk-sticky-top) + ${titleHeight}px)` }}
       >
-        <div className="sk-dynamic-page__sticky" ref={stickyRef}>
+        <HeaderTag className="sk-dynamic-page__sticky" ref={stickyRef} role={lm.header.role} aria-label={lm.header.label}>
           {titleArea}
           {pinned || !pageSnap ? headerContent : null}
           {summaryLine ? null : pinned || !pageSnap || scrolledPast || !expanded ? features : null}
-        </div>
+        </HeaderTag>
         {pageSnap && !pinned ? (
           <>
             {headerContent}
@@ -519,9 +532,11 @@ export function DynamicPage(p: $DynamicPageSettings) {
             {p.stickySubheaderProvider}
           </div>
         ) : null}
-        <div className="sk-dynamic-page__content" tabIndex={-1}>{p.content}</div>
-        {p.footer && p.showFooter ? <div className="sk-dynamic-page__footer">{p.footer}</div> : null}
-      </div>
+        <div className="sk-dynamic-page__content" tabIndex={-1} role={lm.content.role} aria-label={lm.content.label}>
+          <PageLandmarkOverride.Provider value={null}>{p.content}</PageLandmarkOverride.Provider>
+        </div>
+        {p.footer && p.showFooter ? <FooterTag className="sk-dynamic-page__footer" role={lm.footer.role} aria-label={lm.footer.label}>{p.footer}</FooterTag> : null}
+      </RootTag>
     </Ctx.Provider>
   );
 }

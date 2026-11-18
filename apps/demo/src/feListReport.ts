@@ -21,7 +21,7 @@ export interface ManifestImplementations {
 
 function convert(value: unknown, impl: ManifestImplementations, key?: string): unknown {
   if (typeof value === 'string') {
-    if (key === 'template') return impl.templates?.[value] ?? (() => { throw new Error(`no React template for ${value}`); })();
+    if (key === 'template' || key === 'expandedHeaderFragment' || key === 'collapsedHeaderFragment') return impl.templates?.[value] ?? (() => { throw new Error(`no React template for ${value}`); })();
     if (key === 'press') return impl.handlers?.[value] ?? (() => { throw new Error(`no handler for ${value}`); })();
     const i18n = /^\{i18n>(.+)\}$/.exec(value);
     return i18n ? impl.text(i18n[1]!) : value;

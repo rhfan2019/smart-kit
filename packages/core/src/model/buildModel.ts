@@ -70,6 +70,12 @@ const pathOf = (v: unknown): string | undefined => {
   return undefined;
 };
 const join = (prefix: string, path: string) => (prefix ? `${prefix}/${path}` : path);
+/** UI.Hidden given as a path (FE getExpressionFromAnnotation: a binding), relative to `prefix`; constants give undefined. */
+const hiddenPathOf = (v: unknown, prefix = ''): string | undefined => {
+  if (!v || typeof v !== 'object' || v instanceof Boolean || v instanceof String) return undefined;
+  const o = v as Any;
+  return (o.type === 'Path' || o.type === 'PropertyPath') && typeof (o.path ?? o.value) === 'string' ? join(prefix, o.path ?? o.value) : undefined;
+};
 
 // UI.CriticalityType values; VeryNegative (-1) and VeryPositive (4) get no colour, as in Fiori elements (D41).
 const CRITICALITY: Record<string, number> = { VeryNegative: -1, Neutral: 0, Negative: 1, Critical: 2, Positive: 3, VeryPositive: 4, Information: 5 };
@@ -143,9 +149,10 @@ export function fromConverted(c: ConvertedMetadata, diagnostics: string[] = []):
       const analytics = [(c as Any).entityContainer?.annotations?.Analytics, raw[es.entityTypeName ?? es.entityType?.fullyQualifiedName]?.annotations?.Analytics].filter(Boolean);
       capabilities.aggregation = aggregationFrom(apply, es.annotations?.Aggregation?.ApplySupported ? es.annotations.Aggregation : typeAggregation, analytics);
     }
-    // UI.CreateHidden / UI.DeleteHidden: on the entity set, else on its type (FE StandardActions isActionAnnotatedHidden).
+    // UI.CreateHidden / UI.DeleteHidden / UI.UpdateHidden: on the entity set, else on its type (FE StandardActions
+    // isActionAnnotatedHidden, ModelHelper isUpdateHidden).
     const typeUi = raw[es.entityTypeName ?? es.entityType?.fullyQualifiedName]?.annotations?.UI;
-    for (const [term, key] of [['CreateHidden', 'createHidden'], ['DeleteHidden', 'deleteHidden']] as const) {
+    for (const [term, key] of [['CreateHidden', 'createHidden'], ['DeleteHidden', 'deleteHidden'], ['UpdateHidden', 'updateHidden']] as const) {
       const hidden = valueRef(es.annotations?.UI?.[term] ?? typeUi?.[term]);
       if (hidden) capabilities[key] = hidden;
     }
@@ -348,6 +355,8 @@ function buildProperty(p: Any, keys: string[], et: Any): PropertyModel {
     // UI.Criticality on a property is not read: the vocabulary applies it to annotations (the LineItem row highlight)
     // and Fiori elements ignores it on properties (D41).
     hidden: bool(ui.Hidden, false) || (common.FieldControl !== undefined && enumName(common.FieldControl) === 'Hidden'),
+    ...(hiddenPathOf(ui.Hidden) ? { hiddenPath: hiddenPathOf(ui.Hidden) } : {}),
+    ...(str(ui.Placeholder) ? { placeholder: str(ui.Placeholder) } : {}),
     hiddenFilter: bool(ui.HiddenFilter, false),
     computed: bool(core.Computed, false),
     immutable: bool(core.Immutable, false),
@@ -758,6 +767,7 @@ function feAnnotationKey(target: string): string {
 /** UI.DataFieldForAction records of a collection (UI.LineItem, UI.Identification). */
 function buildActions(records: unknown, scope: string, ctx: UiContext): ActionModel[] {
   if (!Array.isArray(records)) return [];
+  const identification = scope.endsWith('@UI.Identification');
   const out: ActionModel[] = [];
   // UI.DataFieldForActionGroup: its actions are listed with `menu` (FE getDataFieldAnnotationAction, ActionType.Menu).
   const flat = (records as Any[]).flatMap((rec) => {
@@ -779,6 +789,10 @@ function buildActions(records: unknown, scope: string, ctx: UiContext): ActionMo
     const bindingName: string | undefined = bound ? params[0]?.name : undefined;
     const avail = target?.annotations?.Core?.OperationAvailable;
     const operationAvailable = avail !== undefined && avail !== null ? actionPathRef(avail, bindingName) : undefined;
+    // FE HeaderAndFooterAction getIdentificationDataFieldForActions: a bound action whose OperationAvailable is statically
+    // false is left out of the object page header and footer.
+    if (identification && bound && operationAvailable && 'value' in operationAvailable && operationAvailable.value === false) continue;
+    const hidden = hiddenPathOf(rec.annotations?.UI?.Hidden);
     out.push({
       id: str(rec.ID) ?? `DataFieldForAction::${qualified}`,
       label: str(rec.Label) ?? humanize(qualified.split('.').pop()!),
@@ -792,6 +806,8 @@ function buildActions(records: unknown, scope: string, ctx: UiContext): ActionMo
       ...(rec.$menu ? { menu: rec.$menu as string } : {}),
       criticality: criticalityRef(rec.Criticality),
       operationAvailable,
+      ...(hidden ? { hidden } : {}),
+      ...(bool(rec.annotations?.UI?.Emphasized, false) ? { emphasized: true } : {}),
       parameters: params.slice(bound ? 1 : 0).map((p) => ({
         name: String(p.name),
         edmType: String(p.type),
@@ -818,7 +834,21 @@ function lookupAnnotation(typeName: string, navigation: string, term: string, qu
   return ui[key] === undefined ? undefined : { value: ui[key], typeName: tn };
 }
 
+/**
+ * A record of a field collection (UI.LineItem, UI.FieldGroup, UI.Identification …) with its UI.Hidden path (of the
+ * record, else of its property, FE UIFormatters isVisible) and UI.PartOfPreview (FE Form isFieldPartOfPreview).
+ */
 function buildField(rec: Any, typeName: string, ctx: UiContext, scope: string, semanticKey: string[]): FieldModel | undefined {
+  const f = buildFieldRecord(rec, typeName, ctx, scope, semanticKey);
+  if (!f) return undefined;
+  const prefix = f.path?.includes('/') ? f.path.slice(0, f.path.lastIndexOf('/')) : '';
+  const prop = f.kind === 'field' && f.path ? resolvePath(ctx.entityTypes, typeName, f.path).property : undefined;
+  const hidden = hiddenPathOf(rec.annotations?.UI?.Hidden) ?? (prop?.hiddenPath ? join(prefix, prop.hiddenPath) : undefined);
+  const preview = rec.annotations?.UI?.PartOfPreview !== undefined && !bool(rec.annotations.UI.PartOfPreview, true);
+  return hidden || preview ? { ...f, ...(hidden ? { hidden } : {}), ...(preview ? { partOfPreview: false } : {}) } : f;
+}
+
+function buildFieldRecord(rec: Any, typeName: string, ctx: UiContext, scope: string, semanticKey: string[]): FieldModel | undefined {
   const type = String(rec.$Type ?? '').split('.').pop();
   if (rec.annotations?.UI?.Hidden !== undefined && bool(rec.annotations.UI.Hidden, false)) return undefined;
   const lineItem = scope.includes('@UI.LineItem');
@@ -1306,24 +1336,41 @@ function contentForReference(f: Any, typeName: string, ctx: UiContext, semanticK
   if (!target) return undefined;
   const { navigation, term, qualifier } = splitAnnotationPath(target);
   if (term === 'LineItem') return tableFor(typeName, navigation, ctx, qualifier);
+  const group = (fields: FieldModel[], label: string | undefined): SubSectionModel['content'] => ({
+    kind: 'form',
+    groups: [{
+      id: facetId(f, annotationId(target)), label, fields,
+      ...(partOfPreview(f) ? {} : { partOfPreview: false }),
+      ...(hiddenPathOf(f.annotations?.UI?.Hidden) ? { hidden: hiddenPathOf(f.annotations.UI.Hidden) } : {}),
+    }],
+  });
   if (term === 'FieldGroup' || term === 'Identification') {
     const found = lookupAnnotation(typeName, navigation, term, qualifier, ctx);
     if (!found) return undefined;
     const data = term === 'FieldGroup' ? (found.value as Any).Data : found.value;
-    const fields = buildFields(data, found.typeName, ctx, scope, semanticKey).map((fd) => (navigation && fd.path ? { ...fd, path: join(navigation, fd.path) } : fd));
-    return { kind: 'form', groups: [{ id: facetId(f, annotationId(target)), label: str((found.value as Any).Label) ?? str(f.Label), fields }] };
+    // FE Form getFormElementsFromAnnotations: actions and intent navigation are no form elements.
+    const fields = buildFields(data, found.typeName, ctx, scope, semanticKey).filter((fd) => fd.kind !== 'action').map((fd) => (navigation && fd.path ? { ...fd, path: join(navigation, fd.path) } : fd));
+    return group(fields, str((found.value as Any).Label) ?? str(f.Label));
   }
   if (term === 'DataPoint') {
     const found = lookupAnnotation(typeName, navigation, term, qualifier, ctx);
     const dp = found ? buildDataPoint(found.value as Any, qualifier ?? 'DataPoint', navigation, typeName, ctx) : undefined;
-    return dp ? { kind: 'dataPoint', dataPoint: dp } : undefined;
+    if (!dp) return undefined;
+    // In a header facet the data point is a facet of its own; in a section it is a form element (FE Form: key "DataPoint::<qualifier>").
+    if (scope.endsWith('@UI.HeaderFacets')) return { kind: 'dataPoint', dataPoint: dp };
+    return group([{ id: `DataPoint::${qualifier ?? ''}`, kind: 'dataPoint', dataPoint: dp, label: dp.title, criticalityIcon: true, isSemanticKey: false }], str(f.Label));
+  }
+  if (term === 'Contact') {
+    // Communication.Contact in a form (FE Form "Contact::<qualifier>") or as a header facet (ObjectPageHeaderContact).
+    const field = buildField({ $Type: 'com.sap.vocabularies.UI.v1.DataFieldForAnnotation', Target: { value: target }, Label: f.Label }, typeName, ctx, scope, semanticKey);
+    return field ? group([{ ...field, id: `Contact::${qualifier ?? ''}` }], str(f.Label)) : undefined;
   }
   if (term === 'Chart' && scope.endsWith('@UI.HeaderFacets')) {
     const found = lookupAnnotation(typeName, navigation, term, qualifier, ctx);
     const chart = found ? buildChart(found.value as Any, qualifier ?? 'Chart', navigation, typeName, ctx) : undefined;
     return chart ? { kind: 'chart', chart } : undefined;
   }
-  ctx.warn('UNSUPPORTED_FACET', `Facet target ${target} is not supported in phase 1`, scope, 'info');
+  ctx.warn('UNSUPPORTED_FACET', `Facet target ${target} is not supported`, scope, 'info');
   return undefined;
 }
 
@@ -1331,9 +1378,28 @@ function partOfPreview(f: Any): boolean {
   return bool(f.annotations?.UI?.PartOfPreview, true);
 }
 
+/** UI.Hidden of a facet: 'drop' for a constant true (FE: visible "false"), else its path (or undefined). */
+function facetHidden(f: Any): string | 'drop' | undefined {
+  const h = f.annotations?.UI?.Hidden;
+  if (h === undefined || h === null) return undefined;
+  return hiddenPathOf(h) ?? (bool(h, false) ? 'drop' : undefined);
+}
+
+/** FE SubSection visualizationTerms: facets whose target is a table, chart, card or presentation (no form element). */
+const VISUALIZATION_TERMS = new Set(['LineItem', 'Chart', 'CardItem', 'PresentationVariant', 'SelectionPresentationVariant', 'Note']);
+const isVisualization = (f: Any) => String(f.$Type).endsWith('ReferenceFacet') && VISUALIZATION_TERMS.has(splitAnnotationPath(str(f.Target?.value) ?? pathOf(f.Target) ?? '').term);
+
+/**
+ * One sub-section from a facet (FE SubSection createSubSection): a reference facet is a form, a table or a data point;
+ * a collection facet is one form with a container per reference facet (nested collection facets are ignored, FE
+ * getFormContainersForCollection), or a "mixed" sub-section when it also refers to tables (createCollectionFacetSubSection).
+ */
 function buildSubSection(f: Any, typeName: string, ctx: UiContext, semanticKey: string[], index: number): SubSectionModel | undefined {
   const type = String(f.$Type).split('.').pop();
   const scope = `${typeName}@UI.Facets`;
+  const hidden = facetHidden(f);
+  if (hidden === 'drop') return undefined;
+  const base = (id: string, label: string, content: SubSectionModel['content']): SubSectionModel => ({ id, label, partOfPreview: partOfPreview(f), content, ...(hidden ? { hidden } : {}) });
   if (type === 'ReferenceFacet') {
     const content = contentForReference(f, typeName, ctx, semanticKey, scope);
     if (!content) {
@@ -1342,50 +1408,89 @@ function buildSubSection(f: Any, typeName: string, ctx: UiContext, semanticKey: 
     }
     const target = str(f.Target?.value) ?? '';
     const label = str(f.Label) ?? (content.kind === 'form' ? content.groups[0]?.label : undefined) ?? (content.kind === 'table' ? ctx.raw[content.targetType] && (str(ctx.raw[content.targetType]!.annotations?.UI?.HeaderInfo?.TypeNamePlural) ?? humanize(content.navigation)) : undefined) ?? '';
-    return { id: facetId(f, annotationId(target) || `SubSection${index}`), label, partOfPreview: partOfPreview(f), content };
+    // the form of a single reference facet has no container title (FE createFormDefinition useFormContainerLabels false)
+    const shown: SubSectionModel['content'] = content.kind === 'form' ? { kind: 'form', groups: content.groups.map(({ partOfPreview: _p, ...g }) => g) } : content;
+    return base(facetId(f, annotationId(target) || `SubSection${index}`), label, shown);
   }
   if (type === 'CollectionFacet') {
-    // A collection facet nested inside a section is a form with several groups.
-    const groups: FormGroupModel[] = [];
-    for (const child of (f.Facets ?? []) as Any[]) {
-      const c = contentForReference(child, typeName, ctx, semanticKey, scope);
-      if (c?.kind === 'form') groups.push(...c.groups);
+    const children = (f.Facets ?? []) as Any[];
+    const id = facetId(f, `SubSection${index}`);
+    const formOf = (facets: Any[]): SubSectionModel['content'] | undefined => {
+      const groups: FormGroupModel[] = [];
+      for (const child of facets) {
+        if (String(child.$Type).endsWith('CollectionFacet') || facetHidden(child) === 'drop') continue;
+        const c = contentForReference(child, typeName, ctx, semanticKey, scope);
+        if (c?.kind === 'form') groups.push(...c.groups.filter((g) => g.fields.length));
+      }
+      return groups.length ? { kind: 'form', groups } : undefined;
+    };
+    const visualizations = children.filter(isVisualization);
+    if (!visualizations.length) {
+      const form = formOf(children);
+      return form ? base(id, str(f.Label) ?? '', form) : undefined;
     }
-    if (!groups.length) return undefined;
-    return { id: facetId(f, `SubSection${index}`), label: str(f.Label) ?? '', partOfPreview: partOfPreview(f), content: { kind: 'form', groups } };
+    const tables = visualizations.map((c, j) => buildSubSection(c, typeName, ctx, semanticKey, j)).filter((x): x is SubSectionModel => x !== undefined);
+    const rest = children.filter((c) => !isVisualization(c));
+    const form = rest.length ? formOf(rest) : undefined;
+    const formPart = form ? [{ id: `${id}::Form`, label: str(f.Label) ?? '', partOfPreview: true, content: form }] : [];
+    const parts = isVisualization(children[0]) ? [...tables, ...formPart] : [...formPart, ...tables];
+    if (!parts.length) return undefined;
+    return base(id, str(f.Label) ?? '', parts.length === 1 ? parts[0]!.content : { kind: 'mixed', parts });
   }
   return undefined;
 }
 
+/**
+ * Sections from UI.Facets (FE ObjectPageConverter getSectionFromAnnotation, SubSection createSubSections): every facet
+ * is a section; a collection facet that contains a collection facet has a sub-section per child, otherwise the facet
+ * itself is the only sub-section.
+ */
 function buildSections(facets: Any[], typeName: string, ctx: UiContext, semanticKey: string[]): SectionModel[] {
   const sections: SectionModel[] = [];
   facets.forEach((f, i) => {
     const type = String(f.$Type).split('.').pop();
-    if (type === 'CollectionFacet') {
+    const hidden = facetHidden(f);
+    if (hidden === 'drop') return;
+    const label = str(f.Label);
+    const common = { ...(label ? { showTitle: true } : {}), ...(hidden ? { hidden } : {}) };
+    if (type === 'CollectionFacet' && ((f.Facets ?? []) as Any[]).some((c) => String(c.$Type).endsWith('CollectionFacet'))) {
       const subs = ((f.Facets ?? []) as Any[]).map((c, j) => buildSubSection(c, typeName, ctx, semanticKey, j)).filter((s): s is SubSectionModel => s !== undefined);
-      if (subs.length) sections.push({ id: facetId(f, `Section${i}`), label: str(f.Label) ?? subs[0]!.label, subSections: uniqueIds(subs, ctx, `${typeName} section ${i}`) });
+      if (subs.length) sections.push({ id: facetId(f, `Section${i}`), label: label ?? subs[0]!.label, subSections: uniqueIds(subs, ctx, `${typeName} section ${i}`), ...common });
     } else {
       const sub = buildSubSection(f, typeName, ctx, semanticKey, i);
-      if (sub) sections.push({ id: sub.id, label: sub.label, subSections: [sub] });
+      if (sub) sections.push({ id: sub.id, label: label ?? sub.label, subSections: [{ ...sub, hidden: undefined }], ...common });
     }
   });
-  return uniqueIds(sections, ctx, `${typeName}@UI.Facets`);
+  return uniqueIds(sections, ctx, `${typeName}@UI.Facets`).map((s) => ({ ...s, subSections: s.subSections.map((x) => (x.hidden === undefined ? stripUndefined(x) : x)) }));
+}
+
+const stripUndefined = <T extends object>(o: T): T => Object.fromEntries(Object.entries(o).filter(([, v]) => v !== undefined)) as T;
+
+/** One header facet (FE HeaderFacet createReferenceHeaderFacet / createCollectionHeaderFacet). */
+function buildHeaderFacet(f: Any, typeName: string, ctx: UiContext, semanticKey: string[], i: number): HeaderFacetModel | undefined {
+  const hiddenOf = facetHidden(f);
+  if (hiddenOf === 'drop') return undefined;
+  const hidden = hiddenOf ? { hidden: hiddenOf } : {};
+  const target = str(f.Target?.value) ?? '';
+  const id = facetId(f, annotationId(target) || `HeaderFacet${i}`);
+  if (String(f.$Type).endsWith('CollectionFacet')) {
+    const facets = ((f.Facets ?? []) as Any[]).filter((c) => String(c.$Type).endsWith('ReferenceFacet')).map((c, j) => buildHeaderFacet(c, typeName, ctx, semanticKey, j)).filter((x): x is HeaderFacetModel => x !== undefined);
+    return facets.length ? { id, kind: 'collection', label: str(f.Label), facets, ...hidden } : undefined;
+  }
+  const content = String(f.$Type).endsWith('ReferenceFacet') ? contentForReference(f, typeName, ctx, semanticKey, `${typeName}@UI.HeaderFacets`) : undefined;
+  const fields = content?.kind === 'form' ? content.groups[0]?.fields ?? [] : [];
+  const only = fields.length === 1 && fields[0]!.path ? resolvePath(ctx.entityTypes, typeName, fields[0]!.path).property : undefined;
+  if (content?.kind === 'form' && fields.length === 1 && fields[0]!.kind === 'contact') return { id, kind: 'contact', label: str(f.Label), field: fields[0]!, ...hidden };
+  if (content?.kind === 'form' && only?.multiLine) return { id, kind: 'text', label: str(f.Label) ?? content.groups[0]?.label, field: fields[0]!, ...hidden };
+  if (content?.kind === 'form') return { id, kind: 'form', label: str(f.Label) ?? content.groups[0]?.label, fields, ...hidden };
+  if (content?.kind === 'chart') return { id, kind: 'chart', label: str(f.Label) ?? content.chart.title, chart: content.chart, ...hidden };
+  if (content?.kind === 'dataPoint') return { id, kind: 'dataPoint', label: str(f.Label) ?? content.dataPoint.title, dataPoint: content.dataPoint, ...hidden };
+  ctx.warn('UNSUPPORTED_FACET', `Header facet ${id} is not supported`, typeName, 'info');
+  return undefined;
 }
 
 function buildHeaderFacets(facets: Any[], typeName: string, ctx: UiContext, semanticKey: string[]): HeaderFacetModel[] {
-  const out: HeaderFacetModel[] = [];
-  facets.forEach((f, i) => {
-    const content = String(f.$Type).endsWith('ReferenceFacet') ? contentForReference(f, typeName, ctx, semanticKey, `${typeName}@UI.HeaderFacets`) : undefined;
-    const target = str(f.Target?.value) ?? '';
-    const id = facetId(f, annotationId(target) || `HeaderFacet${i}`);
-    const fields = content?.kind === 'form' ? content.groups[0]?.fields ?? [] : [];
-    const only = fields.length === 1 && fields[0]!.path ? resolvePath(ctx.entityTypes, typeName, fields[0]!.path).property : undefined;
-    if (content?.kind === 'form' && only?.multiLine) out.push({ id, kind: 'text', label: str(f.Label) ?? content.groups[0]?.label, field: fields[0]! });
-    else if (content?.kind === 'form') out.push({ id, kind: 'form', label: str(f.Label) ?? content.groups[0]?.label, fields });
-    else if (content?.kind === 'chart') out.push({ id, kind: 'chart', label: str(f.Label) ?? content.chart.title, chart: content.chart });
-    else if (content?.kind === 'dataPoint') out.push({ id, kind: 'dataPoint', label: str(f.Label) ?? content.dataPoint.title, dataPoint: content.dataPoint });
-    else ctx.warn('UNSUPPORTED_FACET', `Header facet ${id} is not supported in phase 1`, typeName, 'info');
-  });
+  const out = facets.map((f, i) => buildHeaderFacet(f, typeName, ctx, semanticKey, i)).filter((x): x is HeaderFacetModel => x !== undefined);
   return uniqueIds(out, ctx, `${typeName}@UI.HeaderFacets`);
 }
 

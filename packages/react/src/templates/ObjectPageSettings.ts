@@ -9,7 +9,7 @@
 import type { ReactNode } from 'react';
 import type { Row } from '@rhfan2019/smart-kit-core';
 import type { PopinLayout } from '../m/library';
-import type { Context } from '../v4/fe/macros/Table';
+import type { Context, Table$RowPressEvent, Table$SelectionChangeEvent } from '../v4/fe/macros/Table';
 
 export type { Context };
 
@@ -136,6 +136,10 @@ export interface TableManifestSettingsConfiguration {
   readOnly?: boolean;
   /** Comma-separated properties whose columns are left out. */
   ignoredFields?: string;
+  /** A row was pressed (FE names an extension function; react-idiom). Default: navigation to the sub-object page. */
+  rowPress?(e: Table$RowPressEvent): void;
+  /** The selection changed (FE names an extension function; react-idiom). */
+  selectionChange?(e: Table$SelectionChangeEvent): void;
 }
 
 /** `controlConfiguration › <nav>/@com.sap.vocabularies.UI.v1.LineItem` (TableManifestConfiguration). */
@@ -190,6 +194,11 @@ export interface ManifestSection {
   actions?: Record<string, ManifestAction>;
   /** false: behind "Show More". @defaultValue true */
   isPartOfPreview?: boolean;
+  /**
+   * An annotation section: a form container whose only field is a multi-line text shows it without its label
+   * (FE ObjectPageConverter getUseSingleTextAreaFieldAsNotes). @defaultValue false
+   */
+  useSingleTextAreaFieldAsNotes?: boolean;
   /** Message strip at the top of the section (OP-17); smart-kit addition. */
   messageStrip?: ReactNode;
 }

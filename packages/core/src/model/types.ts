@@ -82,6 +82,10 @@ export interface PropertyModel {
   /** Common.ValueListWithFixedValues (also for value lists that come from Common.ValueListReferences). */
   valueListFixedValues?: boolean;
   hidden: boolean;
+  /** UI.Hidden as a path: the field is hidden for rows where it is true (FE UIFormatters isVisible). */
+  hiddenPath?: string;
+  /** UI.Placeholder: the placeholder of the editor (FE FieldTemplating getPlaceholder). */
+  placeholder?: string;
   hiddenFilter: boolean;
   computed: boolean;
   immutable: boolean;
@@ -190,6 +194,8 @@ export interface CapabilityModel {
   /** UI.CreateHidden / UI.DeleteHidden of the entity set, else of its type (FE StandardActions isActionAnnotatedHidden). */
   createHidden?: ValueRef;
   deleteHidden?: ValueRef;
+  /** UI.UpdateHidden of the entity set (else its type): a constant true hides the object page's Edit, a path per object (FE getEditButtonVisibility). */
+  updateHidden?: ValueRef;
   /** Aggregation.ApplySupported on the entity set or its type ($apply: groups and totals, docs/23). Absent: no aggregation. */
   aggregation?: AggregationModel;
 }
@@ -302,6 +308,10 @@ export interface ActionModel {
   criticality?: ValueRef;
   /** Core.OperationAvailable: a constant or a path relative to the bound entity (binding parameter removed). */
   operationAvailable?: ValueRef;
+  /** UI.Hidden of the record as a path (a constant true drops the action): the button is hidden for rows where it is true. */
+  hidden?: string;
+  /** UI.Emphasized of the record (FE HeaderAndFooterAction getDataFieldAnnotationAction: emphasized when there is no Criticality). */
+  emphasized?: boolean;
   /** Non-binding parameters. */
   parameters: { name: string; edmType: EdmType; label: string; nullable: boolean }[];
 }
@@ -398,6 +408,13 @@ export interface FieldModel {
   isSemanticKey: boolean;
   /** UI.Importance of the record (responsive table columns, forms on small screens). */
   importance?: Importance;
+  /**
+   * UI.Hidden of the record or of its property as a path (a constant true drops the field): hidden for rows where the
+   * path is true (FE UIFormatters isVisible / DataField isReferencePropertyStaticallyHidden).
+   */
+  hidden?: string;
+  /** UI.PartOfPreview false on the record: in a form the field is shown only with "Show More" details (FE Form isFieldPartOfPreview). */
+  partOfPreview?: boolean;
   /** The value refers to another object that has UI.QuickViewFacets (cross navigation, LR Navigation). */
   quickView?: { navigation: string; typeName: string };
 }
@@ -431,6 +448,10 @@ export interface FormGroupModel {
   id: string;
   label?: string;
   fields: FieldModel[];
+  /** UI.PartOfPreview false of the facet: the form container is shown only after "Show More" (FE Form hasFacetsNotPartOfPreview). */
+  partOfPreview?: boolean;
+  /** UI.Hidden of the facet as a path: the container is hidden for rows where it is true (a constant true drops it). */
+  hidden?: string;
 }
 
 export type SubSectionContent =
@@ -438,28 +459,45 @@ export type SubSectionContent =
   | { kind: 'table'; navigation: string; targetType: string; columns: ColumnModel[]; presentation: PresentationModel }
   | { kind: 'dataPoint'; dataPoint: DataPointModel }
   /** Header micro charts (UI.Chart referenced from UI.HeaderFacets). */
-  | { kind: 'chart'; chart: ChartModel };
+  | { kind: 'chart'; chart: ChartModel }
+  /**
+   * A collection facet with tables (or charts) and forms (FE SubSection createCollectionFacetSubSection, SubSectionType
+   * Mixed): its parts in order, each a sub-section of its own (the visualizations first when the first facet is one).
+   */
+  | { kind: 'mixed'; parts: SubSectionModel[] };
 
 export interface SubSectionModel {
   id: string;
+  /** UI.Facet/Label; empty without one. */
   label: string;
   partOfPreview: boolean;
   content: SubSectionContent;
+  /** UI.Hidden of the facet as a path (a constant true drops the sub-section). */
+  hidden?: string;
 }
 
 export interface SectionModel {
   id: string;
+  /** UI.Facet/Label, else the label of the first sub-section (anchor text). */
   label: string;
+  /** The facet has a UI.Facet/Label (FE ObjectPageSection showTitle). */
+  showTitle?: boolean;
   subSections: SubSectionModel[];
+  /** UI.Hidden of the facet as a path (a constant true drops the section). */
+  hidden?: string;
 }
 
 export type HeaderFacetModel =
-  | { id: string; kind: 'form'; label?: string; fields: FieldModel[] }
-  | { id: string; kind: 'dataPoint'; label?: string; dataPoint: DataPointModel }
+  | { id: string; kind: 'form'; label?: string; fields: FieldModel[]; hidden?: string }
+  | { id: string; kind: 'dataPoint'; label?: string; dataPoint: DataPointModel; hidden?: string }
   /** Micro chart facet. */
-  | { id: string; kind: 'chart'; label?: string; chart: ChartModel }
+  | { id: string; kind: 'chart'; label?: string; chart: ChartModel; hidden?: string }
   /** Plain text facet: a field group with a single multi-line text field. */
-  | { id: string; kind: 'text'; label?: string; field: FieldModel };
+  | { id: string; kind: 'text'; label?: string; field: FieldModel; hidden?: string }
+  /** Communication.Contact facet (FE ObjectPageHeaderContact): the contact's name as a link with its details. */
+  | { id: string; kind: 'contact'; label?: string; field: FieldModel; hidden?: string }
+  /** A collection facet (FE createCollectionHeaderFacet): its reference facets side by side in one container. */
+  | { id: string; kind: 'collection'; label?: string; facets: HeaderFacetModel[]; hidden?: string };
 
 export interface PresentationModel {
   sortOrder: { path: string; descending: boolean }[];

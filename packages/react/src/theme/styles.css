@@ -274,9 +274,9 @@
 .sk-microchart__lane { position: relative; flex: none; height: calc(var(--sk-chart-text) * 1.3); min-width: 0; }
 .sk-microchart__placed { position: absolute; top: 0; white-space: nowrap; }
 .sk-microchart__value--large { font-size: var(--sk-microchart-value-size); }
-.sk-chart--positive.sk-microchart__row-fit, .sk-chart--negative.sk-microchart__row-fit, .sk-chart--critical.sk-microchart__row-fit, .sk-chart--info.sk-microchart__row-fit { color: var(--sk-chart-mark); }
+.sk-microchart__row-fit[class*='sk-chart--'], .sk-microchart__row-fit[style] { color: var(--sk-chart-mark); }
 /* area (SAP anatomy): solid threshold areas, the actual line in the text colour, the target dotted */
-.sk-microchart--area .sk-microchart__line { stroke: var(--sk-chart-actual-line); stroke-width: calc(2 * var(--sk-size-border)); }
+.sk-microchart--area .sk-microchart__line { stroke: var(--sk-chart-mark, var(--sk-chart-actual-line)); stroke-width: calc(2 * var(--sk-size-border)); }
 .sk-microchart--area .sk-microchart__line--target { stroke: var(--sk-chart-target); stroke-width: calc(2 * var(--sk-size-border)); }
 /* delta (SAP anatomy): value 1, the delta, value 2 from top to bottom; names left, values right */
 .sk-microchart__delta-grid { display: flex; flex-direction: column; justify-content: center; gap: var(--sk-space-1); width: 100%; height: 100%; min-width: 0; }
@@ -422,6 +422,18 @@ tr.sk-rtable__total > * { position: sticky; top: auto; bottom: 0; z-index: 2; bo
 .sk-rtable__nodata { position: static; }
 .sk-rtable__sentinel { height: var(--sk-size-border); }
 .sk-rtable__loading { display: flex; align-items: center; justify-content: center; gap: var(--sk-space-2); padding: var(--sk-space-3); color: var(--sk-color-text-muted); }
+/* sap.m.Table showUnread (sapMLIBUnread), item actions (itemActionCount), swipeContent, modeAnimationOn */
+.sk-rtable__row--unread td { font-weight: var(--sk-font-weight-bold); }
+.sk-rtable__item-actions { white-space: nowrap; }
+.sk-rtable__item-action-hidden { display: inline-block; width: var(--sk-space-7); }
+.sk-rtable__swipe { position: absolute; inset-inline-end: 0; z-index: 3; display: flex; align-items: center; padding: 0 var(--sk-space-3); background: var(--sk-color-surface); animation: sk-rtable-swipe-in 0.2s ease-out; }
+.sk-rtable__swipe:focus { outline: none; }
+@keyframes sk-rtable-swipe-in { from { opacity: 0; transform: translateX(100%); } }
+.sk-rtable[data-sk-mode-anim] .sk-rtable__select > *, .sk-rtable[data-sk-mode-anim] [data-sk-row-delete] { animation: sk-rtable-mode-in 0.2s ease-out; }
+@keyframes sk-rtable-mode-in { from { opacity: 0; transform: scale(0.4); } }
+@media (prefers-reduced-motion: reduce) {
+  .sk-rtable__swipe, .sk-rtable[data-sk-mode-anim] .sk-rtable__select > *, .sk-rtable[data-sk-mode-anim] [data-sk-row-delete] { animation: none; }
+}
 .sk-inline-create { display: flex; flex-direction: column; gap: var(--sk-space-2); padding: var(--sk-space-3) var(--sk-space-inset); border-bottom: var(--sk-size-border) solid var(--sk-color-border); background: var(--sk-color-accent-wash); }
 .sk-inline-create__fields { display: grid; grid-template-columns: repeat(auto-fill, minmax(calc(var(--sk-size-column-min) * 1.6), 1fr)); gap: var(--sk-space-3); }
 .sk-form__error { color: var(--sk-color-negative); font-size: var(--sk-text-small); }
@@ -476,6 +488,15 @@ tr.sk-rtable__total > * { position: sticky; top: auto; bottom: 0; z-index: 2; bo
 .sk-list-report:not(.sk-list-report--responsive) .sk-list-tabs__panel { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; padding-top: var(--sk-space-3); }
 .sk-list-report--responsive .sk-list-tabs__panel { padding-top: var(--sk-space-3); }
 .sk-chartview { flex: 1 1 auto; }
+/* stage 6: combined view of the list report (chart and table, FE CollectionVisualization) and title toolbar separators */
+.sk-list-combined { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; gap: var(--sk-space-3); }
+.sk-list-combined > .sk-table { flex: 1 1 auto; min-height: 20rem; }
+.sk-list-report__separator { display: inline-block; align-self: stretch; min-height: 1.25rem; border-left: var(--sk-size-border) solid var(--sk-color-border); }
+/* stage 6 (macros6): toolbar separators of overflow groups (table, chart), the table's "Filtered By" bar, group rows */
+.sk-toolbar__separator { display: inline-block; align-self: stretch; min-height: 1.25rem; margin-inline-end: var(--sk-space-2); border-left: var(--sk-size-border) solid var(--sk-color-border); vertical-align: middle; }
+.sk-table__action, .sk-chartview__action { display: inline-flex; align-items: center; }
+.sk-table__filter-info { padding: var(--sk-space-1) var(--sk-space-inset); background: var(--sk-color-info-wash); border-bottom: var(--sk-size-border) solid var(--sk-color-border); }
+.sk-table__group-label { display: inline-flex; align-items: center; gap: var(--sk-space-1); }
 .sk-chartview__body { position: relative; padding: var(--sk-space-4) var(--sk-space-inset); }
 .sk-chartview__anchor { display: block; width: var(--sk-size-border); height: var(--sk-size-border); }
 .sk-fcl { display: flex; height: 100%; min-height: 0; overflow: hidden; }
@@ -490,6 +511,12 @@ tr.sk-rtable__total > * { position: sticky; top: auto; bottom: 0; z-index: 2; bo
 }
 .sk-fcl__separator + .sk-fcl__column { border-left: 0; }
 .sk-fcl__arrow { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); }
+.sk-fcl__arrow { z-index: 1; }
+/* draggable separator (sap.f.FlexibleColumnLayout 1.154): the grip covers the strip; arrows and Home / End move it */
+.sk-fcl__separator { cursor: col-resize; touch-action: none; }
+.sk-fcl__grip { position: absolute; inset: 0; }
+.sk-fcl__grip:focus-visible { outline: var(--sk-size-accent-line) solid var(--sk-color-focus); outline-offset: calc(-1 * var(--sk-size-accent-line)); }
+.sk-fcl[data-resizing] { user-select: none; cursor: col-resize; }
 .sk-fcl__column[hidden] { display: none; }
 .sk-fcl__column > .sk-list-report { height: 100%; }
 .sk-quickview__link { display: inline; color: var(--sk-color-link); }
@@ -743,11 +770,30 @@ tr.sk-rtable__total > * { position: sticky; top: auto; bottom: 0; z-index: 2; bo
 .sk-relative-dates__days { border-top: var(--sk-size-border) solid var(--sk-color-border); padding-top: var(--sk-space-2); }
 .sk-relative-dates__count { width: var(--sk-relative-dates-count-width); flex: none; }
 
-/* sap.fe.macros.MicroChart `size` (stage 2): fixed boxes within the 64×18 – 320×94 px range (MC-02) */
-.sk-microchart--size-XS { width: 4.5rem; height: 1.125rem; }
-.sk-microchart--size-S { width: 7.5rem; height: 2.25rem; }
-.sk-microchart--size-M { width: 10.5rem; height: 3.5rem; }
-.sk-microchart--size-L { width: 15rem; height: 5.875rem; }
+/* sap.m.Size of the sap.suite.ui.microchart controls (stage 6): the UI5 boxes (library.css of 1.154); Auto is M, S on
+ * phones; Responsive (no class) fills the container. Stacked bars are 3.5rem high in S and M. */
+.sk-microchart--size-XS { width: 6rem; height: 1.5rem; }
+.sk-microchart--size-S { width: 8.25rem; height: 3.5rem; }
+.sk-microchart--size-M, .sk-microchart--size-Auto { width: 10.5rem; height: 4.5rem; }
+.sk-microchart--size-L { width: 12rem; height: 5.875rem; }
+@media (max-width: 599px) { .sk-microchart--size-Auto { width: 8.25rem; height: 3.5rem; } }
+.sk-microchart--stackedBar.sk-microchart--size-M, .sk-microchart--stackedBar.sk-microchart--size-Auto { height: 3.5rem; }
+.sk-microchart--harvey.sk-microchart--xs-wide.sk-microchart--size-XS { width: 7rem; }
+.sk-microchart--comparison.sk-microchart--shrinkable { height: auto; }
+.sk-microchart--align-Center .sk-microchart__frame { justify-content: center; }
+.sk-microchart--align-Right .sk-microchart__frame { justify-content: flex-end; }
+.sk-microchart__track--transparent { fill: transparent; }
+.sk-microchart__mark--pressable { cursor: pointer; }
+.sk-microchart__scale { margin-inline-start: 0.125em; }
+.sk-microchart__segment--zero { min-width: 0.25rem; }
+.sk-microchart__line--dashed { stroke-dasharray: 6 3; }
+.sk-microchart__line--dotted { stroke-dasharray: 1 3; stroke-linecap: round; }
+.sk-microchart__line--muted { --sk-chart-mark: var(--sk-chart-axis); }
+.sk-microchart__band--neutral { fill: var(--sk-chart-track); }
+.sk-microchart__band--mark { fill: var(--sk-chart-mark); opacity: var(--sk-chart-forecast-opacity); }
+.sk-microchart__delta-values { display: flex; flex-direction: column; align-items: flex-end; justify-content: space-between; flex: none; height: 100%; }
+.sk-microchart--compact .sk-microchart__delta-values { justify-content: center; }
+.sk-microchart__delta-grid--wide .sk-microchart__titles { display: flex; justify-content: space-between; height: 100%; }
 
 /* Row highlight (LineItem@UI.Criticality, FE TableFormatter rowHighlighting; stage 4) and special cells. */
 .sk-table__row--error { box-shadow: inset 0.25rem 0 0 var(--sk-color-negative); }

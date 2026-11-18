@@ -110,7 +110,8 @@ export async function readFe(page: Page, rows = TEXT_ROWS): Promise<{ structure:
     const columns = (table?.getColumns() ?? []).map((c: any) => String(c.getHeader() ?? '')).filter(Boolean);
     const actions = (table?.getActions() ?? [])
       .map((a: any) => (a.getAction ? a.getAction() : a))
-      .filter((b: any) => b.getVisible())
+      // toolbar separators of overflow groups (macros6) have no text
+      .filter((b: any) => b.getVisible() && typeof b.getText === 'function')
       .map((b: any) => `${b.getText()}${b.getEnabled() ? '' : ' [disabled]'}`);
     // the view tabs (IconTabFilter texts; their counts are a property of their own, compared by tests/e2e-fe/lr5.spec.ts;
     // the IconTabBar's overflow items have no text; the tabs of an open value help dialog are no view tabs)

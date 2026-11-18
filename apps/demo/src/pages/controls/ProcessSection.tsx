@@ -79,12 +79,15 @@ function Box({ label, children }: { label: string; children: ReactNode }) {
 
 export function ProcessSection() {
   const flow = useRef<ProcessFlow>(null);
+  const timeline = useRef<Timeline>(null);
   const [zoom, setZoom] = useState('');
   const [event, setEvent] = useState('');
   const [group, setGroup] = useState<TimelineGroupType>('Month');
   const [posts, setPosts] = useState([
     { id: 1, sender: 'Marc Weber', initials: 'MW', text: 'Can we accept the partial delivery? Sales needs 10 laptops by Monday.', timestamp: '2026-11-15T16:20:00Z' },
     { id: 2, sender: 'Acme Corp', initials: 'AC', text: 'The remaining 2 laptops ship on December 4. Tracking: https://example.com/track/88120', timestamp: '2026-11-16T08:05:00Z' },
+    // FeedListItem text holds the sap.m.FormattedText HTML subset
+    { id: 3, sender: 'Anna Klein', initials: 'AK', text: 'Credit memo <strong>CM-2026-118</strong> is <em>approved</em>.', timestamp: '2026-11-16T09:30:00Z' },
   ]);
   const zoomBy = (fn: (r: ProcessFlow) => unknown) => {
     if (!flow.current) return;
@@ -144,8 +147,11 @@ export function ProcessSection() {
           {(['None', 'Month', 'Week', 'Day'] as TimelineGroupType[]).map((g) => (
             <Button key={g} size="xs" variant={g === group ? 'filled' : 'default'} onClick={() => setGroup(g)}>{g}</Button>
           ))}
+          <Button size="xs" variant="default" onClick={() => { timeline.current?.setCurrentFilter('Invoice'); timeline.current?.setCustomFilterMessage('invoice steps'); }}>
+            Filter: invoice (setCurrentFilter)
+          </Button>
         </Group>
-        <Timeline groupByType={group} enableSocial height="32rem" onSelect={({ selectedItem }) => setEvent(`select: ${selectedItem.title}`)}>
+        <Timeline ref={timeline} groupByType={group} enableSocial height="32rem" onSelect={({ selectedItem }) => setEvent(`select: ${selectedItem.title}`)}>
           {history.map(([k, date, title, user, filter, text, status]) => (
             <TimelineItem key={k} dateTime={date} title={title} userName={user} userNameClickable filterValue={filter} text={text} status={status}
               replyCount={k === '6' ? 2 : undefined} customAction={k === '6' ? [{ key: 'open', value: 'Open invoice' }] : undefined}

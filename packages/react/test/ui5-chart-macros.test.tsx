@@ -162,9 +162,11 @@ describe('sap.fe.macros.MicroChart (stage 2)', () => {
     expect(screen.getByRole('img', { name: /^Quantities:/ }).querySelectorAll('[data-sk-microchart-bar]')).toHaveLength(2);
   });
 
-  it('without metaPath the data props draw the chart', () => {
-    render(wrap(<MicroChart kind="bullet" label="Budget" value={10} target={20} />));
-    expect(screen.getByRole('img', { name: /^Budget: Actual 10/ })).toBeInTheDocument();
+  it('AL-05 MicroChart: the chart is the sap.suite.ui.microchart control of the chart type, size Auto by default; without metaPath nothing', () => {
+    const { container, rerender } = render(wrap(<MicroChart contextPath="/Orders" metaPath="@UI.Chart#Budget" row={order} showOnlyChart />));
+    expect(container.querySelector('[data-sk-microchart="bullet"]')).toHaveClass('sk-microchart--size-Auto');
+    rerender(wrap(<MicroChart contextPath="/Orders" />));
+    expect(container.querySelector('.sk-microchart')).toBeNull();
   });
 });
 

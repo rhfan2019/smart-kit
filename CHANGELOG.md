@@ -5,6 +5,12 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+### Changed — breaking (SAPUI5 alignment, stage 6, D47)
+
+- smart-kit: the nine sap.suite.ui.microchart controls replace `MicroChart kind=…` for data-only charts (`suite/ui/microchart/*`, UI5 properties: `actual`, `targetValue`, `columns`, `points` / `lines`, `data`, `bars`, `fraction` / `total`, `value1` / `value2` …); `m/p13n/Popup` with `SelectionPanel` / `SortPanel` / `GroupPanel` replaces the table and chart personalization dialogs; `m/QuickView` family; landmark info modules; enums `Size`, `ValueColor`, `P13nPopupMode`, `PlacementType`, `QuickViewGroupElementType`, `ListKeyboardMode`, `ListGrowingDirection`, `SwipeDirection`, `ListItemActionType` in `m/library`, `AccessibleLandmarkRole` in `ui/core/library`.
+- sap.fe.macros members of 1.154 on Table / TreeTable / Chart / FilterBar / Field / Form, and the remaining ListReport / ObjectPage manifest settings that do not need the SAP runtime (docs/26b, docs/26c; AL-13: 0 unregistered).
+- Behaviour as FE: collapsible grouped analytical table (subtotals in the group header while collapsed), list report grid tables always Auto (manifest `rowCountMode` / `rowCount` ignored, FE `_getTableMode`), "New Object" dialog before NewPage creation on draft lists, chart personalization on by default, mass edit and paste, toolbar overflow groups and priorities, object page header action order and Delete / Edit visibility, FE sort query row in the sort panel. smart-kit-core: analytical `groupLevels`, leaf counts and level filters.
+
 ### Changed — breaking (SAPUI5 alignment, stage 5, D46)
 
 - smart-kit: `SmartListReport` → `v4/fe/templates/ListReport`, `SmartObjectPage` → `v4/fe/templates/ObjectPage`; the `/templates` subpath is removed. Props are the Fiori elements manifest settings (docs/26c), checked by `scripts/check-manifest-settings.mjs` in `npm run check:ui5` (AL-13).

@@ -2,7 +2,7 @@
  * Card (sap.f.Card): a container with a header and a content area, optionally a footer (docs/20 CD-01).
  * Sizes follow the SAPUI5 integration card (Horizon); colours come from the theme tokens.
  */
-import { useCallback, useId, useMemo, useState, type CSSProperties, type KeyboardEvent, type MouseEvent, type ReactNode } from 'react';
+import { useCallback, useId, useImperativeHandle, useMemo, useState, type CSSProperties, type KeyboardEvent, type MouseEvent, type ReactNode, type Ref } from 'react';
 import type { TitleLevel } from '../controls/types';
 import { CardContext, type CardContextValue, type CardCounter, type CardHeaderDefaults } from './CardContext';
 
@@ -38,6 +38,16 @@ export interface $CardSettings {
   style?: CSSProperties;
   /** Accessible description of the card type, e.g. "List card". */
   'aria-roledescription'?: string;
+  ref?: Ref<Card>;
+}
+
+/** Instance methods of Card. */
+export interface Card {
+  /**
+   * The accessibility role the card has as an item of a sap.f.GridContainer (set by the container through the restricted
+   * setGridItemRole). smart-kit has no GridContainer, so this is `null`, as for a SAPUI5 card outside a grid container.
+   */
+  getGridItemRole(): string | null;
 }
 
 /** Whether an event comes from an interactive element inside the card (its own press then wins). */
@@ -48,6 +58,7 @@ const fromInner = (e: { target: EventTarget; currentTarget: EventTarget }) => {
 
 export function Card(p: $CardSettings) {
   const titleId = useId();
+  useImperativeHandle(p.ref, () => ({ getGridItemRole: () => null }), []);
   const [counter, setCounterState] = useState<CardCounter | undefined>();
   const [headerPress, setPress] = useState<(() => void) | undefined>();
   const setCounter = useCallback((c: CardCounter | undefined) => setCounterState(c), []);

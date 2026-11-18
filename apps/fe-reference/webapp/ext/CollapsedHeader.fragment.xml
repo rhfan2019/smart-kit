@@ -1,0 +1,4 @@
+<!-- Custom collapsed header of the list report (content › header › customHeader, tests/e2e-fe/macros6-lr.spec.ts). -->
+<core:FragmentDefinition xmlns:core="sap.ui.core" xmlns="sap.m">
+  <Text text="Purchasing (collapsed)" class="feRefCollapsedHeader"/>
+</core:FragmentDefinition>

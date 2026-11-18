@@ -176,17 +176,22 @@ export function SupplierPanel({ path }: { path: string }) {
 - In a table column, a header facet or a card: a `DataFieldForAnnotation` pointing to a `UI.Chart` with
   `ChartType` Bullet, Radial, HarveyBall, Delta(Bullet), Column, Line, Comparison, Area, StackedBar — drawn as a
   micro chart, no code.
-- Standalone, with your own numbers (no service needed, about 5 KB gzip):
+- Standalone, with your own numbers: the sap.suite.ui.microchart controls (no service needed, about 3 KB gzip each):
 
 ```tsx
-import MicroChart from '@rhfan2019/smart-kit/v4/fe/macros/MicroChart'; // sap/fe/macros/MicroChart
+import BulletMicroChart from '@rhfan2019/smart-kit/suite/ui/microchart/BulletMicroChart'; // sap/suite/ui/microchart/BulletMicroChart
+import BulletMicroChartData from '@rhfan2019/smart-kit/suite/ui/microchart/BulletMicroChartData';
+import ColumnMicroChart from '@rhfan2019/smart-kit/suite/ui/microchart/ColumnMicroChart';
 import SimpleChart from '@rhfan2019/smart-kit/kit/SimpleChart';
 
 export function Kpis() {
   return (
     <>
-      <MicroChart kind="bullet" label="Budget used" value={72} target={80} max={100} criticality={2} />
-      <MicroChart kind="column" label="Orders per month" points={[{ label: 'Jan', value: 12 }, { label: 'Feb', value: 18 }, { label: 'Mar', value: 9 }]} />
+      <BulletMicroChart aria-label="Budget used" targetValue={80} maxValue={100} thresholds={[{ value: 90, color: 'Error' }]}>
+        <BulletMicroChartData value={72} color="Critical" />
+      </BulletMicroChart>
+      <ColumnMicroChart aria-label="Orders per month" columns={[{ label: 'Jan', value: 12 }, { label: 'Feb', value: 18 }, { label: 'Mar', value: 9 }]}
+        leftBottomLabel={{ label: 'Jan' }} rightBottomLabel={{ label: 'Mar' }} />
       <SimpleChart kind="bar" measureLabel="Net amount" dimensionLabel="Supplier" data={[{ key: 'A', label: 'Acme', value: 1200 }, { key: 'B', label: 'Bolt', value: 800 }]} />
     </>
   );
@@ -456,11 +461,13 @@ export const recent: FilterState = {
 };
 ```
 
-`FlexibleColumnLayout` shows arrow buttons on the separators between columns that switch between the ratios
-(`TwoColumnsMidExpanded` 33/67 ↔ `TwoColumnsBeginExpanded` 67/33; three columns 25/50/25 ↔ 25/25/50 ↔ 67/33/0 …).
-The arrows (and the full screen / close buttons of `FlexibleColumnLayoutActions` in a column's title) only fire
-`onStateChange({ layout, maxColumnsCount, isNavigationArrow, isResize })`; the host's router stores the layout (ADR-022).
-`separatorArrows={false}` hides the arrows.
+`FlexibleColumnLayout` separators can be dragged (or moved with the keyboard), as in SAPUI5 1.154: the column sizes
+change and `onColumnsDistributionChange({ media, layout, columnsSizes })` fires. The full screen / close buttons of
+`FlexibleColumnLayoutActions` in a column's title only fire `onStateChange({ layout, maxColumnsCount,
+isNavigationArrow, isResize })`; the host's router stores the layout (ADR-022). `autoFocus` (default true) moves the
+focus into a column when it shows a new page. The kit extension `separatorArrows` (default false) adds the older arrow
+buttons that switch between the ratios (`TwoColumnsMidExpanded` 33/67 ↔ `TwoColumnsBeginExpanded` 67/33; three columns
+25/50/25 ↔ 25/25/50 ↔ 67/33/0 …).
 
 ```tsx
 import FlexibleColumnLayout, { type $FlexibleColumnLayoutSettings } from '@rhfan2019/smart-kit/f/FlexibleColumnLayout';

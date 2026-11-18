@@ -70,6 +70,11 @@
           "pattern": "SupplierContacts({key}):?query:",
           "name": "SupplierContactsObjectPage",
           "target": "SupplierContactsObjectPage"
+        },
+        {
+          "pattern": "PurchaseOrderItems({key}):?query:",
+          "name": "PurchaseOrderItemsObjectPage",
+          "target": "PurchaseOrderItemsObjectPage"
         }
       ],
       "targets": {
@@ -109,6 +114,16 @@
           "options": {
             "settings": {
               "contextPath": "/SupplierContacts"
+            }
+          }
+        },
+        "PurchaseOrderItemsObjectPage": {
+          "type": "Component",
+          "id": "PurchaseOrderItemsObjectPage",
+          "name": "sap.fe.templates.ObjectPage",
+          "options": {
+            "settings": {
+              "contextPath": "/PurchaseOrderItems"
             }
           }
         }

@@ -130,6 +130,9 @@
 .sk-timeline__filter-time { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sk-space-2); }
 .sk-timeline__message { display: flex; align-items: center; justify-content: space-between; gap: var(--sk-space-3); padding: var(--sk-space-2) var(--sk-space-3); border-radius: var(--sk-radius-1); background: var(--sk-color-info-wash); }
 .sk-timeline__message-close { display: inline-flex; padding: 0; border: 0; background: none; color: inherit; cursor: pointer; }
+/* filter info bar (UI5: an Info OverflowToolbar with the filter text and a clear icon) */
+.sk-timeline__filter-info { display: flex; align-items: center; justify-content: space-between; gap: var(--sk-space-3); padding: var(--sk-space-1) var(--sk-space-3); background: var(--sk-color-info-wash); font-size: var(--sk-font-size-2); }
+.sk-timeline__filter-info > span { min-inline-size: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .sk-timeline__empty { padding: var(--sk-space-5); text-align: center; color: var(--sk-color-text-muted); }
 .sk-timeline__list, .sk-timeline__group-list { margin: 0; padding: 0; list-style: none; }
 .sk-timeline--scroll .sk-timeline__list { flex: 1 1 auto; min-block-size: 0; overflow: auto; }

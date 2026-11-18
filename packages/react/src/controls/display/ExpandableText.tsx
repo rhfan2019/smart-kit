@@ -1,6 +1,6 @@
 /** sap.m.ExpandableText: a long text cut after `maxCharacters` with a "More" link (in place or in a popover) (docs/26 §3.4). */
 import { Popover } from '@mantine/core';
-import { useEffect, useState, type HTMLAttributes } from 'react';
+import { useEffect, useImperativeHandle, useState, type HTMLAttributes, type Ref } from 'react';
 import { useControlText } from '../context';
 import type { EmptyIndicatorMode } from '../types';
 import { ALIGN, cx, EmptyIndicator, isEmpty, type TextAlignValue } from './shared';
@@ -27,12 +27,20 @@ export interface $ExpandableTextSettings extends Omit<HTMLAttributes<HTMLDivElem
   expanded?: boolean;
   /** Shows "–" when text is empty. @defaultValue 'Off' */
   emptyIndicatorMode?: EmptyIndicatorMode;
+  ref?: Ref<ExpandableText>;
+}
+
+/** Instance methods of ExpandableText. */
+export interface ExpandableText {
+  /** Whether the control can be bound to a label; always `false`, as in sap.m.ExpandableText (a text is not labelable). */
+  hasLabelableHTMLElement(): boolean;
 }
 
 export function ExpandableText({
   text = '', wrappingType = 'Normal', textAlign = 'Begin', renderWhitespace = false, overflowMode = 'InPlace', maxCharacters = 100, expanded: expandedProp = false,
-  emptyIndicatorMode = 'Off', className, style, ...rest
+  emptyIndicatorMode = 'Off', className, style, ref, ...rest
 }: $ExpandableTextSettings) {
+  useImperativeHandle(ref, () => ({ hasLabelableHTMLElement: () => false }), []);
   const t = useControlText(TEXTS);
   const [expanded, setExpanded] = useState(expandedProp);
   const [popover, setPopover] = useState(false);

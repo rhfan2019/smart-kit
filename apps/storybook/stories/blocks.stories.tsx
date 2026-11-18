@@ -5,7 +5,10 @@ import ConditionInput from '@rhfan2019/smart-kit/kit/ConditionInput';
 import FilterSummary from '@rhfan2019/smart-kit/kit/FilterSummary';
 import ListReport from '@rhfan2019/smart-kit/v4/fe/templates/ListReport';
 import ObjectPage from '@rhfan2019/smart-kit/v4/fe/templates/ObjectPage';
-import TableP13nDialog from '@rhfan2019/smart-kit/m/p13n/Popup';
+import Popup from '@rhfan2019/smart-kit/m/p13n/Popup';
+import SelectionPanel from '@rhfan2019/smart-kit/m/p13n/SelectionPanel';
+import SortPanel from '@rhfan2019/smart-kit/m/p13n/SortPanel';
+import GroupPanel from '@rhfan2019/smart-kit/m/p13n/GroupPanel';
 import useFilterState from '@rhfan2019/smart-kit/kit/useFilterState';
 import useVariants from '@rhfan2019/smart-kit/kit/useVariants';
 import ValueHelpDialog from '@rhfan2019/smart-kit/kit/ValueHelpDialog';
@@ -22,7 +25,7 @@ import FieldMacro from '@rhfan2019/smart-kit/v4/fe/macros/Field';
 import FormMacro from '@rhfan2019/smart-kit/v4/fe/macros/Form';
 import CriticalityIcon from '@rhfan2019/smart-kit/kit/CriticalityIcon';
 import VariantManagementMacro from '@rhfan2019/smart-kit/v4/fe/macros/VariantManagement';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { data, model } from './providers';
 
 const meta: Meta = { title: 'smart-kit/Building blocks', parameters: { layout: 'fullscreen' } };
@@ -58,9 +61,29 @@ function ConditionDemo() {
 export const ConditionInputAndValueHelp: Story = { render: () => <ConditionDemo /> };
 
 export const AdaptFilters: Story = { render: () => <AdaptFiltersDialog opened entitySet="Products" fields={['Code']} locked={['Status']} onOk={() => {}} onCancel={() => {}} /> };
-export const Personalization: Story = {
-  render: () => <TableP13nDialog opened columns={ui.lineItem.map((c) => ({ id: c.id, label: c.label }))} visible={ui.lineItem.slice(0, 3).map((c) => c.id)} sort={[{ path: 'Price', descending: true }]} sortable={[{ path: 'Price', label: 'Price' }, { path: 'Name', label: 'Product Name' }]} onOk={() => {}} onCancel={() => {}} />,
-};
+/** sap.m.p13n.Popup with SelectionPanel, SortPanel and GroupPanel, opened through the ref. */
+function PersonalizationDemo() {
+  const popup = useRef<Popup>(null);
+  const [result, setResult] = useState('');
+  const sel = useRef<SelectionPanel>(null);
+  const sort = useRef<SortPanel>(null);
+  return (
+    <div>
+      <button type="button" onClick={(e) => popup.current?.open(e.currentTarget)}>View Settings</button>
+      <pre>{result}</pre>
+      <Popup
+        ref={popup} title="View Settings" warningText="Reset all changes?" reset={() => setResult('reset')}
+        onClose={({ reason }) => setResult(reason === 'Ok' ? JSON.stringify({ columns: sel.current?.getP13nData(true).map((x) => x.name), sort: sort.current?.getP13nData(true) }) : reason)}
+        panels={[
+          <SelectionPanel key="columns" ref={sel} title="Columns" showHeader enableCount p13nData={ui.lineItem.map((c, i) => ({ name: c.id, label: c.label, visible: i < 3 }))} />,
+          <SortPanel key="sort" ref={sort} p13nData={[{ name: 'Price', label: 'Price', sorted: true, descending: true }, { name: 'Name', label: 'Product Name', sorted: false, descending: false }]} />,
+          <GroupPanel key="group" enableShowField p13nData={[{ name: 'Status', label: 'Status', grouped: false }]} />,
+        ]}
+      />
+    </div>
+  );
+}
+export const Personalization: Story = { render: () => <PersonalizationDemo /> };
 
 function VariantDemo() {
   const v = useVariants('story-variants', { standard: { filters: {} } });

@@ -112,9 +112,9 @@ describe('query generation (AC-DATA-01)', () => {
     expect(req.count).toBe(false); // target set is not countable
   });
 
-  it('Q-08 object request reads header and all form fields in one go', () => {
+  it('Q-08 object request reads header and all form fields in one go; not the ETag property (FE: @odata.etag, DV-FE-02)', () => {
     const req = buildObjectRequest(model, 'Shop.Product', ui);
-    expect(readQueryString(req)).toBe('$select=ID,Version,Name,Code,ImageUrl,CategoryID,Rating,Stock,Price,Currency,ReleaseDate,Notes&$expand=_Category($select=Name,ID)');
+    expect(readQueryString(req)).toBe('$select=ID,Name,Code,ImageUrl,CategoryID,Rating,Stock,Price,Currency,ReleaseDate,Notes&$expand=_Category($select=Name,ID)');
   });
 
   it('Q-09 value help request with contains fallback when search is not supported', () => {

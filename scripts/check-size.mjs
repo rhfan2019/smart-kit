@@ -22,7 +22,8 @@ const ENTRY_BUDGETS = {
   'core:.': 60,
   '.': 154, // everything, all subpaths together; 80 → 95 with the cards (ADR-028, /cards ≈ 18 KB); 95 → 154 with the controls (docs/26, /controls ≈ 57 KB) and the tree table
   // context, i18n, table, templates +1 to +2: the texts and the code of relative dates and the FCL separator (S6, S23)
-  context: 13, i18n: 8, theme: 2, util: 12, // util 1 → 11 with the helpers from /controls (stage 1, ADR-033: messageTypeOf, toDates, viewSettingsFilterString …)
+  // context, i18n 13 → 14, 8 → 10: the texts of stage 6 (p13n panels, QuickView, mass edit, New Object dialog, chart personalization)
+  context: 14, i18n: 10, theme: 2, util: 12, // util 1 → 11 with the helpers from /controls (stage 1, ADR-033: messageTypeOf, toDates, viewSettingsFilterString …)
   // stage 2 (D38): the block subpaths are gone, the blocks are measured as modules below
 };
 
@@ -31,15 +32,26 @@ const ENTRY_BUDGETS = {
  * A module not listed here gets MODULE_DEFAULT. The former /controls, /messages and /cards entries were 59, 16 and 23 KB.
  */
 // most controls share about 8 KB (provider texts and helpers); budgets are the first measurement plus about 15 %
-const MODULE_DEFAULT = 14;
+// 14 → 16 (stage 6): the shared texts grew with the stage 6 controls (p13n panels, QuickView, mass edit)
+const MODULE_DEFAULT = 16;
 const MODULE_BUDGETS = {
-  'm/DynamicDateRange': 19, 'm/IllustratedMessage': 16, 'm/plugins/UploadSetwithTable': 25,
+  'm/DynamicDateRange': 21, 'm/IllustratedMessage': 16, 'm/plugins/UploadSetwithTable': 25,
   // stage 2 (D38): the building blocks; Table / TreeTable are the former /table entry (40 KB) plus the sap.fe.macros.Table API
-  'v4/fe/macros/Table': 66, 'v4/fe/macros/TreeTable': 66, 'v4/fe/macros/Field': 19, 'v4/fe/macros/Form': 20, // stage 4: FE column types, inline action columns, value display
-  'v4/fe/macros/FilterBar': 30, 'kit/ConditionInput': 21, 'kit/ValueHelpDialog': 21, // stage 4: FE semantic date operators (RelativeDateButton), value help descriptions and qualified lists
+  // (66 KB for Table / TreeTable, 19 / 20 KB for Field / Form after stage 4: FE column types, inline action columns, value display)
+  // (FilterBar 30, ConditionInput / ValueHelpDialog 21 KB after stage 4: FE semantic date operators, value help descriptions and qualified lists)
   // the page templates (were together the /templates entry, 118 KB; stage 5 splits them into their sap.fe.templates modules)
-  'v4/fe/templates/ListReport': 112, 'v4/fe/templates/ObjectPage': 100,
-  'kit/CreateDialog': 20, 'kit/HeaderFacet': 23, 'kit/QuickViewLink': 19,
+  // (112 / 100 KB in stage 5; CreateDialog 20, HeaderFacet 23, QuickViewLink 19 KB before stage 6)
+  // stage 6 (D47): Field renders the nine sap.suite.ui.microchart controls (DataPoint / Chart visualizations, +11 KB) and
+  // the full sap.m.QuickView (pages, groups, navigation, +6 KB); every module that renders Field grows with it
+  'v4/fe/macros/Field': 40, 'v4/fe/macros/Form': 41, 'kit/CreateDialog': 41, 'kit/HeaderFacet': 44, 'kit/QuickViewLink': 40,
+  // stage 6 (D47): Table / TreeTable add the grouped analytical hierarchy, mass edit, paste, the table's own variant
+  // management, quick variant selection and presentation / selection variant methods; Chart adds its p13n popup
+  // (m/p13n panels), variant management and toolbar overflow groups; FilterBar the variant key methods
+  'v4/fe/macros/Table': 100, 'v4/fe/macros/TreeTable': 100, 'v4/fe/macros/Chart': 46, 'v4/fe/macros/FilterBar': 32,
+  'kit/ConditionInput': 23, 'kit/ValueHelpDialog': 23,
+  // stage 6 (D47): ListReport adds the New Object dialog, combined views, Control variant management; ObjectPage the
+  // FE header action order, the stage 6 object page settings and Field's growth
+  'v4/fe/templates/ListReport': 140, 'v4/fe/templates/ObjectPage': 130,
 };
 
 /** Budgets for what an application ships when it imports only this (React and React DOM excluded). */
@@ -47,9 +59,11 @@ const SCENARIOS = [
   // sap.fe.macros.MicroChart is annotation-driven (provider, model); the 8 KB data-only micro chart returns with the nine
   // sap.suite.ui.microchart controls in stage 6 (D38)
   { name: 'MicroChart only (v4/fe/macros/MicroChart)', code: "import MicroChart from '@rhfan2019/smart-kit/v4/fe/macros/MicroChart'; console.log(MicroChart);", budget: 44 },
-  { name: 'Field only (v4/fe/macros/Field)', code: "import Field from '@rhfan2019/smart-kit/v4/fe/macros/Field'; console.log(Field);", budget: 130 },
-  { name: 'List report page', code: "import ListReport from '@rhfan2019/smart-kit/v4/fe/templates/ListReport'; console.log(ListReport);", budget: 580 }, // 560 → 580: stage 4 list report annotations,
-  { name: 'Object page', code: "import ObjectPage from '@rhfan2019/smart-kit/v4/fe/templates/ObjectPage'; console.log(ObjectPage);", budget: 560 },
+  // the data-only micro charts are back (stage 6): one sap.suite.ui.microchart control without model or provider
+  { name: 'BulletMicroChart only (suite/ui/microchart/BulletMicroChart)', code: "import BulletMicroChart from '@rhfan2019/smart-kit/suite/ui/microchart/BulletMicroChart'; console.log(BulletMicroChart);", budget: 4 },
+  { name: 'Field only (v4/fe/macros/Field)', code: "import Field from '@rhfan2019/smart-kit/v4/fe/macros/Field'; console.log(Field);", budget: 140 }, // 130 → 140: micro charts and QuickView (stage 6, D47)
+  { name: 'List report page', code: "import ListReport from '@rhfan2019/smart-kit/v4/fe/templates/ListReport'; console.log(ListReport);", budget: 620 }, // 560 → 580: stage 4 list report annotations; 580 → 620: stage 6 (D47),
+  { name: 'Object page', code: "import ObjectPage from '@rhfan2019/smart-kit/v4/fe/templates/ObjectPage'; console.log(ObjectPage);", budget: 600 }, // 560 → 600: stage 6 (D47)
   // Cards (docs/20, ADR-028): a card with its content, no AG Grid.
   { name: 'Card + Header only (Component card)', code: "import Card from '@rhfan2019/smart-kit/f/Card'; import Header from '@rhfan2019/smart-kit/f/cards/Header'; console.log(Card, Header);", budget: 5 }, // 2 → 5: the sap.f.cards.Header API of 1.154 (avatar settings, dataTimestamp, infoSection, toolbar; stage 1)
   { name: 'List card (Card + Header + ListContent)', code: "import Card from '@rhfan2019/smart-kit/f/Card'; import Header from '@rhfan2019/smart-kit/f/cards/Header'; import ListContent from '@rhfan2019/smart-kit/ui/integration/cards/ListContent'; console.log(Card, Header, ListContent);", budget: 48 }, // 45 → 48: the 1.154 header API (stage 1)

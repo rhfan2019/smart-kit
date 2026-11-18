@@ -1,12 +1,12 @@
 # 02 注解覆盖表（以 Fiori elements 1.154 源码为依据）
 
-> 状态：现行 · 2026-11-18（阶段 3 重写，`31` 阶段 3、ADR-033；阶段 4 更新，D41、D42、D43；阶段 4 收尾更新，D45）。
+> 状态：现行 · 2026-11-18（阶段 3 重写，`31` 阶段 3、ADR-033；阶段 4 更新，D41、D42、D43；阶段 4 收尾更新，D45；阶段 6 更新：列表页其余项和第 5 节对象页，D47）。
 >
-> **依据**：SAPUI5 / Fiori elements 1.154.0 的 sap.fe 源码（core、macros、templates、base 四个库按模块拆开读，模块路径相对 `sap/fe/`，对应源码可在 `https://ui5.sap.com/1.154.0/resources/sap/fe/<模块>-dbg.js` 找到），以及 FE 对比测试（`npm run e2e:fe`，同一份 `$metadata` 和注解分别交给 FE 参考应用 `apps/fe-reference` 和 smart-kit，比较请求和显示）。列表页部分以 `29a` 的 195 行逐条对照为底稿，按阶段 3、阶段 4 的结果更新；**只用于对象页的术语在阶段 6 核对**（`29b`、`29c`），这里先保留原来的说法，标为"阶段 6 核对"。
+> **依据**：SAPUI5 / Fiori elements 1.154.0 的 sap.fe 源码（core、macros、templates、base 四个库按模块拆开读，模块路径相对 `sap/fe/`，对应源码可在 `https://ui5.sap.com/1.154.0/resources/sap/fe/<模块>-dbg.js` 找到），以及 FE 对比测试（`npm run e2e:fe`，同一份 `$metadata` 和注解分别交给 FE 参考应用 `apps/fe-reference` 和 smart-kit，比较请求和显示）。列表页部分以 `29a` 的 195 行逐条对照为底稿，按阶段 3、阶段 4 的结果更新；**只用于对象页的术语在阶段 6 核对**（`29b`、`29c`），第 5 节已按其结果改写。
 >
 > **结论**：一致 / 部分一致 / 不一致（行为不同）/ 未实现 / FE 列表页不用。阶段 3、阶段 4 改过的行，只有 FE 对比场景或 FE 源码确认过的才写"一致"；只按 FE 源码实现、还没有 FE 对比场景的，写明"只有单元测试"。
 >
-> **计划阶段**：`31` 的阶段（阶段 4：列表页其余注解；阶段 5：页面模板和 manifest 设置；阶段 6：对象页注解）。"—"表示不需要再改。阶段 4 已完成（D43）："阶段 4 收尾"是 D43 留给收尾的，收尾已完成（D45），做完的行改为"—"，剩下的差异按 `tools/ui5-alignment/deviations.json` 写登记的阶段；"待排"是阶段 4 没做、还没排进哪个阶段的；"长期"是登记为长期偏差的（D42 等）；阶段 5 已完成（D46）：做完的行写"**阶段 5 按 FE**"，改到阶段 6 或长期的写登记的偏差编号；仍写"阶段 4"的行是阶段 4 没有涉及的（多为 `29a` 的 P3），还没排定。
+> **计划阶段**：`31` 的阶段（阶段 4：列表页其余注解；阶段 5：页面模板和 manifest 设置；阶段 6：对象页注解）。"—"表示不需要再改。阶段 4 已完成（D43）："阶段 4 收尾"是 D43 留给收尾的，收尾已完成（D45），做完的行改为"—"，剩下的差异按 `tools/ui5-alignment/deviations.json` 写登记的阶段；"待排"是阶段 4 没做、还没排进哪个阶段的；"长期"是登记为长期偏差的（D42 等）；阶段 5 已完成（D46）：做完的行写"**阶段 5 按 FE**"，改到阶段 6 或长期的写登记的偏差编号；阶段 6 已完成：做完的行写"**阶段 6 按 FE**"，剩下的写登记的偏差编号（多数改为长期）；仍写"阶段 4"的行是阶段 4 没有涉及的（多为 `29a` 的 P3），还没排定。
 >
 > **ANN 编号和期**：ANN 编号是测试编号，测试名称里带这个编号（例如 `it('ANN-01 …')`）。"期"一列是原来的交付期次（一期 / 二期 / 三期），`npm run trace`（`scripts/trace.mjs`）按这一列检查每个一期条目都有测试、每个二期条目都有通过的测试；新加的行没有原来的期次，写"—"。
 >
@@ -18,7 +18,7 @@
 
 | 术语 / 记录属性 | FE 1.154 的处理（模块） | smart-kit 现状 | 结论 | 计划阶段 | ANN 编号 | 期 |
 | --- | --- | --- | --- | --- | --- | --- |
-| `UI.LineItem`：怎样选定（SPV、PV、限定符） | 按 manifest 的默认 SPV → 不带限定符的 SPV → 不带限定符的 PV → `UI.LineItem` 的顺序选，PV 的 `Visualizations` 要含 LineItem 或 Chart 才采用；取第一个 LineItem 或 Chart，Chart 在前时默认显示图表（`LRConverter`、`DataVisualization`） | **阶段 4 按 FE**：不带限定符的 SPV → PV → `UI.LineItem`，PV 的 Visualizations 不含 LineItem 或 Chart 时不采用（也不用它的排序和 RequestAtLeast）；Chart 在前时整页只显示图表。FE 对比场景确认（`views4-pv-chart-first`、`views4-pv-not-compliant`）。manifest 的默认 SPV 见第 4 节 | 一致 | —（默认 SPV 阶段 6，DV-lr5-033） | — | — |
+| `UI.LineItem`：怎样选定（SPV、PV、限定符） | 按 manifest 的默认 SPV → 不带限定符的 SPV → 不带限定符的 PV → `UI.LineItem` 的顺序选，PV 的 `Visualizations` 要含 LineItem 或 Chart 才采用；取第一个 LineItem 或 Chart，Chart 在前时默认显示图表（`LRConverter`、`DataVisualization`） | **阶段 4 按 FE**：不带限定符的 SPV → PV → `UI.LineItem`，PV 的 Visualizations 不含 LineItem 或 Chart 时不采用（也不用它的排序和 RequestAtLeast）；Chart 在前时整页只显示图表。FE 对比场景确认（`views4-pv-chart-first`、`views4-pv-not-compliant`）。manifest 的默认 SPV 见第 4 节（**阶段 6 按 FE**） | 一致 | — | — | — |
 | `UI.LineItem`：列集合与个性化 | LineItem 的记录生成列；实体上其他不隐藏的属性生成 `availability:"Adaptation"` 的列，可在个性化里添加；没有 LineItem 时是默认表（`Columns` `getColumnsFromEntityType`、`Table`） | **阶段 4 按 FE**：LineItem 以外不隐藏的属性可以在个性化里添加，默认不显示；没有 LineItem 时推导最多 8 列（本库约定，见第 6.3 节）。**阶段 4 收尾**：个性化对话框的候选按 FE：列面板先列显示中的列，其余按字母序；排序是全部可排序属性（去掉 NonSortable 和 TextOnly 的属性，加上文本和 criticality 的技术属性）；响应式表格的分组候选同排序，分析表的分组候选是 GroupableProperties。FE 对比场景确认（`cols5-p13n-GridTable`、`cols5-p13n-ResponsiveTable`；分析表的分组没有对比场景） | 一致 | — | — | — |
 | `UI.LineItem@UI.Criticality`（行高亮） | 注在 LineItem 集合上，生成行的 `highlight`（`Table`、`core/converters/…/Criticality`、`macros/table/MdcTableTemplate`） | **阶段 4 按 FE**：读 LineItem 上的 `UI.Criticality`（路径加进请求）：1 错误、2 警告、3 成功、5 信息，没激活过的新草稿为信息。常量（Negative、VeryNegative、VeryPositive 等）：真 FE 把枚举名交给 `TableFormatter.rowHighlighting`，值不合法，**不高亮**，smart-kit 跟着不高亮。路径值和常量都经阶段 4 收尾的 FE 对比场景确认（`cols5-types`、`cols5-negative`、`cols5-very-negative`、`cols5-very-positive`） | 一致 | — | — | — |
 | `UI.DataField`：`Value`、`Label` | 标签：`Label` → Value 的 `Common.Label` → 属性名；提示取 `Common.QuickInfo`（`Columns`） | 标签：`Label` → 属性标签（相同）；不设提示 | 一致 | — | ANN-01 | 一期 |
@@ -35,7 +35,7 @@
 | `UI.DataFieldWithActionGroup` | 列转换不把它当成列，列表不显示（`Columns`；术语是 Experimental） | **阶段 4 按 FE**：不作为列 | 一致 | — | — | — |
 | `UI.DataFieldForAnnotation` → `UI.DataPoint` | DataPoint 控件显示评分、进度或数值；列标签先取 DataPoint Value 的 `Common.Label`，再取记录 `Label`，不用 `Title`；导出带目标值（`Columns`、`macros/internal/DataPoint`） | 支持评分、进度、数值；**阶段 4 按 FE**：标签先取 DataPoint Value 的 `Common.Label`，再取记录 `Label`，不用 `Title`（FE 对比场景 `cols-po-list` 确认）；导出不带目标值 | 部分一致 | 待排（导出） | ANN-10 | 一期 |
 | `UI.DataFieldForAnnotation` → `UI.Chart`（单元格微图表） | 单元格里的 XS 微图表，也接受 PV 作为目标；没有数据时隐藏（`MdcTableTemplate`） | 支持行自身、单值导航、集合导航的图表；不接受 PV 作为目标。九种微图表，规则见 `15`，验收见 `17`；**阶段 4**：没有 `Label` 时，列标题和 FE 一样是列的键（例如 `DataFieldForAnnotation::Chart::BudgetBullet`） | 一致 | — | MC-60、MC-61、MC-65 | 三期 |
-| `UI.DataFieldForAnnotation` → `Communication.Contact` | Contact 控件：名字链接，点开联系人弹出框（`DisplayStyle`、`macros/contact/Contact`） | **阶段 4 按 FE**：名字链接，点开弹出框（职位、部门、角色、电话、邮件），详细信息在打开时按键读取。FE 对比场景确认（`display4-contacts`）。只显示第一个电话和邮件，没有地址和照片（阶段 6，DV-display4-006） | 部分一致 | 阶段 6 | — | — |
+| `UI.DataFieldForAnnotation` → `Communication.Contact` | Contact 控件：名字链接，点开联系人弹出框（`DisplayStyle`、`macros/contact/Contact`） | **阶段 4 按 FE**：名字链接，点开弹出框（职位、部门、角色、电话、邮件），详细信息在打开时按键读取。FE 对比场景确认（`display4-contacts`）。只显示第一个电话和邮件，没有地址和照片（长期，DV-op6-204） | 部分一致 | 长期（DV-op6-204） | — | — |
 | `UI.DataFieldForAnnotation` → `UI.FieldGroup` | 一列里纵向列出组内字段，缺省不带标签（manifest `showDataFieldsLabel` 时才带）；全部隐藏时整列隐藏（`MdcTableTemplate`、`Columns`） | **阶段 4 按 FE**：一个单元格里纵向列出，不带标签。阶段 4 收尾 FE 对比场景确认（`cols5-types`） | 一致 | — | — | — |
 | `UI.ConnectedFields`（列） | 按 `Template` 把多个字段拼在一个单元格（`MdcTableTemplate`、`Columns`） | **阶段 4 按 FE**：按 `Template` 拼成一行。阶段 4 收尾 FE 对比场景确认（`cols5-types`） | 一致 | — | — | — |
 | `UI.DataFieldForAction`（工具栏） | 非 Inline、非 Determining 的动作放在工具栏；绑定动作要先选行；没有绑定动作和删除时表格不可选（`Table`） | **阶段 4 按 FE**：非 Inline、非 Determining 的动作放进工具栏，顺序是注解动作、没有锚点的自定义动作、新建、复制、删除（FE 对比场景 `cols-po-draft-list` 工具栏一致）；表格仍始终可多选；参数对话框、部分处理见 ADR-024 | 部分一致 | 待排（选择列） | ANN-80 | 二期 |
@@ -50,10 +50,10 @@
 | `UI.DataFieldForIntentBasedNavigation` | 工具栏按钮或 Inline 列，`RequiresContext` 时要选行，依赖 launchpad（`Table`、`DisplayStyle`） | 忽略 | 未实现 | 阶段 4 | — | — |
 | `UI.CreateHidden` | 实体集或实体类型上，常量或路径，为真时隐藏"新建"（`StandardActions`） | **阶段 4**：读实体集上的，没有时读实体类型上的；常量为真时隐藏"新建"；路径形式不求值（FE 按绑定表达式求值）。常量形式阶段 4 收尾 FE 对比场景确认（`cols5-create-delete-hidden`） | 部分一致 | 待排（路径） | — | — |
 | `UI.DeleteHidden` | 为真时隐藏"删除"（`StandardActions`） | **阶段 4**：同上，常量为真时隐藏"删除"；路径形式不求值。常量形式阶段 4 收尾 FE 对比场景确认（`cols5-create-delete-hidden`） | 部分一致 | 待排（路径） | — | — |
-| `UI.UpdateHidden` | 列表页没有"编辑"按钮，只用于批量编辑和对象页（`StandardActions`） | 不读 | FE 列表页不用 | 阶段 6 核对 | — | — |
-| `Capabilities.InsertRestrictions` | `Insertable` 常量、路径或表达式；草稿根有 `NewAction` 时用它的 OperationAvailable；`RequiredProperties` 在新建时必填；默认新建方式 NewPage（`StandardActions`、`Table`） | 读入模型（`insertable`）；**阶段 4**：路径形式的 `Insertable` 保留"新建"；表达式当作 true；`newAction` 读了没用。**阶段 5 按 FE**：`tableSettings.creationMode.name` 默认 `NewPage`，草稿服务直接建草稿并打开对象页（`lr5-draft-newpage`），`CreationDialog` 可选（`lr5-creation-dialog`）；FE 先在对象页弹"New Object"对话框问非计算键和 NewAction 的必填参数，smart-kit 没有（阶段 6，DV-lr5-117）。没有草稿的服务，列表页也有"新建"（FE 1.154 只在草稿、粘性会话或 External 新建方式时有），按 D42 补记长期保留（`kit-extension`，DV-FE-04） | 部分一致 | 阶段 6（新建对话框，DV-lr5-117）；长期（非草稿新建） | ANN-45 | 一期 |
+| `UI.UpdateHidden` | 列表页没有"编辑"按钮，只用于批量编辑和对象页（`StandardActions`） | 不读 | FE 列表页不用 | —（对象页的"编辑"按它，**阶段 6 按 FE**，第 5 节） | — | — |
+| `Capabilities.InsertRestrictions` | `Insertable` 常量、路径或表达式；草稿根有 `NewAction` 时用它的 OperationAvailable；`RequiredProperties` 在新建时必填；默认新建方式 NewPage（`StandardActions`、`Table`） | 读入模型（`insertable`）；**阶段 4**：路径形式的 `Insertable` 保留"新建"；表达式当作 true；`newAction` 读了没用。**阶段 5 按 FE**：`tableSettings.creationMode.name` 默认 `NewPage`，草稿服务直接建草稿并打开对象页（`lr5-draft-newpage`），`CreationDialog` 可选（`lr5-creation-dialog`）；**阶段 6 按 FE**：新建草稿前先弹"New Object"对话框，问非计算的可见键（Guid 键只在有 `Common.Text` 时问）和不可变字段，值随 POST 发出；没有这类字段时不弹（`macros6-lr-newobject`）。没有草稿的服务，列表页也有"新建"（FE 1.154 只在草稿、粘性会话或 External 新建方式时有），按 D42 补记长期保留（`kit-extension`，DV-FE-04） | 部分一致 | 长期（非草稿新建） | ANN-45 | 一期 |
 | `Capabilities.DeleteRestrictions` | `Deletable` 常量 false 时隐藏"删除"；路径时加进请求，选中的行里至少一行可删时可用，只删可删的行（`Table`、`StandardActions`） | **阶段 4 按 FE**：常量和路径形式都按 FE（路径加进请求，按行判断）。路径形式阶段 4 收尾 FE 对比场景确认（`cols5-deletable-path`：请求、选行后的可用性、确认文字） | 一致 | — | ANN-45 | 一期 |
-| `Capabilities.UpdateRestrictions` | 列表页只用于批量编辑（`Table`） | 读入模型，给对象页编辑用 | FE 列表页不用 | 阶段 6 核对 | ANN-45 | 一期 |
+| `Capabilities.UpdateRestrictions` | 列表页只用于批量编辑（`Table`） | 读入模型，给对象页编辑用 | FE 列表页不用 | —（对象页按 FE，阶段 6；批量编辑见 `enableMassEdit`） | ANN-45 | 一期 |
 | `Capabilities.SupportedFormats` | 含 `application/pdf` 时导出菜单多一个 PDF；XLSX 总是有（`macros/table/delegates/TableDelegate`） | 只导出 xlsx | 未实现 | 阶段 4 | — | — |
 | `UI.MediaResource` | 有 Stream 时启用上传表格插件（`Table`） | 不读（`UploadSetwithTable` 要手工配置） | 未实现 | 阶段 4 | — | — |
 | `Common.SemanticKey`（列和请求） | 总是请求语义键；响应式表格显示为 ObjectIdentifier，网格表是加粗 Label；Importance High；草稿标记在语义键单元格，网格表单独一列 `draftStatus`（`Table`、`Columns`、`MdcTableTemplate`） | 语义键列加粗；**阶段 3**：网格表的草稿标记改为单独一列 `draftStatus`（只有图标、无列标题）；语义键不在 LineItem 里时仍不请求 | 部分一致 | 阶段 4 | ANN-24 | 一期 |
@@ -98,20 +98,20 @@
 | `ValueListParameterDisplayOnly` | 值帮助表格的列，参与 distinct（`ValueListHelper`） | 作为列；**阶段 4 按 FE**：不再当作描述 | 一致 | — | — | — |
 | `InitialValueIsSignificant`（In、InOut、Constant 参数上） | In 值为空时也作为条件（`ValueListHelper`） | 忽略 | 未实现 | 阶段 4 | — | — |
 | `Common.ValueListWithFixedValues` | 下拉或多选，没有对话框（`macros/filterBar/FilterFieldTemplate`、`macros/internal/valuehelp/ValueHelpTemplating`） | SingleValue 用 Select，其他用固定建议的 TagsInput，不显示值帮助按钮；**阶段 4 按 FE**：固定值在获得焦点、打开下拉或条件需要描述时才加载（原来一显示就加载，DV-FE-08、DV-FE-09 已删） | 一致 | — | ANN-22 | 一期 |
-| `Common.ValueListReferences` | 交给 OData 模型从外部值帮助服务加载（`core/templating/PropertyHelper`、`macros/field/FieldHelper`） | **阶段 4 收尾按 FE**：筛选栏（类型提示、值帮助对话框、令牌文字、手输校验）加载引用的值帮助服务的 `$metadata`，读其中的 `ValueListMapping`，请求发到值帮助服务；`DataProvider` 新增可选的 `valueListService`。FE 对比场景确认（`vhref-initial`、`vhref-typeahead`、`vhref-dialog`、`vhref-token`、`vhref-typed`，测试服务 `/odata/purchasing-vh/`）。编辑态（对象页、表单）还不加载（阶段 6，DV-vhref-001） | 一致 | 阶段 6（编辑态） | — | — |
-| `Common.ValueListMapping` | 外部值帮助服务的映射（`PropertyHelper`、`FieldHelper`） | **阶段 4 收尾按 FE**：随 ValueListReferences 读取，参数、描述和列的规则同本服务的 ValueList（FE 对比场景同上）；`ValueListRelevantQualifiers` 不筛引用服务的映射（FE 要按行求值，属于编辑态，阶段 6，DV-vhref-002） | 一致 | 阶段 6（DV-vhref-002） | — | — |
+| `Common.ValueListReferences` | 交给 OData 模型从外部值帮助服务加载（`core/templating/PropertyHelper`、`macros/field/FieldHelper`） | **阶段 4 收尾按 FE**：筛选栏（类型提示、值帮助对话框、令牌文字、手输校验）加载引用的值帮助服务的 `$metadata`，读其中的 `ValueListMapping`，请求发到值帮助服务；`DataProvider` 新增可选的 `valueListService`。FE 对比场景确认（`vhref-initial`、`vhref-typeahead`、`vhref-dialog`、`vhref-token`、`vhref-typed`，测试服务 `/odata/purchasing-vh/`）。**阶段 6**：编辑态（对象页、表单）也加载引用的值帮助服务（只有代码，没有编辑态的 FE 场景，见 `29c` D 节） | 一致 | — | — | — |
+| `Common.ValueListMapping` | 外部值帮助服务的映射（`PropertyHelper`、`FieldHelper`） | **阶段 4 收尾按 FE**：随 ValueListReferences 读取，参数、描述和列的规则同本服务的 ValueList（FE 对比场景同上）；`ValueListRelevantQualifiers` 不筛引用服务的映射（FE 要按行求值，属于编辑态，长期，DV-op6-205） | 一致 | 长期（DV-op6-205） | — | — |
 | `Common.ValueListRelevantQualifiers` | 决定哪些限定符的 ValueList 生效（`ValueHelpTemplating`、`ValueListHelper`） | **阶段 4**：按列出的限定符过滤（空字符串是不带限定符的）；`$If` 等表达式不支持 | 部分一致 | 待排（表达式） | — | — |
 | `Common.ValueListShowValuesImmediately` | 只用于编辑态（`macros/internal/field/EditStyle`） | 忽略 | FE 列表页不用 | 阶段 6 核对 | — | — |
 | `Common.ValueListForValidation` | 筛选输入按指定值帮助校验（`ValueHelpTemplating`） | 不校验 | 未实现 | 阶段 4 | — | — |
 | `Common.QuickInfo`（筛选字段） | 筛选字段的提示（`FilterFieldTemplate`、`FilterBar`） | 不读 | 未实现 | 阶段 4 | — | — |
 | `Common.DocumentationRef` | 标签旁的文档链接（`FilterFieldTemplate`、`FilterBarDelegate`） | 不读 | 未实现 | 阶段 4 | — | — |
-| `Common.ResultContext` | 参数化实体集：参数成为必填单值筛选字段，请求 `/Set(P=…)/Results`（`FilterBar`、`FilterRestrictions`、`FilterField`、`FilterHelper`） | **阶段 4 收尾按 FE**（列表页）：`ListReport` 的 `contextPath="/P/Set"`（或 `entitySet`）；参数是筛选栏最前面的必填单值字段，默认值来自 SV 的 Parameters 和参数上的 FilterDefaultValue，请求 `/P(p1=…,p2=…)/Set`。FE 对比场景确认（`params-initial`、`params-change`，FE 应用 `purchasing-params`）。没做：从结果行进对象页、参数化实体集上的图表、树表和分析表、值帮助的 CollectionPath 是参数化实体集（阶段 6，DV-vhref-003）；启动台的用户默认值（长期，D42，DV-vhref-004） | 部分一致 | 阶段 6（DV-vhref-003）；长期（D42） | — | — |
+| `Common.ResultContext` | 参数化实体集：参数成为必填单值筛选字段，请求 `/Set(P=…)/Results`（`FilterBar`、`FilterRestrictions`、`FilterField`、`FilterHelper`） | **阶段 4 收尾按 FE**（列表页）：`ListReport` 的 `contextPath="/P/Set"`（或 `entitySet`）；参数是筛选栏最前面的必填单值字段，默认值来自 SV 的 Parameters 和参数上的 FilterDefaultValue，请求 `/P(p1=…,p2=…)/Set`。FE 对比场景确认（`params-initial`、`params-change`，FE 应用 `purchasing-params`）。没做：从结果行进对象页、参数化实体集上的图表、树表和分析表、值帮助的 CollectionPath 是参数化实体集（长期，DV-op6-206）；启动台的用户默认值（长期，D42，DV-vhref-004） | 部分一致 | 长期（DV-op6-206；D42） | — | — |
 | `PersonalData.IsPotentiallySensitive` | 不写入 app state 和导航上下文，值帮助不记输入历史（`FilterBarDelegate`、`navigation/NavigationHandler`、`ValueHelpDelegate`） | 不读；页面状态存 sessionStorage 时会持久化敏感值 | 未实现 | 阶段 4 | — | — |
 | `UI.ExcludeFromNavigationContext` | 不写入 app state 和导航上下文（`FilterBarDelegate`、`NavigationHandler`） | 不读；没有带上下文的跨应用导航 | 未实现 | 阶段 4 | — | — |
 | `Analytics.Measure`（筛选栏） | 度量字段的筛选值不写入 app state（`FilterBarDelegate`） | 不读 | 未实现 | 阶段 4 | — | — |
 | `Common.Label`（筛选字段） | 目标属性的 `Common.Label`，没有时用属性名（`FilterBar`、`FilterFieldTemplate`） | 相同；没有时按驼峰拆词（本库约定） | 一致 | — | ANN-20 | 一期 |
 | 日期筛选的语义运算符（Edm.Date、DateTimeOffset） | manifest `useSemanticDateRange` 缺省 true，DynamicDateRange 带大量运算符（`macros/filterBar/DefaultSemanticDateOperators`、`CommonHelper`） | **阶段 4 按 FE**：FE 的默认和扩展运算符（DATE、FROM、TO、DATERANGE、TODAYFROMTO、SPECIFICMONTH(INYEAR)、QUARTER1–4、DATETOYEAR、FIRSTDAY* / LASTDAY*，天、周、月、季、年的 LAST / NEXT 及 …INCLUDED 等）；相对日期一律生成 BT；SingleValue 日期有单值相对日期；一周起始日跟随语言。FE 对比场景确认（`filter4-date-last-weeks`）。DateTimeOffset 的 LAST / NEXT MINUTES / HOURS 没做；DateTimeOffset 的 DATE / TO 上界写成次日 0 点的 `lt`（FE 是 `le 23:59:59.999`，结果相同） | 部分一致 | 待排（分钟、小时） | — | — |
-| `Common.SemanticDateRange` | 词汇表没有这个术语，对应的是 manifest 设置 | 相对日期缺省开启，和 FE 一致 | FE 列表页不用 | 阶段 6（manifest 的 `useSemanticDateRange`，DV-lr5-098） | — | — |
+| `Common.SemanticDateRange` | 词汇表没有这个术语，对应的是 manifest 设置 | 相对日期缺省开启，和 FE 一致 | FE 列表页不用 | 待排（manifest 的 `useSemanticDateRange`，DV-macros6-l27） | — | — |
 
 ## 3. 值的显示
 
@@ -129,9 +129,9 @@ FE 单元格显示方式的判定顺序在 `FieldStructureHelper` 的 `setUpDisp
 | 语义键单元格 | 响应式表格用 ObjectIdentifier（标题、描述两行），网格表用 LabelSemanticKey（`FieldStructureHelper`） | 整行加粗，一行显示 | 部分一致 | 阶段 4 | ANN-24 | 一期 |
 | `Common.Label` 与列标题的回退 | DataField.Label → `Common.Label` → 属性名原样；`UI.DataFieldDefault` 的 Label 优先；`Common.QuickInfo` 作列提示（`Columns`） | `Label` → `Common.Label` → 按驼峰拆词（本库约定）；不支持 DataFieldDefault、QuickInfo | 部分一致 | 阶段 4 | ANN-20 | 一期 |
 | 指向 DataPoint 的列标题 | 先取 DataPoint.Value 的 `Common.Label`，再取 DataField.Label，不用 DataPoint.Title（`Columns` `getLabel`） | **阶段 4 按 FE**：顺序相同，都没有时用值的路径。FE 对比场景确认（`cols-po-list`） | 一致 | — | — | — |
-| `Measures.ISOCurrency` | 表格里 `isCurrencyOrUnitAligned`，数字和币种分开对齐；小数位按 CodeList，否则按 CLDR（`MdcTableTemplate`、`FieldStructureHelper`） | 按 Intl 的 ISO 4217 小数位，数字后面加币种；不做小数点对齐；小数点对齐登记为阶段 6（DV-display4-002） | 部分一致 | 阶段 6 | ANN-30 | 一期 |
-| `Measures.Unit` | 同样对齐；小数位按 UnitsOfMeasure CodeList；常量 `%` 显示为"x %"（`core/templating/PropertyHelper`、`DataPointTemplating`） | 小数位按 Edm Scale facet，单位附在后面；CodeList 的小数位阶段 6（DV-display4-001） | 部分一致 | 阶段 6 | ANN-30 | 一期 |
-| `CodeList.CurrencyCodes` / `CodeList.UnitsOfMeasure` | 读每个代码的小数位和外部代码（`DataPointTemplating`、`base/BindingToolkit`、`core/AppComponent`） | 不读（DV-display4-001；测试服务没有容器上的 CodeList 注解） | 未实现 | 阶段 6 | — | — |
+| `Measures.ISOCurrency` | 表格里 `isCurrencyOrUnitAligned`，数字和币种分开对齐；小数位按 CodeList，否则按 CLDR（`MdcTableTemplate`、`FieldStructureHelper`） | 按 Intl 的 ISO 4217 小数位，数字后面加币种；不做小数点对齐；小数点对齐登记为长期（DV-op6-202） | 部分一致 | 长期（DV-op6-202） | ANN-30 | 一期 |
+| `Measures.Unit` | 同样对齐；小数位按 UnitsOfMeasure CodeList；常量 `%` 显示为"x %"（`core/templating/PropertyHelper`、`DataPointTemplating`） | 小数位按 Edm Scale facet，单位附在后面；CodeList 的小数位长期（DV-op6-201） | 部分一致 | 长期（DV-op6-201） | ANN-30 | 一期 |
+| `CodeList.CurrencyCodes` / `CodeList.UnitsOfMeasure` | 读每个代码的小数位和外部代码（`DataPointTemplating`、`base/BindingToolkit`、`core/AppComponent`） | 不读（DV-op6-201；测试服务没有容器上的 CodeList 注解） | 未实现 | 长期（DV-op6-201） | — | — |
 | `Measures.Scale` | 只在 AnnotationConverter 里登记，不用 | 也不用；小数位来自 Edm 的 `Scale` facet（原 `02` 说支持 `Measures.Scale`，有误） | 一致（都不用） | — | ANN-30 | 一期 |
 | `Common.IsCurrency` / `Common.IsUnit` | 只用于值帮助输入校验（`ValueHelpTemplating`） | 不读 | 未实现 | 阶段 4 | — | — |
 | `UI.DoNotCheckScaleOfMeasuredQuantity` | 只在解析和编辑时跳过小数位校验（`core/templating/UIFormatters`） | 不读 | FE 列表页不用 | 阶段 6 核对 | — | — |
@@ -144,17 +144,17 @@ FE 单元格显示方式的判定顺序在 `FieldStructureHelper` 的 `setUpDisp
 | `UI.DateTimeStyle` | 按 short/medium/long/full 格式化（`UIFormatters`） | 不读；固定 medium 日期时间（**阶段 4 收尾**：时间带秒，同 FE `DateTimeOffset` 类型的缺省 medium 样式） | 未实现 | 阶段 4 | — | — |
 | `UI.IsImageURL` | Avatar；`IsNaturalPerson` 时圆形，否则方形（`FieldStructureHelper`、`FieldTemplating`） | Avatar，固定小圆角方形 | 部分一致 | 阶段 4 | ANN-14 | 一期 |
 | `UI.IsImage`（流属性） | 显示方式 File，内容为图片（`FieldStructureHelper`、`DisplayStyle`） | 不读 | 未实现 | 阶段 4 | — | — |
-| `Edm.Stream` + `Core.MediaType` / `ContentDisposition` / `AcceptableMediaTypes` | 显示方式 File：可下载的链接或图标，image/* 有预览（`DisplayStyle`） | **阶段 4 按 FE**：下载链接（`@odata.mediaReadLink`），名字取 `Core.ContentDisposition/Filename`，没有时为"打开文件"；没有内容时不显示。图标、头像、上传阶段 6（DV-display4-005）；fe-mockserver 没有流，没有 FE 对比场景 | 部分一致 | 阶段 6 | ANN-50 | 一期 |
+| `Edm.Stream` + `Core.MediaType` / `ContentDisposition` / `AcceptableMediaTypes` | 显示方式 File：可下载的链接或图标，image/* 有预览（`DisplayStyle`） | **阶段 4 按 FE**：下载链接（`@odata.mediaReadLink`），名字取 `Core.ContentDisposition/Filename`，没有时为"打开文件"；没有内容时不显示。图标、头像、上传长期（DV-op6-203）；fe-mockserver 没有流，没有 FE 对比场景 | 部分一致 | 长期（DV-op6-203） | ANN-50 | 一期 |
 | `Core.IsURL` | 列表页不显示为链接 | **阶段 4（D41）**：按 FE 去掉，显示为普通文本（`PropertyModel.isUrl` 删除） | 一致 | — | ANN-50 | 一期 |
 | `DataFieldWithUrl` 的协议和 `IconUrl` | Link，href 不限协议；IconUrl 时带图标（`DisplayStyle`） | **阶段 4 按 FE**：不限协议（只拒绝 `javascript:`、`vbscript:`、`data:`，本库的安全约定）；有 IconUrl 时带图标 | 一致 | — | — | — |
 | `HTML5.LinkTarget` | 取 record 或属性上的；缺省不设 target（当前窗口）（`DisplayStyle`） | **阶段 4 按 FE（D41）**：取记录或属性上的，缺省当前窗口。FE 对比场景确认（`display4-contacts`） | 一致 | — | — | — |
 | `UI.MultiLineText` | ExpandableText，超长截断带"更多"（`DisplayStyle`） | `pre-wrap` 显示全文 | 部分一致 | 阶段 4 | ANN-14 | 一期 |
 | `Common.Masked` | 显示为掩码（`DisplayStyle`） | **阶段 4 按 FE**：每个字符显示为一个 `*`。FE 对比场景确认（`display4-contacts`） | 一致 | — | — | — |
 | `UI.InputMask` | 显示是普通文本，掩码只用于编辑（`FieldStructureHelper`、`EditStyle`） | 显示为普通文本 | 一致（显示） | 阶段 6 核对（编辑） | — | — |
-| `UI.Placeholder` | 只用于编辑字段（`FieldTemplating`） | 不读 | 未实现 | 阶段 6 核对 | — | — |
+| `UI.Placeholder` | 只用于编辑字段（`FieldTemplating`） | **阶段 6 按 FE**：编辑字段的占位文字（`PropertyModel.placeholder`，`29c` D 节） | 一致 | — | — | — |
 | `Communication.IsEmailAddress` | `mailto:` 链接（`DisplayStyle`） | **阶段 4 按 FE**：`mailto:` 链接。FE 对比场景确认（`display4-contacts`） | 一致 | — | — | — |
 | `Communication.IsPhoneNumber` | `tel:` 链接（`DisplayStyle`） | **阶段 4 按 FE**：`tel:` 链接。FE 对比场景确认（`display4-contacts`） | 一致 | — | — | — |
-| `Communication.Contact`（单元格） | 联系人卡片（`macros/contact/Contact`、`FieldStructureHelper`） | **阶段 4**：名字链接和联系人弹出框，见第 1 节；只显示第一个电话和邮件（阶段 6） | 部分一致 | 阶段 6 | — | — |
+| `Communication.Contact`（单元格） | 联系人卡片（`macros/contact/Contact`、`FieldStructureHelper`） | **阶段 4**：名字链接和联系人弹出框，见第 1 节；只显示第一个电话和邮件（长期，DV-op6-204） | 部分一致 | 长期（DV-op6-204） | — | — |
 | `Common.IsNaturalPerson` | 决定 Avatar 和快速预览头部的形状（`FieldTemplating`、`macros/quickView/QuickViewHeaderOptions`） | 只看有没有 `Communication.Contact`；头像固定形状 | 部分一致 | 阶段 4 | — | — |
 | `DataField/Criticality`（单元格） | ObjectStatus，常量或路径（`FieldStructureHelper`、`CriticalityFormatters`） | 状态色和图标（0 中性、1 负面、2 警告、3 正面、5 信息） | 一致 | — | ANN-11 | 一期 |
 | `DataField/CriticalityRepresentation` | 只有 `WithoutIcon` 不显示图标（`CriticalityFormatters`） | 相同 | 一致 | — | ANN-11 | 一期 |
@@ -170,7 +170,7 @@ FE 单元格显示方式的判定顺序在 `FieldStructureHelper` 的 `setUpDisp
 | DataPoint `Title` | 单元格不显示，列标题不用 | **阶段 4 按 FE**：列标题不再用它 | 一致 | — | — | — |
 | `UI.ValueCriticality` | 只用于图表和可视筛选按维度值着色（`macros/chart/ChartHelper`、`macros/visualfilters/InteractiveChartHelper`） | 不读 | 未实现 | 阶段 4 | — | — |
 | `Validation.Minimum` / `Validation.Maximum` | 类型约束，校验筛选和编辑输入（`UIFormatters`） | 不读 | 未实现 | 阶段 4 | — | — |
-| `Common.SemanticObject`（含 `SemanticObjectMapping`、`SemanticObjectUnavailableActions`） | 智能链接 LinkWithQuickView，列出 FLP 意图导航（`FieldStructureHelper`、`core/templating/SemanticObjectHelper`、`macros/quickView/QuickView`） | **阶段 4（D42）**：导航目标由宿主的 `NavigationAdapter.semanticTargets` 给出：没有目标时是普通文本（和没有 FLP 的 FE 相同），一个目标时直接链接，多个时弹出框；只读常量形式。Mapping、UnavailableActions、"更多链接"、路径形式，以及快速预览和链接合在一个弹出框，登记为长期偏差（DV-display4-004） | 部分一致 | 长期（D42） | — | — |
+| `Common.SemanticObject`（含 `SemanticObjectMapping`、`SemanticObjectUnavailableActions`） | 智能链接 LinkWithQuickView，列出 FLP 意图导航（`FieldStructureHelper`、`core/templating/SemanticObjectHelper`、`macros/quickView/QuickView`） | **阶段 4（D42）**：导航目标由宿主的 `NavigationAdapter.semanticTargets` 给出：没有目标时是普通文本（和没有 FLP 的 FE 相同），一个目标时直接链接，多个时弹出框；只读常量形式。Mapping、UnavailableActions、"更多链接"、路径形式，以及快速预览和链接合在一个弹出框，登记为长期偏差（DV-display4-004）。**阶段 6**：`Field` 积木的 `semanticObject` 属性（按 FE 覆盖注解的语义对象） | 部分一致 | 长期（D42） | — | — |
 | `UI.QuickViewFacets` | 字段是导航的外键、或经导航取目标的键或语义键时显示快速预览；DataPoint 也可以（`FieldTemplating`、`DataPoint`） | **阶段 4 按 FE**：外键规则，加上"经导航取目标键或语义键"；去掉了"文本经过导航"这一条（FE 没有）。DataPoint 不支持 | 部分一致 | 待排（DataPoint） | ANN-86 | 二期 |
 | `Common.ExternalID` | 显示外部 ID 而不是内部 ID（`PropertyHelper`、`FieldStructureHelper`、`DataPointTemplating`、`FilterFieldTemplate`） | **阶段 4 按 FE**：单元格显示并格式化 ExternalID 的属性，加进请求（FE 对比场景 `display4-contacts`）；筛选令牌还没做 | 部分一致 | 待排（筛选令牌） | — | — |
 | `PersonalData.IsPotentiallyPersonal` | 只用于判断乐观批处理（`macros/table/Utils`） | 不读 | FE 列表页不用 | — | — | — |
@@ -183,7 +183,7 @@ FE 单元格显示方式的判定顺序在 `FieldStructureHelper` 的 `setUpDisp
 | 术语 / 记录属性 | FE 1.154 的处理（模块） | smart-kit 现状 | 结论 | 计划阶段 | ANN 编号 | 期 |
 | --- | --- | --- | --- | --- | --- | --- |
 | `UI.PresentationVariant`（列表页默认解析） | SPV 的 PV 要"合规"（Visualizations 含 LineItem 或 Chart），否则回退到 PV、再到 LineItem（`LRConverter`、`DataVisualization` `isPresentationCompliant`） | **阶段 4 按 FE**：检查合规，按 SPV → PV → LineItem 回退（同第 1 节） | 一致 | — | ANN-04 | 一期 |
-| 默认 SPV / PV（manifest `defaultTemplateAnnotationPath`） | manifest 指定带限定符的 SPV 作为默认（`DataVisualization`、`LRConverter`） | 没有对应属性；阶段 5 没做（DV-lr5-033） | 未实现 | 阶段 6 | — | — |
+| 默认 SPV / PV（manifest `defaultTemplateAnnotationPath`） | manifest 指定带限定符的 SPV 作为默认（`DataVisualization`、`LRConverter`） | **阶段 6 按 FE**：`defaultTemplateAnnotationPath` 指定的 SPV 的 PV 是表格的，SV 是默认筛选（`macros6-lr-default-template`） | 一致 | — | — | — |
 | `PV/SortOrder`（`Property`、`Descending`） | 表格初始排序，跳过不可排序的属性（`Table`、`macros/table/adapter/TablePVToState`） | 相同；金额先按单位排序（本库约定，第 6.3 节） | 一致 | — | ANN-04 | 一期 |
 | `PV/SortOrder/DynamicProperty` | 只用于图表（`ChartHelper` `getSortConditions`） | 表格忽略；**阶段 4 按 FE**：图表排序里换成 AggregatedProperty 的 Name | 一致 | — | — | — |
 | `PV/Visualizations` | 取第一个 LineItem 或 Chart，只引用 Chart 的 PV 在列表页只显示图表（`DataVisualization`） | **阶段 4 按 FE**：取第一个 LineItem 或 Chart；只引用 Chart 时整页只显示图表（`ui.defaultChart`） | 一致 | — | ANN-04 | 一期 |
@@ -191,10 +191,10 @@ FE 单元格显示方式的判定顺序在 `FieldStructureHelper` 的 `setUpDisp
 | `PV/GroupBy` | ResponsiveTable 只用第一个路径，AnalyticalTable 所有层级（`Table`） | 只用第一个路径作为默认分组 | 部分一致 | 阶段 4 | ANN-04 | 一期 |
 | `PV/Total` | 只用于 AnalyticalTable；没有 `Total` 时默认合计所有 CustomAggregate 的列；GridTable、ResponsiveTable 没有合计和小计（`Table` `updateTableVisualizationForType`、`getAggregateConditions`） | **阶段 3 按 FE（D39）**：合计和小计只给分析表；没有 `Total` 时默认合计全部可合计（CustomAggregate）列；多种币种时显示一个值加"多单位"标记，请求按单位一并聚合（按 FE） | 一致 | — | ANN-04 | 一期 |
 | `PV/TotalBy`、`IncludeGrandTotal`、`DynamicTotal`、`RequestAtLeastDynamic`、`RecursiveHierarchyQualifier` | 列表页不读 | 不读 | FE 列表页不用 | — | — | — |
-| `PV/MaxItems` | 表格每次加载的行数，缺省列表页 30、Grid/Analytical 100、Tree 200（`Table`）；KPI 图表的数据点数（`core/converters/controls/Common/KPI`） | **阶段 5 按 FE**：页大小按 FE `getThreshold`（MaxItems；否则响应式 30、网格 / 分析表 100、树表 200；`tableSettings.threshold` 优先），网格类表格首块 `$top` = threshold + ⌈窗口高度 / 25⌉（`lr5-threshold`、`apply-paging`）；滚动后各块 FE 按实际行数读，smart-kit 每块一样大（阶段 6，DV-lr5-122） | 部分一致 | 阶段 6（后续块的 `$top`） | — | — |
+| `PV/MaxItems` | 表格每次加载的行数，缺省列表页 30、Grid/Analytical 100、Tree 200（`Table`）；KPI 图表的数据点数（`core/converters/controls/Common/KPI`） | **阶段 5 按 FE**：页大小按 FE `getThreshold`（MaxItems；否则响应式 30、网格 / 分析表 100、树表 200；`tableSettings.threshold` 优先），网格类表格首块 `$top` = threshold + ⌈窗口高度 / 25⌉（`lr5-threshold`、`apply-paging`）；滚动后各块 FE 按实际行数读，smart-kit 每块一样大（长期，DV-macros6-t38：AG Grid 的无限行模型按固定块读） | 部分一致 | 长期（后续块的 `$top`，DV-macros6-t38） | — | — |
 | `PV/InitialExpansionLevel` | TreeTable 的初始展开层级（`Table`） | **阶段 4 按 FE**：层级表的 `initialExpansionLevel` 缺省取 InitialExpansionLevel + 1。只有单元测试 | 一致 | — | — | — |
 | `PV/Text` | 视图指向 PV 时作为标签页标题（`LRConverter`） | 只读 SPV 的 `Text` | 部分一致 | 阶段 4 | — | — |
-| 多视图的来源（manifest `views.paths`） | 只在 manifest 配置时才有；每个 path 可以是 SPV、PV 或 SV，可以带自己的实体集；视图的 SV 是隐藏过滤；`showCounts` 控制计数（`LRConverter`） | 自动收集所有带限定符的 SPV；视图的完整 SV 作为隐藏过滤、SelectionFields 留在筛选栏（**阶段 3 按 FE**，`29a` 第④点已解决）；**阶段 4**：视图没有排序时不再回退到默认 PV 的排序。**阶段 5 按 FE**：视图由 `views.paths` 指定（SPV、PV 或 LineItem，可带 `entitySet` / `contextPath`，自定义视图 `label` + `template`），不再自动收集；页签计数用 `<set>/$count`（视图条件在前，只数未选中的页签，计数单独显示，`lr5-views-counts`）。组合视图、`keepPreviousPersonalization` 没做（阶段 6，DV-lr5-035～038）；切换到没有排序的视图时 FE 多发一次请求，不照抄（长期，DV-lr5-120） | 部分一致 | 阶段 6（组合视图）；长期（DV-lr5-120） | ANN-85 | 二期 |
+| 多视图的来源（manifest `views.paths`） | 只在 manifest 配置时才有；每个 path 可以是 SPV、PV 或 SV，可以带自己的实体集；视图的 SV 是隐藏过滤；`showCounts` 控制计数（`LRConverter`） | 自动收集所有带限定符的 SPV；视图的完整 SV 作为隐藏过滤、SelectionFields 留在筛选栏（**阶段 3 按 FE**，`29a` 第④点已解决）；**阶段 4**：视图没有排序时不再回退到默认 PV 的排序。**阶段 5 按 FE**：视图由 `views.paths` 指定（SPV、PV 或 LineItem，可带 `entitySet` / `contextPath`，自定义视图 `label` + `template`），不再自动收集；页签计数用 `<set>/$count`（视图条件在前，只数未选中的页签，计数单独显示，`lr5-views-counts`）。**阶段 6 按 FE**：`annotationPath` 可指向 SelectionVariant（默认表格按 SV 过滤，`macros6-lr-views-sv`）；组合视图（`primary` 图表、`secondary` 表格，`defaultPath` 默认 `both`，`macros6-lr-combined`、`-combined-table`）；`keepPreviousPersonalization`；切换到没有排序的视图时 FE 多发一次请求，不照抄（长期，DV-lr5-120） | 一致 | 长期（DV-lr5-120） | ANN-85 | 二期 |
 | 多视图：图表视图与表格视图 | 视图的 PV 引用 Chart 时是单独的图表视图，不能切成表格（`LRConverter`、`DataVisualization`） | **阶段 4 按 FE**：视图 PV 的第一个可视化是 Chart 时是图表视图，不能切成表格；表格视图不再自动出现图表切换（只有 `chart` 属性才有）；图表视图不按视图 PV 的 SortOrder 排序（FE 也不按）。FE 对比场景确认（`views4-chart-view`） | 一致 | — | — | — |
 | ALP / 混合视图（图表和表格同屏） | `hasMultipleVisualizations` 或 ALP 时图表加表格（`LRConverter`、`DataVisualization` `isAlpAnnotation`） | 只有表格 / 图表二选一 | 未实现 | 阶段 4（可以不做，写明） | — | — |
 | `UI.Chart/ChartType`（列表页图表） | 映射约 40 种 sap.chart 类型（`ChartHelper`、`macros/chart/MdcChartTemplate`） | **阶段 4 按 FE**：照 FE `ChartTypeEnum` 映射 38 种，`data-sk-chart` 用 sap.chart 的名字；柱、条、折线、面积、饼、环形及堆积、百分比堆积按类型画；dual、combination、scatter、bubble、heatmap、treemap、waterfall、bullet 画成最接近的柱或条（近似画法，`drawnChart().exact=false`）。FE 对比场景确认（`views4-chart-line`、`views4-chart-donut`、`views4-chart-column-stacked`） | 部分一致 | 待排（近似画法） | ANN-82 | 二期 |
@@ -209,7 +209,7 @@ FE 单元格显示方式的判定顺序在 `FieldStructureHelper` 的 `setUpDisp
 | `UI.HeaderInfo/TypeNamePlural` | 表格标题（`Table` `getTableAnnotationConfiguration`） | 表格标题、导出标题；页面标题缺省也用它（FE 来自应用描述符） | 一致 | — | ANN-03 | 一期 |
 | `UI.HeaderInfo/Title`、`Description`（删除确认） | 删除确认显示被删对象的 Title（`macros/table/TableEventHandlerProvider`） | **阶段 4 按 FE**：删除确认用 FE 的文字，带 HeaderInfo 的 Title 和 Description；多行和部分行不能删的提示也按 FE；**阶段 4 收尾**：单数、复数的文字分开，FE 对比场景确认（`cols5-deletable-path`） | 一致 | — | — | — |
 | `UI.HeaderInfo/TypeName` | 批量编辑对话框标题等（`MassEditDialogHelper`） | "已删除"提示、新建对话框标题 | 一致 | — | ANN-03 | 一期 |
-| `Aggregation.ApplySupported/Transformations` | 全部 8 种转换时默认表格类型自动变成 AnalyticalTable；含 `search` 才允许搜索（分析表、层级表、图表）；读容器上的 `ApplySupportedDefaults`（`Table`、`Chart`、`core/converters/helpers/Aggregation`） | **阶段 4 按 FE**：不设表格类型时按注解自动选，全部 8 种转换时用 AnalyticalTable（`views4-table-type`）；都不满足时用 ResponsiveTable（**阶段 5 按 FE**，`tableSettings.type`，`lr5-table-default`）。**阶段 4 收尾按 FE**：未分组的分析表用一个 `$apply` 的 `concat` 同时取首页的行、合计和条数（FE 对比场景 `apply-initial`、`apply-sort`、`apply-sort-amount`、`apply-filter`、`apply-search`、`apply-paging`）；分组的分析表仍是行、小计、合计分开请求（FE 是可折叠的层级，阶段 5 改到阶段 6，DV-lr5-118、119）；Transformations 不含 `search` 时分析表没有搜索框，筛选栏的搜索也去掉（同 FE）。不读 ApplySupportedDefaults | 部分一致 | 阶段 6（分组的分析表）；待排（ApplySupportedDefaults） | — | — |
+| `Aggregation.ApplySupported/Transformations` | 全部 8 种转换时默认表格类型自动变成 AnalyticalTable；含 `search` 才允许搜索（分析表、层级表、图表）；读容器上的 `ApplySupportedDefaults`（`Table`、`Chart`、`core/converters/helpers/Aggregation`） | **阶段 4 按 FE**：不设表格类型时按注解自动选，全部 8 种转换时用 AnalyticalTable（`views4-table-type`）；都不满足时用 ResponsiveTable（**阶段 5 按 FE**，`tableSettings.type`，`lr5-table-default`）。**阶段 4 收尾按 FE**：未分组的分析表用一个 `$apply` 的 `concat` 同时取首页的行、合计和条数（FE 对比场景 `apply-initial`、`apply-sort`、`apply-sort-amount`、`apply-filter`、`apply-search`、`apply-paging`）；**阶段 6 按 FE**：分组的分析表是可折叠的层级（groupLevels）：首个请求和 FE 相同（叶子数、合计、第一层的组，组开始折叠，小计在组头），展开时用列表请求读组内行（`$filter=G eq 'v' and (…)`、`$count`），展开后小计在组底（`macros6-grouped`、`macros6-grouped-expand`）；`analyticalConfiguration.aggregationOnLeafLevel`；Transformations 不含 `search` 时分析表没有搜索框，筛选栏的搜索也去掉（同 FE）。不读 ApplySupportedDefaults | 部分一致 | 待排（ApplySupportedDefaults） | — | — |
 | `ApplySupported/GroupableProperties` | 列表为空＝都可分组，否则只有列出的（`Aggregation` `isPropertyGroupable`） | 相同（`23`） | 一致 | — | — | — |
 | `ApplySupported/AggregatableProperties` | 分析表的可聚合列不看它而看 CustomAggregate；图表的可选度量参考它（`Table`、`Aggregation`、`Chart`、`ChartDelegate`） | **阶段 3**：合计只认 CustomAggregate（D39），和 FE 一致；图表个性化（可选度量）没有做 | 部分一致 | 阶段 4 | — | — |
 | `ApplySupported/Rollup`、`PropertyRestrictions` | FE 不读 | 不读 | FE 列表页不用 | — | — | — |
@@ -229,36 +229,36 @@ FE 单元格显示方式的判定顺序在 `FieldStructureHelper` 的 `setUpDisp
 | `Common.SemanticKey`（请求和路由） | 加进表格 `$select`；草稿根按语义键生成语义 URL（`Table`、`routing/ContextPathHelper`）；列加粗、显示草稿标记（`Columns`） | 列加粗、行标签；不保证进 `$select`；URL 用技术键；也决定面包屑和标题的回退 | 部分一致 | 阶段 4 | ANN-24 | 一期 |
 | `Common.DraftRoot`：列表请求和编辑状态（含协作草稿） | 非协作草稿 6 个选项，"全部"＝`IsActiveEntity eq false or SiblingEntity/IsActiveEntity eq null`；协作草稿只有"全部 / 我的草稿 / 只看已保存"（`DraftEditState`）；额外请求 `HasActiveEntity`、`HasDraftEntity`、`InProcessByUser`（`Table`） | **阶段 3 按 FE**：非协作草稿的选项、过滤和请求字段一致（见第 1 节）；需要服务支持 `SiblingEntity`（mock 已补）。协作草稿的选项未做 | 部分一致 | 阶段 4（协作草稿） | — | — |
 | `Session.StickySessionSupported` | 列表页"新建"用 `NewAction`（`StandardActions`、`Table`） | 不读 | 未实现 | 阶段 6 | — | — |
-| `Common.SideEffects`（列表里） | 列表页有 SideEffects 扩展，批量编辑和内联编辑后触发（`templates/ListReport/overrides/SideEffects`、`massEdit/MassEditSideEffects`） | 不做；保存后整页重新读取；只在 PreparationAction 里传 `SideEffectsQualifier: ''`。**阶段 4**：FE 在列表页只在批量编辑和表格内联编辑后触发，smart-kit 列表页两者都没有，暂不适用，随批量编辑或内联编辑一起做 | 未实现 | 阶段 6 | — | — |
+| `Common.SideEffects`（列表里） | 列表页有 SideEffects 扩展，批量编辑和内联编辑后触发（`templates/ListReport/overrides/SideEffects`、`massEdit/MassEditSideEffects`） | 不做；保存后整页重新读取；只在 PreparationAction 里传 `SideEffectsQualifier: ''`。**阶段 4**：FE 在列表页只在批量编辑和表格内联编辑后触发，smart-kit 列表页两者都没有，暂不适用，随批量编辑或内联编辑一起做。**阶段 6**：有了批量编辑（`enableMassEdit`），保存后表格整体重读；SideEffects 仍不读，和对象页一起长期（`29c` C 节） | 未实现 | 长期 | — | — |
 | `UI.CardItem` | 实验性；只有视图直接指向它时用 GridList（`DataVisualization`） | 不读 | 未实现 | 阶段 4（暂不做） | — | — |
 
-## 5. 对象页（阶段 6 核对）
+## 5. 对象页（阶段 6 按 FE）
 
-这些术语 FE 主要在对象页使用（`core/converters/templates/ObjectPageConverter`、`core/converters/controls/ObjectPage/*`、`controls/Common/Form`、`HeaderFacet`、`SubSection`），列表页的对照没有覆盖。下面是原 `02` 的说法和 smart-kit 现状，FE 的处理在阶段 6 写进 `29b`、`29c` 后补上。
+这些术语 FE 主要在对象页使用（`core/converters/templates/ObjectPageConverter`、`core/converters/controls/ObjectPage/*`、`controls/Common/Form`、`HeaderFacet`、`SubSection`），列表页的对照没有覆盖。阶段 6 逐条对照的结果在 `29b`（说明）和 `29c`（附录表），FE 对比场景是 `tests/e2e-fe/op6.spec.ts`（`op6-draft-display`、`op6-draft-edit`、`op6-display`、`op6-approvable`、`op6-contact`、`op6-contact-blocked`、`op6-item`）；下面每行只写结论，细节见 `29c` 的对应节。
 
 | 术语 / 记录属性 | FE 1.154 的处理（模块） | smart-kit 现状 | 结论 | 计划阶段 | ANN 编号 | 期 |
 | --- | --- | --- | --- | --- | --- | --- |
-| `UI.HeaderInfo`（对象页） | 阶段 6 核对（`ObjectPageConverter`、`controls/ObjectPage/HeaderAndFooterAction`） | 对象页标题和副标题（`Title`、`Description`）、图片（`ImageUrl`）、面包屑文字 | 阶段 6 核对 | 阶段 6 | ANN-03 | 一期 |
-| `UI.Facets` | 阶段 6 核对（`controls/ObjectPage/SubSection`） | `CollectionFacet` 是区块，子 Facet 是子区块；顶层 `ReferenceFacet` 是只有一个子区块的区块 | 阶段 6 核对 | 阶段 6 | ANN-06 | 一期 |
-| `UI.ReferenceFacet` | 阶段 6 核对（`SubSection`、`controls/Common/Form`） | 指向 `FieldGroup`、`Identification` 的是表单；指向 `导航/@UI.LineItem` 的是子表；指向 `DataPoint` 的是关键值 | 阶段 6 核对 | 阶段 6 | ANN-06 | 一期 |
-| `UI.CollectionFacet` | 阶段 6 核对 | 区块（顶层）和表单组集合（子区块内） | 阶段 6 核对 | 阶段 6 | ANN-06 | 一期 |
-| `UI.PartOfPreview` | 阶段 6 核对 | 为 false 时放进"显示更多" | 阶段 6 核对 | 阶段 6 | ANN-07 | 一期 |
-| `UI.HeaderFacets` | 阶段 6 核对（`controls/ObjectPage/HeaderFacet`） | FieldGroup 是表单，DataPoint 是关键值、评分或进度 | 阶段 6 核对 | 阶段 6 | ANN-08 | 一期 |
-| `UI.FieldGroup`（表单） | 阶段 6 核对（`controls/Common/Form`） | 表单组，以及页头的表单 Facet | 阶段 6 核对 | 阶段 6 | ANN-09 | 一期 |
-| `UI.Identification`（表单） | 阶段 6 核对 | 没有 Facet 时的默认表单字段 | 阶段 6 核对 | 阶段 6 | ANN-09 | 一期 |
-| `UI.Identification` 的 `DataFieldForAction`（`Determining`） | 阶段 6 核对（`HeaderAndFooterAction`） | 页头和页脚动作，可用性和部分处理见 ADR-024 | 阶段 6 核对 | 阶段 6 | ANN-81 | 二期 |
-| `UI.Chart`（页头微图表 Facet） | 阶段 6 核对（`HeaderFacet`、`macros/microchart`） | Bullet、Donut、Pie、Column、Line、Bar 等页头微图表 Facet（ADR-021），类型对应见 `15` | 阶段 6 核对 | 阶段 6 | ANN-83 | 二期 |
-| `UI.Chart` 作为微型图表（九种）及 DataPoint 的 `CriticalityCalculation`、`ForecastValue`、`DeltaBulletChart`、`ValueFormat` | 阶段 6 核对（`macros/microchart`、`suite/ui/microchart`） | 九种全做，规则见 `15` 第 3 节，验收见 `17`、`18`；Delta 暂用本库约定 `Waterfall`（待定） | 阶段 6 核对 | 阶段 6 | MC-60、MC-61、MC-65 | 三期 |
-| `UI.DataPoint` 的 `SampleSize`、`MinimumValue`、`MaximumValue` | 阶段 6 核对 | 汇总评分、微图表的刻度 | 阶段 6 核对 | 阶段 6 | ANN-84 | 二期 |
-| `UI.Importance`（表单字段） | 阶段 6 核对 | 表单字段在小屏隐藏 | 阶段 6 核对 | 阶段 6 | ANN-87 | 二期 |
-| `Common.FieldControl`（`Hidden`） | 阶段 6 核对（`UIFormatters`、`macros/field`） | 值为 0 时字段隐藏 | 阶段 6 核对 | 阶段 6 | ANN-23 | 一期 |
-| `Common.FieldControl`（`Mandatory`、`ReadOnly` 常量） | 阶段 6 核对 | 编辑和新建时的必填与只读 | 阶段 6 核对 | 阶段 6 | ANN-88 | 二期 |
-| `Common.DraftRoot`、`Common.DraftNode` 的动作 | 阶段 6 核对（`core/controllerextensions/EditFlow`、`editFlow/draft`） | 草稿编辑策略：`EditAction`、`PreparationAction`、`ActivationAction`（ADR-018） | 阶段 6 核对 | 阶段 6 | ANN-89 | 二期 |
-| `Core.Computed`、`Core.Immutable`、`Core.OptimisticConcurrency` | 阶段 6 核对（编辑） | 入模型，编辑时用（OP-20） | 阶段 6 核对 | 阶段 6 | ANN-50 | 一期 |
-| `Core.Description` | 阶段 6 核对 | 字段说明，作为提示 | 阶段 6 核对 | 阶段 6 | ANN-50 | 一期 |
-| `UI.ConnectedFields`（表单）、`UI.Note` | 阶段 6 核对 | 不做 | 阶段 6 核对 | 阶段 6 | — | — |
-| `UI.Badge` | 阶段 6 核对 | 不做 | 阶段 6 核对 | 阶段 6 | — | — |
-| `Common.SideEffects`（对象页编辑） | 阶段 6 核对（`core/services/SideEffectsServiceFactory`） | 不做；保存后整页重新读取 | 阶段 6 核对 | 阶段 6 | — | — |
+| `UI.HeaderInfo`（对象页） | 标题、副标题、头像 / 首字母（`ObjectPageConverter`、`controls/ObjectPage/HeaderAndFooterAction`） | 标题和副标题（`Title`、`Description`）、图片（`ImageUrl`）、首字母、面包屑文字；`TypeImageUrl` 没做（P3） | 一致 | — | ANN-03 | 一期 |
+| `UI.Facets` | 顶层记录各是一个区块；子区块按 createSubSections（`controls/ObjectPage/SubSection`） | **阶段 6 按 FE**：只含引用 Facet 的集合 Facet 是一个子区块（一个表单，每个引用 Facet 一个容器）；含集合 Facet 时每个子 Facet 一个子区块，第三层忽略；同时有表格和表单时是混合子区块；`UI.Hidden` 路径按对象（`29c` A 节） | 一致 | — | ANN-06 | 一期 |
+| `UI.ReferenceFacet` | `LineItem` 是子表，`FieldGroup` / `Identification` 是表单，`DataPoint`、`Contact` 是表单元素（`SubSection`、`controls/Common/Form`） | **阶段 6 按 FE**：同 FE；`Communication.Address`、区块里的 `UI.Chart` 没做（P3） | 一致 | — | ANN-06 | 一期 |
+| `UI.CollectionFacet` | 区块（顶层）；子区块内是表单容器或混合子区块 | **阶段 6 按 FE**，见 `UI.Facets` | 一致 | — | ANN-06 | 一期 |
+| `UI.PartOfPreview` | 子区块、容器在"显示更多"后；字段在"显示详细信息"后（`Form`） | **阶段 6 按 FE**：子区块、容器、字段三级；编辑态的"显示更多"不自动展开 | 一致 | — | ANN-07 | 一期 |
+| `UI.HeaderFacets` | FieldGroup、DataPoint、Chart、集合 Facet、Contact、Address（`controls/ObjectPage/HeaderFacet`） | **阶段 6 按 FE**：加集合 Facet、联系人 Facet、`UI.Hidden` 路径；地址没做（P3）；评分 `SampleSize` 是导航路径时不照抄 FE 的解析失败（DV-op6-001～003） | 部分一致 | 待排（地址） | ANN-08 | 一期 |
+| `UI.FieldGroup`（表单） | 表单容器；页头的表单 Facet（`controls/Common/Form`） | 同 FE；可编辑页头区块列出页头 Facet 的全部字段（含只读和数据点）；`useSingleTextAreaFieldAsNotes` | 一致 | — | ANN-09 | 一期 |
+| `UI.Identification`（表单） | 表单字段；动作记录不作表单元素 | 同 FE（动作记录不再进表单） | 一致 | — | ANN-09 | 一期 |
+| `UI.Identification` 的 `DataFieldForAction`（`Determining`） | 确定性动作在页脚，显示态也显示，不可用置灰；其余在页头，两种模式都显示（`HeaderAndFooterAction`） | **阶段 6 按 FE**：页脚、页头的位置和顺序（重要 Criticality 在前）、置灰、`UI.Hidden` 路径、`UI.Emphasized`、`UI.IsCopyAction`；`DataFieldForActionGroup` 做成菜单没做（P3） | 一致 | — | ANN-81 | 二期 |
+| `UI.Chart`（页头微图表 Facet） | 页头 Facet 里的微图表，尺寸 Auto（`HeaderFacet`、`macros/microchart`） | **阶段 6 按 FE**：由 sap.suite.ui.microchart 的九个控件画（`suite/ui/microchart/*`）；集合导航单独查询（DV-op6-007，ADR-025） | 一致 | — | ANN-83 | 二期 |
+| `UI.Chart` 作为微型图表（九种）及 DataPoint 的 `CriticalityCalculation`、`ForecastValue`、`DeltaBulletChart`、`ValueFormat` | FE MicroChartHelper 把 UI.Chart 映射到 sap.suite.ui.microchart 的控件（`macros/microchart`、`suite/ui/microchart`） | **阶段 6 按 FE**：`v4/fe/macros/MicroChart` 按 MicroChartHelper 用九个控件画（`DeltaBulletChart` → Bullet 的 Delta 模式，CriticalityCalculation → 阈值，没有 criticality 时用定性色板）；表格单元格 XS、页头 Auto；FE 对比 `mc6-header-facets`、`mc6-table-cells`。UI.Chart 没有 Delta 类型，`DeltaMicroChart` 只作控件 | 一致 | — | MC-60、MC-61、MC-65 | 三期 |
+| `UI.DataPoint` 的 `SampleSize`、`MinimumValue`、`MaximumValue` | 评分人数、微图表的刻度 | 同 FE；`SampleSize` 是导航路径时见 `UI.HeaderFacets` | 一致 | — | ANN-84 | 二期 |
+| `UI.Importance`（表单字段） | `29c` 未单列 | 表单字段在小屏隐藏（原说法，阶段 6 没改） | 部分一致 | 待排 | ANN-87 | 二期 |
+| `Common.FieldControl`（`Hidden`） | 已废弃的 Hidden 当禁用（`UIFormatters`、`macros/field`） | 仍当隐藏（P3）；隐藏字段用 `UI.Hidden` 路径（**阶段 6 按 FE**） | 部分一致 | 待排（P3） | ANN-23 | 一期 |
+| `Common.FieldControl`（`Mandatory`、`ReadOnly` 常量） | 常量和路径按对象求值：1 只读、0 禁用、7 必填（`FieldControlHelper`、`UIFormatters`） | **阶段 6 按 FE**：常量和路径都按对象求值（`edit/fieldControl.ts`；路径只有单元测试，测试服务没有） | 一致 | — | ANN-88 | 二期 |
+| `Common.DraftRoot`、`Common.DraftNode` 的动作 | 草稿编辑策略；编辑态的草稿切换（`EditFlow`、`components/DraftToggle`） | **阶段 6 按 FE**：加草稿切换（草稿 / 保存的版本）；有自己的草稿时没有"编辑"；`DraftAdministrativeData` 只选 FE 的三个字段；非草稿对象页保留"编辑"（kit-extension，DV-op6-008～012，ADR-018） | 一致 | — | ANN-89 | 二期 |
+| `Core.Computed`、`Core.Immutable`、`Core.OptimisticConcurrency` | 不可编辑；只在新建时可编辑；ETag 用 `@odata.etag` | **阶段 6 按 FE**：同 FE；对象页请求不再选 ETag 属性 | 一致 | — | ANN-50 | 一期 |
+| `Core.Description` | `29c` 未单列 | 字段说明，作为提示（原说法，阶段 6 没改） | 部分一致 | 待排 | ANN-50 | 一期 |
+| `UI.ConnectedFields`（表单）、`UI.Note` | ConnectedFields 一行；Note 子区块 | ConnectedFields 一致（阶段 4）；`UI.Note` 没做（P3） | 部分一致 | 待排（Note） | — | — |
+| `UI.Badge` | `29c` 未单列 | 不做 | 未实现 | 待排 | — | — |
+| `Common.SideEffects`（对象页编辑） | 字段改后按目标重读、触发动作（`core/services/SideEffectsServiceFactory`） | 不读；保存后整页重新读取（编辑会话要按 SideEffects 分组 PATCH 后重读目标，测试服务也没有） | 未实现 | 长期 | — | — |
 
 ## 6. 其他
 
@@ -396,6 +396,6 @@ FE 没有 LineItem 时是"默认表"（属性都可以在个性化里添加）�
 
 - **阶段 4 收尾**（D43 留下的三项，已完成，D45）：未分组的分析表用一个 `$apply` 的 `concat` 同时取行、合计和条数；`Common.ValueListReferences` / `ValueListMapping`（筛选栏）；`Common.ResultContext` 和 SV 的 Parameters（列表页）；新列类型和新动作用真 FE 核对（见 7.1）。剩下的都已登记，列在下面各阶段里（DV-vhref-001～004；DV-apply-005～010 在阶段 5 已修或由 DV-lr5-* 取代）。
 - **阶段 5**（已完成，D46）：页签计数用 `/$count`、页签结构（DV-apply-007、DV-draft-029、DV-FE-viewTabs 已删）；页大小、`threshold` 和网格表首块 `$top`（`PV/MaxItems`，DV-apply-010、DV-FE-03 已删）；没设 `tableSettings.type` 时默认 ResponsiveTable；草稿列表的 NewPage 新建；`keyPerformanceIndicators` 按 manifest 定名；图表 `$apply` 的视图条件 `filter()` 不加括号（DV-apply-009 已删）；示例的自定义列不再换掉订单类型单元格（DV-FE-07 已删）。
-- **阶段 6**：阶段 5 改过来的：分组的分析表按 FE 的可折叠层级读（DV-lr5-118、119，取代 DV-apply-005、006）；变式管理 `Control`（DV-lr5-023）和表格宏的变式管理、快速变式（DV-table-005、009 等 10 条，DV-filter-010、011）；滚动后各块的 `$top`（DV-lr5-122）；草稿 NewPage 新建时问非计算键的对话框（DV-lr5-117）；manifest 的默认 SPV（DV-lr5-033）；两模板没实现的其余 manifest 设置（`manifest-missing`，`26c` 第 10 节）。原有的：编辑态的引用值帮助、引用服务映射的 `ValueListRelevantQualifiers`（DV-vhref-001、002）；参数化实体集的对象页、图表、树表和分析表（DV-vhref-003）；SideEffects（随批量编辑、内联编辑）；对象页请求不再选 ETag 属性（列表已按 FE 不选）；CodeList 的小数位和金额、数量的小数点对齐；流属性的图标、上传；联系人弹出框的其余内容。
+- **阶段 6**（已完成，D47）：分组的分析表按 FE 的可折叠层级读（DV-lr5-118、119 已删）；变式管理 `Control` 和表格、图表、筛选栏的变式管理、快速变式（DV-lr5-023、DV-table-005 等已删）；草稿 NewPage 新建的"New Object"对话框（DV-lr5-117 已删）；manifest 的默认 SPV、组合视图、`keepPreviousPersonalization`、自定义页眉（DV-lr5-033～038 等已删）；对象页的区块结构、页头 Facet、动作、FieldControl、编辑态的值帮助和引用值帮助、ETag（DV-vhref-001、DV-FE-02 已删，见 `29b`、`29c`）；九个微图表控件（DV-chart-018～044 已删）。改为长期的：滚动后各块的 `$top`（DV-macros6-t38）；引用服务映射的 `ValueListRelevantQualifiers`（DV-op6-205）；参数化实体集的对象页、图表、树表和分析表（DV-op6-206）；CodeList 的小数位和小数点对齐（DV-op6-201、202）；流属性的图标、上传（DV-op6-203）；联系人弹出框的其余内容（DV-op6-204）；SideEffects（列表页和对象页）。剩下的 manifest 设置见 `26c` 第 10 节。
 - **长期**（D42 等）：页面变式存在 smart-kit 自己的变式服务，不用 SAP flexibility（DV-lr5-116，取代 DV-FE-10）；切换到没有排序的视图时 FE 多发一次请求，不照抄（DV-lr5-120，取代 DV-apply-008）；语义对象链接中需要 FLP 的部分（Mapping、UnavailableActions、"更多链接"）；参数的启动台用户默认值（DV-vhref-004）；非英语的时区名称；没有草稿的服务在列表页的"新建"（`kit-extension`）。
 - **待排**：dual、combination、scatter、bubble、heatmap、treemap、waterfall、bullet 图表是近似画法；表中标"待排"的其余各项。

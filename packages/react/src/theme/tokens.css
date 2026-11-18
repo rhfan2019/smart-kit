@@ -174,6 +174,10 @@
   --sk-size-anchorbar: 44px;
   --sk-size-column-min: 120px;
   --sk-size-dialog-list: 360px;
+  --sk-size-p13n-dialog: 40rem;
+  --sk-size-p13n-popover: 30rem;
+  --sk-size-p13n-popover-height: 35rem;
+  --sk-size-field-quickview: 300px;
   --sk-size-max-content: 1680px;
   --sk-size-letterbox: 1280px;
   --sk-size-side-content: 320px;
@@ -583,7 +587,7 @@
   --sk-microchart-max-height: 94px;
   /* height of the chart area of a header micro chart facet (the container decides the size) */
   --sk-microchart-facet-height: 72px;
-  --sk-microchart-facet-width: 160px;
+  --sk-microchart-facet-width: 168px;
   /* micro chart in a table or form cell: the row height less the cell padding */
   --sk-microchart-cell-height: calc(var(--sk-row-height) - var(--sk-space-3));
   --sk-microchart-dot: 6px;

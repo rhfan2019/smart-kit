@@ -5,10 +5,13 @@ import { EDIT_STATE, editStateFilter, editStateOf } from './draftEditState';
 import { hiddenFilterPath, hiddenFiltersOf } from './hiddenFilters';
 import { capabilitiesFor, isFilterable, isSortable } from '../model/access';
 import { resolvePath } from '../model/buildModel';
-import type { ChartModel, DataPointModel, EntityUi, FieldModel, MetaModel, PropertyModel, ValueListModel } from '../model/types';
+import type { ChartModel, DataPointModel, EntityUi, FieldModel, MetaModel, PropertyModel, SubSectionModel, ValueListModel } from '../model/types';
 import { resolveEntityPath, type EntityPath } from './entityPath';
 import { encodeKeyLiteral } from './literals';
 import type { AnalyticalApply } from './analytical';
+
+/** Alias of the number of leaves of a grouped analytical table (sap.ui.model.odata.v4 "UI5__leaves"). */
+export const ANALYTICAL_LEAVES_ALIAS = 'UI5__leaves';
 
 export type Row = Record<string, unknown>;
 
@@ -64,6 +67,11 @@ export interface QueryRequest {
    * from `skip` / `top`, sorted by `orderBy`, in one `$apply` with `concat`; `select` and `expand` are not sent.
    */
   analytical?: AnalyticalApply;
+  /**
+   * Conditions of an expanded group of an analytical table (sap.ui.model.odata.v4.lib._AggregationCache): written
+   * first, the other filters follow in parentheses (`$filter=Status eq 'A' and (…)`).
+   */
+  levelFilter?: FilterState;
 }
 
 /**
@@ -98,6 +106,8 @@ export interface QueryResult {
   count?: number;
   /** The grand total row of an analytical request (`QueryRequest.analytical` with a grand total). */
   grandTotal?: Row;
+  /** Number of leaves of a grouped analytical request (`UI5__leaves`; `count` is then the number of groups). */
+  leafCount?: number;
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -299,20 +309,34 @@ export function buildListRequest(model: MetaModel, ui: EntityUi, o: ListRequestO
   };
 }
 
-/** Fields shown by the object page: header, header facets, and every form in every section. */
+/**
+ * Fields shown by the object page: header, header facets, and every form in every section (also the parts of mixed
+ * sub-sections), and the UI.Hidden paths of facets and fields (FE binds `visible` to them, so they are selected).
+ */
 export function objectFields(ui: EntityUi): FieldModel[] {
   const out: FieldModel[] = [];
-  for (const f of ui.headerFacets) {
-    if (f.kind === 'form') out.push(...f.fields);
-    else if (f.kind === 'text') out.push(f.field);
+  const hiddenPath = (path: string | undefined) => { if (path) out.push({ id: `Hidden::${path}`, kind: 'field', path, label: path, criticalityIcon: false, isSemanticKey: false }); };
+  const fieldsOf = (fields: FieldModel[]) => { for (const f of fields) { out.push(f); hiddenPath(f.hidden); } };
+  const header = (f: EntityUi['headerFacets'][number]): void => {
+    hiddenPath(f.hidden);
+    if (f.kind === 'form') fieldsOf(f.fields);
+    else if (f.kind === 'text' || f.kind === 'contact') fieldsOf([f.field]);
+    else if (f.kind === 'collection') f.facets.forEach(header);
     else if (f.kind === 'dataPoint') out.push({ id: f.id, kind: 'dataPoint', dataPoint: f.dataPoint, label: f.label ?? '', criticalityIcon: true, isSemanticKey: false });
     else if (!f.chart.navigation) out.push(...chartFields(f.chart));
     // A chart of a single-valued navigation reads that object's fields; a series has its own query (ADR-025).
     else out.push({ id: f.id, kind: 'chart', chart: f.chart, label: f.label ?? '', criticalityIcon: false, isSemanticKey: false });
-  }
-  for (const s of ui.sections) for (const sub of s.subSections) {
-    if (sub.content.kind === 'form') for (const g of sub.content.groups) out.push(...g.fields);
-    if (sub.content.kind === 'dataPoint') out.push({ id: sub.id, kind: 'dataPoint', dataPoint: sub.content.dataPoint, label: sub.label, criticalityIcon: true, isSemanticKey: false });
+  };
+  ui.headerFacets.forEach(header);
+  const sub = (x: SubSectionModel): void => {
+    hiddenPath(x.hidden);
+    if (x.content.kind === 'form') for (const g of x.content.groups) { hiddenPath(g.hidden); fieldsOf(g.fields); }
+    if (x.content.kind === 'dataPoint') out.push({ id: x.id, kind: 'dataPoint', dataPoint: x.content.dataPoint, label: x.label, criticalityIcon: true, isSemanticKey: false });
+    if (x.content.kind === 'mixed') x.content.parts.forEach(sub);
+  };
+  for (const s of ui.sections) {
+    hiddenPath(s.hidden);
+    s.subSections.forEach(sub);
   }
   return out;
 }
@@ -333,8 +357,8 @@ export function buildObjectRequest(model: MetaModel, typeName: string, ui: Entit
   const type = model.entityTypes[typeName]!;
   const hi = ui.headerInfo;
   const paths = dedupe([
+    // keys; not the ETag property: the ETag comes as @odata.etag (FE, DV-FE-02)
     ...type.keys,
-    ...(type.etag ? [type.etag] : []),
     ...[hi.title, hi.description].filter((p): p is string => Boolean(p)).flatMap((p) => {
       const prop = resolvePath(model.entityTypes, typeName, p).property;
       return prop ? [p, ...companionPaths(prop, p)] : [p];
@@ -701,7 +725,13 @@ export function typeLookup(model: MetaModel, typeName: string) {
 }
 
 /** Builds the $filter string of a request (filters and anyOf). */
-export function filterString(model: MetaModel, typeName: string, req: Pick<QueryRequest, 'filters' | 'anyOf' | 'anyOfOnly' | 'timeZone' | 'caseInsensitive' | 'hiddenFiltersFirst'>, o: { wrapHidden?: boolean } = {}): string | undefined {
+export function filterString(model: MetaModel, typeName: string, req: Pick<QueryRequest, 'filters' | 'anyOf' | 'anyOfOnly' | 'timeZone' | 'caseInsensitive' | 'hiddenFiltersFirst' | 'levelFilter'>, o: { wrapHidden?: boolean } = {}): string | undefined {
+  if (req.levelFilter) {
+    // the group's conditions first, the binding's filter in parentheses (_AggregationCache)
+    const level = toFilter(req.levelFilter, typeLookup(model, typeName), { timeZone: req.timeZone, caseInsensitive: req.caseInsensitive });
+    const rest = filterString(model, typeName, { ...req, levelFilter: undefined }, o);
+    return level && rest ? `${level} and (${rest})` : level ?? rest;
+  }
   const typeOf = typeLookup(model, typeName);
   const parts: string[] = [];
   if (req.anyOfOnly && req.anyOf && !req.filters) {
@@ -807,6 +837,18 @@ function analyticalQueryString(model: MetaModel, req: QueryRequest, a: Analytica
   const skipTop = [...(req.skip ? [`skip(${req.skip})`] : []), ...(req.top !== undefined ? [`top(${req.top})`] : [])].join('/');
   if (req.count) leaves += `/concat(aggregate($count as UI5__count),${skipTop || 'identity'})`;
   else if (skipTop) leaves += `/${skipTop}`;
+  if (a.groupLevel) {
+    // visual grouping (groupLevels): the number of leaves, the grand total, then the first level's groups
+    const g = a.groupLevel;
+    const gm = aggregateList(g.measures);
+    let groups = `groupby((${g.groupBy.join(',')})${gm ? `,aggregate(${gm})` : ''})`;
+    if (req.orderBy.length) groups += `/orderby(${req.orderBy.map((s) => (s.descending ? `${s.path} desc` : s.path)).join(',')})`;
+    if (req.count) groups += `/concat(aggregate($count as UI5__count),${skipTop || 'identity'})`;
+    else if (skipTop) groups += `/${skipTop}`;
+    const parts = [`groupby((${a.groupBy.join(',')}))/aggregate($count as ${ANALYTICAL_LEAVES_ALIAS})`, ...(a.grandTotal.length ? [`aggregate(${aggregateList(a.grandTotal)})`] : []), groups];
+    const gsteps = [...(filter ? [`filter(${filter})`] : []), ...(req.search ? [`search(${req.search})`] : []), `concat(${parts.join(',')})`];
+    return `$apply=${encodeOption(gsteps.join('/'))}`;
+  }
   const main = a.grandTotal.length ? `concat(aggregate(${aggregateList(a.grandTotal)}),${leaves})` : leaves;
   const steps = [...(filter ? [`filter(${filter})`] : []), ...(req.search ? [`search(${req.search})`] : []), main];
   return `$apply=${encodeOption(steps.join('/'))}`;
