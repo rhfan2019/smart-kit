@@ -16,7 +16,11 @@ export default defineConfig({
   workers: 1,
   retries: process.env.CI ? 1 : 0,
   // The JSON results feed `npm run trace` (docs/13: every criterion must map to a passing test).
-  reporter: process.env.CI ? [['github'], ['list'], ['json', { outputFile: 'reports/e2e-results.json' }]] : [['list'], ['json', { outputFile: 'reports/e2e-results.json' }]],
+  // CI runs the suite in shards (.github/workflows/ci.yml): each shard also writes a blob report, merged into
+  // reports/e2e-results.json for `npm run trace`.
+  reporter: process.env.CI
+    ? [['github'], ['list'], ['json', { outputFile: 'reports/e2e-results.json' }], ['blob', { outputDir: 'blob-report' }]]
+    : [['list'], ['json', { outputFile: 'reports/e2e-results.json' }]],
   snapshotPathTemplate: '{testDir}/__screenshots__/{platform}/{testFilePath}/{arg}{ext}',
   use: {
     ...devices['Desktop Chrome'],

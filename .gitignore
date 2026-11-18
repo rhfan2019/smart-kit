@@ -9,3 +9,4 @@ storybook-static/
 *.tsbuildinfo
 apps/mock/data/
 reports/
+blob-report/
