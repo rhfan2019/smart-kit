@@ -17,12 +17,13 @@ const REACT_DIST = join(ROOT, 'packages/react/dist');
 const CORE_DIST = join(ROOT, 'packages/core/dist');
 
 /** Budgets for the library's own code per entry (dependencies external). */
+// context, messages, templates: MessageToast / MessageBox host in the SmartKitProvider and the message controls (docs/26)
 const ENTRY_BUDGETS = {
   'core:.': 60,
-  '.': 95, // everything, all subpaths together; 80 → 95 with the cards (ADR-028, /cards ≈ 18 KB)
+  '.': 154, // everything, all subpaths together; 80 → 95 with the cards (ADR-028, /cards ≈ 18 KB); 95 → 154 with the controls (docs/26, /controls ≈ 57 KB) and the tree table
   // context, i18n, table, templates +1 to +2: the texts and the code of relative dates and the FCL separator (S6, S23)
-  context: 9, i18n: 8, theme: 2, util: 1, field: 15, filter: 11, variants: 4, table: 39, chart: 12,
-  object: 30, page: 7, actions: 3, edit: 19, messages: 2, templates: 73, cards: 23,
+  context: 12, i18n: 8, theme: 2, util: 1, field: 15, filter: 11, variants: 4, table: 40, chart: 12,
+  object: 30, page: 7, actions: 3, edit: 19, messages: 16, templates: 84, cards: 23, controls: 59,
 };
 
 /** Budgets for what an application ships when it imports only this (React and React DOM excluded). */
@@ -103,7 +104,7 @@ for (const name of entryNames) {
 // P5: one stylesheet for all components (styles.css imports tokens.css). 13 → 16 KB with the cards (ADR-028, about 4 KB).
 const css = ['styles.css', 'tokens.css'].reduce((n, f) => n + gzipSync(readFileSync(join(REACT_DIST, f))).length, 0) / 1024;
 // 16 → 17 KB: data-sk-theme selectors beside the former data-theme ones (S7), FCL separator, relative dates (S6, S23)
-report('@rhfan2019/smart-kit/styles.css (with tokens.css)', css, 17);
+report('@rhfan2019/smart-kit/styles.css (with tokens.css)', css, 27); // 17 → 27 with the controls (docs/26, about 8 KB) and the tree table
 
 console.log('\nWhat an application ships (everything except React):');
 for (const s of SCENARIOS) report(s.name, await bundle(s.code, reactOnly), s.budget);

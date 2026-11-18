@@ -42,6 +42,19 @@ export interface QueryRequest {
   /** Server-side aggregation ($apply, OData Data Aggregation): group by `groupBy` and aggregate the measures (ADR-021). */
   aggregate?: { groupBy: string[]; measures: { path: string; with: 'sum' | 'average' | 'min' | 'max' | 'countdistinct' | 'count'; as?: string }[] };
   // `with: 'count'` is `$count as <as>` (rows of the group; `path` is ignored).
+  /** Recursive hierarchy (docs/26 §3.10): the visible nodes as `$apply=…/com.sap.vocabularies.Hierarchy.v1.TopLevels(…)`. */
+  hierarchy?: HierarchyRequest;
+}
+
+/** Parameters of the TopLevels function (OData Hierarchy vocabulary). */
+export interface HierarchyRequest {
+  /** Qualifier of Aggregation.RecursiveHierarchy. */
+  qualifier: string;
+  nodeProperty: string;
+  /** Levels shown from the roots (1: only the roots); undefined: all levels. */
+  levels?: number;
+  /** Nodes expanded (`levels` > 0, null: all levels) or collapsed (0) apart from `levels`. */
+  expandLevels?: { nodeId: string; levels: number | null }[];
 }
 
 export interface ReadRequest {
@@ -491,12 +504,37 @@ export function toQueryString(model: MetaModel, req: QueryRequest): string {
     if (req.top !== undefined) opts.push(`$top=${req.top}`);
     return opts.join('&');
   }
+  if (req.hierarchy) return hierarchyQueryString(model, req, req.hierarchy, info.typeName);
   if (req.count) opts.push('$count=true');
   if (req.select.length) opts.push(`$select=${encodeOption(req.select.join(','))}`);
   const filter = filterString(model, info.typeName, req);
   if (filter) opts.push(`$filter=${encodeOption(filter)}`);
   if (req.search) opts.push(`$search=${encodeOption(req.search)}`);
   if (req.orderBy.length) opts.push(`$orderby=${encodeOption(req.orderBy.map((s) => (s.descending ? `${s.path} desc` : s.path)).join(','))}`);
+  if (req.expand.length) opts.push(`$expand=${encodeOption(req.expand.map(expandToString).join(','))}`);
+  if (req.skip !== undefined) opts.push(`$skip=${req.skip}`);
+  if (req.top !== undefined) opts.push(`$top=${req.top}`);
+  return opts.join('&');
+}
+
+/**
+ * TopLevels request as SAP Fiori elements sends it: filters and search keep the matching nodes with their ancestors
+ * (`ancestors(…,keep start)`), the sort applies to siblings (`orderby` before TopLevels).
+ */
+function hierarchyQueryString(model: MetaModel, req: QueryRequest, h: HierarchyRequest, typeName: string): string {
+  const nodes = `$root/${sourcePath(model, req.source)}`;
+  const steps: string[] = [];
+  const filter = filterString(model, typeName, req);
+  const limit = [...(filter ? [`filter(${filter})`] : []), ...(req.search ? [`search(${req.search})`] : [])];
+  if (limit.length) steps.push(`ancestors(${nodes},${h.qualifier},${h.nodeProperty},${limit.join('/')},keep start)`);
+  if (req.orderBy.length) steps.push(`orderby(${req.orderBy.map((s) => (s.descending ? `${s.path} desc` : s.path)).join(',')})`);
+  const params = [`HierarchyNodes=${nodes}`, `HierarchyQualifier='${h.qualifier}'`, `NodeProperty='${h.nodeProperty}'`];
+  if (h.levels !== undefined) params.push(`Levels=${h.levels}`);
+  if (h.expandLevels?.length) params.push(`ExpandLevels=${JSON.stringify(h.expandLevels.map((e) => ({ NodeID: e.nodeId, Levels: e.levels })))}`);
+  steps.push(`com.sap.vocabularies.Hierarchy.v1.TopLevels(${params.join(',')})`);
+  const opts = [`$apply=${encodeOption(steps.join('/'))}`];
+  if (req.count) opts.push('$count=true');
+  if (req.select.length) opts.push(`$select=${encodeOption(req.select.join(','))}`);
   if (req.expand.length) opts.push(`$expand=${encodeOption(req.expand.map(expandToString).join(','))}`);
   if (req.skip !== undefined) opts.push(`$skip=${req.skip}`);
   if (req.top !== undefined) opts.push(`$top=${req.top}`);

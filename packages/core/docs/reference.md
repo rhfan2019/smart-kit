@@ -5,7 +5,7 @@
 
 ## `@rhfan2019/smart-kit-core`
 
-`ActionModel` (interface) · `activeFilterPaths` (function) · `AggregateRequestOptions` (interface) · `AggregationModel` (interface) · `arrangeText` (function) · `buildAggregateRequest` (function) · `buildListRequest` (function) · `buildModel` (function) · `BuildModelOptions` (interface) · `buildObjectRequest` (function) · `buildTotalsRequest` (function) · `buildValueHelpRequest` (function) · `calculateCriticality` (function) · `calculateTrend` (function) · `canGroup` (function) · `canSubtotal` (function) · `canTotal` (function) · `capabilitiesFor` (function) · `CapabilityModel` (interface) · `chartExpand` (function) · `chartFields` (function) · `chartIsSeries` (function) · `ChartModel` (interface) · `chartSeriesSelect` (function) · `childPathOf` (function) · `collectTotals` (function) · `ColumnModel` (type) · `companionPaths` (function) · `compareDecimal` (function) · `compareValues` (function) · `ConcurrencyError` (class) · `Condition` (interface) · `conditionAllowed` (function) · `createMessage` (function) · `createSessionPageStateStore` (function) · `Criticality` (type) · `CriticalityCalculationModel` (interface) · `csdlJsonToXml` (function) · `CsdlSource` (type) · `currencyDigits` (function) · `DataPointModel` (interface) · `dataPointPaths` (function) · `DataProvider` (type) · `DEFAULT_CAPABILITIES` (const) · `deriveColumns` (function) · `DERIVED_GENERAL_SECTION` (const) · `DirectEditStrategy` (class) · `DraftEditStrategy` (class) · `DraftModel` (interface) · `EditSession` (interface) · `EditStrategy` (interface) · `editStrategyFor` (function) · `EdmType` (type) · `encodeOption` (function) · `EntityPath` (type) · `EntityPathError` (class) · `entityPathOf` (function) · `EntitySetModel` (interface) · `EntityTypeModel` (interface) · `EntityUi` (interface) · `errorFromResponse` (function) · `EventModel` (interface) · `ExpandSpec` (interface) · `FetchLike` (type) · `FieldModel` (interface) · `fieldPaths` (function) · `FilterExpression` (type) · `filterExpressionRules` (function) · `FilterExpressionRules` (interface) · `FilterOptions` (interface) · `FilterState` (type) · `filterString` (function) · `formatDate` (function) · `formatDateTime` (function) · `formatNumber` (function) · `FormatOptions` (interface) · `formatTime` (function) · `formatValue` (function) · `FormGroupModel` (interface) · `getEntitySet` (function) · `getEntityType` (function) · `getProperty` (function) · `getUi` (function) · `groupKey` (function) · `HeaderFacetModel` (type) · `HeaderInfoModel` (interface) · `highestSeverity` (function) · `humanize` (function) · `Importance` (type) · `ImprovementDirection` (type) · `InitialCondition` (interface) · `isAbortError` (function) · `isComplete` (function) · `isDraftRow` (function) · `isFilterable` (function) · `isRelativeDateOperator` (function) · `isSortable` (function) · `keyPredicate` (function) · `ListRequestOptions` (interface) · `LiteralError` (class) · `loadService` (function) · `LoadServiceOptions` (interface) · `matches` (function) · `MAX_GROUP_VALUES` (const) · `MemoryPageStateStore` (class) · `MemoryProvider` (class) · `MemoryProviderOptions` (interface) · `MemoryVariantStore` (class) · `Message` (interface) · `messagesFromError` (function) · `messagesFromHeader` (function) · `MessageType` (type) · `MetaModel` (interface) · `MICRO_CHART_MAX_POINTS` (const) · `MICRO_COMPARISON_MAX_BARS` (const) · `MODEL_VERSION` (const) · `ModelError` (class) · `ModelWarning` (interface) · `NavigationAdapter` (interface) · `NavigationModel` (interface) · `NavigationTarget` (type) · `objectFields` (function) · `ODataError` (class) · `ODataErrorDetail` (interface) · `ODataV4Provider` (class) · `ODataV4ProviderOptions` (interface) · `ODataVariantStore` (class) · `ODataVariantStoreOptions` (interface) · `Operator` (type) · `OPERATOR_ARITY` (const) · `OPERATORS` (const) · `PageStateStore` (interface) · `parseAnnotationPath` (function) · `parseEntityPath` (function) · `PathSegment` (interface) · `PresentationModel` (interface) · `PresentationVariantModel` (interface) · `propertyFilter` (function) · `PropertyModel` (interface) · `QueryRequest` (interface) · `QueryResult` (interface) · `QuerySource` (type) · `ReadDataProvider` (interface) · `readQueryString` (function) · `ReadRequest` (interface) · `RELATIVE_DATE_OPERATORS` (const) · `RelativeDateOperator` (type) · `relativeDateRange` (function) · `RequestOptions` (interface) · `resolveCondition` (function) · `ResolvedPath` (interface) · `resolveEntityPath` (function) · `resolvePath` (function) · `restrictConditions` (function) · `Row` (type) · `SectionModel` (interface) · `selectAndExpand` (function) · `siblingPath` (function) · `SortItem` (interface) · `sourceInfo` (function) · `SourceInfo` (interface) · `sourcePath` (function) · `STANDARD_VARIANT_ID` (const) · `startOfDayIso` (function) · `SubSectionContent` (type) · `SubSectionModel` (interface) · `targetEntitySet` (function) · `TextArrangement` (type) · `toCsdlXml` (function) · `todayIn` (function) · `toFilter` (function) · `toLiteral` (function) · `toQueryString` (function) · `TOTAL_COUNT_ALIAS` (const) · `TotalAmount` (interface) · `TotalsEntry` (interface) · `TotalsRequestOptions` (interface) · `TrendCalculationModel` (interface) · `unitPathOf` (function) · `UnknownEntitySetError` (class) · `ValueHelpRequestOptions` (interface) · `ValueListModel` (interface) · `ValueListParameter` (interface) · `valueListTextArrangement` (function) · `ValueOperator` (type) · `ValueRef` (type) · `Variant` (interface) · `VariantContent` (interface) · `VariantStore` (interface) · `ViewModel` (interface) · `WriteDataProvider` (interface) · `WriteResult` (interface)
+`ActionModel` (interface) · `activeFilterPaths` (function) · `AggregateRequestOptions` (interface) · `AggregationModel` (interface) · `arrangeText` (function) · `buildAggregateRequest` (function) · `buildHierarchyRequest` (function) · `buildListRequest` (function) · `buildModel` (function) · `BuildModelOptions` (interface) · `buildObjectRequest` (function) · `buildTotalsRequest` (function) · `buildValueHelpRequest` (function) · `calculateCriticality` (function) · `calculateTrend` (function) · `canGroup` (function) · `canSubtotal` (function) · `canTotal` (function) · `capabilitiesFor` (function) · `CapabilityModel` (interface) · `chartExpand` (function) · `chartFields` (function) · `chartIsSeries` (function) · `ChartModel` (interface) · `chartSeriesSelect` (function) · `childPathOf` (function) · `collectTotals` (function) · `ColumnModel` (type) · `companionPaths` (function) · `compareDecimal` (function) · `compareValues` (function) · `ConcurrencyError` (class) · `Condition` (interface) · `conditionAllowed` (function) · `createMessage` (function) · `createSessionPageStateStore` (function) · `Criticality` (type) · `CriticalityCalculationModel` (interface) · `csdlJsonToXml` (function) · `CsdlSource` (type) · `currencyDigits` (function) · `DataPointModel` (interface) · `dataPointPaths` (function) · `DataProvider` (type) · `DEFAULT_CAPABILITIES` (const) · `deriveColumns` (function) · `DERIVED_GENERAL_SECTION` (const) · `DirectEditStrategy` (class) · `DraftEditStrategy` (class) · `DraftModel` (interface) · `DrillState` (type) · `EditSession` (interface) · `EditStrategy` (interface) · `editStrategyFor` (function) · `EdmType` (type) · `encodeOption` (function) · `EntityPath` (type) · `EntityPathError` (class) · `entityPathOf` (function) · `EntitySetModel` (interface) · `EntityTypeModel` (interface) · `EntityUi` (interface) · `errorFromResponse` (function) · `EventModel` (interface) · `ExpandSpec` (interface) · `FetchLike` (type) · `FieldModel` (interface) · `fieldPaths` (function) · `FilterExpression` (type) · `filterExpressionRules` (function) · `FilterExpressionRules` (interface) · `FilterOptions` (interface) · `FilterState` (type) · `filterString` (function) · `formatDate` (function) · `formatDateTime` (function) · `formatNumber` (function) · `FormatOptions` (interface) · `formatTime` (function) · `formatValue` (function) · `FormGroupModel` (interface) · `getEntitySet` (function) · `getEntityType` (function) · `getProperty` (function) · `getUi` (function) · `groupKey` (function) · `HeaderFacetModel` (type) · `HeaderInfoModel` (interface) · `HierarchyNode` (interface) · `hierarchyNodeOf` (function) · `hierarchyOf` (function) · `HierarchyRequest` (interface) · `HierarchyRequestOptions` (interface) · `highestSeverity` (function) · `humanize` (function) · `Importance` (type) · `ImprovementDirection` (type) · `InitialCondition` (interface) · `isAbortError` (function) · `isComplete` (function) · `isDraftRow` (function) · `isFilterable` (function) · `isRelativeDateOperator` (function) · `isSortable` (function) · `keyPredicate` (function) · `ListRequestOptions` (interface) · `LiteralError` (class) · `loadService` (function) · `LoadServiceOptions` (interface) · `matches` (function) · `MAX_GROUP_VALUES` (const) · `MemoryPageStateStore` (class) · `MemoryProvider` (class) · `MemoryProviderOptions` (interface) · `MemoryVariantStore` (class) · `Message` (interface) · `messagesFromError` (function) · `messagesFromHeader` (function) · `MessageType` (type) · `MetaModel` (interface) · `MICRO_CHART_MAX_POINTS` (const) · `MICRO_COMPARISON_MAX_BARS` (const) · `MODEL_VERSION` (const) · `ModelError` (class) · `ModelWarning` (interface) · `NavigationAdapter` (interface) · `NavigationModel` (interface) · `NavigationTarget` (type) · `objectFields` (function) · `ODataError` (class) · `ODataErrorDetail` (interface) · `ODataV4Provider` (class) · `ODataV4ProviderOptions` (interface) · `ODataVariantStore` (class) · `ODataVariantStoreOptions` (interface) · `Operator` (type) · `OPERATOR_ARITY` (const) · `OPERATORS` (const) · `PageStateStore` (interface) · `parseAnnotationPath` (function) · `parseEntityPath` (function) · `PathSegment` (interface) · `PresentationModel` (interface) · `PresentationVariantModel` (interface) · `propertyFilter` (function) · `PropertyModel` (interface) · `QueryRequest` (interface) · `QueryResult` (interface) · `QuerySource` (type) · `ReadDataProvider` (interface) · `readQueryString` (function) · `ReadRequest` (interface) · `RecursiveHierarchyModel` (interface) · `RELATIVE_DATE_OPERATORS` (const) · `RelativeDateOperator` (type) · `relativeDateRange` (function) · `RequestOptions` (interface) · `resolveCondition` (function) · `ResolvedPath` (interface) · `resolveEntityPath` (function) · `resolvePath` (function) · `restrictConditions` (function) · `Row` (type) · `SectionModel` (interface) · `selectAndExpand` (function) · `siblingPath` (function) · `SortItem` (interface) · `sourceInfo` (function) · `SourceInfo` (interface) · `sourcePath` (function) · `STANDARD_VARIANT_ID` (const) · `startOfDayIso` (function) · `SubSectionContent` (type) · `SubSectionModel` (interface) · `targetEntitySet` (function) · `TextArrangement` (type) · `toCsdlXml` (function) · `todayIn` (function) · `toFilter` (function) · `toLiteral` (function) · `toQueryString` (function) · `TOTAL_COUNT_ALIAS` (const) · `TotalAmount` (interface) · `TotalsEntry` (interface) · `TotalsRequestOptions` (interface) · `TrendCalculationModel` (interface) · `unitPathOf` (function) · `UnknownEntitySetError` (class) · `ValueHelpRequestOptions` (interface) · `ValueListModel` (interface) · `ValueListParameter` (interface) · `valueListTextArrangement` (function) · `ValueOperator` (type) · `ValueRef` (type) · `Variant` (interface) · `VariantContent` (interface) · `VariantStore` (interface) · `ViewModel` (interface) · `WriteDataProvider` (interface) · `WriteResult` (interface)
 
 ### `ActionModel` — interface
 
@@ -66,6 +66,14 @@ Builds the aggregation request of a chart (ADR-021): group by the dimensions (an
 
 ```ts
 buildAggregateRequest(model: MetaModel, chart: { dimensions: string[]; measures: string[]; }, o: AggregateRequestOptions): QueryRequest
+```
+
+### `buildHierarchyRequest` — function
+
+Builds the TopLevels request of a tree table: the list request (columns, filters, search, sort) plus the node id and the hierarchy properties, without paging; the service returns the visible nodes in tree order.
+
+```ts
+buildHierarchyRequest(model: MetaModel, ui: EntityUi, o: HierarchyRequestOptions): QueryRequest
 ```
 
 ### `buildListRequest` — function
@@ -433,6 +441,12 @@ new DraftEditStrategy(model: MetaModel, provider: DataProvider)
 | `discardAction` |  | `string` |  |
 | `newAction` |  | `string` |  |
 
+### `DrillState` — type
+
+```ts
+export type DrillState = 'expanded' | 'collapsed' | 'leaf';
+```
+
 ### `EditSession` — interface
 
 | Member | Required | Type | Description |
@@ -519,6 +533,7 @@ entityPathOf(model: MetaModel, entitySet: string, row: Record<string, unknown>):
 | `propertyOrder` | **yes** | `string[]` | Declaration order. |
 | `navigations` | **yes** | `Record&lt;string, NavigationModel>` |  |
 | `etag` |  | `string` |  |
+| `hierarchies` |  | `RecursiveHierarchyModel[]` | Recursive hierarchies of the type (docs/26 §3.10); absent when the type declares none. |
 
 ### `EntityUi` — interface
 
@@ -757,6 +772,57 @@ export type HeaderFacetModel = | { id: string; kind: 'form'; label?: string; fie
 | `imageUrl` |  | `ValueRef` |  |
 | `initials` |  | `ValueRef` | UI.HeaderInfo/Initials: shown in an avatar when there is no image. |
 | `person` |  | `boolean` | The type describes a person (Communication.Contact): the avatar is round, otherwise a rounded square. |
+
+### `HierarchyNode` — interface
+
+Node state of a row of a TopLevels result.
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `id` | **yes** | `string` |  |
+| `level` | **yes** | `number` | DistanceFromRoot (0 for roots). |
+| `drillState` | **yes** | `DrillState` |  |
+| `descendants` |  | `number` | LimitedDescendantCount: visible descendants. |
+
+### `hierarchyNodeOf` — function
+
+```ts
+hierarchyNodeOf(h: RecursiveHierarchyModel, row: Row): HierarchyNode
+```
+
+### `hierarchyOf` — function
+
+The hierarchy of an entity type with this qualifier; without a qualifier the first one.
+
+```ts
+hierarchyOf(model: MetaModel, typeName: string, qualifier?: string): RecursiveHierarchyModel | undefined
+```
+
+### `HierarchyRequest` — interface
+
+Parameters of the TopLevels function (OData Hierarchy vocabulary).
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `qualifier` | **yes** | `string` | Qualifier of Aggregation.RecursiveHierarchy. |
+| `nodeProperty` | **yes** | `string` |  |
+| `levels` |  | `number` | Levels shown from the roots (1: only the roots); undefined: all levels. |
+| `expandLevels` |  | `{ nodeId: string; levels: number \| null }[]` | Nodes expanded (`levels` > 0, null: all levels) or collapsed (0) apart from `levels`. |
+
+### `HierarchyRequestOptions` — interface
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `source` | **yes** | `QuerySource` |  |
+| `columns` | **yes** | `FieldModel[]` | Visible columns, in display order. |
+| `qualifier` |  | `string` | Qualifier of Aggregation.RecursiveHierarchy; default the type's first hierarchy. |
+| `levels` |  | `number` | Levels shown from the roots (default 1). |
+| `expandLevels` |  | `HierarchyRequest['expandLevels']` | Nodes expanded or collapsed apart from `levels` (TopLevels ExpandLevels). |
+| `search` |  | `string` |  |
+| `filters` |  | `FilterState` |  |
+| `timeZone` |  | `string` |  |
+| `sort` |  | `SortItem[]` |  |
+| `extraSelect` |  | `string[]` | Extra paths to select (e.g. requested by custom content). |
 
 ### `highestSeverity` — function
 
@@ -1224,6 +1290,7 @@ propertyFilter(path: string, conditions: Condition[], type: EdmType, opts?: Filt
 | `top` |  | `number` |  |
 | `timeZone` |  | `string` | Time zone for calendar-day filters on Edm.DateTimeOffset properties. |
 | `aggregate` |  | `{ groupBy: string[]; measures: { path: string; with: 'sum' \| 'average' \| 'min' \| 'max' \| 'countdistinct' \| 'count'; as?: string }[] }` | Server-side aggregation ($apply, OData Data Aggregation): group by `groupBy` and aggregate the measures (ADR-021). |
+| `hierarchy` |  | `HierarchyRequest` | Recursive hierarchy (docs/26 §3.10): the visible nodes as `$apply=…/com.sap.vocabularies.Hierarchy.v1.TopLevels(…)`. |
 
 ### `QueryResult` — interface
 
@@ -1261,6 +1328,23 @@ readQueryString(req: ReadRequest): string
 | --- | --- | --- | --- |
 | `select` | **yes** | `string[]` |  |
 | `expand` | **yes** | `ExpandSpec[]` |  |
+
+### `RecursiveHierarchyModel` — interface
+
+A recursive hierarchy: `Aggregation.RecursiveHierarchy` (node and parent) with the same qualifier as `Hierarchy.RecursiveHierarchy` (properties the service fills per row of a TopLevels result).
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `qualifier` | **yes** | `string` |  |
+| `nodeProperty` | **yes** | `string` | NodeProperty: the node id. |
+| `parentNavigation` | **yes** | `string` | ParentNavigationProperty. |
+| `parentProperty` |  | `string` | Property holding the parent's node id (referential constraint of the parent navigation), when declared. |
+| `drillState` |  | `string` | 'expanded' \| 'collapsed' \| 'leaf'. |
+| `distanceFromRoot` |  | `string` |  |
+| `limitedDescendantCount` |  | `string` |  |
+| `matched` |  | `string` |  |
+| `matchedDescendantCount` |  | `string` |  |
+| `externalKey` |  | `string` |  |
 
 ### `RELATIVE_DATE_OPERATORS` — const
 

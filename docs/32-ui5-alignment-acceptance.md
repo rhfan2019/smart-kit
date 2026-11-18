@@ -1,0 +1,51 @@
+# 32 验收标准：与 SAPUI5 对齐
+
+> 状态：现行 · 2026-11-17（讨论记录 D34、D35，ADR-033）。规则见 `30`，计划见 `31`。
+>
+> 验收方式：**S** = API 核对脚本 `npm run check:ui5`；**F** = Fiori elements 对比测试 `npm run e2e:fe`；**U** = 单元测试；**E** = 端到端；**Z** = 体积和打包检查；**D** = 文档检查（人工核对，写明核对人和日期）。
+>
+> 每个阶段开始时把用到的条目细化成附表（例如 AL-05 细化为"AL-05-Table：sap.fe.macros.Table 的 36 个属性"），测试名称带细化后的编号，`npm run trace -- --strict` 检查每条都有通过的测试。
+
+## 1. 名字和命名空间
+
+| 编号 | 标准 | 方式 |
+| --- | --- | --- |
+| AL-01 | 每个公开模块都在 `tools/ui5-alignment/mapping.json` 里：对应一个 UI5 类全名（或 `library`），或标 `none` 并写理由；没有遗漏、没有多余 | S |
+| AL-02 | 有 UI5 对应的模块，路径 = UI5 模块路径只换前缀（`sap/m/MessageBox` → `@rhfan2019/smart-kit/m/MessageBox`；`sap.fe.*` 带 `v4`：`sap/fe/macros/Table` → `@rhfan2019/smart-kit/v4/fe/macros/Table`），默认导出名 = 类名；没有 UI5 对应的只在 `kit/…` 或基础子路径 | S |
+| AL-03 | 枚举从所在库的 `library` 模块具名导出（`ui/core/library`、`m/library`…），类型和同名常量都有，值的集合等于 UI5 未废弃的值 | S |
+
+## 2. API
+
+| 编号 | 标准 | 方式 |
+| --- | --- | --- |
+| AL-04 | 对应 UI5 类的每个公开、未废弃的属性、聚合、关联都有同名属性，或已登记偏差 | S |
+| AL-05 | 每个有 UI5 默认值的属性，TSDoc 写了 `@defaultValue`，值与 UI5 相同；单元测试证明不传时的行为符合默认值 | S、U |
+| AL-06 | 每个 UI5 事件有 `on` + 事件名的属性；事件对象的字段名与 UI5 参数名相同；可阻止的事件有 `preventDefault()` | S、U |
+| AL-07 | UI5 的公开实例方法在 `ref` 上，静态方法在组件上，名字和参数顺序相同 | S、U |
+| AL-08 | smart-kit 多出来的属性、事件、方法全部登记为偏差，类别和理由合理；`not-implemented` 和 `fe-behavior` 两类的条数逐阶段只减不增，每条都写了计划阶段 | S、D |
+| AL-09 | 类型名照 UI5 的 TypeScript 定义：设置类型 `$<类名>Settings`，事件对象类型 `<类名>$<事件名>Event`，实例类型与类同名（`useRef<Table>`） | S |
+
+## 3. 注解语义
+
+| 编号 | 标准 | 方式 |
+| --- | --- | --- |
+| AL-10 | FE 对比测试的每个场景：smart-kit 与 FE 发出的 OData 请求规范化后相同（`$select`、`$filter`、`$orderby`、`$apply`、`$expand`、`$search`、`$count`），或差异已登记为 `fe-behavior` 偏差 | F |
+| AL-11 | 每个场景的结构相同：筛选栏字段及顺序、表格列标题及顺序、工具栏动作及可用性、编辑状态选项、视图页签、图表类型和维度度量 | F |
+| AL-12 | 每个场景前 N 行的单元格文本相同（同一语言、时区、数据）；`29` 列出的 P1 场景全部在 F 里覆盖；`02` 按 FE 源码重写，每条写明 FE 模块 | F、D |
+| AL-13 | 模板的每个 manifest 设置在 smart-kit 里有同名同义的属性；FE 对比应用的 manifest 和 smart-kit 示例页的属性一一对应，对比测试通过 | F、S |
+
+## 4. 核对工具本身
+
+| 编号 | 标准 | 方式 |
+| --- | --- | --- |
+| AL-20 | `npm run check:ui5` 能从 `ui5.sap.com` 下载 1.154.0 的 `api.json` 并缓存；有未登记差异时退出码非 0；有自测（故意改错一个属性名、默认值、事件参数，脚本能报出来） | U |
+| AL-21 | `npm run e2e:fe` 能启动 FE 对比应用（运行时取自 `ui5.sap.com/1.154.0`）和 smart-kit 示例页，对同一场景输出请求、结构和文本的差异；有自测（故意让 smart-kit 少一列，测试失败） | E |
+| AL-22 | 仓库和发布的包里没有 SAP 的文件（`api.json`、sap.fe 源码、SAPUI5 运行时）；只有映射表、偏差表和报告 | Z、D |
+
+## 5. 不留旧名和发布（D35）
+
+| 编号 | 标准 | 方式 |
+| --- | --- | --- |
+| AL-30 | 改过名的组件、属性、子路径，旧的全部不存在（没有废弃别名、没有旧子路径、根入口不导出组件）；示例、Storybook、测试、文档都用新路径 | S、Z |
+| AL-31 | `25-invoice-assure-issues.md` 的迁移清单完整：每个旧名、旧属性、旧路径对应的新写法，以及每项行为改动；`deviations.json` 只剩 `kit-extension`、`react-idiom`、`no-binding` 和用户确认保留的条目 | D、S |
+| AL-32 | 每个阶段：`typecheck`、`lint`、`test`、`e2e`、`size`、`trace --strict`、`verify:pack`、`gen-agent-docs --check`、`check:ui5`、`e2e:fe` 全部通过 | 全部 |

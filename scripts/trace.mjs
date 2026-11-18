@@ -5,6 +5,7 @@
 //   latest results (reports/unit-results.json from `npm test`, reports/e2e-results.json from `npm run e2e`);
 // - phase 3: every micro chart criterion of docs/17 tested by U or E maps to a passing test;
 // - cards: every criterion of docs/22 tested by U or E maps to a passing test;
+// - controls: the same for docs/27;
 // - grouping and totals: every criterion of docs/23 §7 tested by U or E maps to a passing test.
 // `--strict` fails on any gap; `--verbose` lists the tests per id.
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
@@ -110,6 +111,20 @@ if (cdNotTraced.length) console.log(`  without a test: ${cdNotTraced.join(', ')}
 if (cdNotPassing.length) console.log(`  failing: ${cdNotPassing.join(', ')}`);
 if (verbose) for (const r of cdRows) console.log(`${r.id}\t${r.passed}/${r.total}\t${r.sources.join(', ')}`);
 
+// ---------------------------------------------------------------- general controls (docs/27)
+const ueDoc = readFileSync(join(ROOT, 'docs/27-ui-elements-acceptance.md'), 'utf8');
+const ue = [...ueDoc.matchAll(/^\| (UE-\d+) \|.*\| ([^|]*) \|$/gm)].filter((m) => /[UE]/.test(m[2])).map((m) => m[1]);
+const ueRows = ue.map((id) => {
+  const ts = traced(id);
+  return { id, total: ts.length, passed: ts.filter((t) => t.passed).length, sources: [...new Set(ts.map((t) => t.source))] };
+});
+const ueNotTraced = ueRows.filter((r) => r.total === 0).map((r) => r.id);
+const ueNotPassing = ueRows.filter((r) => r.total > 0 && r.passed < r.total).map((r) => `${r.id} (${r.passed}/${r.total})`);
+console.log(`controls · criteria (docs/27): ${ueRows.length - ueNotTraced.length - ueNotPassing.length}/${ueRows.length} traced to passing tests`);
+if (ueNotTraced.length) console.log(`  without a test: ${ueNotTraced.join(', ')}`);
+if (ueNotPassing.length) console.log(`  failing: ${ueNotPassing.join(', ')}`);
+if (verbose) for (const r of ueRows) console.log(`${r.id}\t${r.passed}/${r.total}\t${r.sources.join(', ')}`);
+
 // ---------------------------------------------------------------- grouping and totals (docs/23 §7)
 const gtDoc = readFileSync(join(ROOT, 'docs/23-grouping-totals-plan.md'), 'utf8');
 const gt = [...gtDoc.matchAll(/^\| (GT-\d+) \|.*\| ([^|]*) \|$/gm)].filter((m) => /[UE]/.test(m[2])).map((m) => m[1]);
@@ -124,5 +139,5 @@ if (gtNotTraced.length) console.log(`  without a test: ${gtNotTraced.join(', ')}
 if (gtNotPassing.length) console.log(`  failing: ${gtNotPassing.join(', ')}`);
 if (verbose) for (const r of gtRows) console.log(`${r.id}\t${r.passed}/${r.total}\t${r.sources.join(', ')}`);
 
-const failed = missingAnn.length || (strict && (missingAc.length || noResults.length || notTraced.length || notPassing.length || p3NotTraced.length || p3NotPassing.length || cdNotTraced.length || cdNotPassing.length || gtNotTraced.length || gtNotPassing.length));
+const failed = missingAnn.length || (strict && (missingAc.length || noResults.length || notTraced.length || notPassing.length || p3NotTraced.length || p3NotPassing.length || cdNotTraced.length || cdNotPassing.length || ueNotTraced.length || ueNotPassing.length || gtNotTraced.length || gtNotPassing.length));
 process.exit(failed ? 1 : 0);

@@ -1,5 +1,9 @@
 /* smart-kit component styles. Only tokens (var(--sk-…)) are allowed here; see scripts/check-tokens.mjs. */
 @import './tokens.css';
+@import './controls-messages.css';
+@import './controls-display.css';
+@import './controls-process.css';
+@import './controls-dialogs.css';
 
 .sk-icon { width: var(--sk-size-icon); height: var(--sk-size-icon); flex: none; }
 .sk-grow { flex: 1 1 auto; min-width: 0; }
@@ -379,6 +383,10 @@ tr.sk-rtable__total > * { position: sticky; top: auto; bottom: 0; z-index: 2; bo
 .sk-table__group-row .ag-cell { display: flex; align-items: center; background: var(--sk-color-surface-2); color: var(--sk-color-text); font-weight: var(--sk-font-weight-bold); line-height: var(--sk-total-line-height); }
 .sk-table__group-row .ag-right-aligned-cell { justify-content: flex-end; }
 .sk-table__group-label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* tree tables (docs/26 §3.10): indentation by DistanceFromRoot, expand / collapse toggle in the first column */
+.sk-tree { display: flex; align-items: center; gap: var(--sk-space-1); padding-inline-start: calc(var(--sk-tree-level, 0) * var(--sk-size-tree-indent)); min-width: 0; }
+.sk-tree__toggle, .sk-tree__spacer { flex: 0 0 var(--sk-size-tree-toggle); width: var(--sk-size-tree-toggle); }
+.sk-tree__content { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .sk-rtable__popin { margin: var(--sk-space-2) 0 0; display: flex; flex-direction: column; gap: var(--sk-space-1); font-size: var(--sk-text-small); }
 .sk-rtable__popin-pair { display: flex; gap: var(--sk-space-2); align-items: baseline; }
 .sk-rtable__popin-pair dt { color: var(--sk-color-text-muted); flex: 0 0 auto; min-width: var(--sk-size-popin-label); max-width: 50%; }

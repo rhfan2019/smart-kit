@@ -6,10 +6,12 @@
  * - mode "grid": AG Grid, own scrollbar, infinite row model with server blocks (list pages on desktop)
  * - mode "auto": AG Grid with auto height, "More" button or scroll to load (object page sub-tables)
  * - mode "responsive": HTML table scrolling with the page, scroll to load, pop-in by importance (LR Responsiveness)
+ * `tableType` takes the UI5 names (sap.ui.comp.smarttable.TableType); "TreeTable" shows a recursive hierarchy in either
+ * kernel (docs/26 §3.10, tree.tsx; the grid uses client-side rows like grouping, docs/23 §9).
  */
 import { ActionIcon, Alert, Anchor, Button, Group, Menu, Modal, Stack, Text, TextInput, Tooltip } from '@mantine/core';
 import {
-  canGroup, canSubtotal, canTotal, capabilitiesFor, isAbortError, isSortable, keyPredicate, matches, resolvePath, sourceInfo, type ActionModel,
+  canGroup, canSubtotal, canTotal, capabilitiesFor, hierarchyOf, isAbortError, isSortable, keyPredicate, matches, resolvePath, sourceInfo, type ActionModel,
   type FieldModel, type FilterState, type Message, type PresentationModel, type QueryRequest, type QuerySource, type Row, type SortItem, type TotalsEntry,
 } from '@rhfan2019/smart-kit-core';
 import { useQueryClient } from '@tanstack/react-query';
@@ -18,7 +20,7 @@ import {
 } from 'ag-grid-community';
 import { AgGridReact } from 'ag-grid-react';
 import { ChevronDown, ChevronRight, Copy, Download, ListCollapse, ListTree, MoreHorizontal, Search, Settings2 } from 'lucide-react';
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useImperativeHandle, useMemo, useRef, useState, type ReactNode, type Ref } from 'react';
 import { actionPaths, isActionAvailable, useActionRunner, type ActionResult } from '../actions/useActionRunner';
 import { useService, useSmartKit, useText } from '../context/SmartKitProvider';
 import { typedText } from '../i18n/text';
@@ -37,6 +39,7 @@ import { useListQuery } from './useListQuery';
 import { InlineCreateRow } from './InlineCreateRow';
 import { groupValueOf, ResponsiveTable, type ResponsiveColumn } from './ResponsiveTable';
 import { TotalLines, useGrandTotals, useSubtotals, useTotalFormatter } from './useTotals';
+import { TreeCell, useTree, useTreeState, type SmartTableRef, type TableType, type ToggleOpenStateEvent } from './tree';
 
 let gridModulesRegistered = false;
 
@@ -116,6 +119,21 @@ export interface SmartTableProps {
   parent?: { path: string; navigation: string };
   /** Table type: "grid" (AG Grid, default for lists), "responsive" (list-like rows), "auto" (responsive below 600 px; default for sub-tables). */
   mode?: 'grid' | 'auto' | 'responsive';
+  /**
+   * Table type by its UI5 name (sap.ui.comp.smarttable.TableType). Without `mode` it picks the kernel:
+   * "ResponsiveTable" the responsive table, the others the grid (sub-tables: "auto"). "AnalyticalTable" is the grid
+   * table (grouping and totals come from the annotations, docs/23). "TreeTable" shows the recursive hierarchy of the
+   * entity type (Aggregation.RecursiveHierarchy, docs/26 §3.10) in the kernel of `mode`; without one it is a plain table.
+   */
+  tableType?: TableType;
+  /** Tree tables: qualifier of Aggregation.RecursiveHierarchy (default: the type's first hierarchy). */
+  hierarchyQualifier?: string;
+  /** Tree tables: levels shown at first (default 1: the roots); `collapseAll` goes back to the roots. */
+  initialExpansionLevel?: number;
+  /** Tree tables: a node was expanded or collapsed by the user (sap.ui.table.TreeTable#toggleOpenState). */
+  onToggleOpenState?(e: ToggleOpenStateEvent): void;
+  /** Tree tables: expand, collapse, collapseAll, expandToLevel, isExpanded (sap.ui.table.TreeTable). */
+  ref?: Ref<SmartTableRef>;
   /** Applied filters; null means "not executed yet" (shows "To start, set the relevant filters."). Undefined loads without filters. */
   query?: TableQuery | null;
   /** Visible column ids in order (controlled) */
@@ -459,8 +477,12 @@ export function SmartTable(p: SmartTableProps) {
   const type = model.entityTypes[info.typeName]!;
   const ui = model.ui[info.typeName]!;
   const caps = info.parentSet ? capabilitiesFor(model, info.parentSet, info.navigation) : capabilitiesFor(model, info.entitySet);
-  const mode = p.mode ?? (p.parent ? 'auto' : 'grid');
+  const mode = p.mode ?? (p.tableType === 'ResponsiveTable' ? 'responsive' : p.parent ? 'auto' : 'grid');
   const responsive = mode === 'responsive';
+  // Tree table (docs/26 §3.10): no grouping, no totals, no paging.
+  const hierarchy = p.tableType === 'TreeTable' ? hierarchyOf(model, info.typeName, p.hierarchyQualifier) : undefined;
+  const isTree = Boolean(hierarchy);
+  const treeState = useTreeState(p.initialExpansionLevel ?? 1);
   const messages = useMessages();
   const draftRoot = !p.parent && Boolean(model.entitySets[info.entitySet]?.draft?.root);
 
@@ -511,12 +533,12 @@ export function SmartTable(p: SmartTableProps) {
   // With onGroupByChange the parent keeps the state (a variant): undefined there means the annotation default.
   const groupOwned = p.groupBy !== undefined || Boolean(p.onGroupByChange);
   const groupChoice = (groupOwned ? p.groupBy : own.groupBy) ?? (groupOwned || own.groupBy === undefined ? columnOfPath(presentation.groupBy[0]) ?? null : null);
-  const groupBy = (responsive || mode === 'grid') && groupChoice && groupable.some((c) => c.id === groupChoice) ? groupChoice : null;
+  const groupBy = !isTree && (responsive || mode === 'grid') && groupChoice && groupable.some((c) => c.id === groupChoice) ? groupChoice : null;
   const groupPath = groupBy ? fieldPath(allColumns.find((c) => c.id === groupBy)) : undefined;
   const setGroupBy = (id: string | null) => { if (!groupOwned) setOwn((x) => ({ ...x, groupBy: id })); p.onGroupByChange?.(id); };
   // Totals (docs/23): numeric columns the service can aggregate (Aggregation.ApplySupported).
   const totalPath = (c: ColumnItem | undefined) => { const path = fieldPath(c); return path && canTotal(model, source, path) ? path : undefined; };
-  const totalable = allColumns.filter((c) => totalPath(c));
+  const totalable = isTree ? [] : allColumns.filter((c) => totalPath(c));
   const totalsOwned = p.totals !== undefined || Boolean(p.onTotalsChange);
   const totalIds = (totalsOwned ? p.totals : own.totals) ?? totalable.filter((c) => presentation.total.includes(totalPath(c)!)).map((c) => c.id);
   const setTotals = (ids: string[]) => { if (!totalsOwned) setOwn((x) => ({ ...x, totals: ids })); p.onTotalsChange?.(ids); };
@@ -524,18 +546,21 @@ export function SmartTable(p: SmartTableProps) {
   const effectiveSearch = [p.query?.search, search].filter(Boolean).join(' ');
   const executed = p.query !== null;
 
-  const totalColumns = visibleColumns.filter((c) => totalIds.includes(c.id) && totalPath(c));
+  const totalColumns = isTree ? [] : visibleColumns.filter((c) => totalIds.includes(c.id) && totalPath(c));
   const measures = [...new Set(totalColumns.map((c) => totalPath(c)!))];
   const [totalsRevision, setTotalsRevision] = useState(0);
 
   // Grouped grid tables load client-side rows in blocks (the infinite row model cannot insert group rows).
   const gridGrouped = mode === 'grid' && Boolean(groupPath);
+  // The grid's infinite row model with server blocks; grouped and tree grids hold client-side rows instead.
+  const infinite = mode === 'grid' && !gridGrouped && !isTree;
   const sort = useMemo(() => (groupPath ? [{ path: groupPath, descending: false }, ...baseSort.filter((x) => x.path !== groupPath)] : baseSort), [groupPath, JSON.stringify(baseSort)]); // eslint-disable-line react-hooks/exhaustive-deps
   const list = useListQuery({
     service: p.service, source, columns: fields, filters, search: effectiveSearch, sort, extraSelect,
     pageSize: gridGrouped ? GRID_GROUP_BLOCK : responsive ? 20 : Math.max(p.growingThreshold ?? 10, own.loaded),
     growSize: gridGrouped ? GRID_GROUP_BLOCK : responsive ? 20 : p.growBy ?? 20,
-    enabled: (mode === 'auto' || responsive || gridGrouped) && executed,
+    enabled: !infinite && executed,
+    hierarchy: hierarchy ? { qualifier: hierarchy.qualifier, ...treeState.request } : undefined,
   });
   // A new query starts a new selection (rows of the old result may be gone).
   const requestKey = JSON.stringify({ f: list.request.filters, s: list.request.search, o: list.request.orderBy });
@@ -551,7 +576,7 @@ export function SmartTable(p: SmartTableProps) {
     if (refreshRef.current === p.refreshToken) return;
     refreshRef.current = p.refreshToken;
     setTotalsRevision((n) => n + 1);
-    if (mode === 'grid' && !gridGrouped) setRefreshToken((n) => n + 1);
+    if (infinite) setRefreshToken((n) => n + 1);
     else list.refresh();
   }, [p.refreshToken]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -579,7 +604,10 @@ export function SmartTable(p: SmartTableProps) {
   const stored = useStoredState<{ selectedKeys: string[]; firstRow: number }>(stateKey ? `${stateKey}:view` : undefined);
   const restore = useRef(stored.read());
 
-  const listRows = useMemo(() => (mode === 'grid' && !gridGrouped ? [] : list.rows.map((r) => overrides[keyOf(r)] ?? r)), [mode, gridGrouped, list.rows, overrides, keyOf]);
+  const loadedRows = useMemo(() => (infinite ? [] : list.rows.map((r) => overrides[keyOf(r)] ?? r)), [infinite, list.rows, overrides, keyOf]);
+  const tree = useTree({ hierarchy, rows: loadedRows, tree: treeState, onToggleOpenState: p.onToggleOpenState });
+  useImperativeHandle(p.ref, () => tree.api);
+  const listRows = isTree ? tree.rows : loadedRows;
 
   // ------------------------------------------------------------------ totals and subtotals (docs/23)
   const totalsQuery = { service: p.service, source, filters, search: effectiveSearch, measures, revision: totalsRevision };
@@ -659,10 +687,10 @@ export function SmartTable(p: SmartTableProps) {
   };
   const ctx: TableContextValue = {
     entitySet: info.entitySet, typeName: info.typeName, source,
-    rows: mode === 'grid' && !gridGrouped ? gridRows : listRows, selected,
-    count: mode === 'grid' && !gridGrouped ? gridCount : list.count,
+    rows: infinite ? gridRows : listRows, selected,
+    count: infinite ? gridCount : list.count,
     filters, search: effectiveSearch, sort,
-    refresh: () => { setOverrides({}); setTotalsRevision((n) => n + 1); if (mode === 'grid' && !gridGrouped) setRefreshToken((n) => n + 1); else list.refresh(); },
+    refresh: () => { setOverrides({}); setTotalsRevision((n) => n + 1); if (infinite) setRefreshToken((n) => n + 1); else list.refresh(); },
   };
   const onCountChange = p.onCountChange;
   useEffect(() => { onCountChange?.(ctx.count); }, [ctx.count, onCountChange]);
@@ -783,8 +811,8 @@ export function SmartTable(p: SmartTableProps) {
     return () => ro.disconnect();
   }, [responsive]);
   const marker = draftRoot ? (row: Row) => <DraftMarker row={row} compact /> : undefined;
-  const latest = useRef({ ctx, p, navigate, sort, totalCell, groupCell, groupLines });
-  latest.current = { ctx, p, navigate, sort, totalCell, groupCell, groupLines };
+  const latest = useRef({ ctx, p, navigate, sort, totalCell, groupCell, groupLines, tree });
+  latest.current = { ctx, p, navigate, sort, totalCell, groupCell, groupLines, tree };
 
   const colDefs = useMemo<ColDef[]>(() => {
     const defs: ColDef[] = visibleColumns.map((c, i) => {
@@ -808,13 +836,22 @@ export function SmartTable(p: SmartTableProps) {
         sortIndex: s && sort.length > 1 ? sort.indexOf(s) : null,
         resizable: true,
         type: prop && /Int|Decimal|Double|Single|Byte/.test(prop.edmType) && c.field?.kind === 'field' ? 'rightAligned' : undefined,
-        cellRenderer: (params: { data?: Row; node?: { rowPinned?: string | null } }) => (params.node?.rowPinned ? latest.current.totalCell(c, i, params.data) : groupOf(params.data) ? latest.current.groupCell(c, i, groupOf(params.data)!) : params.data ? (
-          <span className={i === 0 && marker ? 'sk-cell--with-marker' : undefined}>
-            {c.render ? c.render(params.data) : <SmartField typeName={info.typeName} service={p.service} field={c.field!} row={params.data} cell />}
-            {i === 0 && marker ? marker(params.data) : null}
-            {i === 0 && overridesRef.current[keyOf(params.data)] ? <span className="sk-table__changed" data-sk-changed-marker>{t('table.changedItem')}</span> : null}
-          </span>
-        ) : null),
+        cellRenderer: (params: { data?: Row; node?: { rowPinned?: string | null } }) => {
+          if (params.node?.rowPinned) return latest.current.totalCell(c, i, params.data);
+          const g = groupOf(params.data);
+          if (g) return latest.current.groupCell(c, i, g);
+          const row = params.data;
+          if (!row) return null;
+          const content = (
+            <span className={i === 0 && marker ? 'sk-cell--with-marker' : undefined}>
+              {c.render ? c.render(row) : <SmartField typeName={info.typeName} service={p.service} field={c.field!} row={row} cell />}
+              {i === 0 && marker ? marker(row) : null}
+              {i === 0 && overridesRef.current[keyOf(row)] ? <span className="sk-table__changed" data-sk-changed-marker>{t('table.changedItem')}</span> : null}
+            </span>
+          );
+          const tr = latest.current.tree;
+          return i === 0 && isTree ? <TreeCell node={tr.nodeOf(row)} onToggle={() => latest.current.tree.toggle(row)}>{content}</TreeCell> : content;
+        },
         context: { sortPath },
       } satisfies ColDef;
     });
@@ -837,13 +874,18 @@ export function SmartTable(p: SmartTableProps) {
     }
     return defs;
     // eslint-disable-next-line react-hooks/exhaustive-deps -- column definitions depend on visible columns, sort indicator and navigability only
-  }, [visible.join('|'), allColumns, navigable, JSON.stringify(sort), intlLocale, timeZone, mode, Boolean(inlineCell), Boolean(marker), gridGrouped, totalIds.join('|')]);
+  }, [visible.join('|'), allColumns, navigable, JSON.stringify(sort), intlLocale, timeZone, mode, Boolean(inlineCell), Boolean(marker), gridGrouped, totalIds.join('|'), isTree]);
   const overridesRef = useRef(overrides);
   overridesRef.current = overrides;
+  // Tree grids: a node collapsed on the client keeps its row data; redraw the first column's toggles.
+  useEffect(() => {
+    const api = apiRef.current;
+    if (isTree && api && !api.isDestroyed() && visibleColumns[0]) api.refreshCells({ columns: [visibleColumns[0].id], force: true });
+  }, [isTree, listRows]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Grid datasource: one block per request, first block with $count.
   const datasource = useMemo<IDatasource | null>(() => {
-    if (mode !== 'grid' || !executed || gridGrouped) return null;
+    if (!infinite || !executed) return null;
     return {
       getRows: async (params) => {
         const top = params.endRow - params.startRow;
@@ -882,18 +924,18 @@ export function SmartTable(p: SmartTableProps) {
       },
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- rebuild when the request changes
-  }, [mode, executed, gridGrouped, JSON.stringify(list.request), refreshToken]);
+  }, [infinite, executed, JSON.stringify(list.request), refreshToken]);
 
   useEffect(() => {
     const api = apiRef.current;
-    if (!api || mode !== 'grid') return;
+    if (!api || !infinite) return;
     if (datasource) api.setGridOption('datasource', datasource);
     else { setGridRows([]); setGridCount(undefined); setGridEmpty(false); }
-  }, [datasource, mode]);
+  }, [datasource, infinite]);
 
   // Grid totals: a pinned row at the bottom, as high as the most currencies of one total (docs/23).
   // Only once rows are there: no totals row under the loading placeholder or the "no data" text.
-  const gridEmptyNow = mode === 'grid' && !gridGrouped ? gridEmpty || gridRows.length === 0 : list.rows.length === 0;
+  const gridEmptyNow = infinite ? gridEmpty || gridRows.length === 0 : list.rows.length === 0;
   const pinnedBottom = useMemo(
     () => (!responsive && executed && measures.length && !gridEmptyNow ? [{ [TOTAL_ROW]: { entry: grand.entry, error: grand.error?.message } }] : undefined),
     [responsive, executed, measures.join('|'), gridEmptyNow, grand.entry, grand.error], // eslint-disable-line react-hooks/exhaustive-deps
@@ -963,8 +1005,8 @@ export function SmartTable(p: SmartTableProps) {
     details: { available: responsive && hiddenCols.length > 0, shown: Boolean(own.details), toggle: () => setOwn((x) => ({ ...x, details: !x.details })) },
   };
 
-  const error = mode === 'grid' && !gridGrouped ? gridError : list.error;
-  const empty = mode === 'grid' && !gridGrouped ? gridEmpty : executed && !list.isLoading && list.rows.length === 0 && !list.error;
+  const error = infinite ? gridError : list.error;
+  const empty = infinite ? gridEmpty : executed && !list.isLoading && list.rows.length === 0 && !list.error;
   const threshold = p.showAllThreshold ?? 200;
   const preview = mode === 'auto' && list.count !== undefined && list.count > threshold;
   const scrollGrowing = mode === 'auto' && p.growing === 'scroll' && !preview;
@@ -1016,6 +1058,7 @@ export function SmartTable(p: SmartTableProps) {
       loading={list.isFetching}
       loadMore={list.loadMore}
       showDetails={Boolean(own.details)}
+      tree={isTree ? { nodeOf: tree.nodeOf, toggle: tree.toggle } : undefined}
       groupBy={groupBy ?? undefined}
       groupSummary={subtotalsOn ? (row) => {
         const failed = Boolean(subtotals.error);
@@ -1035,11 +1078,19 @@ export function SmartTable(p: SmartTableProps) {
   const grid = responsive ? null : (
     <AgGridReact
       // The row model is fixed when the grid starts: grouping switches between the infinite and the client-side model.
-      key={gridGrouped ? 'grouped' : 'rows'}
+      key={gridGrouped ? 'grouped' : isTree ? 'tree' : 'rows'}
       theme={smartKitGridTheme}
       containerStyle={mode === 'grid' ? { position: 'absolute', inset: 0 } : { width: '100%' }}
       columnDefs={colDefs}
-      {...(gridGrouped
+      {...(isTree
+        ? {
+            rowData: listRows,
+            loading: list.isLoading,
+            ...(mode === 'grid' ? {} : { domLayout: 'autoHeight' as const }),
+            // Tree order comes from the service (a header click sorts siblings there).
+            postSortRows: (params: { nodes: { sourceRowIndex: number }[] }) => { params.nodes.sort((a, b) => a.sourceRowIndex - b.sourceRowIndex); },
+          }
+        : gridGrouped
         ? {
             rowData: groupedRows ?? [],
             loading: list.isLoading,
@@ -1103,6 +1154,12 @@ export function SmartTable(p: SmartTableProps) {
       onRowDoubleClicked={(e) => { if (navigable && e.data && !e.node.rowPinned && !groupOf(e.data)) navigate(e.data as Row); }}
       onCellKeyDown={(e: CellKeyDownEvent) => {
         const ev = e.event as KeyboardEvent | undefined;
+        // Tree tables: "+" expands, "-" collapses the node of the focused row (sap.ui.table.TreeTable).
+        if (isTree && e.data && (ev?.key === '+' || ev?.key === '-')) {
+          const node = tree.nodeOf(e.data as Row);
+          if (node && node.drillState !== 'leaf' && (node.drillState === 'expanded') === (ev.key === '-')) tree.toggle(e.data as Row);
+          return;
+        }
         if (ev?.key === 'Enter' && navigable && e.data && !e.node.rowPinned && !groupOf(e.data) && e.column.getColId() !== '$nav') navigate(e.data as Row);
       }}
     />
@@ -1146,7 +1203,7 @@ export function SmartTable(p: SmartTableProps) {
         visible={visible}
         sort={baseSort}
         sortable={allColumns.filter((c) => c.field?.kind === 'field' && c.field.path && isSortable(caps, c.field.path)).map((c) => ({ path: c.field!.path!, label: c.label }))}
-        groupable={responsive || mode === 'grid' ? groupable.map((c) => ({ id: c.id, label: c.label })) : undefined}
+        groupable={!isTree && (responsive || mode === 'grid') ? groupable.map((c) => ({ id: c.id, label: c.label })) : undefined}
         groupBy={groupBy}
         totalable={totalable.filter((c) => visible.includes(c.id)).map((c) => ({ id: c.id, label: c.label }))}
         totals={totalIds}

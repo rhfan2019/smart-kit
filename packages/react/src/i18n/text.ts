@@ -3,7 +3,8 @@ import { en, type MessageKey, type Messages } from './messages.en';
 import { zh } from './messages.zh';
 
 export type Locale = 'zh' | 'en';
-export const MESSAGES: Record<Locale, Messages> = { zh, en: en as unknown as Messages };
+/** The library texts per locale; the control texts are not included (they come with each control group, docs/26). */
+export const MESSAGES: Record<Locale, Messages> = { zh: zh as Messages, en: en as unknown as Messages };
 export const INTL_LOCALE: Record<Locale, string> = { zh: 'zh-CN', en: 'en-US' };
 
 export type TextParams = Record<string, string | number>;

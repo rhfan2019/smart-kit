@@ -30,6 +30,7 @@ import {
   type NavigationModel,
   type PresentationModel,
   type PropertyModel,
+  type RecursiveHierarchyModel,
   type SectionModel,
   type SubSectionModel,
   type TextArrangement,
@@ -177,7 +178,33 @@ function buildEntityType(et: Any): EntityTypeModel {
   }
   const concurrency = et.annotations?.Core?.OptimisticConcurrency;
   const etag = Array.isArray(concurrency) && concurrency.length ? pathOf(concurrency[0]) : undefined;
-  return { name: et.name, fullName: et.fullyQualifiedName, keys, properties, propertyOrder: order, navigations, etag };
+  const hierarchies = buildHierarchies(et, navigations);
+  return { name: et.name, fullName: et.fullyQualifiedName, keys, properties, propertyOrder: order, navigations, etag, ...(hierarchies.length ? { hierarchies } : {}) };
+}
+
+/** Aggregation.RecursiveHierarchy#Q with Hierarchy.RecursiveHierarchy#Q on the entity type (docs/26 §3.10). */
+function buildHierarchies(et: Any, navigations: Record<string, NavigationModel>): RecursiveHierarchyModel[] {
+  const out: RecursiveHierarchyModel[] = [];
+  const agg = (et.annotations?.Aggregation ?? {}) as Any;
+  const hier = (et.annotations?.Hierarchy ?? {}) as Any;
+  for (const [key, a] of Object.entries(agg)) {
+    if (key.split('#')[0] !== 'RecursiveHierarchy') continue;
+    const qualifier = key.split('#')[1] ?? '';
+    const nodeProperty = pathOf(a?.NodeProperty);
+    const parentNavigation = pathOf(a?.ParentNavigationProperty);
+    if (!nodeProperty || !parentNavigation) continue;
+    const h = (hier[qualifier ? `RecursiveHierarchy#${qualifier}` : 'RecursiveHierarchy'] ?? {}) as Any;
+    const parentProperty = navigations[parentNavigation]?.referentialConstraints[0]?.property;
+    const model: RecursiveHierarchyModel = { qualifier, nodeProperty, parentNavigation };
+    if (parentProperty) model.parentProperty = parentProperty;
+    for (const [field, term] of [['drillState', 'DrillState'], ['distanceFromRoot', 'DistanceFromRoot'], ['limitedDescendantCount', 'LimitedDescendantCount'],
+      ['matched', 'Matched'], ['matchedDescendantCount', 'MatchedDescendantCount'], ['externalKey', 'ExternalKey']] as const) {
+      const v = pathOf(h[term]);
+      if (v) model[field] = v;
+    }
+    out.push(model);
+  }
+  return out;
 }
 
 function buildProperty(p: Any, keys: string[], et: Any): PropertyModel {

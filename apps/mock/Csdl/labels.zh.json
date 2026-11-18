@@ -162,5 +162,10 @@
   "F.Location": "地点",
   "F.MeetingCategory": "类别",
   "F.MeetingCategoryName": "类别名称",
-  "DP.CardSpend": "采购支出"
+  "DP.CardSpend": "采购支出",
+  "T.CostCenter": "成本中心",
+  "T.CostCenters": "成本中心",
+  "F.CostCenter": "成本中心",
+  "F.CostCenterName": "成本中心名称",
+  "F.Budget": "预算"
 }

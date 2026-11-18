@@ -22,6 +22,7 @@
 | `UI.HeaderInfo` | 列表表标题（`TypeNamePlural`）、对象页标题和副标题（`Title`、`Description`）、图片（`ImageUrl`）、面包屑文字 | 一期 | OP-01、NAV-03 | ANN-03 |
 | `UI.PresentationVariant` | 默认排序（`SortOrder`）、使用的 LineItem 限定符（`Visualizations`）、`RequestAtLeast`；2026-11-17 起 `GroupBy`（响应式表格的默认分组，只用第一个）、`Total`（默认合计的列） | 一期；`GroupBy`、`Total`：见 `23`（GT-07） | LR-32 | ANN-04 |
 | `Aggregation.ApplySupported` | 实体集或实体类型上：`Transformations`、`GroupableProperties`（能分组的字段）、`AggregatableProperties`（能合计的字段，`SupportedAggregationMethods` 要含 `sum`）。没有它就没有合计，分组不带小计 | 见 `23`（GT-01、GT-06） | — | — |
+| `Aggregation.RecursiveHierarchy`、`Hierarchy.RecursiveHierarchy`（同一限定符，在实体类型上） | 层级表（`SmartTable tableType="TreeTable"`）：`NodeProperty`、`ParentNavigationProperty`；`DrillState`、`DistanceFromRoot`、`LimitedDescendantCount`、`Matched`、`MatchedDescendantCount`、`ExternalKey`。请求是 `TopLevels`，见 `26` §3.10 | 见 `27`（UE-80～UE-89） | — | UE-80 |
 | `UI.SelectionVariant` | 默认筛选条件（`SelectOptions`）、默认参数 | 一期（用作初始条件） | LR-06 | ANN-05 |
 | `UI.SelectionPresentationVariant` | 列表页的默认组合 | 一期（只取它引用的 SV 和 PV） | LR-06 | ANN-05 |
 | `UI.Facets` | 对象页区块：`CollectionFacet` 是区块，它的子 Facet 是子区块；顶层的 `ReferenceFacet` 是只有一个子区块的区块 | 一期 | OP-10、OP-12 | ANN-06 |

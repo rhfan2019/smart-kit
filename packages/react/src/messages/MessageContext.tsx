@@ -2,11 +2,12 @@
  * Page messages (ADR-023): the footer shows a message button when there are messages; it opens the message popover
  * (LR Footer Toolbar, OP Message Handling · In Edit Mode).
  */
-import { ActionIcon, Badge, Button, CloseButton, Group, Popover, Stack, Text, UnstyledButton } from '@mantine/core';
+import { ActionIcon, Button } from '@mantine/core';
 import { highestSeverity, type Message } from '@rhfan2019/smart-kit-core';
 import { AlertTriangle, CheckCircle2, Info, XCircle } from 'lucide-react';
-import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useText } from '../context/SmartKitProvider';
+import { MessagePopover, type MessagePopoverRef } from './MessagePopover';
 
 export interface MessagesApi {
   messages: Message[];
@@ -44,52 +45,32 @@ export function MessageIcon({ type }: { type: Message['type'] }) {
   return <Info className="sk-icon sk-status--info" aria-hidden />;
 }
 
-/** Footer message button with the message popover. Renders nothing without messages. */
+/** Footer message button with the message popover (MessagePopover, docs/26). Renders nothing without messages. */
 export function MessageButton({ defaultOpened = false }: { defaultOpened?: boolean }) {
   const api = useMessages();
   const t = useText();
-  const [opened, setOpened] = useState(defaultOpened);
-  if (!api || !api.messages.length) return null;
+  const button = useRef<HTMLButtonElement>(null);
+  const popover = useRef<MessagePopoverRef>(null);
+  const count = api?.messages.length ?? 0;
+  useEffect(() => { if (defaultOpened && count && button.current) popover.current?.openBy(button.current); }, [defaultOpened, count]);
+  if (!api || !count) return null;
   const top = highestSeverity(api.messages)!;
   const order: Message['type'][] = ['error', 'warning', 'info', 'success'];
   const sorted = [...api.messages].sort((a, b) => order.indexOf(a.type) - order.indexOf(b.type));
   return (
-    <Popover opened={opened} onChange={setOpened} position="top-start" width={360} withArrow trapFocus returnFocus>
-      <Popover.Target>
-        <Button variant="subtle" leftSection={<MessageIcon type={top} />} onClick={() => setOpened((o) => !o)} aria-label={t('messages.button', { count: api.messages.length })} aria-haspopup="dialog" data-sk-message-button={top}>
-          {api.messages.length}
-        </Button>
-      </Popover.Target>
-      <Popover.Dropdown role="dialog" aria-label={t('messages.title')} data-sk-message-popover>
-        <Group justify="space-between" mb="xs">
-          <Text fw={600}>{t('messages.title')}</Text>
-          <Group gap={4}>
-            <Button size="compact-xs" variant="subtle" onClick={() => { api.clear(); setOpened(false); }} data-sk-messages-clear>{t('messages.clear')}</Button>
-            <CloseButton aria-label={t('common.close')} onClick={() => setOpened(false)} />
-          </Group>
-        </Group>
-        <Stack gap={4} className="sk-messages__list">
-          {sorted.map((m) => {
-            const content = (
-              <Group gap="xs" wrap="nowrap" align="flex-start">
-                <MessageIcon type={m.type} />
-                <div className="sk-messages__text">
-                  <Text size="sm">{m.message}</Text>
-                  {m.target ? <Badge size="xs" variant="light" color="gray">{m.target}</Badge> : null}
-                </div>
-              </Group>
-            );
-            return (
-              <div key={m.id} className="sk-messages__item" data-sk-message={m.type} data-sk-message-target={m.target}>
-                {m.target && api.onNavigate ? (
-                  <UnstyledButton className="sk-messages__link" onClick={() => { setOpened(false); api.onNavigate!(m); }}>{content}</UnstyledButton>
-                ) : content}
-              </div>
-            );
-          })}
-        </Stack>
-      </Popover.Dropdown>
-    </Popover>
+    <>
+      <Button
+        ref={button} variant="subtle" leftSection={<MessageIcon type={top} />} onClick={(e) => popover.current?.toggle(e.currentTarget)}
+        aria-label={t('messages.button', { count })} aria-haspopup="dialog" data-sk-message-button={top}
+      >
+        {count}
+      </Button>
+      <MessagePopover
+        ref={popover} items={sorted} placement="Top" aria-label={t('messages.title')}
+        headerButton={<Button size="compact-xs" variant="subtle" onClick={() => { api.clear(); popover.current?.close(); }} data-sk-messages-clear>{t('messages.clear')}</Button>}
+        onActiveTitlePress={api.onNavigate ? ({ item }) => { popover.current?.close(); if (item.message) api.onNavigate!(item.message); } : undefined}
+      />
+    </>
   );
 }
 

@@ -20,3 +20,4 @@ export * from './entries/edit';
 export * from './entries/messages';
 export * from './entries/templates';
 export * from './entries/cards';
+export * from './entries/controls';

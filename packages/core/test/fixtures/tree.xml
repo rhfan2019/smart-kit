@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Recursive hierarchy fixture (tree tables, docs/26 §3.10): organizational units with two hierarchies. -->
+<edmx:Edmx Version="4.0" xmlns:edmx="http://docs.oasis-open.org/odata/ns/edmx">
+  <edmx:Reference Uri="https://sap.github.io/odata-vocabularies/vocabularies/UI.xml">
+    <edmx:Include Namespace="com.sap.vocabularies.UI.v1" Alias="UI"/>
+  </edmx:Reference>
+  <edmx:Reference Uri="https://sap.github.io/odata-vocabularies/vocabularies/Common.xml">
+    <edmx:Include Namespace="com.sap.vocabularies.Common.v1" Alias="Common"/>
+  </edmx:Reference>
+  <edmx:Reference Uri="https://oasis-tcs.github.io/odata-vocabularies/vocabularies/Org.OData.Capabilities.V1.xml">
+    <edmx:Include Namespace="Org.OData.Capabilities.V1" Alias="Capabilities"/>
+  </edmx:Reference>
+  <edmx:Reference Uri="https://oasis-tcs.github.io/odata-vocabularies/vocabularies/Org.OData.Aggregation.V1.xml">
+    <edmx:Include Namespace="Org.OData.Aggregation.V1" Alias="Aggregation"/>
+  </edmx:Reference>
+  <edmx:Reference Uri="https://sap.github.io/odata-vocabularies/vocabularies/Hierarchy.xml">
+    <edmx:Include Namespace="com.sap.vocabularies.Hierarchy.v1" Alias="Hierarchy"/>
+  </edmx:Reference>
+  <edmx:DataServices>
+    <Schema xmlns="http://docs.oasis-open.org/odata/ns/edm" Namespace="Org">
+      <EntityType Name="Unit">
+        <Key><PropertyRef Name="ID"/></Key>
+        <Property Name="ID" Type="Edm.String" Nullable="false" MaxLength="10"/>
+        <Property Name="Name" Type="Edm.String" MaxLength="40"/>
+        <Property Name="ParentID" Type="Edm.String" MaxLength="10"/>
+        <Property Name="LineID" Type="Edm.String" MaxLength="10"/>
+        <Property Name="Headcount" Type="Edm.Int32"/>
+        <Property Name="DrillState" Type="Edm.String"/>
+        <Property Name="DistanceFromRoot" Type="Edm.Int64"/>
+        <Property Name="LimitedDescendantCount" Type="Edm.Int64"/>
+        <Property Name="Matched" Type="Edm.Boolean"/>
+        <NavigationProperty Name="_Parent" Type="Org.Unit">
+          <ReferentialConstraint Property="ParentID" ReferencedProperty="ID"/>
+        </NavigationProperty>
+        <NavigationProperty Name="_Line" Type="Org.Unit">
+          <ReferentialConstraint Property="LineID" ReferencedProperty="ID"/>
+        </NavigationProperty>
+      </EntityType>
+      <EntityType Name="Flat">
+        <Key><PropertyRef Name="ID"/></Key>
+        <Property Name="ID" Type="Edm.String" Nullable="false"/>
+        <Property Name="Name" Type="Edm.String"/>
+      </EntityType>
+      <EntityContainer Name="Container">
+        <EntitySet Name="Units" EntityType="Org.Unit">
+          <NavigationPropertyBinding Path="_Parent" Target="Units"/>
+          <NavigationPropertyBinding Path="_Line" Target="Units"/>
+        </EntitySet>
+        <EntitySet Name="Flats" EntityType="Org.Flat"/>
+      </EntityContainer>
+      <Annotations Target="Org.Container/Units">
+        <Annotation Term="Capabilities.SearchRestrictions">
+          <Record><PropertyValue Property="Searchable" Bool="true"/></Record>
+        </Annotation>
+      </Annotations>
+      <Annotations Target="Org.Unit">
+        <Annotation Term="Aggregation.RecursiveHierarchy" Qualifier="Org">
+          <Record Type="Aggregation.RecursiveHierarchyType">
+            <PropertyValue Property="NodeProperty" PropertyPath="ID"/>
+            <PropertyValue Property="ParentNavigationProperty" NavigationPropertyPath="_Parent"/>
+          </Record>
+        </Annotation>
+        <Annotation Term="Hierarchy.RecursiveHierarchy" Qualifier="Org">
+          <Record Type="Hierarchy.RecursiveHierarchyType">
+            <PropertyValue Property="DrillState" PropertyPath="DrillState"/>
+            <PropertyValue Property="DistanceFromRoot" PropertyPath="DistanceFromRoot"/>
+            <PropertyValue Property="LimitedDescendantCount" PropertyPath="LimitedDescendantCount"/>
+            <PropertyValue Property="Matched" PropertyPath="Matched"/>
+          </Record>
+        </Annotation>
+        <Annotation Term="Aggregation.RecursiveHierarchy" Qualifier="Line">
+          <Record Type="Aggregation.RecursiveHierarchyType">
+            <PropertyValue Property="NodeProperty" PropertyPath="ID"/>
+            <PropertyValue Property="ParentNavigationProperty" NavigationPropertyPath="_Line"/>
+          </Record>
+        </Annotation>
+        <Annotation Term="Hierarchy.RecursiveHierarchy" Qualifier="Line">
+          <Record Type="Hierarchy.RecursiveHierarchyType">
+            <PropertyValue Property="DrillState" PropertyPath="DrillState"/>
+            <PropertyValue Property="DistanceFromRoot" PropertyPath="DistanceFromRoot"/>
+          </Record>
+        </Annotation>
+        <Annotation Term="UI.HeaderInfo">
+          <Record>
+            <PropertyValue Property="TypeName" String="Unit"/>
+            <PropertyValue Property="TypeNamePlural" String="Units"/>
+            <PropertyValue Property="Title"><Record Type="UI.DataField"><PropertyValue Property="Value" Path="Name"/></Record></PropertyValue>
+          </Record>
+        </Annotation>
+        <Annotation Term="UI.LineItem">
+          <Collection>
+            <Record Type="UI.DataField"><PropertyValue Property="Value" Path="Name"/></Record>
+            <Record Type="UI.DataField"><PropertyValue Property="Value" Path="ID"/></Record>
+            <Record Type="UI.DataField"><PropertyValue Property="Value" Path="Headcount"/></Record>
+          </Collection>
+        </Annotation>
+      </Annotations>
+      <Annotations Target="Org.Unit/Name">
+        <Annotation Term="Common.Label" String="Name"/>
+      </Annotations>
+    </Schema>
+  </edmx:DataServices>
+</edmx:Edmx>

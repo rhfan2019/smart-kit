@@ -115,6 +115,11 @@
       "types": "./dist/entries/cards.d.ts",
       "import": "./dist/entries/cards.js"
     },
+    "./controls": {
+      "smart-kit-source": "./src/entries/controls.ts",
+      "types": "./dist/entries/controls.d.ts",
+      "import": "./dist/entries/controls.js"
+    },
     "./styles.css": {
       "smart-kit-source": "./src/theme/styles.css",
       "default": "./dist/styles.css"

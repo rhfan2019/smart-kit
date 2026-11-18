@@ -125,6 +125,7 @@ const PURCHASING_SEARCH = {
   PurchaseOrderItems: { fields: ['Material', 'Plant'], lookups: [{ property: 'Material', keys: nameLookup(() => purchasing().materials, 'Material', 'MaterialName') }] },
   Suppliers: { fields: ['Supplier', 'SupplierName', 'City'] },
   Materials: { fields: ['Material', 'MaterialName'] },
+  CostCenters: { fields: ['CostCenter', 'CostCenterName'] },
 };
 const SEARCH = { purchasing: PURCHASING_SEARCH, [DRAFT_SERVICE]: PURCHASING_SEARCH };
 

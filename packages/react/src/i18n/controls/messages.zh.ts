@@ -1,0 +1,32 @@
+/** Chinese texts of the messages controls (docs/26). Keys must match messages.en.ts. */
+import type { messagesEn } from './messages.en';
+
+export const messagesZh: Record<keyof typeof messagesEn, string | Record<string, string>> = {
+  'ctl.msg.action.ok': '确定',
+  'ctl.msg.action.cancel': '取消',
+  'ctl.msg.action.yes': '是',
+  'ctl.msg.action.no': '否',
+  'ctl.msg.action.abort': '中止',
+  'ctl.msg.action.retry': '重试',
+  'ctl.msg.action.ignore': '忽略',
+  'ctl.msg.action.close': '关闭',
+  'ctl.msg.action.delete': '删除',
+  'ctl.msg.title.alert': '提示',
+  'ctl.msg.title.confirm': '确认',
+  'ctl.msg.title.error': '错误',
+  'ctl.msg.title.information': '信息',
+  'ctl.msg.title.warning': '警告',
+  'ctl.msg.title.success': '成功',
+  'ctl.msg.showDetails': '查看详细信息',
+  'ctl.msg.strip.Error': '错误',
+  'ctl.msg.strip.Warning': '警告',
+  'ctl.msg.strip.Success': '成功',
+  'ctl.msg.strip.Information': '信息',
+  'ctl.msg.detailsError': '无法加载详细信息。',
+  'ctl.msg.retry': '重试',
+  'ctl.msg.messages': '消息',
+  'ctl.msg.all': '全部',
+  'ctl.msg.filter': '按类型筛选',
+  'ctl.msg.back': '返回',
+  'ctl.msg.noItems': '没有消息',
+};

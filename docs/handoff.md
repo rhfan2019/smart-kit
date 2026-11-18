@@ -15,7 +15,13 @@
 
 - **npm 发布准备和给 AI 的文档（2026-11-16，ADR-029、ADR-030，讨论记录 D23、D24）**：分支 `claude/npm-publish`。`exports` 改为指向 `dist`，仓库里用自定义条件 `smart-kit-source` 走源码（npm 不认 `publishConfig.exports`，原配置发布后无法导入）；peer 依赖改成范围；Changesets 四包同步版本，`release.yml` 用 npm 可信发布；`npm run verify:pack` 在仓库外从 tgz 安装后逐项检查（已进 CI）；构建后 `scripts/fix-dts-imports.mjs` 给 `.d.ts` 的相对导入补扩展名（`nodenext` 项目才能用类型）。每个包带 `docs/`（React 包另有 `skills/smart-kit-getting-started/SKILL.md`），`docs/reference.md` 由 `scripts/gen-agent-docs.mjs` 从类型和 TSDoc 生成；文档代码块的类型检查在 `tests/unit/agent-docs.test.ts`；CLI 新命令 `smart-kit agents` 写使用方的 `AGENTS.md` / `CLAUDE.md`。**还没有发布到 npm**：第一次发布由用户手工执行（D24 列出命令）。
 
+- **通用控件（2026-11-17，D31，ADR-032）**：分支 `claude/ui-elements`。参照 Fiori UI Elements，按 SAPUI5 1.154 的 API（`26a` 由官方 api.json 生成）做了 `/controls` 子路径的 23 个控件、`/messages` 的 5 个消息控件、`SmartTable tableType="TreeTable"` 和 `UploadSetwithTable`。计划 `26`、验收 `27`（UE-01～UE-99）、示例 `/controls`、`/tree`。Linux 截图基准没有更新（导航换行），推送后 CI 需要重新生成。
+
+- **铁律：与 SAPUI5 一致（2026-11-17，D34，ADR-033）**：组件名、模块路径（只换前缀；`sap.fe.*` 带 `v4`；每个类一个模块）、API 和注解语义都和 SAPUI5 1.154 一致，注解积木对齐 sap.fe.macros，模板对齐 sap.fe.templates；不留旧名（D35）。**以后统一在 main 上开发**，不开功能分支；D31～D35 的改动已经合并进 main。开发文档 `30`、推进计划 `31`（阶段 0～7，有"进度"一节）、验收标准 `32`；新会话从 `docs/prompt/UI5对齐-推进提示词.md` 开始。已有核对结果：`26a`（控件 API）、`28`（已有组件和 UI5 的差异）、`29` / `29a`（列表页注解和 FE 的差异）。
+
 ## 2. 下一步
+
+0. **按 `31` 推进与 SAPUI5 的对齐**（从阶段 0 开始），这是当前的主线。
 
 0. invoice-assure 的问题清单在 `docs/25-invoice-assure-issues.md`：0.1.0 时的 S1～S9、S13～S23 已在 0.3.0 修好，invoice-assure 已升级并删去这些条目；还没修的是 S24（对象页区块和抬头关键值按数据隐藏）、S25（宿主页脚按钮），S10～S12 只记录。
 0. 自写服务的草稿（D16 的 D 部分）还没做，要不要做由用户决定；`$batch`、深层新建、PUT 也没做。

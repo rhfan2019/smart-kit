@@ -62,6 +62,19 @@ describe('texts (AC-I18N-02)', () => {
     }
   });
 
+  it('zh and en control texts have the same keys and placeholders (docs/26)', async () => {
+    const { controlsEn } = await import('../../packages/react/src/i18n/messages.controls.en');
+    const { controlsZh } = await import('../../packages/react/src/i18n/messages.controls.zh');
+    const en = controlsEn as Record<string, unknown>;
+    const zh = controlsZh as Record<string, unknown>;
+    expect(Object.keys(zh).sort()).toEqual(Object.keys(en).sort());
+    const params = (v: unknown) => [...JSON.stringify(v).matchAll(/\{(\w+)\}/g)].map((m) => m[1]).sort().join();
+    for (const k of Object.keys(en)) {
+      expect(typeof zh[k], k).toBe(typeof en[k]);
+      expect(params(zh[k]), k).toBe(params(en[k]));
+    }
+  });
+
   it('no Chinese characters in library code outside the zh messages', () => {
     const hits = [...files(join(ROOT, 'packages/react/src')), ...files(join(ROOT, 'packages/core/src'))]
       .filter((f) => !f.endsWith('.zh.ts'))

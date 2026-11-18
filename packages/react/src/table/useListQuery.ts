@@ -1,9 +1,9 @@
 /** Headless list query: builds requests from the model and loads pages (growing). Used by SmartTable's "auto" mode and by custom UIs. */
 import {
-  buildListRequest, capabilitiesFor, sourceInfo, type FieldModel, type FilterState, type QueryRequest, type QuerySource,
-  type Row, type SortItem,
+  buildHierarchyRequest, buildListRequest, capabilitiesFor, sourceInfo, type FieldModel, type FilterState, type HierarchyRequestOptions,
+  type QueryRequest, type QuerySource, type Row, type SortItem,
 } from '@rhfan2019/smart-kit-core';
-import { useInfiniteQuery } from '@tanstack/react-query';
+import { keepPreviousData, useInfiniteQuery } from '@tanstack/react-query';
 import { useMemo } from 'react';
 import { useService, useSmartKit } from '../context/SmartKitProvider';
 
@@ -22,6 +22,8 @@ export interface ListQueryOptions {
   /** When false nothing is loaded (e.g. before "Go"). */
   enabled?: boolean;
   extraSelect?: string[];
+  /** Tree tables (docs/26 §3.10): one TopLevels request for the visible nodes instead of pages. */
+  hierarchy?: Pick<HierarchyRequestOptions, 'qualifier' | 'levels' | 'expandLevels'>;
 }
 
 export interface ListQueryResult {
@@ -34,7 +36,7 @@ export interface ListQueryResult {
   hasMore: boolean;
   loadMore(): void;
   refresh(): void;
-  /** Builds a request for an arbitrary page (export, grid blocks). */
+  /** Builds a request for an arbitrary page (export, grid blocks); never hierarchical. */
   pageRequest(skip: number, top: number, count: boolean): QueryRequest;
 }
 
@@ -51,19 +53,26 @@ export function useListQuery(o: ListQueryOptions): ListQueryResult {
 
   const pageRequest = (skip: number, top: number, count: boolean) =>
     buildListRequest(model, ui, { source: o.source, columns, filters: o.filters, search: o.search, sort: o.sort, skip, top, count, extraSelect: o.extraSelect, timeZone });
-  const base = pageRequest(0, pageSize, true);
+  const tree = o.hierarchy
+    ? buildHierarchyRequest(model, ui, { source: o.source, columns, filters: o.filters, search: o.search, sort: o.sort, extraSelect: o.extraSelect, timeZone, ...o.hierarchy })
+    : undefined;
+  const base = tree ?? pageRequest(0, pageSize, true);
   const key = ['smart-kit', namespace, service.name, locale, 'list', JSON.stringify({ ...base, skip: undefined, top: undefined })];
 
   const q = useInfiniteQuery({
     queryKey: key,
     enabled: o.enabled !== false,
     initialPageParam: 0,
+    // Expanding or collapsing keeps the previous rows until the next result is in.
+    placeholderData: tree ? keepPreviousData : undefined,
     queryFn: ({ pageParam, signal }) => {
+      if (tree) return service.dataProvider.query(tree, { signal }).then((r) => ({ ...r, count: undefined, skip: 0, top: r.rows.length }));
       const skip = pageParam as number;
       const top = skip === 0 ? pageSize : growSize;
       return service.dataProvider.query(pageRequest(skip, top, skip === 0), { signal }).then((r) => ({ ...r, skip, top }));
     },
     getNextPageParam: (last, pages) => {
+      if (tree) return undefined;
       const loaded = pages.reduce((n, p) => n + p.rows.length, 0);
       const total = pages[0]?.count;
       if (total !== undefined) return loaded < total ? loaded : undefined;
@@ -72,7 +81,7 @@ export function useListQuery(o: ListQueryOptions): ListQueryResult {
   });
 
   const rows = useMemo(() => (q.data?.pages ?? []).flatMap((p) => p.rows), [q.data]);
-  const count = q.data?.pages[0]?.count ?? (caps.countable ? undefined : q.hasNextPage ? undefined : q.data ? rows.length : undefined);
+  const count = tree ? undefined : q.data?.pages[0]?.count ?? (caps.countable ? undefined : q.hasNextPage ? undefined : q.data ? rows.length : undefined);
   return {
     request: base,
     rows,

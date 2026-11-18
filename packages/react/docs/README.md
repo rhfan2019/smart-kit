@@ -160,9 +160,10 @@ ships about 5 KB gzip of smart-kit).
 | `@rhfan2019/smart-kit/page` | `DynamicPage`, `FlexibleColumnLayout`, `OverflowActions`, `ShareMenu` | no |
 | `@rhfan2019/smart-kit/actions` | `useActionRunner`, `isActionAvailable` | no |
 | `@rhfan2019/smart-kit/edit` | `CreateDialog`, `useEditStrategy`, `validate` | no |
-| `@rhfan2019/smart-kit/messages` | `MessageProvider`, `MessageButton`, `MessageIcon`, `useMessages` | no |
+| `@rhfan2019/smart-kit/messages` | `MessageProvider`, `MessageButton`, `MessageIcon`, `useMessages`; SAPUI5-named `MessageToast`, `MessageBox`, `MessageStrip`, `MessageView`, `MessageItem`, `MessagePopover`, `MessageHost` | no |
 | `@rhfan2019/smart-kit/templates` | `SmartListReport`, `SmartObjectPage` | **yes** |
 | `@rhfan2019/smart-kit/cards` | `Card`, `Header`, `NumericHeader`, `NumericSideIndicator`, `ListContent`, `TableContent`, `ObjectContent`, `AnalyticalContent`, `TimelineContent`, `CalendarContent` | no |
+| `@rhfan2019/smart-kit/controls` | General controls with SAPUI5 names, properties, events and methods (docs/26): `ObjectStatus`, `ObjectIdentifier`, `ObjectNumber`, `ObjectMarker`, `ToggleButton`, `IllustratedMessage`, `BusyIndicator`, `BusyDialog`, `Currency`, `ExpandableText`, `OverflowToolbar`, `ToolbarSpacer`, `ProcessFlow`, `MicroProcessFlow`, `Timeline`, `FeedInput`, `FeedListItem`, `DynamicDateRange`, `SelectDialog`, `TableSelectDialog`, `ViewSettingsDialog`, `Wizard`, `IconTabBar` and their enums | no |
 | `@rhfan2019/smart-kit/styles.css` | the one stylesheet of all components | — |
 | `@rhfan2019/smart-kit/styles.layered.css` | the same stylesheet inside `@layer smart-kit` | — |
 

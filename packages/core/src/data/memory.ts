@@ -2,7 +2,8 @@
 import { compareValues, matches } from '../conditions/conditions';
 import type { EntityTypeModel, MetaModel, NavigationModel } from '../model/types';
 import { keyPredicate, resolveEntityPath, type EntityPath } from '../query/entityPath';
-import { sourceInfo, type ExpandSpec, type QueryRequest, type QueryResult, type QuerySource, type ReadRequest, type Row } from '../query/request';
+import { hierarchyOf } from '../query/hierarchy';
+import { sourceInfo, type ExpandSpec, type HierarchyRequest, type QueryRequest, type QueryResult, type QuerySource, type ReadRequest, type Row } from '../query/request';
 import { resolvePath } from '../model/buildModel';
 import { ConcurrencyError, ODataError } from './errors';
 import type { DataProvider, RequestOptions, WriteResult } from './provider';
@@ -116,6 +117,7 @@ export class MemoryProvider implements DataProvider {
       if (!parentRow) throw new ODataError({ status: 404, message: `Not found: ${req.source.parent}` });
       rows = this.navigate(parent.entitySet, parent.typeName, parentRow, req.source.navigation).rows;
     } else rows = this.rows(info.entitySet);
+    const all = rows;
 
     const typeOf = (p: string) => resolvePath(model.entityTypes, info.typeName, p).property?.edmType ?? 'Edm.String';
     const val = (r: Row, p: string) => this.value(info.entitySet, info.typeName, r, p);
@@ -133,6 +135,7 @@ export class MemoryProvider implements DataProvider {
       const strings = Object.values(type.properties).filter((p) => p.edmType === 'Edm.String').map((p) => p.name);
       rows = rows.filter((r) => terms.every((t) => strings.some((p) => String(r[p] ?? '').toLowerCase().includes(t))));
     }
+    if (req.hierarchy) return this.topLevels(info.entitySet, info.typeName, req, req.hierarchy, all, rows);
     if (req.orderBy.length) {
       rows = [...rows].sort((a, b) => {
         for (const s of req.orderBy) {
@@ -175,6 +178,78 @@ export class MemoryProvider implements DataProvider {
     const skip = req.skip ?? 0;
     const page = req.top === undefined ? rows.slice(skip) : rows.slice(skip, skip + req.top);
     return { rows: page.map((r) => this.project(info.entitySet, info.typeName, r, req.select, req.expand)), count: req.count ? count : undefined };
+  }
+
+  /**
+   * TopLevels (docs/26 §3.10): `rows` are the matching nodes; they are shown with their ancestors (ancestors … keep
+   * start) in tree order, siblings sorted by `orderBy`, down to `levels` and the `expandLevels` of single nodes.
+   */
+  private topLevels(entitySet: string, typeName: string, req: QueryRequest, h: HierarchyRequest, all: Row[], matching: Row[]): QueryResult {
+    const model = this.o.model;
+    const def = hierarchyOf(model, typeName, h.qualifier);
+    if (!def) throw new ODataError({ status: 400, message: `${typeName} has no recursive hierarchy "${h.qualifier}"` });
+    const idOf = (r: Row) => String(r[h.nodeProperty] ?? '');
+    const byId = new Map(all.map((r) => [idOf(r), r]));
+    const parentOf = (r: Row): string | undefined => {
+      if (def.parentProperty) {
+        const v = r[def.parentProperty];
+        return v === null || v === undefined || v === '' ? undefined : String(v);
+      }
+      const parent = this.navigate(entitySet, typeName, r, def.parentNavigation).rows[0];
+      return parent ? idOf(parent) : undefined;
+    };
+    // The limited hierarchy: matching nodes and all their ancestors.
+    const limited = new Set<string>();
+    const matched = new Set(matching.map(idOf));
+    for (const r of matching) {
+      let id: string | undefined = idOf(r);
+      while (id !== undefined && !limited.has(id) && byId.has(id)) {
+        limited.add(id);
+        id = parentOf(byId.get(id)!);
+      }
+    }
+    const typeOf = (p: string) => resolvePath(model.entityTypes, typeName, p).property?.edmType ?? 'Edm.String';
+    const nodes = all.filter((r) => limited.has(idOf(r)));
+    if (req.orderBy.length) {
+      nodes.sort((a, b) => {
+        for (const s of req.orderBy) {
+          const c = compareValues(this.value(entitySet, typeName, a, s.path), this.value(entitySet, typeName, b, s.path), typeOf(s.path));
+          if (c) return s.descending ? -c : c;
+        }
+        return 0;
+      });
+    }
+    const children = new Map<string, Row[]>();
+    const roots: Row[] = [];
+    for (const r of nodes) {
+      const parent = parentOf(r);
+      if (parent !== undefined && limited.has(parent)) (children.get(parent) ?? children.set(parent, []).get(parent)!).push(r);
+      else roots.push(r);
+    }
+    const expand = new Map((h.expandLevels ?? []).map((e) => [e.nodeId, e.levels]));
+    const filtered = Boolean(req.filters || req.anyOf || req.search);
+    const out: Row[] = [];
+    // `levels`: levels shown from this node down (1: the node only).
+    const visit = (r: Row, depth: number, levels: number): number => {
+      const id = idOf(r);
+      if (expand.has(id)) {
+        const n = expand.get(id);
+        levels = n === null ? Infinity : n === 0 ? 1 : Math.max(levels, n! + 1);
+      }
+      const row: Row = { ...this.project(entitySet, typeName, r, req.select, req.expand) };
+      out.push(row);
+      const kids = children.get(id) ?? [];
+      let shown = 0;
+      if (levels > 1) for (const k of kids) shown += 1 + visit(k, depth + 1, levels - 1);
+      if (def.drillState) row[def.drillState] = !kids.length ? 'leaf' : levels > 1 ? 'expanded' : 'collapsed';
+      if (def.distanceFromRoot) row[def.distanceFromRoot] = depth;
+      if (def.limitedDescendantCount) row[def.limitedDescendantCount] = shown;
+      if (def.matched && filtered) row[def.matched] = matched.has(id);
+      return shown;
+    };
+    for (const r of roots) visit(r, 0, h.levels ?? Infinity);
+    const skip = req.skip ?? 0;
+    return { rows: req.top === undefined ? out.slice(skip) : out.slice(skip, skip + req.top), count: req.count ? out.length : undefined };
   }
 
   private findByKey(entitySet: string, typeName: string, key: Record<string, string>): Row | undefined {

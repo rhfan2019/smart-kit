@@ -14,7 +14,7 @@
 | [008](008-csdl-parser.md) | CSDL 与注解解析用 `@sap-ux/*` | 采纳 |
 | [009](009-mock-server.md) | 测试服务用 ASP.NET Core OData | 已被 ADR-017 取代 |
 | [010](010-routing.md) | 库不依赖路由；示例用 React Router | 采纳 |
-| [011](011-component-naming.md) | 组件沿用 Smart* 名字 | 采纳 |
+| [011](011-component-naming.md) | 组件沿用 Smart* 名字 | 被 ADR-033 取代 |
 | [012](012-package-naming.md) | 包名与改名脚本 | 采纳 |
 | [013](013-trademark-check.md) | 商标词检查 | 采纳 |
 | [014](014-variant-storage.md) | 变体存服务端实体集 | 采纳 |
@@ -35,3 +35,5 @@
 | [029](029-npm-publishing.md) | npm 发布：导出条件 `smart-kit-source`、Changesets 四包同步版本、可信发布、打包验证 | 采纳 |
 | [030](030-docs-for-coding-agents.md) | 给 AI 编程工具的文档：随包发布 `docs/` 和 Skill，`smart-kit agents` 写 `AGENTS.md` 索引 | 采纳 |
 | [031](031-grouping-and-totals.md) | 列表的分组、组小计和总计由服务端 `$apply` 计算；网格表格只有总计 | 采纳 |
+| [032](032-ui5-naming-for-controls.md) | 通用控件：控件名、属性、枚举、事件和方法沿用 SAPUI5；实例方法用 ref | 采纳 |
+| [033](033-ui5-iron-rule.md) | 铁律：组件、命名空间（只换前缀）、API 和注解语义与 SAPUI5 1.154 一致；注解积木对齐 sap.fe.macros，模板对齐 sap.fe.templates；偏差必须登记，开发后必须核对 | 采纳 |

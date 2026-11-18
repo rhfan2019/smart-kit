@@ -11,12 +11,14 @@ import { AboutPage, HomePage } from './pages/HostPages';
 import { FreestylePage } from './pages/FreestylePage';
 import { HooksOnlyPage } from './pages/HooksOnlyPage';
 import { CardsPage } from './pages/CardsPage';
+import { ControlsPage } from './pages/ControlsPage';
 import { MicroChartsPage } from './pages/MicroChartsPage';
 import { NorthwindListPage } from './pages/NorthwindPages';
 import { ObjectRoute } from './pages/ObjectRoute';
 import { PurchaseOrdersPage } from './pages/PurchaseOrdersPage';
 import { FclPage } from './pages/FclPage';
 import { TablePage } from './pages/TablePage';
+import { TreePage } from './pages/TreePage';
 import { shellText, type ShellKey } from './shellText';
 
 const fetchJson: FetchLike = (url, init) => fetch(url, init);
@@ -70,7 +72,7 @@ export function App() {
   const pageState = useMemo(() => createSessionPageStateStore(), []);
   const shell = useMemo(() => ({ locale, s: (k: ShellKey, p?: Record<string, string | number>) => shellText(locale, k, p) }), [locale]);
   const responsiveList = /[?&]table=(responsive|auto)/.test(location.search);
-  const fill = (!responsiveList && /^\/(po|po-draft|nw\/products|nw\/orders|freestyle|fcl)\/?$/.test(location.pathname)) || /^\/fcl\/?$/.test(location.pathname) || /^\/[\w-]+\/table\/?$/.test(location.pathname);
+  const fill = (!responsiveList && /^\/(po|po-draft|nw\/products|nw\/orders|freestyle|fcl|tree)\/?$/.test(location.pathname)) || /^\/fcl\/?$/.test(location.pathname) || /^\/[\w-]+\/table\/?$/.test(location.pathname);
 
   return (
     <MantineProvider theme={smartKitMantineTheme} cssVariablesResolver={smartKitCssVariablesResolver} forceColorScheme="light">
@@ -83,12 +85,14 @@ export function App() {
                 <NavLink to="/po">{shell.s('po')}</NavLink>
                 <NavLink to="/po-draft">{shell.s('poDraft')}</NavLink>
                 <NavLink to="/fcl">{shell.s('fcl')}</NavLink>
+                <NavLink to="/tree">{shell.s('tree')}</NavLink>
                 <NavLink to="/nw/products">{shell.s('products')}</NavLink>
                 <NavLink to="/nw/orders">{shell.s('orders')}</NavLink>
                 <NavLink to="/freestyle">{shell.s('freestyle')}</NavLink>
                 <NavLink to="/hooks">{shell.s('hooks')}</NavLink>
                 <NavLink to="/microcharts">{shell.s('microcharts')}</NavLink>
                 <NavLink to="/cards">{shell.s('cards')}</NavLink>
+                <NavLink to="/controls">{shell.s('controls')}</NavLink>
                 <NavLink to="/about">{shell.s('about')}</NavLink>
               </nav>
               <SegmentedControl size="xs" aria-label={shell.s('language')} value={locale} onChange={(v) => { setLocale(v as Locale); remember('lang', v); }} data={[{ value: 'zh', label: '中文' }, { value: 'en', label: 'English' }]} data-demo-lang />
@@ -107,6 +111,7 @@ export function App() {
                     <Route path="/po" element={<PurchaseOrdersPage />} />
                     <Route path="/po-draft" element={<PurchaseOrdersPage service="purchasing-draft" />} />
                     <Route path="/fcl" element={<FclPage />} />
+                    <Route path="/tree" element={<TreePage />} />
                     <Route path="/:service/table" element={<TablePage />} />
                     <Route path="/nw/products" element={<NorthwindListPage entitySet="Products" />} />
                     <Route path="/nw/orders" element={<NorthwindListPage entitySet="Orders" />} />
@@ -114,6 +119,7 @@ export function App() {
                     <Route path="/hooks" element={<HooksOnlyPage />} />
                     <Route path="/microcharts" element={<MicroChartsPage />} />
                     <Route path="/cards" element={<CardsPage />} />
+                    <Route path="/controls" element={<ControlsPage />} />
                     <Route path="/:service/object" element={<ObjectRoute />} />
                     <Route path="/about" element={<AboutPage />} />
                   </Routes>

@@ -162,5 +162,10 @@
   "F.Location": "Location",
   "F.MeetingCategory": "Category",
   "F.MeetingCategoryName": "Category Name",
-  "DP.CardSpend": "Purchasing Spend"
+  "DP.CardSpend": "Purchasing Spend",
+  "T.CostCenter": "Cost Center",
+  "T.CostCenters": "Cost Centers",
+  "F.CostCenter": "Cost Center",
+  "F.CostCenterName": "Cost Center Name",
+  "F.Budget": "Budget"
 }

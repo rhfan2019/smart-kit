@@ -87,6 +87,29 @@ export interface EntityTypeModel {
   propertyOrder: string[];
   navigations: Record<string, NavigationModel>;
   etag?: string;
+  /** Recursive hierarchies of the type (docs/26 §3.10); absent when the type declares none. */
+  hierarchies?: RecursiveHierarchyModel[];
+}
+
+/**
+ * A recursive hierarchy: `Aggregation.RecursiveHierarchy` (node and parent) with the same qualifier as
+ * `Hierarchy.RecursiveHierarchy` (properties the service fills per row of a TopLevels result).
+ */
+export interface RecursiveHierarchyModel {
+  qualifier: string;
+  /** NodeProperty: the node id. */
+  nodeProperty: string;
+  /** ParentNavigationProperty. */
+  parentNavigation: string;
+  /** Property holding the parent's node id (referential constraint of the parent navigation), when declared. */
+  parentProperty?: string;
+  /** 'expanded' | 'collapsed' | 'leaf'. */
+  drillState?: string;
+  distanceFromRoot?: string;
+  limitedDescendantCount?: string;
+  matched?: string;
+  matchedDescendantCount?: string;
+  externalKey?: string;
 }
 
 export interface CapabilityModel {

@@ -72,7 +72,34 @@ const HISTORY_CATEGORIES = [
 ];
 
 /** English -> Chinese for the localized text properties (by property name). */
+/** Cost center hierarchy (tree table, docs/26 §3.10): per company a head office with departments and teams. */
+const COST_CENTER_TREE = [
+  ['100', 'Purchasing', '采购', [['110', 'Strategic Purchasing', '战略采购'], ['120', 'Operational Purchasing', '操作采购']]],
+  ['200', 'Production', '生产', [['210', 'Assembly', '装配'], ['220', 'Quality Assurance', '质量保证']]],
+  ['300', 'Logistics', '物流', []],
+];
+const HEAD_OFFICE = { Hamburg: '汉堡', Chicago: '芝加哥', Shanghai: '上海', Osaka: '大阪' };
+
+/** Deterministic (no random numbers: the seeded data of the other sets stays the same). */
+function generateCostCenters() {
+  const out = [];
+  for (const [cc, currency, [city]] of COMPANIES) {
+    const scale = FX_FROM_EUR[currency];
+    const row = (id, name, parent, eur) => out.push({ CostCenter: `${cc[0]}${id}`, CostCenterName: name, ParentCostCenter: parent, CompanyCode: cc, City: city, Budget: round(eur * scale, currency === 'JPY' ? 0 : 2), Currency: currency });
+    row('000', `${city} Head Office`, null, 5_000_000);
+    for (const [id, name, , teams] of COST_CENTER_TREE) {
+      row(id, name, `${cc[0]}000`, 1_200_000 + Number(id) * 1000);
+      for (const [tid, tname] of teams) row(tid, tname, `${cc[0]}${id}`, 400_000 + Number(tid) * 1000);
+    }
+  }
+  return out;
+}
+
 export const ZH_TEXTS = {
+  CostCenterName: Object.fromEntries([
+    ...Object.entries(HEAD_OFFICE).map(([en, zh]) => [`${en} Head Office`, `${zh}总部`]),
+    ...COST_CENTER_TREE.flatMap(([, en, zh, teams]) => [[en, zh], ...teams.map(([, ten, tzh]) => [ten, tzh])]),
+  ]),
   Name: Object.fromEntries([...STATUSES, ...ORDER_TYPES].map((s) => [s[1], s[2]])),
   ConditionTypeName: Object.fromEntries(CONDITION_TYPES.map((s) => [s[1], s[2]])),
   CategoryText: Object.fromEntries(HISTORY_CATEGORIES.map((s) => [s[1], s[2]])),
@@ -301,6 +328,7 @@ export function generatePurchasing() {
   return {
     OrderStatuses, PurchaseOrderTypes, Suppliers, Materials: materials.map((m) => m.m), Plants,
     PurchaseOrders, PurchaseOrderItems, PricingConditions, ItemHistory, Variants: [], MaterialPrices, SupplierMeetings,
+    CostCenters: generateCostCenters(),
   };
 }
 

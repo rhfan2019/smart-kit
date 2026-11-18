@@ -48,6 +48,7 @@
 | `Suppliers` | `Supplier`（String 10） | `SupplierName`、`Country`、`City`、`Rating`（Decimal 2,1，评分）、`RatingCount`（Int32，评分次数 5–400，由编号的散列得出）、`LogoUrl`（`UI.IsImageURL`，指向服务自带的生成 SVG）、`IsBlocked` | — | 200 |
 | `Materials` | `Material` | `MaterialName`、`MaterialGroup`、`BaseUnit` | — | 500 |
 | `Plants` | `Plant` | `PlantName`、`City` | — | 12 |
+| `CostCenters` | `CostCenter`（String 10） | `CostCenterName`（中英文）、`ParentCostCenter`、`CompanyCode`、`City`、`Budget`（Decimal 15,2，币种 `Currency`）；层级字段 `DrillState`、`DistanceFromRoot`、`LimitedDescendantCount`、`Matched`、`MatchedDescendantCount`（隐藏，由 TopLevels 填） | `_Parent` | 32（4 家公司 × 总部、3 个部门、4 个小组），见 3.7 |
 | `OrderStatuses` | `Code` | `Name`、`Criticality` | — | 6（二期加了 `REJ` 已拒绝，只由"拒绝"动作产生） |
 | `Variants` | `ID`（Guid） | `PageKey`、`Name`、`IsDefault`、`AutoApply`、`Content`、`ModifiedAt` | — | 空 |
 
@@ -144,6 +145,12 @@
 - 新实体集 `SupplierMeetings`（实体类型 `SupplierMeeting`）：`Meeting`（键）、`Supplier`（文本 `_Supplier/SupplierName`）、`Subject`、`StartAt`、`EndAt`（DateTimeOffset）、`Location`、`Category`（文本 `CategoryName`，中英文）；注解 `UI.HeaderInfo`、`UI.LineItem`、`UI.PresentationVariant`（按开始时间升序）、`Communication.Event`。数据由固定种子生成（与订单的随机序列分开）：2026-10-26 到 2026-12-14 的工作日每天 0～3 个会议，2026-11-16（`MEETING_DAY`）正好 4 个，共 50 个。
 - `PurchaseOrders` 新增：`UI.LineItem#CardList`、`#CardTable`，`UI.DataPoint#CardAmount`（净值，状态色）、`#CardSpend`（目标 6 亿、`CriticalityCalculation`、`TrendCalculation`），`UI.PresentationVariant#CardLarge`（净值降序，`MaxItems` 5），`UI.SelectionVariant#CardNew`（状态 NEW）、`#CardEur`（币种 EUR），`UI.Chart#CardTypeShare`（Donut）。
 - 词汇表引用加了 `Communication`。`packages/core/test/samples` 已重新导出（原样例停在三期页头 Facet 增加之前，`samples.test.ts` 的页头 Facet 数随之从 4 改为 7）。
+
+### 3.7 层级表用的数据和注解（docs/26 §3.10）
+
+- 新实体集 `CostCenters`（实体类型 `CostCenter`）：每家公司一个总部（`1000`、`2000`…），下设采购、生产、物流三个部门，采购和生产各有两个小组。数据是固定的（不用随机数，其他实体集的种子数据不变），名称有中文（`ZH_TEXTS.CostCenterName`）。只读（`Insert/Update/DeleteRestrictions` 为 false），可搜索（`CostCenter`、`CostCenterName`）。
+- 注解：`Aggregation.RecursiveHierarchy#CostCenterHierarchy`（`NodeProperty` = `CostCenter`，`ParentNavigationProperty` = `_Parent`）、`Hierarchy.RecursiveHierarchy#CostCenterHierarchy`（`DrillState`、`DistanceFromRoot`、`LimitedDescendantCount`、`Matched`、`MatchedDescendantCount`），`UI.HeaderInfo`、`UI.LineItem`、`UI.SelectionFields`（公司代码、城市）。词汇表引用加了 `Hierarchy`。
+- 查询由 fe-mockserver-core 的 `TopLevels` 完成（`Levels`、`ExpandLevels`，`ancestors(…,keep start)` 筛选和搜索，`orderby` 排同级）；它不认 `ExpandLevels` 的 `Levels: 0`（折叠），smart-kit 在客户端补上。`packages/core/test/samples` 没有重新导出。示例应用的页面是 `/tree`。
 
 ## 4. 一致性
 

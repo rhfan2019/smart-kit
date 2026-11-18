@@ -159,6 +159,8 @@
   --sk-size-row-comfortable: 40px;
   --sk-size-row-compact: 30px;
   --sk-total-line-height: 20px;
+  --sk-size-tree-indent: 16px;
+  --sk-size-tree-toggle: 24px;
   --sk-size-header-row-comfortable: 36px;
   --sk-size-header-row-compact: 28px;
   --sk-size-avatar: 64px;
@@ -596,6 +598,36 @@
   /* stacked bar: bar thickness limit and the text on the segments */
   --sk-microchart-stack-height: 20px;
   --sk-chart-segment-text: var(--sk-color-surface);
+  /* controls (docs/26, ADR-032): IndicationColor Indication01–08 and their washes (inverted ObjectStatus) */
+  --sk-color-indication-01: var(--sk-red-700);
+  --sk-color-indication-02: var(--sk-orange-600);
+  --sk-color-indication-03: var(--sk-amber-700);
+  --sk-color-indication-04: var(--sk-green-700);
+  --sk-color-indication-05: var(--sk-blue-700);
+  --sk-color-indication-06: var(--sk-teal-600);
+  --sk-color-indication-07: var(--sk-purple-600);
+  --sk-color-indication-08: var(--sk-pink-600);
+  --sk-color-indication-09: var(--sk-cyan-600);
+  --sk-color-indication-10: var(--sk-indigo-500);
+  --sk-color-indication-11: var(--sk-magenta-600);
+  --sk-color-indication-12: var(--sk-slate-600);
+  --sk-color-indication-13: var(--sk-red-900);
+  --sk-color-indication-14: var(--sk-amber-900);
+  --sk-color-indication-15: var(--sk-green-900);
+  --sk-color-indication-16: var(--sk-blue-900);
+  --sk-color-indication-17: var(--sk-teal-300);
+  --sk-color-indication-18: var(--sk-purple-300);
+  --sk-color-indication-19: var(--sk-pink-300);
+  --sk-color-indication-20: var(--sk-orange-300);
+  --sk-indication-wash: 14%;
+  /* message controls (docs/26 §3.1) */
+  --sk-toast-bg: color-mix(in srgb, var(--sk-color-text) 82%, transparent);
+  --sk-toast-text: var(--sk-color-surface);
+  --sk-toast-margin: var(--sk-space-7);
+  --sk-toast-width: 15em;
+  --sk-toast-z: 1000;
+  --sk-message-view-max-height: 22rem;
+  --sk-message-strip-min-height: 2.5rem;
 }
 
 /* ---------------------------------------------------------------- Mantine bridge
@@ -702,4 +734,18 @@
 [data-sk-theme='sky'],
 [data-theme='sky']:where(:root:not([data-sk-theme]), :root:not([data-sk-theme]) *) {
   --sk-chart-color: var(--sk-color-chart-1);
+}
+
+/* ---------------------------------------------------------------- controls: indication colours in the dark theme */
+[data-sk-theme='dark'],
+[data-theme='dark']:where(:root:not([data-sk-theme]), :root:not([data-sk-theme]) *) {
+  --sk-color-indication-01: var(--sk-red-300);
+  --sk-color-indication-02: var(--sk-orange-300);
+  --sk-color-indication-03: var(--sk-amber-300);
+  --sk-color-indication-04: var(--sk-green-300);
+  --sk-color-indication-05: var(--sk-blue-300);
+  --sk-color-indication-06: var(--sk-teal-300);
+  --sk-color-indication-07: var(--sk-purple-300);
+  --sk-color-indication-08: var(--sk-pink-300);
+  --sk-indication-wash: 24%;
 }

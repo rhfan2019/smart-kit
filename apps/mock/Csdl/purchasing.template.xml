@@ -22,6 +22,9 @@
   <edmx:Reference Uri="https://oasis-tcs.github.io/odata-vocabularies/vocabularies/Org.OData.Aggregation.V1.xml">
     <edmx:Include Namespace="Org.OData.Aggregation.V1" Alias="Aggregation"/>
   </edmx:Reference>
+  <edmx:Reference Uri="https://sap.github.io/odata-vocabularies/vocabularies/Hierarchy.xml">
+    <edmx:Include Namespace="com.sap.vocabularies.Hierarchy.v1" Alias="Hierarchy"/>
+  </edmx:Reference>
   <edmx:Reference Uri="https://sap.github.io/odata-vocabularies/vocabularies/Communication.xml">
     <edmx:Include Namespace="com.sap.vocabularies.Communication.v1" Alias="Communication"/>
   </edmx:Reference>
@@ -171,6 +174,26 @@
         <Property Name="City" Type="Edm.String" Nullable="false" MaxLength="40"/>
       </EntityType>
 
+      <!-- Cost center hierarchy (tree table, docs/26 §3.10). The hierarchy properties are filled by TopLevels. -->
+      <EntityType Name="CostCenter">
+        <Key><PropertyRef Name="CostCenter"/></Key>
+        <Property Name="CostCenter" Type="Edm.String" Nullable="false" MaxLength="10"/>
+        <Property Name="CostCenterName" Type="Edm.String" Nullable="false" MaxLength="40"/>
+        <Property Name="ParentCostCenter" Type="Edm.String" MaxLength="10"/>
+        <Property Name="CompanyCode" Type="Edm.String" Nullable="false" MaxLength="4"/>
+        <Property Name="City" Type="Edm.String" Nullable="false" MaxLength="40"/>
+        <Property Name="Budget" Type="Edm.Decimal" Nullable="false" Precision="15" Scale="2"/>
+        <Property Name="Currency" Type="Edm.String" Nullable="false" MaxLength="3"/>
+        <Property Name="DrillState" Type="Edm.String" MaxLength="10"/>
+        <Property Name="DistanceFromRoot" Type="Edm.Int64"/>
+        <Property Name="LimitedDescendantCount" Type="Edm.Int64"/>
+        <Property Name="Matched" Type="Edm.Boolean"/>
+        <Property Name="MatchedDescendantCount" Type="Edm.Int64"/>
+        <NavigationProperty Name="_Parent" Type="Purchasing.CostCenter">
+          <ReferentialConstraint Property="ParentCostCenter" ReferencedProperty="CostCenter"/>
+        </NavigationProperty>
+      </EntityType>
+
       <EntityType Name="OrderStatus">
         <Key><PropertyRef Name="Code"/></Key>
         <Property Name="Code" Type="Edm.String" Nullable="false" MaxLength="10"/>
@@ -236,6 +259,9 @@
         </EntitySet>
         <EntitySet Name="Materials" EntityType="Purchasing.Material"/>
         <EntitySet Name="Plants" EntityType="Purchasing.Plant"/>
+        <EntitySet Name="CostCenters" EntityType="Purchasing.CostCenter">
+          <NavigationPropertyBinding Path="_Parent" Target="CostCenters"/>
+        </EntitySet>
         <EntitySet Name="OrderStatuses" EntityType="Purchasing.OrderStatus"/>
         <EntitySet Name="PurchaseOrderTypes" EntityType="Purchasing.OrderType"/>
         <EntitySet Name="Variants" EntityType="Purchasing.Variant"/>
@@ -317,6 +343,20 @@
       <Annotations Target="Purchasing.Container/Materials">
         <Annotation Term="Capabilities.SearchRestrictions">
           <Record Type="Capabilities.SearchRestrictionsType"><PropertyValue Property="Searchable" Bool="true"/></Record>
+        </Annotation>
+      </Annotations>
+      <Annotations Target="Purchasing.Container/CostCenters">
+        <Annotation Term="Capabilities.SearchRestrictions">
+          <Record Type="Capabilities.SearchRestrictionsType"><PropertyValue Property="Searchable" Bool="true"/></Record>
+        </Annotation>
+        <Annotation Term="Capabilities.InsertRestrictions">
+          <Record Type="Capabilities.InsertRestrictionsType"><PropertyValue Property="Insertable" Bool="false"/></Record>
+        </Annotation>
+        <Annotation Term="Capabilities.UpdateRestrictions">
+          <Record Type="Capabilities.UpdateRestrictionsType"><PropertyValue Property="Updatable" Bool="false"/></Record>
+        </Annotation>
+        <Annotation Term="Capabilities.DeleteRestrictions">
+          <Record Type="Capabilities.DeleteRestrictionsType"><PropertyValue Property="Deletable" Bool="false"/></Record>
         </Annotation>
       </Annotations>
       <Annotations Target="Purchasing.Container/Plants">
@@ -1871,6 +1911,81 @@
       </Annotations>
       <Annotations Target="Purchasing.Material/BaseUnit">
         <Annotation Term="Common.Label" String="{{label:F.BaseUnit}}"/>
+      </Annotations>
+      <!-- =========================================================== CostCenter (recursive hierarchy) -->
+      <Annotations Target="Purchasing.CostCenter">
+        <Annotation Term="Aggregation.RecursiveHierarchy" Qualifier="CostCenterHierarchy">
+          <Record Type="Aggregation.RecursiveHierarchyType">
+            <PropertyValue Property="NodeProperty" PropertyPath="CostCenter"/>
+            <PropertyValue Property="ParentNavigationProperty" NavigationPropertyPath="_Parent"/>
+          </Record>
+        </Annotation>
+        <Annotation Term="Hierarchy.RecursiveHierarchy" Qualifier="CostCenterHierarchy">
+          <Record Type="Hierarchy.RecursiveHierarchyType">
+            <PropertyValue Property="LimitedDescendantCount" PropertyPath="LimitedDescendantCount"/>
+            <PropertyValue Property="DistanceFromRoot" PropertyPath="DistanceFromRoot"/>
+            <PropertyValue Property="DrillState" PropertyPath="DrillState"/>
+            <PropertyValue Property="Matched" PropertyPath="Matched"/>
+            <PropertyValue Property="MatchedDescendantCount" PropertyPath="MatchedDescendantCount"/>
+          </Record>
+        </Annotation>
+        <Annotation Term="UI.HeaderInfo">
+          <Record Type="UI.HeaderInfoType">
+            <PropertyValue Property="TypeName" String="{{label:T.CostCenter}}"/>
+            <PropertyValue Property="TypeNamePlural" String="{{label:T.CostCenters}}"/>
+            <PropertyValue Property="Title"><Record Type="UI.DataField"><PropertyValue Property="Value" Path="CostCenterName"/></Record></PropertyValue>
+            <PropertyValue Property="Description"><Record Type="UI.DataField"><PropertyValue Property="Value" Path="CostCenter"/></Record></PropertyValue>
+          </Record>
+        </Annotation>
+        <Annotation Term="UI.SelectionFields">
+          <Collection><PropertyPath>CompanyCode</PropertyPath><PropertyPath>City</PropertyPath></Collection>
+        </Annotation>
+        <Annotation Term="UI.LineItem">
+          <Collection>
+            <Record Type="UI.DataField"><PropertyValue Property="Value" Path="CostCenterName"/><Annotation Term="UI.Importance" EnumMember="UI.ImportanceType/High"/></Record>
+            <Record Type="UI.DataField"><PropertyValue Property="Value" Path="CostCenter"/><Annotation Term="UI.Importance" EnumMember="UI.ImportanceType/High"/></Record>
+            <Record Type="UI.DataField"><PropertyValue Property="Value" Path="CompanyCode"/></Record>
+            <Record Type="UI.DataField"><PropertyValue Property="Value" Path="City"/></Record>
+            <Record Type="UI.DataField"><PropertyValue Property="Value" Path="Budget"/></Record>
+          </Collection>
+        </Annotation>
+      </Annotations>
+      <Annotations Target="Purchasing.CostCenter/CostCenter">
+        <Annotation Term="Common.Label" String="{{label:F.CostCenter}}"/>
+      </Annotations>
+      <Annotations Target="Purchasing.CostCenter/CostCenterName">
+        <Annotation Term="Common.Label" String="{{label:F.CostCenterName}}"/>
+      </Annotations>
+      <Annotations Target="Purchasing.CostCenter/CompanyCode">
+        <Annotation Term="Common.Label" String="{{label:F.CompanyCode}}"/>
+      </Annotations>
+      <Annotations Target="Purchasing.CostCenter/City">
+        <Annotation Term="Common.Label" String="{{label:F.City}}"/>
+      </Annotations>
+      <Annotations Target="Purchasing.CostCenter/Budget">
+        <Annotation Term="Common.Label" String="{{label:F.Budget}}"/>
+        <Annotation Term="Measures.ISOCurrency" Path="Currency"/>
+      </Annotations>
+      <Annotations Target="Purchasing.CostCenter/Currency">
+        <Annotation Term="Common.Label" String="{{label:F.Currency}}"/>
+      </Annotations>
+      <Annotations Target="Purchasing.CostCenter/ParentCostCenter">
+        <Annotation Term="UI.Hidden" Bool="true"/>
+      </Annotations>
+      <Annotations Target="Purchasing.CostCenter/DrillState">
+        <Annotation Term="UI.Hidden" Bool="true"/>
+      </Annotations>
+      <Annotations Target="Purchasing.CostCenter/DistanceFromRoot">
+        <Annotation Term="UI.Hidden" Bool="true"/>
+      </Annotations>
+      <Annotations Target="Purchasing.CostCenter/LimitedDescendantCount">
+        <Annotation Term="UI.Hidden" Bool="true"/>
+      </Annotations>
+      <Annotations Target="Purchasing.CostCenter/Matched">
+        <Annotation Term="UI.Hidden" Bool="true"/>
+      </Annotations>
+      <Annotations Target="Purchasing.CostCenter/MatchedDescendantCount">
+        <Annotation Term="UI.Hidden" Bool="true"/>
       </Annotations>
       <Annotations Target="Purchasing.Plant">
         <Annotation Term="UI.HeaderInfo">

@@ -14,7 +14,7 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import {
   ChartView, DynamicPage, FilterSummary, MessageButton, MessageProvider, ShareMenu, SmartFilterBar, SmartTable, SmartVariantManagement, useFilterState, useMessages,
   useMetaModel, usePageState, useService, useSmartKit, useText, useVariants,
-  type ActionGroup, type ExportEvent, type ExtendEntry, type FilterFieldItem, type TableExtendEntry,
+  type ActionGroup, type ExportEvent, type ExtendEntry, type FilterFieldItem, type TableExtendEntry, type TableType,
 } from '../index';
 
 export interface ListContentItem {
@@ -66,8 +66,14 @@ export interface SmartListReportProps {
   views?: { mode: 'switch' | 'tabs'; ids?: string[] };
   /** Multiple content (LR Multiple Content): a text-only tab per table, all filtered by the same filter bar. */
   contents?: ListContentItem[];
-  /** Table type: grid (desktop), responsive, or auto = responsive below 600px (LR Responsiveness, docs/12 U-17). */
-  tableType?: 'grid' | 'responsive' | 'auto';
+  /**
+   * Table type: grid (desktop), responsive, or auto = responsive below 600px (LR Responsiveness, docs/12 U-17). The UI5
+   * names (sap.ui.comp.smarttable.TableType) are accepted too: "Table" and "AnalyticalTable" = grid,
+   * "ResponsiveTable" = responsive, "TreeTable" = grid tree table of the recursive hierarchy (docs/26 §3.10).
+   */
+  tableType?: 'grid' | 'responsive' | 'auto' | TableType;
+  /** Tree tables: qualifier of Aggregation.RecursiveHierarchy (default: the type's first hierarchy). */
+  hierarchyQualifier?: string;
   /** Offer a chart view from UI.Chart (qualifier; true = the first chart); views use the chart of their presentation variant. */
   chart?: boolean | string;
   /** Working mode after actions (LR Working Modes; default worklist). */
@@ -211,7 +217,7 @@ function ListReportInner(props: SmartListReportProps) {
     return () => ro.disconnect();
   });
   const tableType = p.tableType ?? 'grid';
-  const responsive = tableType === 'responsive' || (tableType === 'auto' && width < 600);
+  const responsive = tableType === 'responsive' || tableType === 'ResponsiveTable' || (tableType === 'auto' && width < 600);
 
   // LR-14: initial focus.
   const latestFilter = useRef(filter);
@@ -337,6 +343,8 @@ function ListReportInner(props: SmartListReportProps) {
           service={p.service}
           entitySet={entitySet}
           mode={responsive ? 'responsive' : 'grid'}
+          tableType={tableType === 'TreeTable' ? 'TreeTable' : undefined}
+          hierarchyQualifier={p.hierarchyQualifier}
           query={q.query}
           overlay={filter.dirty && !p.liveMode}
           columns={entitySet === p.entitySet && !v ? columns : undefined}

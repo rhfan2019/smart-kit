@@ -8,6 +8,7 @@ import { createContext, useContext, useMemo, useState, type ReactNode } from 're
 import { createText, INTL_LOCALE, type Locale, type TextFn } from '../i18n/text';
 import type { Messages } from '../i18n/messages.en';
 import type { RendererRegistry } from '../field/renderers';
+import { MessageHost } from '../messages/MessageHost';
 
 export interface ServiceConfig {
   model: MetaModel;
@@ -81,7 +82,7 @@ export function SmartKitProvider(p: SmartKitProviderProps) {
   );
   return (
     <QueryClientProvider client={p.queryClient ?? ownClient}>
-      <SmartKitContext.Provider value={value}>{p.children}</SmartKitContext.Provider>
+      <SmartKitContext.Provider value={value}>{p.children}<MessageHost /></SmartKitContext.Provider>
     </QueryClientProvider>
   );
 }
@@ -94,6 +95,11 @@ export function useSmartKit(): SmartKitContextValue {
 
 export function useText(): TextFn {
   return useSmartKit().t;
+}
+
+/** The smart-kit context, or null outside a SmartKitProvider (controls that also work without one, docs/26). */
+export function useOptionalSmartKit(): SmartKitContextValue | null {
+  return useContext(SmartKitContext);
 }
 
 export interface ServiceHandle extends ServiceConfig {

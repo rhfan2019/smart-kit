@@ -425,3 +425,31 @@ export function TwoColumns(p: { list: ReactNode; detail: ReactNode; onClose(): v
   return <FlexibleColumnLayout layout={layout} onLayoutChange={setLayout} begin={p.list} mid={p.detail} onCloseMid={p.onClose} />;
 }
 ```
+
+## 15. Tree table (recursive hierarchy)
+
+The entity type needs `Aggregation.RecursiveHierarchy#Q` (`NodeProperty`, `ParentNavigationProperty`) and
+`Hierarchy.RecursiveHierarchy#Q` (`DrillState`, `DistanceFromRoot`, `LimitedDescendantCount`). The table reads the
+visible nodes with `$apply=…/com.sap.vocabularies.Hierarchy.v1.TopLevels(…)` (filters and search through
+`ancestors(…,keep start)`); `MemoryProvider` answers the same requests. `tableType` takes the UI5 names
+(`ResponsiveTable`, `Table`, `AnalyticalTable`, `TreeTable`); `mode="responsive"` gives a responsive tree. Methods and
+the event are those of `sap.ui.table.TreeTable`; row indexes count the visible rows. No paging, grouping or totals.
+
+```tsx
+import { SmartTable, type SmartTableRef } from '@rhfan2019/smart-kit/table';
+import { useRef } from 'react';
+
+export function CostCenterTree() {
+  const ref = useRef<SmartTableRef>(null);
+  return (
+    <SmartTable
+      entitySet="CostCenters"
+      tableType="TreeTable"
+      hierarchyQualifier="CostCenterHierarchy" // default: the first hierarchy of the type
+      ref={ref} // expand(rowIndex), collapse(rowIndex), collapseAll(), expandToLevel(level), isExpanded(rowIndex)
+      onToggleOpenState={(e) => console.log(e.rowIndex, e.rowContext, e.expanded)} // user toggles only
+      toolbarEnd={<button type="button" onClick={() => ref.current?.expandToLevel(3)}>Expand all</button>}
+    />
+  );
+}
+```

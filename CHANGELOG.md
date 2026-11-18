@@ -5,6 +5,13 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+### Added (general controls with SAPUI5 names, docs/26, ADR-032)
+
+- smart-kit: new subpath `/controls`: `ObjectStatus`, `ObjectIdentifier`, `ObjectNumber`, `ObjectMarker`, `ToggleButton`, `IllustratedMessage`, `BusyIndicator`, `BusyDialog`, `Currency`, `ExpandableText`, `OverflowToolbar` (+ `OverflowToolbarButton`, `ToolbarSpacer`), `ProcessFlow`, `MicroProcessFlow`, `Timeline`, `FeedInput`, `FeedListItem`, `UploadSetwithTable`, `DynamicDateRange`, `SelectDialog`, `TableSelectDialog`, `ViewSettingsDialog`, `Wizard`, `IconTabBar` and their enums. Properties, defaults, events (`on` + UI5 event name) and methods (static functions or `ref`) follow the SAPUI5 1.154 API (`docs/26a-ui5-api-1.154.md`).
+- smart-kit: message controls in `/messages`: `MessageToast.show`, `MessageBox.*` (return a promise of the action), `MessageStrip`, `MessageView` / `MessageItem`, `MessagePopover`; `SmartKitProvider` renders the `MessageHost`. The footer `MessageButton` now uses `MessagePopover`.
+- smart-kit: `SmartTable tableType="TreeTable"` (also `ResponsiveTable`, `Table`, `AnalyticalTable`) for entity types with `Hierarchy.RecursiveHierarchy`; `ref` methods `expand`, `collapse`, `collapseAll`, `expandToLevel`, `isExpanded` and `onToggleOpenState`. `SmartListReport tableType` accepts the UI5 names too.
+- smart-kit-core: `buildHierarchyRequest`, `hierarchyOf`, `hierarchyNodeOf`; `QueryRequest.hierarchy`; `MemoryProvider` answers `TopLevels` requests.
+
 ### Added (issues found by invoice-assure on 0.1.0, docs/25)
 
 - smart-kit-server: `$filter` supports the lambda operators `any` / `all` over collection navigations (`_Item/any(i: i/Plant eq '1010')`, `any()`, nested lambdas, `$it`); the target's data scope applies to the rows a lambda sees.

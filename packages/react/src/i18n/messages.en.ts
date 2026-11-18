@@ -1,5 +1,6 @@
 /** English library texts. Keys must match messages.zh.ts (checked by a unit test). */
 import { cardsEn } from './messages.cards.en';
+import type { controlsEn } from './messages.controls.en';
 import { p2en } from './messages.p2.en';
 
 export const en = {
@@ -41,6 +42,8 @@ export const en = {
   'table.error': 'The data could not be loaded: {message}',
   'table.selectRow': 'Select row',
   'table.overflow': 'More actions',
+  'table.expandNode': 'Expand node',
+  'table.collapseNode': 'Collapse node',
   'p13n.title': 'View Settings',
   'p13n.columns': 'Columns',
   'p13n.sort': 'Sort',
@@ -188,5 +191,8 @@ export const en = {
 } as const;
 
 type Widen<T> = { -readonly [K in keyof T]: T[K] extends string ? string : { [P in keyof T[K]]: string } };
-export type Messages = Widen<typeof en>;
+/** The library texts; the control texts (docs/26) are loaded per control group, but can be overridden here too. */
+export type Messages = Widen<typeof en & typeof controlsEn>;
+/** The texts in messages.en.ts / messages.zh.ts themselves (without the control texts). */
+export type CoreMessages = Widen<typeof en>;
 export type MessageKey = keyof Messages;

@@ -4,7 +4,7 @@ export type {
   ActionModel, AggregationModel, ChartModel, DraftModel, EventModel, Importance, PresentationVariantModel, ViewModel,
   CapabilityModel, ColumnModel, Criticality, CriticalityCalculationModel, ImprovementDirection, DataPointModel, EdmType, EntitySetModel, EntityTypeModel, EntityUi, FieldModel,
   FilterExpression, FormGroupModel, HeaderFacetModel, HeaderInfoModel, InitialCondition, MetaModel, ModelWarning, NavigationModel,
-  PresentationModel, PropertyModel, TrendCalculationModel, SectionModel, SubSectionContent, SubSectionModel, TextArrangement, ValueListModel,
+  PresentationModel, PropertyModel, RecursiveHierarchyModel, TrendCalculationModel, SectionModel, SubSectionContent, SubSectionModel, TextArrangement, ValueListModel,
   ValueListParameter, ValueRef,
 } from './model/types';
 export { buildModel, resolvePath, parseAnnotationPath, DEFAULT_CAPABILITIES, type BuildModelOptions } from './model/buildModel';
@@ -30,9 +30,10 @@ export {
 export {
   buildListRequest, buildObjectRequest, buildValueHelpRequest, buildAggregateRequest, chartFields, chartExpand, chartIsSeries, chartSeriesSelect, MICRO_CHART_MAX_POINTS, MICRO_COMPARISON_MAX_BARS, objectFields, fieldPaths, companionPaths, dataPointPaths, selectAndExpand,
   toQueryString, readQueryString, filterString, sourcePath, sourceInfo, encodeOption,
-  type QueryRequest, type QueryResult, type ReadRequest, type Row, type SortItem, type ExpandSpec, type QuerySource,
+  type QueryRequest, type QueryResult, type ReadRequest, type Row, type SortItem, type ExpandSpec, type QuerySource, type HierarchyRequest,
   type ListRequestOptions, type ValueHelpRequestOptions, type AggregateRequestOptions, type SourceInfo,
 } from './query/request';
+export { buildHierarchyRequest, hierarchyOf, hierarchyNodeOf, type HierarchyRequestOptions, type HierarchyNode, type DrillState } from './query/hierarchy';
 export {
   buildTotalsRequest, collectTotals, canTotal, canGroup, canSubtotal, unitPathOf, groupKey, TOTAL_COUNT_ALIAS, MAX_GROUP_VALUES,
   type TotalsRequestOptions, type TotalsEntry, type TotalAmount,

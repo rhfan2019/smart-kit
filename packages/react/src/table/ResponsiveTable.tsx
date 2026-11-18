@@ -2,15 +2,16 @@
  * Responsive table (ADR-020, LR Table / Sticky Behavior / Responsiveness): a semantic table that scrolls with the
  * page, loads more rows when its end comes into view ("scroll to load"), keeps the column headers sticky, hides
  * columns by UI.Importance on narrow widths and shows them below the row with "Show Details" (pop-in), groups rows
- * (with subtotals and counts in the group header) and shows a totals row at the end (docs/23), and navigates by
- * clicking the whole row.
+ * (with subtotals and counts in the group header) and shows a totals row at the end (docs/23), shows a tree
+ * (treegrid, docs/26 §3.10) and navigates by clicking the whole row.
  */
 import { Checkbox, Loader, Text } from '@mantine/core';
-import type { Row } from '@rhfan2019/smart-kit-core';
+import type { HierarchyNode, Row } from '@rhfan2019/smart-kit-core';
 import { ChevronRight } from 'lucide-react';
 import { useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { useText } from '../context/SmartKitProvider';
 import { getPath } from '../field/values';
+import { TreeCell } from './tree';
 
 export interface ResponsiveColumn {
   id: string;
@@ -52,6 +53,8 @@ export interface ResponsiveTableProps {
   groupSummary?(row: Row): GroupSummary | undefined;
   /** Totals row after the last row: cells by column id (docs/23). */
   totals?: { label: ReactNode; cells: Record<string, ReactNode> };
+  /** Tree rows (docs/26 §3.10): indentation and toggle in the first column. */
+  tree?: { nodeOf(row: Row): HierarchyNode | undefined; toggle(row: Row): void };
 }
 
 export interface GroupSummary {
@@ -173,7 +176,7 @@ export function ResponsiveTable(p: ResponsiveTableProps) {
   const groupCol = p.groupBy ? p.columns.find((c) => c.id === p.groupBy) : undefined;
   return (
     <div className="sk-rtable" ref={boxRef} data-sk-responsive-table data-width={width}>
-      <table role="grid" aria-label={p.label} aria-rowcount={p.rows.length} onKeyDown={onKeyDown} className="sk-rtable__table">
+      <table role={p.tree ? 'treegrid' : 'grid'} aria-label={p.label} aria-rowcount={p.rows.length} onKeyDown={onKeyDown} className="sk-rtable__table">
         <thead>
           <tr>
             {p.selectable ? (
@@ -203,12 +206,15 @@ export function ResponsiveTable(p: ResponsiveTableProps) {
             }
             lastGroup = group;
             const selected = p.selectedKeys.has(k);
+            const node = p.tree?.nodeOf(row);
             return [
               header,
               <tr
                 key={k}
                 data-sk-row={k}
                 aria-selected={p.selectable ? selected : undefined}
+                aria-level={node ? node.level + 1 : undefined}
+                aria-expanded={node && node.drillState !== 'leaf' ? node.drillState === 'expanded' : undefined}
                 data-changed={p.changedKeys?.has(k) || undefined}
                 className={['sk-rtable__row', p.navigable ? 'sk-rtable__row--nav' : ''].join(' ')}
                 onClick={(e) => {
@@ -224,7 +230,7 @@ export function ResponsiveTable(p: ResponsiveTableProps) {
                 ) : null}
                 {visible.map((c, i) => (
                   <td key={c.id} data-sk-cell tabIndex={-1} data-col={c.id} className={c.align === 'end' ? 'sk-rtable__end' : undefined}>
-                    {c.render(row)}
+                    {i === 0 && p.tree ? <TreeCell node={node} onToggle={() => p.tree!.toggle(row)}>{c.render(row)}</TreeCell> : c.render(row)}
                     {i === 0 && p.rowMarker ? p.rowMarker(row) : null}
                     {i === 0 && p.changedKeys?.has(k) ? <div className="sk-rtable__changed" data-sk-changed-marker>{t('table.changedItem')}</div> : null}
                     {i === 0 && p.showDetails && hidden.length ? (

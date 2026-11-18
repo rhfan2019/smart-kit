@@ -17,7 +17,7 @@ MOCK_PORT=4500 npm start
 | 地址 | 说明 |
 | --- | --- |
 | `/odata/northwind/` | 仿 Northwind，命名空间 `NorthwindLike`，**没有任何注解** |
-| `/odata/purchasing/` | 采购订单，命名空间 `Purchasing`，完整 UI / Common / Measures / Capabilities / Core / Aggregation 注解；直接保存（新建、PATCH、删除、绑定动作 `approve` / `reject` / `close`） |
+| `/odata/purchasing/` | 采购订单，命名空间 `Purchasing`，完整 UI / Common / Measures / Capabilities / Core / Aggregation 注解，成本中心层级（`CostCenters`，Hierarchy 注解，TopLevels）；直接保存（新建、PATCH、删除、绑定动作 `approve` / `reject` / `close`） |
 | `/odata/purchasing-draft/` | 同一份模板派生的草稿服务（`IsActiveEntity` 键、`draftEdit` / `draftActivate` / `draftPrepare`、`Common.DraftRoot` / `DraftNode`）；`4500000004` 有其他用户（虚构的 Alex Miller）的草稿 |
 | `GET /` | 服务列表 |
 | `…/$metadata`、`…/$metadata?$format=json` | CSDL XML / CSDL JSON |

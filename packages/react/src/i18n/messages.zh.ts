@@ -1,9 +1,9 @@
 /** 简体中文库文案。键必须与 messages.en.ts 一致（单元测试检查）。 */
-import type { Messages } from './messages.en';
+import type { CoreMessages } from './messages.en';
 import { cardsZh } from './messages.cards.zh';
 import { p2zh } from './messages.p2.zh';
 
-export const zh: Messages = {
+export const zh: CoreMessages = {
   ...p2zh,
   ...cardsZh,
   'filterBar.search': '搜索',
@@ -42,6 +42,8 @@ export const zh: Messages = {
   'table.error': '数据加载失败：{message}',
   'table.selectRow': '选择行',
   'table.overflow': '更多操作',
+  'table.expandNode': '展开节点',
+  'table.collapseNode': '折叠节点',
   'p13n.title': '视图设置',
   'p13n.columns': '列',
   'p13n.sort': '排序',
