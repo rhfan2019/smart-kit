@@ -1,6 +1,6 @@
 {
   "name": "@rhfan2019/smart-kit-server",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "A limited OData V4 service on PostgreSQL for smart-kit: URL -> AST -> query plan -> SQL (Node only).",
   "keywords": [
     "odata",
@@ -46,7 +46,7 @@
     "build": "vite build && node ../../scripts/fix-dts-imports.mjs ."
   },
   "dependencies": {
-    "@rhfan2019/smart-kit-core": "0.3.0",
+    "@rhfan2019/smart-kit-core": "0.4.0",
     "chevrotain": "13.2.0",
     "kysely": "0.29.9",
     "pg": "8.23.1",

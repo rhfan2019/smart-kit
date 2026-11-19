@@ -941,3 +941,9 @@ ADR-027 定的范围是"只实现 smart-kit 会发的请求"，用户也定过�
 这些都不影响同一注解下已经实现的部分；以后要做，按条目里写的前提一项项做。
 
 **结果**：偏差表 469 条：kit-extension 186、react-idiom 88、no-binding 121；按本条保留 74 条（not-implemented 49、different-value 19、fe-behavior 6）。AL-13：ListReport 333 项、ObjectPage 382 项，0 未登记。检查：单测 1027、e2e 211、e2e:pg 148（2 个跳过）、FE 对比 111 个场景、trace 22/22、`verify:pack`、`gen-agent-docs --check` 全部通过。对齐的 8 个阶段全部完成；是否发 1.0、何时迁移 invoice-assure 由用户决定。
+
+## D49 发版 0.4.0（2026-11-18）
+
+**用户**：发版，上一个版本是 0.3.0，这次定为 0.4.0，暂时不到 1.0。CI 和发版完成后，用户在 invoice-assure 另开会话按 `25` 的迁移清单修改。D48 保留的 74 条暂时不做。
+
+**结果**：12 个 changeset 都是 minor，四个包同步升到 0.4.0（本地 `npm run version-packages`，不走版本拉取请求），根目录 `CHANGELOG.md` 的 Unreleased 记为 0.4.0（之前 0.2.0、0.3.0 的条目合成一节）。推送 main 后 CI 通过，`release.yml` 发现没有 changeset、版本不在 npm 上，直接发布。阶段 1、2、5、6 的不兼容改动在 0.x 期间按小版本发布（`28` 已记录）。

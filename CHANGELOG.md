@@ -5,6 +5,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-11-18
+
 ### Changed — behaviour (SAPUI5 alignment, stage 7, D48)
 
 - smart-kit: object page sub-tables share the list report's table mapping; object page header / footer / section toolbars follow FE (`priority`, `group`, `overflowGroup`, `overflowGroups`, `defaultAction`, `applyObjectPageEmphasisRules`, `shareOverflowPriority` High); `defaultValuesFunction`, `afterExecution`; table `$ActionGroupSettings` with `defaultAction`, toolbar `template` content, column overrides, `showDataFieldsLabel`, `settings.mergeCells`, `exportSettings`, `aiNotice`, `formatOptions`; `useSemanticDateRange`, filter field `settings`. Settings FE accepts without effect are declared the same way.
@@ -74,6 +76,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 - smart-kit: message controls in `/messages`: `MessageToast.show`, `MessageBox.*` (return a promise of the action), `MessageStrip`, `MessageView` / `MessageItem`, `MessagePopover`; `SmartKitProvider` renders the `MessageHost`. The footer `MessageButton` now uses `MessagePopover`.
 - smart-kit: `SmartTable tableType="TreeTable"` (also `ResponsiveTable`, `Table`, `AnalyticalTable`) for entity types with `Hierarchy.RecursiveHierarchy`; `ref` methods `expand`, `collapse`, `collapseAll`, `expandToLevel`, `isExpanded` and `onToggleOpenState`. `SmartListReport tableType` accepts the UI5 names too.
 - smart-kit-core: `buildHierarchyRequest`, `hierarchyOf`, `hierarchyNodeOf`; `QueryRequest.hierarchy`; `MemoryProvider` answers `TopLevels` requests.
+
+## [0.2.0, 0.3.0] - 2026-11-17
+
+Released as 0.2.0 and 0.3.0 from the same changes (the package CHANGELOG.md files list each).
 
 ### Added (issues found by invoice-assure on 0.1.0, docs/25)
 
