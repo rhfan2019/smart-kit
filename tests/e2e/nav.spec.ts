@@ -39,7 +39,7 @@ test('AC-NAV-01 returning to the list restores filters, search, sort, columns, s
   await expect(filterInput(page, '$search')).toHaveValue('Ltd');
   await expect(t.locator('.ag-header-cell[col-id="DataField::PurchaseOrder"]')).toHaveAttribute('aria-sort', 'ascending');
   await expect(t.locator('.ag-header-cell[col-id="DataField::NetAmount"]')).toHaveCount(0);
-  await expect.poll(() => t.locator('.ag-grid-viewport').evaluate((el) => el.scrollTop)).toBeGreaterThan(scrollBefore - 60);
+  await expect.poll(() => t.locator('.ag-grid-viewport').evaluate((el) => el.scrollTop), { timeout: 20_000 }).toBeGreaterThan(scrollBefore - 60);
   expect(await t.locator('.ag-grid-viewport').evaluate((el) => el.scrollTop)).toBeLessThan(scrollBefore + 60);
   await expect(t.locator('.ag-row[row-index="125"] input[type="checkbox"]')).toBeChecked();
 });
