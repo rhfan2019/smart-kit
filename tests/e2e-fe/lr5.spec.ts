@@ -167,10 +167,13 @@ for (const s of SCENARIOS) {
       expect(fe.snap.requests.some((r) => r.resource === 'PurchaseOrders'), 'FE list request').toBe(true);
       expect(sk.snap.requests.some((r) => r.resource === 'PurchaseOrders'), 'smart-kit list request').toBe(true);
     } else {
-      expect(fe.snap.requests.filter((r) => r.resource === 'PurchaseOrders'), 'FE: no list request').toEqual([]);
+      // FE switches the filter bar's requests off when the view starts (ListReportController._setInitLoad); on a slow
+      // machine (GitHub runners) the table may bind first and FE loads anyway, so CI only checks smart-kit (D49)
+      if (!process.env.CI) expect(fe.snap.requests.filter((r) => r.resource === 'PurchaseOrders'), 'FE: no list request').toEqual([]);
       expect(sk.snap.requests.filter((r) => r.resource === 'PurchaseOrders'), 'smart-kit: no list request').toEqual([]);
     }
-    compareScenario(s.name, fe.snap, sk.snap);
+    const raced = !s.loads && process.env.CI ? { ...fe.snap, requests: fe.snap.requests.filter((r) => r.resource !== 'PurchaseOrders') } : fe.snap;
+    compareScenario(s.name, raced, sk.snap);
     if (s.extra) expect(sk.extra, `${s.name}: smart-kit`).toEqual(fe.extra);
   });
 }

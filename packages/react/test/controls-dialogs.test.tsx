@@ -588,7 +588,7 @@ describe('UI5 alignment (AL-05 defaults, AL-06 events)', () => {
     expect(within(list).queryAllByRole('checkbox')).toHaveLength(0);
     expect(screen.queryByRole('button', { name: 'Clear' })).toBeNull();
     expect(within(list).getAllByRole('option')).toHaveLength(20); // growing with the list's threshold
-    await waitFor(() => expect(within(list).getAllByRole('option')[0]).toHaveFocus());
+    await waitFor(() => expect(within(list).getAllByRole('option')[0]).toHaveFocus(), { timeout: 5000 });
   });
 
   it('AL-05 TableSelectDialog: multiSelect false and growing true by default', async () => {

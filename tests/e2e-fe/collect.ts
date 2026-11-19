@@ -115,7 +115,9 @@ export async function readFe(page: Page, rows = TEXT_ROWS): Promise<{ structure:
       .map((b: any) => `${b.getText()}${b.getEnabled() ? '' : ' [disabled]'}`);
     // the view tabs (IconTabFilter texts; their counts are a property of their own, compared by tests/e2e-fe/lr5.spec.ts;
     // the IconTabBar's overflow items have no text; the tabs of an open value help dialog are no view tabs)
-    const viewTabs = of('sap.m.IconTabBar').filter((t) => !t.getDomRef()?.closest('[role="dialog"]')).flatMap((t) => t.getItems().filter((i: any) => i.isA('sap.m.IconTabFilter') && i.getVisible() && i.getText()).map((i: any) => i.getText()))
+    // (a closed dialog keeps its DOM outside the dialog element on slow machines: check the control tree too)
+    const inDialog = (c: any): boolean => { for (let p = c; p; p = p.getParent?.()) if (p.isA?.(['sap.m.Dialog', 'sap.ui.mdc.valuehelp.base.Container'])) return true; return false; };
+    const viewTabs = of('sap.m.IconTabBar').filter((t) => !inDialog(t) && !t.getDomRef()?.closest('[role="dialog"]')).flatMap((t) => t.getItems().filter((i: any) => i.isA('sap.m.IconTabFilter') && i.getVisible() && i.getText()).map((i: any) => i.getText()))
       .concat(of('sap.m.SegmentedButton').filter((s) => s.getId().includes('fe::')).flatMap((s) => s.getItems().map((i: any) => i.getText()).filter(Boolean)));
     const chart = of('sap.ui.mdc.Chart').find((x) => x.getDomRef());
     const inner = table?._oTable;

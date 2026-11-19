@@ -947,3 +947,9 @@ ADR-027 定的范围是"只实现 smart-kit 会发的请求"，用户也定过�
 **用户**：发版，上一个版本是 0.3.0，这次定为 0.4.0，暂时不到 1.0。CI 和发版完成后，用户在 invoice-assure 另开会话按 `25` 的迁移清单修改。D48 保留的 74 条暂时不做。
 
 **结果**：12 个 changeset 都是 minor，四个包同步升到 0.4.0（本地 `npm run version-packages`，不走版本拉取请求），根目录 `CHANGELOG.md` 的 Unreleased 记为 0.4.0（之前 0.2.0、0.3.0 的条目合成一节）。推送 main 后 CI 通过，`release.yml` 发现没有 changeset、版本不在 npm 上，直接发布。阶段 1、2、5、6 的不兼容改动在 0.x 期间按小版本发布（`28` 已记录）。
+
+**第一次 CI（GitHub）失败，修正**：这是对齐工作第一次在 GitHub 上跑 CI。
+- Linux 截图基线还是 0.3.0 的页面，按 CI 产出的截图更新（列表页、对象页）。
+- `SelectDialog` 的初始焦点单测在慢机器上超过 1 秒，等待改为 5 秒。
+- FE 对比：值帮助对话框关闭后，FE 的 IconTabBar 在慢机器上不在 `role="dialog"` 元素里，被当成视图标签；`collect.ts` 改为按控件树排除对话框里的 IconTabBar。
+- FE 对比 `lr5-initial-disabled`：FE 在视图启动时才关掉筛选栏的请求（`ListReportController._setInitLoad`），慢机器上表格可能先绑定、照样读数据。这是 FE 的竞态，CI 上只检查 smart-kit 不读数据，本地仍两边都查。
