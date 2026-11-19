@@ -13,3 +13,4 @@ reports/*
 !reports/ui5-alignment.md
 # SAP api.json, sap.fe sources: downloaded for the alignment checks only, never committed (ADR-033 §9)
 .cache/
+blob-report/
