@@ -37,7 +37,8 @@
     "verify:pack": "node scripts/verify-pack.mjs",
     "changeset": "changeset",
     "version-packages": "changeset version && npm install --package-lock-only --no-audit --no-fund",
-    "release": "npm run build && changeset publish"
+    "release": "npm run build && changeset publish",
+    "test:slow": "bash scripts/slow-test.sh"
   },
   "devDependencies": {
     "@axe-core/playwright": "4.14.0",

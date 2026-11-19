@@ -15,3 +15,5 @@
 
 
 **更新（2026-11-18，D49）**：检查任务加 `npm run check:ui5`（SAPUI5 api.json 缓存在 `.cache/ui5`）；和 Fiori elements 的对比（`npm run e2e:fe`）单独一个任务，结果交给可追溯检查任务。
+
+**更新（2026-11-18，D50）**：FE 对比分 4 片；`changes` 任务让版本提交和只改文档的提交跳过端到端任务；`ci/*` 分支也跑 CI（不发布）。

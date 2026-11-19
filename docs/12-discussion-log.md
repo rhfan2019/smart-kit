@@ -962,3 +962,16 @@ ADR-027 定的范围是"只实现 smart-kit 会发的请求"，用户也定过�
 - 第二、三次 CI：慢机器上又有 UI 单测超时、图表 "View By" 菜单点在正在开关的菜单上；React 单测在 CI 上把 `findBy*` / `waitFor` 等待设为 5 秒、单个测试 30 秒（`setup.ts`、`vitest.config.ts`），图表用例重试"打开、选择、检查"。FE 对比 `cols5-contacts-expand-header`：FE 网格表先画空行，改为等有数据的行再数请求。
 - 第四次 CI：`SelectDialog` 的初始焦点在慢机器上被对话框的焦点陷阱抢走（陷阱在设焦点的那一帧之后运行）；初始焦点目标加 `data-autofocus`，陷阱自己就聚焦它（产品修正，慢机器上的用户同样受益）。AC-Q-02 万行滚动的长任务：开发机 99～145ms，GitHub 运行器 205～213ms；预算按开发机定义，CI 上按 300ms 检查（`07` 已注明）。
 - 第五次 CI：图表用例的重试在慢机器上超过它自己的 20 秒上限（改 60 秒）；PostgreSQL 上返回列表恢复滚动位置要等第二块数据，等待改为 20 秒。
+
+## D50 CI 提速：`ci/*` 分支、慢机器测试、FE 对比分片（2026-11-18）
+
+**背景**：0.4.0 发版时 CI 连续失败多轮，每轮约 21 分钟（最慢的是 FE 对比 21 分钟）；失败都是 GitHub 运行器比开发机慢约一倍时才出现的超时和竞态，而对齐工作期间从没在 GitHub 上跑过 CI。
+
+**用户**：同意以下优化。
+
+**结果**：
+1. **`ci/*` 分支**：CI 也在推送到 `ci/*` 分支时运行（`release.yml` 只跟 main，不会发布）。较大的工作在进行中推到 `ci/<主题>` 分支，在 GitHub 运行器上尽早暴露问题；推 main 仍需用户同意。
+2. **慢机器测试** `npm run test:slow [-- 命令]`（`scripts/slow-test.sh`）：在 Playwright 的 Linux 镜像里跑，限制 2 个 CPU、7 GB 内存，`CI=1`；默认跑单元测试。可用 `SLOW_CPUS`、`SLOW_MEMORY` 调整；Docker Desktop 的 Settings › Resources 至少要给这么多。提交 UI 测试前先用它跑一遍。
+3. **FE 对比分 4 片**并行，各片的 blob 报告在可追溯检查任务里合并。
+4. **只改文档的提交跳过端到端任务**（`docs/`、`*.md`、`.changeset/`），新的 `changes` 任务判断；版本提交照旧跳过。
+5. **React 单测在 CI 上失败最多重试 2 次**（和 Playwright 在 CI 上重试一样）。`npm run test:slow` 能在本地复现图表用例在负载下的失败（`macros6-chart.test.tsx`），根本原因还没找到，记为待查。

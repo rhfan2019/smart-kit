@@ -27,6 +27,8 @@ export default defineConfig({
           setupFiles: ['packages/react/test/setup.ts'],
           // UI tests drive menus and dialogs; on slow CI runners they need more than the default 5 s (D49)
           testTimeout: process.env.CI ? 30_000 : 5_000,
+          // as Playwright on CI: a UI test that fails under the runner's load gets retried (D50)
+          retry: process.env.CI ? 2 : 0,
         },
       },
       {

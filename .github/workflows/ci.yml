@@ -2,11 +2,15 @@ name: CI
 
 # Jobs run in parallel (D31): static checks, unit tests and builds in one job; the end-to-end suites in shards, each
 # shard with its own test services; the traceability check merges the shard reports at the end.
-# Version commits of the release ("chore: version packages", its pull request and its merge) only change versions
-# and changelogs: they skip the end-to-end jobs (the same code was tested when it was pushed).
+# The end-to-end jobs (e2e, e2e PostgreSQL, the comparison with Fiori elements) are skipped (D50) for
+# - version commits of the release ("chore: version packages", its pull request and its merge): they only change
+#   versions and changelogs, the same code was tested when it was pushed;
+# - commits that only change documentation (docs/, *.md, .changeset/).
+# Branches `ci/*` run the same checks without releasing (release.yml only follows main): push work in progress there
+# to see it on GitHub's runners early (D50).
 on:
   push:
-    branches: [main]
+    branches: [main, 'ci/**']
   pull_request:
 
 concurrency:
@@ -15,6 +19,32 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
+  # whether the end-to-end jobs run (see the top of this file)
+  changes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      e2e: ${{ steps.files.outputs.e2e }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - id: files
+        env:
+          HEAD_REF: ${{ github.head_ref }}
+          MESSAGE: ${{ github.event.head_commit.message }}
+          BEFORE: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
+        run: |
+          if [ "$HEAD_REF" = "changeset-release/main" ] || [[ "$MESSAGE" == "chore: version packages"* ]] || [[ "$MESSAGE" == *"/changeset-release/main"* ]]; then
+            echo "version commit: no end-to-end tests"; echo "e2e=false" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          if [ -z "$BEFORE" ] || ! git cat-file -e "$BEFORE^{commit}" 2>/dev/null; then
+            echo "no base commit: all tests"; echo "e2e=true" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          code=$(git diff --name-only "$BEFORE" HEAD | grep -Ev '^docs/|\.md$|^\.changeset/' || true)
+          if [ -z "$code" ]; then echo "documentation only: no end-to-end tests"; echo "e2e=false" >> "$GITHUB_OUTPUT"
+          else echo "$code" | head -20; echo "e2e=true" >> "$GITHUB_OUTPUT"; fi
+
   checks:
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -82,10 +112,8 @@ jobs:
 
   e2e:
     name: e2e (${{ matrix.shard }}/3)
-    if: >-
-      ${{ github.head_ref != 'changeset-release/main'
-      && !startsWith(github.event.head_commit.message, 'chore: version packages')
-      && !contains(github.event.head_commit.message, '/changeset-release/main') }}
+    needs: changes
+    if: ${{ needs.changes.outputs.e2e == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     strategy:
@@ -119,10 +147,8 @@ jobs:
 
   e2e-pg:
     name: e2e PostgreSQL (${{ matrix.shard }}/2)
-    if: >-
-      ${{ github.head_ref != 'changeset-release/main'
-      && !startsWith(github.event.head_commit.message, 'chore: version packages')
-      && !contains(github.event.head_commit.message, '/changeset-release/main') }}
+    needs: changes
+    if: ${{ needs.changes.outputs.e2e == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     strategy:
@@ -167,13 +193,15 @@ jobs:
 
   # a real Fiori elements app (SAPUI5 loaded from ui5.sap.com at runtime) against the same test service (docs/30 §7.2)
   e2e-fe:
-    name: Comparison with Fiori elements 1.154 (AL-10..AL-12, AL-21)
-    if: >-
-      ${{ github.head_ref != 'changeset-release/main'
-      && !startsWith(github.event.head_commit.message, 'chore: version packages')
-      && !contains(github.event.head_commit.message, '/changeset-release/main') }}
+    name: Comparison with Fiori elements 1.154 (${{ matrix.shard }}/4)
+    needs: changes
+    if: ${{ needs.changes.outputs.e2e == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -183,20 +211,22 @@ jobs:
       - run: npm ci
       - name: Install Playwright browser
         run: npx playwright install --with-deps chromium
-      - name: Comparison with Fiori elements 1.154
-        run: npm run e2e:fe
-      # the traceability job reads the comparison results (docs/32 appendix, F rows)
+      - name: Comparison with Fiori elements 1.154 (AL-10..AL-12, AL-21)
+        run: npm run e2e:fe -- --shard=${{ matrix.shard }}/4
+      # the traceability job merges the shards' results (docs/32 appendix, F rows)
       - uses: actions/upload-artifact@v4
         if: ${{ !cancelled() }}
         with:
-          name: e2e-fe-results
-          path: reports/e2e-fe-results.json
+          name: fe-blob-report-${{ matrix.shard }}
+          path: blob-report
           retention-days: 3
       - uses: actions/upload-artifact@v4
         if: failure()
         with:
-          name: playwright-fe-report
-          path: test-results/
+          name: playwright-fe-report-${{ matrix.shard }}
+          path: |
+            test-results/
+            reports/fe-compare/
 
   # needs the unit and end-to-end results (docs/13: every criterion maps to a passing test)
   traceability:
@@ -216,10 +246,6 @@ jobs:
           path: reports
       - uses: actions/download-artifact@v4
         with:
-          name: e2e-fe-results
-          path: reports
-      - uses: actions/download-artifact@v4
-        with:
           pattern: blob-report-*
           path: all-blob-reports
           merge-multiple: true
@@ -227,5 +253,14 @@ jobs:
         run: npx playwright merge-reports --reporter json all-blob-reports
         env:
           PLAYWRIGHT_JSON_OUTPUT_FILE: reports/e2e-results.json
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: fe-blob-report-*
+          path: all-fe-blob-reports
+          merge-multiple: true
+      - name: Merge the comparison shard reports
+        run: npx playwright merge-reports --reporter json all-fe-blob-reports
+        env:
+          PLAYWRIGHT_JSON_OUTPUT_FILE: reports/e2e-fe-results.json
       - name: Traceability
         run: npm run trace -- --strict

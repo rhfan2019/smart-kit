@@ -19,7 +19,11 @@ export default defineConfig({
   workers: 1,
   retries: process.env.CI ? 1 : 0,
   // the JSON results feed `npm run trace` (docs/32 appendix, AL-21)
-  reporter: process.env.CI ? [['github'], ['list'], ['json', { outputFile: 'reports/e2e-fe-results.json' }]] : [['list'], ['json', { outputFile: 'reports/e2e-fe-results.json' }]],
+  // CI runs the comparison in shards (.github/workflows/ci.yml, D50): each shard also writes a blob report, merged into
+  // reports/e2e-fe-results.json for `npm run trace`.
+  reporter: process.env.CI
+    ? [['github'], ['list'], ['json', { outputFile: 'reports/e2e-fe-results.json' }], ['blob', { outputDir: 'blob-report' }]]
+    : [['list'], ['json', { outputFile: 'reports/e2e-fe-results.json' }]],
   use: {
     ...devices['Desktop Chrome'],
     // wide enough that neither table virtualizes columns away
