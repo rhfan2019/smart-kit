@@ -975,3 +975,4 @@ ADR-027 定的范围是"只实现 smart-kit 会发的请求"，用户也定过�
 3. **FE 对比分 4 片**并行，各片的 blob 报告在可追溯检查任务里合并。
 4. **只改文档的提交跳过端到端任务**（`docs/`、`*.md`、`.changeset/`），新的 `changes` 任务判断；版本提交照旧跳过。
 5. **React 单测在 CI 上失败最多重试 2 次**（和 Playwright 在 CI 上重试一样）。`npm run test:slow` 能在本地复现图表用例在负载下的失败（`macros6-chart.test.tsx`），根本原因还没找到，记为待查。
+6. **发版 0.4.0 结果**：第七轮 CI 全绿，用时 9 分 14 秒（之前约 21 分钟）；`release.yml` 发布了四个包的 0.4.0，`verify-pack --registry` 在本地补跑通过。发现 `release.yml` 的老问题：changesets 3 的输出 changesets/action 解析不了，`published` 一直是 false，所以"从 npm 安装检查"被跳过、版本标签没推到 GitHub（0.1.0～0.4.0 都没有标签）。改为按 `hasChangesets == 'false'` 推标签并检查。

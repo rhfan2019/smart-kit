@@ -52,8 +52,14 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       # a new version takes a few minutes to become installable from npm
+      # changesets 3 prints its results in a format changesets/action does not parse, so its `published` output stays
+      # false (D50): after a publish run (no changesets left) push the version tags `changeset publish` created and
+      # check whatever is now on npm (versions that were already there pass at once)
+      - name: Push the version tags
+        if: steps.changesets.outputs.hasChangesets == 'false'
+        run: git push origin --tags
       - name: Install the published packages from npm and check them
-        if: steps.changesets.outputs.published == 'true'
+        if: steps.changesets.outputs.hasChangesets == 'false'
         run: |
           for i in $(seq 1 20); do
             node scripts/verify-pack.mjs --registry && exit 0
