@@ -953,3 +953,10 @@ ADR-027 定的范围是"只实现 smart-kit 会发的请求"，用户也定过�
 - `SelectDialog` 的初始焦点单测在慢机器上超过 1 秒，等待改为 5 秒。
 - FE 对比：值帮助对话框关闭后，FE 的 IconTabBar 在慢机器上不在 `role="dialog"` 元素里，被当成视图标签；`collect.ts` 改为按控件树排除对话框里的 IconTabBar。
 - FE 对比 `lr5-initial-disabled`：FE 在视图启动时才关掉筛选栏的请求（`ListReportController._setInitLoad`），慢机器上表格可能先绑定、照样读数据。这是 FE 的竞态，CI 上只检查 smart-kit 不读数据，本地仍两边都查。
+
+## D50 发版与 CI 扫盲手册（2026-11-18）
+
+**用户**：0.4.0 发布期间，请解释发布流程和 CI 的基本概念，并整理成可以放进 Obsidian 的 markdown 手册。
+
+**结果**：新增 `docs/33-release-ci-handbook.md`（带 Obsidian frontmatter、callout、Mermaid 图）：全景图；Git 与 PR；npm 包、`exports`、发布规则；semver 和 0.x 约定；monorepo；Changesets（`fixed` 组）；CI 与 GitHub Actions 概念；`ci.yml` 五个 job 逐项说明；`release.yml` 的两种模式；可信发布、OIDC、provenance；两条发版路径（版本 PR / 本地 `version-packages`，D49 用后者）的操作清单；发布后处理；常见故障对照表；命令速查；术语表。内容按仓库里的 workflow 和配置核对过。
+- 第二、三次 CI：慢机器上又有 UI 单测超时、图表 "View By" 菜单点在正在开关的菜单上；React 单测在 CI 上把 `findBy*` / `waitFor` 等待设为 5 秒、单个测试 30 秒（`setup.ts`、`vitest.config.ts`），图表用例重试"打开、选择、检查"。FE 对比 `cols5-contacts-expand-header`：FE 网格表先画空行，改为等有数据的行再数请求。

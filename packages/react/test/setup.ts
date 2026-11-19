@@ -1,8 +1,11 @@
 import '@testing-library/jest-dom/vitest';
-import { cleanup } from '@testing-library/react';
+import { cleanup, configure } from '@testing-library/react';
 import { afterEach } from 'vitest';
 
 afterEach(() => cleanup());
+
+// GitHub runners are slow under the parallel test files: give findBy* / waitFor more time there (D49)
+if (process.env.CI) configure({ asyncUtilTimeout: 5000 });
 
 // jsdom lacks these browser APIs used by Mantine and the building blocks.
 if (!window.matchMedia) {

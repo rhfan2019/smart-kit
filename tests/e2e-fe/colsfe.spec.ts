@@ -428,6 +428,13 @@ test('AL-10 cols5-contacts-expand-header: expanding the collapsed header does no
       if (side === 'fe') {
         await page.goto(`${FE}/index.html?app=purchasing-display`);
         await expect(page.locator('.sapUiMdcTable .sapUiTableRow').first()).toBeVisible({ timeout: 90_000 });
+        // the grid table shows empty rows before its data: wait for a bound row (slow machines)
+        await page.waitForFunction(() => {
+          /* eslint-disable-next-line @typescript-eslint/no-explicit-any -- the UI5 control tree is untyped here */
+          const R = (window as any).sap.ui.require('sap/ui/core/ElementRegistry');
+          /* eslint-disable-next-line @typescript-eslint/no-explicit-any -- the UI5 control tree is untyped here */
+          return R.filter((e: any) => e.isA('sap.ui.mdc.Table') && e.getDomRef()).some((t: any) => (t.getRowBinding?.()?.getCurrentContexts?.() ?? []).some(Boolean));
+        }, undefined, { timeout: 90_000, polling: 250 });
       } else {
         await page.goto(`${DEMO}/contacts?lang=en`);
         await expect(page.locator('[data-sk-table] .ag-row[row-index="0"] [col-id]').first()).toBeVisible({ timeout: 60_000 });

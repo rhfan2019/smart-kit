@@ -126,14 +126,15 @@ describe('sap.fe.macros.Chart personalization, variants and presentation variant
     await waitFor(() => expect(view().getAttribute('data-sk-chart-type')).toBe('bar'));
     // the type menu closes with a transition; under a loaded test run the View By menu can take longer than 1 s
     await waitFor(() => expect(screen.queryByRole('menuitem', { name: 'Bar Chart' })).toBeNull(), { timeout: 5000 });
-    // on a slow machine the first click can land while the toolbar re-renders: click again until the menu is open
-    let currency: HTMLElement | null = null;
-    for (let attempt = 0; attempt < 4 && !currency; attempt++) {
-      await user.click(view().querySelector('[data-sk-chart-view-by]')!);
-      currency = await screen.findByRole('menuitem', { name: 'Currency' }, { timeout: 2500 }).catch(() => null);
+    // under load a click can land on a menu that is still opening or already closing: open, pick and check again
+    const dims = () => view().getAttribute('data-sk-chart-dimensions');
+    for (let attempt = 0; attempt < 5 && dims() !== 'Status\u0001Currency'; attempt++) {
+      if (!screen.queryByRole('menuitem', { name: 'Currency' })) await user.click(view().querySelector('[data-sk-chart-view-by]')!);
+      const currency = await screen.findByRole('menuitem', { name: 'Currency' }, { timeout: 3000 }).catch(() => null);
+      if (currency) await user.click(currency);
+      await waitFor(() => expect(dims()).toBe('Status\u0001Currency'), { timeout: 3000 }).catch(() => undefined);
     }
-    await user.click(currency!);
-    await waitFor(() => expect(view().getAttribute('data-sk-chart-dimensions')).toBe('Status\u0001Currency'));
+    expect(dims()).toBe('Status\u0001Currency');
     await user.click(view().querySelector('[data-sk-chart-settings]')!);
     const dialog = await screen.findByRole('dialog');
     expect(dialog.querySelector('[data-sk-p13n-tab="item"]')).not.toBeNull();
