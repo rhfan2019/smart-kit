@@ -249,6 +249,8 @@ function useSelectDialog<I extends ListItemBase>(p: CommonProps<I> & { items: I[
     p.onUpdateFinished?.({ reason, actual: visible.length, total: filtered.length });
   }, [reason, visible.length, filtered.length, p]);
 
+  // the target also carries `data-autofocus`, so the dialog's focus trap focuses it too (on a slow machine the trap
+  // can run after this frame)
   useEffect(() => {
     if (!opened) return undefined;
     const id = requestAnimationFrame(() => {
@@ -300,7 +302,7 @@ function Frame<I extends ListItemBase>({ p, s, children }: { p: CommonProps<I>; 
       subHeader={(
         <>
           <TextInput
-            ref={s.searchRef} type="search" value={s.search} placeholder={p.searchPlaceholder ?? t('ctl.list.search')} aria-label={p.searchPlaceholder ?? t('ctl.list.search')}
+            ref={s.searchRef} data-autofocus={p.initialFocus === 'SearchField' || undefined} type="search" value={s.search} placeholder={p.searchPlaceholder ?? t('ctl.list.search')} aria-label={p.searchPlaceholder ?? t('ctl.list.search')}
             leftSection={<Search className="sk-icon" />}
             onChange={(e) => {
               const value = e.currentTarget.value;
@@ -354,7 +356,7 @@ export function SelectDialog(p: $SelectDialogSettings) {
           const icon = on && i.activeIcon ? i.activeIcon : i.icon;
           return (
             <div
-              key={i.key} role="option" aria-selected={on} tabIndex={n === 0 ? 0 : -1} data-sk-key={i.key}
+              key={i.key} role="option" aria-selected={on} tabIndex={n === 0 ? 0 : -1} data-autofocus={(n === 0 && p.initialFocus !== 'SearchField') || undefined} data-sk-key={i.key}
               className={`sk-list-item${on ? ' sk-list-item--selected' : ''}${i.wrapping ? ' sk-list-item--wrapping' : ''}${i.unread ? ' sk-list-item--unread' : ''}${i.navigated ? ' sk-list-item--navigated' : ''}${hl.className}`}
               style={hl.style} title={i.highlightText || undefined}
               onClick={() => s.toggle(i)} onKeyDown={(e) => {
@@ -437,7 +439,7 @@ export function TableSelectDialog(p: $TableSelectDialogSettings) {
             const prev = s.visible[r - 1];
             return (
               <Table.Tr
-                key={row.key} aria-selected={on} tabIndex={r === 0 ? 0 : -1} data-sk-key={row.key} style={hl.style}
+                key={row.key} aria-selected={on} tabIndex={r === 0 ? 0 : -1} data-autofocus={(r === 0 && p.initialFocus !== 'SearchField') || undefined} data-sk-key={row.key} style={hl.style}
                 className={`sk-select-dialog__row${on ? ' sk-select-dialog__row--selected' : ''}${row.unread ? ' sk-list-item--unread' : ''}${hl.className}`}
                 onClick={() => s.toggle(row)} onKeyDown={activate(() => s.toggle(row))}
               >

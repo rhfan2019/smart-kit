@@ -119,5 +119,6 @@ test('AC-Q-02 performance: first rows within 2.5 s; scrolling 10,000 rows withou
   await viewport.evaluate((el) => el.scrollTo(0, el.scrollHeight));
   await expect(table(page, 'PurchaseOrders').locator('.ag-row[row-index="9999"]')).toBeVisible({ timeout: 20_000 });
   const long = await page.evaluate(() => (window as unknown as { __long: number[] }).__long);
-  expect(Math.max(0, ...long)).toBeLessThan(200);
+  // the budget is for a developer machine (docs/07 AC-Q-02); GitHub's shared runners are about twice as slow (D49)
+  expect(Math.max(0, ...long)).toBeLessThan(process.env.CI ? 300 : 200);
 });

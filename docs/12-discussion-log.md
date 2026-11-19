@@ -960,3 +960,4 @@ ADR-027 定的范围是"只实现 smart-kit 会发的请求"，用户也定过�
 
 **结果**：新增 `docs/33-release-ci-handbook.md`（带 Obsidian frontmatter、callout、Mermaid 图）：全景图；Git 与 PR；npm 包、`exports`、发布规则；semver 和 0.x 约定；monorepo；Changesets（`fixed` 组）；CI 与 GitHub Actions 概念；`ci.yml` 五个 job 逐项说明；`release.yml` 的两种模式；可信发布、OIDC、provenance；两条发版路径（版本 PR / 本地 `version-packages`，D49 用后者）的操作清单；发布后处理；常见故障对照表；命令速查；术语表。内容按仓库里的 workflow 和配置核对过。
 - 第二、三次 CI：慢机器上又有 UI 单测超时、图表 "View By" 菜单点在正在开关的菜单上；React 单测在 CI 上把 `findBy*` / `waitFor` 等待设为 5 秒、单个测试 30 秒（`setup.ts`、`vitest.config.ts`），图表用例重试"打开、选择、检查"。FE 对比 `cols5-contacts-expand-header`：FE 网格表先画空行，改为等有数据的行再数请求。
+- 第四次 CI：`SelectDialog` 的初始焦点在慢机器上被对话框的焦点陷阱抢走（陷阱在设焦点的那一帧之后运行）；初始焦点目标加 `data-autofocus`，陷阱自己就聚焦它（产品修正，慢机器上的用户同样受益）。AC-Q-02 万行滚动的长任务：开发机 99～145ms，GitHub 运行器 205～213ms；预算按开发机定义，CI 上按 300ms 检查（`07` 已注明）。
