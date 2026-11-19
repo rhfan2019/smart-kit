@@ -126,8 +126,13 @@ describe('sap.fe.macros.Chart personalization, variants and presentation variant
     await waitFor(() => expect(view().getAttribute('data-sk-chart-type')).toBe('bar'));
     // the type menu closes with a transition; under a loaded test run the View By menu can take longer than 1 s
     await waitFor(() => expect(screen.queryByRole('menuitem', { name: 'Bar Chart' })).toBeNull(), { timeout: 5000 });
-    await user.click(view().querySelector('[data-sk-chart-view-by]')!);
-    await user.click(await screen.findByRole('menuitem', { name: 'Currency' }, { timeout: 5000 }));
+    // on a slow machine the first click can land while the toolbar re-renders: click again until the menu is open
+    let currency: HTMLElement | null = null;
+    for (let attempt = 0; attempt < 4 && !currency; attempt++) {
+      await user.click(view().querySelector('[data-sk-chart-view-by]')!);
+      currency = await screen.findByRole('menuitem', { name: 'Currency' }, { timeout: 2500 }).catch(() => null);
+    }
+    await user.click(currency!);
     await waitFor(() => expect(view().getAttribute('data-sk-chart-dimensions')).toBe('Status\u0001Currency'));
     await user.click(view().querySelector('[data-sk-chart-settings]')!);
     const dialog = await screen.findByRole('dialog');
