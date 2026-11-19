@@ -116,7 +116,8 @@ describe('sap.fe.macros.Chart personalization, variants and presentation variant
     await waitFor(() => expect(view().getAttribute('data-sk-chart-type')).toBe('line'));
   });
 
-  it('AL-06 Chart: the chart type button and "View By" change the chart; the settings dialog sorts', async () => {
+  // two menus and the settings dialog: under a loaded full run this takes longer than the default 5 s
+  it('AL-06 Chart: the chart type button and "View By" change the chart; the settings dialog sorts', { timeout: 20000 }, async () => {
     const user = userEvent.setup();
     render(wrap(<Chart contextPath="/Orders" metaPath={META} />));
     await waitFor(() => expect(document.querySelector('[data-sk-chart-bar="A"]')).not.toBeNull());

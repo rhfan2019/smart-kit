@@ -22,6 +22,8 @@ export const p2en = {
   'table.inlineAction': 'Inline Action',
   'actions.criticalConfirm': 'Perform this action?',
   'actions.confirmTitle': 'Confirmation',
+  // FE C_OPERATIONS_ACTION_PARAMETER_DIALOG_MISSING_MANDATORY_MSG (ActionRuntime validateProperties)
+  'actions.parameterMissing': 'Enter a value for "{field}".',
   'delete.confirmObjectInfo': 'Delete object {title} "{description}"?',
   'delete.confirmObjectTitle': 'Delete object {title}?',
   'delete.confirmSingular': 'Delete this object?',

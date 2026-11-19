@@ -36,11 +36,24 @@ export function templateParts(text: string, keys: string[]): ({ key: string } | 
   return parts.flatMap((part, i): ({ key: string } | { literal: string })[] => (i % 2 === 1 ? [{ key: part.trim() }] : part ? [{ literal: part }] : []));
 }
 
-/** The cell content of a column of the given field, or undefined when the field is a plain one (rendered by Field). */
-export function specialCell(env: CellEnv, f: FieldModel, row: Row): ReactNode | undefined {
+/**
+ * The cell content of a column of the given field, or undefined when the field is a plain one (rendered by Field).
+ * `labels`: the fields of a field group show their labels (FE column `showDataFieldsLabel`: "Label:" before the value,
+ * HEADER_FORM_LABEL; fields without a label stay without).
+ */
+export function specialCell(env: CellEnv, f: FieldModel, row: Row, o?: { labels?: boolean; label?(text: string): string }): ReactNode | undefined {
   switch (f.kind) {
     case 'fieldGroup':
-      return <span className="sk-cell__group" data-sk-field-group>{(f.fields ?? []).map((x) => <span key={x.id} className="sk-cell__group-item">{plain(env, x, row)}</span>)}</span>;
+      return (
+        <span className="sk-cell__group" data-sk-field-group>
+          {(f.fields ?? []).map((x) => (
+            <span key={x.id} className="sk-cell__group-item">
+              {o?.labels && x.label ? <span className="sk-cell__group-label" data-sk-field-group-label>{o.label ? o.label(x.label) : `${x.label}:`}</span> : null}
+              {plain(env, x, row)}
+            </span>
+          ))}
+        </span>
+      );
     case 'connectedFields': {
       const byKey = Object.fromEntries((f.template?.keys ?? []).map((k, i) => [k, f.fields?.[i]]));
       // FE shows nothing when every connected value is empty

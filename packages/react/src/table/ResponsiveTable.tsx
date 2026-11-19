@@ -98,6 +98,13 @@ export interface $ColumnSettings {
   footer?: ReactNode;
   /** Text of the grouping header (value of the group property; smart-kit addition). */
   groupValue?(row: Row): string;
+  /** A cell whose value equals the one of the row above (in the same group) is left empty; not in the pop-in. @defaultValue false */
+  mergeDuplicates?: boolean;
+  /**
+   * The value compared by `mergeDuplicates` (React form of `mergeFunctionName`, which names a getter of the cell
+   * control; default "getText": the text of the cell).
+   */
+  mergeValue?(row: Row): unknown;
 }
 
 export interface Table$SelectionChangeEvent {
@@ -334,6 +341,8 @@ export function hiddenByImportance(width: number, importance: Priority | undefin
 }
 
 /** sap.m.ScreenSize in px. */
+/** The text of a cell that is a string or number (sap.m.Column mergeFunctionName "getText"); other content is not merged. */
+const textOf = (n: ReactNode): string | undefined => (typeof n === 'string' || typeof n === 'number' ? String(n) : undefined);
 const SCREEN: Record<string, number> = { Phone: 240, Tablet: 600, Desktop: 1024, XXSmall: 240, XSmall: 320, Small: 480, Medium: 560, Large: 768, XLarge: 960, XXLarge: 1120 };
 function pxOf(v: string | undefined): number | undefined {
   if (!v) return undefined;
@@ -824,6 +833,13 @@ export function Table(p: $TableSettings) {
             const navigable = rowNavigable(row);
             const clickable = navigable || mode === 'SingleSelectMaster' || (p.includeItemInSelection && mode !== 'None' && mode !== 'Delete');
             const unread = Boolean(p.showUnread && p.rowUnread?.(row));
+            // sap.m.Column mergeDuplicates: equal to the row above, not after a group header
+            const above = index > 0 && !header ? displayRows[index - 1] : undefined;
+            const merged = (c: $ColumnSettings) => {
+              if (!c.mergeDuplicates || above === undefined) return false;
+              const a = c.mergeValue ? c.mergeValue(above) : textOf(c.cell(above));
+              return a !== undefined && String(a) === String(c.mergeValue ? c.mergeValue(row) : textOf(c.cell(row)));
+            };
             return [
               header,
               <tr
@@ -853,8 +869,8 @@ export function Table(p: $TableSettings) {
                   </td>
                 ) : null}
                 {visible.map((c, i) => (
-                  <td key={c.id} data-sk-cell tabIndex={-1} data-col={c.id} className={alignEnd(c) ? 'sk-rtable__end' : undefined} style={cellStyle(index)}>
-                    {i === 0 && p.tree ? <TreeCell node={node} onToggle={() => p.tree!.toggle(row)}>{c.cell(row)}</TreeCell> : c.cell(row)}
+                  <td key={c.id} data-sk-cell tabIndex={-1} data-col={c.id} className={alignEnd(c) ? 'sk-rtable__end' : undefined} style={cellStyle(index)} data-sk-merged={merged(c) || undefined}>
+                    {merged(c) ? null : i === 0 && p.tree ? <TreeCell node={node} onToggle={() => p.tree!.toggle(row)}>{c.cell(row)}</TreeCell> : c.cell(row)}
                     {i === 0 && unread ? <span className="sk-visually-hidden">{t('table.unread')}</span> : null}
                     {i === 0 && p.rowMarker ? p.rowMarker(row) : null}
                     {i === 0 && p.changedKeys?.has(k) ? <div className="sk-rtable__changed" data-sk-changed-marker>{t('table.changedItem')}</div> : null}

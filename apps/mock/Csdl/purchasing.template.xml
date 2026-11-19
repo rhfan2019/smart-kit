@@ -280,6 +280,11 @@
       </Action>
       <Action Name="reject" IsBound="true">
         <Parameter Name="_it" Type="Purchasing.PurchaseOrder" Nullable="false"/>
+        <!-- stage 7 (param7): parameters of the parameter dialog, annotated in "reject parameters" below -->
+        <Parameter Name="FollowUpType" Type="Edm.String" MaxLength="4"/>
+        <Parameter Name="RejectionNote" Type="Edm.String" MaxLength="255"/>
+        <Parameter Name="ReplyBy" Type="Edm.Date"/>
+        <Parameter Name="Priority" Type="Edm.Int32"/>
         <ReturnType Type="Purchasing.PurchaseOrder" Nullable="false"/>
       </Action>
       <Action Name="close" IsBound="true">
@@ -1378,6 +1383,47 @@
         <Annotation Term="Common.Label" String="{{label:A.Close}}"/>
         <Annotation Term="Core.OperationAvailable" Path="_it/CloseEnabled"/>
       </Annotations>
+
+      <!-- ============================== reject parameters (stage 7, param7: FE OperationParameterDialog) -->
+      <!-- fixed values with a constant default; targets the action without its overload (all overloads) -->
+      <Annotations Target="Purchasing.reject/FollowUpType">
+        <Annotation Term="Common.Label" String="{{label:P.FollowUpType}}"/>
+        <Annotation Term="UI.ParameterDefaultValue" String="NB"/>
+        <Annotation Term="Common.ValueListWithFixedValues" Bool="true"/>
+        <Annotation Term="Common.ValueList">
+          <Record Type="Common.ValueListType">
+            <PropertyValue Property="Label" String="{{label:P.FollowUpType}}"/>
+            <PropertyValue Property="CollectionPath" String="PurchaseOrderTypes"/>
+            <PropertyValue Property="Parameters">
+              <Collection>
+                <Record Type="Common.ValueListParameterInOut">
+                  <PropertyValue Property="LocalDataProperty" PropertyPath="FollowUpType"/>
+                  <PropertyValue Property="ValueListProperty" String="Code"/>
+                </Record>
+                <Record Type="Common.ValueListParameterDisplayOnly">
+                  <PropertyValue Property="ValueListProperty" String="Name"/>
+                </Record>
+              </Collection>
+            </PropertyValue>
+          </Record>
+        </Annotation>
+      </Annotations>
+      <!-- multi-line and mandatory; the overload-specific targets -->
+      <Annotations Target="Purchasing.reject(Purchasing.PurchaseOrder)/RejectionNote">
+        <Annotation Term="Common.Label" String="{{label:P.RejectionNote}}"/>
+        <Annotation Term="UI.MultiLineText" Bool="true"/>
+        <Annotation Term="Common.FieldControl" EnumMember="Common.FieldControlType/Mandatory"/>
+      </Annotations>
+      <!-- a default value from the bound order -->
+      <Annotations Target="Purchasing.reject(Purchasing.PurchaseOrder)/ReplyBy">
+        <Annotation Term="Common.Label" String="{{label:P.ReplyBy}}"/>
+        <Annotation Term="UI.ParameterDefaultValue" Path="_it/OrderDate"/>
+      </Annotations>
+      <Annotations Target="Purchasing.reject(Purchasing.PurchaseOrder)/Priority">
+        <Annotation Term="Common.Label" String="{{label:P.Priority}}"/>
+        <Annotation Term="UI.ParameterDefaultValue" Int="2"/>
+      </Annotations>
+      <!-- end of reject parameters -->
 
       <!-- =========================================================== PurchaseOrderItem -->
       <Annotations Target="Purchasing.PurchaseOrderItem">

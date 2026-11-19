@@ -103,4 +103,4 @@
 | 4 | 完成 | 66c48a3 | D43 | 列、动作、筛选栏、值帮助、值的显示、视图、图表、KPI 按 FE；FE 对比 37 个场景；`fe-behavior` 28 → 13；收尾（D45）：分析表单请求、引用的值帮助、参数化实体集、列和动作的 FE 核对，FE 对比 60 个场景 |
 | 5 | 完成 | a8a942b | D46 | `ListReport`、`ObjectPage` 在 `v4/fe/templates`，属性是 manifest 设置（AL-13 核对：LR 333 项、OP 382 项，0 未登记）；`/templates` 删除；FE 对比 75 个场景 |
 | 6 | 完成 | ef4ffd0 | D47 | 对象页注解按 FE（`29b`、`29c`）；九个微图、`m/p13n`、`m/QuickView`、landmark info；积木补齐 sap.fe.macros 成员，分组分析表可折叠；`check:ui5` 256 个导出 0 未登记，AL-13 0 未登记；FE 对比 101 个场景；`not-implemented` 135（阶段 7 处理） |
-| 7 | 未开始 | | | |
+| 7 | 完成 | （本提交） | D48 | 其余不依赖 SAP 运行时的 manifest 设置按 FE；动作参数对话框、无限制日期字段的运算符按 FE；偏差表 469 条：kit-extension 186、react-idiom 88、no-binding 121，另 74 条按 D48 保留（not-implemented 49、different-value 19、fe-behavior 6）；迁移清单 `25` 182 行；FE 对比 111 个场景 |

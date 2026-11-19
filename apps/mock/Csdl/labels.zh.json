@@ -108,6 +108,10 @@
   "A.Approve": "审批",
   "A.Reject": "拒绝",
   "A.Close": "关闭",
+  "P.FollowUpType": "后续订单类型",
+  "P.RejectionNote": "拒绝说明",
+  "P.ReplyBy": "答复期限",
+  "P.Priority": "优先级",
 
   "DP.Budget": "预算",
   "DP.Invoiced": "已开票金额",

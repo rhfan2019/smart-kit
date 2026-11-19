@@ -17,6 +17,7 @@ import { filterSummaryText } from './FilterSummary';
 import { fromSelectionVariant, toSelectionVariant, type SelectionVariant } from './selectionVariant';
 import { useFilterState, type FilterStateApi } from './useFilterState';
 import { ValueHelpDialog } from './ValueHelpDialog';
+import { FilterOperatorsContext } from './filterOperators';
 import { ValueHelpSourceContext, type ValueHelpSource } from './valueHelpSource';
 
 export type { SelectionVariant, SelectionVariantRange } from './selectionVariant';
@@ -443,15 +444,16 @@ function FilterBarWithState(p: $FilterBarSettings & { state: FilterStateApi }) {
     () => ({
       filters: s.filters,
       fields: fieldIds.split('|'),
-      single: (path) => filterExpressionRules(capabilities.filterExpressions[path], getProperty(barService.model, barSet.typeName, path)?.edmType).max === 1,
+      single: (path) => filterExpressionRules(capabilities.filterExpressions[path], getProperty(barService.model, barSet.typeName, path)?.edmType, s.operatorOptions?.(path)).max === 1,
       setConditions: s.setConditions,
     }),
-    [s.filters, s.setConditions, fieldIds, capabilities.filterExpressions, barService.model, barSet.typeName],
+    [s.filters, s.setConditions, fieldIds, capabilities.filterExpressions, barService.model, barSet.typeName, s.operatorOptions],
   );
   const locked = [...new Set([...capabilities.requiredFilters, ...Object.keys(s.filters).filter((k) => (s.filters[k] ?? []).length)])];
   const adaptFields = [...shownFields, ...custom.filter((f) => customShown.has(f.key)).map((f) => f.key)];
   return (
     <Ctx.Provider value={value}>
+      <FilterOperatorsContext.Provider value={s.operatorOptions}>
       <ValueHelpSourceContext.Provider value={vhSource}>
       <div className={['sk-filterbar', p.className].filter(Boolean).join(' ')} role="search">
         {p.children ?? (
@@ -490,6 +492,7 @@ function FilterBarWithState(p: $FilterBarSettings & { state: FilterStateApi }) {
         onCancel={() => setAdapt(false)}
       />
       </ValueHelpSourceContext.Provider>
+      </FilterOperatorsContext.Provider>
     </Ctx.Provider>
   );
 }

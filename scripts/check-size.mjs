@@ -47,8 +47,10 @@ const MODULE_BUDGETS = {
   // stage 6 (D47): Table / TreeTable add the grouped analytical hierarchy, mass edit, paste, the table's own variant
   // management, quick variant selection and presentation / selection variant methods; Chart adds its p13n popup
   // (m/p13n panels), variant management and toolbar overflow groups; FilterBar the variant key methods
-  'v4/fe/macros/Table': 100, 'v4/fe/macros/TreeTable': 100, 'v4/fe/macros/Chart': 46, 'v4/fe/macros/FilterBar': 32,
+  'v4/fe/macros/Table': 100, 'v4/fe/macros/TreeTable': 100, 'v4/fe/macros/Chart': 48, 'v4/fe/macros/FilterBar': 32,
   'kit/ConditionInput': 23, 'kit/ValueHelpDialog': 23,
+  // stage 7 (D48): Chart's action groups (split button, AI marker); Timeline grew with the shared texts
+  'suite/ui/commons/Timeline': 17,
   // stage 6 (D47): ListReport adds the New Object dialog, combined views, Control variant management; ObjectPage the
   // FE header action order, the stage 6 object page settings and Field's growth
   'v4/fe/templates/ListReport': 140, 'v4/fe/templates/ObjectPage': 130,

@@ -51,7 +51,7 @@
 | 绑定动作 OperationAvailable 静态 false | 不显示 | 不显示 | 一致 | – | 一致 |
 | 动作记录的 `UI.Hidden` 路径 | 按对象隐藏 | 不读 | 未实现 | P2 | 已改（路径进 $select） |
 | 重要 Criticality 的动作在前 | 页头、页脚都排在前面 | 按注解顺序 | 不一致 | P2 | 已改（单元测试） |
-| `UI.Emphasized` | 无 Criticality 时强调 | 不读 | 未实现 | P3 | 已改 |
+| `UI.Emphasized` | 无 Criticality 时强调 | 不读 | 未实现 | P3 | 已改；阶段 7 按 FE `applyObjectPageEmphasisRules`：有可见 Criticality 动作时不强调，页脚第一个强调动作移到最前、保存失去强调，页头主动作只在没有页脚时移到最前（op7） |
 | `UI.IsCopyAction` | 页头"复制"（第一层） | 普通动作 | 部分一致 | P3 | 已改（按位置） |
 | `DataFieldForActionGroup` 在 Identification | 菜单按钮 | 平铺 | 部分一致 | P3 | 未做 |
 | `DataFieldForIntentBasedNavigation` 在 Identification | 页头按钮（需要启动台） | 忽略 | – | P3 | D42：不依赖启动台 |

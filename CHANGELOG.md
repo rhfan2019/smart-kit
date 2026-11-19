@@ -5,6 +5,12 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+### Changed — behaviour (SAPUI5 alignment, stage 7, D48)
+
+- smart-kit: object page sub-tables share the list report's table mapping; object page header / footer / section toolbars follow FE (`priority`, `group`, `overflowGroup`, `overflowGroups`, `defaultAction`, `applyObjectPageEmphasisRules`, `shareOverflowPriority` High); `defaultValuesFunction`, `afterExecution`; table `$ActionGroupSettings` with `defaultAction`, toolbar `template` content, column overrides, `showDataFieldsLabel`, `settings.mergeCells`, `exportSettings`, `aiNotice`, `formatOptions`; `useSemanticDateRange`, filter field `settings`. Settings FE accepts without effect are declared the same way.
+- Behaviour as FE: unrestricted date filter fields only have basic operators; the action parameter dialog follows FE OperationParameterDialog (typed fields from annotations, defaults, mandatory by `Common.FieldControl`, typed request body); table micro charts show only the chart.
+- The deviation register holds only kit-extension, react-idiom, no-binding and entries kept by decision D48 (`tests/unit/deviations-final.test.ts`, AL-31). smart-kit-core: `ActionParameterModel`, `actionParameterState` / `Defaults` / `Body` / `Errors`, `skipsParameterDialog`.
+
 ### Changed — breaking (SAPUI5 alignment, stage 6, D47)
 
 - smart-kit: the nine sap.suite.ui.microchart controls replace `MicroChart kind=…` for data-only charts (`suite/ui/microchart/*`, UI5 properties: `actual`, `targetValue`, `columns`, `points` / `lines`, `data`, `bars`, `fraction` / `total`, `value1` / `value2` …); `m/p13n/Popup` with `SelectionPanel` / `SortPanel` / `GroupPanel` replaces the table and chart personalization dialogs; `m/QuickView` family; landmark info modules; enums `Size`, `ValueColor`, `P13nPopupMode`, `PlacementType`, `QuickViewGroupElementType`, `ListKeyboardMode`, `ListGrowingDirection`, `SwipeDirection`, `ListItemActionType` in `m/library`, `AccessibleLandmarkRole` in `ui/core/library`.

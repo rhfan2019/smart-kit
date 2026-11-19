@@ -1,5 +1,6 @@
 /** Headless filter state: conditions, search, visible fields, "Go", mandatory checks (LR-05–LR-09). */
-import { activeFilterPaths, isComplete, isFilterable, resolvePath, restrictConditions, type Condition, type FilterState, type Operator } from '@rhfan2019/smart-kit-core';
+import { activeFilterPaths, filterExpressionRules, isComplete, isFilterable, isRelativeDateOperator, resolvePath, restrictConditions, type Condition, type FilterState, type Operator } from '@rhfan2019/smart-kit-core';
+import type { FilterOperatorOptionsOf } from './filterOperators';
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useMetaModel } from '../context/SmartKitProvider';
 import { usePageState } from '../util/usePageState';
@@ -29,6 +30,16 @@ export interface UseFilterStateOptions {
   liveMode?: boolean;
   /** Delay of the live mode in ms. */
   liveDelay?: number;
+  /**
+   * Operator options per field (FE manifest `useSemanticDateRange`, filter field `settings.operatorConfiguration`): they
+   * restrict the operators of the bar's fields and the conditions set.
+   */
+  operatorOptions?: FilterOperatorOptionsOf;
+  /**
+   * Default conditions laid over the annotation defaults (FE filter field `settings.defaultValues`, FilterHelper
+   * getFilterConditions: the manifest value wins over the selection variant for the same property).
+   */
+  defaultConditions?: FilterState;
 }
 
 export interface FilterStateApi extends FilterSnapshot {
@@ -58,6 +69,8 @@ export interface FilterStateApi extends FilterSnapshot {
   searchable?: boolean;
   /** Defaults from the annotations (SelectionVariant, SelectionFields), i.e. the "Standard" variant. */
   defaults: Pick<FilterSnapshot, 'filters' | 'search' | 'fields'>;
+  /** The operator options of the fields (`UseFilterStateOptions.operatorOptions`). */
+  operatorOptions?: FilterOperatorOptionsOf;
 }
 
 const sameFilter = (a: AppliedFilter | null, f: FilterState, s: string) => !!a && a.search === s && JSON.stringify(normalize(a.filters)) === JSON.stringify(normalize(f));
@@ -91,8 +104,21 @@ export function useFilterState(entitySet: string, o: UseFilterStateOptions = {})
     // a parameterized entity set (Common.ResultContext): the parameters come first (FE FilterBar getFilterFields)
     const parameters = meta.set.parameters?.properties ?? [];
     const fields = [...new Set([...parameters, ...ui.selectionFields, ...capabilities.requiredFilters, ...conditionFields])].filter((p) => isFilterable(capabilities, p));
-    return { filters: o.initial?.filters ?? filters, search: o.initial?.search ?? '', fields: o.initial?.fields ?? fields };
-  }, [ui, capabilities, type, o.initial, propOf, meta.set]);
+    // FE FilterHelper getConditionsOfSupportedOperators: default semantic date conditions whose operator the field does
+    // not support are dropped
+    const merged: FilterState = { ...(o.initial?.filters ?? filters), ...o.defaultConditions };
+    if (o.operatorOptions) {
+      for (const [path, conds] of Object.entries(merged)) {
+        const options = o.operatorOptions(path);
+        if (!options) continue;
+        const rules = filterExpressionRules(capabilities.filterExpressions[path], propOf(path).property?.edmType, options);
+        const kept = conds.filter((c) => !isRelativeDateOperator(c.operator) || rules.operators.includes(c.operator));
+        if (kept.length) merged[path] = kept;
+        else delete merged[path];
+      }
+    }
+    return { filters: merged, search: o.initial?.search ?? '', fields: o.initial?.fields ?? fields };
+  }, [ui, capabilities, type, o.initial, o.defaultConditions, o.operatorOptions, propOf, meta.set]);
 
   const [state, setState] = usePageState<FilterSnapshot & { showRequiredErrors: boolean }>(o.pageKey ? `${o.pageKey}:filters` : undefined, () => ({ ...defaults, applied: null, showRequiredErrors: false }));
 
@@ -138,12 +164,12 @@ export function useFilterState(entitySet: string, o: UseFilterStateOptions = {})
       setState((s) => {
         const filters = { ...s.filters };
         // Capabilities.FilterExpressionRestrictions (P2-LR-19): only allowed conditions are kept.
-        const conditions = restrictConditions(capabilities.filterExpressions[path], input, propOf(path).property?.edmType);
+        const conditions = restrictConditions(capabilities.filterExpressions[path], input, propOf(path).property?.edmType, o.operatorOptions?.(path));
         if (conditions.length) filters[path] = conditions;
         else delete filters[path];
         return { ...s, filters };
       }),
-    [setState, capabilities, propOf],
+    [setState, capabilities, propOf, o.operatorOptions],
   );
   const setSearch = useCallback((search: string) => setState((s) => ({ ...s, search })), [setState]);
   const setFields = useCallback((fields: string[]) => setState((s) => ({ ...s, fields })), [setState]);
@@ -178,5 +204,6 @@ export function useFilterState(entitySet: string, o: UseFilterStateOptions = {})
     activeCount: activeFilterPaths(state.filters).length,
     showRequiredErrors: state.showRequiredErrors && missingRequired.length > 0,
     defaults,
+    operatorOptions: o.operatorOptions,
   };
 }

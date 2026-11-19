@@ -1,0 +1,4 @@
+<!-- Custom content of the table toolbar (controlConfiguration › @UI.LineItem › actions › <key> › template, tests/e2e-fe/lr7.spec.ts). -->
+<core:FragmentDefinition xmlns:core="sap.ui.core" xmlns="sap.m">
+  <Text text="Toolbar note" class="feRefToolbarNote"/>
+</core:FragmentDefinition>

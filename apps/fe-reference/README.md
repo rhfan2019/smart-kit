@@ -27,6 +27,7 @@ node apps/fe-reference/server.mjs              # http://localhost:4420
 | `http://localhost:4420/index.html?app=purchasing-display` | `fe.ref.purchasingdisplay` (`webapp/purchasing-display/`; also an object page of `PurchaseOrderItems` for `tests/e2e-fe/op6.spec.ts`) | `/odata/purchasing/` |
 | `http://localhost:4420/index.html?app=purchasing-params` | `fe.ref.purchasingparams` (`webapp/purchasing-params/`) | `/odata/purchasing/` |
 | `http://localhost:4420/index.html?app=purchasing-op` | `fe.ref.purchasingop` (`webapp/purchasing-op/`) | `/odata/purchasing-draft/` |
+| `http://localhost:4420/index.html?app=purchasing-op7` | `fe.ref.purchasingop7` (`webapp/purchasing-op7/`; the object page toolbars of `tests/e2e-fe/op7.spec.ts`: overflow groups with separators, primary header and footer actions; demo `/purchasing-draft/object?…&fe=purchasing-op7`) | `/odata/purchasing-draft/` |
 
 Both components start through `webapp/ext/start.js`; the shared extensions (custom column, custom action) are in
 `webapp/ext/`. Variants are kept in the session storage flexibility connector (no LREP backend).

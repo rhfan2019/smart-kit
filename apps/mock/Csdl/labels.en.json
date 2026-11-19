@@ -108,6 +108,10 @@
   "A.Approve": "Approve",
   "A.Reject": "Reject",
   "A.Close": "Close",
+  "P.FollowUpType": "Follow-Up Order Type",
+  "P.RejectionNote": "Rejection Note",
+  "P.ReplyBy": "Reply By",
+  "P.Priority": "Priority",
 
   "DP.Budget": "Budget",
   "DP.Invoiced": "Invoiced Amount",

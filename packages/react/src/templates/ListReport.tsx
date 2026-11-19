@@ -9,7 +9,7 @@ import { ChevronDown, Sparkles } from 'lucide-react';
 import {
   buildTotalsRequest, calculateCriticality, capabilitiesFor, DRAFT_EDIT_STATES, EDIT_STATE, editStateOf, isCustomAggregate, isFilterable, parseAnnotationPath, resolvePath,
   STANDARD_VARIANT_ID, withHiddenFilters,
-  type ChartModel, type DataPointModel, type EntityUi, type FilterState, type InitialCondition, type MetaModel, type ValueRef, type Operator, type QueryRequest, type Row, type SortItem, type VariantContent, type ViewModel,
+  type ChartModel, type DataPointModel, type EntityUi, type FilterOperatorOptions, type FilterState, type OperatorConfiguration, type InitialCondition, type MetaModel, type ValueRef, type Operator, type QueryRequest, type Row, type SortItem, type VariantContent, type ViewModel,
 } from '@rhfan2019/smart-kit-core';
 import { useQueries } from '@tanstack/react-query';
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
@@ -20,8 +20,10 @@ import {
 import FilterSummary from '../kit/FilterSummary';
 import useFilterState from '../kit/useFilterState';
 import useVariants from '../kit/useVariants';
-import Table, { type $ActionSettings, type $ColumnSettings, type $TableSettings, type ActionGroup, type Context, type Table$BeforeExportEvent, type Table$ExportedEvent, type Table$RowPressEvent, type Table$SelectionChangeEvent } from '../v4/fe/macros/Table';
+import Table, { type $TableSettings, type Context, type $ColumnExportSettings, type Table$BeforeExportEvent, type Table$ExportedEvent, type Table$RowPressEvent, type Table$SelectionChangeEvent } from '../v4/fe/macros/Table';
 import TreeTable from '../v4/fe/macros/TreeTable';
+import { overflowGroupsOf, tableActionsOf, tableColumnsOf, tableSettingsOf } from './tableManifest';
+import type { FieldFormatOptions } from '../v4/fe/macros/Field';
 import FilterBar, { type $FilterFieldSettings, type FilterFieldItem, type FilterFieldTemplateContext } from '../v4/fe/macros/FilterBar';
 import VariantManagement from '../v4/fe/macros/VariantManagement';
 import MessageButton from '../v4/fe/macros/MessageButton';
@@ -34,6 +36,31 @@ import Chart, { type $ChartActionGroupSettings, type $ChartActionSettings, type 
 import KPITag from '../v4/fe/macros/KPITag';
 import MessageProvider from '../kit/MessageProvider';
 import useMessages from '../kit/useMessages';
+
+/**
+ * The field options of the filter bar from `@UI.SelectionFields` (FE FilterHelper getConditionsOfSupportedOperators,
+ * ListReportConverter getDefaultSemanticDates): a filter field key is the property path with "::" for "/".
+ */
+function filterFieldSettings(c: $ManifestFilterConfiguration | undefined): { options?: FilterOperatorOptionsOf; defaults?: FilterState } {
+  const semanticDates = c?.useSemanticDateRange !== false;
+  const byPath = new Map(Object.entries(c?.filterFields ?? {}).map(([key, f]) => [f.property ?? key.replace(/::/g, '/'), f.settings]));
+  const configured = !semanticDates || [...byPath.values()].some((x) => x?.operatorConfiguration?.length || x?.disableIntegerGrouping);
+  const options: FilterOperatorOptionsOf | undefined = configured
+    ? (path) => ({ semanticDates, operatorConfiguration: byPath.get(path)?.operatorConfiguration, disableIntegerGrouping: byPath.get(path)?.disableIntegerGrouping })
+    : undefined;
+  const defaults: FilterState = {};
+  if (semanticDates) {
+    for (const [path, x] of byPath) {
+      const d = x?.defaultValues?.[0];
+      if (d) defaults[path] = [{ operator: d.operator as Operator, values: d.values ?? [] }];
+    }
+  }
+  return { options, defaults: Object.keys(defaults).length ? defaults : undefined };
+}
+
+/** The operator options of the filter bar's fields by property path (read by the filter bar's condition inputs). */
+type FilterOperatorOptionsOf = (path: string) => (FilterOperatorOptions & { disableIntegerGrouping?: boolean }) | undefined;
+
 
 // ---------------------------------------------------------------------------------------------- settings (docs/26c)
 
@@ -143,12 +170,56 @@ export interface $ManifestCustomHeaderSettings {
   collapsedHeaderFragment?(): ReactNode;
 }
 
-/** A custom column (FE `CustomDefinedTableColumn`); FE names a fragment in `template`, here it renders the cell (react-idiom). */
+/**
+ * A custom column (FE `CustomDefinedTableColumn`; FE names a fragment in `template`, here it renders the cell,
+ * react-idiom), or, with the key of an annotation column (e.g. "DataField::Status") and without `template`, settings
+ * that change that column (FE `CustomDefinedTableColumnForOverride`: width, importance, horizontalAlign, availability,
+ * widthIncludingColumnHeader, disableExport, exportSettings, formatOptions, aiNotice, showDataFieldsLabel, settings).
+ */
 export interface $ManifestColumnSettings {
   /** Column header. */
   header?: string;
   /** Cell content. */
   template?(row: Row): ReactNode;
+  /**
+   * "Slot" (a column of the Table building block's `columns`, FE ColumnType.Slot) or none (a manifest custom column);
+   * both render `template` (FE getColumnsFromManifest isSlotColumn / isCustomColumn).
+   */
+  type?: 'Default' | 'Slot';
+  /** Field group columns (override): each field with its label (FE MdcTableTemplate HEADER_FORM_LABEL). */
+  showDataFieldsLabel?: boolean;
+  /**
+   * Accepted as in FE, without effect in the manifest: FE 1.154 reads `settings.mergeCells` of an annotation column
+   * (Columns.ts getColumnsFromManifest; the top-level key comes from the Table building block's column).
+   */
+  mergeCells?: boolean;
+  /** Accepted as in FE, without effect in the manifest: FE 1.154 reads `settings.mergeComparisonProperties`. */
+  mergeComparisonProperties?: string | string[];
+  /** Export settings of the column (FE ColumnExportSettings, sap.fe.macros.table.ColumnExportSettings). */
+  exportSettings?: $ColumnExportSettings;
+  /**
+   * Format options of an annotation column's fields (override; FE _getDefaultFormatOptionsForTable). Custom columns
+   * accept them without effect, as in FE (their template renders the cells).
+   */
+  formatOptions?: FieldFormatOptions;
+  /** An AI notice in the column header (FE getColumnHeaderAiNotice). */
+  aiNotice?: {
+    /** Text of the popover. */
+    contentText?: string;
+    /** Content of the popover (FE: a fragment name; here a render function, react-idiom). */
+    contentFragmentName?(): ReactNode;
+  };
+  /** Settings of an annotation column (FE TableColumnSettings). */
+  settings?: {
+    /** Responsive tables: size of a micro chart column. @defaultValue "XS" */
+    microChartSize?: string;
+    /** Responsive tables: a micro chart column also shows its labels. @defaultValue false */
+    showMicroChartLabel?: boolean;
+    /** Responsive tables: a cell equal to the one above is left empty (sap.m.Column mergeDuplicates). */
+    mergeCells?: boolean;
+    /** Properties compared for `mergeCells` (default the column's value). */
+    mergeComparisonProperties?: string | string[];
+  };
   /** Properties the column shows: they are selected from the service (and exported). */
   properties?: string[];
   position?: $PositionSettings;
@@ -187,6 +258,12 @@ export interface $ManifestCreationModeSettings {
   inlineCreationRowsHiddenInEditMode?: boolean;
   /** Inline creation rows only: not used by the list report (FE _getCreationBehaviour). @defaultValue false */
   disableAddRowButtonForEmptyData?: boolean;
+  /**
+   * Accepted as in FE, without effect in the list report: FE 1.154 runs the custom validation only for the creation
+   * row of a table (EditFlow createCustomValidationMessages on table.getCreationRow()), a creation mode the list report
+   * does not offer (FE _getCreationBehaviour). FE names an extension function, here it is the function (react-idiom).
+   */
+  customValidationFunction?(data: Row): { messageTarget?: string; messageText: string }[] | Promise<{ messageTarget?: string; messageText: string }[]>;
 }
 
 /** `tableSettings › quickVariantSelection`: a segmented button (≤ 3) or a select (> 3) in the table toolbar. */
@@ -291,6 +368,23 @@ export interface $ManifestTableActionSettings extends $ManifestActionSettings {
   group?: number;
   /** An AI operation (the AI icon on the button). */
   isAIOperation?: boolean;
+  /**
+   * With `menu`: the key of the action (a manifest or annotation action of this table) run by the menu button itself;
+   * the menu becomes a split button (FE ActionsTemplating getMenuButton: MenuButton buttonMode "Split").
+   */
+  defaultAction?: string;
+  /**
+   * Accepted as in FE, without effect in the table toolbar: FE 1.154 emphasizes manifest primary actions only in the
+   * page header (ListReportConverter getHeaderActions → applyManifestPrimaryActionEmphasis); the table toolbar keeps
+   * its Transparent buttons (ActionsTemplating; ActionHelper.ensurePrimaryActionNeverOverflows reads `emphasized`).
+   */
+  isPrimaryAction?: boolean;
+  /**
+   * Custom content placed in the table toolbar instead of a button (FE ActionsTemplating getCustomToolbarContent; FE
+   * names a fragment, here it is a render function, react-idiom). `text` names it in the overflow; `position`,
+   * `priority` and `overflowGroup` apply; `press`, `enabled` and `requiresSelection` are not used.
+   */
+  template?(): ReactNode;
 }
 
 /** `controlConfiguration › @UI.LineItem` (FE TableManifestConfiguration). */
@@ -311,15 +405,49 @@ export interface $ManifestFilterFieldSettings {
   property?: string;
   /** Editor of a custom filter field (FE: a fragment name; react-idiom). */
   template?(ctx: FilterFieldTemplateContext): ReactNode;
+  /**
+   * "Slot" (a filter field of the FilterBar building block's `filterFields`, FE filterFieldType.Slot) or "Default":
+   * both render `template` as a custom filter field (FE FilterBar converter getManifestFilterFields: `template` or
+   * Slot makes a custom filter).
+   */
+  type?: 'Default' | 'Slot';
   /** @defaultValue "Default" */
   availability?: 'Adaptation' | 'Default' | 'Hidden';
   required?: boolean;
   position?: $PositionSettings;
+  /** Settings of the field (FE FilterSettings). */
+  settings?: {
+    /**
+     * Semantic date operators offered or left out (FE SemanticDateOperators.getFilterOperations): entries with `path`
+     * "key" or "category", comma-separated `equals` / `contains` values and `exclude`. Effective on date fields
+     * restricted to SingleRange / SingleValue (Capabilities.FilterExpressionRestrictions), as in FE
+     * (CommonHelper.getOperatorsForProperty); a "key" exclusion of "Empty" also removes Empty.
+     */
+    operatorConfiguration?: OperatorConfiguration[];
+    /**
+     * Initial semantic date condition of the field, e.g. `[{ operator: "LASTYEAR" }]` (FE getDefaultSemanticDates: the
+     * first entry; it wins over the selection variant; only with `useSemanticDateRange`).
+     */
+    defaultValues?: { operator: string; values?: unknown[] }[];
+    /**
+     * Accepted as in FE, without effect: FE's FilterBar converter sets it itself on custom fields (with `template`)
+     * and reads it only in the property keys mode (FilterBarDelegate).
+     */
+    isCustomFilter?: boolean;
+    /** Integer values of the field's conditions are shown without grouping separators (FE FilterFieldTemplate). */
+    disableIntegerGrouping?: boolean;
+  };
 }
 
 /** `controlConfiguration › @UI.SelectionFields` (FE FilterManifestConfiguration). */
 export interface $ManifestFilterConfiguration {
   filterFields?: Record<string, $ManifestFilterFieldSettings>;
+  /**
+   * false: date fields offer no semantic date operators (today, last year …) but the plain date and range operators, and
+   * `defaultValues` are not applied (FE CommonHelper.getOperatorsForProperty, ListReportConverter).
+   * @defaultValue true
+   */
+  useSemanticDateRange?: boolean;
   /** @defaultValue false */
   showClearButton?: boolean;
   /** Navigation properties offered in "Adapt Filters". */
@@ -559,20 +687,6 @@ export function listCreationMode(name: $ManifestCreationModeSettings['name']): '
   return name === 'CreationDialog' || name === 'External' || name === 'AddViaValueHelp' ? name : 'NewPage';
 }
 
-/** The `massEdit` of `Table` for `enableMassEdit` (FE getMassEditSettings; the list report saves each object on its own). */
-function massEditOf(v: NonNullable<$ManifestTableSettings['enableMassEdit']>): NonNullable<$TableSettings['massEdit']> {
-  const list = (x: string | undefined) => (x ? x.split(',').map((f) => f.trim()).filter(Boolean) : undefined);
-  return v === true || v === false ? { operationGroupingMode: 'Isolated' } : { visibleFields: list(v.visibleFields), ignoredFields: list(v.ignoredFields), operationGroupingMode: v.operationGroupingMode ?? 'Isolated', customContent: v.customFragment?.() };
-}
-
-/** The personalization string of `Table` ("false" or the panels) for the FE setting. */
-function personalizationOf(v: $ManifestTableSettings['personalization']): string | undefined {
-  if (v === undefined || v === true) return undefined;
-  if (v === false) return 'false';
-  const panels = [v.column && 'Column', v.sort && 'Sort', v.filter && 'Filter', v.group && 'Group', v.aggregate && 'Aggregate'].filter(Boolean);
-  return panels.length ? panels.join(',') : 'false';
-}
-
 /** One tab of `views` (FE MultipleModeControl). */
 interface ViewTab {
   key: string;
@@ -786,7 +900,14 @@ function ListReportInner(p: $ListReportSettings) {
   const viewPaths = useMemo(() => viewExcludedPaths([...tabs.filter((x) => x.entitySet === entitySet), ...quick], ui.selectionFields), [tabs, quick, entitySet, ui.selectionFields]);
   const showCounts = p.views?.showCounts ?? new Set(tabs.map((x) => x.entitySet)).size > 1;
 
-  const filter = useFilterState(entitySet, { service: p.service, pageKey, liveMode, autoExecute: false, initial: defaultFilters ? { filters: defaultFilters } : undefined });
+  // FE useSemanticDateRange and the filter fields' settings (operatorConfiguration, defaultValues, disableIntegerGrouping):
+  // the operators of the fields and the initial semantic date conditions (FE FilterHelper getFilterConditions)
+  const filterSettingsKey = JSON.stringify([filterConfig?.useSemanticDateRange, Object.entries(filterConfig?.filterFields ?? {}).map(([k, f]) => [k, f.property, f.settings])]);
+  const filterSettings = useMemo(() => filterFieldSettings(filterConfig), [filterSettingsKey]); // eslint-disable-line react-hooks/exhaustive-deps -- by value
+  const filter = useFilterState(entitySet, {
+    service: p.service, pageKey, liveMode, autoExecute: false, initial: defaultFilters ? { filters: defaultFilters } : undefined,
+    operatorOptions: filterSettings.options, defaultConditions: filterSettings.defaults,
+  });
   const [view, setView] = usePageState<{ columns?: string[]; sort?: SortItem[]; groupBy?: string | null; totals?: string[]; headerExpanded?: boolean; headerPinned?: boolean; tab?: string; quick?: string; content?: CombinedContent }>(`${pageKey}:view`, {});
   const columns = view.columns;
   const sort = view.sort ?? ui.presentation.sortOrder;
@@ -976,24 +1097,10 @@ function ListReportInner(p: $ListReportSettings) {
   ) : null;
 
   // Columns and actions of the manifest (FE getTableAnnotationConfiguration / getActionsFromManifest).
-  const manifestColumns = useMemo<$ColumnSettings[] | undefined>(() => (tableConfig?.columns
-    ? Object.entries(tableConfig.columns).map(([key, c]) => ({
-      key, header: c.header, template: c.template, properties: c.properties, width: c.width, importance: c.importance, horizontalAlign: c.horizontalAlign,
-      disableExport: c.disableExport, availability: c.availability, tooltip: c.tooltip, required: c.required, widthIncludingColumnHeader: c.widthIncludingColumnHeader,
-      ...(c.position?.placement === 'End' ? {} : { anchor: c.position?.anchor, placement: c.position?.placement }),
-    }))
-    : undefined), [tableConfig?.columns]);
-  const manifestActions = useMemo<{ actions?: $ActionSettings[]; groups?: ActionGroup[] }>(() => {
-    const entries = Object.entries(tableConfig?.actions ?? {});
-    const actions: $ActionSettings[] = entries.filter(([, a]) => !a.menu).map(([key, a]) => ({
-      key, text: a.text ?? key, anchor: a.position?.anchor, placement: a.position?.placement === 'End' ? undefined : a.position?.placement,
-      enabled: a.enabled, visible: a.visible, requiresSelection: a.requiresSelection, enableOnSelect: a.enableOnSelect,
-      priority: a.priority, overflowGroup: a.overflowGroup ?? a.group, isAIOperation: a.isAIOperation,
-      onPress: a.press ? (e) => a.press!({ selectedContexts: e.selectedContexts }) : undefined,
-    }));
-    const groups: ActionGroup[] = entries.filter(([, a]) => a.menu).map(([key, a]) => ({ id: key, label: a.text ?? key, actions: a.menu! }));
-    return { actions: actions.length ? actions : undefined, groups: groups.length ? groups : undefined };
-  }, [tableConfig?.actions]);
+  // A column without template is an override of the annotation column of its key (FE isColumnOverride; the Table
+  // building block applies it); only overrides carry formatOptions, showDataFieldsLabel and settings.
+  const manifestColumns = useMemo(() => tableColumnsOf(tableConfig?.columns), [tableConfig?.columns]);
+  const manifestActions = useMemo(() => tableActionsOf(tableConfig?.actions), [tableConfig?.actions]);
   // Row navigation: navigation › <set> › detail › route (else the NavigationAdapter decides, kit-extension).
   const navigable = (set: string) => {
     const n = p.navigation?.[set];
@@ -1076,6 +1183,7 @@ function ListReportInner(p: $ListReportSettings) {
       columns: set === entitySet ? manifestColumns : undefined,
       actions: set === entitySet ? manifestActions.actions : undefined,
       actionGroups: set === entitySet ? manifestActions.groups : undefined,
+      extend: set === entitySet ? manifestActions.extend : undefined,
       creationMode: { name: creation, creationFields: creation === 'CreationDialog' ? ts.creationMode?.creationFields : undefined },
       onRowPress: ts.rowPress,
       onSelectionChange: ts.selectionChange,
@@ -1089,36 +1197,16 @@ function ListReportInner(p: $ListReportSettings) {
       titleAddon: set === entitySet ? contentSwitch : undefined,
       onRowsChange: set === entitySet ? p.onRowsChange : undefined,
       onCountChange: tab && tab.key === activeTab ? setActiveCount : undefined,
-      selectionMode: ts.selectionMode,
-      enableExport: ts.enableExport,
-      exportFileName: ts.exportFileName,
-      exportSheetName: ts.exportSheetName,
-      exportRequestSize: ts.exportRequestSize,
-      disableCopyToClipboard: ts.disableCopyToClipboard,
-      enableFullScreen: ts.enableFullScreen,
-      personalization: personalizationOf(ts.personalization),
+      // the settings the object page's sub-tables map the same way (./tableManifest); each object is saved on its own
+      ...tableSettingsOf(ts, { massEditGrouping: 'Isolated' }),
       // FE _getTableMode: a list report's grid tables are always "Auto" with at least 3 rows (rowCountMode / rowCount are not read)
       rowCountMode: type === 'ResponsiveTable' ? undefined : 'Auto',
       rowCount: type === 'ResponsiveTable' ? undefined : 3,
-      enableSelectAll: ts.selectAll,
-      selectionLimit: ts.selectionLimit,
-      frozenColumnCount: ts.frozenColumnCount,
-      disableColumnFreeze: ts.disableColumnFreeze,
-      widthIncludingColumnHeader: ts.widthIncludingColumnHeader,
-      condensedTableLayout: ts.condensedTableLayout,
-      popinLayout: ts.popinLayout,
-      isSearchable: ts.isSearchable,
-      readOnly: ts.readOnly,
-      ignoredFields: ts.ignoredFields,
       threshold,
       // FE reads threshold + ⌈window height / 25⌉ first also with a fixed row count (fe:macros6-lr-row-count)
       scrollThreshold: type === 'ResponsiveTable' ? undefined : gridRequestSize(ts.scrollThreshold ?? threshold),
-      enablePaste: ts.enablePaste,
-      enablePastingOfComputedProperties: ts.enablePastingOfComputedProperties,
-      massEdit: ts.enableMassEdit ? massEditOf(ts.enableMassEdit) : undefined,
-      analyticalConfiguration: ts.analyticalConfiguration,
       additionalProperties: set === entitySet ? ts.additionalProperties : undefined,
-      actionOverflowGroups: set === entitySet && tableConfig?.overflowGroups ? Object.entries(tableConfig.overflowGroups).map(([k, g]) => ({ overflowGroup: Number(k), showSeparator: g.showSeparator })) : undefined,
+      actionOverflowGroups: set === entitySet ? overflowGroupsOf(tableConfig?.overflowGroups) : undefined,
       onBeforeExport: p.onBeforeExport,
       onExported: p.onExported,
     };

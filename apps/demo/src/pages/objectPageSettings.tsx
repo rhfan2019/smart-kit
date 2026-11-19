@@ -13,17 +13,18 @@ import type { ReactNode, RefObject } from 'react';
 import purchasing from '../../../fe-reference/webapp/purchasing/manifest.json';
 import purchasingDraft from '../../../fe-reference/webapp/purchasing-draft/manifest.json';
 import purchasingOp from '../../../fe-reference/webapp/purchasing-op/manifest.json';
+import purchasingOp7 from '../../../fe-reference/webapp/purchasing-op7/manifest.json';
 import purchasingDisplay from '../../../fe-reference/webapp/purchasing-display/manifest.json';
 import type { ShellKey } from '../shellText';
 
 /** FE apps whose object page the demo mirrors (`?fe=<app>`; default by service). */
-export const FE_APPS = { purchasing, 'purchasing-draft': purchasingDraft, 'purchasing-op': purchasingOp, 'purchasing-display': purchasingDisplay } as const;
+export const FE_APPS = { purchasing, 'purchasing-draft': purchasingDraft, 'purchasing-op': purchasingOp, 'purchasing-op7': purchasingOp7, 'purchasing-display': purchasingDisplay } as const;
 export type FeApp = keyof typeof FE_APPS;
 
 /** Texts of the FE i18n keys that the demo's shell texts do not have. */
 const EXTRA = {
-  zh: { contactFacet: '采购组', remindAction: '提醒供应商', checkAction: '检查订单', reminded: '已提醒供应商', checked: '已检查' },
-  en: { contactFacet: 'Purchasing Group', remindAction: 'Remind Supplier', checkAction: 'Check Order', reminded: 'Reminder sent', checked: 'Checked' },
+  zh: { contactFacet: '采购组', remindAction: '提醒供应商', checkAction: '检查订单', confirmAction: '确认订单', reminded: '已提醒供应商', checked: '已检查' },
+  en: { contactFacet: 'Purchasing Group', remindAction: 'Remind Supplier', checkAction: 'Check Order', confirmAction: 'Confirm Order', reminded: 'Reminder sent', checked: 'Checked' },
 } as const;
 
 interface Resolve {

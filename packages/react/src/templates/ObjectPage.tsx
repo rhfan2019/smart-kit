@@ -5,10 +5,11 @@
  * pages, state restoration; edit (direct save or draft, ADR-018), create mode, delete, header and footer actions
  * (ADR-024), messages (ADR-023), object marker, the editable "Header" section, paging buttons, side content.
  */
-import { Alert, Anchor, Avatar, Breadcrumbs, Button, Group, Image, Menu, Modal, Stack, Text, UnstyledButton } from '@mantine/core';
+import { ActionIcon, Alert, Anchor, Avatar, Breadcrumbs, Button, Group, Image, Menu, Modal, Stack, Text, UnstyledButton } from '@mantine/core';
+import { ChevronDown } from 'lucide-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
-  capabilitiesFor, resolvePath, childPathOf, ConcurrencyError, DERIVED_GENERAL_SECTION, isDraftRow, messagesFromError, resolveEntityPath,
+  capabilitiesFor, resolvePath, childPathOf, ConcurrencyError, DERIVED_GENERAL_SECTION, entityPathOf, isDraftRow, messagesFromError, resolveEntityPath,
   siblingPath, targetEntitySet, type ActionModel, type EditSession, type FieldModel, type FormGroupModel, type HeaderFacetModel, type Message, type Row,
   type SectionModel, type SubSectionModel,
 } from '@rhfan2019/smart-kit-core';
@@ -20,7 +21,7 @@ import {
 } from '../index';
 import ObjectPageLayout, { type SectionItem, type SubSectionItem } from '../uxap/ObjectPageLayout';
 import ObjectPageDynamicHeaderTitle from '../uxap/ObjectPageDynamicHeaderTitle';
-import type { OverflowToolbarLayoutData } from '../m/OverflowToolbar';
+import OverflowToolbar, { type OverflowToolbarLayoutData } from '../m/OverflowToolbar';
 import Share from '../v4/fe/macros/Share';
 import Paginator from '../v4/fe/macros/Paginator';
 import FlexibleColumnLayoutActions from '../v4/fe/macros/fcl/FlexibleColumnLayoutActions.block';
@@ -29,21 +30,23 @@ import useColumn from '../kit/useColumn';
 import useObject from '../kit/useObject';
 import useObjectTitle from '../kit/useObjectTitle';
 import DraftIndicator from '../kit/DraftIndicator';
-import Table, { type $ActionSettings, type $ColumnSettings, type ActionGroup } from '../v4/fe/macros/Table';
+import Table, { type $ActionSettings, type $ColumnSettings, type $OverflowGroupSettings, type $TableSettings, type ActionGroup, type TableExtendEntry } from '../v4/fe/macros/Table';
+import TreeTable from '../v4/fe/macros/TreeTable';
+import { overflowGroupsOf, RenderContent, tableActionsOf, tableColumnsOf, tableSettingsOf } from './tableManifest';
 import MessageButton from '../v4/fe/macros/MessageButton';
 import Field from '../v4/fe/macros/Field';
 import Form from '../v4/fe/macros/Form';
-import useActionRunner from '../kit/useActionRunner';
+import useActionRunner, { type ActionResult } from '../kit/useActionRunner';
 import useEditStrategy from '../kit/useEditStrategy';
 import MessageProvider from '../kit/MessageProvider';
 import useMessages from '../kit/useMessages';
 import type {
-  Context, ManifestAction, ManifestHeaderFacet, ManifestSection, ManifestSubSection, ObjectPageManifestSettings, Position,
-  TableManifestConfiguration, TableManifestSettingsConfiguration,
+  Context, HeaderFooterManifestAction, ManifestAction, ManifestHeaderFacet, ManifestSection, ManifestSubSection, ObjectPageManifestSettings,
+  OverflowToolbarPriority, Position, TableManifestConfiguration, TableManifestSettingsConfiguration,
 } from './ObjectPageSettings';
 
 export type {
-  Context, ManifestAction, ManifestHeaderFacet, ManifestSection, ManifestSideContent, ManifestSubSection, NavigationSettingsConfiguration,
+  ActionAfterExecutionConfiguration, Context, HeaderFooterManifestAction, ManifestAction, ManifestHeaderFacet, OverflowGroupConfiguration, OverflowToolbarPriority, ManifestSection, ManifestSideContent, ManifestSubSection, NavigationSettingsConfiguration,
   NavigationTargetConfiguration, ObjectPage$ActionPressEvent, ObjectPage$TableActionPressEvent, ObjectPageContent, ObjectPageHeaderContent,
   ObjectPageManifestSettings, Position, TableCreationModeConfiguration, TableManifestAction, TableManifestColumn, TableManifestConfiguration,
   TableManifestSettingsConfiguration,
@@ -227,29 +230,18 @@ export function creationModeOf(ts: TableManifestSettingsConfiguration | undefine
   return name === 'NewPage' && !hasRoute ? 'Inline' : name;
 }
 
-/** Table personalization (`tableSettings › personalization`) as the building block's comma-separated value. */
-export function personalizationOf(v: TableManifestSettingsConfiguration['personalization']): string | undefined {
-  if (v === undefined || v === true) return undefined;
-  if (v === false) return 'false';
-  const parts = (['column', 'sort', 'filter', 'group', 'aggregate'] as const).filter((k) => v[k]).map((k) => k[0]!.toUpperCase() + k.slice(1));
-  return parts.length ? parts.join(',') : 'false';
-}
+export { personalizationOf } from './tableManifest';
 
-/** `columns` and `actions` of a sub-table configuration as the building block's aggregations. */
-export function tableAggregationsOf(cfg: TableManifestConfiguration | undefined): { columns?: $ColumnSettings[]; actions?: $ActionSettings[]; actionGroups?: ActionGroup[] } {
+/**
+ * `columns`, `actions` and `overflowGroups` of a sub-table configuration as the building block's aggregations (the
+ * list report's mapping, ./tableManifest).
+ */
+export function tableAggregationsOf(cfg: TableManifestConfiguration | undefined): {
+  columns?: $ColumnSettings[]; actions?: $ActionSettings[]; actionGroups?: ActionGroup[]; extend?: TableExtendEntry[]; actionOverflowGroups?: $OverflowGroupSettings[];
+} {
   if (!cfg) return {};
-  const placement = (p?: Position) => (p?.placement === 'Before' ? 'Before' as const : 'After' as const);
-  const columns = cfg.columns ? Object.entries(cfg.columns).map(([key, c]) => ({
-    key, header: c.header, anchor: c.position?.anchor, placement: placement(c.position), width: c.width, importance: c.importance,
-    horizontalAlign: c.horizontalAlign, properties: c.properties, disableExport: c.disableExport, template: c.template,
-  } satisfies $ColumnSettings)) : undefined;
-  const entries = cfg.actions ? Object.entries(cfg.actions) : [];
-  const actions = entries.filter(([, a]) => !a.menu).map(([key, a]) => ({
-    key, text: a.text ?? key, anchor: a.position?.anchor, placement: placement(a.position), enabled: a.enabled, visible: a.visible,
-    requiresSelection: a.requiresSelection, enableOnSelect: a.enableOnSelect, onPress: a.press ? (e) => a.press!({ selectedContexts: e.selectedContexts }) : undefined,
-  } satisfies $ActionSettings));
-  const actionGroups = entries.filter(([, a]) => a.menu).map(([key, a]) => ({ id: key, label: a.text ?? key, actions: a.menu! }));
-  return { columns, actions: entries.length ? actions : undefined, actionGroups: actionGroups.length ? actionGroups : undefined };
+  const a = tableActionsOf(cfg.actions);
+  return { columns: tableColumnsOf(cfg.columns), actions: a.actions, actionGroups: a.groups, extend: a.extend, actionOverflowGroups: overflowGroupsOf(cfg.overflowGroups) };
 }
 
 // ---------------------------------------------------------------------------------------------- component
@@ -267,8 +259,82 @@ export function ObjectPage(p: $ObjectPageSettings) {
 
 type Mode = 'display' | 'edit' | 'create';
 
-/** A keyed header or footer action. */
-interface KeyedAction { key: string; node: ReactNode; text?: string; press?(): void; menu?: string[] }
+type Variant = 'filled' | 'subtle' | 'default';
+
+/**
+ * A toolbar action of the header, the footer or a section (FE BaseAction after getActionsFromManifest and
+ * insertCustomElements): its press, its overflow layout and what the emphasis rules need.
+ */
+export interface ToolbarAction {
+  key: string;
+  text?: string;
+  press?(): void;
+  disabled?: boolean;
+  /** sap.m.OverflowToolbarLayoutData priority. */
+  priority?: OverflowToolbarPriority;
+  /** sap.m.OverflowToolbarLayoutData group (FE `overflowGroup ?? group`; manifest actions 0 without one). */
+  group?: number;
+  /** A manifest action (FE ActionUtilities isManifestAction). */
+  manifest?: boolean;
+  /** FE buttonType Emphasized: UI.Emphasized without a Criticality, or `isPrimaryAction` of the manifest. */
+  emphasized?: boolean;
+  /** The annotation action has a Criticality (FE hasCriticality). */
+  critical?: boolean;
+  /** Keys of the actions of a menu button. */
+  menu?: string[];
+  /** With `menu`: the key of the menu action the button runs itself (a split button). */
+  defaultAction?: string;
+  /** Header: custom content instead of a button. */
+  template?(): ReactNode;
+  /** The button of a standard or annotation action (its data attributes); custom actions are rendered by the toolbar. */
+  render?(variant: Variant): ReactNode;
+}
+
+/** The visible actions the emphasis rules look at. */
+export interface EmphasisAction { key: string; emphasized?: boolean; critical?: boolean; manifest?: boolean }
+
+/**
+ * The object page's emphasis rules (FE ActionUtilities applyObjectPageEmphasisRules with the templates' expressions)
+ * for the visible header and footer actions: while an action with a criticality is visible nothing but criticality is
+ * emphasized; else the first emphasized footer action (manifest primary actions before UI.Emphasized ones) is shown
+ * first, emphasized and never in the overflow, and Save loses its emphasis; the first emphasized header action is so
+ * shown in the header only while no footer is shown. Edit is emphasized while no action with a criticality is visible
+ * (ObjectPageTemplating buildEmphasizedButtonExpression); all other emphasized actions are shown as Ghost.
+ */
+export function objectPageEmphasis(header: EmphasisAction[], footer: EmphasisAction[], o: { footerShown: boolean }): { header?: string; footer?: string; edit: boolean; save: boolean } {
+  const criticality = [...header, ...footer].some((a) => a.critical);
+  const first = (list: EmphasisAction[]) => {
+    const emphasized = list.filter((a) => a.emphasized && !a.critical);
+    return (emphasized.find((a) => a.manifest) ?? emphasized[0])?.key;
+  };
+  const footerFirst = criticality ? undefined : first(footer);
+  const headerFirst = criticality || o.footerShown ? undefined : first(header);
+  return { header: headerFirst, footer: footerFirst, edit: !criticality, save: !criticality && !footerFirst };
+}
+
+/**
+ * Toolbar separators (FE Action addSeparators): before the first action of each overflow group whose
+ * `overflowGroups` entry has `showSeparator`, unless it would be the first item.
+ */
+export function withSeparators<T extends { key: string; group?: number }>(items: T[], groups: Record<string, { showSeparator?: boolean }> | undefined): (T | { key: string; group: number; separator: true })[] {
+  if (!groups) return items;
+  const seen = new Set<number>();
+  const out: (T | { key: string; group: number; separator: true })[] = [];
+  for (const item of items) {
+    const g = item.group;
+    if (g !== undefined && !seen.has(g)) {
+      seen.add(g);
+      if (groups[String(g)]?.showSeparator && out.length) out.push({ key: `Separator::${g}`, group: g, separator: true });
+    }
+    out.push(item);
+  }
+  return out;
+}
+
+/** A child of an OverflowToolbar with its layout data (the toolbar reads `layoutData` from its children). */
+function ToolbarSlot({ children }: { children: ReactNode; layoutData?: OverflowToolbarLayoutData }) {
+  return <>{children}</>;
+}
 
 function ObjectPageInner(p: $ObjectPageSettings & { registerNavigate(fn: (m: Message) => void): void }) {
   const t = useText();
@@ -548,38 +614,115 @@ function ObjectPageInner(p: $ObjectPageSettings & { registerNavigate(fn: (m: Mes
   const headerModelActions = annotationActions.filter((a) => !a.determining && !a.copy);
   const copyAction = viewLevel === 1 ? annotationActions.find((a) => !a.determining && a.copy) : undefined;
   const footerActions = annotationActions.filter((a) => a.determining);
-  const annotationButton = (a: ActionModel, variant: 'subtle' | 'default' | 'filled', text = a.label): KeyedAction => ({
-    key: a.id, text, press: () => runner.run(a, [objectTarget]),
-    node: <Button key={a.id} variant={a.emphasized && !a.criticality ? 'filled' : variant} disabled={!isActionAvailable(a, data) || !data} onClick={() => runner.run(a, [objectTarget])} data-sk-action={a.id}>{text}</Button>,
-  });
   const pageContext: Context = { getPath: () => `/${activePath}`, getObject: () => data ?? {} };
-  /** Custom actions (ManifestAction) placed among the keyed standard and annotation actions. */
-  const withCustomActions = (items: KeyedAction[], custom: Record<string, ManifestAction> | undefined, variant: 'subtle' | 'default'): KeyedAction[] => {
+  // FE EditFlow invokeAction isNavigable: a bound annotation action that returns another object of the page's entity set
+  // navigates to it (not with afterExecution › navigateToInstance false or enableAutoScroll true)
+  const navigateToResult = (r: ActionResult) => {
+    const row = r.processed.length === 1 ? r.processed[0]!.row : undefined;
+    const context = row?.['@odata.context'];
+    if (!row || (typeof context === 'string' && !new RegExp(`#${entitySet}([(/]|$)`).test(context))) return;
+    try {
+      const target = entityPathOf(model, entitySet, row);
+      if (resolveEntityPath(model, target).canonical !== resolveEntityPath(model, readPath || activePath).canonical) navigation?.toObject(target, service.name);
+    } catch {
+      // not an object of the page's entity set
+    }
+  };
+  /**
+   * An annotation action of the header or the footer, with the manifest entry of its key (FE getActionOverrideConfig:
+   * text, visible, enabled, priority, group, isPrimaryAction, defaultValuesFunction, afterExecution).
+   */
+  const annotationAction = (a: ActionModel, o: { text?: string; override?: HeaderFooterManifestAction; priority?: OverflowToolbarPriority } = {}): ToolbarAction | undefined => {
+    const m = o.override;
+    if (m && !evaluate(m.visible, data)) return undefined;
+    const text = m?.text ?? o.text ?? a.label;
+    const navigable = a.bound && m?.afterExecution?.navigateToInstance !== false && m?.afterExecution?.enableAutoScroll !== true;
+    const defaults = m?.defaultValuesFunction;
+    const press = () => runner.run(a, [objectTarget], {
+      defaultValues: defaults ? () => defaults({ contexts: [pageContext] }) : undefined,
+      onDone: navigable ? navigateToResult : undefined,
+    });
+    const disabled = !isActionAvailable(a, data) || !data || (m?.enabled !== undefined && !evaluate(m.enabled, data));
+    return {
+      key: a.id, text, press, disabled, priority: m?.priority ?? o.priority, group: m?.overflowGroup ?? m?.group,
+      emphasized: m?.isPrimaryAction ?? (a.emphasized && !a.criticality), critical: Boolean(a.criticality),
+      render: (variant) => <Button key={a.id} variant={variant} disabled={disabled} onClick={press} data-sk-action={a.id}>{text}</Button>,
+    };
+  };
+  /**
+   * Custom actions (ManifestAction) placed among the keyed standard and annotation actions (FE insertCustomElements);
+   * the entry of an annotation action's key overrides it; the actions of a `menu` move into the menu button.
+   */
+  const placeActions = (items: (ToolbarAction & { annotation?: ActionModel; annotationText?: string })[], custom: Record<string, HeaderFooterManifestAction> | undefined, defaultPriority?: OverflowToolbarPriority): (ToolbarAction & { items?: ToolbarAction[] })[] => {
     // CancelAction has the position "End" in FE (HeaderAndFooterAction): custom actions go before it.
     const end = items.at(-1)?.key === 'CancelAction' ? items.at(-1) : undefined;
     const base = end ? items.slice(0, -1) : items;
-    const inserted = insertByPosition<KeyedAction, ManifestAction>(base, custom, (key, a) => {
+    const inserted = insertByPosition<ToolbarAction & { annotation?: ActionModel; annotationText?: string }, HeaderFooterManifestAction>(base, custom, (key, a) => {
       if (!evaluate(a.visible, data)) return undefined;
-      const disabled = !evaluate(a.enabled, data);
       const press = a.press ? () => a.press!({ bindingContext: pageContext }) : undefined;
-      return { key, text: a.text, press, menu: a.menu, node: <Button key={key} variant={variant} disabled={disabled} onClick={press} data-sk-action={key}>{a.text ?? key}</Button> };
-    });
+      return {
+        key, text: a.text, press, disabled: !evaluate(a.enabled, data), menu: a.menu, defaultAction: a.defaultAction, template: a.template,
+        priority: a.priority ?? defaultPriority, group: a.overflowGroup ?? a.group ?? 0, manifest: true,
+        // FE applyManifestPrimaryActionEmphasis: a menu only with a defaultAction
+        emphasized: Boolean(a.isPrimaryAction && (!a.menu || a.defaultAction)),
+      };
+    }, (item, a) => (item.annotation ? annotationAction(item.annotation, { text: item.annotationText, override: a, priority: defaultPriority }) : item));
     const placed = end ? [...inserted, end] : inserted;
-    // Menu buttons (`menu`): the listed actions move into the menu.
     const inMenus = new Set(placed.flatMap((a) => a.menu ?? []));
-    return placed.filter((a) => !inMenus.has(a.key)).map((a) => (a.menu ? {
-      ...a,
-      node: (
-        <Menu key={a.key} position="bottom-end">
-          <Menu.Target><Button variant={variant} data-sk-action-group={a.key}>{a.text ?? a.key}</Button></Menu.Target>
+    return placed.filter((a) => !inMenus.has(a.key)).map((a) => (a.menu ? { ...a, items: a.menu.flatMap((k) => placed.filter((x) => x.key === k)) } : a));
+  };
+  /**
+   * The items of an OverflowToolbar (FE OverflowToolbarLayoutData of each action, addSeparators): `first` is shown
+   * first, emphasized and never in the overflow; `emphasize` decides the emphasis of the other buttons.
+   */
+  const toolbarItems = (actions: (ToolbarAction & { items?: ToolbarAction[] })[], o: { variant: Variant; overflowGroups?: Record<string, { showSeparator?: boolean }>; first?: string; firstAfter?: string; emphasize?(a: ToolbarAction): boolean; templates?: boolean }): ReactNode[] => {
+    const firstItem = o.first ? actions.find((a) => a.key === o.first) : undefined;
+    let ordered = firstItem ? actions.filter((a) => a !== firstItem) : actions;
+    if (firstItem) {
+      const at = o.firstAfter ? ordered.findIndex((a) => a.key === o.firstAfter) + 1 : 0;
+      ordered = [...ordered.slice(0, at), firstItem, ...ordered.slice(at)];
+    }
+    return withSeparators(ordered, o.overflowGroups).map((a) => {
+      if ('separator' in a) return <ToolbarSlot key={a.key} layoutData={{ group: a.group }}><span className="sk-toolbar__separator" role="separator" aria-orientation="vertical" data-sk-separator /></ToolbarSlot>;
+      const isFirst = a === firstItem;
+      const variant: Variant = isFirst || (o.emphasize?.(a) ?? false) ? 'filled' : o.variant;
+      const layoutData: OverflowToolbarLayoutData = { priority: isFirst ? 'NeverOverflow' : a.priority, group: a.group || undefined };
+      let node: ReactNode;
+      if (a.template && o.templates) node = <span data-sk-toolbar-content={a.key}><RenderContent render={a.template} /></span>;
+      else if (a.items) {
+        const def = a.defaultAction ? a.items.find((x) => x.key === a.defaultAction) : undefined;
+        const dropdown = (
           <Menu.Dropdown>
-            {a.menu.map((k) => placed.find((x) => x.key === k)).filter((x): x is KeyedAction => Boolean(x)).map((x) => (
-              <Menu.Item key={x.key} onClick={x.press} data-sk-action={x.key}>{x.text ?? x.key}</Menu.Item>
-            ))}
+            {a.items.map((x) => <Menu.Item key={x.key} disabled={x.disabled} onClick={x.press} data-sk-action={x.key}>{x.text ?? x.key}</Menu.Item>)}
           </Menu.Dropdown>
-        </Menu>
-      ),
-    } : a));
+        );
+        // FE DefaultActionHandler / createMenuButton: with a defaultAction a split button (sap.m.MenuButton buttonMode "Split")
+        node = def ? (
+          <Group gap={0} wrap="nowrap" display="inline-flex" data-sk-action-group={a.key} data-sk-split>
+            <Button variant={variant} disabled={a.disabled || def.disabled} onClick={def.press} data-sk-action-group-default={a.key}>{a.text ?? a.key}</Button>
+            <Menu position="bottom-end">
+              <Menu.Target><ActionIcon size="lg" variant={variant} disabled={a.disabled} aria-label={a.text ?? a.key} data-sk-action-group-arrow={a.key}><ChevronDown className="sk-icon" /></ActionIcon></Menu.Target>
+              {dropdown}
+            </Menu>
+          </Group>
+        ) : (
+          <Menu position="bottom-end">
+            <Menu.Target><Button variant={variant} disabled={a.disabled} rightSection={<ChevronDown className="sk-icon" />} data-sk-action-group={a.key}>{a.text ?? a.key}</Button></Menu.Target>
+            {dropdown}
+          </Menu>
+        );
+      } else node = a.render ? a.render(variant) : <Button variant={variant} disabled={a.disabled} onClick={a.press} data-sk-action={a.key}>{a.text ?? a.key}</Button>;
+      return <ToolbarSlot key={a.key} layoutData={layoutData}>{node}</ToolbarSlot>;
+    });
+  };
+  /** A section or sub-section toolbar (FE FormActions / FormActionButtons: Transparent buttons, no emphasis, no templates). */
+  const sectionToolbar = (actions: Record<string, ManifestAction> | undefined, overflowGroups: Record<string, { showSeparator?: boolean }> | undefined): ReactNode => {
+    const items = actions ? placeActions([], actions) : [];
+    return items.length ? (
+      <OverflowToolbar design="Transparent" style="Clear" className="sk-custom-subsection__actions" data-sk-subsection-actions>
+        {toolbarItems(items, { variant: 'default', overflowGroups })}
+      </OverflowToolbar>
+    ) : null;
   };
 
   // ------------------------------------------------------------------ header
@@ -637,11 +780,11 @@ function ObjectPageInner(p: $ObjectPageSettings & { registerNavigate(fn: (m: Mes
     const customSub = (key: string, s: ManifestSubSection, title: string | undefined, base?: KSub): KSub | undefined => {
       if (!evaluate(s.visible, data)) return undefined;
       const main = s.template ? s.template(data) : base?.content;
-      const actions = s.actions ? withCustomActions([], s.actions, 'default') : [];
+      const toolbar = sectionToolbar(s.actions, s.overflowGroups);
       const side = s.sideContent && sideShown[key] ? s.sideContent.template(data) : undefined;
       const content = (
         <div className={['sk-custom-subsection', side ? 'sk-custom-subsection--side' : '', s.sideContent?.equalSplit ? 'sk-custom-subsection--equal' : ''].filter(Boolean).join(' ')} data-sk-custom-subsection={key}>
-          {actions.length ? <Group justify="flex-end" gap="xs" className="sk-custom-subsection__actions" data-sk-subsection-actions>{actions.map((a) => a.node)}</Group> : null}
+          {toolbar}
           <div className="sk-custom-subsection__body">
             <div className="sk-custom-subsection__main">{main}</div>
             {side ? <aside className="sk-side-content" aria-label={title} data-sk-side-content={key}>{side}</aside> : null}
@@ -669,49 +812,45 @@ function ObjectPageInner(p: $ObjectPageSettings & { registerNavigate(fn: (m: Mes
       // "Routing" of smart-kit: a `navigation` entry, else the host's NavigationAdapter has an object page.
       const routed = navEntry ? Boolean(navEntry.detail) : Boolean(target && navigation?.hasObjectPage?.(target, service.name));
       const aggregations = tableAggregationsOf(cfg);
-      return (
-        <Table
-          key={sub.id}
-          service={p.service}
-          contextPath={`/${entitySet}/${nav}`}
-          bindingContext={readPath}
-          header={ts?.header ?? label(sub)}
-          headerVisible={ts?.headerVisible}
-          headerLevel={`H${Math.min(6, level)}` as `H${3 | 4 | 5 | 6}`}
-          pageKey={`${pageKey}:${sub.id}`}
-          type={ts?.type === 'TreeTable' ? undefined : ts?.type}
-          selectionMode={ts?.selectionMode}
-          enableExport={ts?.enableExport}
-          exportFileName={ts?.exportFileName}
-          exportSheetName={ts?.exportSheetName}
-          exportRequestSize={ts?.exportRequestSize}
-          disableCopyToClipboard={ts?.disableCopyToClipboard}
-          enableFullScreen={ts?.enableFullScreen}
-          personalization={personalizationOf(ts?.personalization)}
-          rowCountMode={ts?.rowCountMode}
-          selectionLimit={ts?.selectionLimit}
-          frozenColumnCount={ts?.frozenColumnCount}
-          disableColumnFreeze={ts?.disableColumnFreeze}
-          widthIncludingColumnHeader={ts?.widthIncludingColumnHeader}
-          condensedTableLayout={ts?.condensedTableLayout}
-          popinLayout={ts?.popinLayout}
-          threshold={ts?.threshold}
-          scrollThreshold={ts?.scrollThreshold}
-          ignoredFields={ts?.ignoredFields}
-          isSearchable={ts?.isSearchable ?? true}
-          modeForNoDataMessage={p.useTextForNoDataMessages ? 'text' : 'illustratedMessage-ExtraSmall'}
-          columns={aggregations.columns}
-          actions={aggregations.actions}
-          actionGroups={aggregations.actionGroups}
-          onRowPress={ts?.rowPress ?? (p.onRowNavigate ? (e) => p.onRowNavigate!(e.bindingContext.getObject(), e.bindingContext.getPath().slice(1)) : undefined)}
-          onSelectionChange={ts?.selectionChange}
-          navigable={p.onRowNavigate || ts?.rowPress ? true : routed}
-          readOnly={!editing || Boolean(ts?.readOnly)}
-          creationMode={{ name: creationModeOf(ts, routed) === 'CreationDialog' ? 'CreationDialog' : 'Inline' }}
-          growingScrollToLoad={useIconTabBar && last}
-          showAllThreshold={p.showAllThreshold}
-        />
-      );
+      const creation = creationModeOf(ts, routed) === 'CreationDialog' ? 'CreationDialog' : 'Inline';
+      // quickVariantSelection (FE QuickFilter); hideTableTitle hides the title while there are quick filters
+      const quick = ts?.quickVariantSelection;
+      const settings: Omit<$TableSettings, 'type' | 'ref'> = {
+        // the settings the list report maps the same way (FE getTableManifestConfiguration); mass edit saves in one change set
+        ...tableSettingsOf(ts ?? {}, { massEditGrouping: 'ChangeSet' }),
+        service: p.service,
+        contextPath: `/${entitySet}/${nav}`,
+        bindingContext: readPath,
+        header: ts?.header ?? label(sub),
+        headerVisible: ts?.headerVisible === false || (quick?.hideTableTitle && quick.paths.length > 0) ? false : undefined,
+        headerLevel: `H${Math.min(6, level)}` as `H${3 | 4 | 5 | 6}`,
+        pageKey: `${pageKey}:${sub.id}`,
+        // FE: "Control" gives every sub-table its own variant management (findVariantManagement); "None" none
+        variantManagement: p.variantManagement === 'Control' ? 'Control' : undefined,
+        rowCountMode: ts?.rowCountMode,
+        rowCount: ts?.rowCount,
+        threshold: ts?.threshold,
+        scrollThreshold: ts?.scrollThreshold,
+        isSearchable: ts?.isSearchable ?? true,
+        quickVariantSelection: quick ? { paths: quick.paths.map((x) => x.annotationPath), showCounts: quick.showCounts } : undefined,
+        additionalProperties: ts?.additionalProperties,
+        modeForNoDataMessage: p.useTextForNoDataMessages ? 'text' : 'illustratedMessage-ExtraSmall',
+        columns: aggregations.columns,
+        actions: aggregations.actions,
+        actionGroups: aggregations.actionGroups,
+        extend: aggregations.extend,
+        actionOverflowGroups: aggregations.actionOverflowGroups,
+        onRowPress: ts?.rowPress ?? (p.onRowNavigate ? (e) => p.onRowNavigate!(e.bindingContext.getObject(), e.bindingContext.getPath().slice(1)) : undefined),
+        onSelectionChange: ts?.selectionChange,
+        navigable: p.onRowNavigate || ts?.rowPress ? true : routed,
+        readOnly: !editing || Boolean(ts?.readOnly),
+        creationMode: { name: creation, creationFields: creation === 'CreationDialog' ? ts?.creationMode?.creationFields : undefined, createAtEnd: ts?.creationMode?.createAtEnd },
+        growingScrollToLoad: useIconTabBar && last,
+        showAllThreshold: p.showAllThreshold,
+      };
+      return ts?.type === 'TreeTable'
+        ? <TreeTable key={sub.id} {...settings} disableLeafSelection={ts.disableLeafSelection} hierarchyQualifier={ts.hierarchyQualifier} />
+        : <Table key={sub.id} {...settings} type={ts?.type} />;
     };
     /**
      * The content of an annotation sub-section (FE SectionContent): a form (its containers with UI.PartOfPreview false
@@ -769,7 +908,7 @@ function ObjectPageInner(p: $ObjectPageSettings & { registerNavigate(fn: (m: Mes
         if (!evaluate(s.visible, data)) return undefined;
         const subs = s.subSections
           ? insertByPosition<KSub, ManifestSubSection>([], s.subSections, (k, c) => customSub(k, c, c.title))
-          : [customSub(key, { template: s.template, actions: s.actions, isPartOfPreview: s.isPartOfPreview }, s.title)].filter((x): x is KSub => Boolean(x));
+          : [customSub(key, { template: s.template, actions: s.actions, overflowGroups: s.overflowGroups, isPartOfPreview: s.isPartOfPreview }, s.title)].filter((x): x is KSub => Boolean(x));
         return { key, id: key, title: s.title ?? key, messageStrip: s.messageStrip, subSections: subs };
       },
       (section, s) => {
@@ -854,10 +993,15 @@ function ObjectPageInner(p: $ObjectPageSettings & { registerNavigate(fn: (m: Mes
   const editVisible = editable && !editing && !refTrue(caps.updateHidden) && !ownDraft;
   const deleteVisible = deletable && (viewLevel > 1 ? editing : !editing) && !refTrue(caps.deleteHidden);
   const deleteEnabled = (!caps.deletablePath || isTrue(data, caps.deletablePath)) && !(setModel.draft?.root && draftAdmin?.InProcessByUser);
-  const headerActions = withCustomActions([
+  // FE Actions.fragment.xml: Edit "High", the other header actions "Low" unless `priority` is set
+  const headerAnnotation = (a: ActionModel, text?: string) => {
+    const item = annotationAction(a, { text, priority: 'Low' });
+    return item ? [{ ...item, annotation: a, annotationText: text }] : [];
+  };
+  const headerPlaced = placeActions([
     ...(showDraftSwitch ? [{
       key: 'DraftActions',
-      node: (
+      render: () => (
         <Menu key="DraftActions" position="bottom-end">
           <Menu.Target>
             <Button variant="subtle" rightSection={<span aria-hidden>▾</span>} data-sk-action="SwitchDraftAndActiveObject">{editing ? t('draft.switchDraft') : t('draft.switchSavedVersion')}</Button>
@@ -869,16 +1013,12 @@ function ObjectPageInner(p: $ObjectPageSettings & { registerNavigate(fn: (m: Mes
         </Menu>
       ),
     }] : []),
-    ...headerModelActions.filter(isCriticalAction).map((a) => annotationButton(a, 'subtle')),
-    ...(editVisible ? [{ key: 'EditAction', node: <Button key="EditAction" variant="filled" disabled={busy || !obj.data} onClick={() => void startEdit()} data-sk-action="Edit">{t('actions.edit')}</Button> }] : []),
-    ...(deleteVisible ? [{ key: 'DeleteAction', node: <Button key="DeleteAction" variant="subtle" disabled={!deleteEnabled} onClick={() => setConfirm('delete')} data-sk-action="Delete">{t('actions.delete')}</Button> }] : []),
-    ...(copyAction ? [annotationButton(copyAction, 'subtle', copyAction.label || t('actions.copy'))] : []),
-    ...headerModelActions.filter((a) => !isCriticalAction(a)).map((a) => annotationButton(a, 'subtle')),
-  ], header?.actions, 'subtle');
-  const actions = [
-    ...headerActions.map((a) => a.node),
-    <Pinned key="Share" layoutData={{ priority: 'NeverOverflow' }}><Share title={heading} href={navigation?.href?.({ kind: 'object', path: activePath, service: service.name })} /></Pinned>,
-  ];
+    ...headerModelActions.filter(isCriticalAction).flatMap((a) => headerAnnotation(a)),
+    ...(editVisible ? [{ key: 'EditAction', priority: 'High' as const, render: (v: Variant) => <Button key="EditAction" variant={v} disabled={busy || !obj.data} onClick={() => void startEdit()} data-sk-action="Edit">{t('actions.edit')}</Button> }] : []),
+    ...(deleteVisible ? [{ key: 'DeleteAction', priority: 'Low' as const, render: (v: Variant) => <Button key="DeleteAction" variant={v} disabled={!deleteEnabled} onClick={() => setConfirm('delete')} data-sk-action="Delete">{t('actions.delete')}</Button> }] : []),
+    ...(copyAction ? headerAnnotation(copyAction, copyAction.label || t('actions.copy')) : []),
+    ...headerModelActions.filter((a) => !isCriticalAction(a)).flatMap((a) => headerAnnotation(a)),
+  ], header?.actions, 'Low');
 
   const message = typeof p.headerMessage === 'function' ? p.headerMessage(data) : p.headerMessage;
   const errorStrip = obj.error && !creating ? (
@@ -893,25 +1033,43 @@ function ObjectPageInner(p: $ObjectPageSettings & { registerNavigate(fn: (m: Mes
   // FE getFooterDefaultActions: the critical determining actions, SaveAction, the other determining actions,
   // CancelAction (position End). The determining actions are shown in display and in edit mode (disabled while
   // Core.OperationAvailable is false); Save and Cancel only while editing.
-  const footerItems = withCustomActions([
-    ...footerActions.filter(isCriticalAction).map((a) => annotationButton(a, 'default')),
-    ...(editing ? [{ key: 'SaveAction', node: <Button key="SaveAction" onClick={() => void save()} loading={busy} data-sk-save>{creating ? t('actions.create') : t('edit.save')}</Button> }] : []),
-    ...footerActions.filter((a) => !isCriticalAction(a)).map((a) => annotationButton(a, 'default')),
+  const footerAnnotation = (a: ActionModel) => {
+    const item = annotationAction(a);
+    return item ? [{ ...item, annotation: a }] : [];
+  };
+  const footerPlaced = placeActions([
+    ...footerActions.filter(isCriticalAction).flatMap(footerAnnotation),
+    ...(editing ? [{ key: 'SaveAction', render: (v: Variant) => <Button key="SaveAction" variant={v} onClick={() => void save()} loading={busy} data-sk-save>{creating ? t('actions.create') : t('edit.save')}</Button> }] : []),
+    ...footerActions.filter((a) => !isCriticalAction(a)).flatMap(footerAnnotation),
     ...(editing ? [{
       key: 'CancelAction',
-      node: (
+      render: () => (
         <Button key="CancelAction" variant="default" onClick={() => (session?.draft || session?.changed.size || creating ? setConfirm('discard') : void discard())} data-sk-cancel>
           {session?.draft ? t('edit.discardDraft') : t('edit.cancel')}
         </Button>
       ),
     }] : []),
-  ], customFooter, 'default');
+  ], customFooter);
+  // FE applyObjectPageEmphasisRules (header, footer, criticality) with the templates' Edit and Save expressions
+  const emphasis = objectPageEmphasis(headerPlaced, footerPlaced, { footerShown: editing || footerPlaced.length > 0 });
+  const footerItems = toolbarItems(footerPlaced, {
+    variant: 'default', overflowGroups: p.content?.footer?.overflowGroups, first: emphasis.footer, emphasize: (a) => a.key === 'SaveAction' && emphasis.save,
+  });
   const footer = editing || footerItems.length || messages.messages.length ? (
     <Group justify="space-between" wrap="nowrap" data-sk-footer>
-      <Group gap="xs"><MessageButton />{editing && session?.draft && draftStatus ? <Text size="sm" c="dimmed" role="status" data-sk-draft-status>{draftStatus === 'saving' ? t('edit.draftSaving') : t('edit.draftSaved')}</Text> : null}</Group>
-      <Group gap="xs" wrap="nowrap">{footerItems.map((a) => a.node)}</Group>
+      <Group gap="xs" wrap="nowrap"><MessageButton />{editing && session?.draft && draftStatus ? <Text size="sm" c="dimmed" role="status" data-sk-draft-status>{draftStatus === 'saving' ? t('edit.draftSaving') : t('edit.draftSaved')}</Text> : null}</Group>
+      {footerItems.length ? <OverflowToolbar design="Transparent" style="Clear" className="sk-object-footer__toolbar">{footerItems}</OverflowToolbar> : null}
     </Group>
   ) : undefined;
+  // The header's OverflowToolbar: the emphasized-first action (draft: after the draft switch, FE Actions.fragment.xml),
+  // the actions with separators (FE addSeparators), Share with `shareOverflowPriority` (macro:Share priority)
+  const actions = [
+    ...toolbarItems(headerPlaced, {
+      variant: 'subtle', overflowGroups: header?.overflowGroups, first: emphasis.header, firstAfter: draftEnabled && showDraftSwitch ? 'DraftActions' : undefined,
+      emphasize: (a) => a.key === 'EditAction' && emphasis.edit, templates: true,
+    }),
+    <ToolbarSlot key="Share" layoutData={{ priority: p.shareOverflowPriority ?? 'High' }}><Share title={heading} href={navigation?.href?.({ kind: 'object', path: activePath, service: service.name })} /></ToolbarSlot>,
+  ];
 
   // The draft indicator reads who changed the draft and when as its popover opens (FE DraftIndicator; the page selects
   // only DraftIsCreatedByMe, DraftUUID and InProcessByUser).
@@ -985,9 +1143,4 @@ function ObjectPageInner(p: $ObjectPageSettings & { registerNavigate(fn: (m: Mes
       </Modal>
     </div>
   );
-}
-
-/** A title action that never moves into the overflow (the OverflowToolbar reads `layoutData` from its children). */
-function Pinned({ children }: { children: ReactNode; layoutData?: OverflowToolbarLayoutData }) {
-  return <>{children}</>;
 }

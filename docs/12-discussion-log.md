@@ -920,3 +920,24 @@ ADR-027 定的范围是"只实现 smart-kit 会发的请求"，用户也定过�
 6. **测试**：对象页组把锚点和标题去重的 e2e 改用联系人页（"Activity"有两个子区块），PostgreSQL 测试库没有联系人实体集，这几步在 `e2e:pg` 里跳过（`ON_PG`）；FE 对比里 `$select` 多出的字段（懒加载子区块、代码表文本）和已登记的条目同因，补登 `DV-op6-013`、`014`、`DV-macros6-l36`。
 
 **偏差登记**：合并后 `check:ui5` 256 个映射导出、0 未登记、0 过期；AL-13 ListReport 333 项、ObjectPage 382 项，0 未登记。按类别：react-idiom 88、kit-extension 186、no-binding 95、different-value 53、not-implemented 135、fe-behavior 6。检查：单测 981、e2e 211、e2e:pg 148（2 个跳过）、FE 对比 101 个场景、trace 全部通过。
+
+## D48 对齐阶段 7：收尾、偏差表定稿和迁移清单（2026-11-18）
+
+**问题**：按 `31` 阶段 7：迁移清单（`25`）整理完整；`deviations.json` 只剩 `kit-extension`、`react-idiom`、`no-binding` 和用户确认保留的条目（AL-31）；写总结报告。按 D44，保留哪些由我按建议决定，记在这里。
+
+**做法**：先把还能做的实现掉：对象页（op7：子表设置和列表页共用 `templates/tableManifest.tsx`；页头、页脚、区块工具栏的优先级、分组、分隔线、默认动作、主动作强调按 FE `applyObjectPageEmphasisRules`；`shareOverflowPriority`；`defaultValuesFunction`、`afterExecution`）、列表页（lr7：表格动作组的默认动作、工具栏自定义内容、列覆盖、`showDataFieldsLabel`、单元格合并、导出设置、`aiNotice`、`useSemanticDateRange`、筛选字段的运算符配置）、动作参数对话框（param7，S27）、没有筛选限制的日期字段的运算符（date7，按真 FE 核对）。对象页 `variantManagement: 'Control'`（阶段 5 声明了但没读，D46 记过）传给子表。FE 只接受、不起作用的设置（如图表和表格工具栏的 `isPrimaryAction`、表格列顶层的 `mergeCells`、列表页 `customValidationFunction`、对象页非表格动作的 `requiresSelection`）照 FE 声明、不起作用，不再登记。再把依赖 SAP 运行时的 `different-value` 改为 `no-binding`（15 条：启动台导航、深链接和路由、分享菜单、Insights、语义对象目标、启动台用户默认值等，D42）。
+
+**动作参数对话框（S27，按建议）**：按 FE `OperationParameterDialog` / `ActionRuntime` / `ODataOperation`：必填只看 `Common.FieldControl` Mandatory、不看 `Nullable`（FE `isRequiredExpression`）；标签没有 `Common.Label` 时用参数名原样；FE 场景 `param7-dialog` 无差异。没做的：集合参数（MultiValueField）、`UI.OperationParameterFacets`、`Edm.Stream` 参数上传、布尔参数的是 / 否下拉（smart-kit 是复选框）。
+
+**保留的条目（按建议，`decision: "D48"`）**：每条在 `deviations.json` 里写了具体原因；`tests/unit/deviations-final.test.ts`（AL-31）检查表里只剩允许的类别和带决定的条目。分组：
+1. **有意的设计**：`MessageView` / `MessagePopover` 的 `asyncURLHandler`、`urlValidated`（smart-kit 不解析 HTML，安全设计，docs/26）；列表页 `navigationProperties`（FE 的旧名，`navigationPropertiesForPersonalization` 已做）；`SortPanel` / `GroupPanel.setP13nData`（1.154 的 api.json 误标为 static，源码是实例方法）。
+2. **请求更少或更稳的不照抄**（`fe:` 场景）：对象页懒加载子区块的分开请求（smart-kit 首个请求读出）；页头评分、微图的 `$expand`（ADR-025 的请求形状）；固定值列表的令牌文本（FE 每个值一次请求，smart-kit 一次读代码表）；切换无排序视图时 FE 多发的一次请求；FE 参考应用自定义列片段的空值；CLDR 时区译名。
+3. **需要可维护的层级**：树表节点的移动、复制、新建子节点（`Hierarchy.RecursiveHierarchyActions`、`ChangeNextSiblingAction`、`_Parent` 写回；测试服务和 FE 参考应用都没有可编辑的树）。
+4. **需要非活动上下文或逐字段提交**：对象页子表的新建行（InlineCreationRows）；`inlineEdit`（列表页、对象页）。
+5. **需要新的大块功能**：可视化筛选栏（`compactvisual`）；区间筛选字段；AddViaValueHelp；严格处理（`Prefer: handling=strict` 和 412 确认）；表单容器工具栏（`facetName` + `inline`）；区块里的注解动作和 `horizontalLayout` 的嵌套字段组；代码表和小数点对齐；`Edm.Stream` 上传；联系人弹出框的全部电话和地址；引用服务的 `ValueListRelevantQualifiers`；参数化实体集结果行的对象页。
+6. **控件形态（react-idiom）**：没有筛选限制的日期字段，FE 是 MultiInput 加"定义条件"对话框，smart-kit 是日期区间选择器加条件；运算符和请求已和 FE 相同（date7 场景）。
+7. **网格的行模型**：后续块的 `$top`（AG Grid 无限行模型按对齐的块读取）。
+
+这些都不影响同一注解下已经实现的部分；以后要做，按条目里写的前提一项项做。
+
+**结果**：偏差表 469 条：kit-extension 186、react-idiom 88、no-binding 121；按本条保留 74 条（not-implemented 49、different-value 19、fe-behavior 6）。AL-13：ListReport 333 项、ObjectPage 382 项，0 未登记。检查：单测 1027、e2e 211、e2e:pg 148（2 个跳过）、FE 对比 111 个场景、trace 22/22、`verify:pack`、`gen-agent-docs --check` 全部通过。对齐的 8 个阶段全部完成；是否发 1.0、何时迁移 invoice-assure 由用户决定。

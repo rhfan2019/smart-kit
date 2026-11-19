@@ -1,7 +1,7 @@
 /** Public API of @rhfan2019/smart-kit-core. Everything exported here is listed in docs/api.md. */
 export { MODEL_VERSION } from './model/types';
 export type {
-  ActionModel, AggregationModel, ChartModel, DraftModel, EventModel, Importance, PresentationVariantModel, ViewModel,
+  ActionModel, ActionParameterModel, AggregationModel, ChartModel, DraftModel, EventModel, Importance, PresentationVariantModel, ViewModel,
   CapabilityModel, ColumnModel, Criticality, CriticalityCalculationModel, ImprovementDirection, DataPointModel, EdmType, EntitySetModel, EntityTypeModel, EntityUi, FieldModel,
   FilterExpression, FormGroupModel, HeaderFacetModel, HeaderInfoModel, InitialCondition, MetaModel, ModelWarning, NavigationModel,
   PresentationModel, PropertyModel, RecursiveHierarchyModel, TrendCalculationModel, SectionModel, SubSectionContent, SubSectionModel, TextArrangement, ValueListModel,
@@ -10,6 +10,10 @@ export type {
 export { buildModel, resolvePath, parseAnnotationPath, DEFAULT_CAPABILITIES, type BuildModelOptions } from './model/buildModel';
 export { DERIVED_GENERAL_SECTION, deriveColumns } from './model/derive';
 export { humanize } from './model/labels';
+export {
+  actionParameterBody, actionParameterDefaults, actionParameterErrors, actionParameterState, skipsParameterDialog,
+  type ActionParameterState,
+} from './model/actionParameters';
 export { arrangeText, valueListTextArrangement } from './model/textArrangement';
 export { readValueListService, referencedValueLists, resolveValueListReference, serviceRootOf, type ValueListService } from './model/valueListReferences';
 export { calculateCriticality, calculateTrend } from './model/criticality';
@@ -23,7 +27,7 @@ export {
   COUNT_DATE_OPERATORS, FIXED_DAY_OPERATORS, setDefaultWeekStart, MDC_DATE_OPERATORS, relativeDateValueTypes, type FixedDayOperator,
   type Condition, type FilterState, type Operator, type ValueOperator, type RelativeDateOperator, type FilterOptions,
 } from './conditions/conditions';
-export { filterExpressionRules, conditionAllowed, restrictConditions, strictestExpression, ALLOWED_EXPRESSIONS_PRIORITY, type FilterExpressionRules } from './conditions/filterExpressions';
+export { filterExpressionRules, conditionAllowed, restrictConditions, strictestExpression, ALLOWED_EXPRESSIONS_PRIORITY, type FilterExpressionRules, type FilterOperatorOptions, type OperatorConfiguration } from './conditions/filterExpressions';
 export { toLiteral, LiteralError } from './query/literals';
 export {
   keyPredicate, parseEntityPath, resolveEntityPath, entityPathOf, childPathOf, EntityPathError,

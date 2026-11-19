@@ -1,8 +1,8 @@
 /* global sap */
-// Starts the component chosen in index.html (?app=purchasing | purchasing-draft | purchasing-chart | purchasing-views | purchasing-analytical | purchasing-display | purchasing-params | purchasing-op).
+// Starts the component chosen in index.html (?app=purchasing | purchasing-draft | purchasing-chart | purchasing-views | purchasing-analytical | purchasing-display | purchasing-params | purchasing-op | purchasing-op7).
 sap.ui.define(['sap/ui/core/ComponentContainer'], function (ComponentContainer) {
   'use strict';
-  var name = { 'purchasing-draft': 'fe.ref.purchasingdraft', 'purchasing-chart': 'fe.ref.purchasingchart', 'purchasing-views': 'fe.ref.purchasingviews', 'purchasing-analytical': 'fe.ref.purchasinganalytical', 'purchasing-display': 'fe.ref.purchasingdisplay', 'purchasing-params': 'fe.ref.purchasingparams', 'purchasing-op': 'fe.ref.purchasingop' }[window.feReferenceApp] || 'fe.ref.purchasing';
+  var name = { 'purchasing-draft': 'fe.ref.purchasingdraft', 'purchasing-chart': 'fe.ref.purchasingchart', 'purchasing-views': 'fe.ref.purchasingviews', 'purchasing-analytical': 'fe.ref.purchasinganalytical', 'purchasing-display': 'fe.ref.purchasingdisplay', 'purchasing-params': 'fe.ref.purchasingparams', 'purchasing-op': 'fe.ref.purchasingop', 'purchasing-op7': 'fe.ref.purchasingop7' }[window.feReferenceApp] || 'fe.ref.purchasing';
   new ComponentContainer({
     id: 'container',
     name: name,

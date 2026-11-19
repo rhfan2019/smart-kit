@@ -10,6 +10,7 @@ import {
   arrangeText, conditionAllowed, filterExpressionRules, getProperty, isComplete, isRelativeDateOperator, valueListTextArrangement,
   type Condition, type PropertyModel, type TextArrangement,
 } from '@rhfan2019/smart-kit-core';
+import { displayProperty, useFilterOperatorOptions } from './filterOperators';
 import dayjs from 'dayjs';
 import { Copy } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
@@ -70,7 +71,8 @@ export function ConditionInput(p: ConditionInputProps) {
   const t = useFilterText();
   const typeName = service.model.entitySets[p.entitySet]!.typeName;
   const prop = getProperty(service.model, typeName, p.path);
-  const rules = filterExpressionRules(service.model.entitySets[p.entitySet]!.capabilities.filterExpressions[p.path], prop?.edmType);
+  const fieldOptions = useFilterOperatorOptions(p.path);
+  const rules = filterExpressionRules(service.model.entitySets[p.entitySet]!.capabilities.filterExpressions[p.path], prop?.edmType, fieldOptions);
   const [rejected, setRejected] = useState(false);
   const [typed, setTyped] = useState('');
   // A range being picked (first date chosen, second not yet): kept locally, not written to the conditions, so that the
@@ -202,7 +204,7 @@ export function ConditionInput(p: ConditionInputProps) {
 
   const tokens = p.conditions.map((c) => {
     const text = c.text ?? (c.operator === 'EQ' && !c.exclude ? descriptions[String(c.values[0])] : undefined);
-    return conditionText(text === undefined ? c : { ...c, text }, prop, intlLocale, timeZone, { t, textArrangement: arrangement });
+    return conditionText(text === undefined ? c : { ...c, text }, displayProperty(prop, fieldOptions), intlLocale, timeZone, { t, textArrangement: arrangement });
   });
   const suggestionRows = (vl?.fixedValues ? fixed.data?.rows : suggest.data?.rows) ?? [];
   const suggestions = suggestionRows.map(describe);

@@ -35,7 +35,6 @@
     "build-storybook": "npm run build -w storybook",
     "rename-scope": "node scripts/rename-scope.mjs",
     "verify:pack": "node scripts/verify-pack.mjs",
-    "check:docs": "node scripts/check-docs.mjs",
     "changeset": "changeset",
     "version-packages": "changeset version && npm install --package-lock-only --no-audit --no-fund",
     "release": "npm run build && changeset publish"

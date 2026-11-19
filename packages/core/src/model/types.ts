@@ -312,8 +312,33 @@ export interface ActionModel {
   hidden?: string;
   /** UI.Emphasized of the record (FE HeaderAndFooterAction getDataFieldAnnotationAction: emphasized when there is no Criticality). */
   emphasized?: boolean;
-  /** Non-binding parameters. */
-  parameters: { name: string; edmType: EdmType; label: string; nullable: boolean }[];
+  /** Non-binding parameters (FE OperationParameterDialog: one field each). */
+  parameters: ActionParameterModel[];
+}
+
+/**
+ * A non-binding parameter of an action, as the FE parameter dialog reads it (sap.fe.macros.coreUI.OperationParameterDialog
+ * createFormElement): its annotations target `Namespace.action/Parameter` or, for one overload,
+ * `Namespace.action(Namespace.Type)/Parameter` (the overload-specific ones win, as the annotation converter merges them).
+ */
+export interface ActionParameterModel {
+  name: string;
+  edmType: EdmType;
+  /** Common.Label; else the parameter name (FE createFormElement). */
+  label: string;
+  /** Nullable of the parameter (CSDL default true); FE sends type defaults for empty non-nullable ones (ODataOperation setParametersValue). */
+  nullable: boolean;
+  /** A Collection(…) parameter (FE: a multi-value field). */
+  collection?: boolean;
+  /**
+   * The parameter as a property: edit control by Edm type and annotations (Common.ValueList, ValueListWithFixedValues,
+   * UI.MultiLineText, UI.Placeholder, Common.Text / UI.TextArrangement), Common.FieldControl (Mandatory: required,
+   * ReadOnly, Inapplicable), Core.Computed / Immutable (read-only) and UI.Hidden. Paths of the bound entity have the
+   * binding parameter removed ("_it/X" → "X").
+   */
+  property?: PropertyModel;
+  /** UI.ParameterDefaultValue: a constant, or a path of the bound entity (binding parameter removed). */
+  defaultValue?: ValueRef;
 }
 
 /** UI.Chart (ADR-021). */

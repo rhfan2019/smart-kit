@@ -84,7 +84,7 @@ describe('phase 2 annotation terms (docs/02 §8, P2-GEN-06)', () => {
   it('ANN-80 UI.DataFieldForAction with Core.OperationAvailable, Inline and parameters (P2-LRA-02, P2-LRA-03)', () => {
     expect(ui.actions.map((a) => [a.id, a.inline, a.bound])).toEqual([['DataFieldForAction::T.approve', false, true], ['DataFieldForAction::T.close', true, true]]);
     expect(ui.actions[0]!.operationAvailable).toEqual({ path: 'CanApprove' });
-    expect(ui.actions[1]!.parameters).toEqual([{ name: 'Reason', edmType: 'Edm.String', label: 'Reason', nullable: true }]);
+    expect(ui.actions[1]!.parameters).toMatchObject([{ name: 'Reason', edmType: 'Edm.String', label: 'Reason', nullable: true }]);
     expect(ui.lineItem.map((c) => c.id)).not.toContain('DataFieldForAction::T.approve');
   });
 

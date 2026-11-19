@@ -1,0 +1,6 @@
+---
+"@rhfan2019/smart-kit": minor
+"@rhfan2019/smart-kit-core": minor
+---
+
+SAPUI5 alignment, stage 7 (docs/31, D48). The remaining Fiori elements 1.154 settings that do not need the SAP runtime: object page sub-tables take the same table settings as the list report (shared mapping); header, footer and section toolbars use the FE overflow priorities, groups, separators, menu default actions and FE's emphasis rules (`isPrimaryAction`, UI.Emphasized, Criticality); `shareOverflowPriority`; action `defaultValuesFunction` and `afterExecution`; table action groups with `defaultAction` (split button), toolbar `template` content, column overrides, `showDataFieldsLabel`, cell merging, `exportSettings`, `aiNotice`; `useSemanticDateRange` and filter field `settings`. Behaviour as FE: date filter fields without `Capabilities.FilterExpressionRestrictions` offer only the basic operators (no relative dates); the action parameter dialog renders a field per parameter from its annotations (fixed values, value help, multi-line, `UI.ParameterDefaultValue`, `Common.FieldControl` Mandatory) and sends typed values; table micro charts show only the chart by default. smart-kit-core: `ActionParameterModel` and the action parameter helpers. See the migration list in docs/25.

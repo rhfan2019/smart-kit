@@ -61,6 +61,8 @@ export function PurchaseOrdersPage({ service = 'purchasing' }: { service?: strin
         // apps/fe-reference/webapp/ext/ExpandedHeader.fragment.xml, CollapsedHeader.fragment.xml (content › header › customHeader)
         'fe.ref.ext.ExpandedHeader': () => <span data-demo-expanded-header>Purchasing overview</span>,
         'fe.ref.ext.CollapsedHeader': () => <span data-demo-collapsed-header>Purchasing (collapsed)</span>,
+        // apps/fe-reference/webapp/ext/ToolbarNote.fragment.xml (table toolbar action `template`)
+        'fe.ref.ext.ToolbarNote': () => <span data-demo-toolbar-note>Toolbar note</span>,
       },
       handlers: {
         // apps/fe-reference/webapp/ext/CustomActions.js copy

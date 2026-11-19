@@ -142,10 +142,17 @@
 - `referencedValueLists`
 - `resolveValueListReference`
 - `serviceRootOf`
+- `actionParameterBody`
+- `actionParameterDefaults`
+- `actionParameterErrors`
+- `actionParameterState`
+- `skipsParameterDialog`
 
 ### 类型
 
 - `ActionModel`
+- `ActionParameterModel`
+- `ActionParameterState`
 - `AggregateMeasure`
 - `AggregateRequestOptions`
 - `AggregationModel`

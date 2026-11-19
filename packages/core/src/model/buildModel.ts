@@ -7,6 +7,7 @@ import { deriveColumns, deriveUi } from './derive';
 import {
   MODEL_VERSION,
   type ActionModel,
+  type ActionParameterModel,
   type AggregatedPropertyModel,
   type AggregationModel,
   type CapabilityModel,
@@ -219,17 +220,11 @@ export function fromConverted(c: ConvertedMetadata, diagnostics: string[] = []):
 
   // value list descriptions: the Common.Text of the key property in the value list entity (FE ValueListHelper _enrichPath)
   for (const type of Object.values(entityTypes)) {
-    for (const prop of Object.values(type.properties)) {
-      for (const vl of prop.valueLists ?? (prop.valueList ? [prop.valueList] : [])) {
-        const vhType = entitySets[vl.collectionPath]?.typeName;
-        const text = vhType ? resolvePath(entityTypes, vhType, vl.keyProperty).property?.text : undefined;
-        if (text) vl.descriptionProperty = vl.keyProperty.includes('/') ? `${vl.keyProperty.slice(0, vl.keyProperty.lastIndexOf('/'))}/${text}` : text;
-      }
-    }
+    for (const prop of Object.values(type.properties)) describeValueLists(prop, entityTypes, entitySets);
   }
 
   const ui: Record<string, EntityUi> = {};
-  const ctx: UiContext = { entityTypes, raw, warn };
+  const ctx: UiContext = { entityTypes, entitySets, raw, warn };
   for (const fullName of Object.keys(entityTypes)) ui[fullName] = buildUi(fullName, ctx);
   // Common.FilterDefaultValue of the parameters (FE FilterHelper: read on the parameter entity set as well)
   for (const es of Object.values(entitySets)) {
@@ -569,8 +564,18 @@ function buildCapabilities(cap: Any, _core: Any): { capabilities: CapabilityMode
 // ---------------------------------------------------------------------------------------------
 // UI description
 
+/** Sets the description property of a property's value lists: the Common.Text of the key property in the value list entity. */
+function describeValueLists(prop: PropertyModel, entityTypes: Record<string, EntityTypeModel>, entitySets: Record<string, EntitySetModel>) {
+  for (const vl of prop.valueLists ?? (prop.valueList ? [prop.valueList] : [])) {
+    const vhType = entitySets[vl.collectionPath]?.typeName;
+    const text = vhType ? resolvePath(entityTypes, vhType, vl.keyProperty).property?.text : undefined;
+    if (text) vl.descriptionProperty = vl.keyProperty.includes('/') ? `${vl.keyProperty.slice(0, vl.keyProperty.lastIndexOf('/'))}/${text}` : text;
+  }
+}
+
 interface UiContext {
   entityTypes: Record<string, EntityTypeModel>;
+  entitySets: Record<string, EntitySetModel>;
   raw: Record<string, Any>;
   warn: (code: string, message: string, target?: string, level?: ModelWarning['level']) => void;
 }
@@ -739,6 +744,44 @@ function actionPathRef(v: unknown, bindingName: string | undefined): ValueRef {
   return { value: bool(v, true) };
 }
 
+/**
+ * A non-binding action parameter (FE OperationParameterDialog createFormElement / createField): the parameter is read
+ * like a property (its annotations: value lists, fixed values, multi-line text, placeholder, field control, hidden);
+ * paths "_it/X" of the binding parameter become paths "X" of the bound entity.
+ */
+function buildActionParameter(p: Any, bindingName: string | undefined, ctx: UiContext): ActionParameterModel {
+  const strip = (path: string) => (bindingName && path.startsWith(`${bindingName}/`) ? path.slice(bindingName.length + 1) : path);
+  const name = String(p.name);
+  const label = str(p.annotations?.Common?.Label);
+  const property = buildProperty(p, [], {});
+  describeValueLists(property, ctx.entityTypes, ctx.entitySets);
+  property.label = label ?? name;
+  property.labelDerived = label === undefined;
+  // only UI.Hidden hides a parameter; FieldControl Hidden / Inapplicable disables it (FE createField, isDisabledExpression)
+  property.hidden = bool(p.annotations?.UI?.Hidden, false);
+  if (property.fieldControl && 'path' in property.fieldControl) property.fieldControl = { path: strip(property.fieldControl.path) };
+  if (property.hiddenPath) property.hiddenPath = strip(property.hiddenPath);
+  // UI.ParameterDefaultValue (FE getParameterDefaultValue): a path is read from the bound context(s), a constant as is
+  const dv: unknown = p.annotations?.UI?.ParameterDefaultValue;
+  const dvPath = pathOf(dv);
+  let defaultValue: ValueRef | undefined;
+  if (dvPath !== undefined) defaultValue = bindingName && dvPath.startsWith(`${bindingName}/`) ? { path: strip(dvPath) } : undefined;
+  else if (dv !== undefined && dv !== null) {
+    const o = dv as Any;
+    const c = typeof o === 'object' && (typeof o.isDecimal === 'function' ? o.isDecimal() : o.isDecimal) === true ? String(o.valueOf()) : primitive(dv);
+    if (c !== undefined) defaultValue = { value: c };
+  }
+  return {
+    name,
+    edmType: String(p.type),
+    label: label ?? name,
+    nullable: p.nullable !== false,
+    ...(p.isCollection ? { collection: true } : {}),
+    property,
+    ...(defaultValue ? { defaultValue } : {}),
+  };
+}
+
 /** The UI.DataFieldForActionGroup records of a collection: menu buttons (FE ActionType.Menu). */
 function buildActionGroups(records: unknown): { id: string; label: string; actions: string[] }[] {
   if (!Array.isArray(records)) return [];
@@ -808,12 +851,7 @@ function buildActions(records: unknown, scope: string, ctx: UiContext): ActionMo
       operationAvailable,
       ...(hidden ? { hidden } : {}),
       ...(bool(rec.annotations?.UI?.Emphasized, false) ? { emphasized: true } : {}),
-      parameters: params.slice(bound ? 1 : 0).map((p) => ({
-        name: String(p.name),
-        edmType: String(p.type),
-        label: str(p.annotations?.Common?.Label) ?? humanize(String(p.name)),
-        nullable: p.nullable !== false,
-      })),
+      parameters: params.slice(bound ? 1 : 0).map((p) => buildActionParameter(p, bindingName, ctx)),
     });
   }
   return uniqueIds(out, ctx, scope);

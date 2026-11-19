@@ -56,7 +56,7 @@ describe('relative dates in filter fields (S6)', () => {
   it('"last X days" takes the number of days', async () => {
     const user = userEvent.setup();
     const onChange = vi.fn();
-    render(wrap(<Field path="ChangedAt" onChange={onChange} />));
+    render(wrap(<Field path="ReleaseDate" onChange={onChange} />));
     await user.click(screen.getByRole('button', { name: 'Relative dates' }));
     const days = (await screen.findAllByLabelText('Number of days'))[0]!;
     fireEvent.change(days, { target: { value: '30' } });

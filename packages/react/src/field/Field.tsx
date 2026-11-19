@@ -8,6 +8,7 @@ import { arrangeText, createMessage, formatNumber, resolvePath, type FieldModel,
 import { AlertTriangle, CheckCircle2, Info, XCircle } from 'lucide-react';
 import { useCallback, useImperativeHandle, useMemo, useRef, useState, type ReactNode, type Ref } from 'react';
 import { MicroChartDrawing as MicroChart } from '../chart/MicroChart';
+import type { Size } from '../chart/microCore';
 import { chartHidden, chartProps } from '../chart/fromModel';
 import { useService, useSmartKit, useText } from '../context/SmartKitProvider';
 import type { MessageType } from '../controls/types';
@@ -127,8 +128,12 @@ export interface $FieldSettings {
   id?: string;
   /** Edit mode: show the label above the editor (dialogs). */
   showLabel?: boolean;
-  /** Rendered in a table cell: a micro chart without data leaves the cell empty (docs/15 MC-06). */
-  cell?: boolean;
+  /**
+   * Rendered in a table cell: a micro chart without data leaves the cell empty (docs/15 MC-06) and shows only the chart
+   * in size XS (FE MdcTableTemplate: showOnlyChart, size "XS"); responsive table columns pass the column's
+   * `settings.microChartSize` and `settings.showMicroChartLabel`.
+   */
+  cell?: boolean | { microChartSize?: string; showMicroChartLabel?: boolean };
   /**
    * Semantic objects of the field: one name or a stringified array ('["A","B"]'). They overwrite the
    * Common.SemanticObject of the property (FE Field: the value is a smart link to the targets of these semantic objects,
@@ -311,7 +316,11 @@ export function Field(props: $FieldSettings) {
     const fmt = (n: number) => formatNumber(String(n), intlLocale, digits !== undefined ? { min: digits, max: digits } : { max: 2 });
     return (
       <span className="sk-field sk-field--chart">
-        <MicroChart {...cp} label={props['aria-label'] ?? field.label} format={fmt} hideOnNoData={props.cell} size={props.cell ? 'XS' : undefined} />
+        <MicroChart
+          {...cp} label={props['aria-label'] ?? field.label} format={fmt} hideOnNoData={Boolean(props.cell)}
+          size={props.cell ? ((typeof props.cell === 'object' ? props.cell.microChartSize : undefined) ?? 'XS') as Size : undefined}
+          showLabels={props.cell ? typeof props.cell === 'object' && props.cell.showMicroChartLabel === true : undefined}
+        />
       </span>
     );
   }

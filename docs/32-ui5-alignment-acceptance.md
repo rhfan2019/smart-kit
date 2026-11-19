@@ -87,3 +87,6 @@
 | AL-11 | 6 | F、U | 同上 |
 | AL-12 | 6 | F、D | 对象页场景前 5 行和表单字段的文本；`29b` 第 4 节 P1、第 5 节 P2 有场景（核对：Claude，2026-11-18） |
 | AL-13 | 6 | F、S、U | `tests/e2e-fe/macros6-lr.spec.ts`（manifest 设置一一对应）；`check-manifest-settings.mjs`（ListReport 333 项、ObjectPage 382 项，0 未登记）；`macros6-lr`、`al-op6` 里 `AL-13` 开头的测试 |
+| AL-31 | 7 | D、S、U | `25` 的迁移清单（阶段 0～7 共 182 行，S24～S27 已关）；`tests/unit/deviations-final.test.ts`：偏差表只剩 `kit-extension`、`react-idiom`、`no-binding` 和带 `decision`（D48）的条目，决定都在 `12` 里（核对：Claude，2026-11-18） |
+| AL-32 | 7 | 全部 | 阶段 7 提交前：`typecheck`、`lint`、`build`、`size`、`test`、`gen-exports --check`、`gen-agent-docs --check`、`check:ui5`、`verify:pack`、`e2e`、`e2e:pg`、`e2e:fe`、`trace --strict` 全部通过 |
+| AL-10 | 7 | F、U | `tests/e2e-fe/op7.spec.ts`、`lr7.spec.ts`、`date7.spec.ts`、`param7.spec.ts`；`op7`、`lr7`、`date7`、`param7` 单测里 `AL-10` / `AL-11` / `AL-13` 开头的测试 |

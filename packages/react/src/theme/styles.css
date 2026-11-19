@@ -495,6 +495,9 @@ tr.sk-rtable__total > * { position: sticky; top: auto; bottom: 0; z-index: 2; bo
 /* stage 6 (macros6): toolbar separators of overflow groups (table, chart), the table's "Filtered By" bar, group rows */
 .sk-toolbar__separator { display: inline-block; align-self: stretch; min-height: 1.25rem; margin-inline-end: var(--sk-space-2); border-left: var(--sk-size-border) solid var(--sk-color-border); vertical-align: middle; }
 .sk-table__action, .sk-chartview__action { display: inline-flex; align-items: center; }
+.sk-table__overflow-content { padding: var(--sk-space-1) var(--sk-space-inset); }
+.sk-table__header-ai { display: inline-flex; align-items: center; gap: var(--sk-space-1); }
+.sk-pre-line { white-space: pre-line; }
 .sk-table__filter-info { padding: var(--sk-space-1) var(--sk-space-inset); background: var(--sk-color-info-wash); border-bottom: var(--sk-size-border) solid var(--sk-color-border); }
 .sk-table__group-label { display: inline-flex; align-items: center; gap: var(--sk-space-1); }
 .sk-chartview__body { position: relative; padding: var(--sk-space-4) var(--sk-space-inset); }
@@ -801,4 +804,5 @@ tr.sk-rtable__total > * { position: sticky; top: auto; bottom: 0; z-index: 2; bo
 .sk-table__row--success { box-shadow: inset 0.25rem 0 0 var(--sk-color-positive); }
 .sk-table__row--information { box-shadow: inset 0.25rem 0 0 var(--sk-color-info); }
 .sk-cell__group { display: flex; flex-direction: column; }
+.sk-cell__group-label { margin-inline-end: var(--sk-space-1); color: var(--sk-color-text-muted); }
 .sk-cell__connected { display: inline-flex; white-space: nowrap; }

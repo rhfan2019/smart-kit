@@ -1463,7 +1463,7 @@ const default: Theme<ThemeDefaultParams>
 
 ## `@rhfan2019/smart-kit/kit/useActionRunner`
 
-`ActionResult` (interface) · `ActionRunner` (interface) · `ActionTarget` (interface) · `default` (hook)
+`ActionResult` (interface) · `ActionRunner` (interface) · `ActionRunOptions` (interface) · `ActionTarget` (interface) · `default` (hook)
 
 ### `ActionResult` — interface
 
@@ -1478,9 +1478,18 @@ const default: Theme<ThemeDefaultParams>
 
 | Member | Required | Type | Description |
 | --- | --- | --- | --- |
-| `run` | **yes** | `(action: ActionModel, targets: ActionTarget[]) => void` |  |
+| `run` | **yes** | `(action: ActionModel, targets: ActionTarget[], options?: ActionRunOptions) => void` |  |
 | `busy` | **yes** | `boolean` |  |
 | `dialogs` | **yes** | `ReactNode` | Dialogs (partial processing, parameters); render once. |
+
+### `ActionRunOptions` — interface
+
+Options of one run (FE invokeAction parameters of a manifest-configured annotation action).
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `defaultValues` |  | `() => Row \| Promise&lt;Row>` | Default values of the parameter dialog by parameter name (FE `defaultValuesFunction`); they win over the others. |
+| `onDone` |  | `(r: ActionResult) => void` | Called after this run, before the runner's own `onDone`. |
 
 ### `ActionTarget` — interface
 
@@ -1614,6 +1623,7 @@ default(entitySet: string, o?: UseFilterStateOptions): FilterStateApi
 | `applied` | **yes** | `AppliedFilter \| null` | Last executed query; null until "Go" (or auto-execution) happened. |
 | `service` |  | `string` |  |
 | `searchable` |  | `boolean` | Set to false by the list report when its table cannot search (FE hides the basic search of the filter bar then: an AnalyticalTable without `search` in ApplySupported/Transformations). |
+| `operatorOptions` |  | `FilterOperatorOptionsOf` | The operator options of the fields (`UseFilterStateOptions.operatorOptions`). |
 
 ### `UseFilterStateOptions` — interface
 
@@ -1625,6 +1635,8 @@ default(entitySet: string, o?: UseFilterStateOptions): FilterStateApi
 | `autoExecute` |  | `boolean` | Execute on load when no mandatory field is empty (default true). |
 | `liveMode` |  | `boolean` | Live update mode: apply changes automatically after a short delay (default false = manual "Go"). |
 | `liveDelay` |  | `number` | Delay of the live mode in ms. |
+| `operatorOptions` |  | `FilterOperatorOptionsOf` | Operator options per field (FE manifest `useSemanticDateRange`, filter field `settings.operatorConfiguration`): they restrict the operators of the bar's fields and the conditions set. |
+| `defaultConditions` |  | `FilterState` | Default conditions laid over the annotation defaults (FE filter field `settings.defaultValues`, FilterHelper getFilterConditions: the manifest value wins over the selection variant for the same property). |
 
 ## `@rhfan2019/smart-kit/kit/useListQuery`
 
@@ -7958,6 +7970,8 @@ A column (sap.m.Column) of the `columns` aggregation.
 | `popinDisplay` |  | `PopinDisplay` | How the pop-in shows header and value. |
 | `footer` |  | `ReactNode` | Footer of the column (sap.m.Column aggregation `footer`). |
 | `groupValue` |  | `(row: Row) => string` | Text of the grouping header (value of the group property; smart-kit addition). |
+| `mergeDuplicates` |  | `boolean` | A cell whose value equals the one of the row above (in the same group) is left empty; not in the pop-in. |
+| `mergeValue` |  | `(row: Row) => unknown` | The value compared by `mergeDuplicates` (React form of `mergeFunctionName`, which names a getter of the cell control; default "getText": the text of the cell). |
 
 ### `$ListItemActionSettings` — interface
 
@@ -12770,7 +12784,7 @@ A visualization of a PresentationVariant: the table's (Type "LineItem") or the c
 | `error` |  | `string` | Edit mode: error text from the page (validation, server messages that target the property). |
 | `id` |  | `string` | Edit mode: element id of the input. |
 | `showLabel` |  | `boolean` | Edit mode: show the label above the editor (dialogs). |
-| `cell` |  | `boolean` | Rendered in a table cell: a micro chart without data leaves the cell empty (docs/15 MC-06). |
+| `cell` |  | `boolean \| { microChartSize?: string; showMicroChartLabel?: boolean }` | Rendered in a table cell: a micro chart without data leaves the cell empty (docs/15 MC-06) and shows only the chart in size XS (FE MdcTableTemplate: showOnlyChart, size "XS"); responsive table columns pass the column's `settings.microChartSize` and `settings.showMicroChartLabel`. |
 | `semanticObject` |  | `string` | Semantic objects of the field: one name or a stringified array ('["A","B"]'). They overwrite the Common.SemanticObject of the property (FE Field: the value is a smart link to the targets of these semantic objects, from NavigationAdapter.semanticTargets, D42). |
 | `ref` |  | `Ref&lt;Field>` |  |
 
@@ -12797,7 +12811,7 @@ sap.fe.macros.Field Instance (ref) of a Field.
 | `error` |  | `string` | Edit mode: error text from the page (validation, server messages that target the property). |
 | `id` |  | `string` | Edit mode: element id of the input. |
 | `showLabel` |  | `boolean` | Edit mode: show the label above the editor (dialogs). |
-| `cell` |  | `boolean` | Rendered in a table cell: a micro chart without data leaves the cell empty (docs/15 MC-06). |
+| `cell` |  | `boolean \| { microChartSize?: string; showMicroChartLabel?: boolean }` | Rendered in a table cell: a micro chart without data leaves the cell empty (docs/15 MC-06) and shows only the chart in size XS (FE MdcTableTemplate: showOnlyChart, size "XS"); responsive table columns pass the column's `settings.microChartSize` and `settings.showMicroChartLabel`. |
 | `semanticObject` |  | `string` | Semantic objects of the field: one name or a stringified array ('["A","B"]'). They overwrite the Common.SemanticObject of the property (FE Field: the value is a smart link to the targets of these semantic objects, from NavigationAdapter.semanticTargets, D42). |
 | `ref` |  | `Ref&lt;Field>` |  |
 
@@ -13230,7 +13244,22 @@ sap.fe.macros.share.ShareOptions
 
 ## `@rhfan2019/smart-kit/v4/fe/macros/Table`
 
-`$ActionSettings` (interface) · `$AnalyticalConfigurationSettings` (interface) · `$ColumnSettings` (interface) · `$MassEditSettings` (interface) · `$OverflowGroupSettings` (interface) · `$QuickVariantSelectionSettings` (interface) · `$TableCreationOptionsSettings` (interface) · `$TableSettings` (interface) · `ActionGroup` (interface) · `ActionItem` (interface) · `ColumnItem` (interface) · `Context` (interface) · `default` (component) · `PresentationVariant` (interface) · `PresentationVariantVisualization` (interface) · `SelectionVariant` (interface) · `SelectionVariantRange` (interface) · `Table$BeforeExportEvent` (interface) · `Table$ExportedEvent` (type) · `Table$RowPressEvent` (interface) · `Table$SelectionChangeEvent` (interface) · `TableContextValue` (interface) · `TableExtendEntry` (type) · `TableQuery` (interface)
+`$ActionGroupSettings` (interface) · `$ActionSettings` (interface) · `$AnalyticalConfigurationSettings` (interface) · `$ColumnAINoticeSettings` (interface) · `$ColumnExportSettings` (interface) · `$ColumnSettings` (interface) · `$MassEditSettings` (interface) · `$OverflowGroupSettings` (interface) · `$QuickVariantSelectionSettings` (interface) · `$TableCreationOptionsSettings` (interface) · `$TableSettings` (interface) · `ActionGroup` (interface) · `ActionItem` (interface) · `ColumnItem` (interface) · `Context` (interface) · `default` (component) · `PresentationVariant` (interface) · `PresentationVariantVisualization` (interface) · `SelectionVariant` (interface) · `SelectionVariantRange` (interface) · `Table$BeforeExportEvent` (interface) · `Table$ExportedEvent` (type) · `Table$RowPressEvent` (interface) · `Table$SelectionChangeEvent` (interface) · `TableContextValue` (interface) · `TableExtendEntry` (type) · `TableQuery` (interface)
+
+### `$ActionGroupSettings` — interface
+
+A menu button of the `actions` aggregation (sap.fe.macros.table.ActionGroup; FE TableDefinition turns it into a manifest menu). Its `actions` are the menu items: an action whose key is an existing toolbar action (annotation or custom) without `onPress` moves that action into the menu, the others are added as custom actions. With `defaultAction` (the key of an action) the menu button is a split button whose main part runs that action (FE ActionsTemplating getMenuButton: MenuButton buttonMode "Split", useDefaultActionOnly). A menu without items is not shown.
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `key` | **yes** | `string` | Unique key of the menu button. |
+| `text` | **yes** | `string` | Button text. |
+| `actions` | **yes** | `$ActionSettings[]` | The menu items. |
+| `anchor` |  | `string` | Key of the action the menu button is placed next to; default: before "Create" like the custom actions. |
+| `placement` |  | `'After' \| 'Before'` |  |
+| `defaultAction` |  | `string` | Key of the action run by the menu button itself (a split button). |
+| `overflowGroup` |  | `number` | The overflow group of the menu button in the toolbar. |
+| `priority` |  | `'AlwaysOverflow' \| 'Disappear' \| 'High' \| 'Low' \| 'NeverOverflow'` | Priority in the overflow toolbar (sap.m.OverflowToolbarPriority). |
 
 ### `$ActionSettings` — interface
 
@@ -13259,6 +13288,33 @@ Settings of the analytical table (sap.fe.macros.table.AnalyticalConfiguration).
 | --- | --- | --- | --- |
 | `aggregationOnLeafLevel` |  | `boolean` | True if leaf level rows shall display aggregated data. |
 
+### `$ColumnAINoticeSettings` — interface
+
+The AI notice of a column header (sap.fe.macros.table.ColumnAINotice): an AI button opening a popover.
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `contentText` |  | `string` | Text of the popover (FE manifest `aiNotice.contentText`); default "This content was partially or fully generated by AI …". |
+| `content` |  | `ReactNode` | Content of the popover (sap.fe.macros.table.ColumnAINotice aggregation `content`; FE manifest: `contentFragmentName`). |
+
+### `$ColumnExportSettings` — interface
+
+Export settings of a column (sap.fe.macros.table.ColumnExportSettings, sap.ui.export column settings).
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `label` |  | `string` | Header text of the column in the file (default the column header). |
+| `property` |  | `string[]` | The properties exported (default the column's value; custom columns: their `properties`). |
+| `template` |  | `string` | Template with indexed placeholders of `property`, e.g. "{0} ({1})"; default the values separated by spaces. |
+| `type` |  | `string` | "Number", "BigNumber", "Currency", "Percentage": the raw number is written as a number; "Boolean": `trueValue` / `falseValue`; "Enumeration": `valueMap`; others: the displayed text. |
+| `width` |  | `number` | Width of the column in characters. |
+| `wrap` |  | `boolean` | Wraps the cell content (default: when several properties are exported). |
+| `textAlign` |  | `string` | "Left", "Right", "Center", "Begin" or "End". |
+| `trueValue` |  | `string` | "Boolean": text for true. |
+| `falseValue` |  | `string` | "Boolean": text for false. |
+| `valueMap` |  | `Record&lt;string, string>` | "Enumeration": text by value. |
+| `inputFormat` |  | `string` | Pattern of textual dates ("Date" type); accepted, the displayed date is exported. |
+
 ### `$ColumnSettings` — interface
 
 A custom column (sap.fe.macros.table.Column) of the `columns` aggregation.
@@ -13279,6 +13335,8 @@ A custom column (sap.fe.macros.table.Column) of the `columns` aggregation.
 | `required` |  | `boolean` | The column header shows the mandatory marker. |
 | `widthIncludingColumnHeader` |  | `boolean` | The automatic width is at least as wide as the column header. |
 | `template` |  | `(row: Row) => ReactNode` | Cell content (the template control of the column in FE). |
+| `exportSettings` |  | `$ColumnExportSettings` | Export settings (sap.fe.macros.table.ColumnExportSettings). |
+| `aiNotice` |  | `$ColumnAINoticeSettings` | An AI notice in the column header (sap.fe.macros.table.ColumnAINotice). |
 
 ### `$MassEditSettings` — interface
 
@@ -13370,7 +13428,7 @@ Settings of sap.fe.macros.Table (docs/26b; defaults in "实际默认值（源码
 | `personalization` |  | `string` | Personalization: "false" hides the settings button; a comma-separated list of "Column", "Sort", "Group", "Aggregate" offers grouping and totals only when listed. Default: all. |
 | `noData` |  | `ReactNode` | Content when there are no rows (replaces the "no data" text). |
 | `columns` |  | `$ColumnSettings[]` | Custom columns (sap.fe.macros.table.Column), placed by `anchor` and `placement`. |
-| `actions` |  | `$ActionSettings[]` | Custom actions (sap.fe.macros.table.Action), placed by `anchor` and `placement`. |
+| `actions` |  | `($ActionSettings \| $ActionGroupSettings)[]` | Custom actions and menu buttons (sap.fe.macros.table.Action, sap.fe.macros.table.ActionGroup), placed by `anchor` and `placement`. |
 | `creationMode` |  | `$TableCreationOptionsSettings` | Creation (sap.fe.macros.table.TableCreationOptions). |
 | `query` |  | `TableQuery \| null` | Applied filters; null means "not executed yet" (shows "To start, set the relevant filters."). Undefined loads without filters (smart-kit addition). |
 | `visibleColumns` |  | `string[]` | Visible column ids in order (controlled, smart-kit addition). |
@@ -13413,6 +13471,7 @@ Menu button grouping annotation and custom actions by id (smart-kit addition).
 | `id` | **yes** | `string` |  |
 | `label` | **yes** | `string` |  |
 | `actions` | **yes** | `string[]` | Action ids (`DataFieldForAction::Namespace.action` or custom ids) shown in the menu. |
+| `defaultAction` |  | `string` | Id of the action run by the menu button itself: the menu becomes a split button (FE ActionGroup `defaultAction`). |
 
 ### `ActionItem` — interface
 
@@ -13431,6 +13490,8 @@ A toolbar action (annotation or custom); the internal form of `actions` and `ext
 | `separator` |  | `boolean` | A separator before the action (the first of an overflow group with `showSeparator`, FE Action addSeparators). |
 | `ai` |  | `boolean` | An AI operation (BaseAction isAIOperation): the button shows the AI icon. |
 | `menu` |  | `ActionItem[]` | A menu button with these items (UI.DataFieldForActionGroup, `actionGroups`); always enabled as in FE. |
+| `split` |  | `boolean` | The menu button is a split button whose main part runs `onPress` (FE ActionGroup `defaultAction`). |
+| `content` |  | `ReactNode` | Custom toolbar content placed instead of a button (FE ActionsTemplating getCustomToolbarContent: the manifest action's `template`); `label` names it in the overflow. |
 | `hidden` |  | `boolean` | Kept for positioning only (FE templates the standard action but it is not shown). |
 
 ### `ColumnItem` — interface
@@ -13453,6 +13514,14 @@ A column of the table (annotation or custom); the internal form of `columns` and
 | `tooltip` |  | `string` | Header tooltip. |
 | `required` |  | `boolean` | Header with the mandatory marker. |
 | `widthIncludingColumnHeader` |  | `boolean` | The automatic width includes the header (column `widthIncludingColumnHeader`). |
+| `showDataFieldsLabel` |  | `boolean` | Field group columns: each field with its label before the value (FE column `showDataFieldsLabel`). |
+| `mergeCells` |  | `boolean` | Responsive tables: a cell whose value equals the one of the row above is left empty (FE column `settings.mergeCells` → sap.m.Column mergeDuplicates with the merge key of MdcTableTemplate). |
+| `mergeComparisonProperties` |  | `string[]` | The properties compared for `mergeCells` (FE `settings.mergeComparisonProperties`); default the column's value. |
+| `aiNotice` |  | `$ColumnAINoticeSettings` | An AI notice in the column header (sap.fe.macros.table.ColumnAINotice, FE getColumnHeaderAiNotice). |
+| `exportSettings` |  | `$ColumnExportSettings` | Export settings of the column (sap.fe.macros.table.ColumnExportSettings). |
+| `formatOptions` |  | `FieldFormatOptions` | Format options of the cells' fields (FE column `formatOptions` of annotation columns, sap.fe.macros.field.FieldFormatOptions). |
+| `microChartSize` |  | `string` | Responsive tables: micro chart columns show the chart in this size (FE `settings.microChartSize`). |
+| `showMicroChartLabel` |  | `boolean` | Responsive tables: micro chart columns also show the labels (FE `settings.showMicroChartLabel`). |
 
 ### `Context` — interface
 
@@ -13515,7 +13584,7 @@ sap.fe.macros.Table: annotation-driven table (`contextPath`, `metaPath`, docs/30
 | `personalization` |  | `string` | Personalization: "false" hides the settings button; a comma-separated list of "Column", "Sort", "Group", "Aggregate" offers grouping and totals only when listed. Default: all. |
 | `noData` |  | `ReactNode` | Content when there are no rows (replaces the "no data" text). |
 | `columns` |  | `$ColumnSettings[]` | Custom columns (sap.fe.macros.table.Column), placed by `anchor` and `placement`. |
-| `actions` |  | `$ActionSettings[]` | Custom actions (sap.fe.macros.table.Action), placed by `anchor` and `placement`. |
+| `actions` |  | `($ActionSettings \| $ActionGroupSettings)[]` | Custom actions and menu buttons (sap.fe.macros.table.Action, sap.fe.macros.table.ActionGroup), placed by `anchor` and `placement`. |
 | `creationMode` |  | `$TableCreationOptionsSettings` | Creation (sap.fe.macros.table.TableCreationOptions). |
 | `query` |  | `TableQuery \| null` | Applied filters; null means "not executed yet" (shows "To start, set the relevant filters."). Undefined loads without filters (smart-kit addition). |
 | `visibleColumns` |  | `string[]` | Visible column ids in order (controlled, smart-kit addition). |
@@ -13759,7 +13828,7 @@ Settings of sap.fe.macros.TreeTable: those of `Table` plus the hierarchy.
 | `personalization` |  | `string` | Personalization: "false" hides the settings button; a comma-separated list of "Column", "Sort", "Group", "Aggregate" offers grouping and totals only when listed. Default: all. |
 | `noData` |  | `ReactNode` | Content when there are no rows (replaces the "no data" text). |
 | `columns` |  | `$ColumnSettings[]` | Custom columns (sap.fe.macros.table.Column), placed by `anchor` and `placement`. |
-| `actions` |  | `$ActionSettings[]` | Custom actions (sap.fe.macros.table.Action), placed by `anchor` and `placement`. |
+| `actions` |  | `($ActionSettings \| $ActionGroupSettings)[]` | Custom actions and menu buttons (sap.fe.macros.table.Action, sap.fe.macros.table.ActionGroup), placed by `anchor` and `placement`. |
 | `creationMode` |  | `$TableCreationOptionsSettings` | Creation (sap.fe.macros.table.TableCreationOptions). |
 | `query` |  | `TableQuery \| null` | Applied filters; null means "not executed yet" (shows "To start, set the relevant filters."). Undefined loads without filters (smart-kit addition). |
 | `visibleColumns` |  | `string[]` | Visible column ids in order (controlled, smart-kit addition). |
@@ -13855,7 +13924,7 @@ sap.fe.macros.TreeTable: the recursive hierarchy of the entity type (Aggregation
 | `personalization` |  | `string` | Personalization: "false" hides the settings button; a comma-separated list of "Column", "Sort", "Group", "Aggregate" offers grouping and totals only when listed. Default: all. |
 | `noData` |  | `ReactNode` | Content when there are no rows (replaces the "no data" text). |
 | `columns` |  | `$ColumnSettings[]` | Custom columns (sap.fe.macros.table.Column), placed by `anchor` and `placement`. |
-| `actions` |  | `$ActionSettings[]` | Custom actions (sap.fe.macros.table.Action), placed by `anchor` and `placement`. |
+| `actions` |  | `($ActionSettings \| $ActionGroupSettings)[]` | Custom actions and menu buttons (sap.fe.macros.table.Action, sap.fe.macros.table.ActionGroup), placed by `anchor` and `placement`. |
 | `creationMode` |  | `$TableCreationOptionsSettings` | Creation (sap.fe.macros.table.TableCreationOptions). |
 | `query` |  | `TableQuery \| null` | Applied filters; null means "not executed yet" (shows "To start, set the relevant filters."). Undefined loads without filters (smart-kit addition). |
 | `visibleColumns` |  | `string[]` | Visible column ids in order (controlled, smart-kit addition). |
@@ -14058,12 +14127,20 @@ A custom chart toolbar action (`controlConfiguration ›
 
 ### `$ManifestColumnSettings` — interface
 
-A custom column (FE `CustomDefinedTableColumn`); FE names a fragment in `template`, here it renders the cell (react-idiom).
+A custom column (FE `CustomDefinedTableColumn`; FE names a fragment in `template`, here it renders the cell, react-idiom), or, with the key of an annotation column (e.g. "DataField::Status") and without `template`, settings that change that column (FE `CustomDefinedTableColumnForOverride`: width, importance, horizontalAlign, availability, widthIncludingColumnHeader, disableExport, exportSettings, formatOptions, aiNotice, showDataFieldsLabel, settings).
 
 | Member | Required | Type | Description |
 | --- | --- | --- | --- |
 | `header` |  | `string` | Column header. |
 | `template` |  | `(row: Row) => ReactNode` | Cell content. |
+| `type` |  | `'Default' \| 'Slot'` | "Slot" (a column of the Table building block's `columns`, FE ColumnType.Slot) or none (a manifest custom column); both render `template` (FE getColumnsFromManifest isSlotColumn / isCustomColumn). |
+| `showDataFieldsLabel` |  | `boolean` | Field group columns (override): each field with its label (FE MdcTableTemplate HEADER_FORM_LABEL). |
+| `mergeCells` |  | `boolean` | Accepted as in FE, without effect in the manifest: FE 1.154 reads `settings.mergeCells` of an annotation column (Columns.ts getColumnsFromManifest; the top-level key comes from the Table building block's column). |
+| `mergeComparisonProperties` |  | `string \| string[]` | Accepted as in FE, without effect in the manifest: FE 1.154 reads `settings.mergeComparisonProperties`. |
+| `exportSettings` |  | `$ColumnExportSettings` | Export settings of the column (FE ColumnExportSettings, sap.fe.macros.table.ColumnExportSettings). |
+| `formatOptions` |  | `FieldFormatOptions` | Format options of an annotation column's fields (override; FE _getDefaultFormatOptionsForTable). Custom columns accept them without effect, as in FE (their template renders the cells). |
+| `aiNotice` |  | `{ /** Text of the popover. */ contentText?: string; /** Content of the popover (FE: a fragment name; here a render function, react-idiom)…` | An AI notice in the column header (FE getColumnHeaderAiNotice). |
+| `settings` |  | `{ /** Responsive tables: size of a micro chart column. @defaultValue "XS" */ microChartSize?: string; /** Responsive tables: a micro char…` | Settings of an annotation column (FE TableColumnSettings). |
 | `properties` |  | `string[]` | Properties the column shows: they are selected from the service (and exported). |
 | `position` |  | `$PositionSettings` |  |
 | `width` |  | `string` | Column width (CSS length). |
@@ -14087,6 +14164,7 @@ A custom column (FE `CustomDefinedTableColumn`); FE names a fragment in `templat
 | `inlineCreationRowCount` |  | `number` | Inline creation rows only: not used by the list report (FE _getCreationBehaviour). |
 | `inlineCreationRowsHiddenInEditMode` |  | `boolean` | Inline creation rows only: not used by the list report (FE _getCreationBehaviour). |
 | `disableAddRowButtonForEmptyData` |  | `boolean` | Inline creation rows only: not used by the list report (FE _getCreationBehaviour). |
+| `customValidationFunction` |  | `(data: Row) => { messageTarget?: string; messageText: string }[] \| Promise&lt;{ messageTarget?: string; messageText: string }[]>` | Accepted as in FE, without effect in the list report: FE 1.154 runs the custom validation only for the creation row of a table (EditFlow createCustomValidationMessages on table.getCreationRow()), a creation mode the list report does not offer (FE _getCreationBehaviour). FE names an extension function, here it is the function (react-idiom). |
 
 ### `$ManifestCustomHeaderSettings` — interface
 
@@ -14104,6 +14182,7 @@ A custom column (FE `CustomDefinedTableColumn`); FE names a fragment in `templat
 | Member | Required | Type | Description |
 | --- | --- | --- | --- |
 | `filterFields` |  | `Record&lt;string, $ManifestFilterFieldSettings>` |  |
+| `useSemanticDateRange` |  | `boolean` | false: date fields offer no semantic date operators (today, last year …) but the plain date and range operators, and `defaultValues` are not applied (FE CommonHelper.getOperatorsForProperty, ListReportConverter). |
 | `showClearButton` |  | `boolean` |  |
 | `navigationPropertiesForPersonalization` |  | `string[]` | Navigation properties offered in "Adapt Filters". |
 
@@ -14116,9 +14195,11 @@ A filter field of `controlConfiguration ›
 | `label` |  | `string` |  |
 | `property` |  | `string` | The property the field filters; default the key. |
 | `template` |  | `(ctx: FilterFieldTemplateContext) => ReactNode` | Editor of a custom filter field (FE: a fragment name; react-idiom). |
+| `type` |  | `'Default' \| 'Slot'` | "Slot" (a filter field of the FilterBar building block's `filterFields`, FE filterFieldType.Slot) or "Default": both render `template` as a custom filter field (FE FilterBar converter getManifestFilterFields: `template` or Slot makes a custom filter). |
 | `availability` |  | `'Adaptation' \| 'Default' \| 'Hidden'` |  |
 | `required` |  | `boolean` |  |
 | `position` |  | `$PositionSettings` |  |
+| `settings` |  | `{ /** * Semantic date operators offered or left out (FE SemanticDateOperators.getFilterOperations): entries with `path` * "key" or "categ…` | Settings of the field (FE FilterSettings). |
 
 ### `$ManifestHeaderActionSettings` — interface
 
@@ -14281,7 +14362,7 @@ export type InitialLoadMode = 'Auto' | 'Enabled' | 'Disabled';
 
 ## `@rhfan2019/smart-kit/v4/fe/templates/ObjectPage`
 
-`$ObjectPageSettings` (interface) · `Context` (interface) · `default` (component) · `ManifestAction` (interface) · `ManifestHeaderFacet` (interface) · `ManifestSection` (interface) · `ManifestSideContent` (interface) · `ManifestSubSection` (interface) · `NavigationSettingsConfiguration` (interface) · `NavigationTargetConfiguration` (interface) · `ObjectPage$ActionPressEvent` (interface) · `ObjectPage$TableActionPressEvent` (interface) · `ObjectPageContent` (interface) · `ObjectPageHeaderContent` (interface) · `ObjectPageManifestSettings` (interface) · `Position` (interface) · `TableCreationModeConfiguration` (interface) · `TableManifestAction` (interface) · `TableManifestColumn` (interface) · `TableManifestConfiguration` (interface) · `TableManifestSettingsConfiguration` (interface)
+`$ObjectPageSettings` (interface) · `Context` (interface) · `default` (component) · `ManifestAction` (interface) · `ManifestHeaderFacet` (interface) · `ManifestSection` (interface) · `ManifestSideContent` (interface) · `ManifestSubSection` (interface) · `NavigationSettingsConfiguration` (interface) · `NavigationTargetConfiguration` (interface) · `ObjectPage$ActionPressEvent` (interface) · `ObjectPage$TableActionPressEvent` (interface) · `ObjectPageContent` (interface) · `ObjectPageHeaderContent` (interface) · `ObjectPageManifestSettings` (interface) · `Position` (interface) · `TableCreationModeConfiguration` (interface) · `TableManifestAction` (interface) · `TableManifestColumn` (type) · `TableManifestConfiguration` (interface) · `TableManifestSettingsConfiguration` (interface)
 
 ### `$ObjectPageSettings` — interface
 
@@ -14315,6 +14396,7 @@ Props of the object page: the manifest settings (ObjectPageManifestSettings) plu
 | `useTextForNoDataMessages` |  | `boolean` | Tables without data show a text instead of an illustrated message. |
 | `variantManagement` |  | `'None' \| 'Control'` | "Control": variant management per table; "None": none ("Page" is not allowed on object pages). |
 | `additionalProperties` |  | `string[]` | Further properties read with the object (e.g. for custom content). |
+| `shareOverflowPriority` |  | `OverflowToolbarPriority` | Overflow priority of the share button in the header toolbar (FE Actions.fragment.xml macro:Share). |
 
 ### `Context` — interface
 
@@ -14359,10 +14441,11 @@ sap.fe.templates.ObjectPage. Instance methods of the object page (sap.fe.templat
 | `useTextForNoDataMessages` |  | `boolean` | Tables without data show a text instead of an illustrated message. |
 | `variantManagement` |  | `'None' \| 'Control'` | "Control": variant management per table; "None": none ("Page" is not allowed on object pages). |
 | `additionalProperties` |  | `string[]` | Further properties read with the object (e.g. for custom content). |
+| `shareOverflowPriority` |  | `OverflowToolbarPriority` | Overflow priority of the share button in the header toolbar (FE Actions.fragment.xml macro:Share). |
 
 ### `ManifestAction` — interface
 
-A header, footer or sub-section action (ManifestAction).
+A custom action of a section or sub-section toolbar (ManifestAction, FE SubSection getFacetActions → FormActionButtons); the base of the header and footer actions.
 
 | Member | Required | Type | Description |
 | --- | --- | --- | --- |
@@ -14372,6 +14455,15 @@ A header, footer or sub-section action (ManifestAction).
 | `enabled` |  | `boolean \| ((row: Row \| undefined) => boolean)` | Enabled; a function of the object stands for a binding expression. |
 | `position` |  | `Position` | Position among the actions (keys such as "EditAction", "DeleteAction", "DataFieldForAction::Namespace.action"). |
 | `menu` |  | `string[]` | Keys of the actions shown in a menu button (the action becomes a menu). |
+| `defaultAction` |  | `string` | With `menu`: the key of the menu action run by the menu button itself, which becomes a split button (FE DefaultActionHandler getButtonMode "Split" / ActionFactory createMenuButton `defaultAction`). |
+| `priority` |  | `OverflowToolbarPriority` | Overflow priority in the toolbar (sap.m.OverflowToolbarLayoutData). Not set: "Low" in the header (FE Actions.fragment.xml), the toolbar's default (High) in the footer and in sections. |
+| `group` |  | `number` | Overflow group (used when there is no `overflowGroup`; FE getActionsFromManifest: `overflowGroup ?? group ?? 0`). |
+| `overflowGroup` |  | `number` | Overflow group: the actions of a group move into the overflow together; `overflowGroups` adds separators. |
+| `isPrimaryAction` |  | `boolean` | The primary action (FE ActionUtilities applyManifestPrimaryActionEmphasis): in the header and the footer it is emphasized, shown first and never in the overflow (header: while no footer is shown and no action with a criticality is visible; footer: while no action with a criticality is visible); a menu only with `defaultAction`. As in FE without effect in section and sub-section toolbars (FormActionButtons: Transparent buttons). |
+| `template` |  | `() => ReactNode` | Custom content placed in the header toolbar instead of a button (FE Actions.fragment.xml CustomFragment; FE names a fragment, here it is a render function, react-idiom). As in FE without effect in the footer and in sections, which show the action as a button (FooterContent getManifestButton, FormActionButtons). |
+| `requiresSelection` |  | `boolean` | As in FE without effect outside table toolbars: these toolbars have no selection (FE reads it only for tables). |
+| `enableOnSelect` |  | `'multi' \| 'single'` | As in FE without effect outside table toolbars: these toolbars have no selection (FE reads it only for tables). |
+| `determining` |  | `boolean` | As in FE without effect for custom actions: only annotation actions (UI.DataFieldForAction/Determining) go to the footer. |
 
 ### `ManifestHeaderFacet` — interface
 
@@ -14398,6 +14490,7 @@ A custom section, or the override of an annotation section (ManifestSection).
 | `visible` |  | `boolean \| ((row: Row \| undefined) => boolean)` |  |
 | `subSections` |  | `Record&lt;string, ManifestSubSection>` |  |
 | `actions` |  | `Record&lt;string, ManifestAction>` | Actions of a section without sub-sections. |
+| `overflowGroups` |  | `Record&lt;string, OverflowGroupConfiguration>` | Separators of the toolbar actions' overflow groups, by group number (FE SubSection getFacetActions). |
 | `isPartOfPreview` |  | `boolean` | false: behind "Show More". |
 | `useSingleTextAreaFieldAsNotes` |  | `boolean` | An annotation section: a form container whose only field is a multi-line text shows it without its label (FE ObjectPageConverter getUseSingleTextAreaFieldAsNotes). |
 | `messageStrip` |  | `ReactNode` | Message strip at the top of the section (OP-17); smart-kit addition. |
@@ -14422,6 +14515,7 @@ A custom sub-section, or the override of an annotation sub-section (ManifestSubS
 | `position` |  | `Position` |  |
 | `visible` |  | `boolean \| ((row: Row \| undefined) => boolean)` |  |
 | `actions` |  | `Record&lt;string, ManifestAction>` | Toolbar actions of the sub-section. |
+| `overflowGroups` |  | `Record&lt;string, OverflowGroupConfiguration>` | Separators of the toolbar actions' overflow groups, by group number. |
 | `sideContent` |  | `ManifestSideContent` |  |
 | `enableLazyLoading` |  | `boolean` | The content is rendered only when scrolled near. |
 | `isPartOfPreview` |  | `boolean` | false: behind "Show More". |
@@ -14467,7 +14561,7 @@ Event of a table action (the selected rows).
 | --- | --- | --- | --- |
 | `header` |  | `ObjectPageHeaderContent` |  |
 | `body` |  | `{ /** Custom sections and overrides of annotation sections by key (the UI.Facets ID). */ sections?: Record&lt;string, ManifestSection>; }` |  |
-| `footer` |  | `{ /** Custom footer actions by key ("SaveAction", "CancelAction" and the determining actions are anchors). */ actions?: Record&lt;string, Ma…` |  |
+| `footer` |  | `{ /** Custom footer actions by key ("SaveAction", "CancelAction" and the determining actions are anchors). */ actions?: Record&lt;string, He…` |  |
 
 ### `ObjectPageHeaderContent` — interface
 
@@ -14478,7 +14572,8 @@ Event of a table action (the selected rows).
 | `visible` |  | `boolean` | Shows the header (title and content). |
 | `anchorBarVisible` |  | `boolean` | Shows the anchor bar (with sectionLayout "Tabs": the tab bar); also the title click and the pin. |
 | `facets` |  | `Record&lt;string, ManifestHeaderFacet>` | Custom header facets by key. |
-| `actions` |  | `Record&lt;string, ManifestAction>` | Custom header actions by key. |
+| `actions` |  | `Record&lt;string, HeaderFooterManifestAction>` | Custom header actions by key. |
+| `overflowGroups` |  | `Record&lt;string, OverflowGroupConfiguration>` | Separators of the header actions' overflow groups, by group number (FE addSeparators). |
 
 ### `ObjectPageManifestSettings` — interface
 
@@ -14498,6 +14593,7 @@ Manifest settings of the object page (ObjectPageManifestSettings + BaseManifestS
 | `useTextForNoDataMessages` |  | `boolean` | Tables without data show a text instead of an illustrated message. |
 | `variantManagement` |  | `'None' \| 'Control'` | "Control": variant management per table; "None": none ("Page" is not allowed on object pages). |
 | `additionalProperties` |  | `string[]` | Further properties read with the object (e.g. for custom content). |
+| `shareOverflowPriority` |  | `OverflowToolbarPriority` | Overflow priority of the share button in the header toolbar (FE Actions.fragment.xml macro:Share). |
 
 ### `Position` — interface
 
@@ -14515,10 +14611,12 @@ Creation of sub-objects (`tableSettings › creationMode`).
 | Member | Required | Type | Description |
 | --- | --- | --- | --- |
 | `name` |  | `'NewPage' \| 'Inline' \| 'InlineCreationRows' \| 'CreationDialog' \| 'External' \| 'AddViaValueHelp' \| 'Sync' \| 'Async' \| 'Deferred' \| 'Creati…` | NewPage: create and open the sub-object page; Inline / InlineCreationRows: a new row in the table; CreationDialog: a dialog. FE default NewPage; without a route to the sub-object page (smart-kit: no `navigation` entry and NavigationAdapter.hasObjectPage false) Inline. |
+| `creationFields` |  | `string` | "CreationDialog": the comma-separated properties the dialog asks. |
+| `createAtEnd` |  | `boolean` | "Inline": the new row is created at the end of the table instead of the top (FE: default false for Inline). |
 
 ### `TableManifestAction` — interface
 
-An action of a sub-object table (`controlConfiguration › <nav>/@UI.LineItem › actions`).
+An action of a sub-object table (`controlConfiguration › <nav>/@UI.LineItem › actions`, as the list report's).
 
 | Member | Required | Type | Description |
 | --- | --- | --- | --- |
@@ -14530,21 +14628,20 @@ An action of a sub-object table (`controlConfiguration › <nav>/@UI.LineItem �
 | `requiresSelection` |  | `boolean` | Enabled only with selected rows. |
 | `enableOnSelect` |  | `'single' \| 'multi'` | Enabled with one ("single") or at least one ("multi") selected row. |
 | `menu` |  | `string[]` | Keys of the actions shown in a menu button. |
+| `defaultAction` |  | `string` | With `menu`: the key of the action run by the menu button itself (a split button, FE ActionsTemplating getMenuButton). |
+| `priority` |  | `OverflowToolbarPriority` | Overflow priority in the table toolbar (sap.m.OverflowToolbarPriority). |
+| `group` |  | `number` | Overflow group (used when there is no `overflowGroup`). |
+| `overflowGroup` |  | `number` | Overflow group: the actions of a group move into the overflow together; `overflowGroups` adds separators. |
+| `isPrimaryAction` |  | `boolean` | Accepted as in FE, without effect in the table toolbar: FE 1.154 emphasizes manifest primary actions only in the page header and footer (applyManifestPrimaryActionEmphasis); the table toolbar keeps its Transparent buttons. |
+| `template` |  | `() => ReactNode` | Custom content placed in the table toolbar instead of a button (FE ActionsTemplating getCustomToolbarContent; FE names a fragment, here it is a render function, react-idiom). |
 
-### `TableManifestColumn` — interface
+### `TableManifestColumn` — type
 
-A custom column, or the override of an annotation column (key "DataField::Path").
+A custom column, or the override of an annotation column (key "DataField::Path"): the same settings as the list report's table (FE CustomDefinedTableColumn / CustomDefinedTableColumnForOverride, ./tableManifest).
 
-| Member | Required | Type | Description |
-| --- | --- | --- | --- |
-| `header` |  | `string` | Column header. |
-| `template` |  | `(row: Row) => ReactNode` | Cell content (FE: the fragment name of the template). |
-| `properties` |  | `string[]` | Properties the column shows: they are selected and exported. |
-| `position` |  | `Position` |  |
-| `width` |  | `string` | CSS width. |
-| `importance` |  | `'High' \| 'Medium' \| 'Low' \| 'None'` |  |
-| `horizontalAlign` |  | `'Begin' \| 'Center' \| 'End'` |  |
-| `disableExport` |  | `boolean` | Not exported. |
+```ts
+export type TableManifestColumn = $ManifestColumnSettings;
+```
 
 ### `TableManifestConfiguration` — interface
 
@@ -14555,6 +14652,7 @@ A custom column, or the override of an annotation column (key "DataField::Path")
 | `tableSettings` |  | `TableManifestSettingsConfiguration` |  |
 | `columns` |  | `Record&lt;string, TableManifestColumn>` | Custom and overridden columns by key. |
 | `actions` |  | `Record&lt;string, TableManifestAction>` | Custom and overridden actions by key. |
+| `overflowGroups` |  | `Record&lt;string, OverflowGroupConfiguration>` | Separators of the toolbar actions' overflow groups, by group number. |
 
 ### `TableManifestSettingsConfiguration` — interface
 
@@ -14563,6 +14661,8 @@ A custom column, or the override of an annotation column (key "DataField::Path")
 | Member | Required | Type | Description |
 | --- | --- | --- | --- |
 | `type` |  | `'ResponsiveTable' \| 'GridTable' \| 'AnalyticalTable' \| 'TreeTable'` | Table type; default by the annotations (analytical, tree), else ResponsiveTable. |
+| `disableLeafSelection` |  | `boolean` | Tree tables: leaves cannot be selected. |
+| `hierarchyQualifier` |  | `string` | Tree tables: qualifier of Aggregation.RecursiveHierarchy (default: the type's first hierarchy). |
 | `selectionMode` |  | `'Auto' \| 'None' \| 'Single' \| 'Multi' \| 'ForceSingle' \| 'ForceMulti'` | Auto: Multi when an action needs a selection (object page: only while editing), else None. |
 | `creationMode` |  | `TableCreationModeConfiguration` |  |
 | `enableExport` |  | `boolean` | Object page: equals `enablePaste` (true). |
@@ -14575,6 +14675,8 @@ A custom column, or the override of an annotation column (key "DataField::Path")
 | `header` |  | `string` | Default `UI.HeaderInfo/TypeNamePlural` of the target (smart-kit: the facet label). |
 | `headerVisible` |  | `boolean` |  |
 | `rowCountMode` |  | `'Auto' \| 'Fixed' \| 'Interactive'` | Non-responsive tables. Object page: Fixed. |
+| `rowCount` |  | `number` | Grid tables: the rows shown (FE: GridTable 5, TreeTable / AnalyticalTable 10). |
+| `selectAll` |  | `boolean` | Responsive tables: the "select all" check box. |
 | `selectionLimit` |  | `number` |  |
 | `frozenColumnCount` |  | `number` |  |
 | `disableColumnFreeze` |  | `boolean` |  |
@@ -14586,5 +14688,11 @@ A custom column, or the override of an annotation column (key "DataField::Path")
 | `isSearchable` |  | `boolean` | Search field (default by SearchRestrictions). |
 | `readOnly` |  | `boolean` | Read only also while editing. |
 | `ignoredFields` |  | `string` | Comma-separated properties whose columns are left out. |
+| `enablePaste` |  | `boolean` | Ctrl+V on the table creates rows from the pasted lines while editing (object page: true). |
+| `enablePastingOfComputedProperties` |  | `boolean` | Pasted values also fill computed properties. |
+| `enableMassEdit` |  | `boolean \| { visibleFields?: string; ignoredFields?: string; /** @defaultValue "ChangeSet" */ operationGroupingMode?: 'ChangeSet' \| 'Isola…` | "Edit" of the selected rows in one dialog; an object limits the fields (comma-separated) and sets the grouping. |
+| `quickVariantSelection` |  | `{ /** Annotation paths of UI.SelectionVariant (or UI.SelectionPresentationVariant) annotations of the sub-object. */ paths: { annotationP…` | Quick filters: a segmented button (≤ 3) or a select (> 3) of selection variants in the table toolbar. |
+| `analyticalConfiguration` |  | `{ /** The leaves are aggregated by the shown properties. @defaultValue false */ aggregationOnLeafLevel?: boolean; }` | Analytical tables: how the leaves are read. |
+| `additionalProperties` |  | `string[]` | Further properties read with the rows. |
 | `rowPress` |  | `(e: Table$RowPressEvent) => void` | A row was pressed (FE names an extension function; react-idiom). Default: navigation to the sub-object page. |
 | `selectionChange` |  | `(e: Table$SelectionChangeEvent) => void` | The selection changed (FE names an extension function; react-idiom). |

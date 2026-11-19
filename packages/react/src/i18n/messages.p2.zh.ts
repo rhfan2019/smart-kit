@@ -24,6 +24,8 @@ export const p2zh: { [K in keyof typeof p2en]: string } = {
   'table.inlineAction': '内嵌操作',
   'actions.criticalConfirm': '是否执行此操作？',
   'actions.confirmTitle': '确认',
+  // FE C_OPERATIONS_ACTION_PARAMETER_DIALOG_MISSING_MANDATORY_MSG (ActionRuntime validateProperties)
+  'actions.parameterMissing': '输入 "{field}" 的值。',
   'delete.confirmObjectInfo': '是否删除 {title} "{description}"？',
   'delete.confirmObjectTitle': '是否删除 {title}？',
   'delete.confirmSingular': '是否删除此项？',

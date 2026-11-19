@@ -4,6 +4,7 @@ import {
   arrangeText, filterExpressionRules, getProperty, isComplete, isRelativeDateOperator, OPERATOR_ARITY, OPERATORS, relativeDateValueTypes, resolvePath, restrictConditions, valueListTextArrangement,
   type Condition, type FilterExpressionRules, type Operator, type PropertyModel,
 } from '@rhfan2019/smart-kit-core';
+import { displayProperty, useFilterOperatorOptions } from './filterOperators';
 import { Plus, Search, Trash2 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useService, useSmartKit } from '../context/SmartKitProvider';
@@ -65,7 +66,8 @@ export function ValueHelpDialog(p: ValueHelpDialogProps) {
   const vlModel = useValueListSource(vl, p.service)?.model;
   // Capabilities.FilterExpressionRestrictions (P2-LR-19): allowed operators, exclusions and number of conditions.
   const expression = service.model.entitySets[p.entitySet]!.capabilities.filterExpressions[p.path];
-  const rules = filterExpressionRules(expression, prop?.edmType);
+  const operatorOptions = useFilterOperatorOptions(p.path);
+  const rules = filterExpressionRules(expression, prop?.edmType, operatorOptions);
   const canSelect = Boolean(vl) && rules.operators.includes('EQ');
   const [selected, setSelected] = useState<Condition[]>(p.conditions);
   const [draft, setDraft] = useState('');
@@ -127,7 +129,7 @@ export function ValueHelpDialog(p: ValueHelpDialogProps) {
     else {
       setPicked({ ...picked, [key]: row });
       const text = vl!.descriptionProperty ? getPath(row, vl!.descriptionProperty) : undefined;
-      setSelected(restrictConditions(expression, [...selected, { operator: 'EQ', values: [key], text: text ? String(text) : undefined }]));
+      setSelected(restrictConditions(expression, [...selected, { operator: 'EQ', values: [key], text: text ? String(text) : undefined }], prop?.edmType, operatorOptions));
     }
   };
 
@@ -208,7 +210,7 @@ export function ValueHelpDialog(p: ValueHelpDialogProps) {
         <Group gap="xs" className="sk-vh__pills">
           {selected.length === 0 ? <Text size="sm" c="dimmed">{t('vh.noneSelected')}</Text> : null}
           {selected.map((c, i) => {
-            const label = conditionText(c, prop, intlLocale, timeZone, { t, textArrangement: arrangement });
+            const label = conditionText(c, displayProperty(prop, operatorOptions), intlLocale, timeZone, { t, textArrangement: arrangement });
             return <Pill key={i} withRemoveButton removeButtonProps={{ 'aria-label': t('common.remove', { name: label }) }} onRemove={() => setSelected(selected.filter((_, j) => j !== i))}>{label}</Pill>;
           })}
         </Group>

@@ -17,6 +17,8 @@
 
 ### S24 · TECH-077：对象页的区块和抬头关键值不能按数据隐藏
 
+- **状态（2026-11-18）**：阶段 6 修好（D47）：`UI.Hidden` 的 `Path` 作用于 `UI.Facets`、`UI.HeaderFacets` 的 facet 和 `UI.DataField`（FE UIFormatters isVisible）。迁移时可以改回 `v4/fe/templates/ObjectPage`。
+
 - **现象**：`UI.Hidden` 只认常量（`buildModel` 里按 `bool(...)` 读），`UI.Facets`、`UI.HeaderFacets` 里的 `ReferenceFacet` 写 `<Annotation Term="UI.Hidden" Path="…"/>` 不起作用；`SmartObjectPage` 也没有扩展抬头关键值的属性（只有 `sectionExtend`）。
 - **为什么要**：invoice-assure 的发票对象页按“情形”换内容（疑似重复、确认订单、差异、补单据、会计复核、在等别人、已了结）：同一个实体类型，抬头关键值（匹配度环形图、单价对比微图、付款到期、复核进度）和第一个区块按每张发票的数据决定显示哪些。Fiori elements 用的就是路径式 `UI.Hidden`。
 - **期望**：`UI.Facets`、`UI.HeaderFacets` 的 facet（含 `CollectionFacet`、`ReferenceFacet`）和 `UI.DataField` 支持 `UI.Hidden` 的 `Path`（布尔字段，按当前这一行算；编辑中按草稿值算），被隐藏的区块同时从锚点栏里拿掉。
@@ -24,6 +26,8 @@
 - **验收**：一个字段为真时区块和锚点都不出现、为假时出现；抬头关键值同理；切换到另一行（FCL 翻页）时跟着变。
 
 ### S25 · TECH-078：对象页的页脚不能放宿主自己的决定按钮
+
+- **状态（2026-11-18）**：阶段 5～7 修好（D46～D48）：`content.footer.actions` 放自定义动作（`press`、`visible`、`enabled`、`priority`、`isPrimaryAction`），和注解动作一起按 FE 排序和强调。
 
 - **现象**：页脚的动作只来自 `UI.Identification` 里 `Determining` 的 `DataFieldForAction`，调服务端绑定动作；`SmartObjectPage` 没有 `footer` 之类的属性。
 - **为什么要**：invoice-assure 的发票页把了结这一步的决定放在固定页脚（如“接受差异，交财务”“退回供应商”“确认，转待预制”），点了先弹本项目的对话框（选依据类型、写原因、带上数字员工起草的文字），再走本项目的 Server Action；按钮按人、按情形现算；缺条件时左边写缺什么（“还差 1 条复核打勾”）并能点过去。
@@ -33,12 +37,16 @@
 
 ### S26 · TECH-079：页脚没有消息按钮时，决定按钮靠左
 
+- **状态（2026-11-18）**：修好：页脚左侧的消息区一直占位，动作工具栏总在右边。宿主样式可以删掉。
+
 - **现象**：`SmartObjectPage` 的页脚是 `justify: space-between`，左边放消息按钮；没有消息时左边是空的，按钮跑到左边。
 - **期望**：页脚动作始终靠右（Fiori 页脚工具栏）。
 - **本项目现在怎么绕**：宿主样式 `[data-sk-footer] > :last-child { margin-left: auto }`。
 - **验收**：没有消息时按钮在右边；有消息时消息按钮在左、动作在右。
 
 ### S27 · TECH-080：动作参数的对话框只有单行文字框
+
+- **状态（2026-11-18）**：阶段 7 修好（D48，按 FE `OperationParameterDialog`）：每个参数一个字段，`Common.ValueListWithFixedValues` 是选择框、`Common.ValueList` 是值帮助、`UI.MultiLineText` 是文本域，日期、数字、布尔按类型；`Common.Label`；`UI.ParameterDefaultValue`（常量或 `_it/…` 路径）；必填看 `Common.FieldControl` Mandatory，空时字段下提示、不发请求；值带类型发送。危险动作：`Common.IsActionCritical` 时确认（有参数对话框时对话框本身算确认，同 FE）；“Criticality 为负面时确认”FE 没有，不做。附件参数（`Edm.Stream`）、`UI.OperationParameterFacets` 分组、集合参数还没有。回调：`useActionRunner` 的 `onDone` 成功和失败都调。
 
 - **现象**：`useActionRunner` 给每个参数一个 `TextInput`，值都是字符串。
 - **为什么要**：invoice-assure 的决定都要填东西：接受差异选依据类型（4 选 1）、写原因（几行字）、附依据文件；退回选原因类别；作废重复要确认“不能恢复”。
@@ -237,3 +245,22 @@ smart-kit 按铁律（ADR-033）改名、改属性、改行为时不保留旧名
 | 6 | 对象页的请求 | 不再选 ETag 属性（用 `@odata.etag`）；`DraftAdministrativeData` 只选 `DraftIsCreatedByMe`、`DraftUUID`、`InProcessByUser`，其余在草稿弹出框打开时读；`UI.Hidden` 路径进 `$select` | 自己写的服务要返回 `@odata.etag` |
 | 6 | `ObjectPage` 新设置 | 区块的 `useSingleTextAreaFieldAsNotes`；子表 `tableSettings.rowPress`、`selectionChange` | 新增 |
 | 6 | core 新导出 | `ANALYTICAL_LEAVES_ALIAS`；`AnalyticalRequestOptions.groupLevels` / `aggregationOnLeafLevel`、`AnalyticalRequests.leaves`；`QueryRequest.levelFilter`、`QueryResult.leafCount`；`SubSectionContent` 的 `mixed`、页头 Facet 的 `collection` / `contact`、`hidden` / `hiddenPath` / `partOfPreview` / `placeholder`、`capabilities.updateHidden`、动作的 `hidden` / `emphasized`（见 `packages/core/docs/reference.md`） | 新增 |
+| 7 | 列表页 / Table 宏 `columns` 里带注解列 key、没有 `template` 的条目 | 按 FE `isColumnOverride` 修改那一列（宽度、重要性、对齐、`availability`、`exportSettings` 等，`availability: 'Hidden'` 去掉该列） | 以前变成一个空的自定义列 |
+| 7 | 表格动作的菜单（manifest `menu`、Table 宏 `actionGroups`） | `actions` 里的 `$ActionGroupSettings`（sap.fe.macros.table.ActionGroup：`key`、`text`、`actions`、`defaultAction`、`overflowGroup`、`priority`）；有 `defaultAction` 时是拆分按钮；菜单项按 `menu` 里 key 的顺序 | 以前按工具栏顺序；全是 AI 动作的菜单显示 AI 图标 |
+| 7 | 表格工具栏动作的 `template` | 自定义内容代替按钮（FE getCustomToolbarContent），放不下时进"更多" | 新增 |
+| 7 | 表格里的微图 | 默认只显示图（XS，FE showOnlyChart）；响应式表用列的 `settings.showMicroChartLabel` 打开标签，`settings.microChartSize` 改尺寸 | 以前显示标签 |
+| 7 | 自定义列的导出 | 导出各属性的格式化值，用 `{0}\n{1}` 连接；列的 `exportSettings` 生效 | 以前导出第一个属性的原始值 |
+| 7 | 列的新设置 | `showDataFieldsLabel`、`settings.mergeCells` / `mergeComparisonProperties`（响应式表相同值留空）、`formatOptions`、`aiNotice`、`type`（Default / Slot） | 新增；顶层 `mergeCells` 和 FE 一样不起作用 |
+| 7 | 筛选栏 `useSemanticDateRange: false`、`filterFields.*.settings` | 日期字段没有相对和语义日期运算符；`operatorConfiguration`、`defaultValues` 生效 | 新增 |
+| 7 | 对象页子表的 `controlConfiguration` | 和列表页同一套映射（`templates/tableManifest`）：树表、`createAtEnd`、`creationFields`、粘贴、批量编辑（对象页默认 ChangeSet）、快速变式、`rowCount`、`selectAll`、动作和列的全部设置 | 以前只认一部分 |
+| 7 | 对象页页头、页脚、区块的动作 | 放进 `m/OverflowToolbar`：`priority`、`group`、`overflowGroup`、`overflowGroups`（分隔线）、`defaultAction`（拆分按钮）；页头默认编辑 High、其余 Low；页头 `template` 显示自定义内容 | 窄屏时 Low 的先进"更多" |
+| 7 | 对象页的强调 | 按 FE `applyObjectPageEmphasisRules`：有页脚时页头动作不强调；页脚第一个强调动作移到最前，此时保存不强调；有可见的 Criticality 动作时编辑不强调；`isPrimaryAction` 照此处理 | 以前编辑和保存总是强调 |
+| 7 | 对象页的分享按钮 | `shareOverflowPriority` 默认 High，可以溢出 | 以前从不溢出 |
+| 7 | 对象页动作的 `defaultValuesFunction`、`afterExecution` | 参数对话框预填（`useActionRunner` 的 `ActionRunOptions.defaultValues`）；注解动作返回本实体集的另一个对象时跳过去（FE isNavigable），`navigateToInstance: false` 或 `enableAutoScroll: true` 时不跳 | 新增 |
+| 7 | manifest 里写注解动作的键 | 可以覆盖它的 `text`、`visible`、`enabled`、`priority`、`group`、`isPrimaryAction` | 新增 |
+| 7 | 没有 `Capabilities.FilterExpressionRestrictions` 的 `Edm.Date` / `Edm.DateTimeOffset` 筛选字段 | 只有基本运算符（等于、区间、<、≤、>、≥、不等于、Empty 和排除形式），可以多个条件；没有相对日期按钮；这种字段上的相对日期默认值和变式条件被丢掉（FE `getOperatorsForDateProperty`） | 要语义日期就给字段加 SingleRange / SingleValue 限制，和 `useSemanticDateRange` 无关 |
+| 7 | 动作参数对话框 | 按参数的类型和注解出控件（选择框、值帮助、文本域、日期、数字、复选框），值带类型发送（Int32 是数字，Date 是 "YYYY-MM-DD"，Decimal / Int64 是字符串）；默认值来自 `UI.ParameterDefaultValue`；全部参数 `UI.Hidden` 时不弹对话框 | 以前全是文字框、值都是字符串 |
+| 7 | 动作参数的必填和标签 | 必填只看 `Common.FieldControl` Mandatory（`Nullable="false"` 不再标星，空值发类型默认值）；没有 `Common.Label` 时标签是参数名原样 | 以前按 Nullable 标必填、参数名 humanize |
+| 7 | core 新导出 | `actionParameterState`、`actionParameterDefaults`、`actionParameterBody`、`actionParameterErrors`、`skipsParameterDialog`；类型 `ActionParameterModel`、`ActionParameterState`；`ActionModel.parameters` 的元素是 `ActionParameterModel`（多了 `property`、`defaultValue`、`collection`） | 新增 |
+| 7 | 对象页 `variantManagement: 'Control'` | 每个子表有自己的变式管理 | 以前声明了但不起作用 |
+| 7 | `package.json` 的 `check:docs` | 删除（脚本从来不存在） | 只影响本仓库 |
