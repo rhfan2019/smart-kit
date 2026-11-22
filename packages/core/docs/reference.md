@@ -1441,6 +1441,7 @@ new ModelError(message?: string)
 | --- | --- | --- | --- |
 | `toObject` | **yes** | `(path: EntityPath, service?: string) => void` | Opens the object page (or sub-object page) of `path` of `service`. |
 | `toList` | **yes** | `(entitySet: string, service?: string) => void` | Goes to the list page of `entitySet`. |
+| `toCreate` |  | `(entitySet: string, service?: string) => void` | Opens the object page in create mode for a new object of `entitySet` (the host renders `ObjectPage` with `create`). With it, "Create" of a list without draft whose creation mode is "NewPage" (the list report's default) goes to that page, so creating and editing share one page; without it such a list creates with a dialog. FE 1.154 has NewPage only with drafts or sticky sessions (kit-extension, DV-FE-04). |
 | `href` |  | `(target: NavigationTarget) => string \| undefined` | Link address for &lt;a href>; undefined renders a button only. |
 | `hasObjectPage` |  | `(entitySet: string, service?: string) => boolean` | Whether an object page exists for rows of `entitySet` (controls navigation indicators). |
 | `toTable` |  | `(parent: EntityPath, navigation: string, service?: string) => void` | Opens a page with the whole table of a collection navigation ("Show All (x)", OP Tables). |

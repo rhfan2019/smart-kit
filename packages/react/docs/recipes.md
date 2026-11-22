@@ -67,7 +67,9 @@ at a time (better for long sub-tables); `editableHeaderContent` (default `true`:
 edited in a "Header" section), `content.header` / `content.body.sections` / `content.footer.actions` (custom facets,
 sections and actions; FE fragment names and extension functions become render functions and handlers),
 `controlConfiguration["_Item/@com.sap.vocabularies.UI.v1.LineItem"].tableSettings` for sub-tables. New object:
-`<ObjectPage path="" create={{ entitySet: 'PurchaseOrders' }} />`. Sub-object pages
+`<ObjectPage path="" create={{ entitySet: 'PurchaseOrders' }} />`. Give the host's `NavigationAdapter` a `toCreate(entitySet)` that
+opens this page and the list report's "Create" goes there instead of opening a dialog (services without draft; creating
+and editing then share one page). Sub-object pages
 (an item of an order) are the same component with the longer path, e.g. `PurchaseOrders('1')/_Items(PurchaseOrder='1',ItemNo=10)`.
 
 Behaviour worth knowing (as SAPUI5 1.154 / Fiori elements):

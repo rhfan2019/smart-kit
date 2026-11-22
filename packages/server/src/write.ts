@@ -98,6 +98,8 @@ function castOf(t: EdmType): string {
   }
 }
 
+const NUMBER = /^[-+]?(\d+(\.\d*)?|\.\d+)([eE][-+]?\d+)?$/;
+
 /** Checks a JSON value against the property type; returns the SQL parameter (string, boolean or null). */
 function sqlValue(set: EntitySetInfo, prop: string, v: unknown): string | boolean | null {
   const c = set.columns[prop]!;
@@ -108,7 +110,7 @@ function sqlValue(set: EntitySetInfo, prop: string, v: unknown): string | boolea
   }
   if (NUMERIC.has(c.edmType)) {
     const s = typeof v === 'number' ? String(v) : typeof v === 'string' ? v.trim() : undefined;
-    if (s === undefined || !/^[-+]?(\d+(\.\d*)?|\.\d+)([eE][-+]?\d+)?$/.test(s)) throw bad();
+    if (s === undefined || !NUMBER.test(s)) throw bad();
     if (INTEGER.has(c.edmType) && !/^[-+]?\d+$/.test(s)) throw bad();
     return s;
   }
@@ -144,7 +146,9 @@ function bodyRow(set: EntitySetInfo, body: unknown): Row {
     if (k.startsWith('@') || k.includes('@odata.')) continue;
     if (set.navigations[k]) throw notImplemented(`Deep insert or update through '${k}' is not supported; write the related entities on their own.`);
     if (!set.columns[k]) throw badRequest('PropertyNotFound', `'${k}' is not a property of ${set.name}.`, k);
-    out[k] = v;
+    // IEEE754Compatible clients send Edm.Decimal and Edm.Int64 as strings: hooks and unmanaged saves get numbers, as
+    // rows that were read have them (anything that is not a number stays, and is refused when the value is checked)
+    out[k] = typeof v === 'string' && NUMERIC.has(set.columns[k]!.edmType) && NUMBER.test(v.trim()) ? Number(v) : v;
   }
   return out;
 }

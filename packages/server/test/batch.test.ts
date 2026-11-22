@@ -238,6 +238,26 @@ describe.skipIf(!available)('unmanaged save and the unit of work', () => {
     expect(calls).toEqual(['create', 'update Description', 'update Description', 'update Description', 'delete']);
   });
 
+  it('hands numbers to the application also when the client sent decimals as strings (IEEE754Compatible)', async () => {
+    const seen: unknown[] = [];
+    const svc = unmanaged({
+      entitySets: {
+        PurchaseOrderItems: {
+          create(e) {
+            seen.push(e.data.OrderQuantity, e.data.PurchaseOrderItem);
+            throw new ODataServerError(409, 'SEEN', 'Looked at the values only.');
+          },
+        },
+      },
+    });
+    const item = { Material: 'MAT-10001', Plant: '1010' };
+    await one(svc, 'POST', "PurchaseOrders('4500000001')/_Item", { ...item, OrderQuantity: '2.500', PurchaseOrderItem: 990 });
+    await one(svc, 'POST', "PurchaseOrders('4500000001')/_Item", { ...item, OrderQuantity: 3 });
+    expect(seen).toEqual([2.5, 990, 3, undefined]);
+    // what is not a number is still refused by the service
+    expect((await one(svc, 'POST', "PurchaseOrders('4500000001')/_Item", { ...item, OrderQuantity: 'two' })).body.error.code).toBe('InvalidValue');
+  });
+
   it('refuses an unmanaged create that does not return the key', async () => {
     const svc = unmanaged({ entitySets: { PurchaseOrders: { create: () => ({}) } } });
     expect((await one(svc, 'POST', 'PurchaseOrders', ORDER)).status).toBe(500);

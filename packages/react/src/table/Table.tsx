@@ -335,7 +335,8 @@ export interface $TableCreationOptionsSettings {
   /**
    * "CreationDialog" (a dialog with the line item fields; then the object page of a list), "Inline" /
    * "InlineCreationRows" (a new row in sub-tables), "NewPage" (draft lists: a new draft opens on the object page; lists
-   * without draft use the dialog). Default: "CreationDialog" for lists, "Inline" for sub-tables; "External" and
+   * without draft open the object page in create mode when the host gives `NavigationAdapter.toCreate`, else they use
+   * the dialog). Default: "CreationDialog" for lists, "Inline" for sub-tables; "External" and
    * "AddViaValueHelp" are not implemented yet (they behave as the default).
    */
   name?: 'AddViaValueHelp' | 'CreationDialog' | 'External' | 'Inline' | 'InlineCreationRows' | 'NewPage';
@@ -1689,6 +1690,15 @@ function TableCore(p: CoreSettings) {
     if (newObjectFields.length) setAskNewObject(true);
     else createDraft({}).catch((e: unknown) => messages?.add(messagesFromError(e)));
   }, [creating, newPage]); // eslint-disable-line react-hooks/exhaustive-deps
+  // creationMode "NewPage" on a list without draft, when the host has a page for new objects (NavigationAdapter.toCreate):
+  // Create opens the object page in create mode, as NewPage does with drafts, instead of the dialog (kit-extension,
+  // DV-FE-04: FE has no creation without draft).
+  const createPage = !parent && creationName === 'NewPage' && strategy.kind !== 'draft' && Boolean(navigation?.toCreate) && Boolean(navigation?.hasObjectPage?.(info.entitySet, service.name));
+  useEffect(() => {
+    if (!creating || !createPage) return;
+    setCreating(false);
+    navigation!.toCreate!(info.entitySet, service.name);
+  }, [creating, createPage]); // eslint-disable-line react-hooks/exhaustive-deps
   const onCreated = (path: string, row: Row, ms: Message[]) => {
     messages?.add([...ms, { id: `created-${Date.now()}`, type: 'success', message: typedText(t, 'create.done', ui.headerInfo.typeName), source: 'server' }]);
     setCreating(false);
@@ -2329,7 +2339,7 @@ function TableCore(p: CoreSettings) {
         /></Suspense>
       ) : null}
       {askNewObject ? <NewObjectDialog opened service={p.service} typeName={info.typeName} fields={newObjectFields} onContinue={createDraft} onCancel={() => setAskNewObject(false)} /> : null}
-      {canCreate && !newPage && (createMode === 'dialog' || !parent) ? (
+      {canCreate && !newPage && !createPage && (createMode === 'dialog' || !parent) ? (
         <CreateDialog
           opened={creating}
           onClose={() => setCreating(false)}

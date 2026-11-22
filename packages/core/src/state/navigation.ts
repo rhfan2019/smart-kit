@@ -8,6 +8,13 @@ export interface NavigationAdapter {
   toObject(path: EntityPath, service?: string): void;
   /** Goes to the list page of `entitySet`. */
   toList(entitySet: string, service?: string): void;
+  /**
+   * Opens the object page in create mode for a new object of `entitySet` (the host renders `ObjectPage` with `create`).
+   * With it, "Create" of a list without draft whose creation mode is "NewPage" (the list report's default) goes to that
+   * page, so creating and editing share one page; without it such a list creates with a dialog. FE 1.154 has NewPage
+   * only with drafts or sticky sessions (kit-extension, DV-FE-04).
+   */
+  toCreate?(entitySet: string, service?: string): void;
   /** Link address for <a href>; undefined renders a button only. */
   href?(target: NavigationTarget): string | undefined;
   /** Whether an object page exists for rows of `entitySet` (controls navigation indicators). */

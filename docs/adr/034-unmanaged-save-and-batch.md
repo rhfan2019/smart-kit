@@ -7,6 +7,7 @@
   3. **`$batch` 只做 JSON 格式**（OData 4.01）：`atomicityGroup` 相同的请求是一个变更集，一个事务；失败时整组不写，只回一条响应（带失败那条请求的 `id`）。URL 可以用 `$<id>` 引用本批次里新建的实体。没有 `Prefer: continue-on-error` 时第一处失败就结束。`multipart/mixed` 回 415。
   4. **逐请求授权** `authorize({ context, request, entitySet, operation, action })`：每个请求（包括 `$batch` 里的每一条）在路径解析后、读写前调用，`entitySet` 是路径最后落到的实体集。经 `$expand`、导航路径和值帮助碰到的实体集仍靠 `scope`。
   5. **前端**：`DataProvider` 增加可选的 `batch(operations, { atomic })`；`ODataV4Provider` 在 `batch: 'json'` 时才有它（SAP 的服务和测试服务只懂 multipart，所以不默认）。core 的 `writeAll` 有 `batch` 就发一次请求，没有就逐个发。页面上：删除选中的行、批量编辑是一个变更集；动作作用于多行是一次请求、各行各自成败，`UI.DataFieldForAction/InvocationGrouping` 为 `ChangeSet` 时全部或全不。
+  6. **补充（2026-11-22，web-app-template 做写操作时）**：钩子和非托管保存拿到的 `Edm.Decimal`、`Edm.Int64` 一律是数字，客户端按 IEEE754 兼容格式发成字符串时也是（之前原样是字符串，和读到的行不一致）。`NavigationAdapter` 增加可选的 `toCreate(entitySet)`：宿主给了它，非草稿列表页的“新建”（新建方式 NewPage，列表页的默认）打开对象页的新建模式，新建和编辑共用一个页面；不给时照旧用对话框（DV-FE-04）。
 - **理由**：
   - 写留在应用自己的代码里，权限、审计、业务规则只有一处；界面仍然只有 OData 一个入口，Fiori elements 的行为（ETag 冲突、字段级错误、消息）不用重做。
   - JSON 批处理是标准格式，解析和调试都比 multipart 简单；两端都是自己的，不需要兼容 UI5 的 multipart。

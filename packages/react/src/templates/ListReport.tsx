@@ -244,7 +244,8 @@ export interface $ManifestColumnSettings {
 export interface $ManifestCreationModeSettings {
   /**
    * The list report allows "NewPage" (draft: a new draft opens on the object page), "CreationDialog" and "External";
-   * the other values fall back to "NewPage" as in FE. Services without draft create with a dialog (kit-extension, D42).
+   * the other values fall back to "NewPage" as in FE. Services without draft: "NewPage" opens the object page in
+   * create mode when the host gives `NavigationAdapter.toCreate`, else a dialog (kit-extension, D42).
    * @defaultValue "NewPage"
    */
   name?: 'AddViaValueHelp' | 'Async' | 'CreationDialog' | 'CreationRow' | 'Deferred' | 'External' | 'Inline' | 'InlineCreationRows' | 'NewPage' | 'Sync';

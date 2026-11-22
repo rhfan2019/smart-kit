@@ -13375,7 +13375,7 @@ Creation options (sap.fe.macros.table.TableCreationOptions) of the `creationMode
 
 | Member | Required | Type | Description |
 | --- | --- | --- | --- |
-| `name` |  | `'AddViaValueHelp' \| 'CreationDialog' \| 'External' \| 'Inline' \| 'InlineCreationRows' \| 'NewPage'` | "CreationDialog" (a dialog with the line item fields; then the object page of a list), "Inline" / "InlineCreationRows" (a new row in sub-tables), "NewPage" (draft lists: a new draft opens on the object page; lists without draft use the dialog). Default: "CreationDialog" for lists, "Inline" for sub-tables; "External" and "AddViaValueHelp" are not implemented yet (they behave as the default). |
+| `name` |  | `'AddViaValueHelp' \| 'CreationDialog' \| 'External' \| 'Inline' \| 'InlineCreationRows' \| 'NewPage'` | "CreationDialog" (a dialog with the line item fields; then the object page of a list), "Inline" / "InlineCreationRows" (a new row in sub-tables), "NewPage" (draft lists: a new draft opens on the object page; lists without draft open the object page in create mode when the host gives `NavigationAdapter.toCreate`, else they use the dialog). Default: "CreationDialog" for lists, "Inline" for sub-tables; "External" and "AddViaValueHelp" are not implemented yet (they behave as the default). |
 | `enabled` |  | `boolean` | false: no "Create" button (smart-kit addition; FE hides it with UI.CreateHidden). |
 | `creationFields` |  | `string` | "CreationDialog": the comma-separated properties the dialog asks (default: the mandatory ones, else the line item's editable fields). |
 | `createAtEnd` |  | `boolean` | "Inline": the new row is created at the end of the table instead of the top. |
@@ -14161,7 +14161,7 @@ A custom column (FE `CustomDefinedTableColumn`; FE names a fragment in `template
 
 | Member | Required | Type | Description |
 | --- | --- | --- | --- |
-| `name` |  | `'AddViaValueHelp' \| 'Async' \| 'CreationDialog' \| 'CreationRow' \| 'Deferred' \| 'External' \| 'Inline' \| 'InlineCreationRows' \| 'NewPage' \| …` | The list report allows "NewPage" (draft: a new draft opens on the object page), "CreationDialog" and "External"; the other values fall back to "NewPage" as in FE. Services without draft create with a dialog (kit-extension, D42). |
+| `name` |  | `'AddViaValueHelp' \| 'Async' \| 'CreationDialog' \| 'CreationRow' \| 'Deferred' \| 'External' \| 'Inline' \| 'InlineCreationRows' \| 'NewPage' \| …` | The list report allows "NewPage" (draft: a new draft opens on the object page), "CreationDialog" and "External"; the other values fall back to "NewPage" as in FE. Services without draft: "NewPage" opens the object page in create mode when the host gives `NavigationAdapter.toCreate`, else a dialog (kit-extension, D42). |
 | `creationFields` |  | `string` | "CreationDialog": the comma-separated properties the dialog asks. |
 | `createAtEnd` |  | `boolean` | Inline creation only: not used by the list report, which creates with NewPage / CreationDialog (FE _getCreationBehaviour). |
 | `inlineCreationRowCount` |  | `number` | Inline creation rows only: not used by the list report (FE _getCreationBehaviour). |
