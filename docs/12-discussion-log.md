@@ -996,3 +996,16 @@ ADR-027 定的范围是"只实现 smart-kit 会发的请求"，用户也定过�
 
 **核对**：`npm run typecheck`、`lint`、`check:ui5`（0 未登记）、单元测试、`e2e`、`e2e:pg`；体积预算上调三项（`check-size.mjs` 里写了原因）。
 
+## D52 发版 0.5.0（2026-11-22）
+
+**用户**：0.5.0 的内容（D51、ADR-034 和之后的 `NavigationAdapter.toCreate`、钩子里的 decimal 数字）发布到 npm，走仓库的 Changesets + GitHub Actions 流程。
+
+**结果**：
+1. 发布前本机全部检查通过：`typecheck`、`lint`、`pg:generate --strict`、单元测试 1077、`check:ui5`（0 未登记）、构建、体积、`gen-agent-docs --check`、`gen-exports`（无差异）、`verify:pack`、Storybook 构建、`e2e` 222、`e2e:pg` 149（2 个跳过）。`e2e:fe` 本机没有重跑（`af8e338` 的改动只在宿主提供 `toCreate` 时生效，FE 对比走不到），CI 上 4 片全部通过。
+2. Linux 截图基线：用 `npm run test:slow -- npx playwright test tests/e2e/quality.spec.ts -g AC-THEME-01` 在 Linux 镜像里先比对，4 条在 2% 阈值内通过，CI 上也通过，**不需要更新**（D51 记的“没有重新生成”到此结案）。
+3. 根目录 `CHANGELOG.md` 补上 `af8e338` 的两项，Unreleased 记为 0.5.0。推送 main 后 CI 一次全绿；`release.yml` 开版本 PR rhfan2019/smart-kit#5（四包 0.4.0 → 0.5.0，删变更集、写各包 CHANGELOG、lock 文件），合并。
+4. 合并提交的 CI 在单元测试失败：已知不稳定的 `macros6-chart.test.tsx` AL-06（重试 2 次仍失败；同样的代码上一轮通过），只重跑失败的任务后通过，`release.yml` 发布四个包，推送 0.5.0 标签，`verify-pack --registry` 通过。AL-06 的根因仍待查（D50 第 5 条）。
+5. 版本 PR 上的 CI 运行是“0 个任务、workflow 文件问题”（由 `github-actions[bot]` 触发，11-17 的版本 PR 也一样），不是代码失败；关口是合并后 main 上的 CI。
+6. 发布后在空项目里从 npm 安装四个包的 0.5.0：能装、能 `import`（`writeAll`、`RolledBackError`、`createKyselyOnClient` 都在），`smart-kit` 命令可用，各包带 `docs/`。
+
+**留给用户**：web-app-template 升级到 0.5.0（它的 `package.json` 仍是 0.4.0，有 5 个依赖 0.5.0 的本地提交等着推）。
