@@ -5,6 +5,20 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+### Added (0.5.0, D51, ADR-034)
+
+- smart-kit-server: unmanaged save (`EntitySetHooks.create` / `update` / `delete`: the application stores, the service keeps the protocol and re-reads the entity), `unitOfWork` with `createKyselyOnClient` (one transaction with the host's own writes), `$batch` in the OData 4.01 JSON format (atomic change sets, `$<id>` references, `continue-on-error`), `authorize` (called for every request, also inside a batch).
+- smart-kit-core: `DataProvider.batch`, `writeAll`, `RolledBackError`, `ODataV4Provider` / `loadService` option `batch: 'json'`, `ActionModel.invocationGrouping`.
+- smart-kit: deleting or mass-editing the selected rows and actions on several rows are one `$batch` request when the provider has `batch`; `ObjectPage` `onActionDone`; `ListReport` `navigationParameter` (inbound navigation) and absolute-path `controlConfiguration` keys for the tables of other entity sets; `autoPopinWidth` on responsive table columns.
+- smart-kit-cli: `generate` and `check` accept a schema without tables (an empty entity container).
+
+### Changed — behaviour
+
+- Responsive table: the automatic pop-in follows sap.m.Table (columns stay while their widths fit, by importance; the most important column always stays) instead of two fixed breakpoints.
+- Object page: footer actions at the right end; the first section's title is visually hidden; sub-section blocks in 1 / 2 / 3 / 4 columns; overrides of sections and actions hidden by `UI.Hidden` no longer show up as untitled custom ones.
+- List report: a view tab of another entity set without its own absolute-path key now takes the relative `@UI.LineItem` configuration (as Fiori elements does); switching the view tab marks the view as modified.
+- Grid tables: named by their header for assistive technology; the grid's screen reader texts are translated; group names of analytical tables are left-aligned.
+
 ## [0.4.0] - 2026-11-18
 
 ### Changed — behaviour (SAPUI5 alignment, stage 7, D48)

@@ -46,7 +46,29 @@ export interface WriteDataProvider {
   invoke(action: string, opts?: RequestOptions & { path?: EntityPath; parameters?: Row }): Promise<{ row?: Row; messages?: Message[] }>;
 }
 
-export type DataProvider = ReadDataProvider & Partial<WriteDataProvider>;
+/** One write of a batch: the arguments of `update`, `create`, `remove` or `invoke`. */
+export type BatchOperation =
+  | { kind: 'update'; path: EntityPath; patch: Row; etag?: string }
+  | { kind: 'create'; target: QuerySource; row: Row }
+  | { kind: 'remove'; path: EntityPath; etag?: string }
+  | { kind: 'invoke'; action: string; path?: EntityPath; parameters?: Row };
+
+/** The outcome of one operation of a batch, in the order of the operations. */
+export type BatchResult =
+  | { ok: true; row?: Row; etag?: string; /** `create`: the path of the new entity. */ path?: EntityPath; messages?: Message[] }
+  | { ok: false; /** What `update` / `create` / `remove` / `invoke` would have thrown. */ error: unknown };
+
+/** Several writes in one request (`$batch`). */
+export interface BatchDataProvider {
+  /**
+   * Sends the operations in one request. `atomic`: one change set: all of them are written or none; when one fails,
+   * its result carries the error and the others an error saying nothing was written. Otherwise each operation
+   * succeeds or fails on its own. Rejects only when the batch request itself fails.
+   */
+  batch(operations: BatchOperation[], opts?: RequestOptions & { atomic?: boolean }): Promise<BatchResult[]>;
+}
+
+export type DataProvider = ReadDataProvider & Partial<WriteDataProvider> & Partial<BatchDataProvider>;
 
 /** Minimal fetch signature, so that users can inject any implementation. */
 export type FetchLike = (input: string, init?: { method?: string; headers?: Record<string, string>; body?: string; signal?: AbortSignal }) => Promise<{

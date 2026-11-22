@@ -5,11 +5,11 @@
 
 ## `@rhfan2019/smart-kit-server`
 
-`ActionHandler` (type) · `AggregatePlan` (interface) · `applyLabels` (function) · `boundActions` (function) · `BoundExpr` (type) · `buildSchema` (function) · `CollectionPlan` (interface) · `ColumnInfo` (interface) · `createKysely` (function) · `createODataService` (function) · `createPostgresDb` (function) · `EntitySetHooks` (interface) · `EntitySetInfo` (interface) · `errorBody` (function) · `escapeLike` (function) · `Expr` (type) · `KyselyOnPoolOptions` (interface) · `Literal` (type) · `mergeMetadata` (function) · `MetadataDocuments` (class) · `MetadataSource` (interface) · `NavigationInfo` (interface) · `ODataServerError` (class) · `ODataService` (interface) · `ODataServiceOptions` (interface) · `parseFilter` (function) · `parseQueryOptions` (function) · `parseResourcePath` (function) · `parseSearch` (function) · `Planner` (class) · `PostgresDbOptions` (interface) · `QueryOptions` (interface) · `Row` (type) · `ScopeFunction` (type) · `SearchExpr` (type) · `ServiceMessage` (interface) · `ServiceSchema` (interface) · `SqlBuilder` (class) · `StorageMapping` (interface) · `toNodeListener` (function) · `validationError` (function) · `WriteContext` (interface)
+`ActionHandler` (type) · `AggregatePlan` (interface) · `applyLabels` (function) · `boundActions` (function) · `BoundExpr` (type) · `buildSchema` (function) · `CollectionPlan` (interface) · `ColumnInfo` (interface) · `createKysely` (function) · `createKyselyOnClient` (function) · `createODataService` (function) · `createPostgresDb` (function) · `EntitySetHooks` (interface) · `EntitySetInfo` (interface) · `errorBody` (function) · `escapeLike` (function) · `Expr` (type) · `KyselyOnPoolOptions` (interface) · `Literal` (type) · `mergeMetadata` (function) · `MetadataDocuments` (class) · `MetadataSource` (interface) · `NavigationInfo` (interface) · `ODataServerError` (class) · `ODataService` (interface) · `ODataServiceOptions` (interface) · `parseFilter` (function) · `parseQueryOptions` (function) · `parseResourcePath` (function) · `parseSearch` (function) · `Planner` (class) · `PostgresDbOptions` (interface) · `QueryOptions` (interface) · `Row` (type) · `ScopeFunction` (type) · `SearchExpr` (type) · `ServiceMessage` (interface) · `ServiceSchema` (interface) · `SqlBuilder` (class) · `StorageMapping` (interface) · `toNodeListener` (function) · `validationError` (function) · `WriteContext` (interface)
 
 ### `ActionHandler` — type
 
-A bound action: returns the changes of the bound entity (written with the next ETag), or nothing.
+A bound action: returns the changes of the bound entity (written with the next ETag; handed to the unmanaged `update` of the entity set when it has one), or nothing when the handler has stored everything itself.
 
 ```ts
 export type ActionHandler<C> = (e: WriteContext<C> & { entitySet: string; entity: Row; parameters: Row }) => Row | void | Promise<Row | void>;
@@ -96,6 +96,14 @@ Kysely on a `pg` pool the host already has (instead of the separate pool of `cre
 createKysely(pool: pg.Pool, o?: KyselyOnPoolOptions): Kysely<any>
 ```
 
+### `createKyselyOnClient` — function
+
+Kysely on one connection the host holds: the connection of the host's own transaction, for the `unitOfWork` option of the service. Every statement of the service then runs inside that transaction, next to the host's own writes (whatever library they use). The session settings are made and reset around each use, as `createKysely` does; nothing here begins, commits or releases: the host does.
+
+```ts
+createKyselyOnClient(client: pg.PoolClient | pg.Client, o?: Pick<KyselyOnPoolOptions, "statementTimeout">): Kysely<any>
+```
+
 ### `createODataService` — function
 
 Creates the OData service. Throws when $metadata and the storage mapping do not fit together.
@@ -124,6 +132,9 @@ createPostgresDb(o?: PostgresDbOptions): { db: Kysely<any>; pool: import("pg").P
 | `afterUpdate` |  | `(e: WriteContext&lt;C> & { entitySet: string; row: Row; previous: Row }) => void \| Promise&lt;void>` |  |
 | `beforeDelete` |  | `(e: WriteContext&lt;C> & { entitySet: string; current: Row }) => void \| Promise&lt;void>` | DELETE: delete dependent rows here (foreign keys), or refuse. |
 | `afterDelete` |  | `(e: WriteContext&lt;C> & { entitySet: string; previous: Row }) => void \| Promise&lt;void>` |  |
+| `create` |  | `(e: WriteContext&lt;C> & { entitySet: string; data: Row; parent?: { entitySet: string; row: Row } }) => Row \| Promise&lt;Row>` | Unmanaged save: the application stores the entity itself, instead of the service writing to the table of the entity set. For entity sets that are read models (a view over several tables, computed columns) and for applications whose writes live in their own code (permissions, audit, numbering). The service still does the protocol: property whitelist, Edm types, Capabilities, the data scope, ETag / If-Match, the hooks before and after, and it answers with the entity read again through the entity set. `create` gets the checked values and returns the key of the new entity (all key properties). |
+| `update` |  | `(e: WriteContext&lt;C> & { entitySet: string; key: Row; current: Row; patch: Row; data: Row }) => void \| Promise&lt;void>` | Unmanaged save of a PATCH (see `create`): `patch` holds the checked properties of the request, `data` the current entity with the patch applied, `current` the entity as it is read now (If-Match was checked against it). The ETag property is the application's to change. |
+| `delete` |  | `(e: WriteContext&lt;C> & { entitySet: string; key: Row; current: Row }) => void \| Promise&lt;void>` | Unmanaged delete (see `create`). |
 
 ### `EntitySetInfo` — interface
 
@@ -241,6 +252,8 @@ new ODataServerError(status: number, code: string, message: string, target?: str
 | `entitySets` |  | `Record&lt;string, EntitySetHooks&lt;C>>` | The entity sets that accept writes, with their business rules: which properties a POST / PATCH may set, and hooks before and after create, update and delete (numbers, defaults, totals, validation). An entity set not listed here is read-only (405); a listed one (`{}` for no rules) is writable as far as its Capabilities Insert-, Update- and DeleteRestrictions allow. |
 | `actions` |  | `Record&lt;string, ActionHandler&lt;C>>` | Bound actions by qualified name ("Purchasing.approve"); they must be declared in $metadata (annotation file). |
 | `afterRead` |  | `(e: { entitySet: string; row: Record&lt;string, unknown>; language: string; context: C }) => void` | Called for every entity written to a read or write response (also expanded entities and the objects of grouped paths in $apply), with the language of the request: e.g. language-dependent texts of code lists. Changes only what is returned; filters and sorting still see the stored values. |
+| `authorize` |  | `(e: { context: C; request: Request; entitySet: string; operation: 'read' \| 'create' \| 'update' \| 'delete' \| 'action'; action?: string }) …` | Whether the request may touch the entity set it addresses: throw an `ODataServerError` (403) to refuse. Called once for every request, also for each request inside a `$batch`, after the path is resolved and before anything is read or written: `entitySet` is the set the path ends at (the items for `Orders('1')/_Items`). Entity sets reached through `$expand`, navigation paths in `$filter` and value helps are not announced here: restrict those with `scope`. |
+| `unitOfWork` |  | `&lt;T>(e: { context: C; request: Request }, work: (db: Kysely&lt;any>) => Promise&lt;T>) => Promise&lt;T>` | The unit of work of a write: called once per write request and once per change set (atomicity group) of a `$batch`, instead of a transaction the service starts itself on `db`. The host begins its own transaction, calls `work` with a Kysely instance that runs on that transaction's connection (`createKyselyOnClient`), and commits when `work` resolves or rolls back when it rejects. With it the unmanaged `create` / `update` / `delete` implementations, the action handlers and the service's own statements are one transaction, whatever database library the host writes with. |
 | `readOnly` |  | `boolean` | Refuse every write with 501, whatever the annotations say (default false). |
 | `onError` |  | `(error: unknown, request: Request) => void` | Called for 5xx errors (logging). |
 

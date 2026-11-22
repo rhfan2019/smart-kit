@@ -5,7 +5,7 @@
 
 ## `@rhfan2019/smart-kit-core`
 
-`ActionModel` (interface) · `actionParameterBody` (function) · `actionParameterDefaults` (function) · `actionParameterErrors` (function) · `ActionParameterModel` (interface) · `actionParameterState` (function) · `ActionParameterState` (interface) · `activeFilterPaths` (function) · `aggregateMeasure` (function) · `AggregateMeasure` (interface) · `AggregateRequestOptions` (interface) · `AggregationModel` (interface) · `ALLOWED_EXPRESSIONS_PRIORITY` (const) · `ANALYTICAL_COUNT_ALIAS` (const) · `AnalyticalApply` (interface) · `AnalyticalRequestOptions` (interface) · `AnalyticalRequests` (interface) · `arrangeText` (function) · `buildAggregateRequest` (function) · `buildAnalyticalRequests` (function) · `buildChartRequest` (function) · `buildHierarchyRequest` (function) · `buildListRequest` (function) · `buildModel` (function) · `BuildModelOptions` (interface) · `buildObjectRequest` (function) · `buildTotalsRequest` (function) · `buildValueHelpRequest` (function) · `calculateCriticality` (function) · `calculateTrend` (function) · `canGroup` (function) · `canSubtotal` (function) · `canTotal` (function) · `capabilitiesFor` (function) · `CapabilityModel` (interface) · `chartExpand` (function) · `chartFields` (function) · `chartIsSeries` (function) · `ChartModel` (interface) · `ChartRequestOptions` (interface) · `chartSeriesSelect` (function) · `childPathOf` (function) · `collectTotals` (function) · `ColumnModel` (type) · `companionPaths` (function) · `compareDecimal` (function) · `compareValues` (function) · `ConcurrencyError` (class) · `Condition` (interface) · `conditionAllowed` (function) · `COUNT_DATE_OPERATORS` (const) · `createMessage` (function) · `createSessionPageStateStore` (function) · `Criticality` (type) · `CriticalityCalculationModel` (interface) · `csdlJsonToXml` (function) · `CsdlSource` (type) · `currencyDigits` (function) · `DataPointModel` (interface) · `dataPointPaths` (function) · `DataProvider` (type) · `DEFAULT_CAPABILITIES` (const) · `deriveColumns` (function) · `DERIVED_GENERAL_SECTION` (const) · `DirectEditStrategy` (class) · `DRAFT_EDIT_STATES` (const) · `DraftEditState` (type) · `DraftEditStrategy` (class) · `DraftModel` (interface) · `DrillState` (type) · `EDIT_STATE` (const) · `EditSession` (interface) · `editStateFilter` (function) · `editStateOf` (function) · `EditStrategy` (interface) · `editStrategyFor` (function) · `EdmType` (type) · `encodeOption` (function) · `EntityPath` (type) · `EntityPathError` (class) · `entityPathOf` (function) · `EntitySetModel` (interface) · `EntityTypeModel` (interface) · `EntityUi` (interface) · `errorFromResponse` (function) · `EventModel` (interface) · `ExpandSpec` (interface) · `FetchLike` (type) · `FieldModel` (interface) · `fieldPaths` (function) · `FilterExpression` (type) · `filterExpressionRules` (function) · `FilterExpressionRules` (interface) · `FilterOperatorOptions` (interface) · `FilterOptions` (interface) · `FilterState` (type) · `filterString` (function) · `FIXED_DAY_OPERATORS` (const) · `FixedDayOperator` (type) · `formatDate` (function) · `formatDateTime` (function) · `formatDateTimeWithTimezone` (function) · `formatNumber` (function) · `FormatOptions` (interface) · `formatTime` (function) · `formatTimezone` (function) · `formatValue` (function) · `FormGroupModel` (interface) · `getEntitySet` (function) · `getEntityType` (function) · `getProperty` (function) · `getUi` (function) · `groupKey` (function) · `HeaderFacetModel` (type) · `HeaderInfoModel` (interface) · `hiddenFilterPath` (function) · `hiddenFiltersOf` (function) · `HierarchyNode` (interface) · `hierarchyNodeOf` (function) · `hierarchyOf` (function) · `HierarchyRequest` (interface) · `HierarchyRequestOptions` (interface) · `highestSeverity` (function) · `humanize` (function) · `Importance` (type) · `ImprovementDirection` (type) · `InitialCondition` (interface) · `isAbortError` (function) · `isComplete` (function) · `isCustomAggregate` (function) · `isDraftRow` (function) · `isFilterable` (function) · `isRelativeDateOperator` (function) · `isSortable` (function) · `keyPredicate` (function) · `ListRequestOptions` (interface) · `LiteralError` (class) · `loadService` (function) · `LoadServiceOptions` (interface) · `matches` (function) · `matchesEditState` (function) · `MAX_GROUP_VALUES` (const) · `MDC_DATE_OPERATORS` (const) · `MemoryPageStateStore` (class) · `MemoryProvider` (class) · `MemoryProviderOptions` (interface) · `MemoryVariantStore` (class) · `Message` (interface) · `messagesFromError` (function) · `messagesFromHeader` (function) · `MessageType` (type) · `MetaModel` (interface) · `MICRO_CHART_MAX_POINTS` (const) · `MICRO_COMPARISON_MAX_BARS` (const) · `MODEL_VERSION` (const) · `ModelError` (class) · `ModelWarning` (interface) · `NavigationAdapter` (interface) · `NavigationModel` (interface) · `NavigationTarget` (type) · `objectFields` (function) · `ODataError` (class) · `ODataErrorDetail` (interface) · `ODataV4Provider` (class) · `ODataV4ProviderOptions` (interface) · `ODataVariantStore` (class) · `ODataVariantStoreOptions` (interface) · `Operator` (type) · `OPERATOR_ARITY` (const) · `OperatorConfiguration` (interface) · `OPERATORS` (const) · `PageStateStore` (interface) · `parseAnnotationPath` (function) · `parseEntityPath` (function) · `PathSegment` (interface) · `PresentationModel` (interface) · `PresentationVariantModel` (interface) · `propertyFilter` (function) · `PropertyModel` (interface) · `QueryRequest` (interface) · `QueryResult` (interface) · `QuerySource` (type) · `ReadDataProvider` (interface) · `readQueryString` (function) · `ReadRequest` (interface) · `readValueListService` (function) · `RecursiveHierarchyModel` (interface) · `referencedValueLists` (function) · `RELATIVE_DATE_OPERATORS` (const) · `RelativeDateOperator` (type) · `relativeDateRange` (function) · `relativeDateValueTypes` (function) · `RequestOptions` (interface) · `resolveCondition` (function) · `ResolvedPath` (interface) · `resolveEntityPath` (function) · `resolvePath` (function) · `resolveValueListReference` (function) · `restrictConditions` (function) · `Row` (type) · `SectionModel` (interface) · `selectAndExpand` (function) · `SemanticTarget` (interface) · `SemanticTargetRequest` (interface) · `serviceRootOf` (function) · `setDefaultWeekStart` (function) · `siblingPath` (function) · `skipsParameterDialog` (function) · `SortItem` (interface) · `sourceInfo` (function) · `SourceInfo` (interface) · `sourcePath` (function) · `STANDARD_VARIANT_ID` (const) · `startOfDayIso` (function) · `strictestExpression` (function) · `SubSectionContent` (type) · `SubSectionModel` (interface) · `targetEntitySet` (function) · `TextArrangement` (type) · `toCsdlXml` (function) · `todayIn` (function) · `toFilter` (function) · `toLiteral` (function) · `toQueryString` (function) · `TOTAL_COUNT_ALIAS` (const) · `TotalAmount` (interface) · `TotalsEntry` (interface) · `TotalsRequestOptions` (interface) · `TrendCalculationModel` (interface) · `unitPathOf` (function) · `UnknownEntitySetError` (class) · `ValueHelpRequestOptions` (interface) · `ValueListModel` (interface) · `ValueListParameter` (interface) · `ValueListService` (interface) · `valueListTextArrangement` (function) · `ValueOperator` (type) · `ValueRef` (type) · `Variant` (interface) · `VariantContent` (interface) · `VariantStore` (interface) · `ViewModel` (interface) · `withHiddenFilters` (function) · `WriteDataProvider` (interface) · `WriteResult` (interface)
+`ActionModel` (interface) · `actionParameterBody` (function) · `actionParameterDefaults` (function) · `actionParameterErrors` (function) · `ActionParameterModel` (interface) · `actionParameterState` (function) · `ActionParameterState` (interface) · `activeFilterPaths` (function) · `aggregateMeasure` (function) · `AggregateMeasure` (interface) · `AggregateRequestOptions` (interface) · `AggregationModel` (interface) · `ALLOWED_EXPRESSIONS_PRIORITY` (const) · `ANALYTICAL_COUNT_ALIAS` (const) · `AnalyticalApply` (interface) · `AnalyticalRequestOptions` (interface) · `AnalyticalRequests` (interface) · `arrangeText` (function) · `BatchDataProvider` (interface) · `BatchOperation` (type) · `BatchResult` (type) · `buildAggregateRequest` (function) · `buildAnalyticalRequests` (function) · `buildChartRequest` (function) · `buildHierarchyRequest` (function) · `buildListRequest` (function) · `buildModel` (function) · `BuildModelOptions` (interface) · `buildObjectRequest` (function) · `buildTotalsRequest` (function) · `buildValueHelpRequest` (function) · `calculateCriticality` (function) · `calculateTrend` (function) · `canGroup` (function) · `canSubtotal` (function) · `canTotal` (function) · `capabilitiesFor` (function) · `CapabilityModel` (interface) · `chartExpand` (function) · `chartFields` (function) · `chartIsSeries` (function) · `ChartModel` (interface) · `ChartRequestOptions` (interface) · `chartSeriesSelect` (function) · `childPathOf` (function) · `collectTotals` (function) · `ColumnModel` (type) · `companionPaths` (function) · `compareDecimal` (function) · `compareValues` (function) · `ConcurrencyError` (class) · `Condition` (interface) · `conditionAllowed` (function) · `COUNT_DATE_OPERATORS` (const) · `createMessage` (function) · `createSessionPageStateStore` (function) · `Criticality` (type) · `CriticalityCalculationModel` (interface) · `csdlJsonToXml` (function) · `CsdlSource` (type) · `currencyDigits` (function) · `DataPointModel` (interface) · `dataPointPaths` (function) · `DataProvider` (type) · `DEFAULT_CAPABILITIES` (const) · `deriveColumns` (function) · `DERIVED_GENERAL_SECTION` (const) · `DirectEditStrategy` (class) · `DRAFT_EDIT_STATES` (const) · `DraftEditState` (type) · `DraftEditStrategy` (class) · `DraftModel` (interface) · `DrillState` (type) · `EDIT_STATE` (const) · `EditSession` (interface) · `editStateFilter` (function) · `editStateOf` (function) · `EditStrategy` (interface) · `editStrategyFor` (function) · `EdmType` (type) · `encodeOption` (function) · `EntityPath` (type) · `EntityPathError` (class) · `entityPathOf` (function) · `EntitySetModel` (interface) · `EntityTypeModel` (interface) · `EntityUi` (interface) · `errorFromResponse` (function) · `EventModel` (interface) · `ExpandSpec` (interface) · `FetchLike` (type) · `FieldModel` (interface) · `fieldPaths` (function) · `FilterExpression` (type) · `filterExpressionRules` (function) · `FilterExpressionRules` (interface) · `FilterOperatorOptions` (interface) · `FilterOptions` (interface) · `FilterState` (type) · `filterString` (function) · `FIXED_DAY_OPERATORS` (const) · `FixedDayOperator` (type) · `formatDate` (function) · `formatDateTime` (function) · `formatDateTimeWithTimezone` (function) · `formatNumber` (function) · `FormatOptions` (interface) · `formatTime` (function) · `formatTimezone` (function) · `formatValue` (function) · `FormGroupModel` (interface) · `getEntitySet` (function) · `getEntityType` (function) · `getProperty` (function) · `getUi` (function) · `groupKey` (function) · `HeaderFacetModel` (type) · `HeaderInfoModel` (interface) · `hiddenFilterPath` (function) · `hiddenFiltersOf` (function) · `HierarchyNode` (interface) · `hierarchyNodeOf` (function) · `hierarchyOf` (function) · `HierarchyRequest` (interface) · `HierarchyRequestOptions` (interface) · `highestSeverity` (function) · `humanize` (function) · `Importance` (type) · `ImprovementDirection` (type) · `InitialCondition` (interface) · `isAbortError` (function) · `isComplete` (function) · `isCustomAggregate` (function) · `isDraftRow` (function) · `isFilterable` (function) · `isRelativeDateOperator` (function) · `isSortable` (function) · `keyPredicate` (function) · `ListRequestOptions` (interface) · `LiteralError` (class) · `loadService` (function) · `LoadServiceOptions` (interface) · `matches` (function) · `matchesEditState` (function) · `MAX_GROUP_VALUES` (const) · `MDC_DATE_OPERATORS` (const) · `MemoryPageStateStore` (class) · `MemoryProvider` (class) · `MemoryProviderOptions` (interface) · `MemoryVariantStore` (class) · `Message` (interface) · `messagesFromError` (function) · `messagesFromHeader` (function) · `MessageType` (type) · `MetaModel` (interface) · `MICRO_CHART_MAX_POINTS` (const) · `MICRO_COMPARISON_MAX_BARS` (const) · `MODEL_VERSION` (const) · `ModelError` (class) · `ModelWarning` (interface) · `NavigationAdapter` (interface) · `NavigationModel` (interface) · `NavigationTarget` (type) · `objectFields` (function) · `ODataError` (class) · `ODataErrorDetail` (interface) · `ODataV4Provider` (class) · `ODataV4ProviderOptions` (interface) · `ODataVariantStore` (class) · `ODataVariantStoreOptions` (interface) · `Operator` (type) · `OPERATOR_ARITY` (const) · `OperatorConfiguration` (interface) · `OPERATORS` (const) · `PageStateStore` (interface) · `parseAnnotationPath` (function) · `parseEntityPath` (function) · `PathSegment` (interface) · `PresentationModel` (interface) · `PresentationVariantModel` (interface) · `propertyFilter` (function) · `PropertyModel` (interface) · `QueryRequest` (interface) · `QueryResult` (interface) · `QuerySource` (type) · `ReadDataProvider` (interface) · `readQueryString` (function) · `ReadRequest` (interface) · `readValueListService` (function) · `RecursiveHierarchyModel` (interface) · `referencedValueLists` (function) · `RELATIVE_DATE_OPERATORS` (const) · `RelativeDateOperator` (type) · `relativeDateRange` (function) · `relativeDateValueTypes` (function) · `RequestOptions` (interface) · `resolveCondition` (function) · `ResolvedPath` (interface) · `resolveEntityPath` (function) · `resolvePath` (function) · `resolveValueListReference` (function) · `restrictConditions` (function) · `RolledBackError` (class) · `Row` (type) · `SectionModel` (interface) · `selectAndExpand` (function) · `SemanticTarget` (interface) · `SemanticTargetRequest` (interface) · `serviceRootOf` (function) · `setDefaultWeekStart` (function) · `siblingPath` (function) · `skipsParameterDialog` (function) · `SortItem` (interface) · `sourceInfo` (function) · `SourceInfo` (interface) · `sourcePath` (function) · `STANDARD_VARIANT_ID` (const) · `startOfDayIso` (function) · `strictestExpression` (function) · `SubSectionContent` (type) · `SubSectionModel` (interface) · `targetEntitySet` (function) · `TextArrangement` (type) · `toCsdlXml` (function) · `todayIn` (function) · `toFilter` (function) · `toLiteral` (function) · `toQueryString` (function) · `TOTAL_COUNT_ALIAS` (const) · `TotalAmount` (interface) · `TotalsEntry` (interface) · `TotalsRequestOptions` (interface) · `TrendCalculationModel` (interface) · `unitPathOf` (function) · `UnknownEntitySetError` (class) · `ValueHelpRequestOptions` (interface) · `ValueListModel` (interface) · `ValueListParameter` (interface) · `ValueListService` (interface) · `valueListTextArrangement` (function) · `ValueOperator` (type) · `ValueRef` (type) · `Variant` (interface) · `VariantContent` (interface) · `VariantStore` (interface) · `ViewModel` (interface) · `withHiddenFilters` (function) · `writeAll` (function) · `WriteDataProvider` (interface) · `WriteResult` (interface)
 
 ### `ActionModel` — interface
 
@@ -28,6 +28,7 @@ UI.DataFieldForAction (ADR-024).
 | `operationAvailable` |  | `ValueRef` | Core.OperationAvailable: a constant or a path relative to the bound entity (binding parameter removed). |
 | `hidden` |  | `string` | UI.Hidden of the record as a path (a constant true drops the action): the button is hidden for rows where it is true. |
 | `emphasized` |  | `boolean` | UI.Emphasized of the record (FE HeaderAndFooterAction getDataFieldAnnotationAction: emphasized when there is no Criticality). |
+| `invocationGrouping` |  | `'ChangeSet'` | UI.DataFieldForAction/InvocationGrouping when it is ChangeSet: the action runs on all selected entities or on none (FE Operation: one change set). Default (Isolated): each entity on its own. |
 
 ### `actionParameterBody` — function
 
@@ -194,6 +195,30 @@ The display of a code with its text: TextFirst (default) "Text (Code)", TextLast
 
 ```ts
 arrangeText(code: string, text: string | undefined, arrangement?: TextArrangement): string
+```
+
+### `BatchDataProvider` — interface
+
+Several writes in one request (`$batch`).
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `batch` | **yes** | `(operations: BatchOperation[], opts?: RequestOptions & { atomic?: boolean }) => Promise&lt;BatchResult[]>` | Sends the operations in one request. `atomic`: one change set: all of them are written or none; when one fails, its result carries the error and the others an error saying nothing was written. Otherwise each operation succeeds or fails on its own. Rejects only when the batch request itself fails. |
+
+### `BatchOperation` — type
+
+One write of a batch: the arguments of `update`, `create`, `remove` or `invoke`.
+
+```ts
+export type BatchOperation = | { kind: 'update'; path: EntityPath; patch: Row; etag?: string } | { kind: 'create'; target: QuerySource; row: Row } | { kind: 'remove'; path: EntityPath; etag?: string } | { kind: 'invoke'; action: string; path?: EntityPath; parameters?: Row };
+```
+
+### `BatchResult` — type
+
+The outcome of one operation of a batch, in the order of the operations.
+
+```ts
+export type BatchResult = | { ok: true; row?: Row; etag?: string; /** `create`: the path of the new entity. */ path?: EntityPath; messages?: Message[] } | { ok: false; /** What `update` / `create` / `remove` / `invoke` would have thrown. */ error: unknown };
 ```
 
 ### `buildAggregateRequest` — function
@@ -575,7 +600,7 @@ dataPointPaths(model: MetaModel, typeName: string, dp: DataPointModel, o?: { cel
 ### `DataProvider` — type
 
 ```ts
-export type DataProvider = ReadDataProvider & Partial<WriteDataProvider>;
+export type DataProvider = ReadDataProvider & Partial<WriteDataProvider> & Partial<BatchDataProvider>;
 ```
 
 ### `DEFAULT_CAPABILITIES` — const
@@ -1258,6 +1283,7 @@ loadService(o: LoadServiceOptions): Promise<{ model: MetaModel; provider: ODataV
 | `fetch` | **yes** | `FetchLike` |  |
 | `language` |  | `string` |  |
 | `annotationUrls` |  | `string[]` | Annotation files as URLs (fetched) — in addition to `annotationFiles` given as text or objects. |
+| `batch` |  | `'json'` | 'json': the service answers `$batch` in the JSON format (see ODataV4ProviderOptions.batch). |
 | `annotationFiles` |  | `CsdlSource[]` | Annotation files, applied after the service annotations, in order. |
 | `overlay` |  | `CsdlSource` | Local overlay, applied last. |
 
@@ -1475,6 +1501,7 @@ new ODataV4Provider(o: ODataV4ProviderOptions)
 | `fetch` | **yes** | `FetchLike` |  |
 | `getLanguage` |  | `() => string` | Current UI language for Accept-Language ("zh", "en", …). |
 | `headers` |  | `() => Record&lt;string, string>` | Extra headers added to every request (e.g. a CSRF token). |
+| `batch` |  | `'json'` | 'json': the service answers `$batch` in the JSON format of OData 4.01 (smart-kit-server does). The provider then has `batch`, and pages send several writes (deleting or changing the selected rows, an action on many rows) as one request. Not set: every write is a request of its own. |
 
 ### `ODataVariantStore` — class
 
@@ -1817,6 +1844,14 @@ Keeps the allowed conditions, at most `max` (the latest ones win: a new single v
 
 ```ts
 restrictConditions(expression: FilterExpression | undefined, conditions: Condition[], type?: EdmType, options?: FilterOperatorOptions): Condition[]
+```
+
+### `RolledBackError` — class
+
+The error of the operations of a change set that were not the one that failed.
+
+```ts
+new RolledBackError(message?: string)
 ```
 
 ### `Row` — type
@@ -2215,6 +2250,14 @@ Adds `hidden` to `filters` as hidden conditions.
 
 ```ts
 withHiddenFilters(filters: FilterState, hidden: FilterState): FilterState
+```
+
+### `writeAll` — function
+
+Runs the writes and reports each outcome, in order; never rejects for a failed operation. With a provider that has `batch` and more than one operation: one request. `atomic` then means all or nothing (one change set). Without `batch` the operations are sent one after another: `atomic` cannot be kept then, so the operations stop at the first failure (what was written before it stays).
+
+```ts
+writeAll(provider: DataProvider, operations: BatchOperation[], opts?: RequestOptions & { atomic?: boolean; }): Promise<BatchResult[]>
 ```
 
 ### `WriteDataProvider` — interface

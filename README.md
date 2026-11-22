@@ -11,7 +11,7 @@
 | 包 | 内容 |
 | --- | --- |
 | `@rhfan2019/smart-kit-core` | 纯 TypeScript：CSDL 与注解解析、模型、查询生成、OData V4 和内存数据提供者、变体与页面状态存储 |
-| `@rhfan2019/smart-kit` | React 积木：`SmartFilterBar`、`SmartTable`、`SmartField`、`SmartForm`、`ObjectPageLayout`、`v4/fe/templates/ListReport`、`v4/fe/templates/ObjectPage` 等；令牌与主题；中英文文案 |
+| `@rhfan2019/smart-kit` | React 积木：`v4/fe/macros/FilterBar`、`Table`、`Field`、`Form`、`ObjectPageLayout`、`v4/fe/templates/ListReport`、`v4/fe/templates/ObjectPage` 等；令牌与主题；中英文文案 |
 | `@rhfan2019/smart-kit-server` | 只在 Node 里用：自写的 OData V4 服务，把请求翻译成 PostgreSQL 的 SQL；支持读、直接保存（修改、新建、删除）和绑定动作，业务规则写成钩子（ADR-027） |
 | `@rhfan2019/smart-kit-cli` | 开发时用的命令 `smart-kit`：从 PostgreSQL 的表结构生成 CSDL，检查手写的注解是否失效 |
 

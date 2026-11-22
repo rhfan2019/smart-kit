@@ -24,7 +24,7 @@ import Table, { type $TableSettings, type Context, type $ColumnExportSettings, t
 import TreeTable from '../v4/fe/macros/TreeTable';
 import { overflowGroupsOf, tableActionsOf, tableColumnsOf, tableSettingsOf } from './tableManifest';
 import type { FieldFormatOptions } from '../v4/fe/macros/Field';
-import FilterBar, { type $FilterFieldSettings, type FilterFieldItem, type FilterFieldTemplateContext } from '../v4/fe/macros/FilterBar';
+import FilterBar, { type $FilterFieldSettings, type FilterFieldItem, type FilterFieldTemplateContext, type SelectionVariant } from '../v4/fe/macros/FilterBar';
 import VariantManagement from '../v4/fe/macros/VariantManagement';
 import MessageButton from '../v4/fe/macros/MessageButton';
 import Share from '../v4/fe/macros/Share';
@@ -515,6 +515,27 @@ export interface $ManifestChartConfiguration {
   overflowGroups?: Record<string, $ManifestOverflowGroupSettings>;
 }
 
+/**
+ * The context of an inbound navigation (`$ListReportSettings.navigationParameter`; FE: the `NavigationParameter` of
+ * sap.fe.core.controllerextensions.ViewState `applyViewState`).
+ */
+export interface $NavigationParameterSettings {
+  /**
+   * The filter conditions, as the JSON object of a sap.fe.navigation.SelectionVariant (`SelectOptions`, `Parameters`).
+   * They replace the conditions of the filter bar (FE FilterBar `setSelectionVariant`: the conditions are cleared
+   * first); select options of properties the entity type does not have are ignored. Without it the conditions stay.
+   */
+  selectionVariant?: SelectionVariant;
+  /** Key of the view to select (`views.paths[].key`; FE sap.fe.templates.ListReport.ExtensionAPI `setSelectedTab`). */
+  selectedTab?: string;
+  /**
+   * Tells two navigations with the same content apart, e.g. the router's key of the history entry (React Router
+   * `location.key`): with a new id the same conditions are applied again, with the same id (back navigation,
+   * re-rendering) they are not. Without it only a different content is a new navigation.
+   */
+  navigationId?: string;
+}
+
 /** Settings of the list report: the FE manifest settings (docs/26c §3–§7) plus the registered smart-kit extensions. */
 export interface $ListReportSettings {
   /** Entity set of the list, e.g. "Orders" (or `contextPath`). */
@@ -523,12 +544,21 @@ export interface $ListReportSettings {
   contextPath?: string;
   /** Row navigation per entity set: `detail.route` makes rows navigate to the object page (NavigationAdapter.toObject). */
   navigation?: Record<string, { detail?: { route?: string } }>;
-  /** Settings of the controls by annotation path (table, filter bar). */
+  /**
+   * Settings of the controls by annotation path (table, filter bar). With views of several entity sets (`views.paths[]`
+   * with `entitySet` / `contextPath`), the table of an entity set reads the key with its absolute path first,
+   * `"/<EntitySet>/@com.sap.vocabularies.UI.v1.LineItem"`, and only when there is none (or it is empty) the relative
+   * key `"@com.sap.vocabularies.UI.v1.LineItem"` — the whole configuration (`tableSettings`, `columns`, `actions`,
+   * `overflowGroups`) is taken from one key, they are not merged (FE ConverterContext getManifestControlConfiguration).
+   */
   controlConfiguration?: {
     '@com.sap.vocabularies.UI.v1.LineItem'?: $ManifestTableConfiguration;
     '@com.sap.vocabularies.UI.v1.SelectionFields'?: $ManifestFilterConfiguration;
     /** The chart's settings; a qualified chart: "@com.sap.vocabularies.UI.v1.Chart#Q". */
     '@com.sap.vocabularies.UI.v1.Chart'?: $ManifestChartConfiguration;
+  } & {
+    /** The table of another entity set's view (multiple views): "/<EntitySet>/@com.sap.vocabularies.UI.v1.LineItem". */
+    [absolutePath: `/${string}/@com.sap.vocabularies.UI.v1.LineItem`]: $ManifestTableConfiguration | undefined;
   } & Record<string, object>;
   content?: {
     header?: {
@@ -575,8 +605,26 @@ export interface $ListReportSettings {
   pageKey?: string;
   /** Page title (standard variant text, e-mail subject); default UI.HeaderInfo/TypeNamePlural. */
   title?: string;
-  /** Loaded rows of the main table (e.g. paging buttons in a flexible column layout). */
+  /**
+   * Loaded rows of the table that is shown: the main table, with `views` the table of the selected view — also a view
+   * of another entity set (e.g. paging buttons in a flexible column layout).
+   */
   onRowsChange?(rows: Row[]): void;
+  /**
+   * The context of an inbound navigation: another page opens the list with filter conditions and, optionally, a view.
+   * FE receives it as the navigation parameter of a cross-application navigation (sap.fe.core ViewState
+   * `applyViewState(viewState, navParameter)`, navigation type "xAppState"; sap.fe.macros.FilterBar
+   * `applyNavigationParameters` / `_applySelectionVariant`); here the host passes it (kit-extension). Each navigation
+   * is applied once, when the page is shown with it for the first time: the standard view is selected, the filter
+   * conditions are replaced by the selection variant's (not merged, also the default conditions go; the search text is
+   * cleared), the list is read at once whatever `initialLoad` says, and `selectedTab` is selected. The selection
+   * variant has to bring the mandatory filter fields: with one of them empty nothing is read and the field shows its
+   * error, as in FE. Without a filter bar (`hideFilterBar`) the conditions have no effect. The navigation wins over the restored page state
+   * and over the user's default view. Rendering again with the same navigation — the same content and
+   * `navigationId`, also after the page was left and opened again — changes nothing, so what the user changed since
+   * stays; a different content or `navigationId` is a new navigation.
+   */
+  navigationParameter?: $NavigationParameterSettings;
   /** Change this value to reload the tables, tab counts and chart. The first value does not reload. */
   refreshToken?: number | string;
   /** Before an export is written; return false to cancel (FE: controller extension onBeforeExport). */
@@ -600,6 +648,35 @@ export function entitySetOf(p: Pick<$ListReportSettings, 'entitySet' | 'contextP
   const set = p.contextPath ? p.contextPath.replace(/^\//, '') : p.entitySet;
   if (!set) throw new Error('ListReport: entitySet or contextPath is required');
   return set;
+}
+
+/** The entity set of a view path (`contextPath` wins over `entitySet`); default the page's. */
+const viewEntitySet = (cfg: Pick<$ViewPathSettings, 'entitySet' | 'contextPath'>, entitySet: string) => (cfg.contextPath ? cfg.contextPath.replace(/^\//, '') : cfg.entitySet ?? entitySet);
+
+/** Whether the views show several entity sets (FE ManifestWrapper hasMultipleEntitySets; custom views do not count). */
+export function hasMultipleEntitySets(p: Pick<$ListReportSettings, 'entitySet' | 'contextPath' | 'views'>): boolean {
+  const entitySet = entitySetOf(p);
+  return Boolean(p.views?.paths.some((x) => !x.template && viewEntitySet(x, entitySet) !== entitySet));
+}
+
+/**
+ * The table configuration of an entity set's table (FE ConverterContext getManifestControlConfiguration): with several
+ * entity sets the key with the absolute path, "/<EntitySet>/@UI.LineItem", when it has content, else the relative key
+ * "@UI.LineItem" (for the tables of every entity set); the configurations are not merged.
+ */
+export function tableConfigurationOf(controlConfiguration: $ListReportSettings['controlConfiguration'], entitySet: string, multipleEntitySets: boolean): $ManifestTableConfiguration {
+  const relative = controlConfiguration?.[LINE_ITEM] ?? {};
+  if (!multipleEntitySets) return relative;
+  const absolute = controlConfiguration?.[`/${entitySet}/${LINE_ITEM}`];
+  return absolute && Object.keys(absolute).length ? absolute : relative;
+}
+
+/**
+ * Identifies an inbound navigation: its id and content. The list report keeps the one it applied in its page state, so
+ * the same navigation is applied once (also when the page is left and shown again).
+ */
+export function navigationKey(n: $NavigationParameterSettings | undefined): string | undefined {
+  return n ? JSON.stringify([n.navigationId ?? null, n.selectionVariant ?? null, n.selectedTab ?? null]) : undefined;
 }
 
 /** initialLoad with booleans as FE reads them (InitialLoadType). */
@@ -709,7 +786,7 @@ interface ViewTab {
 export function viewTabs(model: MetaModel, entitySet: string, paths: $ViewPathSettings[], defaultMetaPath?: string): ViewTab[] {
   return paths.flatMap((cfg, i): ViewTab[] => {
     if (cfg.template) return [{ key: cfg.key ?? `custom${i}`, entitySet, title: cfg.label ?? '', conditions: [], template: cfg.template }];
-    const set = cfg.contextPath ? cfg.contextPath.replace(/^\//, '') : cfg.entitySet ?? entitySet;
+    const set = viewEntitySet(cfg, entitySet);
     const typeName = model.entitySets[set]?.typeName;
     const ui = typeName ? model.ui[typeName] : undefined;
     if (!ui) return [];
@@ -873,8 +950,10 @@ function ListReportInner(p: $ListReportSettings) {
   const liveMode = p.liveMode ?? false;
   const initialLoad = initialLoadOf(p.initialLoad);
   const variantManagement = p.variantManagement ?? 'Page';
-  const tableConfig = p.controlConfiguration?.[LINE_ITEM];
-  const ts: $ManifestTableSettings = tableConfig?.tableSettings ?? {};
+  // The table configuration of an entity set's table: with several entity sets "/<Set>/@UI.LineItem", else "@UI.LineItem"
+  const multipleSets = hasMultipleEntitySets(p);
+  const tableConfigOf = (set: string) => tableConfigurationOf(p.controlConfiguration, set, multipleSets);
+  const ts: $ManifestTableSettings = tableConfigOf(entitySet).tableSettings ?? {};
   const filterConfig = p.controlConfiguration?.[SELECTION_FIELDS];
   const hideFilterBar = p.hideFilterBar ?? false;
   const t = useText();
@@ -908,10 +987,16 @@ function ListReportInner(p: $ListReportSettings) {
     service: p.service, pageKey, liveMode, autoExecute: false, initial: defaultFilters ? { filters: defaultFilters } : undefined,
     operatorOptions: filterSettings.options, defaultConditions: filterSettings.defaults,
   });
-  const [view, setView] = usePageState<{ columns?: string[]; sort?: SortItem[]; groupBy?: string | null; totals?: string[]; headerExpanded?: boolean; headerPinned?: boolean; tab?: string; quick?: string; content?: CombinedContent }>(`${pageKey}:view`, {});
+  const [view, setView] = usePageState<{ columns?: string[]; sort?: SortItem[]; groupBy?: string | null; totals?: string[]; headerExpanded?: boolean; headerPinned?: boolean; tab?: string; quick?: string; content?: CombinedContent; navigation?: string }>(`${pageKey}:view`, {});
   const columns = view.columns;
   const sort = view.sort ?? ui.presentation.sortOrder;
-  const activeTab = view.tab && tabs.some((x) => x.key === view.tab) ? view.tab : tabs[0]?.key;
+  // An inbound navigation that was not applied yet (`navigationParameter`): nothing is read before it is applied, and
+  // its view is the selected one from the first render.
+  const inbound = p.navigationParameter;
+  const navKey = navigationKey(inbound);
+  const navigationPending = navKey !== undefined && navKey !== view.navigation;
+  const wantedTab = navigationPending ? inbound?.selectedTab ?? view.tab : view.tab;
+  const activeTab = wantedTab && tabs.some((x) => x.key === wantedTab) ? wantedTab : tabs[0]?.key;
   const activeQuick = quick.find((x) => x.key === view.quick) ?? quick[0];
 
   const standard = useMemo<VariantContent>(
@@ -934,13 +1019,39 @@ function ListReportInner(p: $ListReportSettings) {
   const titleVariants = variantManagement === 'Page' || (variantManagement === 'Control' && !hideFilterBar);
   // "Control": the variants of the filter bar (FE <filterBarId>::VariantManagement) are kept apart from the page's.
   const variants = useVariants(variantManagement === 'Control' ? `${pageKey}:filterBar` : pageKey, { service: p.service, standard, enabled: titleVariants, onDefaultLoaded: (v) => apply({ key: v.id, content: v.content, autoApply: v.autoApply }) });
+  // Inbound navigation (FE ViewState applyViewState with an xAppState navigation parameter; FilterBar
+  // _applySelectionVariant with requiresStandardVariant, isSearchTriggeredByInitialLoad): the standard variant is
+  // activated, the selection variant replaces the conditions, the search runs, the header is collapsed. Applied once
+  // per navigation, after the variants were read (so that the user's default variant does not override it).
+  const latestNavigation = useRef({ inbound, filter, variants });
+  latestNavigation.current = { inbound, filter, variants };
+  useEffect(() => {
+    if (!navigationPending || variants.isLoading) return;
+    const { inbound: n, filter: f, variants: vm } = latestNavigation.current;
+    const sv = n?.selectionVariant;
+    if (sv) {
+      if (titleVariants) vm.select(STANDARD_VARIANT_ID);
+      // a mandatory field the navigation leaves empty: nothing is read, the field shows its error (as in FE)
+      f.applySelectionVariant(sv);
+    } else {
+      f.go();
+    }
+    setView((s) => ({
+      ...s, navigation: navKey, tab: n?.selectedTab ?? s.tab, headerExpanded: undefined,
+      // the standard variant's table settings (the page variant holds them)
+      ...(sv && variantManagement !== 'Control' ? { columns: undefined, sort: undefined, groupBy: undefined, totals: undefined } : {}),
+    }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- once per navigation
+  }, [navigationPending, navKey, variants.isLoading]);
   const initialized = useRef(false);
   useEffect(() => {
     if (initialized.current || variants.isLoading) return;
     initialized.current = true;
+    // an inbound navigation decides what is read on start (the effect above)
+    if (navigationPending) return;
     if (filter.applied !== null || variants.variants.some((v) => v.isDefault)) return;
     if (hideFilterBar || loadsOnStart(initialLoad, variantManagement, filter.filters)) filter.go();
-  }, [variants.isLoading, variants.variants, filter, initialLoad, variantManagement, hideFilterBar]);
+  }, [variants.isLoading, variants.variants, filter, initialLoad, variantManagement, hideFilterBar, navigationPending]);
   // The page variant stores the selected view (FE: the IconTabBar's selected key is part of the page variant).
   const content: VariantContent = variantManagement === 'Control'
     ? { filters: filter.filters, search: filter.search, filterFields: filter.fields }
@@ -960,7 +1071,7 @@ function ListReportInner(p: $ListReportSettings) {
     ro.observe(list);
     return () => ro.disconnect();
   });
-  const tableTypeOf = (set: string) => ts.type ?? autoTableType(model, set);
+  const tableTypeOf = (set: string) => tableConfigOf(set).tableSettings?.type ?? autoTableType(model, set);
   const tableType = tableTypeOf(entitySet);
   const responsive = tableType === 'ResponsiveTable';
 
@@ -1026,7 +1137,7 @@ function ListReportInner(p: $ListReportSettings) {
   const barState = viewPaths.size || noSearch ? { ...filter, fields: viewPaths.size ? filter.fields.filter((f) => !viewPaths.has(f)) : filter.fields, ...(noSearch ? { searchable: false } : {}) } : filter;
 
   const queryFor = (set: string, conditions: InitialCondition[] = []) => {
-    const applied = hideFilterBar ? { filters: {}, search: '' } : filter.applied;
+    const applied = navigationPending ? null : hideFilterBar ? { filters: {}, search: '' } : filter.applied;
     if (applied === null) return { query: null, ignored: [] as string[] };
     const typeName = model.entitySets[set]!.typeName;
     const caps = model.entitySets[set]!.capabilities;
@@ -1099,14 +1210,21 @@ function ListReportInner(p: $ListReportSettings) {
   // Columns and actions of the manifest (FE getTableAnnotationConfiguration / getActionsFromManifest).
   // A column without template is an override of the annotation column of its key (FE isColumnOverride; the Table
   // building block applies it); only overrides carry formatOptions, showDataFieldsLabel and settings.
-  const manifestColumns = useMemo(() => tableColumnsOf(tableConfig?.columns), [tableConfig?.columns]);
-  const manifestActions = useMemo(() => tableActionsOf(tableConfig?.actions), [tableConfig?.actions]);
+  // Per entity set (multiple views): the table of a set has the columns and actions of its own configuration.
+  const manifestCache = useRef(new Map<string, { columnsOf: unknown; actionsOf: unknown; columns: ReturnType<typeof tableColumnsOf>; actions: ReturnType<typeof tableActionsOf> }>());
+  const manifestOf = (set: string) => {
+    const config = tableConfigOf(set);
+    const hit = manifestCache.current.get(set);
+    if (hit && hit.columnsOf === config.columns && hit.actionsOf === config.actions) return hit;
+    const next = { columnsOf: config.columns, actionsOf: config.actions, columns: tableColumnsOf(config.columns), actions: tableActionsOf(config.actions) };
+    manifestCache.current.set(set, next);
+    return next;
+  };
   // Row navigation: navigation › <set> › detail › route (else the NavigationAdapter decides, kit-extension).
   const navigable = (set: string) => {
     const n = p.navigation?.[set];
     return n ? Boolean(n.detail?.route) : undefined;
   };
-  const creation = listCreationMode(ts.creationMode?.name);
   const maxItems = ui.presentationVariants['']?.maxItems;
 
   // controlConfiguration › @UI.Chart[#qualifier] (FE ChartManifestConfiguration, getManifestControlConfiguration of the
@@ -1164,7 +1282,12 @@ function ListReportInner(p: $ListReportSettings) {
     if (tab?.template) return tab.template();
     if (tab?.chart || (!tab && ui.defaultChart !== undefined && !defaultMetaPath)) return chart(set, tab?.chartMetaPath ?? '@com.sap.vocabularies.UI.v1.PresentationVariant', q.query);
     const type = tableTypeOf(set);
-    const threshold = thresholdOf(type, ts.threshold, set === entitySet ? maxItems : undefined);
+    // the configuration of the table's entity set (FE getManifestControlConfiguration)
+    const config = tableConfigOf(set);
+    const tset: $ManifestTableSettings = config.tableSettings ?? {};
+    const manifest = manifestOf(set);
+    const creation = listCreationMode(tset.creationMode?.name);
+    const threshold = thresholdOf(type, tset.threshold, set === entitySet ? maxItems : undefined);
     const own = main && !activeQuick?.view;
     const common: Omit<$TableSettings, 'type' | 'ref'> = {
       service: p.service,
@@ -1180,33 +1303,34 @@ function ListReportInner(p: $ListReportSettings) {
       onGroupByChange: own ? (g) => setView((x) => ({ ...x, groupBy: g })) : undefined,
       totals: own ? view.totals : undefined,
       onTotalsChange: own ? (ids) => setView((x) => ({ ...x, totals: ids })) : undefined,
-      columns: set === entitySet ? manifestColumns : undefined,
-      actions: set === entitySet ? manifestActions.actions : undefined,
-      actionGroups: set === entitySet ? manifestActions.groups : undefined,
-      extend: set === entitySet ? manifestActions.extend : undefined,
-      creationMode: { name: creation, creationFields: creation === 'CreationDialog' ? ts.creationMode?.creationFields : undefined },
-      onRowPress: ts.rowPress,
-      onSelectionChange: ts.selectionChange,
+      columns: manifest.columns,
+      actions: manifest.actions.actions,
+      actionGroups: manifest.actions.groups,
+      extend: manifest.actions.extend,
+      creationMode: { name: creation, creationFields: creation === 'CreationDialog' ? tset.creationMode?.creationFields : undefined },
+      onRowPress: tset.rowPress,
+      onSelectionChange: tset.selectionChange,
       navigable: navigable(set),
       // keepPreviousPersonalization: the table of the annotation, not of the view (FE configureMultiViews: the table id)
       pageKey: tab?.keep ? `${pageKey}${tab.metaPath && tab.metaPath !== defaultMetaPath ? `:${tab.metaPath}` : ''}` : `${pageKey}${key === 'main' ? '' : `:${key}`}`,
       variantManagement: variantManagement === 'Control' ? 'Control' : undefined,
       toolbarEnd: extra?.toolbarEnd,
-      header: ts.header ?? title,
-      headerVisible: ts.headerVisible === false || (quick.length > 0 && ts.quickVariantSelection?.hideTableTitle) ? false : undefined,
+      header: tset.header ?? title,
+      headerVisible: tset.headerVisible === false || (quick.length > 0 && ts.quickVariantSelection?.hideTableTitle) ? false : undefined,
       titleAddon: set === entitySet ? contentSwitch : undefined,
-      onRowsChange: set === entitySet ? p.onRowsChange : undefined,
+      // only the shown view's table is mounted: the host gets the rows of the table it sees
+      onRowsChange: p.onRowsChange,
       onCountChange: tab && tab.key === activeTab ? setActiveCount : undefined,
       // the settings the object page's sub-tables map the same way (./tableManifest); each object is saved on its own
-      ...tableSettingsOf(ts, { massEditGrouping: 'Isolated' }),
+      ...tableSettingsOf(tset, { massEditGrouping: 'Isolated' }),
       // FE _getTableMode: a list report's grid tables are always "Auto" with at least 3 rows (rowCountMode / rowCount are not read)
       rowCountMode: type === 'ResponsiveTable' ? undefined : 'Auto',
       rowCount: type === 'ResponsiveTable' ? undefined : 3,
       threshold,
       // FE reads threshold + ⌈window height / 25⌉ first also with a fixed row count (fe:macros6-lr-row-count)
-      scrollThreshold: type === 'ResponsiveTable' ? undefined : gridRequestSize(ts.scrollThreshold ?? threshold),
-      additionalProperties: set === entitySet ? ts.additionalProperties : undefined,
-      actionOverflowGroups: set === entitySet ? overflowGroupsOf(tableConfig?.overflowGroups) : undefined,
+      scrollThreshold: type === 'ResponsiveTable' ? undefined : gridRequestSize(tset.scrollThreshold ?? threshold),
+      additionalProperties: tset.additionalProperties,
+      actionOverflowGroups: overflowGroupsOf(config.overflowGroups),
       onBeforeExport: p.onBeforeExport,
       onExported: p.onExported,
     };
@@ -1214,7 +1338,7 @@ function ListReportInner(p: $ListReportSettings) {
       <>
         {q.ignored.length ? <Text size="sm" c="dimmed" data-sk-ignored-filters>{t('views.ignoredFilters', { fields: q.ignored.join(', ') })}</Text> : null}
         {type === 'TreeTable'
-          ? <TreeTable key={key} ref={tableRef} {...common} disableLeafSelection={ts.disableLeafSelection} hierarchyQualifier={ts.hierarchyQualifier ?? (ts.type ? undefined : pairedHierarchy(model, set))} />
+          ? <TreeTable key={key} ref={tableRef} {...common} disableLeafSelection={tset.disableLeafSelection} hierarchyQualifier={tset.hierarchyQualifier ?? (tset.type ? undefined : pairedHierarchy(model, set))} />
           : <Table key={key} ref={tableRef} {...common} type={type} />}
       </>
     );

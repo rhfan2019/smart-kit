@@ -9,5 +9,5 @@ export type {
   $ListReportSettings, $ManifestTableConfiguration, $ManifestTableSettings, $ManifestCreationModeSettings, $QuickVariantSelectionSettings,
   $ManifestActionSettings, $ManifestColumnSettings, $ManifestFilterConfiguration, $ManifestFilterFieldSettings, $KPIConfiguration,
   $ViewPathSettings, $PositionSettings, InitialLoadMode, $ManifestHeaderActionSettings, $ManifestChartActionSettings, $ManifestChartConfiguration,
-  $ManifestOverflowGroupSettings, $ManifestCustomHeaderSettings,
+  $ManifestOverflowGroupSettings, $ManifestCustomHeaderSettings, $NavigationParameterSettings,
 } from '../../../templates/ListReport';

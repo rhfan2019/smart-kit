@@ -90,3 +90,23 @@ export function createKysely(pool: pg.Pool, o: KyselyOnPoolOptions = {}): Kysely
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- tables are known only at run time
   return new Kysely<any>({ dialect: new PostgresDialect({ pool: wrapper as unknown as pg.Pool }) });
 }
+
+/**
+ * Kysely on one connection the host holds: the connection of the host's own transaction, for the `unitOfWork` option
+ * of the service. Every statement of the service then runs inside that transaction, next to the host's own writes
+ * (whatever library they use). The session settings are made and reset around each use, as `createKysely` does;
+ * nothing here begins, commits or releases: the host does.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- tables are known only at run time
+export function createKyselyOnClient(client: pg.PoolClient | pg.Client, o: Pick<KyselyOnPoolOptions, 'statementTimeout'> = {}): Kysely<any> {
+  // the client seen by createKysely: release() gives nothing back
+  const held = new Proxy(client, {
+    get(target, prop, receiver) {
+      if (prop === 'release') return () => undefined;
+      const v = Reflect.get(target, prop, receiver) as unknown;
+      return typeof v === 'function' ? (v as (...a: unknown[]) => unknown).bind(target) : v;
+    },
+  }) as pg.PoolClient;
+  const single = { Client: undefined, options: {}, connect: async () => held, end: async () => undefined };
+  return createKysely(single as unknown as pg.Pool, { statementTimeout: o.statementTimeout });
+}

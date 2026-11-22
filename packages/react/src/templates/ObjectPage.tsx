@@ -22,6 +22,7 @@ import {
 import ObjectPageLayout, { type SectionItem, type SubSectionItem } from '../uxap/ObjectPageLayout';
 import ObjectPageDynamicHeaderTitle from '../uxap/ObjectPageDynamicHeaderTitle';
 import OverflowToolbar, { type OverflowToolbarLayoutData } from '../m/OverflowToolbar';
+import ToolbarSpacer from '../m/ToolbarSpacer';
 import Share from '../v4/fe/macros/Share';
 import Paginator from '../v4/fe/macros/Paginator';
 import FlexibleColumnLayoutActions from '../v4/fe/macros/fcl/FlexibleColumnLayoutActions.block';
@@ -67,6 +68,12 @@ export interface $ObjectPageSettings extends ObjectPageManifestSettings {
   onCreated?(path: string): void;
   /** After the object was deleted; default NavigationAdapter.toList. */
   onDeleted?(): void;
+  /**
+   * After an annotation action of the header or the footer (UI.Identification DataFieldForAction) has run, with its
+   * result (`processed`, `failed`, `messages`); the page has already refreshed its own data. FE has no such hook (its
+   * EditFlow offers only `onBeforeExecuteAction`); use it to refresh what the host shows next to the page.
+   */
+  onActionDone?(result: ActionResult): void;
   /** Offer "Edit" (default: when the entity set is updatable and the data provider can write). */
   editable?: boolean;
   /** Message strip under the title (OP-17). */
@@ -604,16 +611,23 @@ function ObjectPageInner(p: $ObjectPageSettings & { registerNavigate(fn: (m: Mes
   useEffect(() => { register((m) => focusRef.current(m)); }, [register]);
 
   // ------------------------------------------------------------------ actions (ADR-024)
-  const runner = useActionRunner({ service: p.service, onDone: () => { obj.refresh(); void invalidate(); } });
+  const onActionDone = useRef(p.onActionDone);
+  onActionDone.current = p.onActionDone;
+  const runner = useActionRunner({ service: p.service, onDone: (r) => { obj.refresh(); void invalidate(); onActionDone.current?.(r); } });
   const objectTarget = { row: data ?? {}, path: activePath, label: String(getPath(data, ui.headerInfo.title ?? type.keys[0]!) ?? '') };
   // Annotation actions (FE HeaderAndFooterAction): UI.Identification's DataFieldForAction; the button is shown unless
   // UI.Hidden is true and disabled while Core.OperationAvailable is false, in display and in edit mode. Determining
   // actions are in the footer, the others in the header; IsCopyAction is the header's "Copy" (only on the first level).
   const viewLevel = resolved?.levels.length ?? 1;
-  const annotationActions = ui.objectActions.filter((a) => !isTrue(data, a.hidden));
-  const headerModelActions = annotationActions.filter((a) => !a.determining && !a.copy);
-  const copyAction = viewLevel === 1 ? annotationActions.find((a) => !a.determining && a.copy) : undefined;
-  const footerActions = annotationActions.filter((a) => a.determining);
+  // UI.Hidden given as a path hides the action for this object; only an explicit `visible` of the manifest entry of its
+  // key overwrites that (FE getActionOverrideConfig `visible: overwrite`). The other keys of the entry (isPrimaryAction,
+  // text …) never bring a hidden action back.
+  const customFooter = p.content?.footer?.actions;
+  const actionShown = (a: ActionModel, custom: Record<string, HeaderFooterManifestAction> | undefined) => custom?.[a.id]?.visible !== undefined || !isTrue(data, a.hidden);
+  const headerModelActions = ui.objectActions.filter((a) => !a.determining && !a.copy && actionShown(a, header?.actions));
+  const copyAction = viewLevel === 1 ? ui.objectActions.find((a) => !a.determining && a.copy && actionShown(a, header?.actions)) : undefined;
+  const footerActions = ui.objectActions.filter((a) => a.determining && actionShown(a, customFooter));
+  const hiddenActionKeys = new Set(ui.objectActions.filter((a) => isTrue(data, a.hidden)).map((a) => a.id));
   const pageContext: Context = { getPath: () => `/${activePath}`, getObject: () => data ?? {} };
   // FE EditFlow invokeAction isNavigable: a bound annotation action that returns another object of the page's entity set
   // navigates to it (not with afterExecution › navigateToInstance false or enableAutoScroll true)
@@ -651,13 +665,15 @@ function ObjectPageInner(p: $ObjectPageSettings & { registerNavigate(fn: (m: Mes
   };
   /**
    * Custom actions (ManifestAction) placed among the keyed standard and annotation actions (FE insertCustomElements);
-   * the entry of an annotation action's key overrides it; the actions of a `menu` move into the menu button.
+   * the entry of an annotation action's key overrides it (an entry for an annotation action that UI.Hidden hides is
+   * left out: it is an override, not a custom action); the actions of a `menu` move into the menu button.
    */
   const placeActions = (items: (ToolbarAction & { annotation?: ActionModel; annotationText?: string })[], custom: Record<string, HeaderFooterManifestAction> | undefined, defaultPriority?: OverflowToolbarPriority): (ToolbarAction & { items?: ToolbarAction[] })[] => {
     // CancelAction has the position "End" in FE (HeaderAndFooterAction): custom actions go before it.
     const end = items.at(-1)?.key === 'CancelAction' ? items.at(-1) : undefined;
     const base = end ? items.slice(0, -1) : items;
-    const inserted = insertByPosition<ToolbarAction & { annotation?: ActionModel; annotationText?: string }, HeaderFooterManifestAction>(base, custom, (key, a) => {
+    const entries = custom && Object.fromEntries(Object.entries(custom).filter(([key]) => !hiddenActionKeys.has(key) || base.some((x) => x.key === key)));
+    const inserted = insertByPosition<ToolbarAction & { annotation?: ActionModel; annotationText?: string }, HeaderFooterManifestAction>(base, entries, (key, a) => {
       if (!evaluate(a.visible, data)) return undefined;
       const press = a.press ? () => a.press!({ bindingContext: pageContext }) : undefined;
       return {
@@ -887,7 +903,12 @@ function ObjectPageInner(p: $ObjectPageSettings & { registerNavigate(fn: (m: Mes
       if (creating && !session?.draft) return undefined;
       return { partOfPreview: sub.partOfPreview, isTable: true, lazy: true, content: table(sub, c.navigation, level, last) };
     };
-    const annotationSections: KSection[] = ui.sections.filter((s) => !isTrue(data, s.hidden)).map((s: SectionModel) => {
+    // UI.Hidden given as a path hides the section for this object. An entry of `content › body › sections` with its
+    // key is an override: it changes only the keys it gives, so the section stays hidden unless the entry itself sets
+    // `visible` (FE getSections `visible: overwrite`); it never becomes a custom section.
+    const hiddenSections = new Set(ui.sections.filter((s) => isTrue(data, s.hidden) && customSections?.[s.id]?.visible === undefined).map((s) => s.id));
+    const sectionEntries = customSections && Object.fromEntries(Object.entries(customSections).filter(([key]) => !hiddenSections.has(key)));
+    const annotationSections: KSection[] = ui.sections.filter((s) => !hiddenSections.has(s.id)).map((s: SectionModel) => {
       const tableTitleLevel = s.subSections.length === 1 ? 3 : 4; // OP Title Styles
       const visible = s.subSections.filter((sub) => !isTrue(data, sub.hidden));
       return {
@@ -903,7 +924,7 @@ function ObjectPageInner(p: $ObjectPageSettings & { registerNavigate(fn: (m: Mes
     // Custom sections and overrides (`content › body › sections`, FE getSections: title, visible, sub-sections).
     let out = insertByPosition<KSection, ManifestSection>(
       annotationSections,
-      customSections,
+      sectionEntries,
       (key, s) => {
         if (!evaluate(s.visible, data)) return undefined;
         const subs = s.subSections
@@ -913,7 +934,11 @@ function ObjectPageInner(p: $ObjectPageSettings & { registerNavigate(fn: (m: Mes
       },
       (section, s) => {
         if (!evaluate(s.visible, data)) return undefined;
-        const subs = insertByPosition<KSub, ManifestSubSection>(section.subSections, s.subSections, (k, c) => customSub(k, c, c.title),
+        // the entry of an annotation sub-section that is not shown (UI.Hidden, or no content) is left out as well
+        const shownSubs = new Set(section.subSections.map((x) => x.key));
+        const absent = new Set((ui.sections.find((x) => x.id === section.key)?.subSections ?? []).map((x) => x.id).filter((id) => !shownSubs.has(id)));
+        const subEntries = s.subSections && Object.fromEntries(Object.entries(s.subSections).filter(([k]) => !absent.has(k)));
+        const subs = insertByPosition<KSub, ManifestSubSection>(section.subSections, subEntries, (k, c) => customSub(k, c, c.title),
           (sub, c) => (c.template || c.sideContent || c.actions || c.blocks ? customSub(sub.key, c, c.title, sub) : evaluate(c.visible, data) ? { ...sub, title: c.title ?? sub.title } : undefined));
         return { ...section, title: s.title ?? section.title, messageStrip: s.messageStrip ?? section.messageStrip, subSections: subs };
       },
@@ -1029,7 +1054,6 @@ function ObjectPageInner(p: $ObjectPageSettings & { registerNavigate(fn: (m: Mes
 
   // Footer toolbar (OP Footer Toolbar): messages; finalizing actions (SaveAction / CancelAction while editing, determining
   // actions in display mode) and the custom footer actions (`content › footer › actions`).
-  const customFooter = p.content?.footer?.actions;
   // FE getFooterDefaultActions: the critical determining actions, SaveAction, the other determining actions,
   // CancelAction (position End). The determining actions are shown in display and in edit mode (disabled while
   // Core.OperationAvailable is false); Save and Cancel only while editing.
@@ -1058,7 +1082,8 @@ function ObjectPageInner(p: $ObjectPageSettings & { registerNavigate(fn: (m: Mes
   const footer = editing || footerItems.length || messages.messages.length ? (
     <Group justify="space-between" wrap="nowrap" data-sk-footer>
       <Group gap="xs" wrap="nowrap"><MessageButton />{editing && session?.draft && draftStatus ? <Text size="sm" c="dimmed" role="status" data-sk-draft-status>{draftStatus === 'saving' ? t('edit.draftSaving') : t('edit.draftSaved')}</Text> : null}</Group>
-      {footerItems.length ? <OverflowToolbar design="Transparent" style="Clear" className="sk-object-footer__toolbar">{footerItems}</OverflowToolbar> : null}
+      {/* FE FooterContent: the OverflowToolbar starts with a ToolbarSpacer, the actions are at its end */}
+      {footerItems.length ? <OverflowToolbar design="Transparent" style="Clear" className="sk-object-footer__toolbar"><ToolbarSpacer key="Spacer" />{footerItems}</OverflowToolbar> : null}
     </Group>
   ) : undefined;
   // The header's OverflowToolbar: the emphasized-first action (draft: after the draft switch, FE Actions.fragment.xml),

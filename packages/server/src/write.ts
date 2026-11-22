@@ -49,9 +49,30 @@ export interface EntitySetHooks<C> {
   /** DELETE: delete dependent rows here (foreign keys), or refuse. */
   beforeDelete?(e: WriteContext<C> & { entitySet: string; current: Row }): void | Promise<void>;
   afterDelete?(e: WriteContext<C> & { entitySet: string; previous: Row }): void | Promise<void>;
+  /**
+   * Unmanaged save: the application stores the entity itself, instead of the service writing to the table of the entity
+   * set. For entity sets that are read models (a view over several tables, computed columns) and for applications
+   * whose writes live in their own code (permissions, audit, numbering). The service still does the protocol: property
+   * whitelist, Edm types, Capabilities, the data scope, ETag / If-Match, the hooks before and after, and it answers
+   * with the entity read again through the entity set.
+   *
+   * `create` gets the checked values and returns the key of the new entity (all key properties).
+   */
+  create?(e: WriteContext<C> & { entitySet: string; data: Row; parent?: { entitySet: string; row: Row } }): Row | Promise<Row>;
+  /**
+   * Unmanaged save of a PATCH (see `create`): `patch` holds the checked properties of the request, `data` the current
+   * entity with the patch applied, `current` the entity as it is read now (If-Match was checked against it). The ETag
+   * property is the application's to change.
+   */
+  update?(e: WriteContext<C> & { entitySet: string; key: Row; current: Row; patch: Row; data: Row }): void | Promise<void>;
+  /** Unmanaged delete (see `create`). */
+  delete?(e: WriteContext<C> & { entitySet: string; key: Row; current: Row }): void | Promise<void>;
 }
 
-/** A bound action: returns the changes of the bound entity (written with the next ETag), or nothing. */
+/**
+ * A bound action: returns the changes of the bound entity (written with the next ETag; handed to the unmanaged
+ * `update` of the entity set when it has one), or nothing when the handler has stored everything itself.
+ */
 export type ActionHandler<C> = (e: WriteContext<C> & { entitySet: string; entity: Row; parameters: Row }) => Row | void | Promise<Row | void>;
 
 /** 400 with error details, the shape smart-kit shows at the fields (ADR-023). */
@@ -146,6 +167,8 @@ export interface WriteOptions<C> {
   /** Bound actions declared in $metadata: qualified name -> binding entity type. */
   declaredActions: Map<string, string>;
   planner: (db: Kysely<any>) => Planner<C>; // eslint-disable-line @typescript-eslint/no-explicit-any
+  /** Runs the work of one request in a transaction (or inside the one of the change set it belongs to). */
+  transact: <T>(fn: (trx: Kysely<any>) => Promise<T>) => Promise<T>; // eslint-disable-line @typescript-eslint/no-explicit-any
   context: C;
   request: Request;
   language: string;
@@ -211,8 +234,16 @@ export class Writer<C> {
     await sql`update ${sql.id(...set.table)} set ${sql.join(assignments)} where ${this.whereKey(set, current)}`.execute(db).catch(databaseError);
   }
 
-  private async inTransaction<T>(db: Kysely<any>, fn: (trx: Kysely<any>) => Promise<T>): Promise<T> { // eslint-disable-line @typescript-eslint/no-explicit-any
-    return db.transaction().execute(fn);
+  private async inTransaction<T>(_db: Kysely<any>, fn: (trx: Kysely<any>) => Promise<T>): Promise<T> { // eslint-disable-line @typescript-eslint/no-explicit-any
+    return this.o.transact(fn);
+  }
+
+  /** The key an unmanaged `create` returned: every key property, nothing else. */
+  private returnedKey(set: EntitySetInfo, key: unknown): Row {
+    const row = key && typeof key === 'object' ? (key as Row) : {};
+    const missing = set.keys.filter((k) => row[k] === undefined || row[k] === null);
+    if (missing.length) throw new Error(`[smart-kit-server] create of ${set.name} must return the key of the new entity; missing: ${missing.join(', ')}`);
+    return this.keyOf(set, row);
   }
 
   /** The entity of a key-addressed request, or 404. */
@@ -244,15 +275,22 @@ export class Writer<C> {
         parentRow = await this.current(trx, parent.set, parent.key, `The parent ${parent.set.name} entity`);
         for (const j of parent.join) data[j.target] = parentRow[j.source];
       }
-      for (const k of set.keys) if (data[k] === undefined && set.columns[k]!.edmType === 'Edm.Guid') data[k] = crypto.randomUUID();
-      if (set.etag && data[set.etag] === undefined && INTEGER.has(set.columns[set.etag]!.edmType)) data[set.etag] = 1;
-      await hooks.beforeCreate?.({ ...ctx, entitySet: set.name, data, parent: parent && parentRow ? { entitySet: parent.set.name, row: parentRow } : undefined });
-      const cols = Object.keys(data).filter((k) => set.columns[k] && data[k] !== undefined);
-      const returning = sql.join(set.keys.map((k) => sql`${sql.id(set.columns[k]!.column)} as ${sql.id(k)}`));
-      const res = await sql`insert into ${sql.id(...set.table)} (${sql.join(cols.map((k) => sql.id(set.columns[k]!.column)))}) values (${sql.join(cols.map((k) => param(set, k, data[k])))}) returning ${returning}`
-        .execute(trx)
-        .catch(databaseError);
-      const key = (res.rows as Row[])[0]!;
+      const parentInfo = parent && parentRow ? { entitySet: parent.set.name, row: parentRow } : undefined;
+      if (!hooks.create) {
+        for (const k of set.keys) if (data[k] === undefined && set.columns[k]!.edmType === 'Edm.Guid') data[k] = crypto.randomUUID();
+        if (set.etag && data[set.etag] === undefined && INTEGER.has(set.columns[set.etag]!.edmType)) data[set.etag] = 1;
+      }
+      await hooks.beforeCreate?.({ ...ctx, entitySet: set.name, data, parent: parentInfo });
+      let key: Row;
+      if (hooks.create) key = this.returnedKey(set, await Promise.resolve(hooks.create({ ...ctx, entitySet: set.name, data, parent: parentInfo })).catch(databaseError));
+      else {
+        const cols = Object.keys(data).filter((k) => set.columns[k] && data[k] !== undefined);
+        const returning = sql.join(set.keys.map((k) => sql`${sql.id(set.columns[k]!.column)} as ${sql.id(k)}`));
+        const res = await sql`insert into ${sql.id(...set.table)} (${sql.join(cols.map((k) => sql.id(set.columns[k]!.column)))}) values (${sql.join(cols.map((k) => param(set, k, data[k])))}) returning ${returning}`
+          .execute(trx)
+          .catch(databaseError);
+        key = (res.rows as Row[])[0]!;
+      }
       const row = await this.read(trx, set, key);
       if (!row) throw new ODataServerError(403, 'OutOfScope', `The new ${set.name} entity is outside your data scope.`);
       await hooks.afterCreate?.({ ...ctx, entitySet: set.name, row });
@@ -275,7 +313,8 @@ export class Writer<C> {
       this.checkIfMatch(set, current);
       const data = { ...current, ...patch };
       await hooks.beforeUpdate?.({ ...ctx, entitySet: set.name, current, patch, data });
-      await this.writeChanges(trx, set, current, data);
+      if (hooks.update) await Promise.resolve(hooks.update({ ...ctx, entitySet: set.name, key: this.keyOf(set, current), current, patch, data })).catch(databaseError);
+      else await this.writeChanges(trx, set, current, data);
       const row = (await this.read(trx, set, this.keyOf(set, current)))!;
       await hooks.afterUpdate?.({ ...ctx, entitySet: set.name, row, previous: current });
       return this.keyOf(set, current);
@@ -291,7 +330,8 @@ export class Writer<C> {
       const current = await this.current(trx, set, key, label);
       this.checkIfMatch(set, current);
       await hooks.beforeDelete?.({ ...ctx, entitySet: set.name, current });
-      await sql`delete from ${sql.id(...set.table)} where ${this.whereKey(set, current)}`.execute(trx).catch(databaseError);
+      if (hooks.delete) await Promise.resolve(hooks.delete({ ...ctx, entitySet: set.name, key: this.keyOf(set, current), current })).catch(databaseError);
+      else await sql`delete from ${sql.id(...set.table)} where ${this.whereKey(set, current)}`.execute(trx).catch(databaseError);
       await hooks.afterDelete?.({ ...ctx, entitySet: set.name, previous: current });
     });
   }
@@ -311,7 +351,9 @@ export class Writer<C> {
       const changes = await handler({ ...ctx, entitySet: set.name, entity: current, parameters });
       if (changes && Object.keys(changes).length) {
         for (const k of Object.keys(changes)) if (!set.columns[k]) throw new Error(`[smart-kit-server] action ${qualified} returned an unknown property '${k}'`);
-        await this.writeChanges(trx, set, current, { ...current, ...changes });
+        const update = this.o.hooks[set.name]?.update;
+        if (update) await Promise.resolve(update({ ...ctx, entitySet: set.name, key: this.keyOf(set, current), current, patch: changes, data: { ...current, ...changes } })).catch(databaseError);
+        else await this.writeChanges(trx, set, current, { ...current, ...changes });
       }
       return this.keyOf(set, current);
     });

@@ -45,6 +45,11 @@ export async function generate(config: LoadedConfig, o: { url?: string; db?: Que
   }
 }
 
+/** The entity sets of the generated CSDL file on disk (`smart-kit check` says so when there are none). */
+export function entitySetsOf(config: LoadedConfig): string[] {
+  return [...indexCsdl(readFileSync(config.path(config.output.csdl), 'utf8')).sets.keys()];
+}
+
 /**
  * `smart-kit check`: the annotation files, and the navigations declared in the configuration, against the generated
  * CSDL file and storage mapping on disk.

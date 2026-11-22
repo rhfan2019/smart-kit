@@ -196,8 +196,19 @@ control, e.g. `suite/ui/microchart/BulletMicroChart`, ships about 3 KB gzip of s
 
 ## Extending without forking
 
-Templates and blocks take `*Extend` props (`filterExtend`, `tableExtend`, `sectionExtend`) with
-`{ id, position: 'before' | 'after' | 'replace' | 'start' | 'end', anchor?, item }` entries; ids are the
-model ids (a column is `DataField::<Path>` unless the record has an `ID`, an action `DataFieldForAction::<Namespace.action>`, a section the facet `ID`). To hide a model column or field, annotate it (`UI.Hidden`) or leave it out of `UI.LineItem`; there is no "remove" position. Field rendering can be replaced per type
-or property with `renderers` on `SmartKitProvider`. `Table` and `FilterBar` accept children to replace their
-default parts. See `docs/recipes.md` § "Freestyle page" and § "Extend a template".
+The templates take the Fiori elements manifest settings as props. What a page adds to the annotations goes there:
+
+- **Custom columns and table actions**: `controlConfiguration['@com.sap.vocabularies.UI.v1.LineItem']` with
+  `columns` and `actions` (objects keyed by an id; `position: { placement: 'Before' | 'After', anchor }`), and
+  `tableSettings` for the table itself. A sub-table of the object page is keyed by its navigation
+  (`'_Item/@com.sap.vocabularies.UI.v1.LineItem'`), the table of another entity set's view tab by the absolute path
+  (`'/OtherSet/@com.sap.vocabularies.UI.v1.LineItem'`).
+- **Custom filter fields**: `controlConfiguration['@com.sap.vocabularies.UI.v1.SelectionFields'].filterFields`.
+- **Header and footer actions, custom sections**: `content.header.actions`, `content.footer.actions`,
+  `content.body.sections` (object page). An entry keyed by the id of an annotation action or section overrides it.
+
+Ids are the model ids: a column is `DataField::<Path>` unless the record has an `ID`, an action
+`DataFieldForAction::<Namespace.action>`, a section the facet `ID`. To hide a model column or field, annotate it
+(`UI.Hidden`) or leave it out of `UI.LineItem`. Field rendering can be replaced per type or property with `renderers`
+on `SmartKitProvider`. The building blocks (`Table`, `FilterBar`, `Form`, `Field`) work on their own for freestyle
+pages. See `docs/recipes.md` § "Freestyle page" and § "Extend a template".

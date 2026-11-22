@@ -61,7 +61,8 @@ export function App() {
     Promise.all(Object.entries(SERVICES).map(async ([name, url]) => {
       // Local annotations (overlay layer): views of the purchase order list by order type.
       const overlay = name.startsWith('purchasing') ? purchasingOverlay(locale) : undefined;
-      const { model, provider } = await loadService({ serviceUrl: url, fetch: fetchJson, language: locale, overlay });
+      const batch = name === 'purchasing' && import.meta.env.VITE_PURCHASING_BATCH === 'json' ? ('json' as const) : undefined;
+      const { model, provider } = await loadService({ serviceUrl: url, fetch: fetchJson, language: locale, overlay, batch });
       const cfg: ServiceConfig = { model, dataProvider: provider, variants: model.entitySets.Variants ? new ODataVariantStore(provider) : undefined };
       return [name, cfg] as const;
     }))

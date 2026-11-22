@@ -13,13 +13,16 @@ import { relative } from 'node:path';
 import { parseArgs } from 'node:util';
 import { agents } from './agents';
 import { loadConfig } from './config';
-import { check, generate } from './generate';
+import { check, entitySetsOf, generate } from './generate';
 import type { CheckProblem } from './check';
 
 const USAGE = `Usage: smart-kit <command>
   generate [--config smart-kit.config.json] [--url postgres://…] [--strict]   CSDL + storage mapping from PostgreSQL, then check
   check    [--config smart-kit.config.json] [--strict]                        check annotations and declared navigations (no database)
   agents                                                                      AGENTS.md / CLAUDE.md block for coding agents`;
+
+const NO_ENTITY_SETS = 'no entity sets (an empty entity container)';
+const entitySetsText = (sets: string[]) => (sets.length ? `${sets.length} entity sets: ${sets.join(', ')}` : NO_ENTITY_SETS);
 
 function report(problems: CheckProblem[]) {
   if (!problems.length) {
@@ -49,11 +52,14 @@ async function main() {
   let problems: CheckProblem[];
   if (command === 'generate') {
     const r = await generate(config, { url: values.url });
-    console.log(`${r.changed ? 'Wrote' : 'Unchanged'}: ${relative(process.cwd(), r.csdlPath)}, ${relative(process.cwd(), r.storagePath)} (${r.entitySets.length} entity sets: ${r.entitySets.join(', ')})`);
+    console.log(`${r.changed ? 'Wrote' : 'Unchanged'}: ${relative(process.cwd(), r.csdlPath)}, ${relative(process.cwd(), r.storagePath)} (${entitySetsText(r.entitySets)})`);
     for (const w of r.warnings) console.log(`  warning: ${w}`);
     problems = r.problems;
-  } else if (command === 'check') problems = check(config);
-  else {
+  } else if (command === 'check') {
+    problems = check(config);
+    // an application without entities yet: say so, the check below then has nothing (or only stale annotations) to look at
+    if (!entitySetsOf(config).length) console.log(`${relative(process.cwd(), config.path(config.output.csdl))}: ${NO_ENTITY_SETS}.`);
+  } else {
     console.error(USAGE);
     process.exit(2);
   }

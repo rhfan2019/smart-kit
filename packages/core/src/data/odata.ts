@@ -8,7 +8,8 @@ import { ANALYTICAL_COUNT_ALIAS } from '../query/analytical';
 import { ANALYTICAL_LEAVES_ALIAS } from '../query/request';
 import { buildModel, type BuildModelOptions } from '../model/buildModel';
 import { errorFromResponse } from './errors';
-import type { DataProvider, FetchLike, RequestOptions, WriteResult } from './provider';
+import { RolledBackError } from './batch';
+import type { BatchOperation, BatchResult, DataProvider, FetchLike, RequestOptions, WriteResult } from './provider';
 import { readValueListService, resolveValueListReference, serviceRootOf, type ValueListService } from '../model/valueListReferences';
 
 export interface ODataV4ProviderOptions {
@@ -20,6 +21,12 @@ export interface ODataV4ProviderOptions {
   getLanguage?: () => string;
   /** Extra headers added to every request (e.g. a CSRF token). */
   headers?: () => Record<string, string>;
+  /**
+   * 'json': the service answers `$batch` in the JSON format of OData 4.01 (smart-kit-server does). The provider then
+   * has `batch`, and pages send several writes (deleting or changing the selected rows, an action on many rows) as
+   * one request. Not set: every write is a request of its own.
+   */
+  batch?: 'json';
 }
 
 const ACCEPT = 'application/json;odata.metadata=minimal;IEEE754Compatible=true';
@@ -29,7 +36,12 @@ function join(root: string, rel: string): string {
 }
 
 export class ODataV4Provider implements DataProvider {
-  constructor(private readonly o: ODataV4ProviderOptions) {}
+  /** Several writes in one `$batch` request; only there when the `batch` option is set. */
+  batch?: (operations: BatchOperation[], opts?: RequestOptions & { atomic?: boolean }) => Promise<BatchResult[]>;
+
+  constructor(private readonly o: ODataV4ProviderOptions) {
+    if (o.batch === 'json') this.batch = (operations, opts) => this.sendBatch(operations, opts);
+  }
 
   /** Value help services of Common.ValueListReferences by `$metadata` URL (SAPUI5 `mSharedModelByUrl`). */
   private readonly valueListServices = new Map<string, Promise<ValueListService>>();
@@ -128,6 +140,55 @@ export class ODataV4Provider implements DataProvider {
     return { row: r.row, messages: r.messages };
   }
 
+  private async sendBatch(operations: BatchOperation[], opts: RequestOptions & { atomic?: boolean } = {}): Promise<BatchResult[]> {
+    const model = this.o.model;
+    const json = { 'Content-Type': 'application/json;IEEE754Compatible=true' };
+    const requests = operations.map((op, i) => {
+      const group = opts.atomic ? { atomicityGroup: 'g1' } : {};
+      const id = String(i + 1);
+      switch (op.kind) {
+        case 'update':
+          return { id, ...group, method: 'PATCH', url: resolveEntityPath(model, op.path).canonical, headers: { ...json, Prefer: 'return=representation', ...(op.etag ? { 'If-Match': op.etag } : {}) }, body: op.patch };
+        case 'create':
+          return { id, ...group, method: 'POST', url: sourcePath(model, op.target), headers: { ...json, Prefer: 'return=representation' }, body: op.row };
+        case 'remove':
+          return { id, ...group, method: 'DELETE', url: resolveEntityPath(model, op.path).canonical, headers: op.etag ? { 'If-Match': op.etag } : {} };
+        case 'invoke':
+          return { id, ...group, method: 'POST', url: op.path ? `${resolveEntityPath(model, op.path).canonical}/${op.action}` : op.action.split('.').pop()!, headers: { ...json, Prefer: 'return=representation' }, body: op.parameters ?? {} };
+      }
+    });
+    const res = await this.o.fetch(join(this.o.serviceUrl, '$batch'), {
+      method: 'POST',
+      headers: this.headers({ 'Content-Type': 'application/json', Prefer: 'continue-on-error' }),
+      body: JSON.stringify({ requests }),
+      signal: opts.signal,
+    });
+    if (!res.ok) throw await errorFromResponse(res);
+    type Part = { id?: string; status: number; headers?: Record<string, string>; body?: unknown };
+    const parts = new Map<string, Part>();
+    for (const part of (JSON.parse(await res.text()) as { responses?: Part[] }).responses ?? []) if (part.id !== undefined) parts.set(String(part.id), part);
+    const header = (part: Part, name: string) => Object.entries(part.headers ?? {}).find(([k]) => k.toLowerCase() === name)?.[1];
+    const results: BatchResult[] = [];
+    for (const [i, op] of operations.entries()) {
+      const part = parts.get(String(i + 1));
+      // no response of its own: the change set failed at another operation (or the batch stopped before this one)
+      if (!part) results.push({ ok: false, error: new RolledBackError() });
+      else if (part.status >= 400) {
+        const text = part.body === undefined ? '' : typeof part.body === 'string' ? part.body : JSON.stringify(part.body);
+        results.push({ ok: false, error: await errorFromResponse({ status: part.status, text: async () => text }) });
+      } else {
+        const row = part.body && typeof part.body === 'object' ? (part.body as Row) : undefined;
+        const messages = messagesFromHeader(header(part, 'sap-messages'));
+        const etag = (row?.['@odata.etag'] as string | undefined) ?? header(part, 'etag');
+        if (op.kind === 'create') {
+          const info = sourceInfo(model, op.target);
+          results.push({ ok: true, row: row ?? {}, etag, path: `${info.entitySet}${keyPredicate(model.entityTypes[info.typeName]!, row ?? {})}`, messages });
+        } else results.push({ ok: true, ...(row ? { row } : {}), ...(etag ? { etag } : {}), messages });
+      }
+    }
+    return results;
+  }
+
   /**
    * The value help service of a Common.ValueListReferences entry: `$metadata` resolved against this service's
    * `$metadata` URL and read with the same headers and language; its data is read by an ODataV4Provider of its own.
@@ -168,6 +229,8 @@ export interface LoadServiceOptions extends BuildModelOptions {
   language?: string;
   /** Annotation files as URLs (fetched) — in addition to `annotationFiles` given as text or objects. */
   annotationUrls?: string[];
+  /** 'json': the service answers `$batch` in the JSON format (see ODataV4ProviderOptions.batch). */
+  batch?: 'json';
 }
 
 /** Fetches $metadata (and annotation files), builds the model and returns it with a provider. */
@@ -180,5 +243,5 @@ export async function loadService(o: LoadServiceOptions): Promise<{ model: MetaM
   };
   const [metadata, ...files] = await Promise.all([get(join(o.serviceUrl, '$metadata')), ...(o.annotationUrls ?? []).map(get)]);
   const model = buildModel(metadata!, { annotationFiles: [...files, ...(o.annotationFiles ?? [])], overlay: o.overlay });
-  return { model, provider: new ODataV4Provider({ serviceUrl: o.serviceUrl, model, fetch: o.fetch, getLanguage: o.language ? () => o.language! : undefined }) };
+  return { model, provider: new ODataV4Provider({ serviceUrl: o.serviceUrl, model, fetch: o.fetch, getLanguage: o.language ? () => o.language! : undefined, batch: o.batch }) };
 }

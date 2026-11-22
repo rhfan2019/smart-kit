@@ -173,7 +173,7 @@ describe('sap.fe.macros.Table (v4/fe/macros/Table)', () => {
     expect(ref.current!.getSelectedContexts().map((c) => c.getPath())).toEqual(['/Products(1)']);
     act(() => ref.current!.clearSelection());
     expect(ref.current!.getSelectedContexts()).toEqual([]);
-    const headers = () => [...document.querySelectorAll('.sk-rtable__table thead th[data-col]')].map((h) => h.getAttribute('data-col'));
+    const headers = () => [...document.querySelectorAll('.sk-rtable__table thead th[data-col]')].map((h) => h.getAttribute('data-col')).filter((id) => id === 'DataField::Name' || id === 'DataField::Code');
     const popin = () => [...document.querySelectorAll('tr[data-sk-row]')][0]!.textContent ?? '';
     await act(() => ref.current!.hideColumns(['DataField::Name']));
     expect(headers()).toEqual(['DataField::Code']);
@@ -187,5 +187,20 @@ describe('sap.fe.macros.Table (v4/fe/macros/Table)', () => {
     expect(popin()).not.toContain('Item 1');
     expect(ref.current!.getIgnoredFields()).toBe('Name');
     await expect(ref.current!.addMessage({ message: 'Hello', type: 'Warning' })).resolves.toMatch(/^table-/);
+  });
+});
+
+describe('sap.m.Table autoPopinMode (Table._configureAutoPopin)', () => {
+  it('keeps the columns that fit, by importance and width; the most important column always stays', async () => {
+    const { autoPopinWidths } = await import('../src/table/ResponsiveTable');
+    // order High, Medium (None), Low; 8rem each unless a fixed width is given; 1rem of selection column and padding
+    expect(autoPopinWidths([{ importance: 'Low' }, { importance: 'High' }, {}, { importance: 'High', width: '120px' }, { width: '50%' }], 1)).toEqual([
+      (1 + 8 + 7.5 + 8 + 8 + 8) * 16, // Low: last
+      undefined, // the first High column never pops in
+      (1 + 8 + 7.5 + 8) * 16,
+      (1 + 8 + 7.5) * 16,
+      (1 + 8 + 7.5 + 8 + 8) * 16, // a flexible width counts with autoPopinWidth
+    ]);
+    expect(autoPopinWidths([{ autoPopinWidth: 20 }, { autoPopinWidth: 4 }], 0)).toEqual([undefined, 24 * 16]);
   });
 });

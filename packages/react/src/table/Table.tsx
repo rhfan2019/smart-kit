@@ -14,7 +14,7 @@
  */
 import { ActionIcon, Alert, Anchor, Button, Group, Menu, Modal, Popover, Stack, Text, TextInput, Tooltip } from '@mantine/core';
 import {
-  canGroup, canSubtotal, canTotal, capabilitiesFor, hierarchyOf, isAbortError, isSortable, keyPredicate, matches, messagesFromError, parseAnnotationPath, resolvePath, sourceInfo, STANDARD_VARIANT_ID, withHiddenFilters,
+  canGroup, canSubtotal, canTotal, capabilitiesFor, hierarchyOf, isAbortError, isSortable, keyPredicate, matches, messagesFromError, parseAnnotationPath, resolvePath, RolledBackError, sourceInfo, STANDARD_VARIANT_ID, withHiddenFilters, writeAll,
   type ActionModel, type EntityTypeModel, type FieldModel, type FilterState, type MetaModel, type Message, type MessageType, type PresentationModel, type QueryRequest, type QuerySource, type Row, type SortItem, type TotalsEntry, type VariantContent,
 } from '@rhfan2019/smart-kit-core';
 import { useQueryClient } from '@tanstack/react-query';
@@ -1730,14 +1730,14 @@ function TableCore(p: CoreSettings) {
     setConfirmDelete(null);
     const out: Message[] = [];
     let done = 0;
-    for (const row of rows) {
-      try {
-        const r = await service.dataProvider.remove!(pathOf(row), { etag: row['@odata.etag'] as string | undefined });
+    // FE DeleteHelper: the selected objects are deleted in one change set (all or none) when the service has $batch;
+    // without it, one request each
+    const results = await writeAll(service.dataProvider, rows.map((row) => ({ kind: 'remove' as const, path: pathOf(row), etag: row['@odata.etag'] as string | undefined })), { atomic: true });
+    for (const r of results) {
+      if (r.ok) {
         out.push(...(r.messages ?? []));
         done++;
-      } catch (e) {
-        out.push({ id: `del-${Date.now()}-${done}`, type: 'error', message: (e as Error).message, source: 'server' });
-      }
+      } else if (!(r.error instanceof RolledBackError)) out.push({ id: `del-${Date.now()}-${out.length}`, type: 'error', message: (r.error as Error).message, source: 'server' });
     }
     if (done) out.unshift({ id: `deleted-${Date.now()}`, type: 'success', message: done === 1 ? typedText(t, 'delete.done', ui.headerInfo.typeName) : t('delete.doneMany', { count: done }), source: 'server' });
     messages?.add(out);
@@ -2093,6 +2093,14 @@ function TableCore(p: CoreSettings) {
     responsiveColumns.push({ id: groupColumn.id, header: groupColumn.label, visible: false, cell: () => null, groupValue: groupDisplay });
   }
   const selectedKeys = useMemo(() => selected.map(keyOf), [selected, keyOf]);
+  // every text AG Grid reads to screen readers for what this table uses (the rest of its locale keys belong to
+  // features that are off)
+  const gridLocaleText = useMemo(() => ({
+    loadingOoo: t('table.loading'), noRowsToShow: noDataText, ariaRowSelect: t('table.selectRow'), ariaChecked: t('common.yes'), ariaUnchecked: t('common.no'),
+    ariaIndeterminate: t('table.aria.indeterminate'), ariaRowDeselect: t('table.aria.deselectRow'), ariaRowToggleSelection: t('table.aria.toggleRow'),
+    ariaRowSelectAll: t('table.aria.toggleAll'), ariaRowSelectionDisabled: t('table.aria.selectionDisabled'), ariaHeaderSelection: t('table.aria.headerSelection'),
+    ariaSortableColumn: t('table.aria.sortable'), ariaColumn: t('table.aria.column'),
+  }), [t, noDataText]);
   const responsiveTable = responsive ? (
     <MTable
       aria-label={title}
@@ -2184,11 +2192,13 @@ function TableCore(p: CoreSettings) {
       suppressColumnVirtualisation={mode === 'auto'}
       animateRows={false}
       ensureDomOrder
-      localeText={{ loadingOoo: t('table.loading'), noRowsToShow: noDataText, ariaRowSelect: t('table.selectRow'), ariaChecked: t('common.yes'), ariaUnchecked: t('common.no') }}
+      localeText={gridLocaleText}
       overlayNoRowsTemplate={undefined}
       suppressNoRowsOverlay
       onGridReady={(e: GridReadyEvent) => {
         apiRef.current = e.api;
+        // the table's name for assistive technology, as the responsive table has it (its header text)
+        if (title) e.api.setGridAriaProperty('label', title);
         if (mode === 'grid' && datasource) e.api.setGridOption('datasource', datasource);
       }}
       onFirstDataRendered={(e) => {
@@ -2295,7 +2305,14 @@ function TableCore(p: CoreSettings) {
           onApply={async (changes) => {
             const out: Message[] = [];
             let done = 0;
-            for (const row of massEditRows) {
+            if (strategy.kind === 'direct' && service.dataProvider.batch) {
+              // direct save with $batch: the selected rows change in one change set (all or none)
+              const results = await writeAll(service.dataProvider, massEditRows.map((row) => ({ kind: 'update' as const, path: pathOf(row), patch: changes, etag: row['@odata.etag'] as string | undefined })), { atomic: true });
+              for (const r of results) {
+                if (r.ok) { out.push(...(r.messages ?? [])); done++; }
+                else if (!(r.error instanceof RolledBackError)) out.push(...messagesFromError(r.error));
+              }
+            } else for (const row of massEditRows) {
               try {
                 const session = await strategy.begin(pathOf(row), row);
                 for (const [k, v] of Object.entries(changes)) session.set(k, v);

@@ -1,6 +1,6 @@
 # 交接文档
 
-> 最后更新：2026-11-17（SAPUI5 对齐，见第 1 节最后一条和 `31` 的进度）。新会话先读本文，再读 `docs/prompt/项目目标与范围-v5.md`。
+> 最后更新：2026-11-22（0.5.0 的内容已在 main 上，没有发版，见第 1 节最后一条）。新会话先读本文，再读 `docs/prompt/项目目标与范围-v5.md`。
 
 ## 1. 现状
 
@@ -20,6 +20,8 @@
 - **铁律：与 SAPUI5 一致（2026-11-17，D34，ADR-033）**：组件名、模块路径（只换前缀；`sap.fe.*` 带 `v4`；每个类一个模块）、API 和注解语义都和 SAPUI5 1.154 一致，注解积木对齐 sap.fe.macros，模板对齐 sap.fe.templates；不留旧名（D35）。**以后统一在 main 上开发**，不开功能分支；D31～D35 的改动已经合并进 main。开发文档 `30`、推进计划 `31`（阶段 0～7，有"进度"一节）、验收标准 `32`；新会话从 `docs/prompt/UI5对齐-推进提示词.md` 开始。已有核对结果：`26a`（控件 API）、`28`（已有组件和 UI5 的差异）、`29` / `29a`（列表页注解和 FE 的差异）。
 
 - **对齐进度**（`31` 第 3 节）：阶段 0 完成（D36）：`npm run check:ui5`、`npm run e2e:fe`、映射表和偏差表 `tools/ui5-alignment/`、`26b`、`26c`。阶段 1 完成（D37）：D31 控件、消息控件、卡片、枚举在 UI5 模块路径（`src/m/…` 等门面文件，exports 由 `node scripts/gen-exports.mjs` 生成，改了模块文件要重跑）；`/controls`、`/messages`、`/cards` 已删除。阶段 2 完成（D38）：积木在 `v4/fe/macros/*`，布局在 `f/`、`uxap/`、`m/`，hooks 在 `kit/`；旧子路径只剩 `/templates`（阶段 5），根入口只导出基础设施。阶段 3 完成（D39、D40）：列表页 P1 注解按 FE，FE 对比 15 个场景（`fe:*` 登记对所有场景有效），合计只给分析表（用户决定）。阶段 4 完成（D43）：列表页其余注解（列、动作、筛选栏、值帮助、值的显示、视图、图表、KPI）按 FE，FE 对比 37 个场景；必须能脱离 SAP / Fiori 运行（D42）。下一步：阶段 4 收尾三项（分析表单个 `$apply` concat；`ValueListReferences` 和 `ResultContext`；新列类型和动作的 FE 核对），阶段 4 收尾完成（D45）。阶段 5 完成（D46）：模板在 `v4/fe/templates/ListReport`、`ObjectPage`，属性是 FE 的 manifest 设置（`26c`），`npm run check:ui5` 同时跑 `check-manifest-settings.mjs`（AL-13）；`/templates` 已删除。阶段 6 完成（D47）：对象页注解按 FE（`29b`、`29c`）；九个微图在 `suite/ui/microchart/*`；`m/p13n/Popup` 和三个面板、`m/QuickView` 一族；积木补齐 sap.fe.macros 成员（表格的变式、快速变式、批量编辑、粘贴、PV / SV 方法，分组分析表是可折叠层级）；`Table.tsx` 的上下文在 `table/tableContext.ts`（`kit/useTableContext` 不带整张表）。阶段 7 完成（D48）：其余不依赖 SAP 运行时的 manifest 设置按 FE；动作参数对话框按 FE；偏差表只剩允许的类别和 D48 保留的条目（AL-31 单测）；迁移清单在 `25`。对齐全部完成，invoice-assure 由用户按 `25` 迁移；是否发 1.0 由用户决定。并行子代理的 playwright 要用各自的 `--output` 和端口；单独重跑场景会覆盖 `reports/e2e-*-results.json`，提交前要整轮重跑或恢复。
+
+- **0.5.0（2026-11-22，D51，ADR-034）**：非托管保存、宿主的事务、JSON 格式的 `$batch`、逐请求授权；前端的批量写；响应式表按 sap.m.Table 弹入；对象页、列表页、网格表的一批问题（`25` 各条下写了结果）。**还没有发版，也没有推送**：用户要求全部在 web-app-template 里联调完再统一发；那边用 `npm run smart-kit:local` 装本地打包的 tgz。发版时 `.changeset/unmanaged-save-and-batch.md` 已经写好。
 
 ## 2. 下一步
 

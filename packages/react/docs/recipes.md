@@ -31,10 +31,14 @@ That is the whole page. What appears comes from annotations on the entity type /
 | Create / Delete buttons | `Capabilities.InsertRestrictions` / `DeleteRestrictions` (and a writable service) |
 | Saved views ("variants") | an entity set `Variants` in the service + `ODataVariantStore` in `ServiceConfig.variants` |
 
-Common props: `pageKey` (variants and back-navigation state; set it when one entity set has two list pages),
-`liveMode={false}` (manual "Go" for slow services), `tableType="responsive"` (no AG Grid look, phone-friendly),
-`chart` (table / chart toggle from `UI.Chart`), `views={{ mode: 'tabs' }}` (one tab per qualified
-`UI.SelectionPresentationVariant`), `headerActions`, `tableExtend`, `filterExtend`.
+Common props (the Fiori elements manifest settings): `pageKey` (variants and back-navigation state; set it when one
+entity set has two list pages), `liveMode` (default false: a "Go" button; true: every change reads),
+`initialLoad`, `variantManagement` (`'Page'`, `'Control'`, `'None'`),
+`controlConfiguration={{ '@com.sap.vocabularies.UI.v1.LineItem': { tableSettings: { type: 'ResponsiveTable' } } }}`
+(`'GridTable'`, `'AnalyticalTable'`, `'TreeTable'`; custom `columns` and `actions` go in the same entry),
+`views={{ paths: [{ key, annotationPath }], showCounts: true }}` (one tab per `UI.SelectionVariant` /
+`UI.SelectionPresentationVariant`; a path with `entitySet` shows another entity set), and
+`content={{ header: { actions } }}` for page actions.
 
 ## 2. Object page (header, sections, sub-tables, edit)
 
@@ -65,6 +69,27 @@ sections and actions; FE fragment names and extension functions become render fu
 `controlConfiguration["_Item/@com.sap.vocabularies.UI.v1.LineItem"].tableSettings` for sub-tables. New object:
 `<ObjectPage path="" create={{ entitySet: 'PurchaseOrders' }} />`. Sub-object pages
 (an item of an order) are the same component with the longer path, e.g. `PurchaseOrders('1')/_Items(PurchaseOrder='1',ItemNo=10)`.
+
+Behaviour worth knowing (as SAPUI5 1.154 / Fiori elements):
+
+- **First section**: under the anchor bar the title of the first visible section is not shown (the anchor bar already
+  names it); the heading stays in the document for screen readers. A page with a single section has no anchor bar and
+  keeps the title. With `sectionLayout="Tabs"` no section title is shown.
+- **Footer**: the message button is at the left end, the actions (Save / Cancel, the `Determining` actions, the
+  `content.footer.actions`) at the right end.
+- **Overrides by key**: an entry of `content.header.actions` / `content.footer.actions` with the key of an annotation
+  action (`DataFieldForAction::Namespace.action`), or of `content.body.sections` with the `ID` of a `UI.Facets`
+  section, changes only the keys it gives, e.g. `{ 'DataFieldForAction::Purchasing.approve': { isPrimaryAction: true } }`
+  makes the annotated footer button the emphasized one. Text, title and `UI.Hidden` still come from the annotation:
+  while `UI.Hidden` (a path) is true for the object, the action or section stays hidden with its override. Only an
+  explicit `visible` in the entry replaces `UI.Hidden`.
+- **After an action**: `onActionDone(result)` is called when an annotation action of the header or footer has run
+  (`result.action`, `result.processed`, `result.failed`, `result.messages`); the page has already refreshed its own
+  data. Use it to refresh what the host shows next to the page.
+- **Columns**: layout blocks of a sub-section (`blocks`) use 1 / 2 / 3 / 4 columns for a sub-section narrower than
+  600px / from 600px / from 1024px / from 1440px; forms use 1 / 3 / 4 / 6 columns at the same widths of the form
+  (the Fiori elements `ColumnLayout` defaults). Both follow their container, not the window, so a page in a narrow
+  column of a `FlexibleColumnLayout` gets fewer columns.
 
 ## 3. Freestyle page from building blocks
 
@@ -409,6 +434,27 @@ export function Worklist(p: { revision: number; log(e: Table$BeforeExportEvent):
 ```
 
 - A failed save in the view dialogs (the `VariantStore` throws) shows the thrown message in the dialog, which stays open.
+- **Views of several entity sets** (`views.paths[]` with `entitySet` / `contextPath`): the table of another entity
+  set takes its configuration from the key with the absolute path,
+  `controlConfiguration['/OtherSet/@com.sap.vocabularies.UI.v1.LineItem']` (`tableSettings` incl.
+  `additionalProperties`, `columns`, `actions`, `overflowGroups`). As in Fiori elements the configurations are not
+  merged: a table reads its absolute key when that has content, else the relative `'@…UI.v1.LineItem'` — so custom
+  columns and actions of the relative key also show on the other entity sets' tabs unless those have their own key
+  (`{ tableSettings: {} }` is enough to keep them out). `onRowsChange` reports the rows of the table that is shown
+  (the selected tab's).
+- **Inbound navigation** (another page opens the list with conditions): `navigationParameter={{ selectionVariant,
+  selectedTab, navigationId }}`. `selectionVariant` is the JSON of a `sap.fe.navigation.SelectionVariant`
+  (`{ SelectOptions: [{ PropertyName: 'Status', Ranges: [{ Sign: 'I', Option: 'EQ', Low: 'OPEN' }] }] }`),
+  `selectedTab` a key of `views.paths[]`. On the first render with a navigation the standard view is selected, the
+  conditions replace all conditions of the filter bar (also the default ones, so include the mandatory filter
+  fields; with one of them empty nothing is read and the field shows its error), the list is read at once whatever
+  `initialLoad` says, and the tab is selected. It wins over the restored page state and over the user's default
+  view. A navigation is applied once: the list remembers it in its page state, so re-rendering, or coming back to the
+  page with the same navigation, keeps what the user changed since. Give every navigation its own `navigationId`
+  (e.g. React Router's `location.key`); without it only different conditions count as a new navigation. Do not write
+  the page state keys by hand for this.
+- A saved view stores the selected view tab (and quick variant) and selects it again; selecting another tab marks
+  the view as modified.
 - `ObjectPage`: `editableHeaderContent={false}` keeps the header read-only while editing (no "Header" section); there
   is no "Edit Header" dialog and no switch for "Share" (as in Fiori elements V4).
 - Custom columns (`controlConfiguration › @UI.LineItem › columns`) take `importance: 'High' | 'Medium' | 'Low'` for the pop-in of responsive tables.

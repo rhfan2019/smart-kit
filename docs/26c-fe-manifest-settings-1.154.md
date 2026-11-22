@@ -294,6 +294,7 @@ smart-kit 多出来的属性：
 | `headerMessage` | op5-175 kit-extension | 标题下的消息条（OP-17） |
 | `keyInfo` | op5-176 kit-extension | 标题栏的关键信息；FE 只能用自定义页头 Facet |
 | `onRowNavigate` | op5-177 kit-extension | 子表行按下的处理，给没有 NavigationAdapter 的宿主（例如分栏） |
+| `onActionDone` | op7-s34 kit-extension | 页头、页脚的注解动作执行完后通知宿主（参数是 `ActionResult`）；FE 没有对应钩子（EditFlow 只有 `onBeforeExecuteAction`） |
 | `paging` | op5-178 kit-extension | 子对象页的翻页按钮；FE 由 FCL 配置决定 |
 | `showAllThreshold` | op5-179 kit-extension | 子表预览的"显示全部 (x)"阈值（设计指南）；FE 没有这个链接 |
 | `letterboxing` | op5-180 kit-extension | 页面限宽；FE 由 Shell 的 `appWidthLimited` 决定 |

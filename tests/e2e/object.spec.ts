@@ -177,8 +177,9 @@ test('AC-OP-11 header: title click, collapse releases the pin, no pin for a tall
 
 test('AC-OP-04 title de-duplication (four cases)', async ({ page }) => {
   await open(page, poPath());
-  // ① one subsection (a collection facet of field groups is one sub-section, FE): its title is promoted
-  await expect(page.locator('[data-sk-section="GeneralInformation"] > .sk-section__title')).toBeVisible();
+  // ① one subsection (a collection facet of field groups is one sub-section, FE): its title is promoted; as the first
+  // section's title it is not shown under the anchor bar (sap.uxap firstSectionTitleHidden, docs/25 S42)
+  await expect(page.locator('[data-sk-section="GeneralInformation"] > .sk-section__title')).toHaveClass(/sk-visually-hidden/);
   await expect(page.locator('[data-sk-section="GeneralInformation"] .sk-subsection__title')).toHaveCount(0);
   // ④ one subsection with one table: the table title is the title
   await expect(page.locator('[data-sk-section="Items"] > .sk-section__title')).toHaveCount(0);

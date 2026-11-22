@@ -71,7 +71,9 @@ export async function introspect(db: Queryable, config: CliConfig): Promise<GenM
   const tables = await db.query<TableRow>(TABLES, [config.schema]);
   const columns = await db.query<ColumnRow>(COLUMNS, [config.schema]);
   const constraints = await db.query<ConstraintRow>(CONSTRAINTS, [config.schema]);
-  if (!tables.rows.length) throw new Error(`Schema "${config.schema}" has no tables (or the user cannot see them).`);
+  // An empty schema is legal (an application that has not built its first table yet): the CSDL gets an empty entity
+  // container. The warning stays, because a misspelt schema name or a missing privilege looks the same.
+  if (!tables.rows.length) warnings.push(`Schema "${config.schema}" has no tables (or the user cannot see them); the service has no entity sets.`);
 
   const byOid = new Map<number, GenEntity>();
   const colName = new Map<string, string>(); // "<oid>:<attnum>" -> property name

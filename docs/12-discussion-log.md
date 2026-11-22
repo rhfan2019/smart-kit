@@ -976,3 +976,23 @@ ADR-027 定的范围是"只实现 smart-kit 会发的请求"，用户也定过�
 4. **只改文档的提交跳过端到端任务**（`docs/`、`*.md`、`.changeset/`），新的 `changes` 任务判断；版本提交照旧跳过。
 5. **React 单测在 CI 上失败最多重试 2 次**（和 Playwright 在 CI 上重试一样）。`npm run test:slow` 能在本地复现图表用例在负载下的失败（`macros6-chart.test.tsx`），根本原因还没找到，记为待查。
 6. **发版 0.4.0 结果**：第七轮 CI 全绿，用时 9 分 14 秒（之前约 21 分钟）；`release.yml` 发布了四个包的 0.4.0，`verify-pack --registry` 在本地补跑通过。发现 `release.yml` 的老问题：changesets 3 的输出 changesets/action 解析不了，`published` 一直是 false，所以"从 npm 安装检查"被跳过、版本标签没推到 GitHub（0.1.0～0.4.0 都没有标签）。改为按 `hasChangesets == 'false'` 推标签并检查。
+
+## D51 0.5.0：非托管保存、`$batch`、web-app-template 和 invoice-assure 碰到的问题（2026-11-22）
+
+**背景**：web-app-template 决定把列表页和对象页统一到 smart-kit（它的决策 `docs/decisions/2026-11-21-list-pages-on-smart-kit.md` 第 5 节 K1～K4）：读走视图，写按 RAP 的做法也走 OData 入口、实现留在应用自己的代码里。它的只读示例（采购订单）做完后另记了一批问题（它的待办 TECH-015）。
+
+**用户**：开发期间不发 npm，模板用本地打包的 tgz 联调，全部测完再统一发 0.5.0。
+
+**结果**（ADR-034）：
+1. **服务端**：非托管保存（`EntitySetHooks.create` / `update` / `delete`）；宿主的事务 `unitOfWork` 和 `createKyselyOnClient`；JSON 格式的 `$batch`（变更集原子、`$<id>` 引用、`continue-on-error`）；逐请求授权 `authorize`；只读服务仍回答只含读的批处理。
+2. **前端**：`DataProvider.batch`、core 的 `writeAll`、`ODataV4Provider` / `loadService` 的 `batch: 'json'`；删除选中的行、批量编辑是一个变更集，动作作用于多行是一次请求（`InvocationGrouping` 为 `ChangeSet` 时全部或全不）。实施前核对过：对象页的直接保存只发抬头一个 PATCH，子表的新建和删除点了就发，没有待提交状态，这次没有改（ADR-034“没做的”）。
+3. **响应式表的自动弹入**改成 sap.m.Table `_configureAutoPopin` 的算法：列按 High、Medium、Low 排，每列按固定宽度或 `autoPopinWidth`（默认 8rem）累计，放不下的进弹入区，最重要的一列总留着。原来按 600 / 1024 两个断点判断，窄容器里（分栏的第一栏、手机）High 列多时被挤成一字一行。宽度为 0（没布局）时保留上次的宽度。
+4. **网格表**：`role="grid"` 以表格标题为名称（S37）；AG Grid 的读屏文字走翻译；分析表组名左对齐（S30）。
+5. **对象页**：页脚动作靠右（S33）、`onActionDone`（S34）、覆盖被隐藏的分区和动作（S41、S43）、第一个区块的标题视觉隐藏（S42）；区块栅格是 1 / 2 / 3 / 4 栏（原来 1 / 3 / 4）。表单没有改：FE 的默认就是 1 → 3 → 4 → 6 栏（`sap/fe/macros/Form.tsx` 的 `columnsM: 3`），加两栏一档反而偏离。
+6. **列表页**：多实体集视图的表格设置用绝对路径键（S29）；入站导航 `navigationParameter`（S35）；只切换页签也算视图已修改（同 FE），这样才能保存；CLI 接受空的 schema。
+7. **随包文档**：服务端 README 加四节；React 的 README、recipes、pitfalls 去掉 0.4.0 已删的属性。
+
+**没做的**：S31、S36、S38、S39（示例用不到）、S40（已不需要）；S32 没复现；“显示 / 隐藏筛选”按钮不做（FE V4 的列表页就是展开 / 折叠，D-8）；Linux 截图基线没有重新生成。
+
+**核对**：`npm run typecheck`、`lint`、`check:ui5`（0 未登记）、单元测试、`e2e`、`e2e:pg`；体积预算上调三项（`check-size.mjs` 里写了原因）。
+

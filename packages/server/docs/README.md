@@ -114,6 +114,135 @@ export const approve: ActionHandler<unknown> = async ({ entity, db, messages, re
 `createODataService({ …, actions: { 'Shop.approve': approve } })`; show it in the UI with a `UI.DataFieldForAction`
 (`Action` = `Shop.approve`) in `UI.LineItem` or `UI.Identification`.
 
+## Unmanaged save: the application stores the entity
+
+By default the service writes to the table of the entity set itself. When the entity set is a **read model** (a view
+over several tables, computed columns), or the application's writes live in its own code (permission checks, audit,
+numbering, a different database library), give the entity set `create` / `update` / `delete`: the service still does
+the protocol (property whitelist, Edm types, Capabilities, the data scope, ETag / If-Match → 412, the hooks before and
+after, OData errors, `sap-messages`) and then calls your function instead of running SQL. The response is the entity
+read again through the entity set, so computed columns of the view are there.
+
+```ts
+import { ODataServerError, type EntitySetHooks } from '@rhfan2019/smart-kit-server';
+
+declare const orders: {
+  create(input: { customer: string; note: string | null }): Promise<{ orderNo: string }>;
+  update(orderNo: string, version: number, changes: { note?: string | null }): Promise<boolean>;
+  remove(orderNo: string): Promise<void>;
+};
+
+export const Orders: EntitySetHooks<unknown> = {
+  creatable: ['Customer', 'Note'],
+  updatable: ['Note'],
+  // returns the key of the new entity: every key property
+  async create({ data }) {
+    const { orderNo } = await orders.create({ customer: String(data.Customer), note: (data.Note as string | null) ?? null });
+    return { OrderNo: orderNo };
+  },
+  // `patch`: the checked properties of the request; `current`: the entity as read now (If-Match was checked against it)
+  async update({ key, current, patch }) {
+    const stored = await orders.update(String(key.OrderNo), Number(current.Version), { note: patch.Note as string | null });
+    if (!stored) throw new ODataServerError(412, 'PreconditionFailed', 'The order was changed by someone else.');
+  },
+  async delete({ key }) {
+    await orders.remove(String(key.OrderNo));
+  },
+};
+```
+
+- The ETag property (`Version`) is yours to count up in `update`; the service only compares it.
+- An action handler of such an entity set either stores what it does itself and returns nothing, or returns the
+  changes, which then go to `update` as `patch`.
+- Throw `ODataServerError` (or `validationError` for field errors) to refuse; anything else becomes a 500.
+- Your function and the service must see the same transaction, or the re-read misses your write: see the next section.
+
+## One transaction with the host: `unitOfWork`
+
+Without it the service runs each write request in a transaction of its own on `db`. When your `create` / `update` /
+`delete` or action handlers write through another connection (Drizzle, Prisma, plain `pg`), give `unitOfWork`: the
+service calls it once per write request — and once per change set of a `$batch` — and does all its own statements on
+the Kysely instance you hand to `work`. You begin, commit and roll back.
+
+```ts
+import { AsyncLocalStorage } from 'node:async_hooks';
+import type pg from 'pg';
+import { createKyselyOnClient, type ODataServiceOptions } from '@rhfan2019/smart-kit-server';
+
+/** The connection of the running unit of work: your own writes take it from here. */
+export const currentClient = new AsyncLocalStorage<pg.PoolClient>();
+
+export const unitOfWork = (pool: pg.Pool): NonNullable<ODataServiceOptions<unknown>['unitOfWork']> =>
+  async (_e, work) => {
+    const client = await pool.connect();
+    try {
+      await client.query('begin');
+      const result = await currentClient.run(client, () => work(createKyselyOnClient(client)));
+      await client.query('commit');
+      return result;
+    } catch (e) {
+      await client.query('rollback');
+      throw e;
+    } finally {
+      client.release();
+    }
+  };
+```
+
+With Drizzle: `drizzle(client).transaction(async (tx) => store.run(tx, () => work(createKyselyOnClient(client))))`
+begins and commits for you, and your mutations take `tx` from the store.
+
+## `$batch`
+
+`POST <service>/$batch` in the **JSON format** of OData 4.01 (`Content-Type: application/json`; `multipart/mixed`
+answers 415):
+
+```json
+{ "requests": [
+  { "id": "1", "atomicityGroup": "g1", "method": "POST", "url": "Orders", "body": { "Customer": "C1" } },
+  { "id": "2", "atomicityGroup": "g1", "method": "POST", "url": "$1/_Items", "body": { "Product": "P1", "Quantity": 2 } },
+  { "id": "3", "method": "POST", "url": "Orders('7')/Shop.approve", "body": {} },
+  { "id": "4", "method": "GET", "url": "Orders('7')?$select=Status" }
+] }
+```
+
+- The answer is `200` with `{ "responses": [{ "id", "status", "headers", "body" }] }` in the order of the requests.
+- Requests with the same `atomicityGroup` are a **change set**: one transaction (one `unitOfWork`). When one of them
+  fails nothing of the group is written and the group gets a single response: the error, with the `id` of the request
+  that failed. A GET cannot be in a group; the requests of a group follow one another.
+- A URL may start with `$<id>` of an earlier request that created an entity (`$1/_Items`).
+- Each request carries its own `headers` (`If-Match`, `Prefer`); the cookies, `Authorization` and `Accept-Language`
+  of the batch request apply to all of them. `context` is computed once for the batch.
+- Without `Prefer: continue-on-error` the first failed request (or group) ends the batch.
+
+In the browser, `ODataV4Provider` (and `loadService`) with `batch: 'json'` sends several writes of a page as one
+batch: deleting or mass-editing the selected rows as one change set, an action on several rows as one request with
+each row on its own (`UI.DataFieldForAction/InvocationGrouping` `ChangeSet`: all or none).
+
+## Authorizing each request: `authorize`
+
+`scope` decides which rows exist for a user; `authorize` decides whether the user may do this kind of thing at all.
+It runs for every request — each request inside a `$batch` too — after the path is resolved and before anything is
+read or written, with the entity set the path ends at (`Orders('1')/_Items` → `Items`).
+
+```ts
+import { ODataServerError, type ODataServiceOptions } from '@rhfan2019/smart-kit-server';
+
+type Ctx = { permissions: Set<string> };
+const NEEDED: Record<string, Record<string, string>> = {
+  Orders: { read: 'order:view', create: 'order:create', update: 'order:edit', delete: 'order:delete', 'action:Shop.approve': 'order:approve' },
+};
+
+export const authorize: NonNullable<ODataServiceOptions<Ctx>['authorize']> = ({ context, entitySet, operation, action }) => {
+  const needed = NEEDED[entitySet]?.[action ? `action:${action}` : operation];
+  if (!needed || !context.permissions.has(needed)) throw new ODataServerError(403, 'PERMISSION_DENIED', `Missing permission ${needed ?? entitySet}.`);
+};
+```
+
+Do not authorize in a wrapper around `service.handle` by looking at the URL: the requests of a `$batch` never pass
+it one by one. Entity sets reached through `$expand`, navigation paths in `$filter` and value helps are not announced
+to `authorize`; restrict those with `scope` (a set the user may not see: scope `false`).
+
 ## Data scope (permissions) and request context
 
 ```ts

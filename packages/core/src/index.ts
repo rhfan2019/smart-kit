@@ -48,7 +48,8 @@ export {
 } from './query/totals';
 export { buildAnalyticalRequests, ANALYTICAL_COUNT_ALIAS, type AnalyticalRequestOptions, type AnalyticalRequests, type AnalyticalApply } from './query/analytical';
 
-export type { DataProvider, ReadDataProvider, WriteDataProvider, WriteResult, FetchLike, RequestOptions } from './data/provider';
+export type { DataProvider, ReadDataProvider, WriteDataProvider, BatchDataProvider, BatchOperation, BatchResult, WriteResult, FetchLike, RequestOptions } from './data/provider';
+export { writeAll, RolledBackError } from './data/batch';
 export { messagesFromHeader, messagesFromError, createMessage, highestSeverity, type Message, type MessageType } from './data/messages';
 export { ODataV4Provider, loadService, type ODataV4ProviderOptions, type LoadServiceOptions } from './data/odata';
 export { MemoryProvider, type MemoryProviderOptions } from './data/memory';

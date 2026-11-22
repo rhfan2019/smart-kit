@@ -14,6 +14,8 @@ const proxy = {
 
 export default defineConfig({
   plugins: [react()],
+  // the PostgreSQL service answers $batch (JSON format): the purchasing service then sends several writes as one request
+  define: { 'import.meta.env.VITE_PURCHASING_BATCH': JSON.stringify(purchasing ? 'json' : '') },
   // workspace packages from their sources (exports condition `smart-kit-source`, ADR-029)
   resolve: { conditions: ['smart-kit-source', ...defaultClientConditions] },
   server: { port: 4401, strictPort: true, proxy },

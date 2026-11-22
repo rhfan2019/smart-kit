@@ -23,7 +23,8 @@ const ENTRY_BUDGETS = {
   '.': 154, // everything, all subpaths together; 80 → 95 with the cards (ADR-028, /cards ≈ 18 KB); 95 → 154 with the controls (docs/26, /controls ≈ 57 KB) and the tree table
   // context, i18n, table, templates +1 to +2: the texts and the code of relative dates and the FCL separator (S6, S23)
   // context, i18n 13 → 14, 8 → 10: the texts of stage 6 (p13n panels, QuickView, mass edit, New Object dialog, chart personalization)
-  context: 14, i18n: 10, theme: 2, util: 12, // util 1 → 11 with the helpers from /controls (stage 1, ADR-033: messageTypeOf, toDates, viewSettingsFilterString …)
+  // context 14 → 15 (0.5.0, D51): the grid's screen reader texts
+  context: 15, i18n: 10, theme: 2, util: 12, // util 1 → 11 with the helpers from /controls (stage 1, ADR-033: messageTypeOf, toDates, viewSettingsFilterString …)
   // stage 2 (D38): the block subpaths are gone, the blocks are measured as modules below
 };
 
@@ -149,7 +150,7 @@ for (const name of moduleNames) {
 // P5: one stylesheet for all components (styles.css imports tokens.css). 13 → 16 KB with the cards (ADR-028, about 4 KB).
 const css = ['styles.css', 'tokens.css'].reduce((n, f) => n + gzipSync(readFileSync(join(REACT_DIST, f))).length, 0) / 1024;
 // 16 → 17 KB: data-sk-theme selectors beside the former data-theme ones (S7), FCL separator, relative dates (S6, S23)
-report('@rhfan2019/smart-kit/styles.css (with tokens.css)', css, 29); // 27 → 29: page controls of stage 2 (title toolbar, anchor bar, micro chart sizes) // 17 → 27 with the controls (docs/26, about 8 KB) and the tree table
+report('@rhfan2019/smart-kit/styles.css (with tokens.css)', css, 30); // 29 → 30 (0.5.0, D51): block grid steps, hidden first section title // 27 → 29: page controls of stage 2 (title toolbar, anchor bar, micro chart sizes) // 17 → 27 with the controls (docs/26, about 8 KB) and the tree table
 
 console.log('\nWhat an application ships (everything except React):');
 for (const s of SCENARIOS) report(s.name, await bundle(s.code, reactOnly), s.budget);
@@ -159,7 +160,7 @@ for (const s of SCENARIOS) report(s.name, await bundle(s.code, reactOnly), s.bud
 // code or dependencies may reach a browser bundle: core, the React package and the built demo app are scanned.
 console.log('\nNode-only packages (ADR-027):');
 const gz = (dir) => readdirSync(dir, { recursive: true }).filter((f) => String(f).endsWith('.js')).reduce((n, f) => n + gzipSync(readFileSync(join(dir, String(f)))).length, 0) / 1024;
-report('@rhfan2019/smart-kit-server (own code)', gz(SERVER_DIST), 30);
+report('@rhfan2019/smart-kit-server (own code)', gz(SERVER_DIST), 34); // 30 → 34 (0.5.0, ADR-034): $batch, unmanaged save, unit of work
 report('@rhfan2019/smart-kit-cli (own code)', gz(CLI_DIST), 12);
 const SERVER_ONLY = /\bfrom\s*["'](?:@rhfan2019\/smart-kit-(?:server|cli)|kysely|chevrotain|pg|pg-pool|pg-protocol|node:[a-z_/]+)["']|\bclass\s+\w*SqlBuilder\b|createODataService|PostgresDialect/;
 for (const [label, dir] of [['@rhfan2019/smart-kit-core dist', CORE_DIST], ['@rhfan2019/smart-kit dist', REACT_DIST], ['apps/demo build', DEMO_DIST]]) {

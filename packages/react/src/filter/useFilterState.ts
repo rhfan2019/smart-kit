@@ -1,6 +1,7 @@
 /** Headless filter state: conditions, search, visible fields, "Go", mandatory checks (LR-05–LR-09). */
-import { activeFilterPaths, filterExpressionRules, isComplete, isFilterable, isRelativeDateOperator, resolvePath, restrictConditions, type Condition, type FilterState, type Operator } from '@rhfan2019/smart-kit-core';
+import { EDIT_STATE, activeFilterPaths, filterExpressionRules, isComplete, isFilterable, isRelativeDateOperator, resolvePath, restrictConditions, type Condition, type FilterState, type Operator } from '@rhfan2019/smart-kit-core';
 import type { FilterOperatorOptionsOf } from './filterOperators';
+import { fromSelectionVariant, type SelectionVariant } from './selectionVariant';
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useMetaModel } from '../context/SmartKitProvider';
 import { usePageState } from '../util/usePageState';
@@ -54,6 +55,13 @@ export interface FilterStateApi extends FilterSnapshot {
   go(): boolean;
   /** Replaces filters, search and fields (e.g. from a variant); applies them when `apply` is true. */
   load(content: Partial<Pick<FilterSnapshot, 'filters' | 'search' | 'fields'>>, apply: boolean): void;
+  /**
+   * The conditions of an inbound navigation (FE FilterBar `_applySelectionVariant` → `setSelectionVariant`): every
+   * condition is replaced by the selection variant's (select options of properties the entity type does not have are
+   * ignored; the search text is cleared), their fields are shown, and the query is executed. With an empty mandatory
+   * field nothing is executed: the last executed query is dropped too and the mandatory fields show their error.
+   */
+  applySelectionVariant(selectionVariant: SelectionVariant): void;
   /** Filters differ from the applied query (manual mode shows an overlay). */
   dirty: boolean;
   /** Mandatory filter paths without a complete condition. */
@@ -142,7 +150,8 @@ export function useFilterState(entitySet: string, o: UseFilterStateOptions = {})
   stateRef.current = state;
   const go = useCallback((): boolean => {
     const ok = missing(stateRef.current.filters).length === 0;
-    setState((s) => (ok ? { ...s, applied: { filters: s.filters, search: s.search }, showRequiredErrors: false } : { ...s, showRequiredErrors: true }));
+    // checked again on the state that is applied: it may have been replaced in the same tick (`load`)
+    setState((s) => (missing(s.filters).length === 0 ? { ...s, applied: { filters: s.filters, search: s.search }, showRequiredErrors: false } : { ...s, showRequiredErrors: true }));
     return ok;
   }, [missing, setState]);
 
@@ -183,6 +192,18 @@ export function useFilterState(entitySet: string, o: UseFilterStateOptions = {})
       }),
     [setState, defaults, missing],
   );
+  const applySelectionVariant = useCallback(
+    (selectionVariant: SelectionVariant) => {
+      const known = (path: string) => path === EDIT_STATE || Boolean(meta.set.parameters?.properties.includes(path) || type.properties[path.split('/')[0]!] || type.navigations[path.split('/')[0]!]);
+      const filters = Object.fromEntries(Object.entries(fromSelectionVariant(selectionVariant, true)).filter(([path]) => known(path)));
+      const shown = Object.keys(filters).filter((path) => path !== EDIT_STATE && isFilterable(capabilities, path));
+      setState((s) => {
+        const next = { ...s, filters, search: '', fields: [...new Set([...defaults.fields, ...shown])] };
+        return missing(filters).length === 0 ? { ...next, applied: { filters, search: '' }, showRequiredErrors: false } : { ...next, applied: null, showRequiredErrors: true };
+      });
+    },
+    [setState, defaults, missing, meta.set, type, capabilities],
+  );
 
   const missingRequired = missing(state.filters);
   return {
@@ -199,6 +220,7 @@ export function useFilterState(entitySet: string, o: UseFilterStateOptions = {})
     setFields,
     go,
     load,
+    applySelectionVariant,
     dirty: state.applied !== null && !sameFilter(state.applied, state.filters, state.search),
     missingRequired,
     activeCount: activeFilterPaths(state.filters).length,

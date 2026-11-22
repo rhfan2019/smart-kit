@@ -384,7 +384,7 @@ getPath(row: Row | undefined, path: string): unknown
 
 ### `hiddenByImportance` — function
 
-Widths below which Low, then Medium columns move out of the table (sap.m.Table pop-in by importance).
+Widths below which Low, then Medium columns of a layout without measured columns move out (object page forms and other places that hide by importance; the responsive table uses `autoPopinWidths`).
 
 ```ts
 hiddenByImportance(width: number, importance: Priority | undefined): boolean
@@ -1612,6 +1612,7 @@ default(entitySet: string, o?: UseFilterStateOptions): FilterStateApi
 | `setFields` | **yes** | `(fields: string[]) => void` |  |
 | `go` | **yes** | `() => boolean` | Applies the current filters; returns false when mandatory fields are empty. |
 | `load` | **yes** | `(content: Partial&lt;Pick&lt;FilterSnapshot, 'filters' \| 'search' \| 'fields'>>, apply: boolean) => void` | Replaces filters, search and fields (e.g. from a variant); applies them when `apply` is true. |
+| `applySelectionVariant` | **yes** | `(selectionVariant: SelectionVariant) => void` | The conditions of an inbound navigation (FE FilterBar `_applySelectionVariant` → `setSelectionVariant`): every condition is replaced by the selection variant's (select options of properties the entity type does not have are ignored; the search text is cleared), their fields are shown, and the query is executed. With an empty mandatory field nothing is executed: the last executed query is dropped too and the mandatory fields show their error. |
 | `dirty` | **yes** | `boolean` | Filters differ from the applied query (manual mode shows an overlay). |
 | `missingRequired` | **yes** | `string[]` | Mandatory filter paths without a complete condition. |
 | `activeCount` | **yes** | `number` | Number of fields that carry a condition ("Adapt Filters (n)"). |
@@ -7965,6 +7966,7 @@ A column (sap.m.Column) of the `columns` aggregation.
 | `hAlign` |  | `'Begin' \| 'End' \| 'Center' \| 'Left' \| 'Right' \| 'Initial'` | Horizontal alignment of the header and the cells. |
 | `width` |  | `string` | Column width (CSS length). |
 | `visible` |  | `boolean` |  |
+| `autoPopinWidth` |  | `number` | With `autoPopinMode`: the width in rem the column counts with when it has no fixed `width` (px, em, rem); the columns stay in the table as long as these widths fit. |
 | `demandPopin` |  | `boolean` | Without `autoPopinMode`: below `minScreenWidth` the column goes into the pop-in instead of being hidden. |
 | `minScreenWidth` |  | `string` | Without `autoPopinMode`: a sap.m.ScreenSize ("Phone", "Tablet", "Desktop", …) or a CSS width below which the column is hidden or popped in. |
 | `popinDisplay` |  | `PopinDisplay` | How the pop-in shows header and value. |
@@ -14034,7 +14036,7 @@ _no props_
 
 ## `@rhfan2019/smart-kit/v4/fe/templates/ListReport`
 
-`$KPIConfiguration` (interface) · `$ListReportSettings` (interface) · `$ManifestActionSettings` (interface) · `$ManifestChartActionSettings` (interface) · `$ManifestChartConfiguration` (interface) · `$ManifestColumnSettings` (interface) · `$ManifestCreationModeSettings` (interface) · `$ManifestCustomHeaderSettings` (interface) · `$ManifestFilterConfiguration` (interface) · `$ManifestFilterFieldSettings` (interface) · `$ManifestHeaderActionSettings` (interface) · `$ManifestOverflowGroupSettings` (interface) · `$ManifestTableConfiguration` (interface) · `$ManifestTableSettings` (interface) · `$PositionSettings` (interface) · `$QuickVariantSelectionSettings` (interface) · `$ViewPathSettings` (interface) · `default` (component) · `InitialLoadMode` (type)
+`$KPIConfiguration` (interface) · `$ListReportSettings` (interface) · `$ManifestActionSettings` (interface) · `$ManifestChartActionSettings` (interface) · `$ManifestChartConfiguration` (interface) · `$ManifestColumnSettings` (interface) · `$ManifestCreationModeSettings` (interface) · `$ManifestCustomHeaderSettings` (interface) · `$ManifestFilterConfiguration` (interface) · `$ManifestFilterFieldSettings` (interface) · `$ManifestHeaderActionSettings` (interface) · `$ManifestOverflowGroupSettings` (interface) · `$ManifestTableConfiguration` (interface) · `$ManifestTableSettings` (interface) · `$NavigationParameterSettings` (interface) · `$PositionSettings` (interface) · `$QuickVariantSelectionSettings` (interface) · `$ViewPathSettings` (interface) · `default` (component) · `InitialLoadMode` (type)
 
 ### `$KPIConfiguration` — interface
 
@@ -14056,7 +14058,7 @@ Settings of the list report: the FE manifest settings (docs/26c §3–§7) plus 
 | `entitySet` |  | `string` | Entity set of the list, e.g. "Orders" (or `contextPath`). |
 | `contextPath` |  | `string` | Context path of the list, e.g. "/Orders" (a parameterized set: "/P/Set"); wins over `entitySet`. |
 | `navigation` |  | `Record&lt;string, { detail?: { route?: string } }>` | Row navigation per entity set: `detail.route` makes rows navigate to the object page (NavigationAdapter.toObject). |
-| `controlConfiguration` |  | `{ '@com.sap.vocabularies.UI.v1.LineItem'?: $ManifestTableConfiguration; '@com.sap.vocabularies.UI.v1.SelectionFields'?: $ManifestFilterCo…` | Settings of the controls by annotation path (table, filter bar). |
+| `controlConfiguration` |  | `{ '@com.sap.vocabularies.UI.v1.LineItem'?: $ManifestTableConfiguration; '@com.sap.vocabularies.UI.v1.SelectionFields'?: $ManifestFilterCo…` | Settings of the controls by annotation path (table, filter bar). With views of several entity sets (`views.paths[]` with `entitySet` / `contextPath`), the table of an entity set reads the key with its absolute path first, `"/&lt;EntitySet>/@com.sap.vocabularies.UI.v1.LineItem"`, and only when there is none (or it is empty) the relative key `"@com.sap.vocabularies.UI.v1.LineItem"` — the whole configuration (`tableSettings`, `columns`, `actions`, `overflowGroups`) is taken from one key, they are not merged (FE ConverterContext getManifestControlConfiguration). |
 | `content` |  | `{ header?: { actions?: Record&lt;string, $ManifestHeaderActionSettings>; /** Separators of the header actions' overflow groups, by group num…` |  |
 | `variantManagement` |  | `'Control' \| 'None' \| 'Page'` | "Page": one variant management in the title for the filter bar and the table; "Control": the filter bar, the table and the chart each have their own (the title shows the page title); "None": no variants. |
 | `defaultTemplateAnnotationPath` |  | `string` | Annotation path of the UI.SelectionPresentationVariant the list starts from (FE getCompliantVisualizationAnnotation): its presentation is the table's, its selection variant the filter bar's defaults. |
@@ -14071,7 +14073,8 @@ Settings of the list report: the FE manifest settings (docs/26c §3–§7) plus 
 | `service` |  | `string` | Name of the service in `SmartKitProvider` `services`; default: the provider's `defaultService`. |
 | `pageKey` |  | `string` | Key for variants and state restoration; defaults to the entity set. |
 | `title` |  | `string` | Page title (standard variant text, e-mail subject); default UI.HeaderInfo/TypeNamePlural. |
-| `onRowsChange` |  | `(rows: Row[]) => void` | Loaded rows of the main table (e.g. paging buttons in a flexible column layout). |
+| `onRowsChange` |  | `(rows: Row[]) => void` | Loaded rows of the table that is shown: the main table, with `views` the table of the selected view — also a view of another entity set (e.g. paging buttons in a flexible column layout). |
+| `navigationParameter` |  | `$NavigationParameterSettings` | The context of an inbound navigation: another page opens the list with filter conditions and, optionally, a view. FE receives it as the navigation parameter of a cross-application navigation (sap.fe.core ViewState `applyViewState(viewState, navParameter)`, navigation type "xAppState"; sap.fe.macros.FilterBar `applyNavigationParameters` / `_applySelectionVariant`); here the host passes it (kit-extension). Each navigation is applied once, when the page is shown with it for the first time: the standard view is selected, the filter conditions are replaced by the selection variant's (not merged, also the default conditions go; the search text is cleared), the list is read at once whatever `initialLoad` says, and `selectedTab` is selected. The selection variant has to bring the mandatory filter fields: with one of them empty nothing is read and the field shows its error, as in FE. Without a filter bar (`hideFilterBar`) the conditions have no effect. The navigation wins over the restored page state and over the user's default view. Rendering again with the same navigation — the same content and `navigationId`, also after the page was left and opened again — changes nothing, so what the user changed since stays; a different content or `navigationId` is a new navigation. |
 | `refreshToken` |  | `number \| string` | Change this value to reload the tables, tab counts and chart. The first value does not reload. |
 | `onBeforeExport` |  | `(e: Table$BeforeExportEvent) => boolean \| void \| Promise&lt;boolean \| void>` | Before an export is written; return false to cancel (FE: controller extension onBeforeExport). |
 | `onExported` |  | `(e: Table$ExportedEvent) => void` | After an export was written. |
@@ -14285,6 +14288,16 @@ A custom header action of the page (`content › header › actions`, FE getHead
 | `rowPress` |  | `(e: Table$RowPressEvent) => void` | A row was pressed (FE names an extension function; react-idiom). Default: navigation to the object page. |
 | `selectionChange` |  | `(e: Table$SelectionChangeEvent) => void` | The selection changed (FE names an extension function; react-idiom). |
 
+### `$NavigationParameterSettings` — interface
+
+The context of an inbound navigation (`$ListReportSettings.navigationParameter`; FE: the `NavigationParameter` of sap.fe.core.controllerextensions.ViewState `applyViewState`).
+
+| Member | Required | Type | Description |
+| --- | --- | --- | --- |
+| `selectionVariant` |  | `SelectionVariant` | The filter conditions, as the JSON object of a sap.fe.navigation.SelectionVariant (`SelectOptions`, `Parameters`). They replace the conditions of the filter bar (FE FilterBar `setSelectionVariant`: the conditions are cleared first); select options of properties the entity type does not have are ignored. Without it the conditions stay. |
+| `selectedTab` |  | `string` | Key of the view to select (`views.paths[].key`; FE sap.fe.templates.ListReport.ExtensionAPI `setSelectedTab`). |
+| `navigationId` |  | `string` | Tells two navigations with the same content apart, e.g. the router's key of the history entry (React Router `location.key`): with a new id the same conditions are applied again, with the same id (back navigation, re-rendering) they are not. Without it only a different content is a new navigation. |
+
 ### `$PositionSettings` — interface
 
 sap.fe.core.converters.helpers.ConfigurableObject Position.
@@ -14330,7 +14343,7 @@ sap.fe.core.converters.helpers.ConfigurableObject Position.
 | `entitySet` |  | `string` | Entity set of the list, e.g. "Orders" (or `contextPath`). |
 | `contextPath` |  | `string` | Context path of the list, e.g. "/Orders" (a parameterized set: "/P/Set"); wins over `entitySet`. |
 | `navigation` |  | `Record&lt;string, { detail?: { route?: string } }>` | Row navigation per entity set: `detail.route` makes rows navigate to the object page (NavigationAdapter.toObject). |
-| `controlConfiguration` |  | `{ '@com.sap.vocabularies.UI.v1.LineItem'?: $ManifestTableConfiguration; '@com.sap.vocabularies.UI.v1.SelectionFields'?: $ManifestFilterCo…` | Settings of the controls by annotation path (table, filter bar). |
+| `controlConfiguration` |  | `{ '@com.sap.vocabularies.UI.v1.LineItem'?: $ManifestTableConfiguration; '@com.sap.vocabularies.UI.v1.SelectionFields'?: $ManifestFilterCo…` | Settings of the controls by annotation path (table, filter bar). With views of several entity sets (`views.paths[]` with `entitySet` / `contextPath`), the table of an entity set reads the key with its absolute path first, `"/&lt;EntitySet>/@com.sap.vocabularies.UI.v1.LineItem"`, and only when there is none (or it is empty) the relative key `"@com.sap.vocabularies.UI.v1.LineItem"` — the whole configuration (`tableSettings`, `columns`, `actions`, `overflowGroups`) is taken from one key, they are not merged (FE ConverterContext getManifestControlConfiguration). |
 | `content` |  | `{ header?: { actions?: Record&lt;string, $ManifestHeaderActionSettings>; /** Separators of the header actions' overflow groups, by group num…` |  |
 | `variantManagement` |  | `'Control' \| 'None' \| 'Page'` | "Page": one variant management in the title for the filter bar and the table; "Control": the filter bar, the table and the chart each have their own (the title shows the page title); "None": no variants. |
 | `defaultTemplateAnnotationPath` |  | `string` | Annotation path of the UI.SelectionPresentationVariant the list starts from (FE getCompliantVisualizationAnnotation): its presentation is the table's, its selection variant the filter bar's defaults. |
@@ -14345,7 +14358,8 @@ sap.fe.core.converters.helpers.ConfigurableObject Position.
 | `service` |  | `string` | Name of the service in `SmartKitProvider` `services`; default: the provider's `defaultService`. |
 | `pageKey` |  | `string` | Key for variants and state restoration; defaults to the entity set. |
 | `title` |  | `string` | Page title (standard variant text, e-mail subject); default UI.HeaderInfo/TypeNamePlural. |
-| `onRowsChange` |  | `(rows: Row[]) => void` | Loaded rows of the main table (e.g. paging buttons in a flexible column layout). |
+| `onRowsChange` |  | `(rows: Row[]) => void` | Loaded rows of the table that is shown: the main table, with `views` the table of the selected view — also a view of another entity set (e.g. paging buttons in a flexible column layout). |
+| `navigationParameter` |  | `$NavigationParameterSettings` | The context of an inbound navigation: another page opens the list with filter conditions and, optionally, a view. FE receives it as the navigation parameter of a cross-application navigation (sap.fe.core ViewState `applyViewState(viewState, navParameter)`, navigation type "xAppState"; sap.fe.macros.FilterBar `applyNavigationParameters` / `_applySelectionVariant`); here the host passes it (kit-extension). Each navigation is applied once, when the page is shown with it for the first time: the standard view is selected, the filter conditions are replaced by the selection variant's (not merged, also the default conditions go; the search text is cleared), the list is read at once whatever `initialLoad` says, and `selectedTab` is selected. The selection variant has to bring the mandatory filter fields: with one of them empty nothing is read and the field shows its error, as in FE. Without a filter bar (`hideFilterBar`) the conditions have no effect. The navigation wins over the restored page state and over the user's default view. Rendering again with the same navigation — the same content and `navigationId`, also after the page was left and opened again — changes nothing, so what the user changed since stays; a different content or `navigationId` is a new navigation. |
 | `refreshToken` |  | `number \| string` | Change this value to reload the tables, tab counts and chart. The first value does not reload. |
 | `onBeforeExport` |  | `(e: Table$BeforeExportEvent) => boolean \| void \| Promise&lt;boolean \| void>` | Before an export is written; return false to cancel (FE: controller extension onBeforeExport). |
 | `onExported` |  | `(e: Table$ExportedEvent) => void` | After an export was written. |
@@ -14375,6 +14389,7 @@ Props of the object page: the manifest settings (ObjectPageManifestSettings) plu
 | `create` |  | `{ entitySet?: string; initial?: Row }` | Create mode: a new object of `entitySet` (default the `entitySet` / `contextPath` setting). |
 | `onCreated` |  | `(path: string) => void` | After a new object was saved; default NavigationAdapter.toObject. |
 | `onDeleted` |  | `() => void` | After the object was deleted; default NavigationAdapter.toList. |
+| `onActionDone` |  | `(result: ActionResult) => void` | After an annotation action of the header or the footer (UI.Identification DataFieldForAction) has run, with its result (`processed`, `failed`, `messages`); the page has already refreshed its own data. FE has no such hook (its EditFlow offers only `onBeforeExecuteAction`); use it to refresh what the host shows next to the page. |
 | `editable` |  | `boolean` | Offer "Edit" (default: when the entity set is updatable and the data provider can write). |
 | `headerMessage` |  | `ReactNode \| ((row: Row \| undefined) => ReactNode)` | Message strip under the title (OP-17). |
 | `keyInfo` |  | `ReactNode \| ((row: Row \| undefined) => ReactNode)` | Key information in the title bar (DP Header Title (4)), e.g. a GenericTag. |
@@ -14420,6 +14435,7 @@ sap.fe.templates.ObjectPage. Instance methods of the object page (sap.fe.templat
 | `create` |  | `{ entitySet?: string; initial?: Row }` | Create mode: a new object of `entitySet` (default the `entitySet` / `contextPath` setting). |
 | `onCreated` |  | `(path: string) => void` | After a new object was saved; default NavigationAdapter.toObject. |
 | `onDeleted` |  | `() => void` | After the object was deleted; default NavigationAdapter.toList. |
+| `onActionDone` |  | `(result: ActionResult) => void` | After an annotation action of the header or the footer (UI.Identification DataFieldForAction) has run, with its result (`processed`, `failed`, `messages`); the page has already refreshed its own data. FE has no such hook (its EditFlow offers only `onBeforeExecuteAction`); use it to refresh what the host shows next to the page. |
 | `editable` |  | `boolean` | Offer "Edit" (default: when the entity set is updatable and the data provider can write). |
 | `headerMessage` |  | `ReactNode \| ((row: Row \| undefined) => ReactNode)` | Message strip under the title (OP-17). |
 | `keyInfo` |  | `ReactNode \| ((row: Row \| undefined) => ReactNode)` | Key information in the title bar (DP Header Title (4)), e.g. a GenericTag. |

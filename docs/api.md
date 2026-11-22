@@ -14,6 +14,7 @@
 - `hiddenFilterPath`
 - `hiddenFiltersOf`
 - `withHiddenFilters`
+- `writeAll`
 - `activeFilterPaths`
 - `aggregateMeasure`
 - `arrangeText`
@@ -110,6 +111,7 @@
 - `propertyFilter`
 - `readQueryString`
 - `RELATIVE_DATE_OPERATORS`
+- `RolledBackError`
 - `ALLOWED_EXPRESSIONS_PRIORITY`
 - `COUNT_DATE_OPERATORS`
 - `FIXED_DAY_OPERATORS`
@@ -168,6 +170,9 @@
 - `CsdlSource`
 - `DataPointModel`
 - `DataProvider`
+- `BatchDataProvider`
+- `BatchOperation`
+- `BatchResult`
 - `DraftModel`
 - `DrillState`
 - `EditSession`
@@ -500,7 +505,7 @@ AG Grid（`ag-grid-community`、`ag-grid-react`）是可选的 peer 依赖：不
 
 ## `@rhfan2019/smart-kit-server`
 
-> ADR-027，只在 Node 里用（`npm run size` 检查它的代码进不了浏览器包）。OData V4 服务：读（URL → 语法树 → 查询计划 → SQL，PostgreSQL）、直接保存（PATCH + ETag、POST、DELETE）、绑定动作；没有草稿。用法见 `apps/pg-server/server.ts` 和 README"在 PostgreSQL 上手工测试"。测试 `packages/server/test/api.test.ts` 比对本节。
+> ADR-027，只在 Node 里用（`npm run size` 检查它的代码进不了浏览器包）。OData V4 服务：读（URL → 语法树 → 查询计划 → SQL，PostgreSQL）、直接保存（PATCH + ETag、POST、DELETE；可以按实体集交给应用自己存，即非托管保存）、绑定动作、JSON 格式的 `$batch`（变更集原子）；没有草稿。用法见 `apps/pg-server/server.ts` 和 README"在 PostgreSQL 上手工测试"。测试 `packages/server/test/api.test.ts` 比对本节。
 
 ### 值（运行时导出）
 
@@ -509,6 +514,7 @@ AG Grid（`ag-grid-community`、`ag-grid-react`）是可选的 peer 依赖：不
 - `buildSchema`
 - `createODataService`
 - `createKysely`
+- `createKyselyOnClient`
 - `createPostgresDb`
 - `errorBody`
 - `escapeLike`

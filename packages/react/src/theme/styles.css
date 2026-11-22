@@ -167,6 +167,9 @@
 .sk-lazy { min-height: var(--sk-space-8); }
 
 /* ---------------------------------------------------------------- form: 1 / 3 / 4 / 6 columns by width (OP-13) */
+/* sap.fe.macros.Form passes ColumnLayout columnsM 3, columnsL 4, columnsXL 6; sap.ui.layout.form.ColumnLayout sizes are
+   those of the form itself (S: 1 column; M, L and XL start at the widths of the three container queries below), not of
+   the window. */
 .sk-form { container-type: inline-size; padding: var(--sk-space-inset); }
 .sk-form__grid { --sk-form-cols: 1; display: grid; grid-template-columns: repeat(var(--sk-form-cols), minmax(0, 1fr)); gap: var(--sk-space-5) var(--sk-space-6); }
 .sk-form[data-groups='1'] .sk-form__grid { grid-template-columns: minmax(0, 1fr); }
@@ -410,6 +413,8 @@ tr.sk-rtable__total > * { position: sticky; top: auto; bottom: 0; z-index: 2; bo
 /* group header rows of grouped grid tables (docs/23 §9) */
 .sk-table__group-row .ag-cell { display: flex; align-items: center; background: var(--sk-color-surface-2); color: var(--sk-color-text); font-weight: var(--sk-font-weight-bold); line-height: var(--sk-total-line-height); }
 .sk-table__group-row .ag-right-aligned-cell { justify-content: flex-end; }
+/* the group name starts at the left whatever the first column's alignment is (FE: the group header) */
+.sk-table__group-row .ag-cell:has(> .sk-table__group-label), .sk-table__group-row .ag-cell:has(.sk-table__group-label) { justify-content: flex-start; text-align: start; }
 .sk-table__group-label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 /* tree tables (docs/26 §3.10): indentation by DistanceFromRoot, expand / collapse toggle in the first column */
 .sk-tree { display: flex; align-items: center; gap: var(--sk-space-1); padding-inline-start: calc(var(--sk-tree-level, 0) * var(--sk-size-tree-indent)); min-width: 0; }
@@ -460,9 +465,11 @@ tr.sk-rtable__total > * { position: sticky; top: auto; bottom: 0; z-index: 2; bo
 .sk-object-header__edit { align-self: flex-start; margin-left: auto; }
 .sk-blocks { display: grid; grid-template-columns: repeat(var(--sk-form-cols, 1), minmax(0, 1fr)); gap: var(--sk-space-5); padding: var(--sk-space-inset); container-type: inline-size; }
 .sk-subsection { container-type: inline-size; }
-@container (min-width: 600px) { .sk-blocks { --sk-form-cols: 3; } }
-@container (min-width: 1024px) { .sk-blocks { --sk-form-cols: 4; } }
+/* sap.uxap.ObjectPageSubSection block grid by the width of the sub-section: S 1, M 2, L 3 (useTwoColumnsForLargeScreen: 2), XL 4 columns. */
+@container (min-width: 600px) { .sk-blocks { --sk-form-cols: 2; } }
+@container (min-width: 1024px) { .sk-blocks { --sk-form-cols: 3; } }
 @container (min-width: 1024px) { .sk-object-page--two-columns .sk-blocks { --sk-form-cols: 2; } }
+@container (min-width: 1440px) { .sk-blocks, .sk-object-page--two-columns .sk-blocks { --sk-form-cols: 4; } }
 .sk-block { min-width: 0; }
 .sk-block--1 { grid-column: span 1; }
 .sk-block--2 { grid-column: span min(2, var(--sk-form-cols, 1)); }

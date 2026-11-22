@@ -89,6 +89,13 @@ Generated columns (`GENERATED ALWAYS AS (…) STORED`) and identity columns get 
 or edit). Constraint names: PostgreSQL's default for `order_id` in `sales_order_item` is `sales_order_item_order_id_fkey`
 (see `\d sales_order_item` in psql). Tables without a primary key are left out (warning).
 
+An empty service is legal: a schema without tables (or with every table left out by `skip`) — an application that
+has not built its first table yet. `generate` then writes a CSDL with an empty `EntityContainer` and the storage
+mapping `{ "entitySets": {} }` (with a warning when the schema has no tables at all: a misspelt schema name or a
+missing privilege looks the same), `@rhfan2019/smart-kit-server` starts on it (`$metadata`, an empty service
+document), and `check --strict` passes, printing `…csdl.xml: no entity sets (an empty entity container).` Annotation
+files that still name entities of a removed sample are reported as usual.
+
 ## Workflow
 
 1. Change the schema (migration).

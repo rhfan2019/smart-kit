@@ -851,6 +851,7 @@ function buildActions(records: unknown, scope: string, ctx: UiContext): ActionMo
       operationAvailable,
       ...(hidden ? { hidden } : {}),
       ...(bool(rec.annotations?.UI?.Emphasized, false) ? { emphasized: true } : {}),
+      ...(/ChangeSet$/.test(String(rec.InvocationGrouping ?? '')) ? { invocationGrouping: 'ChangeSet' as const } : {}),
       parameters: params.slice(bound ? 1 : 0).map((p) => buildActionParameter(p, bindingName, ctx)),
     });
   }

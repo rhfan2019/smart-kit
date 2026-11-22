@@ -10,7 +10,7 @@
  */
 import { Button, Group, Modal, Stack, Text, TextInput } from '@mantine/core';
 import {
-  actionParameterBody, actionParameterDefaults, actionParameterErrors, actionParameterState, messagesFromError, skipsParameterDialog,
+  actionParameterBody, actionParameterDefaults, actionParameterErrors, actionParameterState, messagesFromError, RolledBackError, skipsParameterDialog, writeAll,
   type ActionModel, type Message, type Row,
 } from '@rhfan2019/smart-kit-core';
 import { useState, type ReactNode } from 'react';
@@ -72,18 +72,22 @@ export function useActionRunner(o: { service?: string; onDone?(r: ActionResult):
     setBusy(true);
     const result: ActionResult = { action, processed: [], failed: [], messages: [] };
     try {
-      for (const target of action.bound ? targets : [targets[0]!]) {
-        try {
-          const r = await provider.invoke(action.action, { path: action.bound ? target.path : undefined, parameters });
+      // One request for all selected entities when the service has $batch: each on its own (FE invocationGrouping
+      // Isolated, the default), or all or none (UI.DataFieldForAction/InvocationGrouping ChangeSet).
+      const list = action.bound ? targets : [targets[0]!];
+      const results = await writeAll(provider, list.map((target) => ({ kind: 'invoke' as const, action: action.action, path: action.bound ? target.path : undefined, parameters })), { atomic: action.invocationGrouping === 'ChangeSet' });
+      results.forEach((r, i) => {
+        const target = list[i]!;
+        if (r.ok) {
           result.processed.push({ target, row: r.row });
           result.messages.push(...(r.messages ?? []));
-        } catch (e) {
-          // Failures discovered only while executing are reported afterwards (LR Partial Processing, note).
-          const m = messagesFromError(e);
-          result.failed.push({ target, messages: m });
-          result.messages.push(...m);
+          return;
         }
-      }
+        // Failures discovered only while executing are reported afterwards (LR Partial Processing, note).
+        const m = r.error instanceof RolledBackError ? [] : messagesFromError(r.error);
+        result.failed.push({ target, messages: m });
+        result.messages.push(...m);
+      });
     } finally {
       setBusy(false);
     }

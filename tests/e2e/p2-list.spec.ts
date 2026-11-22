@@ -318,7 +318,8 @@ test('P2-LR-09 responsive table hides Low/Medium columns on narrow widths; "Show
   await expect(rows(page).first()).toBeVisible();
   const t = table(page, 'PurchaseOrders');
   await expect(t.locator('thead [data-col="DataField::Status"]')).toBeVisible(); // High
-  await expect(t.locator('thead [data-col="DataField::OrderDate"]')).toBeVisible(); // Medium
+  // sap.m.Table autoPopinMode: columns stay while their widths (8rem each) fit, High before Medium before Low
+  expect(await t.locator('thead th[data-col]').count()).toBeLessThanOrEqual(Math.floor(820 / 128));
   await expect(t.locator('thead [data-col="DataField::PurchaseOrderType"]')).toHaveCount(0); // Low
   await t.locator('[data-sk-table-details]').click();
   await expect(rows(page).first().locator('[data-sk-popin]')).toContainText('Order Type');

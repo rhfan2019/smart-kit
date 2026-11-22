@@ -88,6 +88,11 @@ export interface $ColumnSettings {
   width?: string;
   /** @defaultValue true */
   visible?: boolean;
+  /**
+   * With `autoPopinMode`: the width in rem the column counts with when it has no fixed `width` (px, em, rem); the
+   * columns stay in the table as long as these widths fit. @defaultValue 8
+   */
+  autoPopinWidth?: number;
   /** Without `autoPopinMode`: below `minScreenWidth` the column goes into the pop-in instead of being hidden. @defaultValue false */
   demandPopin?: boolean;
   /** Without `autoPopinMode`: a sap.m.ScreenSize ("Phone", "Tablet", "Desktop", …) or a CSS width below which the column is hidden or popped in. */
@@ -333,7 +338,29 @@ export interface Table {
   swipeOut(callback?: (swipedListItem: Row, swipedContent: ReactNode) => void): Table;
 }
 
-/** Widths below which Low, then Medium columns move out of the table (sap.m.Table pop-in by importance). */
+/**
+ * sap.m.Table `_configureAutoPopin`: the columns in the order High, Medium (None), Low each count with their fixed
+ * width or `autoPopinWidth`; a column moves into the pop-in when the table is narrower than the widths up to and
+ * including it. The most important column (the first of that order) always stays. Returns the width in px below
+ * which each column pops in (undefined: never).
+ */
+export function autoPopinWidths(columns: Pick<$ColumnSettings, 'importance' | 'width' | 'autoPopinWidth'>[], initialRem: number): (number | undefined)[] {
+  const rank = (c: Pick<$ColumnSettings, 'importance'>) => (c.importance === 'High' ? 0 : c.importance === 'Low' ? 2 : 1);
+  const order = columns.map((c, i) => ({ c, i })).sort((a, b) => rank(a.c) - rank(b.c) || a.i - b.i);
+  const out: (number | undefined)[] = columns.map(() => undefined);
+  let rem = initialRem;
+  order.forEach(({ c, i }, n) => {
+    const m = /^(\d+(?:\.\d+)?)(px|em|rem)$/.exec((c.width ?? '').trim());
+    rem += m ? Number(m[1]) / (m[2] === 'px' ? 16 : 1) : c.autoPopinWidth ?? 8;
+    if (n > 0) out[i] = rem * 16;
+  });
+  return out;
+}
+
+/**
+ * Widths below which Low, then Medium columns of a layout without measured columns move out (object page forms and
+ * other places that hide by importance; the responsive table uses `autoPopinWidths`).
+ */
 export function hiddenByImportance(width: number, importance: Priority | undefined): boolean {
   if (importance === 'High') return false;
   if (importance === 'Low') return width < 1024;
@@ -379,9 +406,11 @@ export function Table(p: $TableSettings) {
   useEffect(() => {
     const el = boxRef.current;
     if (!el || typeof ResizeObserver === 'undefined') return;
-    const ro = new ResizeObserver(() => setMeasured(el.clientWidth));
+    // width 0: not laid out (inside a hidden tab, or a test environment without layout); the last width stays
+    const measure = () => { if (el.clientWidth > 0) setMeasured(el.clientWidth); };
+    const ro = new ResizeObserver(measure);
     ro.observe(el);
-    setMeasured(el.clientWidth);
+    measure();
     return () => ro.disconnect();
   }, []);
   const width = p.contextualWidth && p.contextualWidth !== 'Inherit' ? pxOf(p.contextualWidth) ?? measured : measured;
@@ -390,11 +419,14 @@ export function Table(p: $TableSettings) {
   const single = mode === 'SingleSelectLeft' || mode === 'SingleSelectMaster';
   const selectColumn = multi || mode === 'SingleSelectLeft';
 
-  // Pop-in (sap.m.Table): the first column always stays (it identifies the row).
+  // Pop-in (sap.m.Table). autoPopinMode: by importance and width, the most important column always stays;
+  // otherwise by each column's minScreenWidth, and the first column always stays (it identifies the row).
   const columns = p.columns.filter((c) => c.visible !== false);
+  // sap.m.Table _getInitialAccumulatedWidth: the selection and the navigation column, borders and padding (rem)
+  const autoWidths = p.autoPopinMode ? autoPopinWidths(columns, 0.75 + (selectColumn ? 2.75 + 0.5 : 0) + (p.navigable ? 2.75 : 0)) : [];
   const outOfTable = (c: $ColumnSettings, i: number): 'popin' | 'hidden' | false => {
+    if (p.autoPopinMode) return autoWidths[i] !== undefined && width < autoWidths[i]! ? 'popin' : false;
     if (i === 0) return false;
-    if (p.autoPopinMode) return hiddenByImportance(width, c.importance) ? 'popin' : false;
     const min = pxOf(c.minScreenWidth);
     if (min === undefined || width >= min) return false;
     return c.demandPopin ? 'popin' : 'hidden';

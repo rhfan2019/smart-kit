@@ -37,3 +37,4 @@
 | [031](031-grouping-and-totals.md) | 列表的分组、组小计和总计由服务端 `$apply` 计算；网格表格只有总计 | 采纳 |
 | [032](032-ui5-naming-for-controls.md) | 通用控件：控件名、属性、枚举、事件和方法沿用 SAPUI5；实例方法用 ref | 采纳 |
 | [033](033-ui5-iron-rule.md) | 铁律：组件、命名空间（只换前缀）、API 和注解语义与 SAPUI5 1.154 一致；注解积木对齐 sap.fe.macros，模板对齐 sap.fe.templates；偏差必须登记，开发后必须核对 | 采纳 |
+| [034](034-unmanaged-save-and-batch.md) | 非托管保存（应用自己存、服务管协议）、宿主的事务 `unitOfWork`、JSON 格式的 `$batch`、逐请求授权 `authorize` | 采纳 |

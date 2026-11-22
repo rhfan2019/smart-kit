@@ -7,14 +7,16 @@
  * below 600 px, chosen by the app), table=annotation (no
  * `type`: chosen from the annotations as FE), views=switch|select|type-switch (`tableSettings.quickVariantSelection`),
  * views=type (views by order type from the demo's local annotations, src/annotations.ts), contents=1 (a view per
- * entity set), kpi=1 (`keyPerformanceIndicators`: the KPI tag UI.KPI#OpenAmount); initialLoad=Auto|Disabled|Enabled,
+ * entity set; the items table has its own configuration under "/PurchaseOrderItems/@UI.LineItem": a toolbar action, a
+ * custom column, `additionalProperties`; the rows of the shown table are counted in `data-demo-rows`),
+ * nav=<JSON> (`navigationParameter`: the conditions and the view of an inbound navigation), kpi=1 (`keyPerformanceIndicators`: the KPI tag UI.KPI#OpenAmount); initialLoad=Auto|Disabled|Enabled,
  * vm=None, selection=None|Single|Multi|Auto, export=0, creation=CreationDialog, threshold=<n> (tests/e2e-fe/lr5.spec.ts);
  * lr=<JSON> lays further settings over the manifest's (tests/e2e-fe/macros6-lr.spec.ts).
  */
 import ListReport, { type $ListReportSettings } from '@rhfan2019/smart-kit/v4/fe/templates/ListReport';
 import MessageToast from '@rhfan2019/smart-kit/m/MessageToast';
 import type { Row } from '@rhfan2019/smart-kit-core';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router';
 import purchasing from '../../../fe-reference/webapp/purchasing/manifest.json';
 import purchasingDraft from '../../../fe-reference/webapp/purchasing-draft/manifest.json';
@@ -27,6 +29,7 @@ import { listReportSettings, withTableSettings } from '../feListReport';
 import type { ShellKey } from '../shellText';
 
 const SPV = 'com.sap.vocabularies.UI.v1.SelectionPresentationVariant';
+const LINE_ITEM = '@com.sap.vocabularies.UI.v1.LineItem';
 const spv = (q: string) => ({ annotationPath: `${SPV}#${q}` });
 
 /** lr=<JSON>: settings laid over the manifest's list report settings (tests/e2e-fe/macros6-lr.spec.ts lays the same over FE). */
@@ -79,8 +82,29 @@ export function PurchaseOrdersPage({ service = 'purchasing' }: { service?: strin
     if (viewsParam === 'type-switch') out = withTableSettings(out, { quickVariantSelection: { paths: ORDER_TYPE_VIEWS.map(spv) } });
     if (viewsParam === 'type') out = { ...out, views: { paths: ORDER_TYPE_VIEWS.map((q) => ({ key: q, ...spv(q) })), showCounts: true } };
     if (params.get('contents')) {
-      out = { ...out, views: { paths: [{ key: 'orders', annotationPath: 'com.sap.vocabularies.UI.v1.LineItem' }, { key: 'items', entitySet: 'PurchaseOrderItems', annotationPath: 'com.sap.vocabularies.UI.v1.LineItem' }] } };
+      out = {
+        ...out,
+        views: { paths: [{ key: 'orders', annotationPath: 'com.sap.vocabularies.UI.v1.LineItem' }, { key: 'items', entitySet: 'PurchaseOrderItems', annotationPath: 'com.sap.vocabularies.UI.v1.LineItem' }] },
+        // the table of the other entity set has its own configuration under the absolute path (as in FE); without it
+        // the relative one would apply to it as well
+        controlConfiguration: {
+          ...out.controlConfiguration,
+          [`/PurchaseOrderItems/${LINE_ITEM}`]: {
+            tableSettings: { type: out.controlConfiguration?.[LINE_ITEM]?.tableSettings?.type, selectionMode: 'Multi', additionalProperties: ['InvoicedAmount'] },
+            actions: {
+              invoiced: {
+                text: 'Invoiced', requiresSelection: true,
+                press: (e) => MessageToast.show(`Invoiced: ${e.selectedContexts.map((c) => `${String(c.getObject().PurchaseOrder)}/${String(c.getObject().PurchaseOrderItem)} ${String(c.getObject().InvoicedAmount)}`).join(', ')}`),
+              },
+            },
+            columns: { 'Custom::Open': { header: 'Open quantity', template: (row: Row) => <span data-demo-open-quantity>{Number(row.OrderQuantity) - Number(row.ReceivedQuantity)}</span>, properties: ['OrderQuantity', 'ReceivedQuantity'], width: '130px' } },
+          },
+        },
+      };
     }
+    // an inbound navigation: nav={"selectionVariant":{"SelectOptions":[…]},"selectedTab":"items","navigationId":"1"}
+    const nav = params.get('nav');
+    if (nav) out = { ...out, navigationParameter: JSON.parse(nav) as $ListReportSettings['navigationParameter'] };
     if (params.get('kpi')) out = { ...out, keyPerformanceIndicators: { openAmount: { qualifier: 'OpenAmount' } } };
     // single settings of the FE comparison tests/e2e-fe/lr5.spec.ts (the FE side lays the same values over the manifest)
     const initialLoad = params.get('initialLoad');
@@ -94,12 +118,18 @@ export function PurchaseOrdersPage({ service = 'purchasing' }: { service?: strin
     if (threshold > 0) out = withTableSettings(out, { threshold });
     return out;
   }, [params, service, s]);
+  // contents=1: the rows the list reports (`onRowsChange`): how many, and of which entity set
+  const [rows, setRows] = useState<Row[]>([]);
   return (
-    <ListReport
-      key={`${service}:${params.toString()}`}
-      service={service}
-      pageKey={service === 'purchasing' ? 'po' : `po:${service}`}
-      {...settings}
-    />
+    <>
+      <ListReport
+        key={`${service}:${params.toString()}`}
+        service={service}
+        pageKey={service === 'purchasing' ? 'po' : `po:${service}`}
+        {...settings}
+        onRowsChange={params.get('contents') ? setRows : undefined}
+      />
+      {params.get('contents') ? <span hidden data-demo-rows={rows.length} data-demo-rows-set={rows[0] && 'PurchaseOrderItem' in rows[0] ? 'PurchaseOrderItems' : rows[0] ? 'PurchaseOrders' : ''} /> : null}
+    </>
   );
 }

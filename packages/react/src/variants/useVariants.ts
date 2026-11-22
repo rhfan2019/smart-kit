@@ -37,6 +37,15 @@ export interface VariantsApi {
 
 const canon = (c: VariantContent) => JSON.stringify({ f: c.filters ?? {}, s: c.search ?? '', ff: c.filterFields ?? null, c: c.columns ?? null, o: c.sort ?? null, g: c.groupBy ?? null, t: c.totals ?? null });
 
+/**
+ * The `custom` state of a content (the list report: the selected view tab and quick variant; FE keeps the IconTabBar's
+ * selected key as a change of the variant, MultipleModeControl handlePersonalizationUpdate "selectIconTabBarFilter"),
+ * compared on the keys the saved variant has: a variant saved without them matches any value.
+ */
+const customOf = (c: VariantContent, saved: VariantContent) => JSON.stringify(
+  Object.keys(saved.custom ?? {}).filter((k) => saved.custom![k] !== undefined && saved.custom![k] !== null).sort().map((k) => [k, c.custom?.[k] ?? null]),
+);
+
 export function useVariants(pageKey: string, o: UseVariantsOptions): VariantsApi {
   const service = useService(o.service);
   const { namespace } = useSmartKit();
@@ -111,6 +120,6 @@ export function useVariants(pageKey: string, o: UseVariantsOptions): VariantsApi
       }
       await reload();
     },
-    isModified: (content) => canon(content) !== canon(current.content),
+    isModified: (content) => canon(content) !== canon(current.content) || customOf(content, current.content) !== customOf(current.content, current.content),
   };
 }

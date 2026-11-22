@@ -278,16 +278,21 @@ function SubSectionView({ o, sectionId, sub, showTitle }: { o: ViewOptions; sect
   );
 }
 
-function SectionView({ o, section, tabs }: { o: ViewOptions; section: SectionItem; tabs: boolean }) {
+/**
+ * `titleHidden`: the first visible section under an anchor bar (sap.uxap.ObjectPageLayout `_applyUxRules`, rule
+ * firstSectionTitleHidden: "the first section title is never visible if there is an anchorBar"). The heading stays in
+ * the document for screen readers and heading navigation; it is only not shown.
+ */
+function SectionView({ o, section, tabs, titleHidden }: { o: ViewOptions; section: SectionItem; tabs: boolean; titleHidden?: boolean }) {
   const single = section.subSections.length === 1;
   const onlyTable = single && section.subSections[0]!.isTable;
   // OP-12: one subsection → its title is promoted (no separate subsection title); a lone table carries the title itself.
   const showSectionTitle = !tabs && !onlyTable;
   const Title = tagOf(o.level, 0);
   return (
-    <section className="sk-section" id={SECTION_ELEMENT_ID(o.scope, section.id)} tabIndex={-1} aria-label={section.title} data-sk-section={section.id}>
+    <section className="sk-section" id={SECTION_ELEMENT_ID(o.scope, section.id)} tabIndex={-1} aria-label={section.title} data-sk-section={section.id} data-sk-first-visible={titleHidden || undefined}>
       {section.messageStrip ? <div className="sk-section__message">{section.messageStrip}</div> : null}
-      {showSectionTitle ? <Title className="sk-section__title">{section.title}</Title> : null}
+      {showSectionTitle ? <Title className={titleHidden ? 'sk-section__title sk-visually-hidden' : 'sk-section__title'} data-sk-title-hidden={titleHidden || undefined}>{section.title}</Title> : null}
       <div className="sk-section__body">
         {section.subSections.map((sub) => (
           <SubSectionView key={sub.id} o={o} sectionId={section.id} sub={sub} showTitle={!single} />
@@ -464,6 +469,9 @@ export function ObjectPageLayout(p: $ObjectPageLayoutSettings) {
     </DynamicPageHeader>
   ) : undefined;
   const o: ViewOptions = { scope: p.scope, lazy: Boolean(p.enableLazyLoading), level: p.sectionTitleLevel };
+  // sap.uxap.ObjectPageLayout _applyUxRules: under an anchor bar (more than one visible section, showAnchorBar) the
+  // title of the first visible section is not shown; with one section there is no anchor bar and the title stays.
+  const firstTitleHidden = !tabs && sections.length > 1 && p.showAnchorBar !== false;
   // Landmarks (sap.uxap.ObjectPageLayoutRenderer): the header label carries the title text.
   const heading = isValidElement(p.headerTitle) ? (p.headerTitle.props as $ObjectPageDynamicHeaderTitleSettings).heading : undefined;
   const titleText = typeof heading === 'string' || typeof heading === 'number' ? String(heading) : undefined;
@@ -503,7 +511,7 @@ export function ObjectPageLayout(p: $ObjectPageLayoutSettings) {
         <>
           <div className="sk-object-page__sections" ref={sectionsRef}>
             {(tabs ? sections.filter((s) => s.id === tab) : sections).map((s) => (
-              <SectionView key={s.id} o={o} section={s} tabs={tabs} />
+              <SectionView key={s.id} o={o} section={s} tabs={tabs} titleHidden={firstTitleHidden && s.id === ids[0]} />
             ))}
           </div>
           {!tabs && spacer > 0 ? <div className="sk-object-page__spacer" style={{ height: spacer }} aria-hidden data-sk-spacer /> : null}

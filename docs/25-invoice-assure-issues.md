@@ -1,6 +1,6 @@
 # invoice-assure 用 smart-kit 发现的问题
 
-> 最后更新：2026-11-17（由 invoice-assure 的会话写入）。invoice-assure 用 smart-kit 时发现、还没修的问题，在本仓库修。修好一条、发版后，在这里写上本仓库的提交号和版本；invoice-assure 升级、拆掉绕行办法后，由那边在它的待办里关掉，并从这里删掉那一条。
+> 最后更新：2026-11-22（0.5.0 的处理结果由 smart-kit 这边写在各条下面，D51；条目本身由 invoice-assure 的会话写入）。invoice-assure 用 smart-kit 时发现、还没修的问题，在本仓库修。修好一条、发版后，在这里写上本仓库的提交号和版本；invoice-assure 升级、拆掉绕行办法后，由那边在它的待办里关掉，并从这里删掉那一条。
 
 ## 怎么用
 
@@ -15,44 +15,135 @@
 
 ## 还没修
 
-### S24 · TECH-077：对象页的区块和抬头关键值不能按数据隐藏
+### S24～S27：invoice-assure 已升到 0.4.0、拆掉绕行办法（2026-11-18）
 
-- **状态（2026-11-18）**：阶段 6 修好（D47）：`UI.Hidden` 的 `Path` 作用于 `UI.Facets`、`UI.HeaderFacets` 的 facet 和 `UI.DataField`（FE UIFormatters isVisible）。迁移时可以改回 `v4/fe/templates/ObjectPage`。
+S24、S25 修好（发票对象页回到 `ObjectPage`，区块改成注解另做）；S26 只修了一半，余下的记为 S33；S27 的参数对话框可用（下拉、文本域、必填、危险动作确认），余下的记为 S32、S34。这四条可以删去。
 
-- **现象**：`UI.Hidden` 只认常量（`buildModel` 里按 `bool(...)` 读），`UI.Facets`、`UI.HeaderFacets` 里的 `ReferenceFacet` 写 `<Annotation Term="UI.Hidden" Path="…"/>` 不起作用；`SmartObjectPage` 也没有扩展抬头关键值的属性（只有 `sectionExtend`）。
-- **为什么要**：invoice-assure 的发票对象页按“情形”换内容（疑似重复、确认订单、差异、补单据、会计复核、在等别人、已了结）：同一个实体类型，抬头关键值（匹配度环形图、单价对比微图、付款到期、复核进度）和第一个区块按每张发票的数据决定显示哪些。Fiori elements 用的就是路径式 `UI.Hidden`。
-- **期望**：`UI.Facets`、`UI.HeaderFacets` 的 facet（含 `CollectionFacet`、`ReferenceFacet`）和 `UI.DataField` 支持 `UI.Hidden` 的 `Path`（布尔字段，按当前这一行算；编辑中按草稿值算），被隐藏的区块同时从锚点栏里拿掉。
-- **本项目现在怎么绕**：发票页不用 `SmartObjectPage`，改用下一层的 `ObjectPageLayout`，由宿主按行给 `facets`、`sections`；代价是区块和字段不再来自注解。补上后可以回到 `SmartObjectPage`。
-- **验收**：一个字段为真时区块和锚点都不出现、为假时出现；抬头关键值同理；切换到另一行（FCL 翻页）时跟着变。
+### S29：列表页的多实体集视图只给页面自己的实体集用表格设置
 
-### S25 · TECH-078：对象页的页脚不能放宿主自己的决定按钮
+> **0.5.0 已修**（D51）：别的实体集的页签用 `controlConfiguration['/那个实体集/@com.sap.vocabularies.UI.v1.LineItem']`（`tableSettings`、`columns`、`actions` 整个取自这一个键，同 FE `getManifestControlConfiguration`）；`onRowsChange` 给当前页签的行。**升级时注意**：没写绝对路径键的实体集会退回用相对键（FE 如此），原来只在主实体集上生效的列和动作会出现在别的页签上；不想要就给它一个自己的键（`{ tableSettings: {} }` 即可）。
 
-- **状态（2026-11-18）**：阶段 5～7 修好（D46～D48）：`content.footer.actions` 放自定义动作（`press`、`visible`、`enabled`、`priority`、`isPrimaryAction`），和注解动作一起按 FE 排序和强调。
+- **现象**：`ListReport` 的 `views.paths[]` 指向别的实体集时，`controlConfiguration['@…LineItem']` 的 `columns`、`actions`、`additionalProperties`，以及 `onRowsChange`，都只用在 `contextPath` 那个实体集的表上（`templates/ListReport.js` 的 `i === g`）。别的页签没有工具栏动作、列覆盖，`selectedContexts` 里也没有 `additionalProperties`。
+- **FE**：多实体集视图的表格设置用绝对路径的键（`"/OtherSet/@com.sap.vocabularies.UI.v1.LineItem"`）。
+- **为什么要**：采购发票的页签是几个实体集（轮到我的、在等别人按人算，只能是实体集上的条件；等你预制要 `posting:submit`），批量按钮（一起确认、预制到 SAP）在这些页签上。
+- **本项目现在怎么绕**：按钮放页头（`content.header.actions`），勾选的行靠 `tableSettings.selectionChange` 记下，按 id 由宿主读；页面实体集取第一个页签的，上一张、下一张只在第一个页签有效。
+- **验收**：`/Set/@…LineItem` 的 `actions`、`columns`、`additionalProperties` 用在该实体集的页签上；`onRowsChange` 给当前页签的行。
 
-- **现象**：页脚的动作只来自 `UI.Identification` 里 `Determining` 的 `DataFieldForAction`，调服务端绑定动作；`SmartObjectPage` 没有 `footer` 之类的属性。
-- **为什么要**：invoice-assure 的发票页把了结这一步的决定放在固定页脚（如“接受差异，交财务”“退回供应商”“确认，转待预制”），点了先弹本项目的对话框（选依据类型、写原因、带上数字员工起草的文字），再走本项目的 Server Action；按钮按人、按情形现算；缺条件时左边写缺什么（“还差 1 条复核打勾”）并能点过去。
-- **期望**：`SmartObjectPage` 有一个页脚扩展（如 `footerActions: ReactNode | (row) => ReactNode`，再加一个页脚左侧的消息位），和模型动作排在一起，照 Fiori 的顺序（主按钮在前），保持固定、不随滚动消失。
-- **本项目现在怎么绕**：同 S24，用 `ObjectPageLayout` 的 `footer`。
-- **验收**：宿主给的按钮出现在页脚、按行变化；编辑状态下页脚仍是保存 / 取消。
+### S30：分析表组行的组名跟着第一列对齐
 
-### S26 · TECH-079：页脚没有消息按钮时，决定按钮靠左
+> **0.5.0 已修**（D51）：组名所在的单元格总是左对齐。宿主的那条样式可以删。
 
-- **状态（2026-11-18）**：修好：页脚左侧的消息区一直占位，动作工具栏总在右边。宿主样式可以删掉。
+- **现象**：组行把“分组属性：值”写在从第一列起跨列的单元格里，对齐方式随第一列（`ag-right-aligned-cell`）。第一列是数字时组名右对齐，表比可见区域宽时组名跑到看不见的地方。
+- **期望**：组名总是左对齐（FE 分析表的组头在左）。
+- **本项目现在怎么绕**：宿主样式 `.sk-table__group-row .ag-right-aligned-cell { justify-content: flex-start }`。
 
-- **现象**：`SmartObjectPage` 的页脚是 `justify: space-between`，左边放消息按钮；没有消息时左边是空的，按钮跑到左边。
-- **期望**：页脚动作始终靠右（Fiori 页脚工具栏）。
-- **本项目现在怎么绕**：宿主样式 `[data-sk-footer] > :last-child { margin-left: auto }`。
-- **验收**：没有消息时按钮在右边；有消息时消息按钮在左、动作在右。
+### S31：网格表、分析表的行高固定，字段组列只显示第一行
 
-### S27 · TECH-080：动作参数的对话框只有单行文字框
+> 0.5.0 没有做（web-app-template 的示例用不到），留待以后。
 
-- **状态（2026-11-18）**：阶段 7 修好（D48，按 FE `OperationParameterDialog`）：每个参数一个字段，`Common.ValueListWithFixedValues` 是选择框、`Common.ValueList` 是值帮助、`UI.MultiLineText` 是文本域，日期、数字、布尔按类型；`Common.Label`；`UI.ParameterDefaultValue`（常量或 `_it/…` 路径）；必填看 `Common.FieldControl` Mandatory，空时字段下提示、不发请求；值带类型发送。危险动作：`Common.IsActionCritical` 时确认（有参数对话框时对话框本身算确认，同 FE）；“Criticality 为负面时确认”FE 没有，不做。附件参数（`Edm.Stream`）、`UI.OperationParameterFacets` 分组、集合参数还没有。回调：`useActionRunner` 的 `onDone` 成功和失败都调。
+- **现象**：`DataFieldForAnnotation` 指向 `UI.FieldGroup` 的列（上下排列），在网格表、分析表里行高固定 44px，第二行以后被裁掉；响应式表正常。
+- **期望**：按 FE（字段组列的行高随内容），或给出 `rowHeight` 一类的设置。
+- **本项目现在怎么绕**：采购发票（分析表）不用字段组列，供应商、发票号、分类、原因各占一列。
 
-- **现象**：`useActionRunner` 给每个参数一个 `TextInput`，值都是字符串。
-- **为什么要**：invoice-assure 的决定都要填东西：接受差异选依据类型（4 选 1）、写原因（几行字）、附依据文件；退回选原因类别；作废重复要确认“不能恢复”。
-- **期望**：参数支持 `Common.ValueListWithFixedValues`（选择框，取值来自值列表或枚举）、`UI.MultiLineText`（多行）、`UI.ParameterDefaultValue`、`Common.Label`；`UI.DataFieldForAction/Criticality` 为负面时先确认；`SmartObjectPage` 有动作做完的回调（`onActionDone(result)`），宿主好刷新自己的部分。
-- **本项目现在怎么绕**：参数都是文字，服务端按中文名称或代码认，不填记“其他”；附件、草稿留在整页的发票页；动作做完的通知靠包一层 `DataProvider.invoke`。
-- **验收**：枚举参数是选择框；多行参数是文本域；危险动作先确认；回调在成功和失败时都调。
+### S32：动作参数的固定值下拉只显示代码
+
+> 0.5.0 没有改：代码里参数的值列表已经按值列表实体主键的 `Common.Text` 取描述（`buildActionParameter` 调 `describeValueLists`），没有复现；web-app-template 做写操作时会用带固定值参数的动作再核对。
+
+- **现象**：参数上 `Common.ValueListWithFixedValues` + `Common.ValueList`，值列表实体的主键有 `Common.Text`（和 `UI.TextArrangement` TextOnly），下拉仍只显示代码；请求只 `$select=Code`，`descriptionProperty` 没有用上（筛选栏和对象页字段正常）。
+- **本项目现在怎么绕**：值列表的键返回中文名称，服务端按名称换回代码。
+- **验收**：参数下拉显示文字，提交代码。
+
+### S33：对象页页脚的动作从左边排起（S26 余下的）
+
+> **0.5.0 已修**（D51）：页脚工具栏以 `ToolbarSpacer` 开头（同 FE `FooterContent`），动作靠右。宿主的那条样式可以删。
+
+- **现象**：页脚左边的消息位一直在，但动作工具栏（`sk-object-footer__toolbar`）占满剩下的宽度，按钮从工具栏左边排起。UI5 的页脚 `OverflowToolbar` 先放一个 `ToolbarSpacer`。
+- **本项目现在怎么绕**：宿主样式 `.sk-object-footer__toolbar { justify-content: flex-end }`。
+
+### S34：对象页没有“动作做完了”的回调（S27 余下的）
+
+> **0.5.0 已修**（D51）：`ObjectPage` 新属性 `onActionDone(result: ActionResult)`，页头、页脚的注解动作做完后调用（FE 没有对应，登记为偏差 `DV-op7-s34`）。子表里的动作不经过它。
+
+- **现象**：`useActionRunner` 有 `onDone`，`ObjectPage` 的注解动作做完宿主拿不到通知。
+- **为什么要**：发票对象页做完决定后，宿主要刷新自己的区块和清单。
+- **本项目现在怎么绕**：包一层 `DataProvider.invoke`。
+- **期望**：`ObjectPage` 有 `onActionDone(result)`（或 FE 的 `afterExecution` 扩展函数）。
+
+### S35：列表页不能带入站导航的筛选条件
+
+> **0.5.0 已修**（D51）：`ListReport` 新属性 `navigationParameter={{ selectionVariant, selectedTab, navigationId }}`（FE 没有同名设置，登记为偏差 `DV-p7-l01`；语义照 FE 的入站导航）：回到标准视图，条件整体换成给的（必填的筛选字段要一起给），马上读数据，选中给的页签；同一次导航只应用一次，之后用户改的不会被冲掉。
+
+- **现象**：别的页面带着条件打开列表（工作台的“只看待采购处理”），`ListReport` 没有收条件的地方。FE 用启动参数、iAppState。
+- **本项目现在怎么绕**：先往页面状态写 `${namespace}:${pageKey}:filters`（`kit/useFilterState` 的键和结构）和 `${namespace}:${pageKey}:view` 的 `tab`（打开时停在哪个页签），靠恢复机制带进来。
+- **期望**：一个入站条件的设置（如 `initialFilters` / 启动参数）和打开时选中的视图（如 `views.defaultKey`），或公开的写页面状态的函数。
+
+### S36：表格工具栏动作的 `enabled` 只能是布尔值
+
+> 0.5.0 没有做（示例用不到），留待以后。
+
+- **现象**：`$ManifestTableActionSettings.enabled` 是布尔值；FE 可以指向按选中的行算的扩展函数（如“勾选的行里有能一起确认的才可点”）。
+- **本项目现在怎么绕**：和 S29 一起，按钮在页头，点了再按勾选的行判断。
+
+### S37：网格表、分析表没有无障碍名称
+
+> **0.5.0 已修**（D51）：网格表、分析表的 `role="grid"` 以表格标题为名称；AG Grid 读给读屏的文字（选择行、全选、排序等）走翻译，中文环境不再是英文。
+
+- **现象**：响应式表的表格有名字（表格标题），网格表、分析表（AG Grid）的 `role="grid"` 没有 `aria-label`，读屏和按名字找表（`getByRole('grid', { name })`）都找不到。
+- **期望**：用表格标题（`header`）作名称，同响应式表。
+- **本项目现在怎么绕**：端到端测试按可见的表找。
+
+### S38：分析表的组不能默认展开
+
+> 0.5.0 没有做：FE 1.154 的分析表没有初始展开的设置（`InitialExpansionLevel` 只用于树表），要加就是 smart-kit 的扩展；示例用不到，留待以后。
+
+- **现象**：分析表（`type: 'AnalyticalTable'`）的组打开时都收起（同 FE），展开状态在 `useAnalyticalGroups` 里，初始是空集合，没有设置能改。
+- **为什么要**：采购发票的“轮到我的”按原因或到期分组，组里的发票就是要做的事，用户要求打开就展开（2026-11-19）。
+- **期望**：一个初始展开层数的设置（如表格积木的 `initialExpansionLevel` 用在分析表上，或 `tableSettings` 里的设置）。
+- **本项目现在怎么绕**：宿主观察表格，组出现时按一下它的展开按钮（`data-sk-group-toggle`）；用户收起的不再展开。
+
+### S39：组名要分组属性也是一列
+
+> 0.5.0 没有做（示例用不到），留待以后。
+
+- **现象**：按某属性分组时，组行写“标签：值”；这个属性不是表里的一列时，值显示成“–”（请求里有 `groupby((DueGroup))`，值在行上）。
+- **本项目现在怎么绕**：分组属性留作一列（“付款到期”和组名重复）。
+- **期望**：组名直接取分组属性的值，不要求它是可见的列。
+
+### S40：`afterRead` 拿不到页面没选的列
+
+> 2026-11-19：本项目删掉了用到它的区块行视图，不再需要；留作记录。
+
+- **现象**：对象页的子表按 `$select` 只读选中的列。`afterRead` 要从原始列（如一行的核对结果 JSON）写出显示的文字，页面不选那些原始列，`afterRead` 就无从写起，显示的列全是空的。
+- **本项目现在怎么绕**：宿主在把请求交给服务前改写 `$select`，补上 `afterRead` 要读的列（`ListSet.reads`：列名和导航名）；只改顶层的 `$select`，不处理 `$expand(...;$select=...)`。
+- **期望**：`createODataService` 能按实体集登记 `afterRead` 依赖的属性（如 `readsFor: { InvoiceDifferences: ['EvaluationLine', 'Params'] }`），服务读库时总带上它们，返回时去掉没选的；`$expand` 里一样。
+
+### S41：注解分区被 `UI.Hidden` 隐藏时，覆盖它会变成没有标题的自定义分区
+
+> **0.5.0 已修**（D51）：覆盖被 `UI.Hidden` 隐藏的注解分区时不再生成没有标题的自定义分区；只有覆盖里显式写了 `visible` 才盖过 `UI.Hidden`，标题仍取注解。
+
+- **现象**：`content.body.sections` 用注解分区的 ID 覆盖（只加一个 `subSections` 或 `messageStrip`）。这一行的 `UI.Hidden` 路径为真、注解分区被去掉时，覆盖照样显示成一个自定义分区，排在最后，锚点栏写 ID（如“Sap”）。
+- **本项目现在怎么绕**：覆盖时再写一遍 `title` 和 `visible(row)`，把 `Hide*` 列放进 `additionalProperties`。
+- **期望**：覆盖只改给出的键，标题、`UI.Hidden` 照注解。
+
+### S42：对象页第一个区块显示了标题
+
+> **0.5.0 已修**（D51）：同 sap.uxap `_applyUxRules`：多于一个区块、不是页签导航、有锚点栏时，第一个区块的标题视觉上隐藏，读屏仍能读到。宿主的样式可以删。
+
+- **现象**：Fiori 对象页规范写明第一个区块没有标题（Object Page Floorplan › Content Area › Sections）；0.4.0 的 `sk-section__title` 在第一个区块上照样显示，和锚点栏重复。
+- **本项目现在怎么绕**：在页面的 `className` 下把第一个区块的标题改成只给读屏读（视觉隐藏）。
+- **期望**：第一个区块的标题默认不显示，读屏仍能读到区块名。
+
+### S43：页脚不能把注解动作设为主操作
+
+> **0.5.0**（D51）：按键覆盖注解动作并设 `isPrimaryAction` 在当前代码里是好的（有单测）；能复现的是另一种情况：注解动作被 `UI.Hidden` 路径隐藏时，覆盖会变成一个以键为文字的按钮，已修。请在 invoice-assure 升级后验证。
+
+- **现象**：`content.footer.actions` 写注解动作的键（`DataFieldForAction::InvoiceAssure.approve`）加 `isPrimaryAction: true`，0.4.0 不是覆盖那个按钮，而是另加一个以键为文字的新按钮。页脚的决定因此没有一个加重的主按钮。
+- **本项目现在怎么绕**：不设主操作，页脚按钮都是普通样式。
+- **期望**：按键覆盖注解动作的 `isPrimaryAction`（变更记录第 7 批已列出，升级后验证）。
+
+### 文档：README、recipes 还是旧写法
+
+`docs/README.md` 的“Extending without forking”和 `docs/recipes.md` 第 1 节的 “Common props” 还写着 `tableExtend`、`filterExtend`、`sectionExtend`、`tableType="responsive"`、`views={{ mode: 'tabs' }}`、`headerActions`，0.4.0 已没有这些属性。
 
 ### S28 · TECH-081：按钮不能按人显示（只记录）
 
@@ -62,6 +153,8 @@
 ## 只记录
 
 ### S10 · TECH-063：没有 `$batch`（只记录）
+
+> **0.5.0 已有**（D51，ADR-034）：服务端支持 JSON 格式的 `$batch`；`loadService` / `ODataV4Provider` 设 `batch: 'json'` 后，成批动作是一次请求、逐条报结果。宿主的授权要从“按 URL 判断”改成服务的 `authorize` 钩子。
 
 - **现象**：成批动作一行发一个请求，丢掉了“一次确认、逐张报结果”的做法。
 - **本项目现在怎么绕**：成批的事用表格工具栏的自定义按钮，调本项目的 Server Action。暂不要求补，记下来供排期参考。

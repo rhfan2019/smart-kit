@@ -312,6 +312,11 @@ export interface ActionModel {
   hidden?: string;
   /** UI.Emphasized of the record (FE HeaderAndFooterAction getDataFieldAnnotationAction: emphasized when there is no Criticality). */
   emphasized?: boolean;
+  /**
+   * UI.DataFieldForAction/InvocationGrouping when it is ChangeSet: the action runs on all selected entities or on none
+   * (FE Operation: one change set). Default (Isolated): each entity on its own.
+   */
+  invocationGrouping?: 'ChangeSet';
   /** Non-binding parameters (FE OperationParameterDialog: one field each). */
   parameters: ActionParameterModel[];
 }
