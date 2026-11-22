@@ -123,7 +123,18 @@ async function feEdit(page: Page) {
 async function feSideContent(page: Page) {
   await page.getByRole('tab', { name: /Delivery Timeline/ }).first().click();
   await page.getByRole('button', { name: 'Supplier Information', exact: true }).click();
-  await page.waitForTimeout(800);
+  // FE shows it after loading the fragment; over the CDN that has taken more than two seconds
+  await page.waitForFunction(
+    () => {
+      /* eslint-disable @typescript-eslint/no-explicit-any -- the UI5 control tree is untyped here */
+      const R = (window as any).sap.ui.require('sap/ui/core/ElementRegistry');
+      return R.filter((e: any) => e.isA('sap.ui.layout.DynamicSideContent') && e.getDomRef() && e.getShowSideContent()).length > 0;
+      /* eslint-enable @typescript-eslint/no-explicit-any */
+    },
+    undefined,
+    { timeout: 15_000, polling: 100 },
+  ).catch(() => undefined);
+  await page.waitForTimeout(300);
 }
 
 // ---------------------------------------------------------------------------------------------- smart-kit
